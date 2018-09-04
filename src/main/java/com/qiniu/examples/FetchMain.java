@@ -4,6 +4,8 @@ import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.config.PropertyConfig;
+import com.qiniu.interfaces.ILineParser;
+import com.qiniu.service.impl.SplitLineParser;
 import com.qiniu.service.oss.AsyncFetchProcessor;
 
 import java.io.BufferedReader;
@@ -19,7 +21,7 @@ public class FetchMain {
         String bucket = propertyConfig.getProperty("bucket");
         String targetFileDir = "/Users/wubingheng/Public/Works/myaccount";
         String sourceFileDir = "/Users/wubingheng/Public/Works/myaccount";
-        String[] sourceReaders = new String[]{"xaa"};
+        String[] sourceReaders = new String[]{"xaa", "xab", "xac", "xad", "xae", "xaf", "xag", "xah", "xai", "xaj", "xak", "xal"};
 
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(QiniuAuth.create(ak, sk), bucket);
@@ -31,8 +33,7 @@ public class FetchMain {
             System.out.println("fetch started...");
             BufferedReader bufferedReader = null;
             String fetchResult = "";
-            String url = "";
-            String key = "";
+            ILineParser lineParser = null;
 
             for (int i = 0; i < sourceReaders.length; i++) {
 
@@ -44,16 +45,14 @@ public class FetchMain {
 
                 while((str = bufferedReader.readLine()) != null)
                 {
-                    // 原列表文件格式为 url[\t]key
-                    url = str.split("\t")[0];
-                    key = str.split("\t")[1];
+                    lineParser = new SplitLineParser(str);
 
                     try {
-                        fetchResult = asyncFetchProcessor.doAsyncFetch(url, key);
+                        fetchResult = asyncFetchProcessor.doAsyncFetch(lineParser.getUrl(), lineParser.getKey());
                         targetFileReaderAndWriterMap.writeSuccess(fetchResult);
                     } catch (QiniuSuitsException e) {
                         // 抓取失败的异常
-                        targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + url + "," + key);
+                        targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + lineParser.toString());
                     }
                 }
 
