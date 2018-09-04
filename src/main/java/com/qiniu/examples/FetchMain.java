@@ -4,8 +4,6 @@ import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.config.PropertyConfig;
-import com.qiniu.interfaces.ILineParser;
-import com.qiniu.service.impl.SplitLineParser;
 import com.qiniu.service.oss.AsyncFetchProcessor;
 
 import java.io.BufferedReader;
@@ -19,9 +17,9 @@ public class FetchMain {
         String ak = propertyConfig.getProperty("access_key");
         String sk = propertyConfig.getProperty("secret_key");
         String bucket = propertyConfig.getProperty("bucket");
-        String targetFileDir = "/Users/wubingheng/Public/Works/qiubai";
-        String sourceFileDir = "/Users/wubingheng/Public/Works/ai@qiniu.com";
-        String[] sourceReaders = new String[]{"xaa", "xab", "xac", "xad", "xae", "xaf", "xag", "xah", "xai", "xaj", "xak", "xal"};
+        String targetFileDir = "/Users/wubingheng/Public/Works/myaccount";
+        String sourceFileDir = "/Users/wubingheng/Public/Works/myaccount";
+        String[] sourceReaders = new String[]{"xaa"};
 
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(QiniuAuth.create(ak, sk), bucket);
@@ -33,7 +31,8 @@ public class FetchMain {
             System.out.println("fetch started...");
             BufferedReader bufferedReader = null;
             String fetchResult = "";
-            ILineParser lineParser = null;
+            String url = "";
+            String key = "";
 
             for (int i = 0; i < sourceReaders.length; i++) {
 
@@ -45,14 +44,16 @@ public class FetchMain {
 
                 while((str = bufferedReader.readLine()) != null)
                 {
-                    lineParser = new SplitLineParser(str);
+                    // 原列表文件格式为 url[\t]key
+                    url = str.split("\t")[0];
+                    key = str.split("\t")[1];
 
                     try {
-                        fetchResult = asyncFetchProcessor.doAsyncFetch(lineParser.getUrl(), lineParser.getKey());
+                        fetchResult = asyncFetchProcessor.doAsyncFetch(url, key);
                         targetFileReaderAndWriterMap.writeSuccess(fetchResult);
                     } catch (QiniuSuitsException e) {
                         // 抓取失败的异常
-                        targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + lineParser.toString());
+                        targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + url + "," + key);
                     }
                 }
 
