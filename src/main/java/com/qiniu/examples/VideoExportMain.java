@@ -6,10 +6,10 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuSuitsException;
-import com.qiniu.service.NothingProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
-import com.qiniu.service.FetchProcess;
-import com.qiniu.service.jedi.IProcessInterface;
+import com.qiniu.interfaces.IUrlItemProcess;
+import com.qiniu.service.impl.FetchUrlItemProcess;
+import com.qiniu.service.impl.NothingUrlItemProcess;
 import com.qiniu.service.jedi.VideoExport;
 import com.qiniu.service.jedi.VideoManage;
 import com.qiniu.config.PropertyConfig;
@@ -35,10 +35,10 @@ public class VideoExportMain {
         QiniuAuth auth = QiniuAuth.create(ak, sk);
         VideoExport videoExport = new VideoExport();
         VideoExportMain videoExportMain = new VideoExportMain();
-        IProcessInterface processor = null;
+        IUrlItemProcess processor = null;
 
         try {
-            processor = new NothingProcess();
+            processor = new NothingUrlItemProcess();
             processor = videoExportMain.getFetchProcess(auth, bucket, targetFileDir);
             videoExport.setPointTime("2018-03-16 16:40:52", false);
             videoExportMain.exportItems(u_auth, videoExport, jediHub, targetFileDir, processor);
@@ -49,15 +49,15 @@ public class VideoExportMain {
         }
     }
 
-    public IProcessInterface getFetchProcess(QiniuAuth auth, String bucket, String targetFileDir) throws QiniuSuitsException, IOException {
+    public IUrlItemProcess getFetchProcess(QiniuAuth auth, String bucket, String targetFileDir) throws QiniuSuitsException, IOException {
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "fetch");
         M3U8Manager m3u8Manager = new M3U8Manager();
-        IProcessInterface processor = new FetchProcess(auth, bucket, targetFileReaderAndWriterMap, m3u8Manager);
+        IUrlItemProcess processor = new FetchUrlItemProcess(auth, bucket, targetFileReaderAndWriterMap, m3u8Manager);
         return processor;
     }
 
-    public void exportItems(QiniuAuth auth, final VideoExport videoExport, String jediHub, String targetFileDir, final IProcessInterface processor) throws IOException {
+    public void exportItems(QiniuAuth auth, final VideoExport videoExport, String jediHub, String targetFileDir, final IUrlItemProcess processor) throws IOException {
         Gson gson = new Gson();
         int count = 500;
         long total = 0;
@@ -84,7 +84,7 @@ public class VideoExportMain {
         System.out.println("export completed for: " + targetFileDir);
     }
 
-    public void multiExportItems(QiniuAuth auth, final VideoExport videoExport, String jediHub, String targetFileDir, final IProcessInterface processor) throws IOException {
+    public void multiExportItems(QiniuAuth auth, final VideoExport videoExport, String jediHub, String targetFileDir, final IUrlItemProcess processor) throws IOException {
         Gson gson = new Gson();
         int count = 500;
         long total = 0;

@@ -1,29 +1,29 @@
-package com.qiniu.service;
+package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.service.jedi.IProcessInterface;
+import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.oss.AsyncFetchProcessor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class FetchProcess implements IProcessInterface {
+public class FetchUrlItemProcess implements IUrlItemProcess {
 
     private AsyncFetchProcessor asyncFetchProcessor;
     private FileReaderAndWriterMap targetFileReaderAndWriterMap;
     private M3U8Manager m3u8Manager;
 
-    public FetchProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
+    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
         this.asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
     }
 
-    public FetchProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
+    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
         this.asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
         this.m3u8Manager = m3u8Manager;

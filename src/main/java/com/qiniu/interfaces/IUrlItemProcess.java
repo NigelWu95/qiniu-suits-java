@@ -1,8 +1,8 @@
-package com.qiniu.service.jedi;
+package com.qiniu.interfaces;
 
 import com.qiniu.common.QiniuAuth;
 
-public interface IProcessInterface {
+public interface IUrlItemProcess {
 
     void processItem(String rootUrl, String item);
 

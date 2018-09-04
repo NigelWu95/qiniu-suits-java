@@ -41,24 +41,25 @@ public class AsyncFetchProcessor {
     public String doAsyncFetch(String url, String key) throws QiniuSuitsException {
         // 构造post请求body
         Gson gson = new Gson();
-        Map<String, String> m = new HashMap();
-        m.put("url", url);
-        m.put("bucket", bucket);
-        m.put("key", key);
-        String paraR = gson.toJson(m);
-        byte[] bodyByte = paraR.getBytes();
+        Map<String, String> bodyMap = new HashMap();
+        bodyMap.put("url", url);
+        bodyMap.put("bucket", bucket);
+        bodyMap.put("key", key);
+        String jsonBody = gson.toJson(bodyMap);
+        byte[] bodyBytes = jsonBody.getBytes();
         // 获取签名
         String apiUrl = "http://api.qiniu.com/sisyphus/fetch";
-        String accessToken = "Qiniu " + auth.signRequestV2(apiUrl, "POST", bodyByte, "application/json");
+        String accessToken = "Qiniu " + auth.signRequestV2(apiUrl, "POST", bodyBytes, "application/json");
         StringMap headers = new StringMap();
         headers.put("Authorization", accessToken);
         String respBody = "";
 
         try {
-            response = client.post(apiUrl, bodyByte, headers, Client.JsonMime);
+            response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
         } catch (QiniuException e) {
             QiniuSuitsException qiniuSuitsException = new QiniuSuitsException(e);
             qiniuSuitsException.addToFieldMap("url", url);
+            qiniuSuitsException.addToFieldMap("key", key);
             qiniuSuitsException.setStackTrace(e.getStackTrace());
             throw qiniuSuitsException;
         }

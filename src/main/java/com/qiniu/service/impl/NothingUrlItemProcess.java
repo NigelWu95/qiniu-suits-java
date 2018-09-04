@@ -1,9 +1,9 @@
-package com.qiniu.service;
+package com.qiniu.service.impl;
 
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.service.jedi.IProcessInterface;
+import com.qiniu.interfaces.IUrlItemProcess;
 
-public class NothingProcess implements IProcessInterface {
+public class NothingUrlItemProcess implements IUrlItemProcess {
 
     @Override
     public void processItem(String rootUrl, String item) {

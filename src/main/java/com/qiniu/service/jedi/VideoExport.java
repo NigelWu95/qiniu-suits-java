@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.config.PropertyConfig;
+import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.util.DateUtil;
 
 import java.util.Map;
@@ -47,7 +48,7 @@ public class VideoExport {
         return jsonElements;
     }
 
-    public void processUrlGroupbyFormat(FileReaderAndWriterMap targetFileReaderAndWriterMap, JsonArray jsonElements, IProcessInterface processor) {
+    public void processUrlGroupbyFormat(FileReaderAndWriterMap targetFileReaderAndWriterMap, JsonArray jsonElements, IUrlItemProcess processor) {
         JsonObject item = null;
         JsonArray transcoding = null;
         JsonObject transcodingResult = null;
