@@ -38,21 +38,21 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
     }
 
-    public void processItem(String rootUrl, String item) {
-        processItem(rootUrl, item, item);
+    public void processItem(String source, String item) {
+        processItem(source, item, item);
     }
 
-    public void processItem(String rootUrl, String item, String key) {
-        String url = rootUrl.endsWith("/") ? rootUrl + item : rootUrl + "/" + item;
+    public void processItem(String source, String item, String key) {
+        String url = source.endsWith("/") ? source + item : source + "/" + item;
         fetchResult(url, key);
     }
 
-    public void processItem(QiniuAuth auth, String rootUrl, String item) {
-        processItem(auth, rootUrl, item, item);
+    public void processItem(QiniuAuth auth, String source, String item) {
+        processItem(auth, source, item, item);
     }
 
-    public void processItem(QiniuAuth auth, String rootUrl, String item, String key) {
-        String url = auth.privateDownloadUrl(rootUrl + item);
+    public void processItem(QiniuAuth auth, String source, String item, String key) {
+        String url = auth.privateDownloadUrl(source + item);
         fetchResult(url, key);
     }
 
@@ -92,7 +92,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            processUrl(videoTS.getUrl(), videoTS.getUrl().substring(videoTS.getUrl().indexOf("/", 8) + 1));
+            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1]);
         }
     }
 
@@ -106,7 +106,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            processUrl(videoTS.getUrl(), videoTS.getUrl().substring(videoTS.getUrl().indexOf("/", 8) + 1));
+            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1]);
         }
     }
 

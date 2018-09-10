@@ -14,14 +14,14 @@ import java.util.Map;
 public class VideoExport {
 
     private QiniuAuth jediAccountAuth;
-    private String jediSourceRootUrl;
+    private String jediSource;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
 
     public VideoExport() {
         PropertyConfig propertyConfig = new PropertyConfig(".qiniu.properties");
         this.jediAccountAuth = QiniuAuth.create(propertyConfig.getProperty("jedi_access_key"), propertyConfig.getProperty("jedi_secret_key"));
-        this.jediSourceRootUrl = propertyConfig.getProperty("jedi_source_root_url");
+        this.jediSource = propertyConfig.getProperty("jedi_source");
         this.pointTimeIsBiggerThanTimeStamp = true;
     }
 
@@ -78,8 +78,8 @@ public class VideoExport {
             }
 
             if (isDoProcess) {
-                // 原文件名进行处理
-                processor.processItem(this.jediAccountAuth, this.jediSourceRootUrl, exporter.getKey());
+                // 原文件名进行处理，该文件在点播的 src 空间中，要单独设置源来获取
+                processor.processItem(this.jediAccountAuth, this.jediSource, exporter.getKey());
 
                 for (int formatIndex = 0; formatIndex < transcoding.size(); formatIndex++) {
                     transcodingResult = transcoding.get(formatIndex).getAsJsonObject();
@@ -92,7 +92,7 @@ public class VideoExport {
                         targetFileReaderAndWriterMap.writeKeyFile(exporter.getFormat(), exporter.getUrl());
 
                         // url 按照文件格式进行处理, 带上处理之后的文件名
-                        processor.processUrl(exporter.getUrl(), exporter.getKey(), exporter.getFormat());
+                        processor.processUrl(exporter.getUrl(), exporter.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1], exporter.getFormat());
                     } else {
                         targetFileReaderAndWriterMap.writeErrorAndNull(exporter.toString());
                     }

@@ -3,16 +3,16 @@ package com.qiniu.examples;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.common.*;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.interfaces.IUrlItemProcess;
+import com.qiniu.service.impl.BucketCopyItemProcess;
 import com.qiniu.service.impl.FetchUrlItemProcess;
 import com.qiniu.service.impl.NothingUrlItemProcess;
 import com.qiniu.service.jedi.VideoExport;
 import com.qiniu.service.jedi.VideoManage;
 import com.qiniu.config.PropertyConfig;
+import com.qiniu.storage.Configuration;
 
 import java.io.IOException;
 import java.util.Map;
@@ -28,25 +28,40 @@ public class VideoExportMain {
         String sk = propertyConfig.getProperty("secret_key");
         String u_ak = propertyConfig.getProperty("user_access_key");
         String u_sk = propertyConfig.getProperty("user_secret_key");
+        String srcBucket = propertyConfig.getProperty("src_bucket");
         String bucket = propertyConfig.getProperty("bucket");
         String jediHub = propertyConfig.getProperty("jedi_hub");
-        String targetFileDir = "/Users/wubingheng/Documents/test/";
+        String targetFileDir = "/Users/wubingheng/Documents/客户/点播下线/无限极/";
         QiniuAuth u_auth = QiniuAuth.create(u_ak, u_sk);
         QiniuAuth auth = QiniuAuth.create(ak, sk);
         VideoExport videoExport = new VideoExport();
+        Map<String, Object> map = videoExport.getFirstResult(auth, jediHub);
+        System.out.println(map);
         VideoExportMain videoExportMain = new VideoExportMain();
         IUrlItemProcess processor = null;
 
         try {
             processor = new NothingUrlItemProcess();
-            processor = videoExportMain.getFetchProcess(auth, bucket, targetFileDir);
-            videoExport.setPointTime("2018-03-16 16:40:52", false);
-            videoExportMain.exportItems(u_auth, videoExport, jediHub, targetFileDir, processor);
+            processor = videoExportMain.getBucketCopyProcess(auth, srcBucket, bucket, targetFileDir);
+//            processor = videoExportMain.getFetchProcess(u_auth, bucket, targetFileDir);
+            // isBiggerThan 标志为 true 时，在 pointTime 时间点之前的记录进行处理，isBiggerThan 标志为 false 时，在 pointTime 时间点之后的记录进行处理。
+            videoExport.setPointTime("2018-09-11 00:00:00", true);
+//            videoExportMain.exportItems(auth, videoExport, jediHub, targetFileDir, processor);
+            videoExportMain.multiExportItems(auth, videoExport, jediHub, targetFileDir, processor);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             processor.close();
         }
+    }
+
+    public IUrlItemProcess getBucketCopyProcess(QiniuAuth auth, String srcBucket, String tarBucket, String targetFileDir) throws QiniuSuitsException, IOException {
+        FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
+        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "copy");
+        M3U8Manager m3u8Manager = new M3U8Manager();
+        QiniuBucketManager bucketManager = new QiniuBucketManager(auth, new Configuration(Zone.autoZone()));
+        IUrlItemProcess processor = new BucketCopyItemProcess(bucketManager, srcBucket, tarBucket, "video/", targetFileReaderAndWriterMap, m3u8Manager);
+        return processor;
     }
 
     public IUrlItemProcess getFetchProcess(QiniuAuth auth, String bucket, String targetFileDir) throws QiniuSuitsException, IOException {

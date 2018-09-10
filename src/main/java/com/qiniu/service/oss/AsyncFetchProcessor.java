@@ -57,9 +57,9 @@ public class AsyncFetchProcessor {
         try {
             response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
         } catch (QiniuException e) {
-            QiniuSuitsException qiniuSuitsException = new QiniuSuitsException(e);
-            qiniuSuitsException.addToFieldMap("url", url);
-            qiniuSuitsException.addToFieldMap("key", key);
+            QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("async fetch error");
+            qiniuSuitsException.addToFieldMap("code", String.valueOf(e.code()));
+            qiniuSuitsException.addToFieldMap("error", String.valueOf(e.error()));
             qiniuSuitsException.setStackTrace(e.getStackTrace());
             throw qiniuSuitsException;
         }

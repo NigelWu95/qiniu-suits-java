@@ -4,13 +4,13 @@ import com.qiniu.common.QiniuAuth;
 
 public interface IUrlItemProcess {
 
-    void processItem(String rootUrl, String item);
+    void processItem(String source, String item);
 
-    void processItem(String rootUrl, String item, String key);
+    void processItem(String source, String item, String key);
 
-    void processItem(QiniuAuth auth, String rootUrl, String item);
+    void processItem(QiniuAuth auth, String source, String item);
 
-    void processItem(QiniuAuth auth, String rootUrl, String item, String key);
+    void processItem(QiniuAuth auth, String source, String item, String key);
 
     void processUrl(String url, String key);
 

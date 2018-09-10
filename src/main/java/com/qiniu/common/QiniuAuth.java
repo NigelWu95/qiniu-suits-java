@@ -10,7 +10,7 @@ import java.security.GeneralSecurityException;
 
 public class QiniuAuth {
 
-    private final String accessKey;
+    public final String accessKey;
     private final SecretKeySpec secretKey;
 
     /**

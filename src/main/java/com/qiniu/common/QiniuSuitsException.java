@@ -57,9 +57,13 @@ public class QiniuSuitsException extends Exception {
 
         for (int i = 0; i < fieldList.size(); i++) {
             stringBuilder.append("\"" + fieldList.get(i) + "\":\"" + fieldMap.get(fieldList.get(i)) + "\",");
+
+            if (i == fieldList.size() - 1) {
+                stringBuilder.append("\"" + fieldList.get(i) + "\":\"" + fieldMap.get(fieldList.get(i)) + "\"}");
+            }
         }
 
-        return "" + stringBuilder.replace(stringBuilder.length() - 2, stringBuilder.length() - 1, "}");
+        return stringBuilder.toString();
     }
 
     public String toString() {
