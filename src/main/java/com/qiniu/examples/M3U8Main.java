@@ -19,7 +19,7 @@ public class M3U8Main {
         String ak = propertyConfig.getProperty("access_key");
         String sk = propertyConfig.getProperty("secret_key");
         String bucket = propertyConfig.getProperty("bucket");
-        String targetFileDir = "/Users/wubingheng/Documents/test";
+        String targetFileDir = System.getProperty("user.home") + "/Documents/test";
         String url = "http://oi62kxphl.cvoda.com/bWVueWFlcjpsaENSUTVjeUppYWdZQnc5ZGducFZsdTRMN1c4_5862081a64703c8d0300021e.m3u8";
         QiniuAuth auth = QiniuAuth.create(ak, sk);
         M3U8Main m3u8Main = new M3U8Main();
@@ -71,7 +71,7 @@ public class M3U8Main {
         M3U8Manager m3u8Manager = new M3U8Manager();
         AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
         List<VideoTS> tsList = null;
-        String tsUrl = "";
+        String tsUrl;
         System.out.println("m3u8 fetch started...");
 
         try {

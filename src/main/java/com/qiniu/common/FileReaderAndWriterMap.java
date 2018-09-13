@@ -39,10 +39,8 @@ public class FileReaderAndWriterMap {
     public void addWriter(String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
         mkDirAndFile(resultFile);
-        FileOutputStream resultFileOutputStream = new FileOutputStream(resultFile, true);
-        OutputStreamWriter resultFileWriter = new OutputStreamWriter(resultFileOutputStream, "UTF-8");
+        OutputStreamWriter resultFileWriter = new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8");
         this.outputStreamWriterMap.put(key, resultFileWriter);
-        resultFileOutputStream = null;
     }
 
     public void mkDirAndFile(File filePath) throws IOException {
@@ -114,15 +112,16 @@ public class FileReaderAndWriterMap {
     }
 
     public void writeKeyFile(String key, String item) {
-        if (!targetWriters.contains(key)) {
+        if (!outputStreamWriterMap.keySet().contains(key)) {
             try {
                 addWriter(key);
-                doWrite(key, item);
             } catch (IOException ioException) {
                 writeOther(item);
                 ioException.printStackTrace();
             }
         }
+
+        doWrite(key, item);
     }
 
     public void writeSuccess(String item) {

@@ -19,21 +19,21 @@ public class FetchMain {
         String ak = propertyConfig.getProperty("access_key");
         String sk = propertyConfig.getProperty("secret_key");
         String bucket = propertyConfig.getProperty("bucket");
-        String targetFileDir = "/Users/wubingheng/Public/Works/myaccount";
-        String sourceFileDir = "/Users/wubingheng/Public/Works/myaccount";
+        String targetFileDir = System.getProperty("user.home") + "/Works/myaccount";
+        String sourceFileDir = System.getProperty("user.home") + "/Works/myaccount";
         String[] sourceReaders = new String[]{"xaa", "xab", "xac", "xad", "xae", "xaf", "xag", "xah", "xai", "xaj", "xak", "xal"};
 
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(QiniuAuth.create(ak, sk), bucket);
-        String str = null;
+        String str;
 
         try {
             targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "fetch");
             targetFileReaderAndWriterMap.initInputStreamReader(sourceFileDir);
             System.out.println("fetch started...");
             BufferedReader bufferedReader = null;
-            String fetchResult = "";
-            ILineParser lineParser = null;
+            String fetchResult;
+            ILineParser lineParser;
 
             for (int i = 0; i < sourceReaders.length; i++) {
 

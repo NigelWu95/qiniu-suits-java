@@ -28,10 +28,10 @@ public class VideoExportMain {
         String sk = propertyConfig.getProperty("secret_key");
         String u_ak = propertyConfig.getProperty("user_access_key");
         String u_sk = propertyConfig.getProperty("user_secret_key");
-        String srcBucket = propertyConfig.getProperty("src_bucket");
+        String jediResultBucket = propertyConfig.getProperty("jedi_result");
         String bucket = propertyConfig.getProperty("bucket");
         String jediHub = propertyConfig.getProperty("jedi_hub");
-        String targetFileDir = "/Users/wubingheng/Documents/客户/点播下线/无限极/";
+        String targetFileDir = System.getProperty("user.home") + "/Downloads/test/";
         QiniuAuth u_auth = QiniuAuth.create(u_ak, u_sk);
         QiniuAuth auth = QiniuAuth.create(ak, sk);
         VideoExport videoExport = new VideoExport();
@@ -42,12 +42,15 @@ public class VideoExportMain {
 
         try {
             processor = new NothingUrlItemProcess();
-            processor = videoExportMain.getBucketCopyProcess(auth, srcBucket, bucket, targetFileDir);
+            processor = videoExportMain.getBucketCopyProcess(u_auth, jediResultBucket, bucket, targetFileDir);
 //            processor = videoExportMain.getFetchProcess(u_auth, bucket, targetFileDir);
+
             // isBiggerThan 标志为 true 时，在 pointTime 时间点之前的记录进行处理，isBiggerThan 标志为 false 时，在 pointTime 时间点之后的记录进行处理。
             videoExport.setPointTime("2018-09-11 00:00:00", true);
-//            videoExportMain.exportItems(auth, videoExport, jediHub, targetFileDir, processor);
-            videoExportMain.multiExportItems(auth, videoExport, jediHub, targetFileDir, processor);
+
+            videoExportMain
+//                    .exportItems(auth, videoExport, jediHub, targetFileDir, processor);
+                    .multiExportItems(auth, videoExport, jediHub, targetFileDir, processor);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -124,8 +127,6 @@ public class VideoExportMain {
             cursor = jsonObject.get("cursor") == null ? "" : jsonObject.get("cursor").getAsString();
             jsonElements = jsonObject.getAsJsonArray("items");
             final JsonArray finalJsonElements = jsonElements;
-            final int finalI = i;
-            final Map<String, Object> finalResult = result;
             executorPool.execute(new Runnable() {
                 public void run() {
                     videoExport.processUrlGroupbyFormat(finalTargetFileReaderAndWriterMap, finalJsonElements, processor);
@@ -143,6 +144,7 @@ public class VideoExportMain {
             e.printStackTrace();
         }
 
+        finalTargetFileReaderAndWriterMap.closeStreamWriter();
         targetFileReaderAndWriterMap.closeStreamWriter();
         System.out.println("export completed for: " + targetFileDir);
     }
