@@ -92,7 +92,7 @@ public class VideoExport {
                         targetFileReaderAndWriterMap.writeKeyFile(exporter.getFormat(), exporter.getUrl());
 
                         // url 按照文件格式进行处理, 带上处理之后的文件名
-                        processor.processUrl(exporter.getUrl(), exporter.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1], exporter.getFormat());
+                        processor.processUrl(exporter.getUrl(), exporter.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], exporter.getFormat());
                     } else {
                         targetFileReaderAndWriterMap.writeErrorAndNull(exporter.toString());
                     }

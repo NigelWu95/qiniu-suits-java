@@ -92,7 +92,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1]);
+            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
 
@@ -106,7 +106,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1]);
+            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
 

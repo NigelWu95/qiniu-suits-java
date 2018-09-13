@@ -61,7 +61,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
     }
 
     public void processUrl(String url, String key) {
-        bucketCopyResult(null, url.split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1], this.keyPrefix + key);
+        bucketCopyResult(null, url.split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], this.keyPrefix + key);
     }
 
     public void processUrl(String url, String key, String format) {
@@ -90,7 +90,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            bucketCopyResult(null, videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1], videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1]);
+            bucketCopyResult(null, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
 
@@ -104,7 +104,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            bucketCopyResult(null, videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1], videoTS.getUrl().split("(https?://(\\S+\\.){1,5}\\S+/)|(\\?ver=)")[1]);
+            bucketCopyResult(null, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
 
