@@ -82,7 +82,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
     }
 
-    public void fetchTSByM3U8(String rootUrl, String m3u8FilePath) {
+    private void fetchTSByM3U8(String rootUrl, String m3u8FilePath) {
         List<VideoTS> videoTSList = new ArrayList<>();
 
         try {
@@ -96,7 +96,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
     }
 
-    public void fetchTSByM3U8(String m3u8Url) {
+    private void fetchTSByM3U8(String m3u8Url) {
         List<VideoTS> videoTSList = new ArrayList<>();
 
         try {

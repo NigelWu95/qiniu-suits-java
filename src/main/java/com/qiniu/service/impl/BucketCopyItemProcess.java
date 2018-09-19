@@ -80,7 +80,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         processUrl(url, key, format);
     }
 
-    public void copyTSByM3U8(String rootUrl, String m3u8FilePath) {
+    private void copyTSByM3U8(String rootUrl, String m3u8FilePath) {
         List<VideoTS> videoTSList = new ArrayList<>();
 
         try {
@@ -94,7 +94,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         }
     }
 
-    public void copyTSByM3U8(String m3u8Url) {
+    private void copyTSByM3U8(String m3u8Url) {
         List<VideoTS> videoTSList = new ArrayList<>();
 
         try {
