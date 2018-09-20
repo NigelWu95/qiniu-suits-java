@@ -31,35 +31,56 @@ public class ListBucketProcessor {
         return listBucketProcessor;
     }
 
-    public void doFileList(String bucket, String prefix, int limit, IOssFileProcess iOssFileProcessor) {
+    /*
+    单次列举，可以传递 marker 和 limit 参数，通常采用此方法进行并发处理
+     */
+    public String doFileList(String bucket, String prefix, String marker, String endFile, int limit, IOssFileProcess iOssFileProcessor) {
+
+        String endMarker = null;
 
         try {
-            FileListing fileListing = bucketManager.listFiles(bucket, prefix, null, limit, null);
+            FileListing fileListing = bucketManager.listFiles(bucket, prefix, marker, limit, null);
             FileInfo[] items = fileListing.items;
 
             for (FileInfo fileInfo : items) {
-                targetFileReaderAndWriterMap.writeSuccess(fileInfo.endUser + "\t" + fileInfo.hash + "\t"
-                        + fileInfo.key + "\t" + fileInfo.mimeType + "\t" + fileInfo.fsize + "\t" + fileInfo.putTime
-                        + "\t" + fileInfo.type);
-                iOssFileProcessor.processFile(fileInfo);
+                if (fileInfo.key.equals(endFile)) {
+                    fileListing = null;
+                    break;
+                }
+                targetFileReaderAndWriterMap.writeSuccess(fileInfo.key + "\t" + fileInfo.fsize + "\t" + fileInfo.hash
+                        + "\t" + fileInfo.putTime+ "\t" + fileInfo.mimeType+ "\t" + fileInfo.type + "\t" + fileInfo.endUser);
+                if (iOssFileProcessor != null) {
+                    iOssFileProcessor.processFile(fileInfo);
+                }
             }
+
+            endMarker = fileListing == null ? null : fileListing.marker;
         } catch (QiniuException e) {
             targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + limit + "\t" + e.code() + "\t" + e.error());
+        } finally {
+            return endMarker;
         }
     }
 
-    public void doFileIteratorList(String bucket, String prefix, int limit, IOssFileProcess iOssFileProcessor) {
+    /*
+    迭代器方式列举带 prefix 前缀的所有文件，直到列举完毕，limit 为单次列举的文件个数
+     */
+    public void doFileIteratorList(String bucket, String prefix, String endFile, int limit, IOssFileProcess iOssFileProcessor) {
 
         FileListIterator fileListIterator = bucketManager.createFileListIterator(bucket, prefix, limit, null);
 
-        while (fileListIterator.hasNext()) {
+        loop:while (fileListIterator.hasNext()) {
             FileInfo[] items = fileListIterator.next();
 
-            for (FileInfo item : items) {
-                targetFileReaderAndWriterMap.writeSuccess(item.endUser + "\t" + item.hash + "\t"
-                        + item.key + "\t" + item.mimeType + "\t" + item.fsize + "\t" + item.putTime
-                        + "\t" + item.type);
-                iOssFileProcessor.processFile(item);
+            for (FileInfo fileInfo : items) {
+                if (fileInfo.key.equals(endFile)) {
+                    break loop;
+                }
+                targetFileReaderAndWriterMap.writeSuccess(fileInfo.key + "\t" + fileInfo.fsize + "\t" + fileInfo.hash
+                        + "\t" + fileInfo.putTime+ "\t" + fileInfo.mimeType+ "\t" + fileInfo.type + "\t" + fileInfo.endUser);
+                if (iOssFileProcessor != null) {
+                    iOssFileProcessor.processFile(fileInfo);
+                }
             }
         }
     }
