@@ -1,6 +1,8 @@
 package com.qiniu.interfaces;
 
+import com.qiniu.storage.model.FileInfo;
+
 public interface IOssFileProcess {
 
-    void processKey(String bucket, String key, short status);
+    void processFile(FileInfo fileInfo);
 }

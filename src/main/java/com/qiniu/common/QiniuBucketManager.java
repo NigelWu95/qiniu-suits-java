@@ -2,6 +2,7 @@ package com.qiniu.common;
 
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FetchRet;
 import com.qiniu.storage.model.FileInfo;
@@ -10,6 +11,7 @@ import com.qiniu.util.StringMap;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -108,6 +110,30 @@ public class QiniuBucketManager {
         String url = String.format("%s/v6/domain/list?tbl=%s", configuration.apiHost(), bucket);
         Response r = get(url);
         return r.jsonToObject(String[].class);
+    }
+
+    /**
+     * 根据前缀获取文件列表的迭代器
+     *
+     * @param bucket 空间名
+     * @param prefix 文件名前缀
+     * @return FileInfo迭代器
+     */
+    public FileListIterator createFileListIterator(String bucket, String prefix) {
+        return new FileListIterator(bucket, prefix, 1000, null);
+    }
+
+    /**
+     * 根据前缀获取文件列表的迭代器
+     *
+     * @param bucket    空间名
+     * @param prefix    文件名前缀
+     * @param limit     每次迭代的长度限制，最大1000，推荐值 100
+     * @param delimiter 指定目录分隔符，列出所有公共前缀（模拟列出目录效果）。缺省值为空字符串
+     * @return FileInfo迭代器
+     */
+    public FileListIterator createFileListIterator(String bucket, String prefix, int limit, String delimiter) {
+        return new FileListIterator(bucket, prefix, limit, delimiter);
     }
 
     /**
@@ -457,4 +483,55 @@ public class QiniuBucketManager {
         return rsPost(operations.execBucket(), "/batch", operations.toBody());
     }
 
+
+    /**
+     * 创建文件列表迭代器
+     */
+    public class FileListIterator implements Iterator<FileInfo[]> {
+        private String marker = null;
+        private String bucket;
+        private String delimiter;
+        private int limit;
+        private String prefix;
+        private QiniuException exception = null;
+
+        public FileListIterator(String bucket, String prefix, int limit, String delimiter) {
+            if (limit <= 0) {
+                throw new IllegalArgumentException("limit must greater than 0");
+            }
+            if (limit > 1000) {
+                throw new IllegalArgumentException("limit must not greater than 1000");
+            }
+            this.bucket = bucket;
+            this.prefix = prefix;
+            this.limit = limit;
+            this.delimiter = delimiter;
+        }
+
+        public QiniuException error() {
+            return exception;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return exception == null && !"".equals(marker);
+        }
+
+        @Override
+        public FileInfo[] next() {
+            try {
+                FileListing f = listFiles(bucket, prefix, marker, limit, delimiter);
+                this.marker = f.marker == null ? "" : f.marker;
+                return f.items;
+            } catch (QiniuException e) {
+                this.exception = e;
+                return null;
+            }
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
+    }
 }
