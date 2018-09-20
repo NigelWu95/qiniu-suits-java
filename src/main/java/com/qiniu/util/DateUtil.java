@@ -8,6 +8,16 @@ import java.util.regex.Pattern;
 
 public final class DateUtil {
 
+    public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, Long timeStamp) throws ParseException, QiniuSuitsException {
+        if (StringUtils.isNullOrEmpty(pointTime)) {
+            return true;
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Long breakpoint = sdf.parse(pointTime).getTime();
+        return (breakpoint > timeStamp) == isBiggerThan ? true : false;
+    }
+
     public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, String timeString) throws ParseException, QiniuSuitsException {
         if (StringUtils.isNullOrEmpty(pointTime)) {
             return true;
@@ -18,7 +28,7 @@ public final class DateUtil {
         return (breakpoint > parseDateToStamp(timeString)) == isBiggerThan ? true : false;
     }
 
-    public static Long parseDateToStamp(String greenwichMeanTime) throws QiniuSuitsException {
+    public static Long parseDateToStamp(String greenwichMeanTime) throws ParseException {
 
         SimpleDateFormat sd = new SimpleDateFormat();
         Long timeStamp = 0L;
@@ -43,15 +53,6 @@ public final class DateUtil {
                     greenwichMeanTime.length() == 20 ? "yyyy-MM-dd'T'HH:mm:ss'Z'" : "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         }
 
-        try {
-            timeStamp = sd.parse(greenwichMeanTime).getTime();
-        } catch (ParseException parseException) {
-            QiniuSuitsException qiniuSuitsException = new QiniuSuitsException(parseException);
-            qiniuSuitsException.addToFieldMap("greenwichMeanTime", greenwichMeanTime);
-            qiniuSuitsException.setStackTrace(parseException.getStackTrace());
-            throw qiniuSuitsException;
-        }
-
-        return timeStamp;
+        return timeStamp = sd.parse(greenwichMeanTime).getTime();
     }
 }

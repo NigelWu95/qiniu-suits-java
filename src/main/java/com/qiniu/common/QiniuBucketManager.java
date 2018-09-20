@@ -237,7 +237,7 @@ public class QiniuBucketManager {
      * @param type   type=0 表示普通存储，type=1 表示低频存存储
      * @throws QiniuException
      */
-    public Response changeType(String bucket, String key, com.qiniu.storage.BucketManager.StorageType type)
+    public Response changeType(String bucket, String key, StorageType type)
             throws QiniuException {
         String resource = encodedEntry(bucket, key);
         String path = String.format("/chtype/%s/type/%d", resource, type.ordinal());
