@@ -8,9 +8,7 @@ import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.UrlSafeBase64;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,13 +19,16 @@ public class ListBucketMultiProcess implements IBucketProcess {
     private String bucket;
     private IOssFileProcess iOssFileProcessor;
     private FileReaderAndWriterMap fileReaderAndWriterMap;
+    private int threadNums;
 
-    public ListBucketMultiProcess(QiniuBucketManager bucketManager, String bucket, IOssFileProcess iOssFileProcessor, FileReaderAndWriterMap fileReaderAndWriterMap) {
+    public ListBucketMultiProcess(QiniuBucketManager bucketManager, String bucket, IOssFileProcess iOssFileProcessor,
+                                  FileReaderAndWriterMap fileReaderAndWriterMap, int threadNums) {
         this.iOssFileProcessor = iOssFileProcessor;
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.fileReaderAndWriterMap = fileReaderAndWriterMap;
         this.listBucketProcessor = ListBucketProcessor.getChangeStatusProcessor(bucketManager, fileReaderAndWriterMap);
+        this.threadNums = threadNums;
     }
 
     public void processBucket() {
@@ -40,7 +41,7 @@ public class ListBucketMultiProcess implements IBucketProcess {
         prefixArray.add(0, "");
         prefixArray.addAll(prefixs);
 
-        List<String> firstKeyList = new ArrayList<>();
+        Map<String, String> firstKeyMap = new LinkedHashMap<>();
         for (int i = 0; i < prefixArray.size(); i++) {
             FileListing fileListing = null;
             try {
@@ -48,7 +49,7 @@ public class ListBucketMultiProcess implements IBucketProcess {
                 FileInfo[] items = fileListing.items;
 
                 for (FileInfo fileInfo : items) {
-                    if (i == 1 && fileInfo.key.equals(firstKeyList.get(0))) {
+                    if (firstKeyMap.keySet().contains(fileInfo.key)) {
                         continue;
                     }
 
@@ -57,18 +58,19 @@ public class ListBucketMultiProcess implements IBucketProcess {
                     if (iOssFileProcessor != null) {
                         iOssFileProcessor.processFile(fileInfo);
                     }
-                    firstKeyList.add(fileInfo.key);
+                    firstKeyMap.put(fileInfo.key, String.valueOf(fileInfo.type));
                 }
             } catch (QiniuException e) {
                 fileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefixArray.get(i) + "\t" + 1 + "\t" + e.code() + "\t" + e.error());
             }
         }
 
-        // 开启线程池，设置线程个数
-        ExecutorService executorPool = Executors.newFixedThreadPool(5);
+        ExecutorService executorPool = Executors.newFixedThreadPool(threadNums);
+        List<String> firstKeyList = new ArrayList<>(firstKeyMap.keySet());
+
         for (int i = 0; i < firstKeyList.size(); i++) {
             String endFileKey = i == firstKeyList.size() - 1 ? "" : firstKeyList.get(i + 1);
-            String startMarker = UrlSafeBase64.encodeToString("{\"c\":0,\"k\":\"" + firstKeyList.get(i) + "\"}");
+            String startMarker = UrlSafeBase64.encodeToString("{\"c\":" + firstKeyMap.get(firstKeyList.get(i)) + ",\"k\":\"" + firstKeyList.get(i) + "\"}");
 
             executorPool.execute(new Runnable() {
                 public void run() {
