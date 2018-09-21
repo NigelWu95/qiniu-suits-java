@@ -110,9 +110,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         }
     }
 
-    public void close() {
-        if (asyncFetchProcessor != null) {
-            asyncFetchProcessor.closeClient();
-        }
+    public void closeResource() {
+
     }
 }

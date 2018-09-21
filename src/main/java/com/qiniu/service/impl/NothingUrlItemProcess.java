@@ -46,7 +46,7 @@ public class NothingUrlItemProcess implements IUrlItemProcess {
     }
 
     @Override
-    public void close() {
+    public void closeResource() {
 
     }
 }

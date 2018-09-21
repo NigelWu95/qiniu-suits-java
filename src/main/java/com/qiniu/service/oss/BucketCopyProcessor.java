@@ -1,31 +1,32 @@
 package com.qiniu.service.oss;
 
+import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Response;
-import com.qiniu.util.StringUtils;
+import com.qiniu.storage.Configuration;
 
 public class BucketCopyProcessor {
 
     private QiniuBucketManager bucketManager;
-    private Response response;
     private String srcBucket;
     private String tarBucket;
 
     private static volatile BucketCopyProcessor bucketCopyProcessor = null;
 
-    public BucketCopyProcessor(QiniuBucketManager bucketManager, String srcBucket, String tarBucket) {
-        this.bucketManager = bucketManager;
+    public BucketCopyProcessor(QiniuAuth auth, Configuration configuration, String srcBucket, String tarBucket) {
+        this.bucketManager = new QiniuBucketManager(auth, configuration);
         this.srcBucket = srcBucket;
         this.tarBucket = tarBucket;
     }
 
-    public static BucketCopyProcessor getBucketCopyProcessor(QiniuBucketManager bucketManager, String srcBucket, String tarBucket) throws QiniuSuitsException {
+    public static BucketCopyProcessor getBucketCopyProcessor(QiniuAuth auth, Configuration configuration,
+                                                             String srcBucket, String tarBucket) {
         if (bucketCopyProcessor == null) {
             synchronized (BucketCopyProcessor.class) {
                 if (bucketCopyProcessor == null) {
-                    bucketCopyProcessor = new BucketCopyProcessor(bucketManager, srcBucket, tarBucket);
+                    bucketCopyProcessor = new BucketCopyProcessor(auth, configuration, srcBucket, tarBucket);
                 }
             }
         }
@@ -33,6 +34,7 @@ public class BucketCopyProcessor {
     }
 
     private String copy(String fromBucket, String srcKey, String toBucket, String tarKey) throws QiniuSuitsException {
+        Response response = null;
         String respBody = "";
 
         try {
@@ -44,6 +46,9 @@ public class BucketCopyProcessor {
             qiniuSuitsException.addToFieldMap("error", String.valueOf(e.error()));
             qiniuSuitsException.setStackTrace(e.getStackTrace());
             throw qiniuSuitsException;
+        } finally {
+            if (response != null)
+                response.close();
         }
 
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
@@ -65,9 +70,8 @@ public class BucketCopyProcessor {
         return copy(srcBucket, srcKey, targetBucket, tarKey);
     }
 
-    public void closeClient() {
-        if (response != null) {
-            response.close();
-        }
+    public void closeBucketManager() {
+        if (bucketManager != null)
+            bucketManager.closeResponse();
     }
 }

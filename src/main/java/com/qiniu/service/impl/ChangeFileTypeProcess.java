@@ -107,9 +107,8 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         }
     }
 
-    public void close() {
-        if (changeFileTypeProcessor != null) {
-            changeFileTypeProcessor.closeClient();
-        }
+    public void closeResource() {
+        if (changeFileTypeProcessor != null)
+            changeFileTypeProcessor.closeBucketManager();
     }
 }

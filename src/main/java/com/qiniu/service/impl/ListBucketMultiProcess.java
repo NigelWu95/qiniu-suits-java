@@ -4,6 +4,7 @@ import com.qiniu.common.*;
 import com.qiniu.interfaces.IBucketProcess;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ListBucketProcessor;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.UrlSafeBase64;
@@ -21,13 +22,13 @@ public class ListBucketMultiProcess implements IBucketProcess {
     private FileReaderAndWriterMap fileReaderAndWriterMap;
     private int threadNums;
 
-    public ListBucketMultiProcess(QiniuBucketManager bucketManager, String bucket, IOssFileProcess iOssFileProcessor,
+    public ListBucketMultiProcess(QiniuAuth auth, Configuration configuration, String bucket, IOssFileProcess iOssFileProcessor,
                                   FileReaderAndWriterMap fileReaderAndWriterMap, int threadNums) {
         this.iOssFileProcessor = iOssFileProcessor;
-        this.bucketManager = bucketManager;
+        this.bucketManager = new QiniuBucketManager(auth, configuration);
         this.bucket = bucket;
         this.fileReaderAndWriterMap = fileReaderAndWriterMap;
-        this.listBucketProcessor = ListBucketProcessor.getChangeStatusProcessor(bucketManager, fileReaderAndWriterMap);
+        this.listBucketProcessor = ListBucketProcessor.getChangeStatusProcessor(auth, configuration, fileReaderAndWriterMap);
         this.threadNums = threadNums;
     }
 
@@ -65,6 +66,10 @@ public class ListBucketMultiProcess implements IBucketProcess {
             }
         }
 
+        // 原 bucketManager 实现中没有关闭单个请求的 response，修改实现使用类成员，使用完后统一关闭
+        if (bucketManager != null)
+            bucketManager.closeResponse();
+
         ExecutorService executorPool = Executors.newFixedThreadPool(threadNums);
         List<String> firstKeyList = new ArrayList<>(firstKeyMap.keySet());
 
@@ -93,9 +98,8 @@ public class ListBucketMultiProcess implements IBucketProcess {
         }
     }
 
-    public void close() {
-        if (iOssFileProcessor != null) {
-            iOssFileProcessor.close();
-        }
+    public void closeResource() {
+        if (listBucketProcessor != null)
+            listBucketProcessor.closeBucketManager();
     }
 }

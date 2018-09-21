@@ -54,7 +54,8 @@ public class VideoExportMain {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            processor.close();
+            if (processor != null)
+                processor.closeProcessor();
         }
     }
 
@@ -62,8 +63,7 @@ public class VideoExportMain {
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "copy");
         M3U8Manager m3u8Manager = new M3U8Manager();
-        QiniuBucketManager bucketManager = new QiniuBucketManager(auth, new Configuration(Zone.autoZone()));
-        IUrlItemProcess processor = new BucketCopyItemProcess(bucketManager, srcBucket, tarBucket, "video/", targetFileReaderAndWriterMap, m3u8Manager);
+        IUrlItemProcess processor = new BucketCopyItemProcess(auth, new Configuration(Zone.autoZone()), srcBucket, tarBucket, "video/", targetFileReaderAndWriterMap, m3u8Manager);
         return processor;
     }
 

@@ -20,5 +20,5 @@ public interface IUrlItemProcess {
 
     void processUrl(QiniuAuth auth, String url, String key, String format);
 
-    void close();
+    void closeResource();
 }

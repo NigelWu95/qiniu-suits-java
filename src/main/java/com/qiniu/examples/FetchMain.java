@@ -71,7 +71,5 @@ public class FetchMain {
             targetFileReaderAndWriterMap.closeStreamReader();
             targetFileReaderAndWriterMap.closeStreamWriter();
         }
-
-        asyncFetchProcessor.closeClient();
     }
 }

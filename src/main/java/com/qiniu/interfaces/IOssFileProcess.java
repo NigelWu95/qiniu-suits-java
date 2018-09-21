@@ -6,5 +6,5 @@ public interface IOssFileProcess {
 
     void processFile(FileInfo fileInfo);
 
-    void close();
+    void closeResource();
 }

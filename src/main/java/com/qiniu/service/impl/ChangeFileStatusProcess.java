@@ -103,9 +103,7 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
         }
     }
 
-    public void close() {
-        if (changeStatusProcessor != null) {
-            changeStatusProcessor.closeClient();
-        }
+    public void closeResource() {
+
     }
 }

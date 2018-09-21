@@ -12,7 +12,6 @@ public class ChangeStatusProcessor {
 
     private QiniuAuth auth;
     private Client client;
-    private Response response;
 
     private static volatile ChangeStatusProcessor changeStatusProcessor = null;
 
@@ -34,6 +33,7 @@ public class ChangeStatusProcessor {
 
     public String doStatusChange(String bucket, String key, short status) throws QiniuSuitsException {
 
+        Response response = null;
         String respBody = "";
         String url = "http://rs.qiniu.com/chstatus/" + UrlSafeBase64.encodeToString(bucket + ":" + key) + "/status/" + status;
         String accessToken = "QBox " + auth.signRequest(url, null, Client.FormMime);
@@ -49,14 +49,11 @@ public class ChangeStatusProcessor {
             qiniuSuitsException.addToFieldMap("error", String.valueOf(e.error()));
             qiniuSuitsException.setStackTrace(e.getStackTrace());
             throw qiniuSuitsException;
+        } finally {
+            if (response != null)
+                response.close();
         }
 
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
-    }
-
-    public void closeClient() {
-        if (response != null) {
-            response.close();
-        }
     }
 }

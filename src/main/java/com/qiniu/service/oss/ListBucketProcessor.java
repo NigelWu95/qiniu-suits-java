@@ -1,30 +1,41 @@
 package com.qiniu.service.oss;
 
 import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.common.QiniuException;
+import com.qiniu.http.Client;
+import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
+import com.qiniu.util.StringMap;
+
+import java.io.*;
 
 public class ListBucketProcessor {
 
+    private QiniuAuth auth;
     private QiniuBucketManager bucketManager;
+    private Client client;
     private FileReaderAndWriterMap targetFileReaderAndWriterMap;
 
     private static volatile ListBucketProcessor listBucketProcessor = null;
 
-    public ListBucketProcessor(QiniuBucketManager bucketManager, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
-        this.bucketManager = bucketManager;
+    public ListBucketProcessor(QiniuAuth auth, Configuration configuration, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
+        this.auth = auth;
+        this.bucketManager = new QiniuBucketManager(auth, configuration);
+        this.client = new Client();
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
     }
 
-    public static ListBucketProcessor getChangeStatusProcessor(QiniuBucketManager bucketManager, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
+    public static ListBucketProcessor getChangeStatusProcessor(QiniuAuth auth, Configuration configuration, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         if (listBucketProcessor == null) {
             synchronized (ListBucketProcessor.class) {
                 if (listBucketProcessor == null) {
-                    listBucketProcessor = new ListBucketProcessor(bucketManager, targetFileReaderAndWriterMap);
+                    listBucketProcessor = new ListBucketProcessor(auth, configuration, targetFileReaderAndWriterMap);
                 }
             }
         }
@@ -85,4 +96,37 @@ public class ListBucketProcessor {
         }
     }
 
+    /*
+    v2 的 list 接口，通过文本流的方式返回文件信息，接收到响应后通过 java8 的流来处理。
+     */
+    public void doListV2(String bucket, String prefix, String delimiter, String marker, int limit, IOssFileProcess iOssFileProcessor) {
+
+        String url = "http://rsf.qbox.me/v2/list?bucket=" + bucket + "&prefix=" + prefix + "&delimiter=" + delimiter
+                + "&limit=" + limit + "&marker=" + marker;
+        String authorization = "QBox " + auth.signRequest(url, null, null);
+        StringMap headers = new StringMap().put("Authorization", authorization);
+        Response response = null;
+
+        try {
+            response = client.post(url, null, headers, null);
+            InputStream inputStream = new BufferedInputStream(response.bodyStream());
+            Reader reader = new InputStreamReader(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(reader);
+            bufferedReader.lines().forEach(lineJson -> System.out.println(lineJson));
+            inputStream.close();
+            reader.close();
+            bufferedReader.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+    }
+
+    public void closeBucketManager() {
+        if (bucketManager != null)
+            bucketManager.closeResponse();
+    }
 }

@@ -4,5 +4,5 @@ public interface IBucketProcess {
 
     void processBucket();
 
-    void close();
+    void closeResource();
 }

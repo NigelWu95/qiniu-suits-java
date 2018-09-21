@@ -16,7 +16,6 @@ public class AsyncFetchProcessor {
 
     private QiniuAuth auth;
     private Client client;
-    private Response response;
     private String bucket;
 
     private static volatile AsyncFetchProcessor asyncFetchProcessor = null;
@@ -39,7 +38,7 @@ public class AsyncFetchProcessor {
     }
 
     public String doAsyncFetch(String url, String key) throws QiniuSuitsException {
-        // 构造post请求body
+
         Gson gson = new Gson();
         Map<String, String> bodyMap = new HashMap();
         bodyMap.put("url", url);
@@ -47,30 +46,29 @@ public class AsyncFetchProcessor {
         bodyMap.put("key", key);
         String jsonBody = gson.toJson(bodyMap);
         byte[] bodyBytes = jsonBody.getBytes();
-        // 获取签名
         String apiUrl = "http://api.qiniu.com/sisyphus/fetch";
         String accessToken = "Qiniu " + auth.signRequestV2(apiUrl, "POST", bodyBytes, "application/json");
         StringMap headers = new StringMap();
         headers.put("Authorization", accessToken);
+        Response response = null;
         String respBody = "";
+        int statusCode = 0;
+        String reqId = "";
 
         try {
             response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
+            respBody = response.bodyString();
+            statusCode = response.statusCode;
+            reqId = response.reqId;
         } catch (QiniuException e) {
             QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("async fetch error");
             qiniuSuitsException.addToFieldMap("code", String.valueOf(e.code()));
             qiniuSuitsException.addToFieldMap("error", String.valueOf(e.error()));
             qiniuSuitsException.setStackTrace(e.getStackTrace());
             throw qiniuSuitsException;
-        }
-
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-
-        try {
-            respBody = response.bodyString();
-        } catch (QiniuException qiniuException) {
-            statusCode = 0;
+        } finally {
+            if (response != null)
+                response.close();
         }
 
         if (statusCode == 200) {
@@ -81,12 +79,6 @@ public class AsyncFetchProcessor {
             qiniuSuitsException.addToFieldMap("reqId", reqId);
             qiniuSuitsException.addToFieldMap("respBody", respBody);
             throw qiniuSuitsException;
-        }
-    }
-
-    public void closeClient() {
-        if (response != null) {
-            response.close();
         }
     }
 }

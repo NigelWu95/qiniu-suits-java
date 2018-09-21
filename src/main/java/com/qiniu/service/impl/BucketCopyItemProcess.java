@@ -9,6 +9,7 @@ import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.BucketCopyProcessor;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.StringUtils;
 
@@ -26,18 +27,18 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
     private String keyPrefix;
     private M3U8Manager m3u8Manager;
 
-    public BucketCopyItemProcess(QiniuBucketManager bucketManager, String sourceBucket, String targetBucket, String keyPrefix,
+    public BucketCopyItemProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
                                  FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
-        this.bucketCopyProcessor = BucketCopyProcessor.getBucketCopyProcessor(bucketManager, sourceBucket, targetBucket);
+        this.bucketCopyProcessor = BucketCopyProcessor.getBucketCopyProcessor(auth, configuration, sourceBucket, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyItemProcess(QiniuBucketManager bucketManager, String sourceBucket, String targetBucket, String keyPrefix,
+    public BucketCopyItemProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
                                  FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
-        this(bucketManager, sourceBucket, targetBucket, keyPrefix, targetFileReaderAndWriterMap);
+        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, targetFileReaderAndWriterMap);
         this.m3u8Manager = m3u8Manager;
     }
 
@@ -122,9 +123,8 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         bucketCopyResult(srcBucket, fileInfo.key, tarBucket, fileInfo.key);
     }
 
-    public void close() {
-        if (bucketCopyProcessor != null) {
-            bucketCopyProcessor.closeClient();
-        }
+    public void closeResource() {
+        if (bucketCopyProcessor != null)
+            bucketCopyProcessor.closeBucketManager();
     }
 }
