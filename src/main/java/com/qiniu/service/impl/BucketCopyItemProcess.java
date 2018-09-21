@@ -118,13 +118,13 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         }
     }
 
+    public void processFile(FileInfo fileInfo) {
+        bucketCopyResult(srcBucket, fileInfo.key, tarBucket, fileInfo.key);
+    }
+
     public void close() {
         if (bucketCopyProcessor != null) {
             bucketCopyProcessor.closeClient();
         }
-    }
-
-    public void processFile(FileInfo fileInfo) {
-        bucketCopyResult(srcBucket, fileInfo.key, tarBucket, fileInfo.key);
     }
 }

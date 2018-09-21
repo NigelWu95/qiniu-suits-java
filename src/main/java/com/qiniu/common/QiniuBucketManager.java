@@ -38,6 +38,8 @@ public class QiniuBucketManager {
      */
     private final Client client;
 
+    private Response response;
+
     /**
      * 构建一个新的 BucketManager 对象
      *
@@ -153,8 +155,8 @@ public class QiniuBucketManager {
                 .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
 
         String url = String.format("%s/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
-        Response r = get(url);
-        return r.jsonToObject(FileListing.class);
+        response = get(url);
+        return response.jsonToObject(FileListing.class);
     }
 
     /**
@@ -483,6 +485,10 @@ public class QiniuBucketManager {
         return rsPost(operations.execBucket(), "/batch", operations.toBody());
     }
 
+    public void closeResponse() {
+        if (response != null)
+            response.close();
+    }
 
     /**
      * 创建文件列表迭代器

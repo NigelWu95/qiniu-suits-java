@@ -92,4 +92,10 @@ public class ListBucketMultiProcess implements IBucketProcess {
             e.printStackTrace();
         }
     }
+
+    public void close() {
+        if (iOssFileProcessor != null) {
+            iOssFileProcessor.close();
+        }
+    }
 }
