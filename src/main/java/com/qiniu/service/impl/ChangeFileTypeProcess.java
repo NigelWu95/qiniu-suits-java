@@ -68,6 +68,10 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
     }
 
     public void processFile(FileInfo fileInfo) {
+        if (fileInfo.type == fileType.ordinal()) {
+            targetFileReaderAndWriterMap.writeOther("file " + fileInfo.key + " type originally is " + fileInfo.type);
+            return;
+        }
         boolean isDoProcess = false;
         try {
             String timeString = String.valueOf(fileInfo.putTime);
