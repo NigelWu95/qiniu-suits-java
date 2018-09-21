@@ -4,10 +4,12 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.BucketCopyProcessor;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -15,53 +17,59 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BucketCopyItemProcess implements IUrlItemProcess {
+public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
 
     private BucketCopyProcessor bucketCopyProcessor;
     private FileReaderAndWriterMap targetFileReaderAndWriterMap;
-    private M3U8Manager m3u8Manager;
+    private String srcBucket;
+    private String tarBucket;
     private String keyPrefix;
+    private M3U8Manager m3u8Manager;
 
-    public BucketCopyItemProcess(QiniuBucketManager bucketManager, String sourceBucket, String targetBucket, String keyPrefix, FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
+    public BucketCopyItemProcess(QiniuBucketManager bucketManager, String sourceBucket, String targetBucket, String keyPrefix,
+                                 FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
         this.bucketCopyProcessor = BucketCopyProcessor.getBucketCopyProcessor(bucketManager, sourceBucket, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+        this.srcBucket = sourceBucket;
+        this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyItemProcess(QiniuBucketManager bucketManager, String sourceBucket, String targetBucket, String keyPrefix, FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
-        this.bucketCopyProcessor = BucketCopyProcessor.getBucketCopyProcessor(bucketManager, sourceBucket, targetBucket);
-        this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+    public BucketCopyItemProcess(QiniuBucketManager bucketManager, String sourceBucket, String targetBucket, String keyPrefix,
+                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
+        this(bucketManager, sourceBucket, targetBucket, keyPrefix, targetFileReaderAndWriterMap);
         this.m3u8Manager = m3u8Manager;
-        this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    private void bucketCopyResult(String srcBucket, String srcKey, String tarKey) {
+    private void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey) {
         try {
-            String bucketCopyResult = bucketCopyProcessor.doBucketCopy(srcBucket, srcKey, tarKey);
+            String bucketCopyResult = bucketCopyProcessor.doBucketCopy(sourceBucket, srcKey, targetBucket, tarKey);
             targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + srcBucket + "\t" + srcKey + "\t" + tarKey);
+            targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + sourceBucket + "\t" + srcKey + "\t"
+                    + targetBucket + "\t" + tarKey);
         }
     }
 
     public void processItem(String source, String item) {
-        bucketCopyResult(source, item, this.keyPrefix + item);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item);
     }
 
     public void processItem(String source, String item, String key) {
-        bucketCopyResult(source, item, this.keyPrefix + key);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key);
     }
 
     public void processItem(QiniuAuth auth, String source, String item) {
-        bucketCopyResult(source, item, this.keyPrefix + item);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item);
     }
 
     public void processItem(QiniuAuth auth, String source, String item, String key) {
-        bucketCopyResult(source, item, this.keyPrefix + key);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key);
     }
 
     public void processUrl(String url, String key) {
-        bucketCopyResult(null, url.split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], this.keyPrefix + key);
+        bucketCopyResult(srcBucket, url.split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], tarBucket,
+                this.keyPrefix + key);
     }
 
     public void processUrl(String url, String key, String format) {
@@ -90,7 +98,8 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            bucketCopyResult(null, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
+            bucketCopyResult(srcBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1],
+                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
 
@@ -104,7 +113,8 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            bucketCopyResult(null, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
+            bucketCopyResult(srcBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1],
+                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
 
@@ -112,5 +122,9 @@ public class BucketCopyItemProcess implements IUrlItemProcess {
         if (bucketCopyProcessor != null) {
             bucketCopyProcessor.closeClient();
         }
+    }
+
+    public void processFile(FileInfo fileInfo) {
+        bucketCopyResult(srcBucket, fileInfo.key, tarBucket, fileInfo.key);
     }
 }

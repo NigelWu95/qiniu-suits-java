@@ -56,10 +56,10 @@ public class QiniuSuitsException extends Exception {
         fieldList.addAll(fieldMap.keySet());
 
         for (int i = 0; i < fieldList.size(); i++) {
-            stringBuilder.append("\"" + fieldList.get(i) + "\":\"" + fieldMap.get(fieldList.get(i)) + "\",");
-
             if (i == fieldList.size() - 1) {
                 stringBuilder.append("\"" + fieldList.get(i) + "\":\"" + fieldMap.get(fieldList.get(i)) + "\"}");
+            } else {
+                stringBuilder.append("\"" + fieldList.get(i) + "\":\"" + fieldMap.get(fieldList.get(i)) + "\",");
             }
         }
 

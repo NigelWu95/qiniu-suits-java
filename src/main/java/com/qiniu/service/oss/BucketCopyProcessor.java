@@ -32,11 +32,11 @@ public class BucketCopyProcessor {
         return bucketCopyProcessor;
     }
 
-    public String doBucketCopy(String sourceBucket, String srcKey, String tarKey) throws QiniuSuitsException {
+    private String copy(String fromBucket, String srcKey, String toBucket, String tarKey) throws QiniuSuitsException {
         String respBody = "";
 
         try {
-            response = bucketManager.copy(StringUtils.isNullOrEmpty(sourceBucket) ? srcBucket : sourceBucket, srcKey, tarBucket, tarKey, false);
+            response = bucketManager.copy(fromBucket, srcKey, toBucket, tarKey, false);
             respBody = response.bodyString();
         } catch (QiniuException e) {
             QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("bucket copy error");
@@ -47,6 +47,22 @@ public class BucketCopyProcessor {
         }
 
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
+    }
+
+    public String doBucketCopy(String sourceBucket, String srcKey, String targetBucket, String tarKey) throws QiniuSuitsException {
+        return copy(sourceBucket, srcKey, targetBucket, tarKey);
+    }
+
+    public String doDefaultBucketCopy(String srcKey, String tarKey) throws QiniuSuitsException {
+        return copy(srcBucket, srcKey, tarBucket, tarKey);
+    }
+
+    public String doDefaultTargetBucketCopy(String sourceBucket, String srcKey, String tarKey) throws QiniuSuitsException {
+        return copy(sourceBucket, srcKey, tarBucket, tarKey);
+    }
+
+    public String doDefaultSourceBucketCopy(String targetBucket, String srcKey, String tarKey) throws QiniuSuitsException {
+        return copy(srcBucket, srcKey, targetBucket, tarKey);
     }
 
     public void closeClient() {
