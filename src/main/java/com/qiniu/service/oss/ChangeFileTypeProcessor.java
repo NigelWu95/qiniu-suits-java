@@ -1,10 +1,12 @@
 package com.qiniu.service.oss;
 
+import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Response;
+import com.qiniu.storage.Configuration;
 
 public class ChangeFileTypeProcessor {
 
@@ -12,15 +14,15 @@ public class ChangeFileTypeProcessor {
 
     private static volatile ChangeFileTypeProcessor changeFileTypeProcessor = null;
 
-    public ChangeFileTypeProcessor(QiniuBucketManager bucketManager) {
-        this.bucketManager = bucketManager;
+    public ChangeFileTypeProcessor(QiniuAuth auth, Configuration configuration) {
+        this.bucketManager = new QiniuBucketManager(auth, configuration);
     }
 
-    public static ChangeFileTypeProcessor getChangeFileTypeProcessor(QiniuBucketManager bucketManager) throws QiniuSuitsException {
+    public static ChangeFileTypeProcessor getChangeFileTypeProcessor(QiniuAuth auth, Configuration configuration) {
         if (changeFileTypeProcessor == null) {
             synchronized (ChangeFileTypeProcessor.class) {
                 if (changeFileTypeProcessor == null) {
-                    changeFileTypeProcessor = new ChangeFileTypeProcessor(bucketManager);
+                    changeFileTypeProcessor = new ChangeFileTypeProcessor(auth, configuration);
                 }
             }
         }

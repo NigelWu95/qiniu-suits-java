@@ -1,9 +1,10 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.QiniuAuth;
+import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.interfaces.IUrlItemProcess;
 
-public class NothingUrlItemProcess implements IUrlItemProcess {
+public class NothingProcess implements IUrlItemProcess, IOssFileProcess {
 
     @Override
     public void processItem(String rootUrl, String item) {
@@ -42,6 +43,11 @@ public class NothingUrlItemProcess implements IUrlItemProcess {
 
     @Override
     public void processUrl(QiniuAuth auth, String url, String key, String format) {
+
+    }
+
+    @Override
+    public void processFile(String fileInfoStr) {
 
     }
 

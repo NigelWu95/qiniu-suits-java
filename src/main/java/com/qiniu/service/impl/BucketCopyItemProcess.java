@@ -1,8 +1,8 @@
 package com.qiniu.service.impl;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.interfaces.IUrlItemProcess;
@@ -10,7 +10,7 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.BucketCopyProcessor;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -119,8 +119,10 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         }
     }
 
-    public void processFile(FileInfo fileInfo) {
-        bucketCopyResult(srcBucket, fileInfo.key, tarBucket, fileInfo.key);
+    public void processFile(String fileInfoStr) {
+        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        String key = fileInfo.get("key").getAsString();
+        bucketCopyResult(srcBucket, key, tarBucket, key);
     }
 
     public void closeResource() {

@@ -1,5 +1,6 @@
 package com.qiniu.service.impl;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuSuitsException;
@@ -8,13 +9,12 @@ import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.ChangeStatusProcessor;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.DateUtil;
+import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class ChangeFileStatusProcess implements IOssFileProcess {
@@ -28,7 +28,7 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
     private boolean pointTimeIsBiggerThanTimeStamp;
 
     public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
-                                   FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
+                                   FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         this.changeStatusProcessor = ChangeStatusProcessor.getChangeStatusProcessor(auth, new Client());
         this.bucket = bucket;
         this.fileStatus = fileStatus;
@@ -37,21 +37,21 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
 
     public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
                                    FileReaderAndWriterMap targetFileReaderAndWriterMap, String pointTime,
-                                   boolean pointTimeIsBiggerThanTimeStamp) throws QiniuSuitsException {
+                                   boolean pointTimeIsBiggerThanTimeStamp) {
         this(auth, bucket, fileStatus, targetFileReaderAndWriterMap);
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
     public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
-                                   FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
+                                   FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
         this(auth, bucket, fileStatus, targetFileReaderAndWriterMap);
         this.m3u8Manager = m3u8Manager;
     }
 
     public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
                                    FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager,
-                                   String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws QiniuSuitsException {
+                                   String pointTime, boolean pointTimeIsBiggerThanTimeStamp) {
         this(auth, bucket, fileStatus, targetFileReaderAndWriterMap);
         this.m3u8Manager = m3u8Manager;
         this.pointTime = pointTime;
@@ -67,26 +67,20 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
         }
     }
 
-    public void processFile(FileInfo fileInfo) {
+    public void processFile(String fileInfoStr) {
+        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        Long putTime = fileInfo.get("putTime").getAsLong();
+        String key = fileInfo.get("key").getAsString();
         boolean isDoProcess = false;
         try {
-            String timeString = String.valueOf(fileInfo.putTime);
             // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-            isDoProcess = DateUtil.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
+            isDoProcess = DateUtil.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(putTime/10000));
         } catch (Exception ex) {
-            targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + fileInfo.key + "\t" + fileInfo.putTime + "\t" + fileInfo.type);
+            targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime);
         }
 
         if (StringUtils.isNullOrEmpty(pointTime) || isDoProcess)
-            changeStatusResult(bucket, fileInfo.key, fileStatus);
-    }
-
-    public void processFile(String rootUrl, String format, FileInfo fileInfo) {
-        changeStatusResult(bucket, fileInfo.key, fileStatus);
-
-        if (Arrays.asList("hls", "HLS", "m3u8", "M3U8").contains(format)) {
-            changeTSByM3U8(rootUrl, fileInfo.key);
-        }
+            changeStatusResult(bucket, fileInfo.get("key").getAsString(), fileStatus);
     }
 
     private void changeTSByM3U8(String rootUrl, String key) {

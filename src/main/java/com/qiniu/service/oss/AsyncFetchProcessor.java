@@ -26,7 +26,7 @@ public class AsyncFetchProcessor {
         this.client = new Client();
     }
 
-    public static AsyncFetchProcessor getAsyncFetchProcessor(QiniuAuth auth, String bucket) throws QiniuSuitsException {
+    public static AsyncFetchProcessor getAsyncFetchProcessor(QiniuAuth auth, String bucket) {
         if (asyncFetchProcessor == null) {
             synchronized (AsyncFetchProcessor.class) {
                 if (asyncFetchProcessor == null) {

@@ -16,6 +16,8 @@ public class FileReaderAndWriterMap {
 
     public FileReaderAndWriterMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
+        this.outputStreamWriterMap = new HashMap<>();
+        inputStreamReaderMap = new HashMap<>();
     }
 
     public Map<String, OutputStreamWriter> getOutputStreamWriterMap() {
@@ -29,7 +31,6 @@ public class FileReaderAndWriterMap {
     public void initOutputStreamWriter(String targetFileDir, String prefix) throws IOException {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
-        this.outputStreamWriterMap = new HashMap<String, OutputStreamWriter>();
 
         for (int i = 0; i < targetWriters.size(); i++) {
             addWriter(prefix + targetWriters.get(i));
@@ -74,7 +75,6 @@ public class FileReaderAndWriterMap {
         File[] fs = sourceDir.listFiles();
         String fileKey = "";
         InputStreamReader fileReader = null;
-        inputStreamReaderMap = new HashMap<String, InputStreamReader>();
 
         for(File f : fs) {
             if (!f.isDirectory()) {

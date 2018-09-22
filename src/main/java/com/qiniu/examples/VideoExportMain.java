@@ -8,7 +8,7 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.impl.BucketCopyItemProcess;
 import com.qiniu.service.impl.FetchUrlItemProcess;
-import com.qiniu.service.impl.NothingUrlItemProcess;
+import com.qiniu.service.impl.NothingProcess;
 import com.qiniu.service.jedi.VideoExport;
 import com.qiniu.service.jedi.VideoManage;
 import com.qiniu.config.PropertyConfig;
@@ -41,7 +41,7 @@ public class VideoExportMain {
         IUrlItemProcess processor = null;
 
         try {
-            processor = new NothingUrlItemProcess();
+            processor = new NothingProcess();
             processor = videoExportMain.getBucketCopyProcess(u_auth, jediResultBucket, bucket, targetFileDir);
 //            processor = videoExportMain.getFetchProcess(u_auth, bucket, targetFileDir);
 
@@ -55,7 +55,7 @@ public class VideoExportMain {
             e.printStackTrace();
         } finally {
             if (processor != null)
-                processor.closeProcessor();
+                processor.closeResource();
         }
     }
 

@@ -20,7 +20,7 @@ public class ChangeStatusProcessor {
         this.client = client;
     }
 
-    public static ChangeStatusProcessor getChangeStatusProcessor(QiniuAuth auth, Client client) throws QiniuSuitsException {
+    public static ChangeStatusProcessor getChangeStatusProcessor(QiniuAuth auth, Client client) {
         if (changeStatusProcessor == null) {
             synchronized (ChangeStatusProcessor.class) {
                 if (changeStatusProcessor == null) {

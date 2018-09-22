@@ -18,12 +18,12 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
     private FileReaderAndWriterMap targetFileReaderAndWriterMap;
     private M3U8Manager m3u8Manager;
 
-    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
+    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         this.asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
     }
 
-    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
+    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
         this.asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
         this.m3u8Manager = m3u8Manager;

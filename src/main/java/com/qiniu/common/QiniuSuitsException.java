@@ -11,7 +11,7 @@ public class QiniuSuitsException extends Exception {
     private Map<String, String> fieldMap;
 
     public QiniuSuitsException(Exception e) {
-        this.fieldMap = new HashMap<String, String>();
+        this.fieldMap = new HashMap<>();
         if (e != null) {
             this.fieldMap.put("msg", e.getMessage());
             this.exceptionType = "QiniuSuitsException from " + e.toString().split(":")[0];
@@ -21,7 +21,7 @@ public class QiniuSuitsException extends Exception {
     }
 
     public QiniuSuitsException(String msg) {
-        this.fieldMap = new HashMap<String, String>();
+        this.fieldMap = new HashMap<>();
         this.fieldMap.put("msg", msg);
         this.exceptionType = "QiniuSuitsException";
     }
