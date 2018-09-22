@@ -18,6 +18,7 @@ import com.qiniu.util.UrlSafeBase64;
 import java.io.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 public class ListBucketProcessor {
 
@@ -109,7 +110,8 @@ public class ListBucketProcessor {
     /*
     v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
      */
-    public String doFileListV2(String bucket, String prefix, String delimiter, String marker, String endFile, int limit, IOssFileProcess iOssFileProcessor) {
+    public String doFileListV2(String bucket, String prefix, String delimiter, String marker, String endFile, int limit,
+                               IOssFileProcess iOssFileProcessor, boolean withParallel) {
 
         Response response = null;
         InputStream inputStream;
@@ -123,8 +125,8 @@ public class ListBucketProcessor {
             inputStream = new BufferedInputStream(response.bodyStream());
             reader = new InputStreamReader(inputStream);
             bufferedReader = new BufferedReader(reader);
-            bufferedReader.lines()
-                    .forEach(line -> {
+            Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
+            lineStream.forEach(line -> {
                         try {
                             String fileInfoStr = getFileInfoV2(bucket, line);
                             if (endFile.equals(JSONConvertUtils.toJson(fileInfoStr).get("key").getAsString())) {

@@ -36,11 +36,11 @@ public class ListBucketMultiProcess implements IBucketProcess {
     }
 
     public void processBucket() {
-        doMultiList("");
+        doMultiList("", false);
     }
 
-    public void processBucketV2() {
-        doMultiList("v2");
+    public void processBucketV2(boolean withParallel) {
+        doMultiList("v2", withParallel);
     }
 
     private Map<String, Integer> getDelimitedFileMap(String version) {
@@ -88,7 +88,7 @@ public class ListBucketMultiProcess implements IBucketProcess {
         return delimitedFileMap;
     }
 
-    private void doMultiList(String version) {
+    private void doMultiList(String version, boolean withParallel) {
 
         Map<String, Integer> delimitedFileMap = getDelimitedFileMap(version);
         ExecutorService executorPool = Executors.newFixedThreadPool(threadNums);
@@ -103,7 +103,8 @@ public class ListBucketMultiProcess implements IBucketProcess {
                 String marker = startMarker;
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = "v2".equals(version) ?
-                            listBucketProcessor.doFileListV2(bucket, "", "", marker, endFileKey, 10000, iOssFileProcessor) :
+                            listBucketProcessor.doFileListV2(bucket, "", "", marker, endFileKey, 10000,
+                                    iOssFileProcessor, withParallel) :
                             listBucketProcessor.doFileList(bucket, null, marker, endFileKey, 1000, iOssFileProcessor);
                 }
             });
