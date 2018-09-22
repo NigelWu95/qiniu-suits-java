@@ -2,6 +2,7 @@ package com.qiniu.config;
 
 import com.qiniu.common.QiniuSuitsException;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +14,7 @@ public class PropertyConfig {
     private Properties properties = null;
 
     public PropertyConfig(String resourceName) {
-        resourceBath = "resource/";
+        resourceBath = "resources/";
         InputStream inputStream = null;
 
         try {
