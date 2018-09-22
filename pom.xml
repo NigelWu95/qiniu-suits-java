@@ -5,9 +5,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.qiniu</groupId>
-  <artifactId>java-suits</artifactId>
+  <artifactId>qiniu-java-suits</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>suits</name>
+  <name>qiniu-java-suits</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

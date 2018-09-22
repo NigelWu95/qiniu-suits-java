@@ -35,19 +35,40 @@ public class ListBucketMultiProcess implements IBucketProcess {
         this.threadNums = threadNums;
     }
 
-    public void processBucket() {
-        doMultiList("", false);
+    public void processBucket(boolean secondLevel) {
+        doMultiList("", false, secondLevel);
     }
 
-    public void processBucketV2(boolean withParallel) {
-        doMultiList("v2", withParallel);
+    public void processBucketV2(boolean withParallel, boolean secondLevel) {
+        doMultiList("v2", withParallel, secondLevel);
     }
 
-    private Map<String, Integer> getDelimitedFileMap(String version) {
+    private Map<String, Integer> getDelimitedFileMap(String version, boolean secondLevel) {
         List<String> prefixArray = new ArrayList<>();
         List<String> prefixs = Arrays.asList("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split(""));
-        prefixArray.add(0, "");
+        prefixArray.add("");
         prefixArray.addAll(prefixs);
+        Map<String, Integer> delimitedFileMap;
+
+        if (secondLevel) {
+            delimitedFileMap = listByPrefix(prefixArray, version, false);
+            System.out.println("1 " + prefixArray);
+            prefixArray = getSecondDelimitedFileMap(prefixArray, new ArrayList<>(delimitedFileMap.keySet()));
+            System.out.println("2 " + prefixArray);
+            prefixArray.add("");
+            System.out.println("3 " + prefixArray);
+            delimitedFileMap.putAll(listByPrefix(prefixArray, version, true));
+        } else {
+            delimitedFileMap = listByPrefix(prefixArray, version, true);
+        }
+
+        // 原 bucketManager 实现中没有关闭单个请求的 response，修改实现使用类成员，使用完后统一关闭
+        if (bucketManager != null)
+            bucketManager.closeResponse();
+        return delimitedFileMap;
+    }
+
+    private Map<String, Integer> listByPrefix(List<String> prefixArray, String version, boolean doProcess) {
         Map<String, Integer> delimitedFileMap = new LinkedHashMap<>();
 
         for (int i = 0; i < prefixArray.size(); i++) {
@@ -72,27 +93,41 @@ public class ListBucketMultiProcess implements IBucketProcess {
             JsonObject json = JSONConvertUtils.toJson(fileInfoStr);
             String fileKey = json.get("key").getAsString();
             int fileType = json.get("type").getAsInt();
-            if (delimitedFileMap.keySet().contains(fileKey)) {
-                continue;
-            }
-            fileReaderAndWriterMap.writeSuccess(fileInfoStr);
-            if (iOssFileProcessor != null) {
-                iOssFileProcessor.processFile(fileInfoStr);
+
+            if (doProcess) {
+                fileReaderAndWriterMap.writeSuccess(fileInfoStr);
+                if (iOssFileProcessor != null) {
+                    iOssFileProcessor.processFile(fileInfoStr);
+                }
             }
             delimitedFileMap.put(fileKey, fileType);
         }
 
-        // 原 bucketManager 实现中没有关闭单个请求的 response，修改实现使用类成员，使用完后统一关闭
-        if (bucketManager != null)
-            bucketManager.closeResponse();
         return delimitedFileMap;
     }
 
-    private void doMultiList(String version, boolean withParallel) {
+    private List<String> getSecondDelimitedFileMap(List<String> prefixArray, List<String> firstKeyList) {
 
-        Map<String, Integer> delimitedFileMap = getDelimitedFileMap(version);
+        List<String> secondPrefixArray = new ArrayList<>();
+
+        for (int i = 0; i < firstKeyList.size(); i++) {
+            String firstPrefix = firstKeyList.get(i).substring(0, 1);
+            for (String secondPrefix : prefixArray) {
+                secondPrefixArray.add(firstPrefix + secondPrefix);
+            }
+        }
+
+        return secondPrefixArray;
+    }
+
+    private void doMultiList(String version, boolean withParallel, boolean secondLevel) {
+
+        Map<String, Integer> delimitedFileMap = getDelimitedFileMap(version, secondLevel);
         ExecutorService executorPool = Executors.newFixedThreadPool(threadNums);
         List<String> firstKeyList = new ArrayList<>(delimitedFileMap.keySet());
+        Collections.sort(firstKeyList);
+
+        System.out.println(firstKeyList);
 
         for (int i = 0; i < firstKeyList.size(); i++) {
             String endFileKey = i == firstKeyList.size() - 1 ? "" : firstKeyList.get(i + 1);

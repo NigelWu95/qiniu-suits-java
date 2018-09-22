@@ -190,7 +190,7 @@ public class ListBucketProcessor {
         String fileKey;
         String fileInfoStr;
 
-        if (marker != null) {
+        if (StringUtils.isNullOrEmpty(marker)) {
             JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(marker)));
             fileKey = decodedMarker.get("k").getAsString();
             fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
@@ -209,7 +209,7 @@ public class ListBucketProcessor {
         JsonObject json = JSONConvertUtils.toJson(line);
         JsonElement jsonElement = json.get("item");
         if (jsonElement == null || "null".equals(jsonElement.toString())) {
-            if (json.get("marker") != null) {
+            if (json.get("marker") != null && json.get("marker").getAsString().equals("")) {
                 JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(json.get("marker").getAsString())));
                 fileKey = decodedMarker.get("k").getAsString();
                 fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
