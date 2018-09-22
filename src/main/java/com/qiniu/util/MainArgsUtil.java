@@ -11,6 +11,9 @@ public class MainArgsUtil {
         else
             throw new Exception("args is null");
 
+        if (params.length == args.length)
+            return;
+
         for (int i = 0; i < args.length; i++) {
             params[i] = args[i];
         }
