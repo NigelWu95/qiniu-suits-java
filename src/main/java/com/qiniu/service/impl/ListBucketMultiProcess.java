@@ -58,8 +58,10 @@ public class ListBucketMultiProcess implements IBucketProcess {
             prefixArray.add("");
             System.out.println("3 " + prefixArray);
             delimitedFileMap.putAll(listByPrefix(prefixArray, version, true));
+            System.out.println("4 " + delimitedFileMap.size());
         } else {
             delimitedFileMap = listByPrefix(prefixArray, version, true);
+            System.out.println("1 " + delimitedFileMap.size());
         }
 
         // 原 bucketManager 实现中没有关闭单个请求的 response，修改实现使用类成员，使用完后统一关闭
@@ -73,14 +75,14 @@ public class ListBucketMultiProcess implements IBucketProcess {
 
         for (int i = 0; i < prefixArray.size(); i++) {
             FileListing fileListing;
-            String fileInfoStr = "";
+            String[] fileInfoAndMarker;
             try {
                 if ("v2".equals(version)) {
                     Response response = listBucketProcessor.listV2(bucket, prefixArray.get(i), "", null, 1);
-                    fileInfoStr = listBucketProcessor.getFileInfoV2(bucket, response.bodyString());
+                    fileInfoAndMarker = listBucketProcessor.getFileInfoV2AndMarker(bucket, response.bodyString());
                 } else {
                     fileListing = bucketManager.listFiles(bucket, prefixArray.get(i), null, 1, null);
-                    fileInfoStr = listBucketProcessor.getFileListingInfo(bucket, fileListing, 0);
+                    fileInfoAndMarker = listBucketProcessor.getFirstFileInfoAndMarker(bucket, fileListing, 0);
                 }
             } catch (QiniuException e) {
                 fileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefixArray.get(i) + "\t" + 1 + "\t" + "{\"msg\":\"" + e.error() + "\"}");
@@ -90,16 +92,19 @@ public class ListBucketMultiProcess implements IBucketProcess {
                 continue;
             }
 
-            JsonObject json = JSONConvertUtils.toJson(fileInfoStr);
+            JsonObject json = JSONConvertUtils.toJson(fileInfoAndMarker[0]);
             String fileKey = json.get("key").getAsString();
             int fileType = json.get("type").getAsInt();
 
-            if (doProcess) {
-                fileReaderAndWriterMap.writeSuccess(fileInfoStr);
+            if (doProcess && !delimitedFileMap.keySet().contains(fileKey)) {
+                fileReaderAndWriterMap.writeSuccess(fileInfoAndMarker[0]);
                 if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(fileInfoStr);
+                    iOssFileProcessor.processFile(fileInfoAndMarker[0]);
                 }
             }
+
+//            if (StringUtils.isNullOrEmpty(fileInfoAndMarker[1]))
+//                continue;
             delimitedFileMap.put(fileKey, fileType);
         }
 

@@ -56,14 +56,11 @@ public class ListBucketProcessor {
 
         try {
             FileListing fileListing = bucketManager.listFiles(bucket, prefix, marker, limit, null);
+            checkFileListing(fileListing);
             FileInfo[] items = fileListing.items;
-            String fileInfoStr = getFileListingInfo(bucket, fileListing, 0);
-            targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
-            if (iOssFileProcessor != null) {
-                iOssFileProcessor.processFile(fileInfoStr);
-            }
+            String fileInfoStr;
 
-            for (int i = 1; i < items.length; i++) {
+            for (int i = 0; i < items.length; i++) {
                 if (items[i].key.equals(endFile)) {
                     fileListing = null;
                     break;
@@ -128,7 +125,7 @@ public class ListBucketProcessor {
             Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
             lineStream.forEach(line -> {
                         try {
-                            String fileInfoStr = getFileInfoV2(bucket, line);
+                            String fileInfoStr = getFileInfoV2AndMarker(bucket, line)[0];
                             if (endFile.equals(JSONConvertUtils.toJson(fileInfoStr).get("key").getAsString())) {
                                 endFlag.set(true);
                                 endMarker.set(null);
@@ -175,22 +172,26 @@ public class ListBucketProcessor {
         return client.post(url, null, headers, null);
     }
 
-    public String getFileListingInfo(String bucket, FileListing fileListing, int index) throws QiniuSuitsException, QiniuException {
+    public void checkFileListing(FileListing fileListing) throws QiniuSuitsException {
         if (fileListing == null)
             throw new QiniuSuitsException("line is empty");
-
-        return getFileInfo(bucket, fileListing.items, fileListing.marker, index);
     }
 
-    public String getFileInfo(String bucket, FileInfo[] items, String marker, int index) throws QiniuSuitsException, QiniuException {
-        return items.length == 0 ? getFileInfoByMarker(bucket, marker) : JSONConvertUtils.toJson(items[index]);
+    public String[] getFirstFileInfoAndMarker(String bucket, FileListing fileListing, int index) throws QiniuSuitsException, QiniuException {
+        checkFileListing(fileListing);
+        FileInfo[] items = fileListing.items;
+        String marker = fileListing.marker;
+        String fileInfoStr = items.length > 0 ? JSONConvertUtils.toJson(items[index]) : getFileInfoByMarker(bucket, marker);
+        String retMarker = items.length < 1000 ? null : marker;
+
+        return new String[]{fileInfoStr, retMarker};
     }
 
     public String getFileInfoByMarker(String bucket, String marker)throws QiniuSuitsException, QiniuException {
         String fileKey;
         String fileInfoStr;
 
-        if (StringUtils.isNullOrEmpty(marker)) {
+        if (!StringUtils.isNullOrEmpty(marker)) {
             JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(marker)));
             fileKey = decodedMarker.get("k").getAsString();
             fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
@@ -200,9 +201,10 @@ public class ListBucketProcessor {
         return fileInfoStr;
     }
 
-    public String getFileInfoV2(String bucket, String line) throws QiniuSuitsException, QiniuException {
+    public String[] getFileInfoV2AndMarker(String bucket, String line) throws QiniuSuitsException, QiniuException {
         String fileKey;
         String fileInfoStr;
+        String retMarker;
 
         if (StringUtils.isNullOrEmpty(line))
             throw new QiniuSuitsException("line is empty");
@@ -210,16 +212,18 @@ public class ListBucketProcessor {
         JsonElement jsonElement = json.get("item");
         if (jsonElement == null || "null".equals(jsonElement.toString())) {
             if (json.get("marker") != null && json.get("marker").getAsString().equals("")) {
-                JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(json.get("marker").getAsString())));
+                retMarker = json.get("marker").getAsString();
+                JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(retMarker)));
                 fileKey = decodedMarker.get("k").getAsString();
                 fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
             } else
                 throw new QiniuSuitsException("marker is empty");
         } else {
             fileInfoStr = JSONConvertUtils.toJson(json.getAsJsonObject("item"));
+            retMarker = json.get("marker").getAsString();
         }
 
-        return fileInfoStr;
+        return new String[]{fileInfoStr, retMarker};
     }
 
     public void closeBucketManager() {
