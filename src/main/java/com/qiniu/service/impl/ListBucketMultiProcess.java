@@ -12,11 +12,9 @@ import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Stream;
 
 public class ListBucketMultiProcess implements IBucketProcess {
 
@@ -75,7 +73,7 @@ public class ListBucketMultiProcess implements IBucketProcess {
             String[] fileInfoAndMarker;
             try {
                 if ("v2".equals(version)) {
-                    Response response = listBucketProcessor.listV2(bucket, prefixArray.get(i), "", null, 1);
+                    Response response = listBucketProcessor.listV2(bucket, prefixArray.get(i), null, null, 1, 3);
                     fileInfoAndMarker = listBucketProcessor.getFileInfoV2AndMarker(bucket, response.bodyString());
                 } else {
                     fileListing = bucketManager.listFiles(bucket, prefixArray.get(i), null, 1, null);
@@ -145,9 +143,10 @@ public class ListBucketMultiProcess implements IBucketProcess {
                 String marker = startMarker;
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = "v2".equals(version) ?
-                            listBucketProcessor.doFileListV2(bucket, "", "", marker, endFileKey, 10000,
-                                    iOssFileProcessor, withParallel) :
-                            listBucketProcessor.doFileList(bucket, null, marker, endFileKey, 1000, iOssFileProcessor);
+                            listBucketProcessor.doFileListV2(bucket, "", "", marker, 10000, endFileKey,
+                                    iOssFileProcessor, withParallel, 3) :
+                            listBucketProcessor.doFileList(bucket, null, null, marker, 1000, endFileKey
+                                    , iOssFileProcessor, 3);
                 }
             });
         }
