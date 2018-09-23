@@ -288,7 +288,7 @@ public class ListBucketProcessor {
         JsonObject json = JSONConvertUtils.toJson(line);
         JsonElement jsonElement = json.get("item");
         if (jsonElement == null || "null".equals(jsonElement.toString())) {
-            if (json.get("marker") != null && json.get("marker").getAsString().equals("")) {
+            if (json.get("marker") != null && !json.get("marker").getAsString().equals("")) {
                 retMarker = json.get("marker").getAsString();
                 JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(retMarker)));
                 fileKey = decodedMarker.get("k").getAsString();
