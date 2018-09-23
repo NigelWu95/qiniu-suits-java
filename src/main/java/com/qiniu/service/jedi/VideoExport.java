@@ -7,7 +7,7 @@ import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.interfaces.IUrlItemProcess;
-import com.qiniu.util.DateUtil;
+import com.qiniu.util.DateUtils;
 
 import java.util.Map;
 
@@ -71,7 +71,7 @@ public class VideoExport {
 
             try {
                 // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-                isDoProcess = DateUtil.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, modifiedTime);
+                isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, modifiedTime);
             } catch (Exception ex) {
                 targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + item.toString());
                 continue;

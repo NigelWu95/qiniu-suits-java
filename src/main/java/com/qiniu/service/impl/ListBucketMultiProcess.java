@@ -69,19 +69,15 @@ public class ListBucketMultiProcess implements IBucketProcess {
         Map<String, Integer[]> delimitedFileMap = new HashMap<>();
 
         for (int i = 0; i < prefixArray.size(); i++) {
-            FileListing fileListing;
             String[] fileInfoAndMarker;
             try {
                 if ("v2".equals(version)) {
-                    Response response = listBucketProcessor.listV2(bucket, prefixArray.get(i), null, null, 1, 3);
-                    fileInfoAndMarker = listBucketProcessor.getFileInfoV2AndMarker(bucket, response.bodyString());
+                    fileInfoAndMarker = listBucketProcessor.getFileInfoV2AndMarker(bucket, prefixArray.get(i), null,
+                            null, 1, 3);
                 } else {
-                    fileListing = bucketManager.listFiles(bucket, prefixArray.get(i), null, 1, null);
-                    fileInfoAndMarker = listBucketProcessor.getFirstFileInfoAndMarker(bucket, fileListing, 0);
+                    fileInfoAndMarker = listBucketProcessor.getFirstFileInfoAndMarker(bucket, prefixArray.get(i),
+                            null, null, 1, 0, 3);
                 }
-            } catch (QiniuException e) {
-                fileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefixArray.get(i) + "\t" + 1 + "\t" + "{\"msg\":\"" + e.error() + "\"}");
-                continue;
             } catch (QiniuSuitsException e) {
                 fileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefixArray.get(i) + "\t" + 1 + "\t" + e.getMessage());
                 continue;

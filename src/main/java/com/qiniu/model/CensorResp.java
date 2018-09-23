@@ -2,7 +2,7 @@ package com.qiniu.model;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.qiniu.util.CensorResultUtil;
+import com.qiniu.util.CensorResultUtils;
 
 public class CensorResp {
 
@@ -40,18 +40,18 @@ public class CensorResp {
     }
 
     public boolean isPulpSex() {
-        return CensorResultUtil.isPulpSexLabels(CensorResultUtil.getLabels(pulpResult));
+        return CensorResultUtils.isPulpSexLabels(CensorResultUtils.getLabels(pulpResult));
     }
 
     public boolean isPulpYellow() {
-        return CensorResultUtil.isPulpYellowLabels(CensorResultUtil.getLabels(pulpResult));
+        return CensorResultUtils.isPulpYellowLabels(CensorResultUtils.getLabels(pulpResult));
     }
 
     public boolean isTerror() {
-        return CensorResultUtil.isTerrorLabels(CensorResultUtil.getLabels(terrorResult));
+        return CensorResultUtils.isTerrorLabels(CensorResultUtils.getLabels(terrorResult));
     }
 
     public boolean isPolitician() {
-        return CensorResultUtil.isPoliticianLabels(CensorResultUtil.getLabels(politicianResult));
+        return CensorResultUtils.isPoliticianLabels(CensorResultUtils.getLabels(politicianResult));
     }
 }

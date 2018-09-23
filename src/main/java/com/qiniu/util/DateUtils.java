@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class DateUtil {
+public final class DateUtils {
 
     public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, Long timeStamp) throws ParseException, QiniuSuitsException {
         if (StringUtils.isNullOrEmpty(pointTime)) {

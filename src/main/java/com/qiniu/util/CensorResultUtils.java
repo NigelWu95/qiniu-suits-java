@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-public final class CensorResultUtil {
+public final class CensorResultUtils {
 
     public static JsonArray getLabels(JsonObject opJson) {
         JsonArray labels = opJson.get("labels").getAsJsonArray();

@@ -1,6 +1,6 @@
 package com.qiniu.util;
 
-public class MainArgsUtil {
+public class MainArgsUtils {
 
     private static String[] params = new String[]{};
 

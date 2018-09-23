@@ -9,7 +9,7 @@ import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.ChangeStatusProcessor;
-import com.qiniu.util.DateUtil;
+import com.qiniu.util.DateUtils;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 
@@ -74,7 +74,7 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
         boolean isDoProcess = false;
         try {
             // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-            isDoProcess = DateUtil.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(putTime/10000));
+            isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(putTime/10000));
         } catch (Exception ex) {
             targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime);
         }

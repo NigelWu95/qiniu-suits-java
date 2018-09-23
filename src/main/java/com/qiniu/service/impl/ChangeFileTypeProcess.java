@@ -11,13 +11,12 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.ChangeFileTypeProcessor;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.DateUtil;
+import com.qiniu.util.DateUtils;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class ChangeFileTypeProcess implements IOssFileProcess {
@@ -83,7 +82,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         try {
             String timeString = String.valueOf(putTime);
             // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-            isDoProcess = DateUtil.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
+            isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
         } catch (Exception ex) {
             targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime + "\t" + type);
         }
