@@ -6,17 +6,14 @@ public class MainArgsUtils {
 
     private static void setParams(String[] args) throws Exception {
 
-        if (args != null)
+        if (args != null) {
+            if (params.length == args.length)
+                return;
             params = new String[args.length];
+            System.arraycopy(args, 0, params, 0, args.length);
+        }
         else
             throw new Exception("args is null");
-
-        if (params.length == args.length)
-            return;
-
-        for (int i = 0; i < args.length; i++) {
-            params[i] = args[i];
-        }
     }
 
     public static String getParam(String[] args, int index, String error) throws Exception {
@@ -35,6 +32,7 @@ public class MainArgsUtils {
             throw new Exception("index is out of bound, " + error);
         }
 
+        System.out.println(params[index - 1]);
         return params[index - 1];
     }
 }

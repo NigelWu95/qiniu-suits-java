@@ -28,7 +28,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
     private M3U8Manager m3u8Manager;
 
     public BucketCopyItemProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap) throws QiniuSuitsException {
+                                 FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         this.bucketCopyProcessor = BucketCopyProcessor.getBucketCopyProcessor(auth, configuration, sourceBucket, targetBucket);
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
         this.srcBucket = sourceBucket;
@@ -37,7 +37,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
     }
 
     public BucketCopyItemProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) throws QiniuSuitsException {
+                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
         this(auth, configuration, sourceBucket, targetBucket, keyPrefix, targetFileReaderAndWriterMap);
         this.m3u8Manager = m3u8Manager;
     }

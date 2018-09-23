@@ -46,13 +46,25 @@ public class FileReaderAndWriterMap {
 
     public void mkDirAndFile(File filePath) throws IOException {
 
+        int count = 3;
         while (!filePath.getParentFile().exists()) {
+            if (count == 0) {
+                throw new IOException("can not make directory.");
+            }
             filePath.getParentFile().mkdirs();
+            count--;
         }
 
+        count = 3;
         while (!filePath.exists()) {
+            if (count == 0) {
+                throw new IOException("can not make directory.");
+            }
             filePath.createNewFile();
+            count--;
         }
+
+        System.out.println(filePath);
     }
 
     public OutputStreamWriter getOutputStreamWriter(String key) {
