@@ -14,8 +14,10 @@ import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
+import sun.net.util.URLUtil;
 
 import java.io.*;
+import java.net.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -156,22 +158,22 @@ public class ListBucketProcessor {
             bufferedReader = new BufferedReader(reader);
             Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
             lineStream.forEach(line -> {
-                        try {
-                            String fileInfoStr = getFileInfoV2AndMarker(bucket, line, retryCount)[0];
-                            if (endFile.equals(JSONConvertUtils.toJson(fileInfoStr).get("key").getAsString())) {
-                                endFlag.set(true);
-                                endMarker.set(null);
-                            }
-                            if (!endFlag.get()) {
-                                targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
-                                iOssFileProcessor.processFile(fileInfoStr);
-                                endMarker.set(JSONConvertUtils.toJson(line).get("marker").getAsString());
-                            }
-                        } catch (QiniuSuitsException e) {
-                            targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                                    + "\t" + limit + "\t" + line + "\t" + e.getMessage());
-                        }
-                    });
+                try {
+                    String fileInfoStr = getFileInfoV2AndMarker(bucket, line, retryCount)[0];
+                    if (endFile.equals(JSONConvertUtils.toJson(fileInfoStr).get("key").getAsString())) {
+                        endFlag.set(true);
+                        endMarker.set(null);
+                    }
+                    if (!endFlag.get()) {
+                        targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
+                        iOssFileProcessor.processFile(fileInfoStr);
+                        endMarker.set(JSONConvertUtils.toJson(line).get("marker").getAsString());
+                    }
+                } catch (QiniuSuitsException e) {
+                    targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
+                            + "\t" + limit + "\t" + line + "\t" + e.getMessage());
+                }
+            });
             inputStream.close();
             reader.close();
             bufferedReader.close();
@@ -195,6 +197,7 @@ public class ListBucketProcessor {
      */
     public Response listV2(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount) throws QiniuSuitsException {
 
+        prefix = prefix.replaceAll("\\s", "%20").replaceAll("\\\\", "%5C").replaceAll("%", "%25");
         String prefixParam = StringUtils.isNullOrEmpty(prefix) ? "" : "&prefix=" + prefix;
         String delimiterParam = StringUtils.isNullOrEmpty(delimiter) ? "" : "&delimiter=" + delimiter;
         String limitParam = limit == 0 ? "" : "&limit=" + limit;

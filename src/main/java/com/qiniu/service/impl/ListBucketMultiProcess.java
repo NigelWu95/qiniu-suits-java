@@ -53,7 +53,6 @@ public class ListBucketMultiProcess implements IBucketProcess {
         if (secondLevel) {
             delimitedFileMap = listByPrefix(prefixList, version, false);
             prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
-            prefixList.add("");
             delimitedFileMap.putAll(listByPrefix(prefixList, version, true));
         } else {
             delimitedFileMap = listByPrefix(prefixList, version, true);
@@ -65,21 +64,21 @@ public class ListBucketMultiProcess implements IBucketProcess {
         return delimitedFileMap;
     }
 
-    private Map<String, Integer[]> listByPrefix(List<String> prefixArray, String version, boolean doProcess) {
+    private Map<String, Integer[]> listByPrefix(List<String> prefixList, String version, boolean doProcess) {
         Map<String, Integer[]> delimitedFileMap = new HashMap<>();
 
-        for (int i = 0; i < prefixArray.size(); i++) {
+        for (int i = 0; i < prefixList.size(); i++) {
             String[] fileInfoAndMarker;
             try {
                 if ("v2".equals(version)) {
-                    fileInfoAndMarker = listBucketProcessor.getFileInfoV2AndMarker(bucket, prefixArray.get(i), null,
+                    fileInfoAndMarker = listBucketProcessor.getFileInfoV2AndMarker(bucket, prefixList.get(i), null,
                             null, 1, 3);
                 } else {
-                    fileInfoAndMarker = listBucketProcessor.getFirstFileInfoAndMarker(bucket, prefixArray.get(i),
+                    fileInfoAndMarker = listBucketProcessor.getFirstFileInfoAndMarker(bucket, prefixList.get(i),
                             null, null, 1, 0, 3);
                 }
             } catch (QiniuSuitsException e) {
-                fileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefixArray.get(i) + "\t" + 1 + "\t" + e.getMessage());
+                fileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefixList.get(i) + "\t" + 1 + "\t" + e.getMessage());
                 continue;
             }
 
