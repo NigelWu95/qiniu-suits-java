@@ -85,6 +85,7 @@ public class ListBucketMultiProcess implements IBucketProcess {
             JsonObject json = JSONConvertUtils.toJson(fileInfoAndMarker[0]);
 
             if (json.keySet().contains("dir")) {
+                fileReaderAndWriterMap.writeOther(fileInfoAndMarker[0]);
                 continue;
             }
 
