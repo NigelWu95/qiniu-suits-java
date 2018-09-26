@@ -21,6 +21,7 @@ public class ListParams extends BaseParams {
         this.withParallel = getParam("parallel");
         this.level = getParam("level");
         this.process = getParam("process");
+        super.setSelfName("list");
     }
 
     public String getBucket() {

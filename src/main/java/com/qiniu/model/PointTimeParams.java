@@ -33,12 +33,12 @@ public class PointTimeParams extends BaseParams {
         }
     }
 
-    public int getDirection() {
-        if (direction.matches("(0|1)")) {
-            return Integer.valueOf(direction);
+    public boolean getDirection() {
+        if (direction.matches("\\d")) {
+            return Integer.valueOf(direction) == 0;
         } else {
-            System.out.println("the direction is incorrect, it will use 0 as default.");
-            return 0;
+            System.out.println("the direction is incorrect, it will use 0(pre) as default.");
+            return true;
         }
     }
 }

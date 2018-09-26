@@ -31,12 +31,12 @@ public class ChangeFileTypeProcessor {
         return changeFileTypeProcessor;
     }
 
-    public String doFileTypeChange(String bucket, String key, StorageType type) throws QiniuSuitsException {
+    public String doFileTypeChange(String bucket, String key, short type) throws QiniuSuitsException {
 
         return doFileTypeChange(bucket, key, type, 0);
     }
 
-    public String doFileTypeChange(String bucket, String key, StorageType type, int retryCount) throws QiniuSuitsException {
+    public String doFileTypeChange(String bucket, String key, short type, int retryCount) throws QiniuSuitsException {
         Response response = null;
         String respBody;
 
@@ -57,18 +57,19 @@ public class ChangeFileTypeProcessor {
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
     }
 
-    private Response changeTypeWithRetry(String bucket, String key, StorageType type, int retryCount) throws QiniuSuitsException {
+    private Response changeTypeWithRetry(String bucket, String key, short type, int retryCount) throws QiniuSuitsException {
         Response response = null;
+        StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
 
         try {
-            response = bucketManager.changeType(bucket, key, type);
+            response = bucketManager.changeType(bucket, key, storageType);
         } catch (QiniuException e1) {
             if (retryCount <= 0)
                 throw new QiniuSuitsException(e1);
             while (retryCount > 0) {
                 try {
                     System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
-                    response = bucketManager.changeType(bucket, key, type);
+                    response = bucketManager.changeType(bucket, key, storageType);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);

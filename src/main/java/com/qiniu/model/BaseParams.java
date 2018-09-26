@@ -10,10 +10,10 @@ public class BaseParams {
 
     private String secretKey;
 
-    private Map<String, String> paramsMap;
+    private String selfName;
 
     protected BaseParams(String[] args) throws Exception {
-        this.paramsMap = MainArgsUtils.setParamsMap(args);
+        MainArgsUtils.setParamsMap(args);
         this.accessKey = MainArgsUtils.getParamValue("ak");
         this.secretKey = MainArgsUtils.getParamValue("sk");
     }
@@ -32,6 +32,14 @@ public class BaseParams {
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+
+    protected void setSelfName(String name) {
+        this.selfName = name;
+    }
+
+    public String getSelfName() {
+        return selfName;
     }
 
     public String getParam(String key) throws Exception {

@@ -1,9 +1,9 @@
 package com.qiniu.model;
 
-import com.qiniu.util.DateUtils;
-
 public class FileCopyParams extends BaseParams {
 
+    private String aKey;
+    private String sKey;
     private String sourceBucket;
     private String targetBucket;
     private String keepKey;
@@ -17,6 +17,23 @@ public class FileCopyParams extends BaseParams {
         this.targetBucket = getParam("to");
         this.keepKey = getParam("keep-key");
         this.targetKeyPrefix = getParam("add-prefix");
+        super.setSelfName("copy");
+    }
+
+    public String getAKey() {
+        aKey = "";
+        try {
+            aKey = getParam("access-key");
+        } catch (Exception e) {}
+        return aKey;
+    }
+
+    public String getSKey() {
+        sKey = "";
+        try {
+            sKey = getParam("secret-key");
+        } catch (Exception e) {}
+        return sKey;
     }
 
     public String getSourceBucket() {

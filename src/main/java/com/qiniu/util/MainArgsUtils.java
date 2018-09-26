@@ -7,7 +7,7 @@ public class MainArgsUtils {
 
     private static String[] params = new String[]{};
 
-    private static Map<String, String> paramsMap;
+    private static Map<String, String> paramsMap = new HashMap<>();
 
     private static void setParams(String[] args) throws Exception {
 
@@ -50,19 +50,15 @@ public class MainArgsUtils {
         return paramCommand.substring(1).split("=");
     }
 
-    public static Map<String, String> setParamsMap(String[] args) throws Exception {
+    public static void setParamsMap(String[] args) throws Exception {
 
         if (args != null) {
-            if (paramsMap != null && paramsMap.size() == args.length)
-                return paramsMap;
-            else
-                paramsMap = new HashMap<>();
+            if (paramsMap.size() == args.length)
+                return;
 
             for (String arg : args) {
                 paramsMap.put(splitParam(arg)[0], splitParam(arg)[1]);
             }
-
-            return paramsMap;
         }
         else
             throw new Exception("args is null");
@@ -75,7 +71,7 @@ public class MainArgsUtils {
         }
 
         if (!paramsMap.keySet().contains(key)) {
-            throw new Exception("has no " + key + " param.");
+            throw new Exception("not set " + key + " param.");
         }
 
         return paramsMap.get(key);

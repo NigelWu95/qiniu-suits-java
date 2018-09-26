@@ -23,13 +23,13 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
 
     private ChangeFileTypeProcessor changeFileTypeProcessor;
     private String bucket;
-    private StorageType fileType;
+    private short fileType;
     private FileReaderAndWriterMap targetFileReaderAndWriterMap;
     private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, QiniuBucketManager.StorageType fileType,
+    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
                                  FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         this.changeFileTypeProcessor = ChangeFileTypeProcessor.getChangeFileTypeProcessor(auth, configuration);
         this.bucket = bucket;
@@ -37,7 +37,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
     }
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, StorageType fileType,
+    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
                                  FileReaderAndWriterMap targetFileReaderAndWriterMap, String pointTime,
                                  boolean pointTimeIsBiggerThanTimeStamp) {
         this(auth, configuration, bucket, fileType, targetFileReaderAndWriterMap);
@@ -45,13 +45,13 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, StorageType fileType,
+    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
                                  FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
         this(auth, configuration, bucket, fileType, targetFileReaderAndWriterMap);
         this.m3u8Manager = m3u8Manager;
     }
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, StorageType fileType,
+    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
                                  FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager,
                                  String pointTime, boolean pointTimeIsBiggerThanTimeStamp) {
         this(auth, configuration, bucket, fileType, targetFileReaderAndWriterMap);
@@ -60,7 +60,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    private void changeTypeResult(String bucket, String key, StorageType fileType, int retryCount) {
+    private void changeTypeResult(String bucket, String key, short fileType, int retryCount) {
         try {
             String bucketCopyResult = changeFileTypeProcessor.doFileTypeChange(bucket, key, fileType, retryCount);
             targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
@@ -75,8 +75,8 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
-        int type = fileInfo.get("type").getAsInt();
-        if (type == fileType.ordinal()) {
+        short type = fileInfo.get("type").getAsShort();
+        if (type == fileType) {
             targetFileReaderAndWriterMap.writeOther("file " + key + " type originally is " + type);
             return;
         }
