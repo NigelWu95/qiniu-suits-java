@@ -1,4 +1,4 @@
-package com.qiniu.service.impl;
+package com.qiniu.service.FileLine;
 
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.interfaces.IOssFileProcess;

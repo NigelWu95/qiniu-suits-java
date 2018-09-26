@@ -8,7 +8,7 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.impl.BucketCopyItemProcess;
 import com.qiniu.service.impl.FetchUrlItemProcess;
-import com.qiniu.service.impl.NothingProcess;
+import com.qiniu.service.FileLine.NothingProcess;
 import com.qiniu.service.jedi.VideoExport;
 import com.qiniu.service.jedi.VideoManage;
 import com.qiniu.config.PropertyConfig;
@@ -78,11 +78,11 @@ public class VideoExportMain {
     public void exportItems(QiniuAuth auth, final VideoExport videoExport, String jediHub, String targetFileDir, final IUrlItemProcess processor) throws IOException {
         Gson gson = new Gson();
         int count = 500;
-        long total = 0;
-        Map<String, Object> result = null;
-        JsonObject jsonObject = null;
+        long total;
+        Map<String, Object> result;
+        JsonObject jsonObject;
         String cursor = null;
-        JsonArray jsonElements = null;
+        JsonArray jsonElements;
         total = videoExport.getTotalCount(auth, jediHub);
         System.out.println("count: " + total);
         System.out.println("exporter started...");
@@ -105,11 +105,11 @@ public class VideoExportMain {
     public void multiExportItems(QiniuAuth auth, final VideoExport videoExport, String jediHub, String targetFileDir, final IUrlItemProcess processor) throws IOException {
         Gson gson = new Gson();
         int count = 500;
-        long total = 0;
-        Map<String, Object> result = null;
-        JsonObject jsonObject = null;
+        long total;
+        Map<String, Object> result;
+        JsonObject jsonObject;
         String cursor = null;
-        JsonArray jsonElements = null;
+        JsonArray jsonElements;
 
         // 开启线程池，设置线程个数
         ExecutorService executorPool = Executors.newFixedThreadPool(5);
@@ -127,10 +127,8 @@ public class VideoExportMain {
             cursor = jsonObject.get("cursor") == null ? "" : jsonObject.get("cursor").getAsString();
             jsonElements = jsonObject.getAsJsonArray("items");
             final JsonArray finalJsonElements = jsonElements;
-            executorPool.execute(new Runnable() {
-                public void run() {
+            executorPool.execute(() -> {
                     videoExport.processUrlGroupbyFormat(finalTargetFileReaderAndWriterMap, finalJsonElements, processor);
-                }
             });
         }
 

@@ -7,6 +7,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.JSONConvertUtils;
 
 public class ChangeFileTypeProcessor {
 
@@ -48,6 +49,25 @@ public class ChangeFileTypeProcessor {
         }
 
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
+    }
+
+    private Response changeTypeWithRetry(String bucket, String key, StorageType type, int retryCount) throws QiniuSuitsException, QiniuException {
+        Response response;
+
+        try {
+            response = bucketManager.changeType(bucket, key, type);
+        } catch (QiniuException e) {
+            retryCount--;
+            if (retryCount > 0 && String.valueOf(e.code()).matches("^[-015]\\d{0,2}")) {
+                System.out.println(e.getMessage() + ", last " + retryCount + " times retry...");
+                retryCount--;
+                response = bucketManager.changeType(bucket, key, type);
+            } else {
+                throw new QiniuSuitsException(e);
+            }
+        }
+
+        return response;
     }
 
     public void closeBucketManager() {

@@ -3,13 +3,10 @@ package com.qiniu.service.oss;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.qiniu.common.*;
-import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.StringUtils;
@@ -20,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-public class ListBucketProcessor {
+public class ListBucketProcessor2 {
 
     private QiniuAuth auth;
     private Configuration configuration;
@@ -28,9 +25,9 @@ public class ListBucketProcessor {
     private Client client;
     private FileReaderAndWriterMap targetFileReaderAndWriterMap;
 
-    private static volatile ListBucketProcessor listBucketProcessor = null;
+    private static volatile ListBucketProcessor2 listBucketProcessor = null;
 
-    public ListBucketProcessor(QiniuAuth auth, Configuration configuration, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
+    public ListBucketProcessor2(QiniuAuth auth, Configuration configuration, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucketManager = new QiniuBucketManager(auth, configuration);
@@ -38,102 +35,15 @@ public class ListBucketProcessor {
         this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
     }
 
-    public static ListBucketProcessor getChangeStatusProcessor(QiniuAuth auth, Configuration configuration, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
+    public static ListBucketProcessor2 getChangeStatusProcessor(QiniuAuth auth, Configuration configuration, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
         if (listBucketProcessor == null) {
-            synchronized (ListBucketProcessor.class) {
+            synchronized (ListBucketProcessor2.class) {
                 if (listBucketProcessor == null) {
-                    listBucketProcessor = new ListBucketProcessor(auth, configuration, targetFileReaderAndWriterMap);
+                    listBucketProcessor = new ListBucketProcessor2(auth, configuration, targetFileReaderAndWriterMap);
                 }
             }
         }
         return listBucketProcessor;
-    }
-
-    /*
-    单次列举，可以传递 marker 和 limit 参数，通常采用此方法进行并发处理
-     */
-    public String doFileList(String bucket, String prefix, String delimiter, String marker, int limit, String endFile,
-                             IOssFileProcess iOssFileProcessor, int retryCount) {
-
-        String endMarker = null;
-
-        try {
-            FileListing fileListing = listFilesWithRetry(bucket, prefix, delimiter, marker, limit, retryCount);
-            checkFileListing(fileListing);
-            FileInfo[] items = fileListing.items;
-            String fileInfoStr;
-
-            for (int i = 0; i < items.length; i++) {
-                if (items[i].key.equals(endFile)) {
-                    fileListing = null;
-                    break;
-                }
-                fileInfoStr = JSONConvertUtils.toJson(items[i]);
-                targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
-                if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(fileInfoStr);
-                }
-            }
-
-            endMarker = fileListing == null ? null : fileListing.marker;
-        } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                    + "\t" + limit + "\t" + e.getMessage());
-        }
-
-        return endMarker;
-    }
-
-
-    public FileListing listFilesWithRetry(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount)
-            throws QiniuSuitsException {
-        StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
-                .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
-
-        String url = String.format("%s/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
-        StringMap headers = auth.authorization(url);
-        Response response = null;
-        FileListing fileListing;
-
-        try {
-            response = client.get(url, headers);
-            fileListing = JSONConvertUtils.fromJson(response.bodyString(), FileListing.class);
-        } catch (QiniuException e) {
-            if (retryCount > 0 && String.valueOf(e.code()).matches("^[-015]\\d{0,2}")) {
-                System.out.println(e.getMessage() + ", last " + retryCount + " times retry...");
-                retryCount--;
-                fileListing = listFilesWithRetry(bucket, prefix, delimiter, marker, limit, retryCount);
-            } else {
-                throw new QiniuSuitsException(e);
-            }
-        } finally {
-            if (response != null)
-                response.close();
-        }
-
-        return fileListing;
-    }
-
-    /*
-    迭代器方式列举带 prefix 前缀的所有文件，直到列举完毕，limit 为单次列举的文件个数
-     */
-    public void doFileIteratorList(String bucket, String prefix, String endFile, int limit, IOssFileProcess iOssFileProcessor) {
-
-        FileListIterator fileListIterator = bucketManager.createFileListIterator(bucket, prefix, limit, null);
-
-        loop:while (fileListIterator.hasNext()) {
-            FileInfo[] items = fileListIterator.next();
-
-            for (FileInfo fileInfo : items) {
-                if (fileInfo.key.equals(endFile)) {
-                    break loop;
-                }
-                targetFileReaderAndWriterMap.writeSuccess(JSONConvertUtils.toJson(fileInfo));
-                if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(JSONConvertUtils.toJson(fileInfo));
-                }
-            }
-        }
     }
 
     /*
@@ -223,41 +133,6 @@ public class ListBucketProcessor {
         }
 
         return response;
-    }
-
-    public void checkFileListing(FileListing fileListing) throws QiniuSuitsException {
-        if (fileListing == null)
-            throw new QiniuSuitsException("line is empty");
-    }
-
-    public String[] getFirstFileInfoAndMarker(String bucket, String prefix, String delimiter, String marker, int limit,
-                                              int index, int retryCount) throws QiniuSuitsException {
-        FileListing fileListing = listFilesWithRetry(bucket, prefix, delimiter, marker, limit, retryCount);
-        return getFirstFileInfoAndMarker(bucket, fileListing, index, retryCount);
-    }
-
-    public String[] getFirstFileInfoAndMarker(String bucket, FileListing fileListing, int index, int retryCount) throws QiniuSuitsException {
-        checkFileListing(fileListing);
-        FileInfo[] items = fileListing.items;
-        String marker = fileListing.marker;
-        String fileInfoStr = items.length > 0 ? JSONConvertUtils.toJson(items[index]) : getFileInfoByMarker(bucket, marker, retryCount);
-        String retMarker = items.length < 1000 ? null : marker;
-
-        return new String[]{fileInfoStr, retMarker};
-    }
-
-    public String getFileInfoByMarker(String bucket, String marker, int retryCount)throws QiniuSuitsException {
-        String fileKey;
-        String fileInfoStr;
-
-        if (!StringUtils.isNullOrEmpty(marker)) {
-            JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(marker)));
-            fileKey = decodedMarker.get("k").getAsString();
-            fileInfoStr = statWithRetry(bucket, fileKey, retryCount);
-        } else
-            throw new QiniuSuitsException("marker is empty");
-
-        return fileInfoStr;
     }
 
     public String[] getFileInfoV2AndMarker(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount)

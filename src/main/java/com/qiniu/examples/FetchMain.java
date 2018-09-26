@@ -5,7 +5,7 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.interfaces.ILineParser;
-import com.qiniu.service.impl.SplitLineParser;
+import com.qiniu.service.FileLine.SplitLineParser;
 import com.qiniu.service.oss.AsyncFetchProcessor;
 
 import java.io.BufferedReader;
@@ -46,9 +46,10 @@ public class FetchMain {
                 while((str = bufferedReader.readLine()) != null)
                 {
                     lineParser = new SplitLineParser(str);
+                    lineParser.splitLine("\t");
 
                     try {
-                        fetchResult = asyncFetchProcessor.doAsyncFetch(lineParser.getUrl(), lineParser.getKey());
+                        fetchResult = asyncFetchProcessor.doAsyncFetch(((SplitLineParser) lineParser).getUrl(), ((SplitLineParser) lineParser).getKey());
                         targetFileReaderAndWriterMap.writeSuccess(fetchResult);
                     } catch (QiniuSuitsException e) {
                         // 抓取失败的异常
