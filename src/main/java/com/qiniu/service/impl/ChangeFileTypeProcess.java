@@ -60,16 +60,18 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    private void changeStatusResult(String bucket, String key, StorageType fileType) {
+    private void changeTypeResult(String bucket, String key, StorageType fileType, int retryCount) {
         try {
-            String bucketCopyResult = changeFileTypeProcessor.doFileTypeChange(bucket, key, fileType);
+            String bucketCopyResult = changeFileTypeProcessor.doFileTypeChange(bucket, key, fileType, retryCount);
             targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuSuitsException e) {
             targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + bucket + "\t" + key + "\t" + fileType);
         }
     }
 
-    public void processFile(String fileInfoStr) {
+    public void processFile(String fileInfoStr) {}
+
+    public void processFile(String fileInfoStr, int retryCount) {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
@@ -78,20 +80,25 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
             targetFileReaderAndWriterMap.writeOther("file " + key + " type originally is " + type);
             return;
         }
-        boolean isDoProcess = false;
-        try {
-            String timeString = String.valueOf(putTime);
-            // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-            isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
-        } catch (Exception ex) {
-            targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime + "\t" + type);
-        }
 
-        if (StringUtils.isNullOrEmpty(pointTime) || isDoProcess)
-            changeStatusResult(bucket, key, fileType);
+        if (StringUtils.isNullOrEmpty(pointTime)) {
+            changeTypeResult(bucket, key, fileType, retryCount);
+        } else {
+            boolean isDoProcess = false;
+            try {
+                String timeString = String.valueOf(putTime);
+                // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
+                isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
+            } catch (Exception ex) {
+                targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime + "\t" + type);
+            }
+
+            if (isDoProcess)
+                changeTypeResult(bucket, key, fileType, retryCount);
+        }
     }
 
-    private void changeTSByM3U8(String rootUrl, String key) {
+    private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
         List<VideoTS> videoTSList = new ArrayList<>();
 
         try {
@@ -101,7 +108,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            changeStatusResult(bucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], fileType);
+            changeTypeResult(bucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], fileType, retryCount);
         }
     }
 

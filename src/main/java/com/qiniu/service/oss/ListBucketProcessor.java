@@ -2,6 +2,7 @@ package com.qiniu.service.oss;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.qiniu.common.*;
 import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.http.Client;
@@ -10,10 +11,7 @@ import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
-import com.qiniu.util.JSONConvertUtils;
-import com.qiniu.util.StringMap;
-import com.qiniu.util.StringUtils;
-import com.qiniu.util.UrlSafeBase64;
+import com.qiniu.util.*;
 
 import java.io.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,7 +69,7 @@ public class ListBucketProcessor {
                 fileInfoStr = JSONConvertUtils.toJson(items[i]);
                 targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
                 if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(fileInfoStr);
+                    iOssFileProcessor.processFile(fileInfoStr, retryCount);
                 }
             }
 
@@ -93,22 +91,34 @@ public class ListBucketProcessor {
         String url = String.format("%s/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
         StringMap headers = auth.authorization(url);
         Response response = null;
-        FileListing fileListing;
+        String responseBody = "";
+        FileListing fileListing = null;
 
         try {
             response = client.get(url, headers);
-            fileListing = JSONConvertUtils.fromJson(response.bodyString(), FileListing.class);
-        } catch (QiniuException e) {
-            if (retryCount > 0 && String.valueOf(e.code()).matches("^[-015]\\d{0,2}")) {
-                System.out.println(e.getMessage() + ", last " + retryCount + " times retry...");
-                retryCount--;
-                fileListing = listFilesWithRetry(bucket, prefix, delimiter, marker, limit, retryCount);
-            } else {
-                throw new QiniuSuitsException(e);
+            responseBody = response.bodyString();
+        } catch (QiniuException e1) {
+            if (retryCount <= 0)
+                throw new QiniuSuitsException(e1);
+            while (retryCount > 0) {
+                try {
+                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    response = client.get(url, headers);
+                    responseBody = response.bodyString();
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
             }
         } finally {
             if (response != null)
                 response.close();
+        }
+
+        try {
+            fileListing = JSONConvertUtils.fromJson(responseBody, FileListing.class);
+        } catch (JsonSyntaxException e3) {
+            throw new QiniuSuitsException(e3);
         }
 
         return fileListing;
@@ -130,99 +140,10 @@ public class ListBucketProcessor {
                 }
                 targetFileReaderAndWriterMap.writeSuccess(JSONConvertUtils.toJson(fileInfo));
                 if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(JSONConvertUtils.toJson(fileInfo));
+                    iOssFileProcessor.processFile(JSONConvertUtils.toJson(fileInfo), 3);
                 }
             }
         }
-    }
-
-    /*
-    v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
-     */
-    public String doFileListV2(String bucket, String prefix, String delimiter, String marker, int limit, String endFile,
-                               IOssFileProcess iOssFileProcessor, boolean withParallel, int retryCount) {
-
-        Response response = null;
-        InputStream inputStream;
-        Reader reader;
-        BufferedReader bufferedReader;
-        AtomicBoolean endFlag = new AtomicBoolean(false);
-        AtomicReference<String> endMarker = new AtomicReference<>();
-
-        try {
-            response = listV2(bucket, prefix, delimiter, marker, limit, retryCount);
-            inputStream = new BufferedInputStream(response.bodyStream());
-            reader = new InputStreamReader(inputStream);
-            bufferedReader = new BufferedReader(reader);
-            Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
-            lineStream.forEach(line -> {
-                try {
-                    String fileInfoStr = getFileInfoV2AndMarker(bucket, line, retryCount)[0];
-                    if (endFile.equals(JSONConvertUtils.toJson(fileInfoStr).get("key").getAsString())) {
-                        endFlag.set(true);
-                        endMarker.set(null);
-                    }
-                    if (!endFlag.get()) {
-                        targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
-                        iOssFileProcessor.processFile(fileInfoStr);
-                        endMarker.set(JSONConvertUtils.toJson(line).get("marker").getAsString());
-                    }
-                } catch (QiniuSuitsException e) {
-                    targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                            + "\t" + limit + "\t" + line + "\t" + e.getMessage());
-                }
-            });
-            inputStream.close();
-            reader.close();
-            bufferedReader.close();
-        } catch (IOException e) {
-            targetFileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                    + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
-        } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                    + "\t" + limit + "\t" + e.getMessage());
-        } finally {
-            if (response != null) {
-                response.close();
-            }
-        }
-
-        return endMarker.get();
-    }
-
-    /*
-    v2 的 list 接口，通过文本流的方式返回文件信息。
-     */
-    public Response listV2(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount) throws QiniuSuitsException {
-
-        prefix = prefix.replaceAll("\\s", "%20").replaceAll("\\\\", "%5C").replaceAll("%", "%25");
-        String prefixParam = StringUtils.isNullOrEmpty(prefix) ? "" : "&prefix=" + prefix;
-        String delimiterParam = StringUtils.isNullOrEmpty(delimiter) ? "" : "&delimiter=" + delimiter;
-        String limitParam = limit == 0 ? "" : "&limit=" + limit;
-        String markerParam = StringUtils.isNullOrEmpty(marker) ? "" : "&marker=" + marker;
-        String url = "http://rsf.qbox.me/v2/list?bucket=" + bucket + prefixParam + delimiterParam + limitParam + markerParam;
-        String authorization = "QBox " + auth.signRequest(url, null, null);
-        StringMap headers = new StringMap().put("Authorization", authorization);
-
-        return httpPostWithRetry(url, null, headers, null, retryCount);
-    }
-
-    private Response httpPostWithRetry(String url, byte[] body, StringMap headers, String contentType, int retryCount) throws QiniuSuitsException {
-        Response response;
-
-        try {
-            response = client.post(url, null, headers, null);
-        } catch (QiniuException e) {
-            if (retryCount > 0 && String.valueOf(e.code()).matches("^[-015]\\d{0,2}")) {
-                System.out.println(e.getMessage() + ", last " + retryCount + " times retry...");
-                retryCount--;
-                response = httpPostWithRetry(url, body, headers, contentType, retryCount);
-            } else {
-                throw new QiniuSuitsException(e);
-            }
-        }
-
-        return response;
     }
 
     public void checkFileListing(FileListing fileListing) throws QiniuSuitsException {
@@ -260,13 +181,67 @@ public class ListBucketProcessor {
         return fileInfoStr;
     }
 
+    /*
+    v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
+     */
+    public String doFileListV2(String bucket, String prefix, String delimiter, String marker, int limit, String endFile,
+                               IOssFileProcess iOssFileProcessor, boolean withParallel, int retryCount) {
+
+        Response response = null;
+        InputStream inputStream;
+        Reader reader;
+        BufferedReader bufferedReader;
+        AtomicBoolean endFlag = new AtomicBoolean(false);
+        AtomicReference<String> endMarker = new AtomicReference<>();
+
+        try {
+            response = listV2(bucket, prefix, delimiter, marker, limit, retryCount);
+            inputStream = new BufferedInputStream(response.bodyStream());
+            reader = new InputStreamReader(inputStream);
+            bufferedReader = new BufferedReader(reader);
+            Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
+            lineStream.forEach(line -> {
+                try {
+                    String fileInfoStr = getFileInfoV2AndMarker(line)[0];
+                    if (endFile.equals(JSONConvertUtils.toJson(fileInfoStr).get("key").getAsString())) {
+                        endFlag.set(true);
+                        endMarker.set(null);
+                    }
+                    if (!endFlag.get()) {
+                        targetFileReaderAndWriterMap.writeSuccess(fileInfoStr);
+                        iOssFileProcessor.processFile(fileInfoStr, retryCount);
+                        endMarker.set(JSONConvertUtils.toJson(line).get("marker").getAsString());
+                    }
+                } catch (QiniuSuitsException e) {
+                    targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
+                            + "\t" + limit + "\t" + line + "\t" + e.getMessage());
+                }
+            });
+            inputStream.close();
+            reader.close();
+            bufferedReader.close();
+        } catch (IOException e) {
+            targetFileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
+                    + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
+        } catch (QiniuSuitsException e) {
+            targetFileReaderAndWriterMap.writeErrorAndNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
+                    + "\t" + limit + "\t" + e.getMessage());
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+
+        return endMarker.get();
+    }
+
     public String[] getFileInfoV2AndMarker(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount)
             throws QiniuSuitsException {
         Response response = null;
         String[] fileInfoAndMarker;
         try {
             response = listV2(bucket, prefix, delimiter, marker, limit, retryCount);
-            fileInfoAndMarker = getFileInfoV2AndMarker(bucket, response.bodyString(), retryCount);
+            fileInfoAndMarker = getFileInfoV2AndMarker(response.bodyString());
         } catch (QiniuSuitsException e) {
             throw e;
         } catch (IOException e) {
@@ -279,23 +254,37 @@ public class ListBucketProcessor {
         return fileInfoAndMarker;
     }
 
-    public String[] getFileInfoV2AndMarker(String bucket, String line, int retryCount) throws QiniuSuitsException {
-        String fileKey;
-        String fileInfoStr;
+    public String[] getFileInfoV2AndMarker(String line) throws QiniuSuitsException {
+        JsonObject json;
+        JsonElement item;
         String retMarker;
+        String dir;
+        String fileInfoStr;
 
         if (StringUtils.isNullOrEmpty(line))
             throw new QiniuSuitsException("line is empty");
-        JsonObject json = JSONConvertUtils.toJson(line);
-        JsonElement jsonElement = json.get("item");
-        if (jsonElement == null || "null".equals(jsonElement.toString())) {
-            if (json.get("marker") != null && !json.get("marker").getAsString().equals("")) {
-                retMarker = json.get("marker").getAsString();
-                JsonObject decodedMarker = JSONConvertUtils.toJson(new String(UrlSafeBase64.decode(retMarker)));
-                fileKey = decodedMarker.get("k").getAsString();
-                fileInfoStr = statWithRetry(bucket, fileKey, retryCount);
-            } else
-                throw new QiniuSuitsException("marker is empty");
+
+        try {
+            json = JSONConvertUtils.toJson(line);
+            item = json.get("item");
+            retMarker = json.get("marker").getAsString();
+            dir = json.get("dir").getAsString();
+        } catch (JsonSyntaxException e) {
+            throw new QiniuSuitsException("line is not json");
+        }
+
+        if (item == null || StringUtils.isNullOrEmpty(item.getAsString())) {
+            if (StringUtils.isNullOrEmpty(dir)) {
+                QiniuSuitsException suitsException = new QiniuSuitsException("this item is deleted");
+                suitsException.addToFieldMap("marker", retMarker);
+                throw suitsException;
+            } else {
+                if (StringUtils.isNullOrEmpty(retMarker)) {
+                    throw new QiniuSuitsException("marker is empty");
+                } else {
+                    fileInfoStr = "{\"dir\":\"" + dir + "\"}";
+                }
+            }
         } else {
             fileInfoStr = JSONConvertUtils.toJson(json.getAsJsonObject("item"));
             retMarker = json.get("marker").getAsString();
@@ -304,19 +293,62 @@ public class ListBucketProcessor {
         return new String[]{fileInfoStr, retMarker};
     }
 
+    /*
+    v2 的 list 接口，通过文本流的方式返回文件信息。
+     */
+    public Response listV2(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount) throws QiniuSuitsException {
+
+        prefix = prefix.replaceAll("\\s", "%20").replaceAll("\\\\", "%5C").replaceAll("%", "%25");
+        String prefixParam = StringUtils.isNullOrEmpty(prefix) ? "" : "&prefix=" + prefix;
+        String delimiterParam = StringUtils.isNullOrEmpty(delimiter) ? "" : "&delimiter=" + delimiter;
+        String limitParam = limit == 0 ? "" : "&limit=" + limit;
+        String markerParam = StringUtils.isNullOrEmpty(marker) ? "" : "&marker=" + marker;
+        String url = "http://rsf.qbox.me/v2/list?bucket=" + bucket + prefixParam + delimiterParam + limitParam + markerParam;
+        String authorization = "QBox " + auth.signRequest(url, null, null);
+        StringMap headers = new StringMap().put("Authorization", authorization);
+
+        return httpPostWithRetry(url, null, headers, null, retryCount);
+    }
+
+    private Response httpPostWithRetry(String url, byte[] body, StringMap headers, String contentType, int retryCount) throws QiniuSuitsException {
+        Response response = null;
+
+        try {
+            response = client.post(url, body, headers, contentType);
+        } catch (QiniuException e1) {
+            if (retryCount <= 0)
+                throw new QiniuSuitsException(e1);
+            while (retryCount > 0) {
+                try {
+                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    response = client.post(url, body, headers, contentType);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return response;
+    }
+
     private String statWithRetry(String bucket, String fileKey, int retryCount) throws QiniuSuitsException {
-        String fileInfoStr;
+
+        String fileInfoStr = "";
 
         try {
             fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
-        } catch (QiniuException e) {
-            retryCount--;
-            if (retryCount > 0 && String.valueOf(e.code()).matches("^[-015]\\d{0,2}")) {
-                System.out.println(e.getMessage() + ", last " + retryCount + " times retry...");
-                retryCount--;
-                fileInfoStr = statWithRetry(bucket, fileKey, retryCount);
-            } else {
-                throw new QiniuSuitsException(e);
+        } catch (QiniuException e1) {
+            if (retryCount <= 0)
+                throw new QiniuSuitsException(e1);
+            while (retryCount > 0) {
+                try {
+                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
             }
         }
 

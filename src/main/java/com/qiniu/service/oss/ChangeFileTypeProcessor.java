@@ -7,6 +7,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JSONConvertUtils;
 
 public class ChangeFileTypeProcessor {
@@ -31,11 +32,16 @@ public class ChangeFileTypeProcessor {
     }
 
     public String doFileTypeChange(String bucket, String key, StorageType type) throws QiniuSuitsException {
+
+        return doFileTypeChange(bucket, key, type, 0);
+    }
+
+    public String doFileTypeChange(String bucket, String key, StorageType type, int retryCount) throws QiniuSuitsException {
         Response response = null;
-        String respBody = "";
+        String respBody;
 
         try {
-            response = bucketManager.changeType(bucket, key, type);
+            response = changeTypeWithRetry(bucket, key, type, retryCount);
             respBody = response.bodyString();
         } catch (QiniuException e) {
             QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("change file type error");
@@ -51,19 +57,22 @@ public class ChangeFileTypeProcessor {
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
     }
 
-    private Response changeTypeWithRetry(String bucket, String key, StorageType type, int retryCount) throws QiniuSuitsException, QiniuException {
-        Response response;
+    private Response changeTypeWithRetry(String bucket, String key, StorageType type, int retryCount) throws QiniuSuitsException {
+        Response response = null;
 
         try {
             response = bucketManager.changeType(bucket, key, type);
-        } catch (QiniuException e) {
-            retryCount--;
-            if (retryCount > 0 && String.valueOf(e.code()).matches("^[-015]\\d{0,2}")) {
-                System.out.println(e.getMessage() + ", last " + retryCount + " times retry...");
-                retryCount--;
-                response = bucketManager.changeType(bucket, key, type);
-            } else {
-                throw new QiniuSuitsException(e);
+        } catch (QiniuException e1) {
+            if (retryCount <= 0)
+                throw new QiniuSuitsException(e1);
+            while (retryCount > 0) {
+                try {
+                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    response = bucketManager.changeType(bucket, key, type);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
             }
         }
 

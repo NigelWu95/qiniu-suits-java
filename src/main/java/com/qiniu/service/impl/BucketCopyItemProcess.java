@@ -119,6 +119,8 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         }
     }
 
+    public void processFile(String fileInfoStr, int retryCount) {}
+
     public void processFile(String fileInfoStr) {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         String key = fileInfo.get("key").getAsString();

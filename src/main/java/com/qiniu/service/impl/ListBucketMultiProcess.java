@@ -83,13 +83,18 @@ public class ListBucketMultiProcess implements IBucketProcess {
             }
 
             JsonObject json = JSONConvertUtils.toJson(fileInfoAndMarker[0]);
+
+            if (json.keySet().contains("dir")) {
+                continue;
+            }
+
             String fileKey = json.get("key").getAsString();
             int fileType = json.get("type").getAsInt();
 
             if (doProcess && !delimitedFileMap.keySet().contains(fileKey)) {
                 fileReaderAndWriterMap.writeSuccess(fileInfoAndMarker[0]);
                 if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(fileInfoAndMarker[0]);
+                    iOssFileProcessor.processFile(fileInfoAndMarker[0], 3);
                 }
             }
 
@@ -138,7 +143,7 @@ public class ListBucketMultiProcess implements IBucketProcess {
                 String marker = startMarker;
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = "v2".equals(version) ?
-                            listBucketProcessor.doFileListV2(bucket, "", "", marker, 10000, endFileKey,
+                            listBucketProcessor.doFileListV2(bucket, "", "", marker, 1000, endFileKey,
                                     iOssFileProcessor, withParallel, 3) :
                             listBucketProcessor.doFileList(bucket, null, null, marker, 1000, endFileKey
                                     , iOssFileProcessor, 3);
