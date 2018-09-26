@@ -1,8 +1,13 @@
 package com.qiniu.util;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MainArgsUtils {
 
     private static String[] params = new String[]{};
+
+    private static Map<String, String> paramsMap;
 
     private static void setParams(String[] args) throws Exception {
 
@@ -34,5 +39,45 @@ public class MainArgsUtils {
 
         System.out.println(params[index - 1]);
         return params[index - 1];
+    }
+
+    public static String[] splitParam(String paramCommand) throws Exception {
+
+        if (!paramCommand.contains("=") || !paramCommand.startsWith("-")) {
+            throw new Exception("it is invalid command param.");
+        }
+
+        return paramCommand.substring(1).split("=");
+    }
+
+    public static Map<String, String> setParamsMap(String[] args) throws Exception {
+
+        if (args != null) {
+            if (paramsMap != null && paramsMap.size() == args.length)
+                return paramsMap;
+            else
+                paramsMap = new HashMap<>();
+
+            for (String arg : args) {
+                paramsMap.put(splitParam(arg)[0], splitParam(arg)[1]);
+            }
+
+            return paramsMap;
+        }
+        else
+            throw new Exception("args is null");
+    }
+
+    public static String getParamValue(String key) throws Exception {
+
+        if (paramsMap == null) {
+            throw new Exception("please set the args.");
+        }
+
+        if (!paramsMap.keySet().contains(key)) {
+            throw new Exception("has no " + key + " param.");
+        }
+
+        return paramsMap.get(key);
     }
 }

@@ -3,6 +3,7 @@ import com.qiniu.common.QiniuSuitsException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,5 +55,10 @@ public final class DateUtils {
         }
 
         return timeStamp = sd.parse(greenwichMeanTime).getTime();
+    }
+
+    public static String[] getCurrentDatetime() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return df.format(new Date()).split(" ");
     }
 }
