@@ -52,6 +52,11 @@ public class NothingProcess implements IUrlItemProcess, IOssFileProcess {
     }
 
     @Override
+    public void processFile(String fileInfoStr, int retryCount) {
+
+    }
+
+    @Override
     public void closeResource() {
 
     }
