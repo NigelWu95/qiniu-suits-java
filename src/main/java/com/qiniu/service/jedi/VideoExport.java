@@ -49,11 +49,11 @@ public class VideoExport {
     }
 
     public void processUrlGroupbyFormat(FileReaderAndWriterMap targetFileReaderAndWriterMap, JsonArray jsonElements, IUrlItemProcess processor) {
-        JsonObject item = null;
-        JsonArray transcoding = null;
-        JsonObject transcodingResult = null;
+        JsonObject item;
+        JsonArray transcoding;
+        JsonObject transcodingResult;
         Exporter exporter = new Exporter();
-        boolean isDoProcess = false;
+        boolean isDoProcess;
 
         for (int i = 0; i < jsonElements.size(); i++) {
             item = jsonElements.get(i).getAsJsonObject();

@@ -273,7 +273,7 @@ public class ListBucketProcessor {
             throw new QiniuSuitsException("line is not json");
         }
 
-        if (item == null || StringUtils.isNullOrEmpty(item.getAsString())) {
+        if (item == null || StringUtils.isNullOrEmpty(item.toString())) {
             if (StringUtils.isNullOrEmpty(dir)) {
                 QiniuSuitsException suitsException = new QiniuSuitsException("this item is deleted");
                 suitsException.addToFieldMap("marker", retMarker);
