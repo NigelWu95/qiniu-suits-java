@@ -98,8 +98,7 @@ public class ListBucketProcessor {
             response = client.get(url, headers);
             responseBody = response.bodyString();
         } catch (QiniuException e1) {
-            if (retryCount <= 0)
-                throw new QiniuSuitsException(e1);
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
                     System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
@@ -316,8 +315,7 @@ public class ListBucketProcessor {
         try {
             response = client.post(url, body, headers, contentType);
         } catch (QiniuException e1) {
-            if (retryCount <= 0)
-                throw new QiniuSuitsException(e1);
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
                     System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
@@ -339,8 +337,7 @@ public class ListBucketProcessor {
         try {
             fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
         } catch (QiniuException e1) {
-            if (retryCount <= 0)
-                throw new QiniuSuitsException(e1);
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
                     System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");

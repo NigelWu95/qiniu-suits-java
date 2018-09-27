@@ -15,4 +15,14 @@ public class HttpResponseUtils {
 
         return retryCount;
     }
+
+    public static void checkRetryCount(QiniuException e, int retryCount) throws QiniuSuitsException {
+
+        if (e.response == null || e.response.needRetry()) {
+            if (retryCount <= 0)
+                throw new QiniuSuitsException(e);
+        } else {
+            throw new QiniuSuitsException(e);
+        }
+    }
 }

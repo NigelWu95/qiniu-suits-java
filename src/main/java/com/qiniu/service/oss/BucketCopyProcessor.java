@@ -81,9 +81,7 @@ public class BucketCopyProcessor {
         try {
             response = bucketManager.copy(fromBucket, srcKey, toBucket, tarKey, false);
         } catch (QiniuException e1) {
-            if (retryCount <= 0) {
-                throw new QiniuSuitsException(e1);
-            }
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
                     System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
