@@ -8,27 +8,27 @@ import java.util.Map;
 
 public class FileReaderAndWriterMap {
 
-    private Map<String, OutputStreamWriter> outputStreamWriterMap;
-    private Map<String, InputStreamReader> inputStreamReaderMap;
+    private Map<String, BufferedWriter> WriterMap;
+    private Map<String, BufferedReader> ReaderMap;
     private List<String> targetWriters;
     private String targetFileDir;
     private String prefix;
 
     public FileReaderAndWriterMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
-        this.outputStreamWriterMap = new HashMap<>();
-        inputStreamReaderMap = new HashMap<>();
+        this.WriterMap = new HashMap<>();
+        this.ReaderMap = new HashMap<>();
     }
 
-    public Map<String, OutputStreamWriter> getOutputStreamWriterMap() {
-        return this.outputStreamWriterMap;
+    public Map<String, BufferedWriter> getWriterMap() {
+        return this.WriterMap;
     }
 
-    public Map<String, InputStreamReader> getInputStreamReaderMap() {
-        return this.inputStreamReaderMap;
+    public Map<String, BufferedReader> getReaderMap() {
+        return this.ReaderMap;
     }
 
-    public void initOutputStreamWriter(String targetFileDir, String prefix) throws IOException {
+    public void initWriter(String targetFileDir, String prefix) throws IOException {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
 
@@ -40,8 +40,8 @@ public class FileReaderAndWriterMap {
     public void addWriter(String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
         mkDirAndFile(resultFile);
-        OutputStreamWriter resultFileWriter = new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8");
-        this.outputStreamWriterMap.put(key, resultFileWriter);
+        BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile));
+        this.WriterMap.put(key, writer);
     }
 
     public void mkDirAndFile(File filePath) throws IOException {
@@ -67,47 +67,47 @@ public class FileReaderAndWriterMap {
         System.out.println(filePath);
     }
 
-    public OutputStreamWriter getOutputStreamWriter(String key) {
-        return this.outputStreamWriterMap.get(key);
+    public BufferedWriter getWriter(String key) {
+        return this.WriterMap.get(key);
     }
 
-    public void closeStreamWriter() {
-        for (Map.Entry<String, OutputStreamWriter> entry : this.outputStreamWriterMap.entrySet()) {
+    public void closeWriter() {
+        for (Map.Entry<String, BufferedWriter> entry : this.WriterMap.entrySet()) {
             try {
-                this.outputStreamWriterMap.get(entry.getKey()).close();
+                this.WriterMap.get(entry.getKey()).close();
             } catch (IOException ioException) {
-                System.out.println("OutputStreamWriter " + entry.getKey() + " close failed.");
+                System.out.println("Writer " + entry.getKey() + " close failed.");
                 ioException.printStackTrace();
             }
         }
     }
 
-    public void initInputStreamReader(String fileDir) throws IOException {
+    public void initReader(String fileDir) throws IOException {
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
-        String fileKey = "";
-        InputStreamReader fileReader = null;
+        String fileKey;
+        BufferedReader reader;
 
         for(File f : fs) {
             if (!f.isDirectory()) {
-                FileInputStream fileInputStream = new FileInputStream(f.getAbsoluteFile().getPath());
-                fileReader = new InputStreamReader(fileInputStream, "UTF-8");
+                FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
+                reader = new BufferedReader(fileReader);
                 fileKey = f.getName();
-                this.inputStreamReaderMap.put(fileKey.endsWith(".txt") ? fileKey.split("\\.txt")[0] : fileKey, fileReader);
+                this.ReaderMap.put(fileKey.endsWith(".txt") ? fileKey.split("\\.txt")[0] : fileKey, reader);
             }
         }
     }
 
-    public InputStreamReader getInputStreamReader(String key) {
-        return this.inputStreamReaderMap.get(key);
+    public BufferedReader getReader(String key) {
+        return this.ReaderMap.get(key);
     }
 
-    public void closeStreamReader() {
-        for (Map.Entry<String, InputStreamReader> entry : this.inputStreamReaderMap.entrySet()) {
+    public void closeReader() {
+        for (Map.Entry<String, BufferedReader> entry : this.ReaderMap.entrySet()) {
             try {
-                this.inputStreamReaderMap.get(entry.getKey()).close();
+                this.ReaderMap.get(entry.getKey()).close();
             } catch (IOException ioException) {
-                System.out.println("InputStreamReader " + entry.getKey() + " close failed.");
+                System.out.println("Reader " + entry.getKey() + " close failed.");
                 ioException.printStackTrace();
             }
         }
@@ -115,16 +115,16 @@ public class FileReaderAndWriterMap {
 
     private void doWrite(String key, String item) {
         try {
-            getOutputStreamWriter(key).write(item + "\n");
-            getOutputStreamWriter(key).flush();
+            getWriter(key).write(item + "\n");
+            getWriter(key).newLine();
         } catch (IOException ioException) {
-            System.out.println("OutputStreamWriter " + key + " write {" + item + "} failed");
+            System.out.println("Writer " + key + " write {" + item + "} failed");
             ioException.printStackTrace();
         }
     }
 
     public void writeKeyFile(String key, String item) {
-        if (!outputStreamWriterMap.keySet().contains(key)) {
+        if (!WriterMap.keySet().contains(key)) {
             try {
                 addWriter(key);
             } catch (IOException ioException) {

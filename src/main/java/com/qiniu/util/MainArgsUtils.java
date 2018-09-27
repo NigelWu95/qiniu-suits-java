@@ -47,7 +47,13 @@ public class MainArgsUtils {
             throw new Exception("it is invalid command param.");
         }
 
-        return paramCommand.substring(1).split("=");
+        String[] strings = paramCommand.substring(1).split("=");
+
+        if (strings.length == 1) {
+            throw new Exception("the " + strings[0] + " param has no value.");
+        }
+
+        return strings;
     }
 
     public static void setParamsMap(String[] args) throws Exception {

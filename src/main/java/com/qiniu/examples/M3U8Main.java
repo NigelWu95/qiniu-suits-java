@@ -37,7 +37,7 @@ public class M3U8Main {
 
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         // writer 和 reader 对象一定要先 init
-        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "m3u8_down");
+        targetFileReaderAndWriterMap.initWriter(targetFileDir, "m3u8_down");
         M3U8Tools m3u8Tools = new M3U8Tools(targetFileReaderAndWriterMap);
         M3U8Manager m3u8Manager = new M3U8Manager();
         List<VideoTS> tsList = null;
@@ -59,7 +59,7 @@ public class M3U8Main {
         m3u8Tools.download(tsList, targetFileDir);
         System.out.println("Wait for download...");
         m3u8Tools.merge(tsList, url, targetFileDir);
-        targetFileReaderAndWriterMap.closeStreamWriter();
+        targetFileReaderAndWriterMap.closeWriter();
         System.out.println("download completed for: " + targetFileDir);
 
     }
@@ -67,7 +67,7 @@ public class M3U8Main {
     public void m3u8Fetch(QiniuAuth auth, String targetBucket, String url, String targetFileDir) throws QiniuSuitsException, IOException {
 
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "m3u8_fetch");
+        targetFileReaderAndWriterMap.initWriter(targetFileDir, "m3u8_fetch");
         M3U8Manager m3u8Manager = new M3U8Manager();
         AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
         List<VideoTS> tsList = null;

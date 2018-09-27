@@ -28,17 +28,17 @@ public class FetchMain {
         String str;
 
         try {
-            targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "fetch");
-            targetFileReaderAndWriterMap.initInputStreamReader(sourceFileDir);
+            targetFileReaderAndWriterMap.initWriter(targetFileDir, "fetch");
+            targetFileReaderAndWriterMap.initReader(sourceFileDir);
             System.out.println("fetch started...");
             BufferedReader bufferedReader = null;
             String fetchResult;
             ILineParser lineParser;
 
-            for (int i = 0; i < sourceReaders.length; i++) {
+            for (String sourceReaderKey : sourceReaders) {
 
                 try {
-                    bufferedReader = new BufferedReader(targetFileReaderAndWriterMap.getInputStreamReader(sourceReaders[i]));
+                    bufferedReader = targetFileReaderAndWriterMap.getReader(sourceReaderKey);
                 } catch (NullPointerException nullPointerException) {
                     nullPointerException.printStackTrace();
                 }
@@ -69,8 +69,8 @@ public class FetchMain {
             System.out.println("init stream writer or reader failed: " + ioException.getMessage() + ". it need retry.");
             ioException.printStackTrace();
         } finally {
-            targetFileReaderAndWriterMap.closeStreamReader();
-            targetFileReaderAndWriterMap.closeStreamWriter();
+            targetFileReaderAndWriterMap.closeReader();
+            targetFileReaderAndWriterMap.closeWriter();
         }
     }
 }

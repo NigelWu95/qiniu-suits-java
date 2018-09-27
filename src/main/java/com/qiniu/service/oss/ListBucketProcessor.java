@@ -297,12 +297,9 @@ public class ListBucketProcessor {
      */
     public Response listV2(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount) throws QiniuSuitsException {
 
-        prefix = prefix.replaceAll("\\s", "%20").replaceAll("\\\\", "%5C").replaceAll("%", "%25");
-        String prefixParam = StringUtils.isNullOrEmpty(prefix) ? "" : "&prefix=" + prefix;
-        String delimiterParam = StringUtils.isNullOrEmpty(delimiter) ? "" : "&delimiter=" + delimiter;
-        String limitParam = limit == 0 ? "" : "&limit=" + limit;
-        String markerParam = StringUtils.isNullOrEmpty(marker) ? "" : "&marker=" + marker;
-        String url = "http://rsf.qbox.me/v2/list?bucket=" + bucket + prefixParam + delimiterParam + limitParam + markerParam;
+        StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter)
+                .putNotEmpty("marker", marker).putWhen("limit", limit, limit > 0);
+        String url = String.format("http://rsf.qbox.me/v2/list?%s", map.formString());
         String authorization = "QBox " + auth.signRequest(url, null, null);
         StringMap headers = new StringMap().put("Authorization", authorization);
 

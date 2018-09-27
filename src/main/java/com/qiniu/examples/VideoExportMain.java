@@ -58,7 +58,7 @@ public class VideoExportMain {
 
     public IUrlItemProcess getBucketCopyProcess(QiniuAuth auth, String srcBucket, String tarBucket, String targetFileDir) throws QiniuSuitsException, IOException {
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "copy");
+        targetFileReaderAndWriterMap.initWriter(targetFileDir, "copy");
         M3U8Manager m3u8Manager = new M3U8Manager();
         IUrlItemProcess processor = new BucketCopyItemProcess(auth, new Configuration(Zone.autoZone()), srcBucket, tarBucket, "video/", targetFileReaderAndWriterMap, m3u8Manager);
         return processor;
@@ -66,7 +66,7 @@ public class VideoExportMain {
 
     public IUrlItemProcess getFetchProcess(QiniuAuth auth, String bucket, String targetFileDir) throws QiniuSuitsException, IOException {
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "fetch");
+        targetFileReaderAndWriterMap.initWriter(targetFileDir, "fetch");
         M3U8Manager m3u8Manager = new M3U8Manager();
         IUrlItemProcess processor = new FetchUrlItemProcess(auth, bucket, targetFileReaderAndWriterMap, m3u8Manager);
         return processor;
@@ -85,7 +85,7 @@ public class VideoExportMain {
         System.out.println("exporter started...");
         VideoManage vm = new VideoManage(auth);
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "export");
+        targetFileReaderAndWriterMap.initWriter(targetFileDir, "export");
 
         for (int i = 0; i < total/count + 1; i++) {
             result = vm.getVideoInfoList(jediHub, cursor, count);
@@ -95,7 +95,7 @@ public class VideoExportMain {
             videoExport.processUrlGroupbyFormat(targetFileReaderAndWriterMap, jsonElements, processor);
         }
 
-        targetFileReaderAndWriterMap.closeStreamWriter();
+        targetFileReaderAndWriterMap.closeWriter();
         System.out.println("export completed for: " + targetFileDir);
     }
 
@@ -112,7 +112,7 @@ public class VideoExportMain {
         ExecutorService executorPool = Executors.newFixedThreadPool(5);
         VideoManage vm = new VideoManage(auth);
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initOutputStreamWriter(targetFileDir, "export");
+        targetFileReaderAndWriterMap.initWriter(targetFileDir, "export");
         final FileReaderAndWriterMap finalTargetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
         total = videoExport.getTotalCount(auth, jediHub);
         System.out.println("count: " + total);
@@ -139,8 +139,8 @@ public class VideoExportMain {
             e.printStackTrace();
         }
 
-        finalTargetFileReaderAndWriterMap.closeStreamWriter();
-        targetFileReaderAndWriterMap.closeStreamWriter();
+        finalTargetFileReaderAndWriterMap.closeWriter();
+        targetFileReaderAndWriterMap.closeWriter();
         System.out.println("export completed for: " + targetFileDir);
     }
 }
