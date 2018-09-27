@@ -21,18 +21,15 @@ import java.util.concurrent.Executors;
 
 public class VideoExportMain {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
 
         PropertyConfig propertyConfig = new PropertyConfig(".qiniu.properties");
         String ak = propertyConfig.getProperty("access_key");
         String sk = propertyConfig.getProperty("secret_key");
-        String u_ak = propertyConfig.getProperty("user_access_key");
-        String u_sk = propertyConfig.getProperty("user_secret_key");
-        String jediResultBucket = propertyConfig.getProperty("jedi_result");
-        String bucket = propertyConfig.getProperty("bucket");
         String jediHub = propertyConfig.getProperty("jedi_hub");
+        String jediResultBucket = propertyConfig.getProperty("jedi_result");
+        String bucket = propertyConfig.getProperty("to_bucket");
         String targetFileDir = System.getProperty("user.home") + "/Downloads/test/";
-        QiniuAuth u_auth = QiniuAuth.create(u_ak, u_sk);
         QiniuAuth auth = QiniuAuth.create(ak, sk);
         VideoExport videoExport = new VideoExport();
         Map<String, Object> map = videoExport.getFirstResult(auth, jediHub);
@@ -42,8 +39,8 @@ public class VideoExportMain {
 
         try {
             processor = new NothingProcess();
-            processor = videoExportMain.getBucketCopyProcess(u_auth, jediResultBucket, bucket, targetFileDir);
-//            processor = videoExportMain.getFetchProcess(u_auth, bucket, targetFileDir);
+            processor = videoExportMain.getBucketCopyProcess(auth, jediResultBucket, bucket, targetFileDir);
+//            processor = videoExportMain.getFetchProcess(auth, bucket, targetFileDir);
 
             // isBiggerThan 标志为 true 时，在 pointTime 时间点之前的记录进行处理，isBiggerThan 标志为 false 时，在 pointTime 时间点之后的记录进行处理。
             videoExport.setPointTime("2018-09-11 00:00:00", true);

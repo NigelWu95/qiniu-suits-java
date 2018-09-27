@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class FetchMain {
 
-    public static void main(String[] args) throws QiniuSuitsException {
+    public static void main(String[] args) throws Exception {
 
         PropertyConfig propertyConfig = new PropertyConfig(".qiniu.properties");
         String ak = propertyConfig.getProperty("access_key");

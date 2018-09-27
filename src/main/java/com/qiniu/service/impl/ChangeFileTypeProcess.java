@@ -69,8 +69,6 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         }
     }
 
-    public void processFile(String fileInfoStr) {}
-
     public void processFile(String fileInfoStr, int retryCount) {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();

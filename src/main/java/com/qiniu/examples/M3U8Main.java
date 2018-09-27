@@ -13,7 +13,7 @@ import java.util.List;
 
 public class M3U8Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         PropertyConfig propertyConfig = new PropertyConfig(".qiniu.properties");
         String ak = propertyConfig.getProperty("access_key");

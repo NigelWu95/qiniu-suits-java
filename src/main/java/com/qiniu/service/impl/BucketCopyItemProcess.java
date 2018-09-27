@@ -42,9 +42,9 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         this.m3u8Manager = m3u8Manager;
     }
 
-    private void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey) {
+    private void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
         try {
-            String bucketCopyResult = bucketCopyProcessor.doBucketCopy(sourceBucket, srcKey, targetBucket, tarKey);
+            String bucketCopyResult = bucketCopyProcessor.doBucketCopy(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
             targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuSuitsException e) {
             targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + sourceBucket + "\t" + srcKey + "\t"
@@ -53,24 +53,24 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
     }
 
     public void processItem(String source, String item) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item, false, 0);
     }
 
     public void processItem(String source, String item, String key) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key, false, 0);
     }
 
     public void processItem(QiniuAuth auth, String source, String item) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item, false, 0);
     }
 
     public void processItem(QiniuAuth auth, String source, String item, String key) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key);
+        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key, false, 0);
     }
 
     public void processUrl(String url, String key) {
         bucketCopyResult(srcBucket, url.split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], tarBucket,
-                this.keyPrefix + key);
+                this.keyPrefix + key, false, 0);
     }
 
     public void processUrl(String url, String key, String format) {
@@ -100,7 +100,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
 
         for (VideoTS videoTS : videoTSList) {
             bucketCopyResult(srcBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1],
-                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
+                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], false, 0);
         }
     }
 
@@ -115,16 +115,14 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
 
         for (VideoTS videoTS : videoTSList) {
             bucketCopyResult(srcBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1],
-                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
+                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], false, 0);
         }
     }
 
-    public void processFile(String fileInfoStr, int retryCount) {}
-
-    public void processFile(String fileInfoStr) {
+    public void processFile(String fileInfoStr, int retryCount) {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         String key = fileInfo.get("key").getAsString();
-        bucketCopyResult(srcBucket, key, tarBucket, key);
+        bucketCopyResult(srcBucket, key, tarBucket, key, false, retryCount);
     }
 
     public void closeResource() {

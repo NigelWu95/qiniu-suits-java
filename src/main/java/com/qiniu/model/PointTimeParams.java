@@ -10,9 +10,16 @@ public class PointTimeParams extends BaseParams {
 
     public PointTimeParams(String[] args) throws Exception {
         super(args);
-        this.pointDate = getParam("date");
-        this.pointTime = getParam("time");
-        this.direction = getParam("direction");
+        this.pointDate = getParamFromArgs("date");
+        this.pointTime = getParamFromArgs("time");
+        this.direction = getParamFromArgs("direction");
+    }
+
+    public PointTimeParams(String configFileName) throws Exception {
+        super(configFileName);
+        this.pointDate = getParamFromConfig("date");
+        this.pointTime = getParamFromConfig("time");
+        this.direction = getParamFromConfig("direction");
     }
 
     public String getPointDate() {

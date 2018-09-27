@@ -1,39 +1,31 @@
 package com.qiniu.model;
 
-public class ListParams extends BaseParams {
+public class ListBucketParams extends BaseParams {
 
-    private String bucket;
-    private String resultFileDir;
-    private String processResultFileDir;
     private String threads;
     private String version;
     private String withParallel;
     private String level;
     private String process;
 
-    public ListParams(String[] args) throws Exception {
+    public ListBucketParams(String[] args) throws Exception {
         super(args);
-        this.bucket = getParam("bucket");
-        this.resultFileDir = getParam("result-path");
-        this.processResultFileDir = getParam("process-path");
-        this.threads = getParam("threads");
-        this.version = getParam("v");
-        this.withParallel = getParam("parallel");
-        this.level = getParam("level");
-        this.process = getParam("process");
+        this.threads = getParamFromArgs("threads");
+        this.version = getParamFromArgs("v");
+        this.withParallel = getParamFromArgs("parallel");
+        this.level = getParamFromArgs("level");
+        this.process = getParamFromArgs("process");
         super.setSelfName("list");
     }
 
-    public String getBucket() {
-        return bucket;
-    }
-
-    public String getResultFileDir() {
-        return resultFileDir;
-    }
-
-    public String getProcessResultFileDir() {
-        return processResultFileDir;
+    public ListBucketParams(String configFileName) throws Exception {
+        super(configFileName);
+        this.threads = getParamFromConfig("threads");
+        this.version = getParamFromConfig("v");
+        this.withParallel = getParamFromConfig("parallel");
+        this.level = getParamFromConfig("level");
+        this.process = getParamFromConfig("process");
+        super.setSelfName("list");
     }
 
     public int getThreads() {

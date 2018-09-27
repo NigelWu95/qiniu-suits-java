@@ -4,8 +4,12 @@ import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.StringMap;
+import com.qiniu.util.UrlSafeBase64;
 
 public class BucketCopyProcessor {
 
@@ -33,12 +37,12 @@ public class BucketCopyProcessor {
         return bucketCopyProcessor;
     }
 
-    private String copy(String fromBucket, String srcKey, String toBucket, String tarKey) throws QiniuSuitsException {
+    private String copy(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuSuitsException {
         Response response = null;
         String respBody = "";
 
         try {
-            response = bucketManager.copy(fromBucket, srcKey, toBucket, tarKey, false);
+            response = changeStatusWithRetry(fromBucket, srcKey, toBucket, tarKey, force, retryCount);
             respBody = response.bodyString();
         } catch (QiniuException e) {
             QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("bucket copy error");
@@ -54,20 +58,44 @@ public class BucketCopyProcessor {
         return response.statusCode + "\t" + response.reqId + "\t" + respBody;
     }
 
-    public String doBucketCopy(String sourceBucket, String srcKey, String targetBucket, String tarKey) throws QiniuSuitsException {
-        return copy(sourceBucket, srcKey, targetBucket, tarKey);
+    public String doBucketCopy(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) throws QiniuSuitsException {
+        return copy(sourceBucket, srcKey, targetBucket, tarKey, false, retryCount);
     }
 
-    public String doDefaultBucketCopy(String srcKey, String tarKey) throws QiniuSuitsException {
-        return copy(srcBucket, srcKey, tarBucket, tarKey);
+    public String doDefaultBucketCopy(String srcKey, String tarKey, boolean force, int retryCount) throws QiniuSuitsException {
+        return copy(srcBucket, srcKey, tarBucket, tarKey, false, retryCount);
     }
 
-    public String doDefaultTargetBucketCopy(String sourceBucket, String srcKey, String tarKey) throws QiniuSuitsException {
-        return copy(sourceBucket, srcKey, tarBucket, tarKey);
+    public String doDefaultTargetBucketCopy(String sourceBucket, String srcKey, String tarKey, boolean force, int retryCount) throws QiniuSuitsException {
+        return copy(sourceBucket, srcKey, tarBucket, tarKey, false, retryCount);
     }
 
-    public String doDefaultSourceBucketCopy(String targetBucket, String srcKey, String tarKey) throws QiniuSuitsException {
-        return copy(srcBucket, srcKey, targetBucket, tarKey);
+    public String doDefaultSourceBucketCopy(String targetBucket, String srcKey, String tarKey, boolean force, int retryCount) throws QiniuSuitsException {
+        return copy(srcBucket, srcKey, targetBucket, tarKey, false, retryCount);
+    }
+
+    private Response changeStatusWithRetry(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuSuitsException {
+
+        Response response = null;
+
+        try {
+            response = bucketManager.copy(fromBucket, srcKey, toBucket, tarKey, false);
+        } catch (QiniuException e1) {
+            if (retryCount <= 0) {
+                throw new QiniuSuitsException(e1);
+            }
+            while (retryCount > 0) {
+                try {
+                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    response = bucketManager.copy(fromBucket, srcKey, toBucket, tarKey, false);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return response;
     }
 
     public void closeBucketManager() {

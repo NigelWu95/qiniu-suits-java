@@ -38,11 +38,15 @@ public class ChangeFileTypeProcessor {
 
     public String doFileTypeChange(String bucket, String key, short type, int retryCount) throws QiniuSuitsException {
         Response response = null;
-        String respBody;
+        String responseBody;
+        int statusCode;
+        String reqId;
 
         try {
             response = changeTypeWithRetry(bucket, key, type, retryCount);
-            respBody = response.bodyString();
+            responseBody = response.bodyString();
+            statusCode = response.statusCode;
+            reqId = response.reqId;
         } catch (QiniuException e) {
             QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("change file type error");
             qiniuSuitsException.addToFieldMap("code", String.valueOf(e.code()));
@@ -54,7 +58,7 @@ public class ChangeFileTypeProcessor {
                 response.close();
         }
 
-        return response.statusCode + "\t" + response.reqId + "\t" + respBody;
+        return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
     private Response changeTypeWithRetry(String bucket, String key, short type, int retryCount) throws QiniuSuitsException {

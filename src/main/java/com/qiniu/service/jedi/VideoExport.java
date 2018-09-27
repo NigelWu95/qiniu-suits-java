@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.util.DateUtils;
@@ -18,7 +19,7 @@ public class VideoExport {
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
 
-    public VideoExport() {
+    public VideoExport() throws Exception {
         PropertyConfig propertyConfig = new PropertyConfig(".qiniu.properties");
         this.jediAccountAuth = QiniuAuth.create(propertyConfig.getProperty("jedi_access_key"), propertyConfig.getProperty("jedi_secret_key"));
         this.jediSource = propertyConfig.getProperty("jedi_source");

@@ -2,37 +2,49 @@ package com.qiniu.model;
 
 public class FileCopyParams extends BaseParams {
 
-    private String aKey;
-    private String sKey;
+    private String aKey = "";
+    private String sKey = "";
     private String sourceBucket;
     private String targetBucket;
     private String keepKey;
-    private String targetKeyPrefix;
+    private String targetKeyPrefix = "";
     private PointTimeParams pointTimeParams;
 
     public FileCopyParams(String[] args) throws Exception {
         super(args);
-        pointTimeParams = new PointTimeParams(args);
-        this.sourceBucket = getParam("from");
-        this.targetBucket = getParam("to");
-        this.keepKey = getParam("keep-key");
-        this.targetKeyPrefix = getParam("add-prefix");
+        this.pointTimeParams = new PointTimeParams(args);
+        try {
+            this.aKey = getParamFromArgs("access-key");
+            this.sKey = getParamFromArgs("secret-key");
+        } catch (Exception e) {}
+        this.sourceBucket = getParamFromArgs("from");
+        this.targetBucket = getParamFromArgs("to");
+        this.keepKey = getParamFromArgs("keep-key");
+        try {
+            this.targetKeyPrefix = getParamFromArgs("add-prefix");
+        } catch (Exception e) {}
+        super.setSelfName("copy");
+    }
+
+    public FileCopyParams(String configFileName) throws Exception {
+        super(configFileName);
+        pointTimeParams = new PointTimeParams(configFileName);
+        try {
+            this.aKey = getParamFromConfig("access-key");
+            this.sKey = getParamFromConfig("secret-key");
+        } catch (Exception e) {}
+        this.sourceBucket = getParamFromConfig("from");
+        this.targetBucket = getParamFromConfig("to");
+        this.keepKey = getParamFromConfig("keep-key");
+        this.targetKeyPrefix = getParamFromConfig("add-prefix");
         super.setSelfName("copy");
     }
 
     public String getAKey() {
-        aKey = "";
-        try {
-            aKey = getParam("access-key");
-        } catch (Exception e) {}
         return aKey;
     }
 
     public String getSKey() {
-        sKey = "";
-        try {
-            sKey = getParam("secret-key");
-        } catch (Exception e) {}
         return sKey;
     }
 

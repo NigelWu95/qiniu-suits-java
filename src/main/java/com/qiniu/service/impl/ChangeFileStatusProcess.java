@@ -58,34 +58,32 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    private void changeStatusResult(String bucket, String key, short status) {
+    private void changeStatusResult(String bucket, String key, short status, int retryCount) {
         try {
-            String bucketCopyResult = changeStatusProcessor.doStatusChange(bucket, key, status);
+            String bucketCopyResult = changeStatusProcessor.doStatusChange(bucket, key, status, retryCount);
             targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuSuitsException e) {
             targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + bucket + "\t" + key + "\t" + status);
         }
     }
 
-    public void processFile(String fileInfoStr, int retryCount) {}
-
-    public void processFile(String fileInfoStr) {
+    public void processFile(String fileInfoStr, int retryCount) {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
         boolean isDoProcess = false;
         try {
             // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-            isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(putTime/10000));
+            isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, putTime/10000);
         } catch (Exception ex) {
             targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime);
         }
 
         if (StringUtils.isNullOrEmpty(pointTime) || isDoProcess)
-            changeStatusResult(bucket, fileInfo.get("key").getAsString(), fileStatus);
+            changeStatusResult(bucket, fileInfo.get("key").getAsString(), fileStatus, retryCount);
     }
 
-    private void changeTSByM3U8(String rootUrl, String key) {
+    private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
         List<VideoTS> videoTSList = new ArrayList<>();
 
         try {
@@ -95,7 +93,7 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
         }
 
         for (VideoTS videoTS : videoTSList) {
-            changeStatusResult(bucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], fileStatus);
+            changeStatusResult(bucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], fileStatus, retryCount);
         }
     }
 

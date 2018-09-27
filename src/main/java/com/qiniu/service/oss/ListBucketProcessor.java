@@ -92,7 +92,7 @@ public class ListBucketProcessor {
         StringMap headers = auth.authorization(url);
         Response response = null;
         String responseBody = "";
-        FileListing fileListing = null;
+        FileListing fileListing;
 
         try {
             response = client.get(url, headers);

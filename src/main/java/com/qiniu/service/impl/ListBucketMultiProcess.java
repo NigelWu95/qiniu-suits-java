@@ -2,12 +2,10 @@ package com.qiniu.service.impl;
 
 import com.google.gson.JsonObject;
 import com.qiniu.common.*;
-import com.qiniu.http.Response;
 import com.qiniu.interfaces.IBucketProcess;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ListBucketProcessor;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
