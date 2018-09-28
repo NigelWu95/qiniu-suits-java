@@ -9,14 +9,12 @@ public class FileStatusParams extends BaseParams {
         super(args);
         pointTimeParams = new PointTimeParams(args);
         this.targetStatus = getParamFromArgs("status");
-        super.setSelfName("status");
     }
 
     public FileStatusParams(String configFileName) throws Exception {
         super(configFileName);
         pointTimeParams = new PointTimeParams(configFileName);
         this.targetStatus = getParamFromConfig("status");
-        super.setSelfName("status");
     }
 
     public short getTargetStatus() throws Exception {

@@ -9,14 +9,12 @@ public class FileTypeParams extends BaseParams {
         super(args);
         pointTimeParams = new PointTimeParams(args);
         this.targetType = getParamFromArgs("type");
-        super.setSelfName("type");
     }
 
     public FileTypeParams(String configFileName) throws Exception {
         super(configFileName);
         pointTimeParams = new PointTimeParams(configFileName);
         this.targetType = getParamFromArgs("type");
-        super.setSelfName("type");
     }
 
     public short getTargetType() throws Exception {

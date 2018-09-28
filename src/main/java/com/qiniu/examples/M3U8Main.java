@@ -2,12 +2,13 @@ package com.qiniu.examples;
 
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.M3U8Tools;
 import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.service.oss.AsyncFetchProcessor;
+import com.qiniu.service.oss.AsyncFetch;
 import java.io.IOException;
 import java.util.List;
 
@@ -69,7 +70,7 @@ public class M3U8Main {
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
         targetFileReaderAndWriterMap.initWriter(targetFileDir, "m3u8_fetch");
         M3U8Manager m3u8Manager = new M3U8Manager();
-        AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
+        AsyncFetch asyncFetch = AsyncFetch.getInstance(auth, targetBucket);
         List<VideoTS> tsList = null;
         String tsUrl;
         System.out.println("m3u8 fetch started...");
@@ -84,10 +85,10 @@ public class M3U8Main {
             tsUrl = ts.getUrl();
 
             try {
-                asyncFetchProcessor.doAsyncFetch(tsUrl, tsUrl.substring(tsUrl.indexOf("/", 8) + 1));
+                asyncFetch.run(tsUrl, tsUrl.substring(tsUrl.indexOf("/", 8) + 1), 0);
                 targetFileReaderAndWriterMap.writeSuccess(tsUrl);
-            } catch (QiniuSuitsException e) {
-                targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + tsUrl);
+            } catch (QiniuException e) {
+                targetFileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + tsUrl);
             }
         }
 

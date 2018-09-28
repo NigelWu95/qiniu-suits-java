@@ -23,7 +23,6 @@ public class FileCopyParams extends BaseParams {
         try {
             this.targetKeyPrefix = getParamFromArgs("add-prefix");
         } catch (Exception e) {}
-        super.setSelfName("copy");
     }
 
     public FileCopyParams(String configFileName) throws Exception {
@@ -36,8 +35,9 @@ public class FileCopyParams extends BaseParams {
         this.sourceBucket = getParamFromConfig("from");
         this.targetBucket = getParamFromConfig("to");
         this.keepKey = getParamFromConfig("keep-key");
-        this.targetKeyPrefix = getParamFromConfig("add-prefix");
-        super.setSelfName("copy");
+        try {
+            this.targetKeyPrefix = getParamFromConfig("add-prefix");
+        } catch (Exception e) {}
     }
 
     public String getAKey() {

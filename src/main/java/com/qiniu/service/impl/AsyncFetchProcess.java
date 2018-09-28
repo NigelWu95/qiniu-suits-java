@@ -2,40 +2,46 @@ package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.common.QiniuException;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.interfaces.IUrlItemProcess;
-import com.qiniu.service.oss.AsyncFetchProcessor;
+import com.qiniu.service.oss.AsyncFetch;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class FetchUrlItemProcess implements IUrlItemProcess {
+public class AsyncFetchProcess implements IUrlItemProcess {
 
-    private AsyncFetchProcessor asyncFetchProcessor;
-    private FileReaderAndWriterMap targetFileReaderAndWriterMap;
+    private AsyncFetch asyncFetch;
+    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
+    private QiniuException qiniuException = null;
 
-    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap) {
-        this.asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
-        this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+    public AsyncFetchProcess(QiniuAuth auth, String targetBucket, String resultFileDir) throws IOException {
+        this.asyncFetch = AsyncFetch.getInstance(auth, targetBucket);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch");
     }
 
-    public FetchUrlItemProcess(QiniuAuth auth, String targetBucket, FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
-        this.asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(auth, targetBucket);
-        this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+    public AsyncFetchProcess(QiniuAuth auth, String targetBucket, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
+        this(auth, targetBucket, resultFileDir);
         this.m3u8Manager = m3u8Manager;
     }
 
     private void fetchResult(String url, String key) {
         try {
-            String fetchResult = asyncFetchProcessor.doAsyncFetch(url, key);
-            targetFileReaderAndWriterMap.writeSuccess(fetchResult);
-        } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + url + "," + key);
+            String fetchResult = asyncFetch.run(url, key, 0);
+            fileReaderAndWriterMap.writeSuccess(fetchResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + url + "," + key);
+            e.response.close();
         }
+    }
+
+    public QiniuException qiniuException() {
+        return qiniuException;
     }
 
     public void processItem(String source, String item) {
@@ -88,7 +94,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, m3u8FilePath);
         } catch (IOException ioException) {
-            targetFileReaderAndWriterMap.writeOther("list ts failed: " + m3u8FilePath);
+            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8FilePath);
         }
 
         for (VideoTS videoTS : videoTSList) {
@@ -102,7 +108,7 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
         } catch (IOException ioException) {
-            targetFileReaderAndWriterMap.writeOther("list ts failed: " + m3u8Url);
+            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8Url);
         }
 
         for (VideoTS videoTS : videoTSList) {
@@ -111,6 +117,6 @@ public class FetchUrlItemProcess implements IUrlItemProcess {
     }
 
     public void closeResource() {
-
+        fileReaderAndWriterMap.closeWriter();
     }
 }

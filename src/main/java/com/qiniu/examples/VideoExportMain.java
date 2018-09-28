@@ -6,9 +6,8 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.*;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.interfaces.IUrlItemProcess;
-import com.qiniu.service.impl.BucketCopyItemProcess;
-import com.qiniu.service.impl.FetchUrlItemProcess;
-import com.qiniu.service.FileLine.NothingProcess;
+import com.qiniu.service.impl.BucketCopyProcess;
+import com.qiniu.service.impl.AsyncFetchProcess;
 import com.qiniu.service.jedi.VideoExport;
 import com.qiniu.service.jedi.VideoManage;
 import com.qiniu.config.PropertyConfig;
@@ -38,7 +37,6 @@ public class VideoExportMain {
         IUrlItemProcess processor = null;
 
         try {
-            processor = new NothingProcess();
             processor = videoExportMain.getBucketCopyProcess(auth, jediResultBucket, bucket, targetFileDir);
 //            processor = videoExportMain.getFetchProcess(auth, bucket, targetFileDir);
 
@@ -56,19 +54,15 @@ public class VideoExportMain {
         }
     }
 
-    public IUrlItemProcess getBucketCopyProcess(QiniuAuth auth, String srcBucket, String tarBucket, String targetFileDir) throws QiniuSuitsException, IOException {
-        FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initWriter(targetFileDir, "copy");
+    public IUrlItemProcess getBucketCopyProcess(QiniuAuth auth, String srcBucket, String tarBucket, String targetFileDir) throws IOException {
         M3U8Manager m3u8Manager = new M3U8Manager();
-        IUrlItemProcess processor = new BucketCopyItemProcess(auth, new Configuration(Zone.autoZone()), srcBucket, tarBucket, "video/", targetFileReaderAndWriterMap, m3u8Manager);
+        IUrlItemProcess processor = new BucketCopyProcess(auth, new Configuration(Zone.autoZone()), srcBucket, tarBucket, "video/", targetFileDir, m3u8Manager);
         return processor;
     }
 
-    public IUrlItemProcess getFetchProcess(QiniuAuth auth, String bucket, String targetFileDir) throws QiniuSuitsException, IOException {
-        FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        targetFileReaderAndWriterMap.initWriter(targetFileDir, "fetch");
+    public IUrlItemProcess getFetchProcess(QiniuAuth auth, String bucket, String targetFileDir) throws IOException {
         M3U8Manager m3u8Manager = new M3U8Manager();
-        IUrlItemProcess processor = new FetchUrlItemProcess(auth, bucket, targetFileReaderAndWriterMap, m3u8Manager);
+        IUrlItemProcess processor = new AsyncFetchProcess(auth, bucket, targetFileDir, m3u8Manager);
         return processor;
     }
 

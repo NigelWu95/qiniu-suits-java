@@ -3,13 +3,11 @@ package com.qiniu.service.impl;
 import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuBucketManager;
-import com.qiniu.common.QiniuBucketManager.*;
-import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.service.oss.ChangeFileTypeProcessor;
+import com.qiniu.service.oss.ChangeType;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.JSONConvertUtils;
@@ -19,53 +17,58 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChangeFileTypeProcess implements IOssFileProcess {
+public class ChangeTypeProcess implements IOssFileProcess {
 
-    private ChangeFileTypeProcessor changeFileTypeProcessor;
+    private ChangeType changeType;
     private String bucket;
     private short fileType;
-    private FileReaderAndWriterMap targetFileReaderAndWriterMap;
+    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();;
     private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
+    private QiniuException qiniuException = null;
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap) {
-        this.changeFileTypeProcessor = ChangeFileTypeProcessor.getChangeFileTypeProcessor(auth, configuration);
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir)
+            throws IOException {
+        this.changeType = ChangeType.getInstance(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;
-        this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
     }
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, String pointTime,
-                                 boolean pointTimeIsBiggerThanTimeStamp) {
-        this(auth, configuration, bucket, fileType, targetFileReaderAndWriterMap);
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
+                             String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir);
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
-        this(auth, configuration, bucket, fileType, targetFileReaderAndWriterMap);
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
+                             M3U8Manager m3u8Manager) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir);
         this.m3u8Manager = m3u8Manager;
     }
 
-    public ChangeFileTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager,
-                                 String pointTime, boolean pointTimeIsBiggerThanTimeStamp) {
-        this(auth, configuration, bucket, fileType, targetFileReaderAndWriterMap);
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
+                             M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir);
         this.m3u8Manager = m3u8Manager;
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
+    }
+
+    public QiniuException qiniuException() {
+        return qiniuException;
     }
 
     private void changeTypeResult(String bucket, String key, short fileType, int retryCount) {
         try {
-            String bucketCopyResult = changeFileTypeProcessor.doFileTypeChange(bucket, key, fileType, retryCount);
-            targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
-        } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + bucket + "\t" + key + "\t" + fileType);
+            String changeResult = changeType.run(bucket, key, fileType, retryCount);
+            fileReaderAndWriterMap.writeSuccess(changeResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + bucket + "\t" + key + "\t" + fileType);
+            e.response.close();
         }
     }
 
@@ -75,7 +78,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         String key = fileInfo.get("key").getAsString();
         short type = fileInfo.get("type").getAsShort();
         if (type == fileType) {
-            targetFileReaderAndWriterMap.writeOther("file " + key + " type originally is " + type);
+            fileReaderAndWriterMap.writeOther("file " + key + " type originally is " + type);
             return;
         }
 
@@ -88,7 +91,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
                 // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
                 isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
             } catch (Exception ex) {
-                targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime + "\t" + type);
+                fileReaderAndWriterMap.writeErrorOrNull("date error:" + key + "\t" + putTime + "\t" + type);
             }
 
             if (isDoProcess)
@@ -102,7 +105,7 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, key);
         } catch (IOException ioException) {
-            targetFileReaderAndWriterMap.writeOther("list ts failed: " + key);
+            fileReaderAndWriterMap.writeOther("list ts failed: " + key);
         }
 
         for (VideoTS videoTS : videoTSList) {
@@ -111,7 +114,8 @@ public class ChangeFileTypeProcess implements IOssFileProcess {
     }
 
     public void closeResource() {
-        if (changeFileTypeProcessor != null)
-            changeFileTypeProcessor.closeBucketManager();
+        fileReaderAndWriterMap.closeWriter();
+        if (changeType != null)
+            changeType.closeBucketManager();
     }
 }

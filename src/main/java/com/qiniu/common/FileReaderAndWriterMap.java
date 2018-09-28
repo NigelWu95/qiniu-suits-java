@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FileReaderAndWriterMap {
+public class FileReaderAndWriterMap implements Cloneable {
 
     private Map<String, BufferedWriter> WriterMap;
     private Map<String, BufferedReader> ReaderMap;
@@ -40,7 +40,7 @@ public class FileReaderAndWriterMap {
     public void addWriter(String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
         mkDirAndFile(resultFile);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
         this.WriterMap.put(key, writer);
     }
 
@@ -115,7 +115,7 @@ public class FileReaderAndWriterMap {
 
     private void doWrite(String key, String item) {
         try {
-            getWriter(key).write(item + "\n");
+            getWriter(key).write(item);
             getWriter(key).newLine();
         } catch (IOException ioException) {
             System.out.println("Writer " + key + " write {" + item + "} failed");
@@ -140,11 +140,15 @@ public class FileReaderAndWriterMap {
         doWrite(this.prefix + "_success", item);
     }
 
-    public void writeErrorAndNull(String item) {
+    public void writeErrorOrNull(String item) {
         doWrite(this.prefix + "_error_null", item);
     }
 
     public void writeOther(String item) {
         doWrite(this.prefix + "_other", item);
+    }
+
+    public FileReaderAndWriterMap clone() throws CloneNotSupportedException {
+        return (FileReaderAndWriterMap)super.clone();
     }
 }

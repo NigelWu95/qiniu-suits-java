@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.util.DateUtils;
@@ -62,7 +61,7 @@ public class VideoExport {
             try {
                 transcoding = item.get("transcoding").getAsJsonArray();
             } catch (NullPointerException nullException) {
-                targetFileReaderAndWriterMap.writeErrorAndNull("transcoding null:" + item.toString());
+                targetFileReaderAndWriterMap.writeErrorOrNull("transcoding null:" + item.toString());
                 continue;
             }
 
@@ -74,13 +73,14 @@ public class VideoExport {
                 // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
                 isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, modifiedTime);
             } catch (Exception ex) {
-                targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + item.toString());
+                targetFileReaderAndWriterMap.writeErrorOrNull("date error:" + item.toString());
                 continue;
             }
 
             if (isDoProcess) {
                 // 原文件名进行处理，该文件在点播的 src 空间中，要单独设置源来获取
-                processor.processItem(this.jediAccountAuth, this.jediSource, exporter.getKey());
+                if (processor != null)
+                    processor.processItem(this.jediAccountAuth, this.jediSource, exporter.getKey());
 
                 for (int formatIndex = 0; formatIndex < transcoding.size(); formatIndex++) {
                     transcodingResult = transcoding.get(formatIndex).getAsJsonObject();
@@ -93,9 +93,10 @@ public class VideoExport {
                         targetFileReaderAndWriterMap.writeKeyFile(exporter.getFormat(), exporter.getUrl());
 
                         // url 按照文件格式进行处理, 带上处理之后的文件名
-                        processor.processUrl(exporter.getUrl(), exporter.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], exporter.getFormat());
+                        if (processor != null)
+                            processor.processUrl(exporter.getUrl(), exporter.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], exporter.getFormat());
                     } else {
-                        targetFileReaderAndWriterMap.writeErrorAndNull(exporter.toString());
+                        targetFileReaderAndWriterMap.writeErrorOrNull(exporter.toString());
                     }
                 }
             }

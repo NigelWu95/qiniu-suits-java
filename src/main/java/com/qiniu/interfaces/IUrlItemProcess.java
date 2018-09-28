@@ -1,8 +1,11 @@
 package com.qiniu.interfaces;
 
 import com.qiniu.common.QiniuAuth;
+import com.qiniu.common.QiniuException;
 
 public interface IUrlItemProcess {
+
+    QiniuException qiniuException();
 
     void processItem(String source, String item);
 

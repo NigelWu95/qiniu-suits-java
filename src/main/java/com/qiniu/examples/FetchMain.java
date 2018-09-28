@@ -1,12 +1,13 @@
 package com.qiniu.examples;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.interfaces.ILineParser;
-import com.qiniu.service.FileLine.SplitLineParser;
-import com.qiniu.service.oss.AsyncFetchProcessor;
+import com.qiniu.service.fileline.SplitLineParser;
+import com.qiniu.service.oss.AsyncFetch;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class FetchMain {
         String[] sourceReaders = new String[]{"xaa", "xab", "xac", "xad", "xae", "xaf", "xag", "xah", "xai", "xaj", "xak", "xal"};
 
         FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-        AsyncFetchProcessor asyncFetchProcessor = AsyncFetchProcessor.getAsyncFetchProcessor(QiniuAuth.create(ak, sk), bucket);
+        AsyncFetch asyncFetch = AsyncFetch.getInstance(QiniuAuth.create(ak, sk), bucket);
         String str;
 
         try {
@@ -49,11 +50,11 @@ public class FetchMain {
                     lineParser.splitLine("\t");
 
                     try {
-                        fetchResult = asyncFetchProcessor.doAsyncFetch(((SplitLineParser) lineParser).getUrl(), ((SplitLineParser) lineParser).getKey());
+                        fetchResult = asyncFetch.run(((SplitLineParser) lineParser).getUrl(), ((SplitLineParser) lineParser).getKey(), 0);
                         targetFileReaderAndWriterMap.writeSuccess(fetchResult);
-                    } catch (QiniuSuitsException e) {
+                    } catch (QiniuException e) {
                         // 抓取失败的异常
-                        targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + lineParser.toString());
+                        targetFileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + lineParser.toString());
                     }
                 }
 

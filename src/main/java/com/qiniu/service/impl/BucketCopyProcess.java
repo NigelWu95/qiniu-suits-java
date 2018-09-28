@@ -3,12 +3,12 @@ package com.qiniu.service.impl;
 import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.service.oss.BucketCopyProcessor;
+import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -18,37 +18,44 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
+public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
 
-    private BucketCopyProcessor bucketCopyProcessor;
-    private FileReaderAndWriterMap targetFileReaderAndWriterMap;
+    private BucketCopy bucketCopy;
+    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private String srcBucket;
     private String tarBucket;
     private String keyPrefix;
     private M3U8Manager m3u8Manager;
+    private QiniuException qiniuException = null;
 
-    public BucketCopyItemProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap) {
-        this.bucketCopyProcessor = BucketCopyProcessor.getBucketCopyProcessor(auth, configuration, sourceBucket, targetBucket);
-        this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+    public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
+                             String keyPrefix, String resultFileDir) throws IOException {
+        this.bucketCopy = BucketCopy.getInstance(auth, configuration, sourceBucket, targetBucket);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyItemProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
-                                 FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
-        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, targetFileReaderAndWriterMap);
+    public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
+                             String keyPrefix, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
+        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir);
         this.m3u8Manager = m3u8Manager;
     }
 
-    private void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
+    public QiniuException qiniuException() {
+        return qiniuException;
+    }
+
+    public void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
+
         try {
-            String bucketCopyResult = bucketCopyProcessor.doBucketCopy(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
-            targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
-        } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + sourceBucket + "\t" + srcKey + "\t"
-                    + targetBucket + "\t" + tarKey);
+            String bucketCopyResult = bucketCopy.run(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
+            fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey);
+            e.response.close();
         }
     }
 
@@ -95,7 +102,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, m3u8FilePath);
         } catch (IOException ioException) {
-            targetFileReaderAndWriterMap.writeOther("list ts failed: " + m3u8FilePath);
+            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8FilePath);
         }
 
         for (VideoTS videoTS : videoTSList) {
@@ -110,7 +117,7 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
         } catch (IOException ioException) {
-            targetFileReaderAndWriterMap.writeOther("list ts failed: " + m3u8Url);
+            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8Url);
         }
 
         for (VideoTS videoTS : videoTSList) {
@@ -126,7 +133,8 @@ public class BucketCopyItemProcess implements IUrlItemProcess, IOssFileProcess {
     }
 
     public void closeResource() {
-        if (bucketCopyProcessor != null)
-            bucketCopyProcessor.closeBucketManager();
+        fileReaderAndWriterMap.closeWriter();
+        if (bucketCopy != null)
+            bucketCopy.closeBucketManager();
     }
 }

@@ -1,4 +1,4 @@
-package com.qiniu.service.FileLine;
+package com.qiniu.service.fileline;
 
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.interfaces.ILineParser;

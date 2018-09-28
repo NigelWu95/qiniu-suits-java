@@ -3,12 +3,12 @@ package com.qiniu.service.impl;
 import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.service.oss.ChangeStatusProcessor;
+import com.qiniu.service.oss.ChangeStatus;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -17,53 +17,57 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChangeFileStatusProcess implements IOssFileProcess {
+public class ChangeStatusProcess implements IOssFileProcess {
 
-    private ChangeStatusProcessor changeStatusProcessor;
+    private ChangeStatus changeStatus;
     private String bucket;
     private short fileStatus;
-    private FileReaderAndWriterMap targetFileReaderAndWriterMap;
+    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
+    private QiniuException qiniuException = null;
 
-    public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
-                                   FileReaderAndWriterMap targetFileReaderAndWriterMap) {
-        this.changeStatusProcessor = ChangeStatusProcessor.getChangeStatusProcessor(auth, new Client());
+    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir) throws IOException {
+        this.changeStatus = ChangeStatus.getInstance(auth, new Client());
         this.bucket = bucket;
         this.fileStatus = fileStatus;
-        this.targetFileReaderAndWriterMap = targetFileReaderAndWriterMap;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
     }
 
-    public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
-                                   FileReaderAndWriterMap targetFileReaderAndWriterMap, String pointTime,
-                                   boolean pointTimeIsBiggerThanTimeStamp) {
-        this(auth, bucket, fileStatus, targetFileReaderAndWriterMap);
+    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, String pointTime,
+                               boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+        this(auth, bucket, fileStatus, resultFileDir);
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
-                                   FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager) {
-        this(auth, bucket, fileStatus, targetFileReaderAndWriterMap);
+    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, M3U8Manager m3u8Manager)
+            throws IOException {
+        this(auth, bucket, fileStatus, resultFileDir);
         this.m3u8Manager = m3u8Manager;
     }
 
-    public ChangeFileStatusProcess(QiniuAuth auth, String bucket, short fileStatus,
-                                   FileReaderAndWriterMap targetFileReaderAndWriterMap, M3U8Manager m3u8Manager,
-                                   String pointTime, boolean pointTimeIsBiggerThanTimeStamp) {
-        this(auth, bucket, fileStatus, targetFileReaderAndWriterMap);
+    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, M3U8Manager m3u8Manager,
+                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+        this(auth, bucket, fileStatus, resultFileDir);
         this.m3u8Manager = m3u8Manager;
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
+    }
+
+    public QiniuException qiniuException() {
+        return qiniuException;
     }
 
     private void changeStatusResult(String bucket, String key, short status, int retryCount) {
         try {
-            String bucketCopyResult = changeStatusProcessor.doStatusChange(bucket, key, status, retryCount);
-            targetFileReaderAndWriterMap.writeSuccess(bucketCopyResult);
-        } catch (QiniuSuitsException e) {
-            targetFileReaderAndWriterMap.writeErrorAndNull(e.toString() + "\t" + bucket + "\t" + key + "\t" + status);
+            String changeResult = changeStatus.run(bucket, key, status, retryCount);
+            fileReaderAndWriterMap.writeSuccess(changeResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + bucket + "\t" + key + "\t" + status);
+            e.response.close();
         }
     }
 
@@ -76,7 +80,7 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
             // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
             isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, putTime/10000);
         } catch (Exception ex) {
-            targetFileReaderAndWriterMap.writeErrorAndNull("date error:" + key + "\t" + putTime);
+            fileReaderAndWriterMap.writeErrorOrNull("date error:" + key + "\t" + putTime);
         }
 
         if (StringUtils.isNullOrEmpty(pointTime) || isDoProcess)
@@ -89,7 +93,7 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, key);
         } catch (IOException ioException) {
-            targetFileReaderAndWriterMap.writeOther("list ts failed: " + key);
+            fileReaderAndWriterMap.writeOther("list ts failed: " + key);
         }
 
         for (VideoTS videoTS : videoTSList) {
@@ -98,6 +102,6 @@ public class ChangeFileStatusProcess implements IOssFileProcess {
     }
 
     public void closeResource() {
-
+        fileReaderAndWriterMap.closeWriter();
     }
 }

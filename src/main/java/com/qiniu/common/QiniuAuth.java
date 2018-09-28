@@ -62,6 +62,10 @@ public class QiniuAuth {
         return new QiniuAuth(accessKey, secretKeySpec);
     }
 
+    public QiniuAuth clone() throws CloneNotSupportedException {
+        return (QiniuAuth)super.clone();
+    }
+
     private static void copyPolicy(final StringMap policy, StringMap originPolicy, final boolean strict) {
         if (originPolicy == null) {
             return;
