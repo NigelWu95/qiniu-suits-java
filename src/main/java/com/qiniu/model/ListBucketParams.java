@@ -1,10 +1,12 @@
 package com.qiniu.model;
 
+import com.qiniu.util.StringUtils;
+
 public class ListBucketParams extends BaseParams {
 
     private String maxThreads;
     private String version;
-    private String endFile;
+    private String enabledEndFile;
     private String withParallel;
     private String level;
     private String process;
@@ -12,80 +14,82 @@ public class ListBucketParams extends BaseParams {
 
     public ListBucketParams(String[] args) throws Exception {
         super(args);
-        this.maxThreads = getParamFromArgs("max-threads");
-        this.version = getParamFromArgs("version");
-        this.withParallel = getParamFromArgs("parallel");
-        this.level = getParamFromArgs("level");
-        try {
-            this.process = getParamFromArgs("process");
-        } catch (Exception e) {}
-        this.unitLen = getParamFromArgs("unit-len");
-        try {
-            this.endFile = getParamFromArgs("end-file");
-        } catch (Exception e) {}
+        try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) {}
+        try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
+        try { this.withParallel = getParamFromArgs("parallel"); } catch (Exception e) {}
+        try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
+        try { this.process = getParamFromArgs("process"); } catch (Exception e) {}
+        try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
+        try { this.enabledEndFile = getParamFromArgs("end-file"); } catch (Exception e) {}
     }
 
     public ListBucketParams(String configFileName) throws Exception {
         super(configFileName);
-        this.maxThreads = getParamFromConfig("max-threads");
-        this.version = getParamFromConfig("version");
-        this.withParallel = getParamFromConfig("parallel");
-        this.level = getParamFromConfig("level");
-        try {
-            this.process = getParamFromConfig("process");
-        } catch (Exception e) {}
-        this.unitLen = getParamFromConfig("unit-len");
-        try {
-            this.endFile = getParamFromConfig("end-file");
-        } catch (Exception e) {}
+        try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) {}
+        try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
+        try { this.withParallel = getParamFromConfig("parallel"); } catch (Exception e) {}
+        try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
+        try { this.process = getParamFromConfig("process"); } catch (Exception e) {}
+        try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
+        try { this.enabledEndFile = getParamFromConfig("end-file"); } catch (Exception e) {}
     }
 
     public int getMaxThreads() {
-        if (maxThreads.matches("[1-9]\\d*")) {
-            return Integer.valueOf(maxThreads);
-        } else {
-            System.out.println("the threads is incorrect, it will use 10 as default.");
+
+        if (StringUtils.isNullOrEmpty(unitLen) || !maxThreads.matches("[1-9]\\d*")) {
+            System.out.println("no incorrect threads, it will use 10 as default.");
             return 10;
+        } else {
+            return Integer.valueOf(maxThreads);
         }
     }
 
     public int getVersion() {
-        if (version.matches("[12]")) {
-            return Integer.valueOf(version);
-        } else {
-            System.out.println("the version is incorrect, it will use 2 as default.");
+        if (StringUtils.isNullOrEmpty(unitLen) || !version.matches("[12]")) {
+            System.out.println("no incorrect version, it will use 2 as default.");
             return 2;
+        } else {
+            return Integer.valueOf(version);
         }
     }
 
     public boolean getWithParallel() {
-        if (withParallel.matches("(true|false)")) {
-            return Boolean.valueOf(withParallel);
-        } else {
-            System.out.println("the parallel is incorrect, it will use true as default.");
+        if (StringUtils.isNullOrEmpty(unitLen) || !withParallel.matches("(true|false)")) {
+            System.out.println("no incorrect parallel, it will use true as default.");
             return true;
+        } else {
+            return Boolean.valueOf(withParallel);
         }
     }
 
     public int getLevel() {
-        if (level.matches("[12]")) {
-            return Integer.valueOf(level);
-        } else {
-            System.out.println("the level is incorrect, it will use 1 as default.");
+        if (StringUtils.isNullOrEmpty(unitLen) || !level.matches("[12]")) {
+            System.out.println("no incorrect level, it will use 1 as default.");
             return 1;
+        } else {
+            return Integer.valueOf(level);
         }
     }
 
     public String getProcess() {
-        return process == null ? "" : process;
+        return process;
     }
 
     public int getUnitLen() {
-        if (unitLen.matches("\\d+")) {
-            return Integer.valueOf(unitLen);
-        } else {
-            System.out.println("the unit-len is incorrect, it will use 1000 as default.");
+        if (StringUtils.isNullOrEmpty(unitLen) || !unitLen.matches("\\d+")) {
+            System.out.println("no incorrect unit-len, it will use 1000 as default.");
             return 1000;
+        } else {
+            return Integer.valueOf(unitLen);
+        }
+    }
+
+    public boolean getEnabledEndFile() {
+        if (StringUtils.isNullOrEmpty(enabledEndFile) || !enabledEndFile.matches("(true|false)")) {
+            System.out.println("no incorrectly enable end-file, it will use false as default.");
+            return false;
+        } else {
+            return Boolean.valueOf(enabledEndFile);
         }
     }
 }

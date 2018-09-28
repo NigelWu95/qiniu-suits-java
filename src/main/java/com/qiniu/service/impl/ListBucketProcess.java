@@ -353,8 +353,8 @@ public class ListBucketProcess implements IBucketProcess {
                 String nextMarker = marker;
                 while (!StringUtils.isNullOrEmpty(nextMarker)) {
                     nextMarker = version == 2 ?
-                            doListV2(bucket, marker, unitLen, endFileKey, iOssFileProcessor, withParallel, 3) :
-                            doListV1(bucket, marker, 1000, endFileKey, iOssFileProcessor, 3);
+                            doListV2(bucket, nextMarker, unitLen, endFileKey, iOssFileProcessor, withParallel, 3) :
+                            doListV1(bucket, nextMarker, unitLen, endFileKey, iOssFileProcessor, 3);
                 }
             });
         }
@@ -388,8 +388,8 @@ public class ListBucketProcess implements IBucketProcess {
                 String nextMarker = marker;
                 while (!StringUtils.isNullOrEmpty(nextMarker)) {
                     nextMarker = version == 2 ?
-                            doListV2(bucket, prefix, marker, unitLen, iOssFileProcessor, withParallel, 3) :
-                            doListV1(bucket, prefix, marker, 1000, iOssFileProcessor, 3);
+                            doListV2(bucket, prefix, nextMarker, unitLen, iOssFileProcessor, withParallel, 3) :
+                            doListV1(bucket, prefix, nextMarker, unitLen, iOssFileProcessor, 3);
                 }
             });
         }
