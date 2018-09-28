@@ -54,7 +54,7 @@ public class ListBucket {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    System.out.println(url + "\t" + e1.error() + ", last " + retryCount + " times retry...");
                     response = client.get(url, headers);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -78,13 +78,15 @@ public class ListBucket {
         String authorization = "QBox " + auth.signRequest(url, null, null);
         StringMap headers = new StringMap().put("Authorization", authorization);
 
+        System.out.println(url);
+
         try {
             response = client.post(url, null, headers, null);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    System.out.println(url + "\t" + e1.error() + ", last " + retryCount + " times retry...");
                     response = client.post(url, null, headers, null);
                     retryCount = 0;
                 } catch (QiniuException e2) {

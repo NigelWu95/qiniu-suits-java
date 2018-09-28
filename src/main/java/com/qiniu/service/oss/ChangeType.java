@@ -49,7 +49,7 @@ public class ChangeType {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    System.out.println("type " + e1.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.changeType(bucket, key, storageType);
                     retryCount = 0;
                 } catch (QiniuException e2) {

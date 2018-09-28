@@ -42,7 +42,7 @@ public class FileStat {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    System.out.println("stat" + e1.error() + ", last " + retryCount + " times retry...");
                     fileInfoStr = JSONConvertUtils.toJson(bucketManager.stat(bucket, fileKey));
                     retryCount = 0;
                 } catch (QiniuException e2) {

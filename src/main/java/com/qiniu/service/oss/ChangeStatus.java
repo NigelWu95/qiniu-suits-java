@@ -56,7 +56,7 @@ public class ChangeStatus {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(e1.getMessage() + ", last " + retryCount + " times retry...");
+                    System.out.println(url + "\t" + e1.error() + ", last " + retryCount + " times retry...");
                     response = client.post(url, null, headers, Client.FormMime);
                     retryCount = 0;
                 } catch (QiniuException e2) {

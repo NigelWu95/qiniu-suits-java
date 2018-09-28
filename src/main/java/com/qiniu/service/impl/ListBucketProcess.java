@@ -330,7 +330,7 @@ public class ListBucketProcess implements IBucketProcess {
     }
 
     public void processBucketWithEndFile(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
-                             int level, int unitLen) throws QiniuException{
+                             int level, int unitLen) throws QiniuException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
