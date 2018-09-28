@@ -78,8 +78,6 @@ public class ListBucket {
         String authorization = "QBox " + auth.signRequest(url, null, null);
         StringMap headers = new StringMap().put("Authorization", authorization);
 
-        System.out.println(url);
-
         try {
             response = client.post(url, null, headers, null);
         } catch (QiniuException e1) {
