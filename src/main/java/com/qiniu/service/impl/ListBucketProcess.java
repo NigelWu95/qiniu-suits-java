@@ -85,7 +85,6 @@ public class ListBucketProcess implements IBucketProcess {
             String[] firstFileInfoAndMarker = new String[]{};
             try {
                 response = listBucket.run(bucket, prefix, null, null, 1, 3, version);
-
                 if (version == 1) {
                     FileListing fileListing = response.jsonToObject(FileListing.class);
                     firstFileInfoAndMarker = getFirstFileInfoAndMarkerV1(fileListing);
@@ -95,7 +94,10 @@ public class ListBucketProcess implements IBucketProcess {
                 }
             } catch (QiniuException e) {
                 fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + bucket + "\t" + prefix);
-                if (e.response.needRetry()) continue; else throw e;
+                if (e.code() > 400) throw e; else continue;
+            } catch (NullPointerException e) {
+                fileReaderAndWriterMap.writeErrorOrNull(e.getMessage() + "\t" + bucket + "\t" + prefix);
+                continue;
             } finally {
                 if (response != null)
                     response.close();
@@ -110,7 +112,7 @@ public class ListBucketProcess implements IBucketProcess {
                 fileReaderAndWriterMap.writeSuccess(fileInfo);
                 if (doProcess) {
                     iOssFileProcessor.processFile(fileInfo, 3);
-                    if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() == 631)
+                    if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400)
                         throw iOssFileProcessor.qiniuException();
                 }
             }
