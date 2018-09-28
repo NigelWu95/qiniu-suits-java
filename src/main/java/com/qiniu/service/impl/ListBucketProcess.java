@@ -201,9 +201,6 @@ public class ListBucketProcess implements IBucketProcess {
         return fileListing.marker;
     }
 
-    /*
-    单次列举，可以传递 marker 和 limit 参数，通常采用此方法进行并发处理
-     */
     public FileListing doListV1(String bucket, String prefix, String delimiter, String marker, int limit, boolean totalWrite, int retryCount) {
 
         Response response = null;
@@ -297,9 +294,6 @@ public class ListBucketProcess implements IBucketProcess {
         return endMarker.get();
     }
 
-    /*
-    v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
-     */
     public String doListV2(String bucket, String prefix, String marker, int limit, IOssFileProcess iOssFileProcessor,
                            boolean withParallel, int retryCount) {
 
