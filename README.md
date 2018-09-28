@@ -9,6 +9,45 @@ java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -ma
   -time=00:00:00 -direction=0 -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
 ```
 
+### property file
+* 不通过命令行传递参数时可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹
+  中，文件名为 .qiniu.properties，参数设置如下：
+```
+# list bucket
+ak=
+sk=
+bucket=temp
+# 相对路径
+result-path=../result
+max-threads=30
+version=2
+end-file=true
+parallel=true
+level=2
+process=copy
+unit-len=1000
+
+# process
+# 1 表示低频存储，0 表示标准存储
+type=1
+# 1 表示文件禁用，0 表示文件启用
+status=0
+# 判断是否进行 process 操作的时间点
+date=2018-08-01
+time=00:00:00
+# 0 表示向时间点以前，1 表示向时间点以后
+direction=0
+
+# file copy
+access-key=
+secret-key=
+# 源和目标 bucket 名称
+from=bucket1
+to=bucket2
+keep-key=true
+add-prefix=video/
+```
+
 ### list test result
 * spent time 为本地测试列举 157330 个文件所花费的时间，根据前缀启动的线程 level 为 1 时为 2 个，level 为 2 时为 3 个。  
 
@@ -53,6 +92,7 @@ java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -ma
 3、通常情况下建议将 end-file 设置为 false（默认值）。
 4、空间有大量删除时直接使用 list v2，使用 list v1 时 parallel 无效，使用 list v2 时 parallel 默认为 true，同时 v2 的 
    unit-len 可视总文件数进行调整。
+5、推荐用法：version=2 end-file=false unit-len=10000，100 万以内文件 level=1，100 万以上文件 level=2。
 ```
 
 ### list process parameter
