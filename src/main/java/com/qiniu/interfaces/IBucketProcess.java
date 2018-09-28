@@ -4,8 +4,11 @@ import com.qiniu.common.QiniuException;
 
 public interface IBucketProcess {
 
-    void processBucket(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
-                       boolean secondLevel, int unitLen) throws QiniuException;
+    void processBucketWithEndFile(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
+                                  int level, int unitLen) throws QiniuException;
+
+    void processBucketWithPrefix(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
+                                 int level, int unitLen) throws QiniuException;
 
     void closeResource();
 }

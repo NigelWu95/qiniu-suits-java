@@ -4,6 +4,7 @@ public class ListBucketParams extends BaseParams {
 
     private String maxThreads;
     private String version;
+    private String endFile;
     private String withParallel;
     private String level;
     private String process;
@@ -18,7 +19,10 @@ public class ListBucketParams extends BaseParams {
         try {
             this.process = getParamFromArgs("process");
         } catch (Exception e) {}
-        this.unitLen = getParamFromArgs("unit-len");;
+        this.unitLen = getParamFromArgs("unit-len");
+        try {
+            this.endFile = getParamFromArgs("end-file");
+        } catch (Exception e) {}
     }
 
     public ListBucketParams(String configFileName) throws Exception {
@@ -30,7 +34,10 @@ public class ListBucketParams extends BaseParams {
         try {
             this.process = getParamFromConfig("process");
         } catch (Exception e) {}
-        this.unitLen = getParamFromConfig("unit-len");;
+        this.unitLen = getParamFromConfig("unit-len");
+        try {
+            this.endFile = getParamFromConfig("end-file");
+        } catch (Exception e) {}
     }
 
     public int getMaxThreads() {

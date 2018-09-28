@@ -42,11 +42,6 @@ public class ListBucketProcess implements IBucketProcess {
         this.listBucket = ListBucket.getInstance(auth, configuration);
     }
 
-    public void processBucket(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
-                              boolean secondLevel, int unitLen) throws QiniuException {
-        doMultiList(iOssFileProcessor, version, maxThreads, withParallel, secondLevel, unitLen);
-    }
-
     public String[] getFirstFileInfoAndMarkerV2(String line) {
 
         if (StringUtils.isNullOrEmpty(line))
@@ -143,12 +138,12 @@ public class ListBucketProcess implements IBucketProcess {
         return secondPrefixList;
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, boolean secondLevel, IOssFileProcess iOssFileProcessor) throws QiniuException {
+    public Map<String, String> getDelimitedFileMap(int version, int level, IOssFileProcess iOssFileProcessor) throws QiniuException {
         List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
         Map<String, String> delimitedFileMap;
         boolean doProcess = iOssFileProcessor != null;
 
-        if (secondLevel) {
+        if (level == 2) {
             delimitedFileMap = listByPrefix(prefixList, version, false, doProcess, iOssFileProcessor);
             prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
             delimitedFileMap.putAll(listByPrefix(prefixList, version, true, doProcess, iOssFileProcessor));
@@ -259,41 +254,40 @@ public class ListBucketProcess implements IBucketProcess {
     /*
     v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
      */
-    public String doListV2(String bucket, String prefix, String delimiter, String marker, int limit, String endFile,
-                           IOssFileProcess iOssFileProcessor, boolean withParallel, int retryCount) {
+    public String doListV2(String bucket, String marker, int limit, String endFile, IOssFileProcess iOssFileProcessor,
+                           boolean withParallel, int retryCount) {
 
         Response response = null;
         AtomicBoolean endFlag = new AtomicBoolean(false);
         AtomicReference<String> endMarker = new AtomicReference<>();
 
         try {
-            response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 2);
+            response = listBucket.run(bucket, "", "", marker, limit, retryCount, 2);
             InputStream inputStream = new BufferedInputStream(response.bodyStream());
             Reader reader = new InputStreamReader(inputStream);
             BufferedReader bufferedReader = new BufferedReader(reader);
             Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
             lineStream.forEach(line -> {
-                    String[] firstFileInfoAndMarker = getFirstFileInfoAndMarkerV2(line);
-                    String fileKey = firstFileInfoAndMarker[0];
-                    String fileInfo = firstFileInfoAndMarker[1];
-                    String nextMarker = firstFileInfoAndMarker[2];
-                    if (endFile.equals(fileKey)) {
-                        endFlag.set(true);
-                        endMarker.set(null);
-                    }
-                    if (!endFlag.get()) {
-                        fileReaderAndWriterMap.writeSuccess(fileInfo);
-                        endMarker.set(nextMarker);
-                        if (iOssFileProcessor != null)
-                            iOssFileProcessor.processFile(fileInfo, retryCount);
-                    }
+                String[] firstFileInfoAndMarker = getFirstFileInfoAndMarkerV2(line);
+                String fileKey = firstFileInfoAndMarker[0];
+                String fileInfo = firstFileInfoAndMarker[1];
+                String nextMarker = firstFileInfoAndMarker[2];
+                if (endFile.equals(fileKey)) {
+                    endFlag.set(true);
+                    endMarker.set(null);
+                }
+                if (!endFlag.get()) {
+                    fileReaderAndWriterMap.writeSuccess(fileInfo);
+                    endMarker.set(nextMarker);
+                    if (iOssFileProcessor != null)
+                        iOssFileProcessor.processFile(fileInfo, retryCount);
+                }
             });
             inputStream.close();
             reader.close();
             bufferedReader.close();
         } catch (IOException e) {
-            fileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                    + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
+            fileReaderAndWriterMap.writeOther(bucket + "\t" + marker + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
         } finally {
             if (response != null) {
                 response.close();
@@ -303,26 +297,99 @@ public class ListBucketProcess implements IBucketProcess {
         return endMarker.get();
     }
 
-    private void doMultiList(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
-                             boolean secondLevel, int unitLen) throws QiniuException{
+    /*
+    v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
+     */
+    public String doListV2(String bucket, String prefix, String marker, int limit, IOssFileProcess iOssFileProcessor,
+                           boolean withParallel, int retryCount) {
 
-        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, secondLevel, iOssFileProcessor);
-        List<String> firstKeyList = new ArrayList<>(delimitedFileMap.keySet());
-        Collections.sort(firstKeyList);
+        Response response = null;
+        AtomicReference<String> endMarker = new AtomicReference<>();
+
+        try {
+            response = listBucket.run(bucket, prefix, "", marker, limit, retryCount, 2);
+            InputStream inputStream = new BufferedInputStream(response.bodyStream());
+            Reader reader = new InputStreamReader(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(reader);
+            Stream<String> lineStream = withParallel ? bufferedReader.lines().parallel() : bufferedReader.lines();
+            lineStream.forEach(line -> {
+                String[] firstFileInfoAndMarker = getFirstFileInfoAndMarkerV2(line);
+                String fileInfo = firstFileInfoAndMarker[1];
+                String nextMarker = firstFileInfoAndMarker[2];
+                fileReaderAndWriterMap.writeSuccess(fileInfo);
+                endMarker.set(nextMarker);
+                if (iOssFileProcessor != null)
+                    iOssFileProcessor.processFile(fileInfo, retryCount);
+            });
+            inputStream.close();
+            reader.close();
+            bufferedReader.close();
+        } catch (IOException e) {
+            fileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+
+        return endMarker.get();
+    }
+
+    public void processBucketWithEndFile(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
+                             int level, int unitLen) throws QiniuException{
+
+        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
+        List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
+        Collections.sort(keyPrefixList);
         int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;
         System.out.println("there are " + runningThreads + " threads running...");
 
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        for (int i = 0; i < firstKeyList.size(); i++) {
-            String endFileKey = i == firstKeyList.size() - 1 ? "" : firstKeyList.get(i + 1);
-            String marker = delimitedFileMap.get(firstKeyList.get(i));
+        for (int i = 0; i < keyPrefixList.size(); i++) {
+            String endFileKey = i == keyPrefixList.size() - 1 ? "" : keyPrefixList.get(i + 1);
+            String marker = delimitedFileMap.get(keyPrefixList.get(i));
 
             executorPool.execute(() -> {
                 String nextMarker = marker;
                 while (!StringUtils.isNullOrEmpty(nextMarker)) {
                     nextMarker = version == 2 ?
-                            doListV2(bucket, "", "", marker, unitLen, endFileKey, iOssFileProcessor, withParallel, 3) :
+                            doListV2(bucket, marker, unitLen, endFileKey, iOssFileProcessor, withParallel, 3) :
                             doListV1(bucket, marker, 1000, endFileKey, iOssFileProcessor, 3);
+                }
+            });
+        }
+
+        executorPool.shutdown();
+
+        try {
+            while (!executorPool.isTerminated()) {
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void processBucketWithPrefix(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
+                                        int level, int unitLen) throws QiniuException {
+
+        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
+        List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
+        Collections.sort(keyPrefixList);
+        int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;
+        System.out.println("there are " + runningThreads + " threads running...");
+
+        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
+        for (String keyPrefix : keyPrefixList) {
+            String prefix = level == 2 ? keyPrefix.substring(0,2) : keyPrefix.substring(0, 1);
+            String marker = delimitedFileMap.get(keyPrefix);
+
+            executorPool.execute(() -> {
+                String nextMarker = marker;
+                while (!StringUtils.isNullOrEmpty(nextMarker)) {
+                    nextMarker = version == 2 ?
+                            doListV2(bucket, prefix, marker, unitLen, iOssFileProcessor, withParallel, 3) :
+                            doListV1(bucket, prefix, marker, 1000, iOssFileProcessor, 3);
                 }
             });
         }

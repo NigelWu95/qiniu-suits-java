@@ -100,8 +100,4 @@ public class ListBucket {
         if (bucketManager != null)
             bucketManager.closeResponse();
     }
-
-    public ListBucket clone() throws CloneNotSupportedException {
-        return (ListBucket) super.clone();
-    }
 }
