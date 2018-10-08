@@ -7,12 +7,12 @@ import com.google.gson.JsonSyntaxException;
 
 public final class JSONConvertUtils {
 
-    public static final <T> T fromJson(String jsonData, Class<T> clazz) throws JsonSyntaxException {
+    public static final <T> T fromJson(String jsonData, Class<T> clazz) {
         Gson gson = new Gson();
         return gson.fromJson(jsonData, clazz);
     }
 
-    public static final JsonObject toJson(String jsonData) throws JsonSyntaxException {
+    public static final JsonObject toJson(String jsonData) {
         JsonParser jsonParser = new JsonParser();
         return jsonParser.parse(jsonData).getAsJsonObject();
     }

@@ -51,7 +51,7 @@ public class ListBucketProcess implements IBucketProcess {
         String fileKey = "";
         String fileInfo = "";
         String nextMarker = json.get("marker").getAsString();
-        String dir = json.get("dir").getAsString();
+//        String dir = json.get("dir").getAsString();
 
         if (item != null) {
             fileKey = item.getAsJsonObject().get("key").getAsString();
@@ -282,9 +282,9 @@ public class ListBucketProcess implements IBucketProcess {
                         iOssFileProcessor.processFile(fileInfo, retryCount);
                 }
             });
-            inputStream.close();
-            reader.close();
             bufferedReader.close();
+            reader.close();
+            inputStream.close();
         } catch (IOException e) {
             fileReaderAndWriterMap.writeOther(bucket + "\t" + marker + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
         } finally {
@@ -317,9 +317,9 @@ public class ListBucketProcess implements IBucketProcess {
                 if (iOssFileProcessor != null)
                     iOssFileProcessor.processFile(fileInfo, retryCount);
             });
-            inputStream.close();
-            reader.close();
             bufferedReader.close();
+            reader.close();
+            inputStream.close();
         } catch (IOException e) {
             fileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
         } finally {
