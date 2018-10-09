@@ -1,9 +1,6 @@
 package com.qiniu.service.impl;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.qiniu.common.*;
 import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.http.Response;
@@ -14,6 +11,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.Json;
 import com.qiniu.util.StringUtils;
 
 import java.io.*;
@@ -53,7 +51,7 @@ public class ListBucketProcess implements IBucketProcess {
         String nextMarker = json.get("marker").getAsString();
 //        String dir = json.get("dir").getAsString();
 
-        if (item != null) {
+        if (item != null && !(item instanceof JsonNull)) {
             fileKey = item.getAsJsonObject().get("key").getAsString();
             fileInfo = JSONConvertUtils.toJson(json.getAsJsonObject("item"));
         }
