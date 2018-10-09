@@ -64,7 +64,14 @@ add-prefix=video/
 |   2   |  2  |  true  |  true  |  1000  |   126s   | 
 |   2   |  2  |  false |  true  |  1000  |   120s   | 
 |   2   |  2  |  true  |  true  |  10000 |   57s    | 
-|   2   |  2  |  false |  true  |  10000 |   62s    | 
+|   2   |  2  |  false |  true  |  10000 |   62s    |
+
+* 列举记录。  
+
+|version|level|end-file|parallel|unit-len| file counts |spent time| machine | running threads |  
+|-------|-----|--------|--------|--------|-------------|----------|---------|-----------------|  
+|   2   |  2  | false  |  false |  10000 |  94898690   |   2h18m  | 16核32G |      50         |  
+ 
 
 * main dynamic parameters and description  
 ```
