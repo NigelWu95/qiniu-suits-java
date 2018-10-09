@@ -93,10 +93,10 @@ public class ListBucketProcess implements IBucketProcess {
                     firstFileInfoAndMarker = getFirstFileInfoAndMarkerV2(line);
                 }
             } catch (QiniuException e) {
-                fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + bucket + "\t" + prefix);
+                fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
                 if (e.code() > 400) throw e; else continue;
             } catch (NullPointerException e) {
-                fileReaderAndWriterMap.writeErrorOrNull(e.getMessage() + "\t" + bucket + "\t" + prefix);
+                fileReaderAndWriterMap.writeErrorOrNull( bucket + "\t" + prefix + "\tnull exception" + e.getMessage());
                 continue;
             } finally {
                 if (response != null)
