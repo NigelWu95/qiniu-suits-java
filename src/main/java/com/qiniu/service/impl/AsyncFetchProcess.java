@@ -35,7 +35,7 @@ public class AsyncFetchProcess implements IUrlItemProcess {
             fileReaderAndWriterMap.writeSuccess(fetchResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + url + "," + key);
+            fileReaderAndWriterMap.writeErrorOrNull(url + "," + key + "\t" + e.error());
             e.response.close();
         }
     }

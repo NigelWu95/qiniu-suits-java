@@ -88,7 +88,7 @@ public class M3U8Main {
                 asyncFetch.run(tsUrl, tsUrl.substring(tsUrl.indexOf("/", 8) + 1), 0);
                 targetFileReaderAndWriterMap.writeSuccess(tsUrl);
             } catch (QiniuException e) {
-                targetFileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + tsUrl);
+                targetFileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + tsUrl + "\t" + e.error());
             }
         }
 

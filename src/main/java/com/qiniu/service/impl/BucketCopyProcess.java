@@ -54,7 +54,7 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
             fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey);
+            fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey + "\t" + e.error());
             e.response.close();
         }
     }

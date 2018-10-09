@@ -67,7 +67,7 @@ public class ChangeTypeProcess implements IOssFileProcess {
             fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + bucket + "\t" + key + "\t" + fileType);
+            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileType + "\t" + e.error());
             e.response.close();
         }
     }
@@ -91,7 +91,7 @@ public class ChangeTypeProcess implements IOssFileProcess {
                 // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
                 isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, Long.valueOf(timeString.substring(0, timeString.length() - 4)));
             } catch (Exception ex) {
-                fileReaderAndWriterMap.writeErrorOrNull("date error:" + key + "\t" + putTime + "\t" + type);
+                fileReaderAndWriterMap.writeErrorOrNull(key + "\t" + putTime + "\t" + type + "\t" + "date error");
             }
 
             if (isDoProcess)

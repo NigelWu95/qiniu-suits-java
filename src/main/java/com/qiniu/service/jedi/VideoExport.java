@@ -61,7 +61,7 @@ public class VideoExport {
             try {
                 transcoding = item.get("transcoding").getAsJsonArray();
             } catch (NullPointerException nullException) {
-                targetFileReaderAndWriterMap.writeErrorOrNull("transcoding null:" + item.toString());
+                targetFileReaderAndWriterMap.writeErrorOrNull(item.toString() + "\t" + "transcoding null");
                 continue;
             }
 
@@ -73,7 +73,7 @@ public class VideoExport {
                 // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
                 isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, modifiedTime);
             } catch (Exception ex) {
-                targetFileReaderAndWriterMap.writeErrorOrNull("date error:" + item.toString());
+                targetFileReaderAndWriterMap.writeErrorOrNull(item.toString() + "\t" + "date error");
                 continue;
             }
 
@@ -96,7 +96,7 @@ public class VideoExport {
                         if (processor != null)
                             processor.processUrl(exporter.getUrl(), exporter.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], exporter.getFormat());
                     } else {
-                        targetFileReaderAndWriterMap.writeErrorOrNull(exporter.toString());
+                        targetFileReaderAndWriterMap.writeErrorOrNull(exporter.toString() + "\t" + "status or url error");
                     }
                 }
             }
