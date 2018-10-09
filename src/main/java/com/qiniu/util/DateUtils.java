@@ -16,7 +16,7 @@ public final class DateUtils {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Long breakpoint = sdf.parse(pointTime).getTime();
-        return (breakpoint > timeStamp) == isBiggerThan ? true : false;
+        return (breakpoint > timeStamp) == isBiggerThan;
     }
 
     public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, String timeString) throws ParseException, QiniuSuitsException {
@@ -26,7 +26,7 @@ public final class DateUtils {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Long breakpoint = sdf.parse(pointTime).getTime();
-        return (breakpoint > parseDateToStamp(timeString)) == isBiggerThan ? true : false;
+        return (breakpoint > parseDateToStamp(timeString)) == isBiggerThan;
     }
 
     public static Long parseDateToStamp(String greenwichMeanTime) throws ParseException {

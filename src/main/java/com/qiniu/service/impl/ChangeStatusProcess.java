@@ -75,16 +75,24 @@ public class ChangeStatusProcess implements IOssFileProcess {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
+        short status = fileInfo.get("status").getAsShort();
+
         boolean isDoProcess = false;
-        try {
-            // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-            isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, putTime/10000);
-        } catch (Exception ex) {
-            fileReaderAndWriterMap.writeErrorOrNull( key + "\t" + putTime + "\t" + "date error");
+        if (StringUtils.isNullOrEmpty(pointTime)) {
+            isDoProcess = true;
+        } else {
+            try {
+                // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
+                isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, putTime/10000);
+            } catch (Exception ex) {
+                fileReaderAndWriterMap.writeErrorOrNull( key + "\t" + putTime + "\t" + "date error");
+            }
         }
 
-        if (StringUtils.isNullOrEmpty(pointTime) || isDoProcess)
+        if (isDoProcess && status != fileStatus)
             changeStatusResult(bucket, fileInfo.get("key").getAsString(), fileStatus, retryCount);
+        else
+            fileReaderAndWriterMap.writeOther(key + "\t" + status + "\t" + isDoProcess);
     }
 
     private void changeTSByM3U8(String rootUrl, String key, int retryCount) {

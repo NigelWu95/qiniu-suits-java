@@ -77,15 +77,11 @@ public class ChangeTypeProcess implements IOssFileProcess {
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
         short type = fileInfo.get("type").getAsShort();
-        if (type == fileType) {
-            fileReaderAndWriterMap.writeOther("file " + key + " type originally is " + type);
-            return;
-        }
 
+        boolean isDoProcess = false;
         if (StringUtils.isNullOrEmpty(pointTime)) {
-            changeTypeResult(bucket, key, fileType, retryCount);
+            isDoProcess = true;
         } else {
-            boolean isDoProcess = false;
             try {
                 String timeString = String.valueOf(putTime);
                 // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
@@ -93,10 +89,12 @@ public class ChangeTypeProcess implements IOssFileProcess {
             } catch (Exception ex) {
                 fileReaderAndWriterMap.writeErrorOrNull(key + "\t" + putTime + "\t" + type + "\t" + "date error");
             }
-
-            if (isDoProcess)
-                changeTypeResult(bucket, key, fileType, retryCount);
         }
+
+        if (isDoProcess && type != fileType)
+            changeTypeResult(bucket, key, fileType, retryCount);
+        else
+            fileReaderAndWriterMap.writeOther(key + "\t" + type + "\t" + isDoProcess);
     }
 
     private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
