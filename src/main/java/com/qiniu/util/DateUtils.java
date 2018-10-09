@@ -31,8 +31,7 @@ public final class DateUtils {
 
     public static Long parseDateToStamp(String greenwichMeanTime) throws ParseException {
 
-        SimpleDateFormat sd = new SimpleDateFormat();
-        Long timeStamp = 0L;
+        SimpleDateFormat sd;
 
         // yyyy-MM-dd'T'HH:mm:ssX（2018-08-09T11:38:05+08:00） 格式
         String pattern1 = "^[\\d]{4}-[\\d]{2}-[\\d]{2}T[\\d]{2}:[\\d]{2}:[\\d]{2}\\+[\\d]{2}:[\\d]{2}$";
@@ -54,7 +53,7 @@ public final class DateUtils {
                     greenwichMeanTime.length() == 20 ? "yyyy-MM-dd'T'HH:mm:ss'Z'" : "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         }
 
-        return timeStamp = sd.parse(greenwichMeanTime).getTime();
+        return sd.parse(greenwichMeanTime).getTime();
     }
 
     public static String[] getCurrentDatetime() {
