@@ -349,6 +349,7 @@ public class ListBucketProcess implements IBucketProcess {
                     nextMarker = version == 2 ?
                             doListV2(bucket, nextMarker, unitLen, endFileKey, iOssFileProcessor, withParallel, 3) :
                             doListV1(bucket, nextMarker, unitLen, endFileKey, iOssFileProcessor, 3);
+                    System.out.println("endFileKey: " + endFileKey + ", nextMarker: " + nextMarker);
                 }
             });
         }
@@ -384,6 +385,7 @@ public class ListBucketProcess implements IBucketProcess {
                     nextMarker = version == 2 ?
                             doListV2(bucket, prefix, nextMarker, unitLen, iOssFileProcessor, withParallel, 3) :
                             doListV1(bucket, prefix, nextMarker, unitLen, iOssFileProcessor, 3);
+                    System.out.println("prefix: " + prefix + ", nextMarker: " + nextMarker);
                 }
             });
         }

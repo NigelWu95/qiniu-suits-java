@@ -16,45 +16,48 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChangeTypeProcess implements IOssFileProcess {
 
     private ChangeType changeType;
     private String bucket;
     private short fileType;
-    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();;
+    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
+    private ExecutorService executorPool;
 
-    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir)
-            throws IOException {
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
+                             String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
         this.changeType = ChangeType.getInstance(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
-    }
-
-    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
-                             String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir);
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
     public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
-                             M3U8Manager m3u8Manager) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir);
-        this.m3u8Manager = m3u8Manager;
+                             String pointTime, boolean pointTimeIsBiggerThanTimeStamp, int threads) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
+        this.executorPool = Executors.newFixedThreadPool(threads);
     }
 
     public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
                              M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir);
+        this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
         this.m3u8Manager = m3u8Manager;
-        this.pointTime = pointTime;
-        this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
+    }
+
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
+                             M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp, int threads) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
+        this.m3u8Manager = m3u8Manager;
+        this.executorPool = Executors.newFixedThreadPool(threads);
     }
 
     public QiniuException qiniuException() {
@@ -73,6 +76,7 @@ public class ChangeTypeProcess implements IOssFileProcess {
     }
 
     public void processFile(String fileInfoStr, int retryCount) {
+
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
@@ -96,6 +100,17 @@ public class ChangeTypeProcess implements IOssFileProcess {
         else
             fileReaderAndWriterMap.writeOther(key + "\t" + type + "\t" + isDoProcess);
     }
+
+//    public void processFile(String fileInfoStr, int retryCount) {
+//
+//        if (executorPool != null) {
+//            executorPool.submit(() -> {
+//                doProcess(fileInfoStr, retryCount);
+//            });
+//        } else {
+//            doProcess(fileInfoStr, retryCount);
+//        }
+//    }
 
     private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
         List<VideoTS> videoTSList = new ArrayList<>();

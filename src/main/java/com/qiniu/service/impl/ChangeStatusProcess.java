@@ -16,6 +16,8 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChangeStatusProcess implements IOssFileProcess {
 
@@ -72,6 +74,7 @@ public class ChangeStatusProcess implements IOssFileProcess {
     }
 
     public void processFile(String fileInfoStr, int retryCount) {
+
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
