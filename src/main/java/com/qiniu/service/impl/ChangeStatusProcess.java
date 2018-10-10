@@ -30,32 +30,21 @@ public class ChangeStatusProcess implements IOssFileProcess {
     private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
 
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir) throws IOException {
+    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, String pointTime,
+                               boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
         this.changeStatus = ChangeStatus.getInstance(auth, new Client());
         this.bucket = bucket;
         this.fileStatus = fileStatus;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
+        this.pointTime = pointTime;
+        this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
     public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, String pointTime,
-                               boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, bucket, fileStatus, resultFileDir);
-        this.pointTime = pointTime;
-        this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
-    }
-
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, M3U8Manager m3u8Manager)
+                               boolean pointTimeIsBiggerThanTimeStamp, M3U8Manager m3u8Manager)
             throws IOException {
-        this(auth, bucket, fileStatus, resultFileDir);
+        this(auth, bucket, fileStatus, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
         this.m3u8Manager = m3u8Manager;
-    }
-
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, M3U8Manager m3u8Manager,
-                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, bucket, fileStatus, resultFileDir);
-        this.m3u8Manager = m3u8Manager;
-        this.pointTime = pointTime;
-        this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
     public QiniuException qiniuException() {
