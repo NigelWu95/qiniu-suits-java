@@ -10,5 +10,5 @@ public interface IOssFileProcess {
 
     void closeResource();
 
-//    IOssFileProcess clone() throws CloneNotSupportedException;
+    IOssFileProcess clone() throws CloneNotSupportedException;
 }

@@ -30,7 +30,7 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
 
     public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
                              String keyPrefix, String resultFileDir) throws IOException {
-        this.bucketCopy = BucketCopy.getInstance(auth, configuration, sourceBucket, targetBucket);
+        this.bucketCopy = new BucketCopy(auth, configuration, sourceBucket, targetBucket);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
@@ -41,6 +41,13 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
                              String keyPrefix, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
         this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir);
         this.m3u8Manager = m3u8Manager;
+    }
+
+    public BucketCopyProcess clone() throws CloneNotSupportedException {
+        BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
+        bucketCopyProcess.bucketCopy = bucketCopy.clone();
+        bucketCopyProcess.fileReaderAndWriterMap = fileReaderAndWriterMap.clone();
+        return bucketCopyProcess;
     }
 
     public QiniuException qiniuException() {
