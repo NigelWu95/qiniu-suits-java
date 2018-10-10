@@ -13,24 +13,11 @@ public class ListBucket {
     private QiniuBucketManager bucketManager;
     private Client client;
 
-    private static volatile ListBucket listBucket = null;
-
     public ListBucket(QiniuAuth auth, Configuration configuration) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucketManager = new QiniuBucketManager(auth, configuration);
         this.client = new Client();
-    }
-
-    public static ListBucket getInstance(QiniuAuth auth, Configuration configuration) {
-        if (listBucket == null) {
-            synchronized (ListBucket.class) {
-                if (listBucket == null) {
-                    listBucket = new ListBucket(auth, configuration);
-                }
-            }
-        }
-        return listBucket;
     }
 
     public Response run(String bucket, String prefix, String delimiter, String marker, int limit, int retryCount, int version) throws QiniuException {
