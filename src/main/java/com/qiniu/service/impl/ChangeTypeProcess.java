@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChangeTypeProcess implements IOssFileProcess {
+public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
     private ChangeType changeType;
     private String bucket;
@@ -30,7 +30,7 @@ public class ChangeTypeProcess implements IOssFileProcess {
 
     public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
                              String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this.changeType = ChangeType.getInstance(auth, configuration);
+        this.changeType = new ChangeType(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
@@ -42,6 +42,13 @@ public class ChangeTypeProcess implements IOssFileProcess {
                              M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
         this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
         this.m3u8Manager = m3u8Manager;
+    }
+
+    public ChangeTypeProcess clone() throws CloneNotSupportedException {
+        ChangeTypeProcess changeTypeProcess = (ChangeTypeProcess)super.clone();
+        changeTypeProcess.changeType = changeType.clone();
+        changeTypeProcess.fileReaderAndWriterMap = fileReaderAndWriterMap.clone();
+        return changeTypeProcess;
     }
 
     public QiniuException qiniuException() {

@@ -250,7 +250,7 @@ public class ListBucketProcess implements IBucketProcess {
     /*
     v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
      */
-    public String doListV2(ListBucket listBucket, String bucket, String marker, int limit, String endFile,
+    public String doListV2(ListBucket listBucket, String bucket, String marker, int limit, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap,
                            IOssFileProcess iOssFileProcessor, boolean withParallel, int retryCount) {
 
         Response response = null;
@@ -293,14 +293,13 @@ public class ListBucketProcess implements IBucketProcess {
         return endMarker.get();
     }
 
-    public String doListV2(ListBucket listBucket, String bucket, String prefix, String marker, int limit,
+    public String doListV2(ListBucket listBucket, String bucket, String prefix, String marker, int limit, FileReaderAndWriterMap fileReaderAndWriterMap,
                            IOssFileProcess iOssFileProcessor, boolean withParallel, int retryCount) {
 
-        Response response = null;
         AtomicReference<String> endMarker = new AtomicReference<>();
 
         try {
-            response = listBucket.run(bucket, prefix, "", marker, limit, retryCount, 2);
+            Response response = listBucket.run(bucket, prefix, "", marker, limit, retryCount, 2);
             InputStream inputStream = new BufferedInputStream(response.bodyStream());
             Reader reader = new InputStreamReader(inputStream);
             BufferedReader bufferedReader = new BufferedReader(reader);
@@ -317,12 +316,9 @@ public class ListBucketProcess implements IBucketProcess {
             bufferedReader.close();
             reader.close();
             inputStream.close();
-        } catch (IOException e) {
+            response.close();
+        } catch (Exception e) {
             fileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
-        } finally {
-            if (response != null) {
-                response.close();
-            }
         }
 
         return endMarker.get();
@@ -344,13 +340,15 @@ public class ListBucketProcess implements IBucketProcess {
                 String endFileKey = finalI == keyPrefixList.size() - 1 ? "" : keyPrefixList.get(finalI + 1);
                 String marker = delimitedFileMap.get(keyPrefixList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
+                FileReaderAndWriterMap fileMap = fileReaderAndWriterMap;
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = version == 2 ?
-                            doListV2(listBucket, bucket, marker, unitLen, endFileKey, iOssFileProcessor, withParallel, 3) :
+                            doListV2(listBucket, bucket, marker, unitLen, endFileKey, fileMap, iOssFileProcessor, withParallel, 3) :
                             doListV1(listBucket, bucket, marker, unitLen, endFileKey, iOssFileProcessor, 3);
                     System.out.println("endFileKey: " + endFileKey + ", marker: " + marker);
                 }
                 listBucket.closeBucketManager();
+//                fileMap.closeWriter();
             });
         }
 
@@ -380,13 +378,15 @@ public class ListBucketProcess implements IBucketProcess {
                 String prefix = level == 2 ? keyPrefix.substring(0,2) : keyPrefix.substring(0, 1);
                 String marker = delimitedFileMap.get(keyPrefix);
                 ListBucket listBucket = new ListBucket(auth, configuration);
+                FileReaderAndWriterMap fileMap = fileReaderAndWriterMap;
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = version == 2 ?
-                            doListV2(listBucket, bucket, prefix, marker, unitLen, iOssFileProcessor, withParallel, 3) :
+                            doListV2(listBucket, bucket, prefix, marker, unitLen, fileMap, iOssFileProcessor, withParallel, 3) :
                             doListV1(listBucket, bucket, prefix, marker, unitLen, iOssFileProcessor, 3);
                     System.out.println("prefix: " + prefix + ", marker: " + marker);
                 }
                 listBucket.closeBucketManager();
+//                fileMap.closeWriter();
             });
         }
 

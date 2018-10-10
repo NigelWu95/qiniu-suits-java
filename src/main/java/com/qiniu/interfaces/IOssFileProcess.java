@@ -9,4 +9,6 @@ public interface IOssFileProcess {
     void processFile(String fileInfoStr, int retryCount);
 
     void closeResource();
+
+//    IOssFileProcess clone() throws CloneNotSupportedException;
 }

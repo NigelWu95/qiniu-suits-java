@@ -5,27 +5,27 @@ import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
+import com.qiniu.service.impl.ChangeTypeProcess;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
 public class ChangeType {
 
     private QiniuBucketManager bucketManager;
-
-    private static volatile ChangeType changeType = null;
+    private QiniuAuth auth;
+    private Configuration configuration;
 
     public ChangeType(QiniuAuth auth, Configuration configuration) {
+        this.auth = auth;
+        this.configuration = configuration;
         this.bucketManager = new QiniuBucketManager(auth, configuration);
     }
 
-    public static ChangeType getInstance(QiniuAuth auth, Configuration configuration) {
-        if (changeType == null) {
-            synchronized (ChangeType.class) {
-                if (changeType == null) {
-                    changeType = new ChangeType(auth, configuration);
-                }
-            }
-        }
+    public ChangeType clone() throws CloneNotSupportedException {
+        ChangeType changeType = (ChangeType)super.clone();
+        changeType.bucketManager = new QiniuBucketManager(auth, configuration);
+
         return changeType;
     }
 
