@@ -16,8 +16,6 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ChangeTypeProcess implements IOssFileProcess {
 
@@ -29,7 +27,6 @@ public class ChangeTypeProcess implements IOssFileProcess {
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
-    private ExecutorService executorPool;
 
     public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
                              String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
@@ -42,22 +39,9 @@ public class ChangeTypeProcess implements IOssFileProcess {
     }
 
     public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
-                             String pointTime, boolean pointTimeIsBiggerThanTimeStamp, int threads) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
-        this.executorPool = Executors.newFixedThreadPool(threads);
-    }
-
-    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
                              M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
         this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
         this.m3u8Manager = m3u8Manager;
-    }
-
-    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
-                             M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp, int threads) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
-        this.m3u8Manager = m3u8Manager;
-        this.executorPool = Executors.newFixedThreadPool(threads);
     }
 
     public QiniuException qiniuException() {
@@ -100,17 +84,6 @@ public class ChangeTypeProcess implements IOssFileProcess {
         else
             fileReaderAndWriterMap.writeOther(key + "\t" + type + "\t" + isDoProcess);
     }
-
-//    public void processFile(String fileInfoStr, int retryCount) {
-//
-//        if (executorPool != null) {
-//            executorPool.submit(() -> {
-//                doProcess(fileInfoStr, retryCount);
-//            });
-//        } else {
-//            doProcess(fileInfoStr, retryCount);
-//        }
-//    }
 
     private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
         List<VideoTS> videoTSList = new ArrayList<>();
