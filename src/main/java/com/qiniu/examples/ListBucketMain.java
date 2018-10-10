@@ -36,7 +36,7 @@ public class ListBucketMain {
             case "status":
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
                 PointTimeParams pointTimeParams = fileStatusParams.getPointTimeParams();
-                iOssFileProcessor = new ChangeStatusProcess(auth, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
+                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
                         resultFileDir, pointTimeParams.getPointDate() + " " + pointTimeParams.getPointTime(),
                         pointTimeParams.getDirection());
                 break;
