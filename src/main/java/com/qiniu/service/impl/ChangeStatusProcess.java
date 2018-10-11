@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Client;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
@@ -17,14 +16,13 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class ChangeStatusProcess implements IOssFileProcess {
+public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     private ChangeStatus changeStatus;
     private String bucket;
     private short fileStatus;
+    private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
     private String pointTime;
@@ -36,6 +34,7 @@ public class ChangeStatusProcess implements IOssFileProcess {
         this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
+        this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
@@ -50,7 +49,13 @@ public class ChangeStatusProcess implements IOssFileProcess {
     public ChangeStatusProcess clone() throws CloneNotSupportedException {
         ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
         changeStatusProcess.changeStatus = changeStatus.clone();
-        changeStatusProcess.fileReaderAndWriterMap = fileReaderAndWriterMap.clone();
+        changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        try {
+            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
+        }
         return changeStatusProcess;
     }
 

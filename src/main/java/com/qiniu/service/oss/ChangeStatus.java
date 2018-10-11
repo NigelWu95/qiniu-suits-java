@@ -10,7 +10,7 @@ import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.UrlSafeBase64;
 
-public class ChangeStatus {
+public class ChangeStatus implements Cloneable {
 
     private Client client;
     private QiniuAuth auth;

@@ -8,8 +8,8 @@ import java.util.Map;
 
 public class FileReaderAndWriterMap implements Cloneable {
 
-    private Map<String, BufferedWriter> writerMap;
-    private Map<String, BufferedReader> readerMap;
+    private HashMap<String, BufferedWriter> writerMap;
+    private HashMap<String, BufferedReader> readerMap;
     private List<String> targetWriters;
     private String targetFileDir;
     private String prefix;
@@ -64,7 +64,7 @@ public class FileReaderAndWriterMap implements Cloneable {
             count--;
         }
 
-        System.out.println(filePath);
+        if (count < 3) System.out.println(filePath);
     }
 
     public BufferedWriter getWriter(String key) {
@@ -146,11 +146,5 @@ public class FileReaderAndWriterMap implements Cloneable {
 
     public void writeOther(String item) {
         doWrite(this.prefix + "_other", item);
-    }
-
-    public FileReaderAndWriterMap clone() throws CloneNotSupportedException {
-        BufferedWriter bufferedWriter;
-
-        return (FileReaderAndWriterMap)super.clone();
     }
 }

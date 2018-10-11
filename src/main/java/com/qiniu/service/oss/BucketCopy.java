@@ -7,7 +7,7 @@ import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
-public class BucketCopy {
+public class BucketCopy implements Cloneable {
 
     private QiniuBucketManager bucketManager;
     private String srcBucket;

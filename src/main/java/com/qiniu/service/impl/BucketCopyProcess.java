@@ -18,9 +18,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
+public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess, Cloneable {
 
     private BucketCopy bucketCopy;
+    private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private String srcBucket;
     private String tarBucket;
@@ -31,6 +32,7 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
     public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
                              String keyPrefix, String resultFileDir) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration, sourceBucket, targetBucket);
+        this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
@@ -46,7 +48,13 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess {
     public BucketCopyProcess clone() throws CloneNotSupportedException {
         BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
-        bucketCopyProcess.fileReaderAndWriterMap = fileReaderAndWriterMap.clone();
+        bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        try {
+            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
+        }
         return bucketCopyProcess;
     }
 

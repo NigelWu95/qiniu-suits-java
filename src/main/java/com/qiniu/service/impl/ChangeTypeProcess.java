@@ -22,6 +22,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
     private ChangeType changeType;
     private String bucket;
     private short fileType;
+    private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
     private String pointTime;
@@ -33,6 +34,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         this.changeType = new ChangeType(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;
+        this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
@@ -47,7 +49,13 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
     public ChangeTypeProcess clone() throws CloneNotSupportedException {
         ChangeTypeProcess changeTypeProcess = (ChangeTypeProcess)super.clone();
         changeTypeProcess.changeType = changeType.clone();
-        changeTypeProcess.fileReaderAndWriterMap = fileReaderAndWriterMap.clone();
+        changeTypeProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        try {
+            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
+        }
         return changeTypeProcess;
     }
 

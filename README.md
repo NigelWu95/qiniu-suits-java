@@ -70,7 +70,8 @@ add-prefix=video/
 
 |version|level|end-file|parallel|unit-len| process | file counts |spent time| machine | running threads |  
 |-------|-----|--------|--------|--------|---------|-------------|----------|---------|-----------------|  
-|   2   |  2  | false  |  false |  10000 |  null   |  94898690   |   2h18m  | 16核32G |      50         |  
+|   2   |  2  | false  |  false |  10000 |  null   |  94898690   |   2h18m  | 16核32G |      50         |
+|   2   |  1  | false  |  false |  10000 |  null   |  1893275    |   7min   | 8核16G  |      16         | 
  
 
 * main dynamic parameters and description  

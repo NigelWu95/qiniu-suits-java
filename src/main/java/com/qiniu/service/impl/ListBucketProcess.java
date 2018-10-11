@@ -11,7 +11,6 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.JSONConvertUtils;
-import com.qiniu.util.Json;
 import com.qiniu.util.StringUtils;
 
 import java.io.*;
@@ -381,7 +380,7 @@ public class ListBucketProcess implements IBucketProcess {
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = version == 2 ?
-                            doListV2(listBucket, bucket, prefix, marker, unitLen, fileReaderAndWriterMap, processor, withParallel, 3) :
+                            doListV2(listBucket, bucket, prefix, marker, unitLen, fileReaderAndWriterMap, iOssFileProcessor, withParallel, 3) :
                             doListV1(listBucket, bucket, prefix, marker, unitLen, processor, 3);
                     System.out.println("prefix: " + prefix + ", marker: " + marker);
                 }
