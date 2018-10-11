@@ -45,8 +45,8 @@ public class M3U8Tools {
 
     public void download(List<VideoTS> tsList, final String targetFileDir) {
         File dir = new File(targetFileDir).getParentFile();
-        String url = "";
-        File file = null;
+        String url;
+        File file;
         FileOutputStream fileOutputStream = null;
         InputStream inputStream = null;
 
