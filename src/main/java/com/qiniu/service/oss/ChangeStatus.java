@@ -1,33 +1,30 @@
 package com.qiniu.service.oss;
 
 import com.qiniu.common.QiniuAuth;
+import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.UrlSafeBase64;
 
-public class ChangeStatus {
+public class ChangeStatus implements Cloneable {
 
-    private QiniuAuth auth;
     private Client client;
+    private QiniuAuth auth;
+    private Configuration configuration;
 
-    private static volatile ChangeStatus changeStatus = null;
-
-    public ChangeStatus(QiniuAuth auth, Client client) {
+    public ChangeStatus(QiniuAuth auth, Configuration configuration) {
         this.auth = auth;
-        this.client = client;
+        this.configuration = configuration;
+        this.client = new Client(configuration);
     }
 
-    public static ChangeStatus getInstance(QiniuAuth auth, Client client) {
-        if (changeStatus == null) {
-            synchronized (ChangeStatus.class) {
-                if (changeStatus == null) {
-                    changeStatus = new ChangeStatus(auth, client);
-                }
-            }
-        }
+    public ChangeStatus clone() throws CloneNotSupportedException {
+        ChangeStatus changeStatus = (ChangeStatus)super.clone();
+        changeStatus.client = new Client(configuration);
         return changeStatus;
     }
 

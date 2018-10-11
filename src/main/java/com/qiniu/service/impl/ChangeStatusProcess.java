@@ -4,11 +4,11 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Client;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.ChangeStatus;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -16,46 +16,47 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class ChangeStatusProcess implements IOssFileProcess {
+public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     private ChangeStatus changeStatus;
     private String bucket;
     private short fileStatus;
+    private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
 
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir) throws IOException {
-        this.changeStatus = ChangeStatus.getInstance(auth, new Client());
+    public ChangeStatusProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
+                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+        this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
+        this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
-    }
-
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, String pointTime,
-                               boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, bucket, fileStatus, resultFileDir);
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, M3U8Manager m3u8Manager)
-            throws IOException {
-        this(auth, bucket, fileStatus, resultFileDir);
+    public ChangeStatusProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
+                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp, M3U8Manager m3u8Manager) throws IOException {
+        this(auth, configuration, bucket, fileStatus, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
         this.m3u8Manager = m3u8Manager;
     }
 
-    public ChangeStatusProcess(QiniuAuth auth, String bucket, short fileStatus, String resultFileDir, M3U8Manager m3u8Manager,
-                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, bucket, fileStatus, resultFileDir);
-        this.m3u8Manager = m3u8Manager;
-        this.pointTime = pointTime;
-        this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
+    public ChangeStatusProcess clone() throws CloneNotSupportedException {
+        ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
+        changeStatusProcess.changeStatus = changeStatus.clone();
+        changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        try {
+            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
+        }
+        return changeStatusProcess;
     }
 
     public QiniuException qiniuException() {

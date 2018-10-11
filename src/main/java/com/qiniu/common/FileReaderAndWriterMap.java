@@ -8,24 +8,24 @@ import java.util.Map;
 
 public class FileReaderAndWriterMap implements Cloneable {
 
-    private Map<String, BufferedWriter> WriterMap;
-    private Map<String, BufferedReader> ReaderMap;
+    private HashMap<String, BufferedWriter> writerMap;
+    private HashMap<String, BufferedReader> readerMap;
     private List<String> targetWriters;
     private String targetFileDir;
     private String prefix;
 
     public FileReaderAndWriterMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
-        this.WriterMap = new HashMap<>();
-        this.ReaderMap = new HashMap<>();
+        this.writerMap = new HashMap<>();
+        this.readerMap = new HashMap<>();
     }
 
     public Map<String, BufferedWriter> getWriterMap() {
-        return this.WriterMap;
+        return this.writerMap;
     }
 
     public Map<String, BufferedReader> getReaderMap() {
-        return this.ReaderMap;
+        return this.readerMap;
     }
 
     public void initWriter(String targetFileDir, String prefix) throws IOException {
@@ -41,7 +41,7 @@ public class FileReaderAndWriterMap implements Cloneable {
         File resultFile = new File(targetFileDir, key + ".txt");
         mkDirAndFile(resultFile);
         BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
-        this.WriterMap.put(key, writer);
+        this.writerMap.put(key, writer);
     }
 
     public void mkDirAndFile(File filePath) throws IOException {
@@ -64,17 +64,17 @@ public class FileReaderAndWriterMap implements Cloneable {
             count--;
         }
 
-        System.out.println(filePath);
+        if (count < 3) System.out.println(filePath);
     }
 
     public BufferedWriter getWriter(String key) {
-        return this.WriterMap.get(key);
+        return this.writerMap.get(key);
     }
 
     public void closeWriter() {
-        for (Map.Entry<String, BufferedWriter> entry : this.WriterMap.entrySet()) {
+        for (Map.Entry<String, BufferedWriter> entry : this.writerMap.entrySet()) {
             try {
-                this.WriterMap.get(entry.getKey()).close();
+                this.writerMap.get(entry.getKey()).close();
             } catch (IOException ioException) {
                 System.out.println("Writer " + entry.getKey() + " close failed.");
                 ioException.printStackTrace();
@@ -93,19 +93,19 @@ public class FileReaderAndWriterMap implements Cloneable {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
                 reader = new BufferedReader(fileReader);
                 fileKey = f.getName();
-                this.ReaderMap.put(fileKey.endsWith(".txt") ? fileKey.split("\\.txt")[0] : fileKey, reader);
+                this.readerMap.put(fileKey.endsWith(".txt") ? fileKey.split("\\.txt")[0] : fileKey, reader);
             }
         }
     }
 
     public BufferedReader getReader(String key) {
-        return this.ReaderMap.get(key);
+        return this.readerMap.get(key);
     }
 
     public void closeReader() {
-        for (Map.Entry<String, BufferedReader> entry : this.ReaderMap.entrySet()) {
+        for (Map.Entry<String, BufferedReader> entry : this.readerMap.entrySet()) {
             try {
-                this.ReaderMap.get(entry.getKey()).close();
+                this.readerMap.get(entry.getKey()).close();
             } catch (IOException ioException) {
                 System.out.println("Reader " + entry.getKey() + " close failed.");
                 ioException.printStackTrace();
@@ -118,13 +118,13 @@ public class FileReaderAndWriterMap implements Cloneable {
             getWriter(key).write(item);
             getWriter(key).newLine();
         } catch (IOException ioException) {
-            System.out.println("Writer " + key + " write {" + item + "} failed");
+            System.out.println("Writer " + key + " write " + item + " failed");
             ioException.printStackTrace();
         }
     }
 
     public void writeKeyFile(String key, String item) {
-        if (!WriterMap.keySet().contains(key)) {
+        if (!writerMap.keySet().contains(key)) {
             try {
                 addWriter(key);
             } catch (IOException ioException) {
@@ -146,9 +146,5 @@ public class FileReaderAndWriterMap implements Cloneable {
 
     public void writeOther(String item) {
         doWrite(this.prefix + "_other", item);
-    }
-
-    public FileReaderAndWriterMap clone() throws CloneNotSupportedException {
-        return (FileReaderAndWriterMap)super.clone();
     }
 }

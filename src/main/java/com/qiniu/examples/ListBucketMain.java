@@ -36,7 +36,7 @@ public class ListBucketMain {
             case "status":
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
                 PointTimeParams pointTimeParams = fileStatusParams.getPointTimeParams();
-                iOssFileProcessor = new ChangeStatusProcess(auth, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
+                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
                         resultFileDir, pointTimeParams.getPointDate() + " " + pointTimeParams.getPointTime(),
                         pointTimeParams.getDirection());
                 break;
@@ -57,17 +57,13 @@ public class ListBucketMain {
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        try {
-            if (enabledEndFile)
-                listBucketProcessor.processBucketWithEndFile(iOssFileProcessor, version, maxThreads, withParallel, level, unitLen);
-            else
-                listBucketProcessor.processBucketWithPrefix(iOssFileProcessor, version, maxThreads, withParallel, level, unitLen);
-        } catch (QiniuException e) {
-            System.out.println(e.code() + "\t" + e.error());
-        } finally {
-            if (iOssFileProcessor != null)
-                iOssFileProcessor.closeResource();
-            listBucketProcessor.closeResource();
-        }
+        if (enabledEndFile)
+            listBucketProcessor.processBucketWithEndFile(iOssFileProcessor, version, maxThreads, withParallel, level, unitLen);
+        else
+            listBucketProcessor.processBucketWithPrefix(iOssFileProcessor, version, maxThreads, withParallel, level, unitLen);
+
+        if (iOssFileProcessor != null)
+            iOssFileProcessor.closeResource();
+        listBucketProcessor.closeResource();
     }
 }
