@@ -63,18 +63,29 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return qiniuException;
     }
 
-    private void changeStatusResult(String bucket, String key, short status, int retryCount) {
+    private void changeStatusResult(String bucket, String key, short fileStatus, int retryCount) {
         try {
-            String changeResult = changeStatus.run(bucket, key, status, retryCount);
+            String changeResult = changeStatus.run(bucket, key, fileStatus, retryCount);
             fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + status + "\t" + e.error());
+            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileStatus + "\t" + e.error());
             e.response.close();
         }
     }
 
-    public void processFile(String fileInfoStr, int retryCount) {
+    private void batchChangeStatusResult(String bucket, String key, short status, int retryCount) {
+        try {
+            String changeResult = changeStatus.batchRun(bucket, key, status, retryCount);
+            if (!StringUtils.isNullOrEmpty(changeResult)) fileReaderAndWriterMap.writeSuccess(changeResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(changeStatus.getBatchOps() + "\t" + e.error());
+            e.response.close();
+        }
+    }
+
+    public String[] getProcessParams(String fileInfoStr, int retryCount) {
 
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
@@ -93,10 +104,25 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
             }
         }
 
-        if (isDoProcess && status != fileStatus)
-            changeStatusResult(bucket, fileInfo.get("key").getAsString(), fileStatus, retryCount);
+        String[] params = new String[]{"false", key, key + "\t" + fileStatus + "\t" + isDoProcess};
+        if (isDoProcess && status != fileStatus) params[0] = "true";
+        return params;
+    }
+
+    public void processFile(String fileInfoStr, int retryCount) {
+        String[] params = getProcessParams(fileInfoStr, retryCount);
+        if ("true".equals(params[0]))
+            changeStatusResult(bucket, params[1], fileStatus, retryCount);
         else
-            fileReaderAndWriterMap.writeOther(key + "\t" + status + "\t" + isDoProcess);
+            fileReaderAndWriterMap.writeOther(params[2]);
+    }
+
+    public void batchProcessFile(String fileInfoStr, int retryCount) {
+        String[] params = getProcessParams(fileInfoStr, retryCount);
+        if ("true".equals(params[0]))
+            batchChangeStatusResult(bucket, params[1], fileStatus, retryCount);
+        else
+            fileReaderAndWriterMap.writeOther(params[2]);
     }
 
     private void changeTSByM3U8(String rootUrl, String key, int retryCount) {

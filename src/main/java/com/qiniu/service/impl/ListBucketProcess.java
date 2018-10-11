@@ -26,15 +26,17 @@ public class ListBucketProcess implements IBucketProcess {
     private QiniuAuth auth;
     private Configuration configuration;
     private String bucket;
+    private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
     public ListBucketProcess(QiniuAuth auth, Configuration configuration, String bucket, String resultFileDir)
             throws IOException {
 
-        this.bucket = bucket;
-        fileReaderAndWriterMap.initWriter(resultFileDir, "list");
         this.auth = auth;
         this.configuration = configuration;
+        this.bucket = bucket;
+        this.resultFileDir = resultFileDir;
+        fileReaderAndWriterMap.initWriter(resultFileDir, "list");
     }
 
     public String[] getFirstFileInfoAndMarkerV2(String line) {
@@ -157,7 +159,7 @@ public class ListBucketProcess implements IBucketProcess {
     /*
     单次列举，可以传递 marker 和 limit 参数，通常采用此方法进行并发处理
      */
-    public String doListV1(ListBucket listBucket, String bucket, String prefix, String marker, int limit,
+    public String doListV1(ListBucket listBucket, String bucket, String prefix, String marker, int limit, FileReaderAndWriterMap fileReaderAndWriterMap,
                            IOssFileProcess iOssFileProcessor, int retryCount) {
 
         FileListing fileListing;
@@ -180,7 +182,7 @@ public class ListBucketProcess implements IBucketProcess {
 
     }
 
-    public String doListV1(ListBucket listBucket, String bucket, String marker, int limit, String endFile,
+    public String doListV1(ListBucket listBucket, String bucket, String marker, int limit, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap,
                            IOssFileProcess iOssFileProcessor, int retryCount) {
 
         FileListing fileListing = doListV1(listBucket, bucket, "", "", marker, limit, false, retryCount);
@@ -324,7 +326,7 @@ public class ListBucketProcess implements IBucketProcess {
     }
 
     public void processBucketWithEndFile(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
-                             int level, int unitLen) throws QiniuException, CloneNotSupportedException {
+                             int level, int unitLen) throws IOException, CloneNotSupportedException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
@@ -335,6 +337,8 @@ public class ListBucketProcess implements IBucketProcess {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         for (int i = 0; i < keyPrefixList.size(); i++) {
             int finalI = i;
+            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+            fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
                 String endFileKey = finalI == keyPrefixList.size() - 1 ? "" : keyPrefixList.get(finalI + 1);
@@ -342,8 +346,8 @@ public class ListBucketProcess implements IBucketProcess {
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = version == 2 ?
-                            doListV2(listBucket, bucket, marker, unitLen, endFileKey, fileReaderAndWriterMap, processor, withParallel, 3) :
-                            doListV1(listBucket, bucket, marker, unitLen, endFileKey, processor, 3);
+                            doListV2(listBucket, bucket, marker, unitLen, endFileKey, fileMap, processor, withParallel, 3) :
+                            doListV1(listBucket, bucket, marker, unitLen, endFileKey, fileMap, processor, 3);
                     System.out.println("endFileKey: " + endFileKey + ", marker: " + marker);
                 }
                 listBucket.closeBucketManager();
@@ -363,7 +367,7 @@ public class ListBucketProcess implements IBucketProcess {
     }
 
     public void processBucketWithPrefix(IOssFileProcess iOssFileProcessor, int version, int maxThreads, boolean withParallel,
-                                        int level, int unitLen) throws QiniuException, CloneNotSupportedException {
+                                        int level, int unitLen) throws IOException, CloneNotSupportedException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
@@ -373,6 +377,8 @@ public class ListBucketProcess implements IBucketProcess {
 
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         for (String keyPrefix : keyPrefixList) {
+            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+            fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
                 String prefix = level == 2 ? keyPrefix.substring(0,2) : keyPrefix.substring(0, 1);
@@ -380,8 +386,8 @@ public class ListBucketProcess implements IBucketProcess {
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     marker = version == 2 ?
-                            doListV2(listBucket, bucket, prefix, marker, unitLen, fileReaderAndWriterMap, iOssFileProcessor, withParallel, 3) :
-                            doListV1(listBucket, bucket, prefix, marker, unitLen, processor, 3);
+                            doListV2(listBucket, bucket, prefix, marker, unitLen, fileMap, processor, withParallel, 3) :
+                            doListV1(listBucket, bucket, prefix, marker, unitLen, fileMap, processor, 3);
                     System.out.println("prefix: " + prefix + ", marker: " + marker);
                 }
                 listBucket.closeBucketManager();

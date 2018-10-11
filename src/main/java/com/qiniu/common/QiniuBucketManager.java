@@ -7,10 +7,12 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FetchRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
+import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -222,7 +224,6 @@ public class QiniuBucketManager {
         return rsPost(bucket, path, null);
     }
 
-
     //存储类型
     public enum StorageType {
         //普通存储
@@ -243,6 +244,21 @@ public class QiniuBucketManager {
             throws QiniuException {
         String resource = encodedEntry(bucket, key);
         String path = String.format("/chtype/%s/type/%d", resource, type.ordinal());
+        return rsPost(bucket, path, null);
+    }
+
+    /**
+     * 修改文件的状态（禁用或者正常）
+     *
+     * @param bucket 空间名称
+     * @param key    文件名称
+     * @param status   0表示启用；1表示禁用。
+     * @throws QiniuException
+     */
+    public Response changeStatus(String bucket, String key, short status)
+            throws QiniuException {
+        String resource = encodedEntry(bucket, key);
+        String path = String.format("/chstatus/%s/status/%d", resource, status);
         return rsPost(bucket, path, null);
     }
 
@@ -481,7 +497,7 @@ public class QiniuBucketManager {
     /**
      * 批量文件管理请求
      */
-    public Response batch(com.qiniu.storage.BucketManager.BatchOperations operations) throws QiniuException {
+    public Response batch(BatchOperations operations) throws QiniuException {
         return rsPost(operations.execBucket(), "/batch", operations.toBody());
     }
 
@@ -490,6 +506,130 @@ public class QiniuBucketManager {
             response.close();
     }
 
+    /**
+     * 文件管理批量操作指令构建对象
+     */
+    public static class BatchOperations {
+        private ArrayList<String> ops;
+        private String execBucket = null;
+
+        public BatchOperations() {
+            this.ops = new ArrayList<String>();
+        }
+
+        /**
+         * 添加chgm指令
+         */
+
+        public BatchOperations addChgmOps(String bucket, String key, String newMimeType) {
+            String resource = encodedEntry(bucket, key);
+            String encodedMime = UrlSafeBase64.encodeToString(newMimeType);
+            ops.add(String.format("/chgm/%s/mime/%s", resource, encodedMime));
+            setExecBucket(bucket);
+            return this;
+        }
+
+        /**
+         * 添加copy指令
+         */
+        public BatchOperations addCopyOps(String fromBucket, String fromFileKey, String toBucket, String toFileKey, boolean force) {
+            String from = encodedEntry(fromBucket, fromFileKey);
+            String to = encodedEntry(toBucket, toFileKey);
+            ops.add(String.format("copy/%s/%s/force/%s", from, to, force));
+            setExecBucket(fromBucket);
+            return this;
+        }
+
+        /**
+         * 添加重命名指令
+         */
+        public BatchOperations addRenameOps(String fromBucket, String fromFileKey, String toFileKey) {
+            return addMoveOps(fromBucket, fromFileKey, fromBucket, toFileKey);
+        }
+
+        /**
+         * 添加move指令
+         */
+        public BatchOperations addMoveOps(String fromBucket, String fromKey, String toBucket, String toKey) {
+            String from = encodedEntry(fromBucket, fromKey);
+            String to = encodedEntry(toBucket, toKey);
+            ops.add(String.format("move/%s/%s", from, to));
+            setExecBucket(fromBucket);
+            return this;
+        }
+
+        /**
+         * 添加delete指令
+         */
+        public BatchOperations addDeleteOps(String bucket, String... keys) {
+            for (String key : keys) {
+                ops.add(String.format("delete/%s", encodedEntry(bucket, key)));
+            }
+            setExecBucket(bucket);
+            return this;
+        }
+
+        /**
+         * 添加stat指令
+         */
+        public BatchOperations addStatOps(String bucket, String... keys) {
+            for (String key : keys) {
+                ops.add(String.format("stat/%s", encodedEntry(bucket, key)));
+            }
+            setExecBucket(bucket);
+            return this;
+        }
+
+        /**
+         * 添加changeType指令
+         */
+        public BatchOperations addChangeTypeOps(String bucket, StorageType type, String... keys) {
+            for (String key : keys) {
+                ops.add(String.format("chtype/%s/type/%d", encodedEntry(bucket, key), type.ordinal()));
+            }
+            setExecBucket(bucket);
+            return this;
+        }
+
+        /**
+         * 添加changeStatus指令
+         */
+        public BatchOperations addChangeStatusOps(String bucket, short status, String... keys) {
+            for (String key : keys) {
+                ops.add(String.format("chstatus/%s/status/%d", encodedEntry(bucket, key), status));
+            }
+            setExecBucket(bucket);
+            return this;
+        }
+
+        public byte[] toBody() {
+            String body = StringUtils.join(ops, "&op=", "op=");
+            return StringUtils.utf8Bytes(body);
+        }
+
+        public BatchOperations merge(BatchOperations batch) {
+            this.ops.addAll(batch.ops);
+            setExecBucket(batch.execBucket());
+            return this;
+        }
+
+        public BatchOperations clearOps() {
+            this.ops.clear();
+            return this;
+        }
+
+        private void setExecBucket(String bucket) {
+            if (execBucket == null) {
+                execBucket = bucket;
+            }
+        }
+
+        public String execBucket() {
+            return execBucket;
+        }
+
+        public ArrayList<String> getOps() { return ops; }
+    }
     /**
      * 创建文件列表迭代器
      */
