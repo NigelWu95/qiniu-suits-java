@@ -111,14 +111,14 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
     }
 
     public void processFile(String fileInfoStr, int retryCount) {
-//        String[] params = getProcessParams(fileInfoStr, retryCount);
-//        if ("true".equals(params[0]))
-//            changeTypeResult(bucket, params[1], fileType, retryCount);
-//        else
-//            fileReaderAndWriterMap.writeOther(params[2]);
-//    }
-//
-//    public void batchProcessFile(String fileInfoStr, int retryCount) {
+        String[] params = getProcessParams(fileInfoStr, retryCount);
+        if ("true".equals(params[0]))
+            changeTypeResult(bucket, params[1], fileType, retryCount);
+        else
+            fileReaderAndWriterMap.writeOther(params[2]);
+    }
+
+    public void batchProcessFile(String fileInfoStr, int retryCount) {
         String[] params = getProcessParams(fileInfoStr, retryCount);
         if ("true".equals(params[0]))
             batchChangeTypeResult(bucket, params[1], fileType, retryCount);
