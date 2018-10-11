@@ -1,4 +1,4 @@
-package com.qiniu.examples;
+package com.qiniu.entries;
 
 import com.qiniu.common.*;
 import com.qiniu.interfaces.IBucketProcess;

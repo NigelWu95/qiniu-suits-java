@@ -5,8 +5,6 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
-import com.qiniu.service.auvideo.M3U8Manager;
-import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.ChangeType;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.DateUtils;
@@ -14,8 +12,6 @@ import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
@@ -24,7 +20,6 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
     private short fileType;
     private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
-    private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
@@ -38,12 +33,6 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
-    }
-
-    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir,
-                             M3U8Manager m3u8Manager, String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
-        this.m3u8Manager = m3u8Manager;
     }
 
     public ChangeTypeProcess clone() throws CloneNotSupportedException {
@@ -124,20 +113,6 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
             batchChangeTypeResult(bucket, params[1], fileType, retryCount);
         else
             fileReaderAndWriterMap.writeOther(params[2]);
-    }
-
-    private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
-        List<VideoTS> videoTSList = new ArrayList<>();
-
-        try {
-            videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, key);
-        } catch (IOException ioException) {
-            fileReaderAndWriterMap.writeOther("list ts failed: " + key);
-        }
-
-        for (VideoTS videoTS : videoTSList) {
-            changeTypeResult(bucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], fileType, retryCount);
-        }
     }
 
     public void closeResource() {
