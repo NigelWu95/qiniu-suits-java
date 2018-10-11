@@ -10,6 +10,7 @@ public class ListBucketParams extends BaseParams {
     private String withParallel;
     private String level;
     private String process;
+    private String processBatch;
     private String unitLen;
 
     public ListBucketParams(String[] args) throws Exception {
@@ -19,6 +20,7 @@ public class ListBucketParams extends BaseParams {
         try { this.withParallel = getParamFromArgs("parallel"); } catch (Exception e) {}
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
         try { this.process = getParamFromArgs("process"); } catch (Exception e) {}
+        try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.enabledEndFile = getParamFromArgs("end-file"); } catch (Exception e) {}
     }
@@ -30,6 +32,7 @@ public class ListBucketParams extends BaseParams {
         try { this.withParallel = getParamFromConfig("parallel"); } catch (Exception e) {}
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
         try { this.process = getParamFromConfig("process"); } catch (Exception e) {}
+        try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.enabledEndFile = getParamFromConfig("end-file"); } catch (Exception e) {}
     }
@@ -73,6 +76,15 @@ public class ListBucketParams extends BaseParams {
 
     public String getProcess() {
         return process;
+    }
+
+    public boolean getProcessBatch() {
+        if (StringUtils.isNullOrEmpty(processBatch) || !processBatch.matches("(true|false)")) {
+            System.out.println("no incorrectly process-batch, it will use false as default.");
+            return false;
+        } else {
+            return Boolean.valueOf(processBatch);
+        }
     }
 
     public int getUnitLen() {
