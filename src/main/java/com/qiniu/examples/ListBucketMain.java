@@ -25,6 +25,7 @@ public class ListBucketMain {
         boolean withParallel = listBucketParams.getWithParallel();
         int level = listBucketParams.getLevel();
         String process = listBucketParams.getProcess();
+        boolean processBatch = listBucketParams.getProcessBatch();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         IOssFileProcess iOssFileProcessor = null;
@@ -58,9 +59,9 @@ public class ListBucketMain {
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
         if (enabledEndFile)
-            listBucketProcessor.processBucketWithEndFile(iOssFileProcessor, version, maxThreads, withParallel, level, unitLen);
+            listBucketProcessor.processBucketWithEndFile(iOssFileProcessor, processBatch, version, maxThreads, withParallel, level, unitLen);
         else
-            listBucketProcessor.processBucketWithPrefix(iOssFileProcessor, version, maxThreads, withParallel, level, unitLen);
+            listBucketProcessor.processBucketWithPrefix(iOssFileProcessor, processBatch, version, maxThreads, withParallel, level, unitLen);
 
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
