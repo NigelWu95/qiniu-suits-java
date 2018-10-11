@@ -7,29 +7,26 @@ import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
-public class BucketCopy {
+public class BucketCopy implements Cloneable {
 
     private QiniuBucketManager bucketManager;
     private String srcBucket;
     private String tarBucket;
-
-    private static volatile BucketCopy bucketCopy = null;
+    private QiniuAuth auth;
+    private Configuration configuration;
 
     public BucketCopy(QiniuAuth auth, Configuration configuration, String srcBucket, String tarBucket) {
+        this.auth = auth;
+        this.configuration = configuration;
         this.bucketManager = new QiniuBucketManager(auth, configuration);
         this.srcBucket = srcBucket;
         this.tarBucket = tarBucket;
     }
 
-    public static BucketCopy getInstance(QiniuAuth auth, Configuration configuration, String srcBucket, String tarBucket) {
-        if (bucketCopy == null) {
-            synchronized (BucketCopy.class) {
-                if (bucketCopy == null) {
-                    bucketCopy = new BucketCopy(auth, configuration, srcBucket, tarBucket);
-                }
-            }
-        }
-        return bucketCopy;
+    public BucketCopy clone() throws CloneNotSupportedException {
+        BucketCopy BucketCopy = (BucketCopy)super.clone();
+        BucketCopy.bucketManager = new QiniuBucketManager(auth, configuration);
+        return BucketCopy;
     }
 
     private String copy(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuException {
