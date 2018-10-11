@@ -20,14 +20,14 @@ public class ChangeType implements Cloneable {
     public ChangeType(QiniuAuth auth, Configuration configuration) {
         this.auth = auth;
         this.configuration = configuration;
-        batchOperations = new BatchOperations();
         this.bucketManager = new QiniuBucketManager(auth, configuration);
+        this.batchOperations = new BatchOperations();
     }
 
     public ChangeType clone() throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType) super.clone();
         changeType.bucketManager = new QiniuBucketManager(auth, configuration);
-
+        changeType.batchOperations = new BatchOperations();
         return changeType;
     }
 
@@ -66,7 +66,8 @@ public class ChangeType implements Cloneable {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("type " + e1.error() + ", last " + retryCount + " times retry...");
+                    System.out.println("type " + bucket + ":" + key + " to " + type + " " + e1.error() + ", last "
+                            + retryCount + " times retry...");
                     response = bucketManager.changeType(bucket, key, storageType);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -90,7 +91,8 @@ public class ChangeType implements Cloneable {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("type " + e1.error() + ", last " + retryCount + " times retry...");
+                    System.out.println("type " + bucket + ":" + key + " to " + type + " " + e1.error() + ", last "
+                            + retryCount + " times retry...");
                     response = bucketManager.batch(batchOperations);
                     retryCount = 0;
                 } catch (QiniuException e2) {

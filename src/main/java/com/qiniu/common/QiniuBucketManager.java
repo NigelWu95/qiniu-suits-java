@@ -224,7 +224,6 @@ public class QiniuBucketManager {
         return rsPost(bucket, path, null);
     }
 
-
     //存储类型
     public enum StorageType {
         //普通存储
@@ -245,6 +244,21 @@ public class QiniuBucketManager {
             throws QiniuException {
         String resource = encodedEntry(bucket, key);
         String path = String.format("/chtype/%s/type/%d", resource, type.ordinal());
+        return rsPost(bucket, path, null);
+    }
+
+    /**
+     * 修改文件的状态（禁用或者正常）
+     *
+     * @param bucket 空间名称
+     * @param key    文件名称
+     * @param status   0表示启用；1表示禁用。
+     * @throws QiniuException
+     */
+    public Response changeStatus(String bucket, String key, short status)
+            throws QiniuException {
+        String resource = encodedEntry(bucket, key);
+        String path = String.format("/chstatus/%s/status/%d", resource, status);
         return rsPost(bucket, path, null);
     }
 
@@ -572,6 +586,17 @@ public class QiniuBucketManager {
         public BatchOperations addChangeTypeOps(String bucket, StorageType type, String... keys) {
             for (String key : keys) {
                 ops.add(String.format("chtype/%s/type/%d", encodedEntry(bucket, key), type.ordinal()));
+            }
+            setExecBucket(bucket);
+            return this;
+        }
+
+        /**
+         * 添加changeStatus指令
+         */
+        public BatchOperations addChangeStatusOps(String bucket, short status, String... keys) {
+            for (String key : keys) {
+                ops.add(String.format("chstatus/%s/status/%d", encodedEntry(bucket, key), status));
             }
             setExecBucket(bucket);
             return this;
