@@ -113,3 +113,14 @@ add-prefix=video/
 [status] 将列举出的文件状态进行修改，可指定某个时间点之前或之后的进行处理。
 [type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储，可指定某个时间点之前或之后的进行处理。
 ```
+与 process 同时使用的参数还有 process-batch，通常情况下会选择（true）此操作方式，用集中的请求做批量处理，效果更好，但特殊操作
+不支持 batch 的情况下不能使用。
+
+### extra comments
+在起始阶段，由于需要通过前缀做列举检测，会比较耗时，同时，可能出现如下的超时异常，可忽略，原因是因为特殊前缀"|"服务端会超时响应。
+<pre><code>
+listV2 xxx:|:null:1:null null, last 3 times retry...
+listV2 xxx:|:null:1:null null, last 2 times retry...
+java.net.SocketTimeoutException: timeout
+...
+</code></pre>
