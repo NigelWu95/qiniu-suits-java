@@ -105,7 +105,6 @@ public class ChangeStatus implements Cloneable {
 
     public Response batchChangeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
         Response response = null;
-        batchOperations.addChangeStatusOps(bucket, status, key);
 
         try {
             if (batchOperations.getOps().size() < 1000) batchOperations.addChangeStatusOps(bucket, status, key);
@@ -123,7 +122,7 @@ public class ChangeStatus implements Cloneable {
                 }
             }
         }
-
+        batchOperations.clearOps();
         return response;
     }
 }

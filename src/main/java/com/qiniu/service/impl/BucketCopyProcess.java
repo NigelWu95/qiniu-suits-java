@@ -10,6 +10,7 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.DateUtils;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
 
@@ -62,10 +63,21 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess, Clon
         return qiniuException;
     }
 
-    public void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
+    private void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
 
         try {
             String bucketCopyResult = bucketCopy.run(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
+            fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey + "\t" + e.error());
+            e.response.close();
+        }
+    }
+    private void batchChangeTypeResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
+
+        try {
+            String bucketCopyResult = bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
             fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
@@ -145,6 +157,12 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess, Clon
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         String key = fileInfo.get("key").getAsString();
         bucketCopyResult(srcBucket, key, tarBucket, key, false, retryCount);
+    }
+
+    public void batchProcessFile(String fileInfoStr, int retryCount) {
+        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        String key = fileInfo.get("key").getAsString();
+        batchChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount);
     }
 
     public void closeResource() {

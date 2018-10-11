@@ -82,7 +82,6 @@ public class ChangeType implements Cloneable {
     public Response batchChangeTypeWithRetry(String bucket, String key, short type, int retryCount) throws QiniuException {
         Response response = null;
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
-        batchOperations.addChangeTypeOps(bucket, storageType, key);
 
         try {
             if (batchOperations.getOps().size() < 1000) batchOperations.addChangeTypeOps(bucket, storageType, key);
@@ -100,7 +99,7 @@ public class ChangeType implements Cloneable {
                 }
             }
         }
-
+        batchOperations.clearOps();
         return response;
     }
 

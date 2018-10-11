@@ -521,7 +521,7 @@ public class QiniuBucketManager {
          * 添加chgm指令
          */
 
-        public BatchOperations addChgmOp(String bucket, String key, String newMimeType) {
+        public BatchOperations addChgmOps(String bucket, String key, String newMimeType) {
             String resource = encodedEntry(bucket, key);
             String encodedMime = UrlSafeBase64.encodeToString(newMimeType);
             ops.add(String.format("/chgm/%s/mime/%s", resource, encodedMime));
@@ -532,10 +532,10 @@ public class QiniuBucketManager {
         /**
          * 添加copy指令
          */
-        public BatchOperations addCopyOp(String fromBucket, String fromFileKey, String toBucket, String toFileKey) {
+        public BatchOperations addCopyOps(String fromBucket, String fromFileKey, String toBucket, String toFileKey, boolean force) {
             String from = encodedEntry(fromBucket, fromFileKey);
             String to = encodedEntry(toBucket, toFileKey);
-            ops.add(String.format("copy/%s/%s", from, to));
+            ops.add(String.format("copy/%s/%s/force/%s", from, to, force));
             setExecBucket(fromBucket);
             return this;
         }
@@ -543,14 +543,14 @@ public class QiniuBucketManager {
         /**
          * 添加重命名指令
          */
-        public BatchOperations addRenameOp(String fromBucket, String fromFileKey, String toFileKey) {
-            return addMoveOp(fromBucket, fromFileKey, fromBucket, toFileKey);
+        public BatchOperations addRenameOps(String fromBucket, String fromFileKey, String toFileKey) {
+            return addMoveOps(fromBucket, fromFileKey, fromBucket, toFileKey);
         }
 
         /**
          * 添加move指令
          */
-        public BatchOperations addMoveOp(String fromBucket, String fromKey, String toBucket, String toKey) {
+        public BatchOperations addMoveOps(String fromBucket, String fromKey, String toBucket, String toKey) {
             String from = encodedEntry(fromBucket, fromKey);
             String to = encodedEntry(toBucket, toKey);
             ops.add(String.format("move/%s/%s", from, to));
@@ -561,7 +561,7 @@ public class QiniuBucketManager {
         /**
          * 添加delete指令
          */
-        public BatchOperations addDeleteOp(String bucket, String... keys) {
+        public BatchOperations addDeleteOps(String bucket, String... keys) {
             for (String key : keys) {
                 ops.add(String.format("delete/%s", encodedEntry(bucket, key)));
             }
