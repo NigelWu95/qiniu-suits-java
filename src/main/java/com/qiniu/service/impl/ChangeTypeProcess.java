@@ -74,7 +74,18 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public void processFile(String fileInfoStr, int retryCount) {
+    private void batchChangeTypeResult(String bucket, String key, short fileType, int retryCount) {
+        try {
+            String changeResult = changeType.batchRun(bucket, key, fileType, retryCount);
+            if (!StringUtils.isNullOrEmpty(changeResult)) fileReaderAndWriterMap.writeSuccess(changeResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());
+            e.response.close();
+        }
+    }
+
+    public String[] getProcessParams(String fileInfoStr, int retryCount) {
 
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
@@ -94,10 +105,25 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
             }
         }
 
-        if (isDoProcess && type != fileType)
-            changeTypeResult(bucket, key, fileType, retryCount);
+        String[] params = new String[]{"false", key, key + "\t" + type + "\t" + isDoProcess};
+        if (isDoProcess && type != fileType) params[0] = "true";
+        return params;
+    }
+
+    public void processFile(String fileInfoStr, int retryCount) {
+//        String[] params = getProcessParams(fileInfoStr, retryCount);
+//        if ("true".equals(params[0]))
+//            changeTypeResult(bucket, params[1], fileType, retryCount);
+//        else
+//            fileReaderAndWriterMap.writeOther(params[2]);
+//    }
+//
+//    public void batchProcessFile(String fileInfoStr, int retryCount) {
+        String[] params = getProcessParams(fileInfoStr, retryCount);
+        if ("true".equals(params[0]))
+            batchChangeTypeResult(bucket, params[1], fileType, retryCount);
         else
-            fileReaderAndWriterMap.writeOther(key + "\t" + type + "\t" + isDoProcess);
+            fileReaderAndWriterMap.writeOther(params[2]);
     }
 
     private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
