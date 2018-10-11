@@ -1,4 +1,4 @@
-# qiniu-java-suits
+# qiniu-suits-java
 七牛接口使用套件
 
 ### command
@@ -24,7 +24,10 @@ version=2
 end-file=true
 parallel=true
 level=2
+# 对每条记录进行什么操作，目前支持 copy/changeTyep/changeStatus
 process=copy
+# 进行 process 操作时，是否使用 batch 方式处理
+process-batch=true
 unit-len=1000
 
 # process
