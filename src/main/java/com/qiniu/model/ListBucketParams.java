@@ -19,7 +19,7 @@ public class ListBucketParams extends BaseParams {
         try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
         try { this.withParallel = getParamFromArgs("parallel"); } catch (Exception e) {}
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
-        try { this.process = getParamFromArgs("process"); } catch (Exception e) {}
+        try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.enabledEndFile = getParamFromArgs("end-file"); } catch (Exception e) {}
@@ -31,7 +31,7 @@ public class ListBucketParams extends BaseParams {
         try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
         try { this.withParallel = getParamFromConfig("parallel"); } catch (Exception e) {}
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
-        try { this.process = getParamFromConfig("process"); } catch (Exception e) {}
+        try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.enabledEndFile = getParamFromConfig("end-file"); } catch (Exception e) {}
