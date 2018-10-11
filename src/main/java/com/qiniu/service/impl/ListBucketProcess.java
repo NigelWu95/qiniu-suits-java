@@ -360,6 +360,7 @@ public class ListBucketProcess implements IBucketProcess {
                 }
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
+                fileMap.closeWriter();
             });
         }
 
@@ -400,6 +401,7 @@ public class ListBucketProcess implements IBucketProcess {
                 }
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
+                fileMap.closeWriter();
             });
         }
 
