@@ -5,7 +5,7 @@
 * list bucket and process per item
 ```
 java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -max-threads=30 -version=2
- -level=2 -end-file=true -parallel=true -unit-len=1000 -process=copy -process-batch=true -type=1 -status=0 -date=2018-08-01
+ -level=2 -end-file=true -unit-len=1000 -process=copy -process-batch=true -type=1 -status=0 -date=2018-08-01
   -time=00:00:00 -direction=0 -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
 ```
 
@@ -51,25 +51,8 @@ keep-key=true
 add-prefix=video/
 ```
 
-### list test result
-* spent time 为本地测试列举 157330 个文件所花费的时间，根据前缀启动的线程 level 为 1 时为 2 个，level 为 2 时为 3 个。  
-
-|version|level|end-file|parallel|unit-len|spent time|  
-|-------|-----|--------|--------|--------|----------|  
-|   1   |  1  |  true  |  false |  1000  |   77s    | 
-|   1   |  1  |  false |  false |  1000  |   55s    | 
-|   1   |  2  |  true  |  false |  1000  |   110s   | 
-|   1   |  2  |  false |  false |  1000  |   111s   | 
-|   2   |  1  |  true  |  true  |  1000  |   73s    | 
-|   2   |  1  |  false |  true  |  1000  |   59s    | 
-|   2   |  1  |  true  |  true  |  10000 |   84s    | 
-|   2   |  1  |  false |  true  |  10000 |   37s    | 
-|   2   |  2  |  true  |  true  |  1000  |   126s   | 
-|   2   |  2  |  false |  true  |  1000  |   120s   | 
-|   2   |  2  |  true  |  true  |  10000 |   57s    | 
-|   2   |  2  |  false |  true  |  10000 |   62s    |
-
-* 列举记录。  
+### list result
+* 列举记录，spent time 为列举（或者同时进行 process 的操作）所花费的时间，running threads 为根据前缀列举启动的线程数。    
 
 |version|level|end-file|parallel|unit-len| process | file counts |spent time| machine | running threads |  
 |-------|-----|--------|--------|--------|---------|-------------|----------|---------|-----------------|  
@@ -90,7 +73,6 @@ add-prefix=video/
               为空判断列举结束。理论上使用 end-file 会比 marker 来判断结束耗时更久。因为 list v1 的 marker 直接通过列举结
               果计算一次可得到，而取出每一个 key 要每一行计算。list v2 的每一行均包含 marker，得到 marker 经过一次 json 
               计算，得到 key 需要经过两次 json 计算。
-[parallel] -- list v2 使用流式处理，选择是否使用 parallel 方式。
 [unit-len] -- 一次列举请求的 item 长度（单次文件个数限制），list v1 接口限制 1000，list v2 可设置 10000 甚至更多。
 
 ```
