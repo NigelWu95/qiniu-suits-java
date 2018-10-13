@@ -155,17 +155,17 @@ public class QiniuBucketManager {
             throws QiniuException {
         StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
                 .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
-
         String url = String.format("%s/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
         response = get(url);
-        return response.jsonToObject(FileListing.class);
+        FileListing fileListing = response.jsonToObject(FileListing.class);
+        if (response != null) response.close();
+        return fileListing;
     }
 
     public Response listV1(String bucket, String prefix, String marker, int limit, String delimiter)
             throws QiniuException {
         StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
                 .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
-
         String url = String.format("%s/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
         return get(url);
     }
@@ -174,7 +174,6 @@ public class QiniuBucketManager {
             throws QiniuException {
         StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
                 .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
-
         String url = String.format("%s/v2/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
         return get(url);
     }
