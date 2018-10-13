@@ -52,24 +52,15 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         return qiniuException;
     }
 
-    private void changeTypeResult(String bucket, String key, short fileType, int retryCount) {
+    private void changeTypeResult(String bucket, String key, short fileType, int retryCount, boolean batch) {
         try {
-            String changeResult = changeType.run(bucket, key, fileType, retryCount);
+            String changeResult = batch ?
+                    changeType.batchRun(bucket, key, fileType, retryCount) :
+                    changeType.run(bucket, key, fileType, retryCount);
             fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileType + "\t" + e.error());
-            e.response.close();
-        }
-    }
-
-    private void batchChangeTypeResult(String bucket, String key, short fileType, int retryCount) {
-        try {
-            String changeResult = changeType.batchRun(bucket, key, fileType, retryCount);
-            if (!StringUtils.isNullOrEmpty(changeResult)) fileReaderAndWriterMap.writeSuccess(changeResult);
-        } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());
             e.response.close();
         }
     }
@@ -99,18 +90,10 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         return params;
     }
 
-    public void processFile(String fileInfoStr, int retryCount) {
+    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
         String[] params = getProcessParams(fileInfoStr, retryCount);
         if ("true".equals(params[0]))
-            changeTypeResult(bucket, params[1], fileType, retryCount);
-        else
-            fileReaderAndWriterMap.writeOther(params[2]);
-    }
-
-    public void batchProcessFile(String fileInfoStr, int retryCount) {
-        String[] params = getProcessParams(fileInfoStr, retryCount);
-        if ("true".equals(params[0]))
-            batchChangeTypeResult(bucket, params[1], fileType, retryCount);
+            changeTypeResult(bucket, params[1], fileType, retryCount, batch);
         else
             fileReaderAndWriterMap.writeOther(params[2]);
     }

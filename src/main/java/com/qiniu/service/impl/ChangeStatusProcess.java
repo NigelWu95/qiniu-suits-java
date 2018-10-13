@@ -24,7 +24,6 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
     private short fileStatus;
     private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
-    private M3U8Manager m3u8Manager;
     private String pointTime;
     private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
@@ -38,12 +37,6 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
         this.pointTime = pointTime;
         this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
-    }
-
-    public ChangeStatusProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
-                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp, M3U8Manager m3u8Manager) throws IOException {
-        this(auth, configuration, bucket, fileStatus, resultFileDir, pointTime, pointTimeIsBiggerThanTimeStamp);
-        this.m3u8Manager = m3u8Manager;
     }
 
     public ChangeStatusProcess clone() throws CloneNotSupportedException {
@@ -63,24 +56,15 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return qiniuException;
     }
 
-    private void changeStatusResult(String bucket, String key, short fileStatus, int retryCount) {
+    private void changeStatusResult(String bucket, String key, short fileStatus, int retryCount, boolean batch) {
         try {
-            String changeResult = changeStatus.run(bucket, key, fileStatus, retryCount);
+            String changeResult = batch ?
+                    changeStatus.batchRun(bucket, key, fileStatus, retryCount) :
+                    changeStatus.run(bucket, key, fileStatus, retryCount);
             fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileStatus + "\t" + e.error());
-            e.response.close();
-        }
-    }
-
-    private void batchChangeStatusResult(String bucket, String key, short status, int retryCount) {
-        try {
-            String changeResult = changeStatus.batchRun(bucket, key, status, retryCount);
-            if (!StringUtils.isNullOrEmpty(changeResult)) fileReaderAndWriterMap.writeSuccess(changeResult);
-        } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(changeStatus.getBatchOps() + "\t" + e.error());
             e.response.close();
         }
     }
@@ -109,34 +93,12 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return params;
     }
 
-    public void processFile(String fileInfoStr, int retryCount) {
+    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
         String[] params = getProcessParams(fileInfoStr, retryCount);
         if ("true".equals(params[0]))
-            changeStatusResult(bucket, params[1], fileStatus, retryCount);
+            changeStatusResult(bucket, params[1], fileStatus, retryCount, batch);
         else
             fileReaderAndWriterMap.writeOther(params[2]);
-    }
-
-    public void batchProcessFile(String fileInfoStr, int retryCount) {
-        String[] params = getProcessParams(fileInfoStr, retryCount);
-        if ("true".equals(params[0]))
-            batchChangeStatusResult(bucket, params[1], fileStatus, retryCount);
-        else
-            fileReaderAndWriterMap.writeOther(params[2]);
-    }
-
-    private void changeTSByM3U8(String rootUrl, String key, int retryCount) {
-        List<VideoTS> videoTSList = new ArrayList<>();
-
-        try {
-            videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, key);
-        } catch (IOException ioException) {
-            fileReaderAndWriterMap.writeOther("list ts failed: " + key);
-        }
-
-        for (VideoTS videoTS : videoTSList) {
-            changeStatusResult(bucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], fileStatus, retryCount);
-        }
     }
 
     public void closeResource() {
