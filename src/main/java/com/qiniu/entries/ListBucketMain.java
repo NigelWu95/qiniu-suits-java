@@ -60,7 +60,7 @@ public class ListBucketMain {
                 break;
             }
             case "filter": {
-//                iOssFileProcessor = new ListFilterProcess(resultFileDir);
+                iOssFileProcessor = new ListFilterProcess(resultFileDir);
                 break;
             }
         }

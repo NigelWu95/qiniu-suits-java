@@ -45,7 +45,7 @@ public class ListBucketProcess implements IBucketProcess {
         String[] firstFileInfoAndMarker = new String[]{"", "", ""};
         if (version == 1) {
             if (response != null) fileListing = response.jsonToObject(FileListing.class);
-            else if (fileListing == null) return firstFileInfoAndMarker;
+            if (fileListing == null) return firstFileInfoAndMarker;
             FileInfo[] items = fileListing.items;
             firstFileInfoAndMarker[0] = "";
             firstFileInfoAndMarker[1] = "";
@@ -57,7 +57,7 @@ public class ListBucketProcess implements IBucketProcess {
             }
         } else if (version == 2) {
             if (response != null) line = response.bodyString();
-            else if (StringUtils.isNullOrEmpty(line)) return firstFileInfoAndMarker;
+            if (StringUtils.isNullOrEmpty(line)) return firstFileInfoAndMarker;
             JsonObject json = JSONConvertUtils.toJson(line);
             JsonElement item = json.get("item");
             firstFileInfoAndMarker[0] = "";
@@ -77,8 +77,9 @@ public class ListBucketProcess implements IBucketProcess {
                                              boolean doProcess, IOssFileProcess iOssFileProcessor) throws QiniuException {
 
         Queue<QiniuException> qiniuExceptionQueue = new ConcurrentLinkedQueue<>();
-        Map<String, String[]> fileInfoAndMarkerMap =
-                prefixList.parallelStream().map(prefix -> {
+        Map<String, String[]> fileInfoAndMarkerMap = prefixList.parallelStream()
+                .filter(prefix -> !prefix.contains("|"))
+                .map(prefix -> {
             Response response = null;
             String[] firstFileInfoAndMarker = null;
             try {
@@ -221,11 +222,9 @@ public class ListBucketProcess implements IBucketProcess {
             if (totalWrite) fileReaderAndWriterMap.writeSuccess(result);
             fileListing = JSONConvertUtils.fromJson(resultBody, FileListing.class);
         } catch (Exception e) {
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker
-                    + "\t" + limit + "\t" + e.getMessage());
+            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
         } finally {
-            if (response != null)
-                response.close();
+            if (response != null) response.close();
         }
 
         return fileListing;
@@ -319,7 +318,6 @@ public class ListBucketProcess implements IBucketProcess {
                 boolean withParallel, int level, int unitLen) throws IOException, CloneNotSupportedException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
-        System.out.println(delimitedFileMap);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyPrefixList);
         int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;
@@ -362,7 +360,6 @@ public class ListBucketProcess implements IBucketProcess {
                 boolean withParallel, int level, int unitLen) throws IOException, CloneNotSupportedException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
-        System.out.println(delimitedFileMap);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyPrefixList);
         int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;

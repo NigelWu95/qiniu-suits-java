@@ -33,11 +33,11 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.prefix = prefix;
 
         for (int i = 0; i < targetWriters.size(); i++) {
-            addWriter(prefix + targetWriters.get(i));
+            addWriter(targetFileDir, prefix + targetWriters.get(i));
         }
     }
 
-    public void addWriter(String key) throws IOException {
+    public void addWriter(String targetFileDir, String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
         mkDirAndFile(resultFile);
         BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
@@ -126,7 +126,7 @@ public class FileReaderAndWriterMap implements Cloneable {
     public void writeKeyFile(String key, String item) {
         if (!writerMap.keySet().contains(key)) {
             try {
-                addWriter(key);
+                addWriter(targetFileDir, key);
             } catch (IOException ioException) {
                 writeOther(item);
                 ioException.printStackTrace();
