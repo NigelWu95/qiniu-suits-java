@@ -8,9 +8,7 @@ public interface IOssFileProcess {
 
     QiniuException qiniuException();
 
-    void processFile(String fileInfoStr, int retryCount);
-
-    void batchProcessFile(String fileInfoStr, int retryCount);
+    void processFile(String fileInfoStr, int retryCount, boolean batch);
 
     void closeResource();
 }

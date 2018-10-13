@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess, Cloneable {
+public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     private BucketCopy bucketCopy;
     private String resultFileDir;
@@ -63,21 +63,12 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess, Clon
         return qiniuException;
     }
 
-    private void bucketCopyResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
-
+    private void bucketChangeTypeResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force,
+                                       int retryCount, boolean batch) {
         try {
-            String bucketCopyResult = bucketCopy.run(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
-            fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
-        } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey + "\t" + e.error());
-            e.response.close();
-        }
-    }
-    private void batchChangeTypeResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force, int retryCount) {
-
-        try {
-            String bucketCopyResult = bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
+            String bucketCopyResult = batch ?
+                    bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount) :
+                    bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
             fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
@@ -86,83 +77,10 @@ public class BucketCopyProcess implements IUrlItemProcess, IOssFileProcess, Clon
         }
     }
 
-    public void processItem(String source, String item) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item, false, 0);
-    }
-
-    public void processItem(String source, String item, String key) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key, false, 0);
-    }
-
-    public void processItem(QiniuAuth auth, String source, String item) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + item, false, 0);
-    }
-
-    public void processItem(QiniuAuth auth, String source, String item, String key) {
-        bucketCopyResult(source, item, tarBucket, this.keyPrefix + key, false, 0);
-    }
-
-    public void processUrl(String url, String key) {
-        bucketCopyResult(srcBucket, url.split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], tarBucket,
-                this.keyPrefix + key, false, 0);
-    }
-
-    public void processUrl(String url, String key, String format) {
-        processUrl(url, key);
-
-        if (Arrays.asList("hls", "HLS", "m3u8", "M3U8").contains(format)) {
-            copyTSByM3U8(url);
-        }
-    }
-
-    public void processUrl(QiniuAuth auth, String url, String key) {
-        processUrl(url, key);
-    }
-
-    public void processUrl(QiniuAuth auth, String url, String key, String format) {
-        processUrl(url, key, format);
-    }
-
-    private void copyTSByM3U8(String rootUrl, String m3u8FilePath) {
-        List<VideoTS> videoTSList = new ArrayList<>();
-
-        try {
-            videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, m3u8FilePath);
-        } catch (IOException ioException) {
-            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8FilePath);
-        }
-
-        for (VideoTS videoTS : videoTSList) {
-            bucketCopyResult(srcBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1],
-                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], false, 0);
-        }
-    }
-
-    private void copyTSByM3U8(String m3u8Url) {
-        List<VideoTS> videoTSList = new ArrayList<>();
-
-        try {
-            videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
-        } catch (IOException ioException) {
-            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8Url);
-        }
-
-        for (VideoTS videoTS : videoTSList) {
-            bucketCopyResult(srcBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1],
-                    tarBucket, videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1], false, 0);
-        }
-    }
-
-    public void processFile(String fileInfoStr, int retryCount) {
+    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         String key = fileInfo.get("key").getAsString();
-        bucketCopyResult(srcBucket, key, tarBucket, key, false, retryCount);
-    }
-
-    public void batchProcessFile(String fileInfoStr, int retryCount) {
-        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
-        String key = fileInfo.get("key").getAsString();
-        batchChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount);
+        bucketChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount, batch);
     }
 
     public void closeResource() {
