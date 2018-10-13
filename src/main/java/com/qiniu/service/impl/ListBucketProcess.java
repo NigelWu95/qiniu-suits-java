@@ -2,7 +2,6 @@ package com.qiniu.service.impl;
 
 import com.google.gson.*;
 import com.qiniu.common.*;
-import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IBucketProcess;
 import com.qiniu.interfaces.IOssFileProcess;
@@ -15,10 +14,12 @@ import com.qiniu.util.StringUtils;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ListBucketProcess implements IBucketProcess {
@@ -37,6 +38,41 @@ public class ListBucketProcess implements IBucketProcess {
         this.bucket = bucket;
         this.resultFileDir = resultFileDir;
         fileReaderAndWriterMap.initWriter(resultFileDir, "list");
+    }
+
+    public String[] getFirstFileInfoAndMarker(Response response, int version) throws QiniuException {
+
+        String[] firstFileInfoAndMarker = new String[]{"", "", ""};
+        if (response == null) return firstFileInfoAndMarker;
+        if (version == 1) {
+            FileListing fileListing = response.jsonToObject(FileListing.class);
+            FileInfo[] items = fileListing.items;
+            firstFileInfoAndMarker[0] = "";
+            firstFileInfoAndMarker[1] = "";
+            firstFileInfoAndMarker[2] = fileListing.marker;
+
+            if (items.length > 0) {
+                firstFileInfoAndMarker[0] = items[0].key;
+                firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(items[0]);
+            }
+        } else if (version == 2) {
+            String line = response.bodyString();
+            if (StringUtils.isNullOrEmpty(line))
+                return new String[]{"", "", ""};
+
+            JsonObject json = JSONConvertUtils.toJson(line);
+            JsonElement item = json.get("item");
+            firstFileInfoAndMarker[0] = "";
+            firstFileInfoAndMarker[1] = "";
+            firstFileInfoAndMarker[2] = json.get("marker").getAsString();
+
+            if (item != null && !(item instanceof JsonNull)) {
+                firstFileInfoAndMarker[0] = item.getAsJsonObject().get("key").getAsString();
+                firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(json.getAsJsonObject("item"));
+            }
+        }
+
+        return firstFileInfoAndMarker;
     }
 
     public String[] getFirstFileInfoAndMarkerV2(String line) {
@@ -73,22 +109,63 @@ public class ListBucketProcess implements IBucketProcess {
         return new String[]{fileKey, fileInfo, nextMarker};
     }
 
+    private Map<String, String> listByPrefixWithParallel(ListBucket listBucket, List<String> prefixList, int version, boolean doWrite,
+                                             boolean doProcess, IOssFileProcess iOssFileProcessor) throws QiniuException {
+
+        Queue<QiniuException> qiniuExceptionQueue = new ConcurrentLinkedQueue<>();
+        Map<String, String[]> fileInfoAndMarkerMap =
+                prefixList.parallelStream().map(prefix -> {
+            Response response = null;
+            String[] firstFileInfoAndMarker = null;
+            try {
+                response = listBucket.run(bucket, prefix, null, null, 1, 3, version);
+                firstFileInfoAndMarker = getFirstFileInfoAndMarker(response, version);
+            } catch (QiniuException e) {
+                System.out.println(e.code() + "\t" + e.error());
+                fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
+                if (e.code() > 400) qiniuExceptionQueue.add(e);
+            } finally {
+                if (response != null)
+                    response.close();
+            }
+            return firstFileInfoAndMarker;
+//        }).filter(Objects::nonNull)
+        }).filter(fileInfoAndMarker -> !(fileInfoAndMarker == null || StringUtils.isNullOrEmpty(fileInfoAndMarker[0])))
+            .collect(Collectors
+                .toMap(
+                    fileInfoAndMarker -> fileInfoAndMarker[1],
+                    fileInfoAndMarker -> new String[]{fileInfoAndMarker[0], fileInfoAndMarker[2]},
+                    (oldValue, newValue) -> newValue
+        ));
+
+        QiniuException qiniuException = qiniuExceptionQueue.poll();
+        if (qiniuException != null) throw qiniuException;
+
+        Map<String, String> delimitedFileMap = fileInfoAndMarkerMap.values()
+                .parallelStream().collect(Collectors
+                        .toMap(keyAndMarker -> keyAndMarker[0], keyAndMarker -> keyAndMarker[1]));
+        Stream<String> fileInfoStream = fileInfoAndMarkerMap.keySet().parallelStream();
+        if (doWrite && doProcess) {
+            fileInfoStream.forEach(fileInfo -> {
+                fileReaderAndWriterMap.writeSuccess(fileInfo);
+                iOssFileProcessor.processFile(fileInfo, 3);
+            });
+        } else if (doWrite) {
+            fileInfoStream.forEach(fileInfo -> fileReaderAndWriterMap.writeSuccess(fileInfo));
+        }
+
+        return delimitedFileMap;
+    }
+
     private Map<String, String> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, boolean doWrite,
                                              boolean doProcess, IOssFileProcess iOssFileProcessor) throws QiniuException {
         Map<String, String> delimitedFileMap = new HashMap<>();
-
         for (String prefix : prefixList) {
             Response response = null;
-            String[] firstFileInfoAndMarker = new String[]{};
+            String[] firstFileInfoAndMarker;
             try {
                 response = listBucket.run(bucket, prefix, null, null, 1, 3, version);
-                if (version == 1) {
-                    FileListing fileListing = response.jsonToObject(FileListing.class);
-                    firstFileInfoAndMarker = getFirstFileInfoAndMarkerV1(fileListing);
-                } else if (version == 2) {
-                    String line = response.bodyString();
-                    firstFileInfoAndMarker = getFirstFileInfoAndMarkerV2(line);
-                }
+                firstFileInfoAndMarker = getFirstFileInfoAndMarker(response, version);
             } catch (QiniuException e) {
                 fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
                 if (e.code() > 400) throw e; else continue;
@@ -143,12 +220,19 @@ public class ListBucketProcess implements IBucketProcess {
         boolean doProcess = iOssFileProcessor != null;
         ListBucket listBucket = new ListBucket(auth, configuration);
 
+//        if (level == 2) {
+//            delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, doProcess, iOssFileProcessor);
+//            prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
+//            delimitedFileMap.putAll(listByPrefix(listBucket, prefixList, version, true, doProcess, iOssFileProcessor));
+//        } else {
+//            delimitedFileMap = listByPrefix(listBucket, prefixList, version, true, doProcess, iOssFileProcessor);
+//        }
         if (level == 2) {
-            delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, doProcess, iOssFileProcessor);
+            delimitedFileMap = listByPrefixWithParallel(listBucket, prefixList, version, false, doProcess, iOssFileProcessor);
             prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
-            delimitedFileMap.putAll(listByPrefix(listBucket, prefixList, version, true, doProcess, iOssFileProcessor));
+            delimitedFileMap.putAll(listByPrefixWithParallel(listBucket, prefixList, version, true, doProcess, iOssFileProcessor));
         } else {
-            delimitedFileMap = listByPrefix(listBucket, prefixList, version, true, doProcess, iOssFileProcessor);
+            delimitedFileMap = listByPrefixWithParallel(listBucket, prefixList, version, true, doProcess, iOssFileProcessor);
         }
 
         listBucket.closeBucketManager();
@@ -230,29 +314,6 @@ public class ListBucketProcess implements IBucketProcess {
     }
 
     /*
-    迭代器方式列举带 prefix 前缀的所有文件，直到列举完毕，limit 为单次列举的文件个数
-     */
-    public void doIteratorListV1(String bucket, String prefix, String endFile, int limit, IOssFileProcess iOssFileProcessor) {
-
-        QiniuBucketManager bucketManager = new QiniuBucketManager(auth, configuration);
-        FileListIterator fileListIterator = bucketManager.createFileListIterator(bucket, prefix, limit, null);
-
-        loop:while (fileListIterator.hasNext()) {
-            FileInfo[] items = fileListIterator.next();
-
-            for (FileInfo fileInfo : items) {
-                if (fileInfo.key.equals(endFile)) {
-                    break loop;
-                }
-                fileReaderAndWriterMap.writeSuccess(JSONConvertUtils.toJson(fileInfo));
-                if (iOssFileProcessor != null) {
-                    iOssFileProcessor.processFile(JSONConvertUtils.toJson(fileInfo), 3);
-                }
-            }
-        }
-    }
-
-    /*
     v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
      */
     public String doListV2(ListBucket listBucket, String bucket, String marker, int limit, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap,
@@ -290,7 +351,7 @@ public class ListBucketProcess implements IBucketProcess {
             reader.close();
             inputStream.close();
         } catch (IOException e) {
-            fileReaderAndWriterMap.writeOther(bucket + "\t" + marker + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
+            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + marker + "\t" + limit + "\t" + "{\"msg\":\"" + e.getMessage() + "\"}");
         } finally {
             if (response != null) {
                 response.close();
@@ -304,7 +365,6 @@ public class ListBucketProcess implements IBucketProcess {
                            IOssFileProcess iOssFileProcessor, boolean processBatch, boolean withParallel, int retryCount) {
 
         AtomicReference<String> endMarker = new AtomicReference<>();
-
         try {
             Response response = listBucket.run(bucket, prefix, "", marker, limit, retryCount, 2);
             InputStream inputStream = new BufferedInputStream(response.bodyStream());
@@ -327,7 +387,7 @@ public class ListBucketProcess implements IBucketProcess {
             inputStream.close();
             response.close();
         } catch (Exception e) {
-            fileReaderAndWriterMap.writeOther(bucket + "\t" + prefix + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
+            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
         }
 
         return endMarker.get();
@@ -337,6 +397,7 @@ public class ListBucketProcess implements IBucketProcess {
                 boolean withParallel, int level, int unitLen) throws IOException, CloneNotSupportedException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
+        System.out.println(delimitedFileMap);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyPrefixList);
         int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;
@@ -379,6 +440,7 @@ public class ListBucketProcess implements IBucketProcess {
                 boolean withParallel, int level, int unitLen) throws IOException, CloneNotSupportedException {
 
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
+        System.out.println(delimitedFileMap);
         List<String> keyPrefixList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyPrefixList);
         int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;

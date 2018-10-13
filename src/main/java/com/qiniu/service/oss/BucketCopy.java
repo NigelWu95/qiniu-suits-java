@@ -53,6 +53,7 @@ public class BucketCopy implements Cloneable {
         int statusCode = response.statusCode;
         String reqId = response.reqId;
         response.close();
+        batchOperations.clearOps();
 
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
@@ -110,7 +111,7 @@ public class BucketCopy implements Cloneable {
                 }
             }
         }
-        batchOperations.clearOps();
+
         return response;
     }
 
