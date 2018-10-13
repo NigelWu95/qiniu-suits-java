@@ -53,6 +53,7 @@ public class ChangeStatus implements Cloneable {
         int statusCode = response.statusCode;
         String reqId = response.reqId;
         response.close();
+        batchOperations.clearOps();
 
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
@@ -99,7 +100,7 @@ public class ChangeStatus implements Cloneable {
                 }
             }
         }
-        batchOperations.clearOps();
+
         return response;
     }
 }
