@@ -22,7 +22,6 @@ public class ListBucketMain {
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
         boolean enabledEndFile = listBucketParams.getEnabledEndFile();
-        boolean withParallel = listBucketParams.getWithParallel();
         int level = listBucketParams.getLevel();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
@@ -60,19 +59,16 @@ public class ListBucketMain {
                 break;
             }
             case "filter": {
-//                iOssFileProcessor = new ListFilterProcess(resultFileDir);
+                iOssFileProcessor = new ListFilterProcess(resultFileDir);
                 break;
             }
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        if (enabledEndFile)
-            listBucketProcessor.processBucketWithEndFile(iOssFileProcessor, processBatch, version, maxThreads, withParallel, level, unitLen);
-        else
-            listBucketProcessor.processBucketWithPrefix(iOssFileProcessor, processBatch, version, maxThreads, withParallel, level, unitLen);
+        listBucketProcessor.processBucket(iOssFileProcessor, processBatch, version, maxThreads, level,
+                unitLen, enabledEndFile);
 
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
-        listBucketProcessor.closeResource();
     }
 }

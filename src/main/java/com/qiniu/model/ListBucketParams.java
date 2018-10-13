@@ -7,7 +7,6 @@ public class ListBucketParams extends BaseParams {
     private String maxThreads;
     private String version;
     private String enabledEndFile;
-    private String withParallel;
     private String level;
     private String process;
     private String processBatch;
@@ -17,7 +16,6 @@ public class ListBucketParams extends BaseParams {
         super(args);
         try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) {}
         try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
-        try { this.withParallel = getParamFromArgs("parallel"); } catch (Exception e) {}
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
         try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
@@ -29,7 +27,6 @@ public class ListBucketParams extends BaseParams {
         super(configFileName);
         try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) {}
         try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
-        try { this.withParallel = getParamFromConfig("parallel"); } catch (Exception e) {}
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
         try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
@@ -53,15 +50,6 @@ public class ListBucketParams extends BaseParams {
             return 2;
         } else {
             return Integer.valueOf(version);
-        }
-    }
-
-    public boolean getWithParallel() {
-        if (StringUtils.isNullOrEmpty(unitLen) || !withParallel.matches("(true|false)")) {
-            System.out.println("no incorrect parallel, it will use true as default.");
-            return true;
-        } else {
-            return Boolean.valueOf(withParallel);
         }
     }
 
