@@ -59,6 +59,10 @@ public class ListBucketMain {
                         fileCopyParams.getTargetBucket(), fileCopyParams.getTargetKeyPrefix(), resultFileDir);
                 break;
             }
+            case "filter": {
+//                iOssFileProcessor = new ListFilterProcess(resultFileDir);
+                break;
+            }
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
