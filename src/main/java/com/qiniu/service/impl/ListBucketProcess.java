@@ -148,7 +148,7 @@ public class ListBucketProcess implements IBucketProcess {
     单次列举请求，可以传递 marker 和 limit 参数，通常采用此方法进行并发处理
      */
     public FileListing listV1(ListBucket listBucket, String bucket, String prefix, String delimiter, String marker,
-                              int limit, FileReaderAndWriterMap fileReaderAndWriterMap, int retryCount) throws QiniuException {
+                              int limit, int retryCount) throws QiniuException {
 
         Response response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 1);
         FileListing fileListing = response.jsonToObject(FileListing.class);
@@ -172,7 +172,7 @@ public class ListBucketProcess implements IBucketProcess {
     v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
      */
     public Map<String, String> listV2(ListBucket listBucket, String bucket, String prefix, String delimiter, String marker,
-                         int limit, FileReaderAndWriterMap fileReaderAndWriterMap, int retryCount) throws IOException {
+                         int limit, int retryCount) throws IOException {
 
         Response response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 2);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
@@ -254,10 +254,10 @@ public class ListBucketProcess implements IBucketProcess {
                                 IOssFileProcess processor, boolean processBatch) throws IOException {
 
         if (version == 2) {
-            fileInfoAndMarkerMap = listV2(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
+            fileInfoAndMarkerMap = listV2(listBucket, bucket, prefix, "", marker, unitLen, 3);
             marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen, 2);
         } else if (version == 1) {
-            FileListing fileListing = listV1(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
+            FileListing fileListing = listV1(listBucket, bucket, prefix, "", marker, unitLen, 3);
             fileInfoAndMarkerMap = getFileInfoAndMarkerMap(fileListing);
             marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen, 1) != null ? fileListing.marker : null;
         }
@@ -284,7 +284,7 @@ public class ListBucketProcess implements IBucketProcess {
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
                 String endFileKey = finalI == keyList.size() - 1 ? "" : keyList.get(finalI + 1);
-                String prefix = endFile ? null :
+                String prefix = endFile ? "" :
                         level == 2 ? keyList.get(finalI).substring(0,2) : keyList.get(finalI).substring(0, 1);
                 String marker = delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
@@ -294,8 +294,8 @@ public class ListBucketProcess implements IBucketProcess {
                         marker = listAndProcess(listBucket, unitLen, endFile, prefix, endFileKey, marker, version, fileInfoAndMarkerMap,
                                 fileMap, processor, processBatch);
                     } catch (IOException e) {
-                        fileMap.writeErrorOrNull(bucket + "\t" + (prefix == null ? "" : prefix)
-                                + (endFileKey == null ? "" : endFileKey) + "\t" + marker + "\t" + unitLen + "\t" + e.getMessage());
+                        fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
+                                + "\t" + e.getMessage());
                     }
                 }
                 listBucket.closeBucketManager();

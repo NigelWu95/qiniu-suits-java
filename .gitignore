@@ -16,7 +16,6 @@ buildNumber.properties
 ### JetBrains template
 # IntelliJ
 .idea/
-*.iml
 out/
 
 # mpeltonen/sbt-idea plugin
