@@ -12,7 +12,7 @@ public final class JSONConvertUtils {
         return gson.fromJson(jsonData, clazz);
     }
 
-    public static final JsonObject toJson(String jsonData) {
+    public static final JsonObject toJsonObject(String jsonData) {
         JsonParser jsonParser = new JsonParser();
         return jsonParser.parse(jsonData).getAsJsonObject();
     }

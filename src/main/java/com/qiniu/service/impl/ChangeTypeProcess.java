@@ -68,7 +68,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
     public String[] getProcessParams(String fileInfoStr) {
 
-        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
         short type = fileInfo.get("type").getAsShort();
