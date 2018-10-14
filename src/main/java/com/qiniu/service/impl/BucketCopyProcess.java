@@ -27,7 +27,6 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private String srcBucket;
     private String tarBucket;
     private String keyPrefix;
-    private M3U8Manager m3u8Manager;
     private QiniuException qiniuException = null;
 
     public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
@@ -38,12 +37,6 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
-    }
-
-    public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
-        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir);
-        this.m3u8Manager = m3u8Manager;
     }
 
     public BucketCopyProcess clone() throws CloneNotSupportedException {
@@ -67,12 +60,13 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
                                        int retryCount, boolean batch) {
         try {
             String bucketCopyResult = batch ?
-                    bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount) :
-                    bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, tarKey, force, retryCount);
+                    bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, keyPrefix + tarKey, force, retryCount) :
+                    bucketCopy.run(sourceBucket, srcKey, targetBucket, keyPrefix + tarKey, force, retryCount);
             fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey + "\t" + e.error());
+            if (batch) fileReaderAndWriterMap.writeErrorOrNull(bucketCopy.getBatchOps() + "\t" + e.error());
+            else fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey + "\t" + e.error());
             e.response.close();
         }
     }

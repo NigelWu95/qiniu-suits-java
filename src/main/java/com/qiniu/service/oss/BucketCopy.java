@@ -8,6 +8,8 @@ import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
+import java.util.ArrayList;
+
 public class BucketCopy implements Cloneable {
 
     private QiniuAuth auth;
@@ -31,6 +33,10 @@ public class BucketCopy implements Cloneable {
         bucketCopy.bucketManager = new QiniuBucketManager(auth, configuration);
         bucketCopy.batchOperations = new BatchOperations();
         return bucketCopy;
+    }
+
+    public ArrayList<String> getBatchOps() {
+        return batchOperations.getOps();
     }
 
     private String copy(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuException {
