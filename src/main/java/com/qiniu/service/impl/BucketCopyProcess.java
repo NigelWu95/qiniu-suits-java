@@ -62,7 +62,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
             String bucketCopyResult = batch ?
                     bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, keyPrefix + tarKey, force, retryCount) :
                     bucketCopy.run(sourceBucket, srcKey, targetBucket, keyPrefix + tarKey, force, retryCount);
-            fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
+            if (bucketCopyResult != null) fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             if (batch) fileReaderAndWriterMap.writeErrorOrNull(bucketCopy.getBatchOps() + "\t" + e.error());
