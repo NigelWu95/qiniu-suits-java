@@ -98,6 +98,13 @@ public class FileReaderAndWriterMap implements Cloneable {
         }
     }
 
+    public void initReader(String fileDir, String key) throws IOException {
+        File sourceFile = new File(fileDir, key + ".txt");
+        FileReader fileReader = new FileReader(sourceFile);
+        BufferedReader reader = new BufferedReader(fileReader);
+        this.readerMap.put(key.endsWith(".txt") ? key.split("\\.txt")[0] : key, reader);
+    }
+
     public BufferedReader getReader(String key) {
         return this.readerMap.get(key);
     }
