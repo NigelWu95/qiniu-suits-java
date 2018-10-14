@@ -202,7 +202,8 @@ public class ListBucketProcess implements IBucketProcess {
         {
             return null;
         } else {
-            if (version == 1) return null;
+            // version 1 的 null 为结束标志，返回 "" 时会进一步判断
+            if (version == 1) return "";
             Optional<String> lastFileInfo = fileInfoAndMarkerMap.keySet().parallelStream().max(String::compareTo);
             return lastFileInfo.isPresent() ? fileInfoAndMarkerMap.get(lastFileInfo.get()) : null;
         }
