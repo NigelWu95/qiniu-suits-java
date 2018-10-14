@@ -284,8 +284,11 @@ public class ListBucketProcess implements IBucketProcess {
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
                 String endFileKey = finalI == keyList.size() - 1 ? "" : keyList.get(finalI + 1);
-                String prefix = endFile ? "" :
-                        level == 2 ? keyList.get(finalI).substring(0,2) : keyList.get(finalI).substring(0, 1);
+                String fileKey = keyList.get(finalI);
+                String prefix;
+                if (endFile) prefix = "";
+                else if (fileKey.length() < 2) prefix = fileKey;
+                else prefix = level == 2 ? fileKey.substring(0,2) : fileKey.substring(0, 1);
                 String marker = delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 Map<String, String> fileInfoAndMarkerMap = new HashMap<>();
