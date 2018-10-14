@@ -61,20 +61,20 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
             String changeResult = batch ?
                     changeStatus.batchRun(bucket, key, fileStatus, retryCount) :
                     changeStatus.run(bucket, key, fileStatus, retryCount);
-            fileReaderAndWriterMap.writeSuccess(changeResult);
+            if (changeResult != null) fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileStatus + "\t" + e.error());
+            if (batch) fileReaderAndWriterMap.writeErrorOrNull(changeStatus.getBatchOps() + "\t" + e.error());
+            else fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileStatus + "\t" + e.error());
             e.response.close();
         }
     }
 
-    public String[] getProcessParams(String fileInfoStr, int retryCount) {
+    public String[] getProcessParams(String fileInfoStr) {
 
-        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
-        short status = fileInfo.get("status").getAsShort();
 
         boolean isDoProcess = false;
         if (StringUtils.isNullOrEmpty(pointTime)) {
@@ -89,12 +89,12 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         }
 
         String[] params = new String[]{"false", key, key + "\t" + fileStatus + "\t" + isDoProcess};
-        if (isDoProcess && status != fileStatus) params[0] = "true";
+        if (isDoProcess) params[0] = "true";
         return params;
     }
 
     public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        String[] params = getProcessParams(fileInfoStr, retryCount);
+        String[] params = getProcessParams(fileInfoStr);
         if ("true".equals(params[0]))
             changeStatusResult(bucket, params[1], fileStatus, retryCount, batch);
         else

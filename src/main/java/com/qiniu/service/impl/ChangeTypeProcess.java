@@ -57,17 +57,18 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
             String changeResult = batch ?
                     changeType.batchRun(bucket, key, fileType, retryCount) :
                     changeType.run(bucket, key, fileType, retryCount);
-            fileReaderAndWriterMap.writeSuccess(changeResult);
+            if (changeResult != null) fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileType + "\t" + e.error());
+            if (batch) fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());
+            else fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileType + "\t" + e.error());
             e.response.close();
         }
     }
 
-    public String[] getProcessParams(String fileInfoStr, int retryCount) {
+    public String[] getProcessParams(String fileInfoStr) {
 
-        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
         short type = fileInfo.get("type").getAsShort();
@@ -91,7 +92,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
     }
 
     public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        String[] params = getProcessParams(fileInfoStr, retryCount);
+        String[] params = getProcessParams(fileInfoStr);
         if ("true".equals(params[0]))
             changeTypeResult(bucket, params[1], fileType, retryCount, batch);
         else
