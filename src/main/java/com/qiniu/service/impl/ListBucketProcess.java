@@ -201,16 +201,18 @@ public class ListBucketProcess implements IBucketProcess {
         return fileInfoAndMarkerMap;
     }
 
-    public String getNextMarker(Map<String, String> fileInfoAndMarkerMap, String fileFlag, boolean endFile) {
+    public String getNextMarker(Map<String, String> fileInfoAndMarkerMap, String fileFlag, int unitLen) {
 
-        if (fileInfoAndMarkerMap == null) return null;
-        if (endFile && fileInfoAndMarkerMap.keySet().parallelStream()
-                .anyMatch(fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
-        {
+        if (fileInfoAndMarkerMap == null || fileInfoAndMarkerMap.size() < unitLen) {
             return null;
-        } else {
+        } else if (StringUtils.isNullOrEmpty(fileFlag)) {
             Optional<String> lastFileInfo = fileInfoAndMarkerMap.keySet().parallelStream().max(String::compareTo);
             return lastFileInfo.isPresent() ? fileInfoAndMarkerMap.get(lastFileInfo.get()) : null;
+        } else {
+            if (fileInfoAndMarkerMap.keySet().parallelStream().anyMatch(fileInfo ->
+                    JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
+                return null;
+            else return "";
         }
     }
 
@@ -279,11 +281,11 @@ public class ListBucketProcess implements IBucketProcess {
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     if (version == 2) {
                         fileInfoAndMarkerMap = listV2(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
-                        marker = getNextMarker(fileInfoAndMarkerMap, endFileKey, endFile);
+                        marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen);
                     } else if (version == 1) {
                         FileListing fileListing = listV1(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
                         fileInfoAndMarkerMap = getFileInfoAndMarkerMap(fileListing);
-                        marker = getNextMarker(fileInfoAndMarkerMap, endFileKey, endFile) != null ? fileListing.marker : null;
+                        marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen) != null ? fileListing.marker : null;
                     }
                     processFileInfo(fileInfoAndMarkerMap.keySet(), endFile ? endFileKey : null, fileMap, iOssFileProcessor,
                             processBatch, 3, null);
