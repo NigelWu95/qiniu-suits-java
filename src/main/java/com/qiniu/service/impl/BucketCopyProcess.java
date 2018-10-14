@@ -31,7 +31,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
                              String keyPrefix, String resultFileDir) throws IOException {
-        this.bucketCopy = new BucketCopy(auth, configuration, sourceBucket, targetBucket);
+        this.bucketCopy = new BucketCopy(auth, configuration);
+        this.bucketCopy.setBucket(sourceBucket, targetBucket);
         this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
         this.srcBucket = sourceBucket;
@@ -75,6 +76,17 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
         String key = fileInfo.get("key").getAsString();
         bucketChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount, batch);
+    }
+
+    public void checkBatchProcess(int retryCount) {
+        try {
+            String bucketCopyResult = bucketCopy.batchCheckRun(retryCount);
+            if (bucketCopyResult != null) fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(bucketCopy.getBatchOps() + "\t" + e.error());
+            e.response.close();
+        }
     }
 
     public void closeResource() {
