@@ -1,42 +1,27 @@
 package com.qiniu.service.oss;
 
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuBucketManager;
-import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
-import java.util.ArrayList;
+public class BucketCopy extends OperationBase implements Cloneable {
 
-public class BucketCopy implements Cloneable {
-
-    private QiniuAuth auth;
-    private Configuration configuration;
     private String srcBucket;
     private String tarBucket;
-    private QiniuBucketManager bucketManager;
-    private BatchOperations batchOperations;
 
-    public BucketCopy(QiniuAuth auth, Configuration configuration, String srcBucket, String tarBucket) {
-        this.auth = auth;
-        this.configuration = configuration;
+    public BucketCopy(QiniuAuth auth, Configuration configuration) {
+        super(auth, configuration);
+    }
+
+    public void setBucket(String srcBucket, String tarBucket) {
         this.srcBucket = srcBucket;
         this.tarBucket = tarBucket;
-        this.bucketManager = new QiniuBucketManager(auth, configuration);
-        this.batchOperations = new BatchOperations();
     }
 
     public BucketCopy clone() throws CloneNotSupportedException {
-        BucketCopy bucketCopy = (BucketCopy)super.clone();
-        bucketCopy.bucketManager = new QiniuBucketManager(auth, configuration);
-        bucketCopy.batchOperations = new BatchOperations();
-        return bucketCopy;
-    }
-
-    public ArrayList<String> getBatchOps() {
-        return batchOperations.getOps();
+        return (BucketCopy)super.clone();
     }
 
     private String copy(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuException {
@@ -53,7 +38,7 @@ public class BucketCopy implements Cloneable {
         return copy(fromBucket, srcKey, toBucket, tarKey, force, retryCount);
     }
 
-    public String batchRun(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force, int retryCount) throws QiniuException {
         Response response = batchCopyWithRetry(fromBucket, srcKey, toBucket, tarKey, force, retryCount);
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -98,31 +83,11 @@ public class BucketCopy implements Cloneable {
         return response;
     }
 
-    public Response batchCopyWithRetry(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force,
+    synchronized public Response batchCopyWithRetry(String fromBucket, String srcKey, String toBucket, String tarKey, boolean force,
                                        int retryCount) throws QiniuException {
         Response response = null;
-
-        try {
-            if (batchOperations.getOps().size() < 1000) batchOperations.addCopyOps(fromBucket, srcKey, toBucket, tarKey, force);
-            else response = bucketManager.batch(batchOperations);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    System.out.println("copy " + e1.error() + ", last " + retryCount + " times retry...");
-                    response = bucketManager.batch(batchOperations);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-
+        if (batchOperations.getOps().size() < 1000) batchOperations.addCopyOps(fromBucket, srcKey, toBucket, tarKey, force);
+        else response = batchWithRetry(retryCount);
         return response;
-    }
-
-    public void closeBucketManager() {
-        if (bucketManager != null)
-            bucketManager.closeResponse();
     }
 }

@@ -99,6 +99,17 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
             fileReaderAndWriterMap.writeOther(params[2]);
     }
 
+    public void checkBatchProcess(int retryCount) {
+        try {
+            String changeResult = changeType.batchCheckRun(retryCount);
+            if (changeResult != null) fileReaderAndWriterMap.writeSuccess(changeResult);
+        } catch (QiniuException e) {
+            if (!e.response.needRetry()) qiniuException = e;
+            fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());
+            e.response.close();
+        }
+    }
+
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
         if (changeType != null)

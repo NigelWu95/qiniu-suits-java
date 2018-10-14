@@ -249,19 +249,19 @@ public class ListBucketProcess implements IBucketProcess {
         return exceptionQueue;
     }
 
-    private String listAndProcess(ListBucket listBucket, int unitLen, boolean endFile, String prefix, String endFileKey,
-                                String marker, int version, Map<String, String> fileInfoAndMarkerMap, FileReaderAndWriterMap fileMap,
-                                IOssFileProcess processor, boolean processBatch) throws IOException {
+    private String listAndProcess(ListBucket listBucket, int unitLen, String prefix, String endFileKey, String marker, int version,
+                                  FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch) throws IOException {
 
+        Map<String, String> fileInfoAndMarkerMap = new HashMap<>();
         if (version == 2) {
             fileInfoAndMarkerMap = listV2(listBucket, bucket, prefix, "", marker, unitLen, 3);
-            marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen, 2);
+            marker = getNextMarker(fileInfoAndMarkerMap, endFileKey, unitLen, 2);
         } else if (version == 1) {
             FileListing fileListing = listV1(listBucket, bucket, prefix, "", marker, unitLen, 3);
             fileInfoAndMarkerMap = getFileInfoAndMarkerMap(fileListing);
-            marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen, 1) != null ? fileListing.marker : null;
+            marker = getNextMarker(fileInfoAndMarkerMap, endFileKey, unitLen, 1) != null ? fileListing.marker : null;
         }
-        processFileInfo(fileInfoAndMarkerMap.keySet(), endFile ? endFileKey : null, fileMap, processor,
+        processFileInfo(fileInfoAndMarkerMap.keySet(), endFileKey, fileMap, processor,
                 processBatch, 3, null);
 
         return marker;
@@ -277,29 +277,33 @@ public class ListBucketProcess implements IBucketProcess {
         System.out.println("there are " + runningThreads + " threads running...");
 
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        for (int i = 0; i < keyList.size(); i++) {
+        for (int i = -1; i < keyList.size(); i++) {
             int finalI = i;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
             fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
                 String endFileKey = finalI == keyList.size() - 1 ? "" : keyList.get(finalI + 1);
-                String prefix = endFile ? "" :
-                        level == 2 ? keyList.get(finalI).substring(0,2) : keyList.get(finalI).substring(0, 1);
-                String marker = delimitedFileMap.get(keyList.get(finalI));
+                String prefix;
+                if (endFile || finalI == -1 || finalI == keyList.size() - 1) prefix = "";
+                else if (keyList.get(finalI).length() < 2) prefix = keyList.get(finalI);
+                else prefix = level == 2 ? keyList.get(finalI).substring(0,2) : keyList.get(finalI).substring(0, 1);
+                String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
-                Map<String, String> fileInfoAndMarkerMap = new HashMap<>();
                 while (!StringUtils.isNullOrEmpty(marker)) {
                     try {
-                        marker = listAndProcess(listBucket, unitLen, endFile, prefix, endFileKey, marker, version, fileInfoAndMarkerMap,
-                                fileMap, processor, processBatch);
+                        marker = listAndProcess(listBucket, unitLen, prefix, endFileKey,
+                                marker.equals("null") ? "" : marker, version, fileMap, processor, processBatch);
                     } catch (IOException e) {
                         fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
                                 + "\t" + e.getMessage());
                     }
                 }
                 listBucket.closeBucketManager();
-                if (processor != null) processor.closeResource();
+                if (processor != null) {
+                    processor.checkBatchProcess(3);
+                    processor.closeResource();
+                }
                 fileMap.closeWriter();
             });
         }
