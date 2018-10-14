@@ -1,34 +1,19 @@
 package com.qiniu.service.oss;
 
 import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuBucketManager;
-import com.qiniu.common.QiniuBucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
-import java.util.ArrayList;
-
-public class ChangeStatus implements Cloneable {
-
-    private QiniuAuth auth;
-    private Configuration configuration;
-    private QiniuBucketManager bucketManager;
-    private BatchOperations batchOperations;
+public class ChangeStatus extends OperationBase implements Cloneable {
 
     public ChangeStatus(QiniuAuth auth, Configuration configuration) {
-        this.auth = auth;
-        this.configuration = configuration;
-        this.bucketManager = new QiniuBucketManager(auth, configuration);
-        this.batchOperations = new BatchOperations();
+        super(auth, configuration);
     }
 
     public ChangeStatus clone() throws CloneNotSupportedException {
-        ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        changeStatus.bucketManager = new QiniuBucketManager(auth, configuration);
-        changeStatus.batchOperations = new BatchOperations();
-        return changeStatus;
+        return (ChangeStatus)super.clone();
     }
 
     public String run(String bucket, String key, short status, int retryCount) throws QiniuException {
@@ -42,11 +27,7 @@ public class ChangeStatus implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public ArrayList<String> getBatchOps() {
-        return batchOperations.getOps();
-    }
-
-    public String batchRun(String bucket, String key, short status, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, String key, short status, int retryCount) throws QiniuException {
         Response response = batchChangeStatusWithRetry(bucket, key, status, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
@@ -81,26 +62,11 @@ public class ChangeStatus implements Cloneable {
         return response;
     }
 
-    public Response batchChangeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
+    synchronized public Response batchChangeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
+
         Response response = null;
-
-        try {
-            if (batchOperations.getOps().size() < 1000) batchOperations.addChangeStatusOps(bucket, status, key);
-            else response = bucketManager.batch(batchOperations);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
-                    response = bucketManager.batch(batchOperations);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-
+        if (batchOperations.getOps().size() < 1000) batchOperations.addChangeStatusOps(bucket, status, key);
+        else response = batchWithRetry(batchOperations, retryCount);
         return response;
     }
 }

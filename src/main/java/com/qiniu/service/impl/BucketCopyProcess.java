@@ -31,7 +31,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
                              String keyPrefix, String resultFileDir) throws IOException {
-        this.bucketCopy = new BucketCopy(auth, configuration, sourceBucket, targetBucket);
+        this.bucketCopy = new BucketCopy(auth, configuration);
+        this.bucketCopy.setBucket(sourceBucket, targetBucket);
         this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
         this.srcBucket = sourceBucket;
