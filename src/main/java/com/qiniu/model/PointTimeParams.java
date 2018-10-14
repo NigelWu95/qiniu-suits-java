@@ -36,7 +36,7 @@ public class PointTimeParams extends BaseParams {
 
     public boolean getDirection() {
         if (StringUtils.isNullOrEmpty(direction) || !direction.matches("\\d")) {
-            System.out.println("no incorrect direction, it will use 0(pre) as default. And it will not take effect if datetime is empty.");
+            System.out.println("no incorrect direction, it will use 0(pre) as default. But it will not take effect if datetime is empty.");
             return true;
         } else {
             return Integer.valueOf(direction) == 0;
