@@ -60,7 +60,7 @@ public class ListBucketProcess implements IBucketProcess {
             } else if (version == 2) {
                 if (response != null) line = response.bodyString();
                 if (StringUtils.isNullOrEmpty(line)) return firstFileInfoAndMarker;
-                JsonObject json = JSONConvertUtils.toJson(line);
+                JsonObject json = JSONConvertUtils.toJsonObject(line);
                 JsonElement item = json.get("item");
                 if (item != null && !(item instanceof JsonNull)) {
                     firstFileInfoAndMarker[0] = item.getAsJsonObject().get("key").getAsString();
@@ -127,19 +127,34 @@ public class ListBucketProcess implements IBucketProcess {
     }
 
     public Map<String, String> getDelimitedFileMap(int version, int level, IOssFileProcess iOssFileProcessor) throws QiniuException {
-        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
-        Map<String, String> delimitedFileMap;
-        ListBucket listBucket = new ListBucket(auth, configuration);
 
-        if (level == 2) {
-            delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, null);
-            prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
-            delimitedFileMap.putAll(listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor));
-        } else {
-            delimitedFileMap = listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor);
+        Map<String, String> delimitedFileMap = new HashMap<>();
+        try {
+            fileReaderAndWriterMap.initReader(resultFileDir, "delimited");
+            String delimitedLine;
+            while ((delimitedLine = fileReaderAndWriterMap.getReader("delimited").readLine()) != null) {
+                delimitedFileMap.putAll(JSONConvertUtils.fromJson(delimitedLine, Map.class));
+            }
+
+            if (delimitedFileMap.size() <= 0) {
+                throw new QiniuException(null, "no content in delimited file!");
+            }
+        } catch (IOException e) {
+            List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+            ListBucket listBucket = new ListBucket(auth, configuration);
+
+            if (level == 2) {
+                delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, null);
+                prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
+                delimitedFileMap.putAll(listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor));
+            } else {
+                delimitedFileMap = listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor);
+            }
+            listBucket.closeBucketManager();
+            fileReaderAndWriterMap.writeKeyFile("delimited", JSONConvertUtils.toJson(delimitedFileMap));
+        } finally {
+            fileReaderAndWriterMap.closeWriter();
         }
-        listBucket.closeBucketManager();
-        fileReaderAndWriterMap.closeWriter();
 
         return delimitedFileMap;
     }

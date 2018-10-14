@@ -12,7 +12,7 @@ public interface ILineParser {
 
     default String getByKey(String key) {
 
-        JsonObject lineJson = JSONConvertUtils.toJson(toString());
+        JsonObject lineJson = JSONConvertUtils.toJsonObject(toString());
         return lineJson.get(key).getAsString();
     };
 }

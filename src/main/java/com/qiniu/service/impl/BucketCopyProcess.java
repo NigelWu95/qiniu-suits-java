@@ -72,7 +72,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     }
 
     public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
+        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
         String key = fileInfo.get("key").getAsString();
         bucketChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount, batch);
     }
