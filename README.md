@@ -58,6 +58,7 @@ add-prefix=video/
 |-------|-----|--------|--------|--------|---------|-------------|----------|---------|-----------------|  
 |   2   |  2  | false  |  false |  10000 |  null   |  94898690   |   2h18m  | 16核32G |      50         |
 |   2   |  1  | false  |  false |  10000 |  null   |  1893275    |   7min   | 8核16G  |      16         | 
+|   2   |  2  | false  |  false |  20000 |  null   |  293940625  |   1h8m   | 16核32G |      200        |
  
 
 * main dynamic parameters and description  
