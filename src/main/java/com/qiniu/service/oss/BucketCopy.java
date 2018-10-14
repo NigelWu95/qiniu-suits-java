@@ -87,7 +87,7 @@ public class BucketCopy extends OperationBase implements Cloneable {
                                        int retryCount) throws QiniuException {
         Response response = null;
         if (batchOperations.getOps().size() < 1000) batchOperations.addCopyOps(fromBucket, srcKey, toBucket, tarKey, force);
-        else response = batchWithRetry(batchOperations, retryCount);
+        else response = batchWithRetry(retryCount);
         return response;
     }
 }

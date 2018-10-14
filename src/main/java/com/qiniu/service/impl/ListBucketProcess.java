@@ -299,7 +299,10 @@ public class ListBucketProcess implements IBucketProcess {
                     }
                 }
                 listBucket.closeBucketManager();
-                if (processor != null) processor.closeResource();
+                if (processor != null) {
+                    processor.checkBatchProcess(3);
+                    processor.closeResource();
+                }
                 fileMap.closeWriter();
             });
         }

@@ -66,7 +66,7 @@ public class ChangeStatus extends OperationBase implements Cloneable {
 
         Response response = null;
         if (batchOperations.getOps().size() < 1000) batchOperations.addChangeStatusOps(bucket, status, key);
-        else response = batchWithRetry(batchOperations, retryCount);
+        else response = batchWithRetry(retryCount);
         return response;
     }
 }
