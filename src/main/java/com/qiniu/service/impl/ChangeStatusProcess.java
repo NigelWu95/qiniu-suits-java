@@ -103,5 +103,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
+        if (changeStatus != null)
+            changeStatus.closeBucketManager();
     }
 }
