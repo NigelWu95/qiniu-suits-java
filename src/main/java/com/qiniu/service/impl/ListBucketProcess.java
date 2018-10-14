@@ -128,33 +128,18 @@ public class ListBucketProcess implements IBucketProcess {
 
     public Map<String, String> getDelimitedFileMap(int version, int level, IOssFileProcess iOssFileProcessor) throws QiniuException {
 
-        Map<String, String> delimitedFileMap = new HashMap<>();
-        try {
-            fileReaderAndWriterMap.initReader(resultFileDir, "delimited");
-            String delimitedLine;
-            while ((delimitedLine = fileReaderAndWriterMap.getReader("delimited").readLine()) != null) {
-                delimitedFileMap.putAll(JSONConvertUtils.fromJson(delimitedLine, Map.class));
-            }
-
-            if (delimitedFileMap.size() <= 0) {
-                throw new QiniuException(null, "no content in delimited file!");
-            }
-        } catch (IOException e) {
-            List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
-            ListBucket listBucket = new ListBucket(auth, configuration);
-
-            if (level == 2) {
-                delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, null);
-                prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
-                delimitedFileMap.putAll(listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor));
-            } else {
-                delimitedFileMap = listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor);
-            }
-            listBucket.closeBucketManager();
-            fileReaderAndWriterMap.writeKeyFile("delimited", JSONConvertUtils.toJson(delimitedFileMap));
-        } finally {
-            fileReaderAndWriterMap.closeWriter();
+        ListBucket listBucket = new ListBucket(auth, configuration);
+        Map<String, String> delimitedFileMap;
+        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+        if (level == 2) {
+            delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, null);
+            prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
+            delimitedFileMap.putAll(listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor));
+        } else {
+            delimitedFileMap = listByPrefix(listBucket, prefixList, version, true, iOssFileProcessor);
         }
+        listBucket.closeBucketManager();
+        fileReaderAndWriterMap.closeWriter();
 
         return delimitedFileMap;
     }
@@ -163,15 +148,11 @@ public class ListBucketProcess implements IBucketProcess {
     单次列举请求，可以传递 marker 和 limit 参数，通常采用此方法进行并发处理
      */
     public FileListing listV1(ListBucket listBucket, String bucket, String prefix, String delimiter, String marker,
-                              int limit, FileReaderAndWriterMap fileReaderAndWriterMap, int retryCount) {
-        FileListing fileListing = null;
-        try {
-            Response response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 1);
-            fileListing = response.jsonToObject(FileListing.class);
-            response.close();
-        } catch (Exception e) {
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + delimiter + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
-        }
+                              int limit, FileReaderAndWriterMap fileReaderAndWriterMap, int retryCount) throws QiniuException {
+
+        Response response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 1);
+        FileListing fileListing = response.jsonToObject(FileListing.class);
+        response.close();
 
         return fileListing;
     }
@@ -191,43 +172,39 @@ public class ListBucketProcess implements IBucketProcess {
     v2 的 list 接口，接收到响应后通过 java8 的流来处理响应的文本流。
      */
     public Map<String, String> listV2(ListBucket listBucket, String bucket, String prefix, String delimiter, String marker,
-                         int limit, FileReaderAndWriterMap fileReaderAndWriterMap, int retryCount) {
-        Map<String, String> fileInfoAndMarkerMap = new HashMap<>();
-        try {
-            Response response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 2);
-            InputStream inputStream = new BufferedInputStream(response.bodyStream());
-            Reader reader = new InputStreamReader(inputStream);
-            BufferedReader bufferedReader = new BufferedReader(reader);
-            Stream<String> lineStream = bufferedReader.lines().parallel();
-            fileInfoAndMarkerMap = lineStream.
-                    map(line -> getFirstFileInfoAndMarker(null, line, null, 2))
-                    .collect(Collectors.toMap(
-                            fileInfoAndMarker -> fileInfoAndMarker[1],
-                            fileInfoAndMarker -> fileInfoAndMarker[2]
-            ));
-            bufferedReader.close();
-            reader.close();
-            inputStream.close();
-            response.close();
-        } catch (Exception e) {
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + marker + "\t" + limit + "\t" + e.getMessage());
-        }
+                         int limit, FileReaderAndWriterMap fileReaderAndWriterMap, int retryCount) throws IOException {
+
+        Response response = listBucket.run(bucket, prefix, delimiter, marker, limit, retryCount, 2);
+        InputStream inputStream = new BufferedInputStream(response.bodyStream());
+        Reader reader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        Stream<String> lineStream = bufferedReader.lines().parallel();
+        Map<String, String> fileInfoAndMarkerMap = lineStream.
+                map(line -> getFirstFileInfoAndMarker(null, line, null, 2))
+                .collect(Collectors.toMap(
+                        fileInfoAndMarker -> fileInfoAndMarker[1],
+                        fileInfoAndMarker -> fileInfoAndMarker[2]
+        ));
+        bufferedReader.close();
+        reader.close();
+        inputStream.close();
+        response.close();
 
         return fileInfoAndMarkerMap;
     }
 
-    public String getNextMarker(Map<String, String> fileInfoAndMarkerMap, String fileFlag, int unitLen) {
+    public String getNextMarker(Map<String, String> fileInfoAndMarkerMap, String fileFlag, int unitLen, int version) {
 
         if (fileInfoAndMarkerMap == null || fileInfoAndMarkerMap.size() < unitLen) {
             return null;
-        } else if (StringUtils.isNullOrEmpty(fileFlag)) {
+        } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoAndMarkerMap.keySet().parallelStream()
+                .anyMatch(fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
+        {
+            return null;
+        } else {
+            if (version == 1) return null;
             Optional<String> lastFileInfo = fileInfoAndMarkerMap.keySet().parallelStream().max(String::compareTo);
             return lastFileInfo.isPresent() ? fileInfoAndMarkerMap.get(lastFileInfo.get()) : null;
-        } else {
-            if (fileInfoAndMarkerMap.keySet().parallelStream().anyMatch(fileInfo ->
-                    JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
-                return null;
-            else return "";
         }
     }
 
@@ -271,6 +248,24 @@ public class ListBucketProcess implements IBucketProcess {
         return exceptionQueue;
     }
 
+    private String listAndProcess(ListBucket listBucket, int unitLen, boolean endFile, String prefix, String endFileKey,
+                                String marker, int version, Map<String, String> fileInfoAndMarkerMap, FileReaderAndWriterMap fileMap,
+                                IOssFileProcess processor, boolean processBatch) throws IOException {
+
+        if (version == 2) {
+            fileInfoAndMarkerMap = listV2(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
+            marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen, 2);
+        } else if (version == 1) {
+            FileListing fileListing = listV1(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
+            fileInfoAndMarkerMap = getFileInfoAndMarkerMap(fileListing);
+            marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen, 1) != null ? fileListing.marker : null;
+        }
+        processFileInfo(fileInfoAndMarkerMap.keySet(), endFile ? endFileKey : null, fileMap, processor,
+                processBatch, 3, null);
+
+        return marker;
+    }
+
     public void processBucket(IOssFileProcess iOssFileProcessor, boolean processBatch, int version, int maxThreads,
                               int level, int unitLen, boolean endFile) throws IOException, CloneNotSupportedException {
 
@@ -294,16 +289,13 @@ public class ListBucketProcess implements IBucketProcess {
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 Map<String, String> fileInfoAndMarkerMap = new HashMap<>();
                 while (!StringUtils.isNullOrEmpty(marker)) {
-                    if (version == 2) {
-                        fileInfoAndMarkerMap = listV2(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
-                        marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen);
-                    } else if (version == 1) {
-                        FileListing fileListing = listV1(listBucket, bucket, prefix, "", marker, unitLen, fileMap, 3);
-                        fileInfoAndMarkerMap = getFileInfoAndMarkerMap(fileListing);
-                        marker = getNextMarker(fileInfoAndMarkerMap, endFile ? endFileKey : null, unitLen) != null ? fileListing.marker : null;
+                    try {
+                        marker = listAndProcess(listBucket, unitLen, endFile, prefix, endFileKey, marker, version, fileInfoAndMarkerMap,
+                                fileMap, processor, processBatch);
+                    } catch (IOException e) {
+                        fileMap.writeErrorOrNull(bucket + "\t" + (prefix == null ? "" : prefix)
+                                + (endFileKey == null ? "" : endFileKey) + "\t" + marker + "\t" + unitLen + "\t" + e.getMessage());
                     }
-                    processFileInfo(fileInfoAndMarkerMap.keySet(), endFile ? endFileKey : null, fileMap, iOssFileProcessor,
-                            processBatch, 3, null);
                 }
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
