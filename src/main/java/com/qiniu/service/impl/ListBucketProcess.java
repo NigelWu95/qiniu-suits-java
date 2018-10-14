@@ -224,9 +224,8 @@ public class ListBucketProcess implements IBucketProcess {
             fileInfoStream = fileInfoStream.filter(fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.compareTo(fileFlag) < 0);
         }
 
-        List<String> list = fileInfoStream.collect(Collectors.toList());
         if (iOssFileProcessor == null) {
-            if (fileMap != null) fileMap.writeSuccess(String.join("\n", list));
+            if (fileMap != null) fileMap.writeSuccess(String.join("\n", fileInfoStream.collect(Collectors.toList())));
             return exceptionQueue;
         }
 
