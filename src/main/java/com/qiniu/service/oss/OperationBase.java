@@ -31,12 +31,11 @@ public abstract class OperationBase {
         return operationBase;
     }
 
-    public ArrayList<String> getBatchOps() {
+    synchronized public ArrayList<String> getBatchOps() {
         return batchOperations.getOps();
     }
 
-    public Response batchWithRetry(BatchOperations batchOperations, int retryCount)
-            throws QiniuException {
+    synchronized public Response batchWithRetry(int retryCount) throws QiniuException {
         Response response = null;
 
         try {
@@ -56,6 +55,21 @@ public abstract class OperationBase {
         }
 
         return response;
+    }
+
+    synchronized public String batchCheckRun(int retryCount) throws QiniuException {
+        if (!batchOperations.getOps().isEmpty()) {
+            Response response = batchWithRetry(retryCount);
+            String responseBody = response.bodyString();
+            int statusCode = response.statusCode;
+            String reqId = response.reqId;
+            response.close();
+            batchOperations.clearOps();
+
+            return statusCode + "\t" + reqId + "\t" + responseBody;
+        } else {
+            return "";
+        }
     }
 
     public void closeBucketManager() {

@@ -66,7 +66,7 @@ public class ChangeType extends OperationBase implements Cloneable {
 
         Response response = null;
         if (batchOperations.getOps().size() < 1000) batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, key);
-        else response = batchWithRetry(batchOperations, retryCount);
+        else response = batchWithRetry(retryCount);
 
         return response;
     }

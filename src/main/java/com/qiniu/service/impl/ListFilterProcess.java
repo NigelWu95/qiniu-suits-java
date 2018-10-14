@@ -92,6 +92,8 @@ public class ListFilterProcess implements IOssFileProcess, Cloneable {
         }
     }
 
+    public void checkBatchProcess(int retryCount) {}
+
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
     }
