@@ -57,8 +57,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
             String changeResult = batch ?
                     changeType.batchRun(bucket, key, fileType, retryCount) :
                     changeType.run(bucket, key, fileType, retryCount);
-            System.out.println(changeType.getBatchOps());
-            fileReaderAndWriterMap.writeSuccess(changeResult);
+            if (changeResult != null) fileReaderAndWriterMap.writeSuccess(changeResult);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             if (batch) fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());
