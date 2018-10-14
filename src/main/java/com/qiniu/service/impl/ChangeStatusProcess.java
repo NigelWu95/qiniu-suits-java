@@ -75,7 +75,6 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         JsonObject fileInfo = JSONConvertUtils.toJson(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
-        short status = fileInfo.get("status").getAsShort();
 
         boolean isDoProcess = false;
         if (StringUtils.isNullOrEmpty(pointTime)) {
@@ -90,7 +89,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         }
 
         String[] params = new String[]{"false", key, key + "\t" + fileStatus + "\t" + isDoProcess};
-        if (isDoProcess && status != fileStatus) params[0] = "true";
+        if (isDoProcess) params[0] = "true";
         return params;
     }
 
