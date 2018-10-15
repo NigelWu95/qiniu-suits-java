@@ -25,6 +25,7 @@ public class ListBucketMain {
         int level = listBucketParams.getLevel();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
+        String customPrefix = listBucketParams.getCustomPrefix();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         PointTimeParams pointTimeParams;
@@ -65,8 +66,11 @@ public class ListBucketMain {
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        listBucketProcessor.processBucket(iOssFileProcessor, processBatch, version, maxThreads, level,
-                unitLen, enabledEndFile);
+        if ("prefix".equals(process))
+            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, null);
+        else
+            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
+                    iOssFileProcessor, processBatch);
 
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();

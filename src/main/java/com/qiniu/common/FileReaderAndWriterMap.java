@@ -20,14 +20,6 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
-    public Map<String, BufferedWriter> getWriterMap() {
-        return this.writerMap;
-    }
-
-    public Map<String, BufferedReader> getReaderMap() {
-        return this.readerMap;
-    }
-
     public void initWriter(String targetFileDir, String prefix) throws IOException {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
