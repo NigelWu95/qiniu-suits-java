@@ -257,22 +257,29 @@ public class ListBucketProcess implements IBucketProcess {
         Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, customPrefix, iOssFileProcessor);
         List<String> keyList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyList);
-        int runningThreads = delimitedFileMap.size() + 1 < maxThreads ? delimitedFileMap.size() + 1 : maxThreads;
+        boolean strictPrefix = !StringUtils.isNullOrEmpty(customPrefix);
+        int runningThreads = strictPrefix ? delimitedFileMap.size() : delimitedFileMap.size() + 1;
+        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
         System.out.println("there are " + runningThreads + " threads running...");
 
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        for (int i = -1; i < keyList.size(); i++) {
+        for (int i = strictPrefix ? 0 : -1; i < keyList.size(); i++) {
             int finalI = i;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
             fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
-                String endFileKey = finalI == keyList.size() - 1 ? "" : keyList.get(finalI + 1);
-                String prefix;
-                if (endFile || finalI == -1 || finalI == keyList.size() - 1) prefix = "";
-                else if (keyList.get(finalI).length() < customPrefix.length() + 2) prefix = keyList.get(finalI);
-                else prefix = level == 2 ? keyList.get(finalI).substring(0, customPrefix.length() + 2) :
-                            keyList.get(finalI).substring(0, customPrefix.length() + 1);
+                String endFileKey = "";
+                String prefix = "";
+                if (endFile && finalI < keyList.size() - 1) {
+                    endFileKey = keyList.get(finalI + 1);
+                } else if (!endFile && finalI < keyList.size() -1 && finalI > -1) {
+                    if (keyList.get(finalI).length() < customPrefix.length() + 2) prefix = keyList.get(finalI);
+                    else prefix = keyList.get(finalI).substring(0, customPrefix.length() + level == 2 ? 2 : 1);
+                } else {
+                    if (finalI == -1) endFileKey = keyList.get(0);
+                    if (strictPrefix) prefix = customPrefix;
+                }
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 while (!StringUtils.isNullOrEmpty(marker)) {
