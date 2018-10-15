@@ -619,6 +619,17 @@ public class QiniuBucketManager {
             return this;
         }
 
+        /**
+         * 添加deleteAfterDays指令
+         */
+        public BatchOperations addDeleteAfterDaysOps(String bucket, int days, String... keys) {
+            for (String key : keys) {
+                ops.add(String.format("deleteAfterDays/%s/%d", encodedEntry(bucket, key), days));
+            }
+            setExecBucket(bucket);
+            return this;
+        }
+
         public byte[] toBody() {
             String body = StringUtils.join(ops, "&op=", "op=");
             return StringUtils.utf8Bytes(body);

@@ -1,10 +1,7 @@
 package com.qiniu.service.fileline;
 
-import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.interfaces.ILineParser;
-import com.qiniu.util.JSONConvertUtils;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,6 +62,6 @@ public class SplitLineParser implements ILineParser {
             }
         }
 
-        return JSONConvertUtils.toJson(itemMap);
+        return JsonConvertUtils.toJson(itemMap);
     }
 }

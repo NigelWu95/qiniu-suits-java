@@ -5,19 +5,12 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
-import com.qiniu.interfaces.IUrlItemProcess;
-import com.qiniu.service.auvideo.M3U8Manager;
-import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.DateUtils;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
@@ -73,7 +66,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     }
 
     public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
+        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
         String key = fileInfo.get("key").getAsString();
         bucketChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount, batch);
     }

@@ -4,7 +4,7 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -79,7 +79,7 @@ public class ListFilterProcess implements IOssFileProcess, Cloneable {
 
     public void processFile(String fileInfoStr, int retryCount, boolean batch) {
 
-        FileInfo fileInfo = JSONConvertUtils.fromJson(fileInfoStr, FileInfo.class);
+        FileInfo fileInfo = JsonConvertUtils.fromJson(fileInfoStr, FileInfo.class);
         String[] keySuffix = new String[]{".m3u8"};
         String[] mimeType = new String[]{"video", "application/x-mpegurl"};
         String[] keyRegex = new String[]{".*_compress_L[\\d].*"};
