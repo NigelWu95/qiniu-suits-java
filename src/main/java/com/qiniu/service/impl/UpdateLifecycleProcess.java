@@ -8,7 +8,7 @@ import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.UpdateLifecycle;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.DateUtils;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
     private QiniuException qiniuException = null;
 
     public UpdateLifecycleProcess(QiniuAuth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+                                  String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
         this.updateLifecycle = new UpdateLifecycle(auth, configuration);
         this.bucket = bucket;
         this.days = days;
@@ -68,7 +68,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
 
     public String[] getProcessParams(String fileInfoStr) {
 
-        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
+        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
 

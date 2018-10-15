@@ -9,7 +9,7 @@ import com.qiniu.service.oss.ListBucket;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
 
@@ -55,7 +55,7 @@ public class ListBucketProcess implements IBucketProcess {
                     if (fileInfo != null) {
                         key = fileInfo.key;
                         type = fileInfo.type;
-                        info = JSONConvertUtils.toJson(fileInfo);
+                        info = JsonConvertUtils.toJson(fileInfo);
                         marker = UrlSafeBase64.encodeToString("{\"c\":" + type + ",\"k\":\"" + key + "\"}");;
                     }
                 }
@@ -66,12 +66,12 @@ public class ListBucketProcess implements IBucketProcess {
                         line = lineList.size() > 0 ? lineList.get(0) : null;
                     }
                     if (!StringUtils.isNullOrEmpty(line)) {
-                        JsonObject json = JSONConvertUtils.toJsonObject(line);
+                        JsonObject json = JsonConvertUtils.toJsonObject(line);
                         JsonElement item = json.get("item");
                         if (item != null && !(item instanceof JsonNull)) {
                             key = item.getAsJsonObject().get("key").getAsString();
                             type = item.getAsJsonObject().get("type").getAsInt();
-                            info = JSONConvertUtils.toJson(item);
+                            info = JsonConvertUtils.toJson(item);
                             marker = UrlSafeBase64.encodeToString("{\"c\":" + type + ",\"k\":\"" + key + "\"}");
                         }
                         marker = StringUtils.isNullOrEmpty(marker) ? json.get("marker").getAsString() : marker;
@@ -212,7 +212,7 @@ public class ListBucketProcess implements IBucketProcess {
         if (fileInfoAndMarkerMap == null || fileInfoAndMarkerMap.size() < unitLen) {
             return null;
         } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoAndMarkerMap.keySet().parallelStream()
-                .anyMatch(fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
+                .anyMatch(fileInfo -> JsonConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
         {
             return null;
         } else {
@@ -253,7 +253,7 @@ public class ListBucketProcess implements IBucketProcess {
         }
         List<String> fileInfoList = (StringUtils.isNullOrEmpty(endFileKey) ? fileInfoAndMarkerMap.keySet().parallelStream() :
                 fileInfoAndMarkerMap.keySet().parallelStream().filter(
-                        fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.compareTo(endFileKey) < 0
+                        fileInfo -> JsonConvertUtils.fromJson(fileInfo, FileInfo.class).key.compareTo(endFileKey) < 0
                 )).collect(Collectors.toList());
         if (fileMap != null) fileMap.writeSuccess(String.join("\n", fileInfoList));
         if (processor != null) processFileInfo(fileInfoList.parallelStream(), processor, processBatch, 3, null);
