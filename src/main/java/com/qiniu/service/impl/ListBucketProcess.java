@@ -11,6 +11,7 @@ import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.JSONConvertUtils;
 import com.qiniu.util.StringUtils;
+import com.qiniu.util.UrlSafeBase64;
 
 import java.io.*;
 import java.util.*;
@@ -40,37 +41,46 @@ public class ListBucketProcess implements IBucketProcess {
 
     public String[] getFirstFileInfoAndMarker(Response response, String line, FileInfo fileInfo, int version) {
 
-        // 0-fileKey, 1-fileInfo, 2-nextMarker
-        String[] firstFileInfoAndMarker = new String[]{"", "", ""};
+        String key = "";
+        String info = "";
+        String marker = "";
+        int type;
         try {
             if (version == 1) {
-                FileListing fileListing = response != null ? response.jsonToObject(FileListing.class) : null;
-                if (fileListing == null && fileInfo == null) return firstFileInfoAndMarker;
-                else if (fileListing != null) {
-                    FileInfo[] items = fileListing.items;
-                    if (items.length > 0) {
-                        firstFileInfoAndMarker[0] = items[0].key;
-                        firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(items[0]);
+                if (response != null || fileInfo != null) {
+                    if (response != null) {
+                        FileListing fileListing = response.jsonToObject(FileListing.class);
+                        fileInfo = fileListing.items != null && fileListing.items.length > 0 ? fileListing.items[0] : null;
                     }
-                    firstFileInfoAndMarker[2] = fileListing.marker == null ? "" : fileListing.marker;
-                } else {
-                    firstFileInfoAndMarker[0] = fileInfo.key;
-                    firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(fileInfo);
+                    if (fileInfo != null) {
+                        key = fileInfo.key;
+                        type = fileInfo.type;
+                        info = JSONConvertUtils.toJson(fileInfo);
+                        marker = UrlSafeBase64.encodeToString("{\"c\":" + type + ",\"k\":\"" + key + "\"}");;
+                    }
                 }
             } else if (version == 2) {
-                if (response != null) line = response.bodyString();
-                if (StringUtils.isNullOrEmpty(line)) return firstFileInfoAndMarker;
-                JsonObject json = JSONConvertUtils.toJsonObject(line);
-                JsonElement item = json.get("item");
-                if (item != null && !(item instanceof JsonNull)) {
-                    firstFileInfoAndMarker[0] = item.getAsJsonObject().get("key").getAsString();
-                    firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(item);
+                if (response != null || !StringUtils.isNullOrEmpty(line)) {
+                    if (response != null) {
+                        List<String> lineList = Arrays.asList(response.bodyString().split("\n"));
+                        line = lineList.size() > 0 ? lineList.get(0) : null;
+                    }
+                    if (!StringUtils.isNullOrEmpty(line)) {
+                        JsonObject json = JSONConvertUtils.toJsonObject(line);
+                        JsonElement item = json.get("item");
+                        if (item != null && !(item instanceof JsonNull)) {
+                            key = item.getAsJsonObject().get("key").getAsString();
+                            type = item.getAsJsonObject().get("type").getAsInt();
+                            info = JSONConvertUtils.toJson(item);
+                            marker = UrlSafeBase64.encodeToString("{\"c\":" + type + ",\"k\":\"" + key + "\"}");
+                        }
+                        marker = StringUtils.isNullOrEmpty(marker) ? json.get("marker").getAsString() : marker;
+                    }
                 }
-                firstFileInfoAndMarker[2] = json.get("marker").getAsString();
             }
         } catch (QiniuException e) {}
 
-        return firstFileInfoAndMarker;
+        return new String[]{key, info, marker};
     }
 
     private Map<String, String> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, boolean doWrite,
@@ -78,7 +88,7 @@ public class ListBucketProcess implements IBucketProcess {
 
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         Map<String, String[]> fileInfoAndMarkerMap = prefixList.parallelStream()
-                .filter(prefix -> !prefix.contains("|"))
+//                .filter(prefix -> !prefix.contains("|"))
                 .map(prefix -> {
                         Response response = null;
                         String[] firstFileInfoAndMarker = null;
