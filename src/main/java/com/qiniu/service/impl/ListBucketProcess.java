@@ -9,8 +9,9 @@ import com.qiniu.service.oss.ListBucket;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
+import com.qiniu.util.UrlSafeBase64;
 
 import java.io.*;
 import java.util.*;
@@ -40,37 +41,46 @@ public class ListBucketProcess implements IBucketProcess {
 
     public String[] getFirstFileInfoAndMarker(Response response, String line, FileInfo fileInfo, int version) {
 
-        // 0-fileKey, 1-fileInfo, 2-nextMarker
-        String[] firstFileInfoAndMarker = new String[]{"", "", ""};
+        String key = "";
+        String info = "";
+        String marker = "";
+        int type;
         try {
             if (version == 1) {
-                FileListing fileListing = response != null ? response.jsonToObject(FileListing.class) : null;
-                if (fileListing == null && fileInfo == null) return firstFileInfoAndMarker;
-                else if (fileListing != null) {
-                    FileInfo[] items = fileListing.items;
-                    if (items.length > 0) {
-                        firstFileInfoAndMarker[0] = items[0].key;
-                        firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(items[0]);
+                if (response != null || fileInfo != null) {
+                    if (response != null) {
+                        FileListing fileListing = response.jsonToObject(FileListing.class);
+                        fileInfo = fileListing.items != null && fileListing.items.length > 0 ? fileListing.items[0] : null;
                     }
-                    firstFileInfoAndMarker[2] = fileListing.marker == null ? "" : fileListing.marker;
-                } else {
-                    firstFileInfoAndMarker[0] = fileInfo.key;
-                    firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(fileInfo);
+                    if (fileInfo != null) {
+                        key = fileInfo.key;
+                        type = fileInfo.type;
+                        info = JsonConvertUtils.toJson(fileInfo);
+                        marker = UrlSafeBase64.encodeToString("{\"c\":" + type + ",\"k\":\"" + key + "\"}");;
+                    }
                 }
             } else if (version == 2) {
-                if (response != null) line = response.bodyString();
-                if (StringUtils.isNullOrEmpty(line)) return firstFileInfoAndMarker;
-                JsonObject json = JSONConvertUtils.toJsonObject(line);
-                JsonElement item = json.get("item");
-                if (item != null && !(item instanceof JsonNull)) {
-                    firstFileInfoAndMarker[0] = item.getAsJsonObject().get("key").getAsString();
-                    firstFileInfoAndMarker[1] = JSONConvertUtils.toJson(item);
+                if (response != null || !StringUtils.isNullOrEmpty(line)) {
+                    if (response != null) {
+                        List<String> lineList = Arrays.asList(response.bodyString().split("\n"));
+                        line = lineList.size() > 0 ? lineList.get(0) : null;
+                    }
+                    if (!StringUtils.isNullOrEmpty(line)) {
+                        JsonObject json = JsonConvertUtils.toJsonObject(line);
+                        JsonElement item = json.get("item");
+                        if (item != null && !(item instanceof JsonNull)) {
+                            key = item.getAsJsonObject().get("key").getAsString();
+                            type = item.getAsJsonObject().get("type").getAsInt();
+                            info = JsonConvertUtils.toJson(item);
+                            marker = UrlSafeBase64.encodeToString("{\"c\":" + type + ",\"k\":\"" + key + "\"}");
+                        }
+                        marker = StringUtils.isNullOrEmpty(marker) ? json.get("marker").getAsString() : marker;
+                    }
                 }
-                firstFileInfoAndMarker[2] = json.get("marker").getAsString();
             }
         } catch (QiniuException e) {}
 
-        return firstFileInfoAndMarker;
+        return new String[]{key, info, marker};
     }
 
     private Map<String, String> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, boolean doWrite,
@@ -78,7 +88,7 @@ public class ListBucketProcess implements IBucketProcess {
 
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         Map<String, String[]> fileInfoAndMarkerMap = prefixList.parallelStream()
-                .filter(prefix -> !prefix.contains("|"))
+//                .filter(prefix -> !prefix.contains("|"))
                 .map(prefix -> {
                         Response response = null;
                         String[] firstFileInfoAndMarker = null;
@@ -99,12 +109,13 @@ public class ListBucketProcess implements IBucketProcess {
 
         if (doWrite) fileReaderAndWriterMap.writeSuccess(String.join("\n", fileInfoAndMarkerMap.keySet()));
         QiniuException qiniuException = exceptionQueue.poll();
-        if (qiniuException == null) {
-            qiniuException = processFileInfo(fileInfoAndMarkerMap.keySet().parallelStream(), iOssFileProcessor,
-                    false, 3, exceptionQueue).poll();
-            if (qiniuException != null) throw qiniuException;
+        if (iOssFileProcessor != null) {
+            if (qiniuException == null) {
+                qiniuException = processFileInfo(fileInfoAndMarkerMap.keySet().parallelStream(), iOssFileProcessor,
+                        false, 3, exceptionQueue).poll();
+                if (qiniuException != null) throw qiniuException;
+            } else throw qiniuException;
         }
-        else throw qiniuException;
 
         return fileInfoAndMarkerMap.values().parallelStream()
                 .collect(Collectors.toMap(keyAndMarker -> keyAndMarker[0], keyAndMarker -> keyAndMarker[1]));
@@ -127,11 +138,13 @@ public class ListBucketProcess implements IBucketProcess {
         return secondPrefixList;
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, int level, IOssFileProcess iOssFileProcessor) throws QiniuException {
+    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, IOssFileProcess iOssFileProcessor) throws QiniuException {
 
         ListBucket listBucket = new ListBucket(auth, configuration);
         Map<String, String> delimitedFileMap;
         List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+        if (!StringUtils.isNullOrEmpty(customPrefix))
+            prefixList = prefixList.parallelStream().map(prefix -> customPrefix + prefix).collect(Collectors.toList());
         if (level == 2) {
             delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, null);
             prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
@@ -199,7 +212,7 @@ public class ListBucketProcess implements IBucketProcess {
         if (fileInfoAndMarkerMap == null || fileInfoAndMarkerMap.size() < unitLen) {
             return null;
         } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoAndMarkerMap.keySet().parallelStream()
-                .anyMatch(fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
+                .anyMatch(fileInfo -> JsonConvertUtils.fromJson(fileInfo, FileInfo.class).key.equals(fileFlag)))
         {
             return null;
         } else {
@@ -240,7 +253,7 @@ public class ListBucketProcess implements IBucketProcess {
         }
         List<String> fileInfoList = (StringUtils.isNullOrEmpty(endFileKey) ? fileInfoAndMarkerMap.keySet().parallelStream() :
                 fileInfoAndMarkerMap.keySet().parallelStream().filter(
-                        fileInfo -> JSONConvertUtils.fromJson(fileInfo, FileInfo.class).key.compareTo(endFileKey) < 0
+                        fileInfo -> JsonConvertUtils.fromJson(fileInfo, FileInfo.class).key.compareTo(endFileKey) < 0
                 )).collect(Collectors.toList());
         if (fileMap != null) fileMap.writeSuccess(String.join("\n", fileInfoList));
         if (processor != null) processFileInfo(fileInfoList.parallelStream(), processor, processBatch, 3, null);
@@ -248,27 +261,35 @@ public class ListBucketProcess implements IBucketProcess {
         return marker;
     }
 
-    public void processBucket(IOssFileProcess iOssFileProcessor, boolean processBatch, int version, int maxThreads,
-                              int level, int unitLen, boolean endFile) throws IOException, CloneNotSupportedException {
+    public void processBucket(int version, int maxThreads, int level, int unitLen, boolean endFile, String customPrefix,
+                              IOssFileProcess iOssFileProcessor, boolean processBatch) throws IOException, CloneNotSupportedException {
 
-        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
+        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, customPrefix, iOssFileProcessor);
         List<String> keyList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyList);
-        int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;
+        boolean strictPrefix = !StringUtils.isNullOrEmpty(customPrefix);
+        int runningThreads = strictPrefix ? delimitedFileMap.size() : delimitedFileMap.size() + 1;
+        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
         System.out.println("there are " + runningThreads + " threads running...");
 
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        for (int i = -1; i < keyList.size(); i++) {
+        for (int i = strictPrefix ? 0 : -1; i < keyList.size(); i++) {
             int finalI = i;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
             fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
-                String endFileKey = finalI == keyList.size() - 1 ? "" : keyList.get(finalI + 1);
-                String prefix;
-                if (endFile || finalI == -1 || finalI == keyList.size() - 1) prefix = "";
-                else if (keyList.get(finalI).length() < 2) prefix = keyList.get(finalI);
-                else prefix = level == 2 ? keyList.get(finalI).substring(0,2) : keyList.get(finalI).substring(0, 1);
+                String endFileKey = "";
+                String prefix = "";
+                if (endFile && finalI < keyList.size() - 1) {
+                    endFileKey = keyList.get(finalI + 1);
+                } else if (!endFile && finalI < keyList.size() -1 && finalI > -1) {
+                    if (keyList.get(finalI).length() < customPrefix.length() + 2) prefix = keyList.get(finalI);
+                    else prefix = keyList.get(finalI).substring(0, customPrefix.length() + level == 2 ? 2 : 1);
+                } else {
+                    if (finalI == -1) endFileKey = keyList.get(0);
+                    if (strictPrefix) prefix = customPrefix;
+                }
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 while (!StringUtils.isNullOrEmpty(marker)) {

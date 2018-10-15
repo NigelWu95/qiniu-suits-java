@@ -25,9 +25,9 @@ public class ListBucketMain {
         int level = listBucketParams.getLevel();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
+        String customPrefix = listBucketParams.getCustomPrefix();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
-        PointTimeParams pointTimeParams;
         IOssFileProcess iOssFileProcessor = null;
         QiniuAuth auth = QiniuAuth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -36,7 +36,7 @@ public class ListBucketMain {
             // isBiggerThan 标志为 true 时，在 pointTime 时间点之前的记录进行处理，isBiggerThan 标志为 false 时，在 pointTime 时间点之后的记录进行处理。
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
-                pointTimeParams = fileStatusParams.getPointTimeParams();
+                PointTimeParams pointTimeParams = fileStatusParams.getPointTimeParams();
                 iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
                         resultFileDir, pointTimeParams.getPointDatetime(),
                         pointTimeParams.getDirection());
@@ -44,10 +44,9 @@ public class ListBucketMain {
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFile) : new FileTypeParams(args);
-                pointTimeParams = fileTypeParams.getPointTimeParams();
+                PointTimeParams pointTimeParams = fileTypeParams.getPointTimeParams();
                 iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
-                        resultFileDir, pointTimeParams.getPointDatetime(),
-                        pointTimeParams.getDirection());
+                        resultFileDir, pointTimeParams.getPointDatetime(), pointTimeParams.getDirection());
                 break;
             }
             case "copy": {
@@ -58,6 +57,13 @@ public class ListBucketMain {
                         fileCopyParams.getTargetBucket(), fileCopyParams.getTargetKeyPrefix(), resultFileDir);
                 break;
             }
+            case "lifecycle": {
+                LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFile) : new LifecycleParams(args);
+                PointTimeParams pointTimeParams = lifecycleParams.getPointTimeParams();
+                iOssFileProcessor = new UpdateLifecycleProcess(QiniuAuth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
+                        lifecycleParams.getDays(), resultFileDir, pointTimeParams.getPointDatetime(), pointTimeParams.getDirection());
+                break;
+            }
             case "filter": {
                 iOssFileProcessor = new ListFilterProcess(resultFileDir);
                 break;
@@ -65,8 +71,11 @@ public class ListBucketMain {
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        listBucketProcessor.processBucket(iOssFileProcessor, processBatch, version, maxThreads, level,
-                unitLen, enabledEndFile);
+        if ("prefix".equals(process))
+            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, null);
+        else
+            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
+                    iOssFileProcessor, processBatch);
 
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();

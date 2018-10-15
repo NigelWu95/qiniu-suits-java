@@ -6,19 +6,18 @@ import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
-public class ChangeStatus extends OperationBase implements Cloneable {
+public class UpdateLifecycle extends OperationBase implements Cloneable {
 
-    public ChangeStatus(QiniuAuth auth, Configuration configuration) {
+    public UpdateLifecycle(QiniuAuth auth, Configuration configuration) {
         super(auth, configuration);
     }
 
-    public ChangeStatus clone() throws CloneNotSupportedException {
-        return (ChangeStatus)super.clone();
+    public UpdateLifecycle clone() throws CloneNotSupportedException {
+        return (UpdateLifecycle) super.clone();
     }
 
-    public String run(String bucket, String key, short status, int retryCount) throws QiniuException {
-
-        Response response = changeStatusWithRetry(bucket, key, status, retryCount);
+    public String run(String bucket, String key, int days, int retryCount) throws QiniuException {
+        Response response = updateLifecycleWithRetry(bucket, key, days, retryCount);
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
         String reqId = response.reqId;
@@ -27,8 +26,8 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    synchronized public String batchRun(String bucket, String key, short status, int retryCount) throws QiniuException {
-        Response response = batchChangeStatusWithRetry(bucket, key, status, retryCount);
+    synchronized public String batchRun(String bucket, String key, int days, int retryCount) throws QiniuException {
+        Response response = batchUpdateLifecycleWithRetry(bucket, key, days, retryCount);;
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -39,18 +38,18 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
+    public Response updateLifecycleWithRetry(String bucket, String key, int days, int retryCount) throws QiniuException {
 
         Response response = null;
         try {
-            response = bucketManager.changeStatus(bucket, key, status);
+            response = bucketManager.deleteAfterDays(bucket, key, days);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
+                    System.out.println("lifecycle " + bucket + ":" + key + " to " + days + " " + e1.error() + ", last "
                             + retryCount + " times retry...");
-                    response = bucketManager.changeStatus(bucket, key, status);
+                    response = bucketManager.deleteAfterDays(bucket, key, days);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -61,11 +60,12 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public Response batchChangeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
+    synchronized public Response batchUpdateLifecycleWithRetry(String bucket, String key, int days, int retryCount) throws QiniuException {
 
         Response response = null;
-        if (batchOperations.getOps().size() < 1000) batchOperations.addChangeStatusOps(bucket, status, key);
+        if (batchOperations.getOps().size() < 1000) batchOperations.addDeleteAfterDaysOps(bucket, days, key);
         else response = batchWithRetry(retryCount);
+
         return response;
     }
 }

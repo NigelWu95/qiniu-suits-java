@@ -40,9 +40,9 @@ public class ChangeType extends OperationBase implements Cloneable {
     }
 
     public Response changeTypeWithRetry(String bucket, String key, short type, int retryCount) throws QiniuException {
+
         Response response = null;
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
-
         try {
             response = bucketManager.changeType(bucket, key, storageType);
         } catch (QiniuException e1) {
