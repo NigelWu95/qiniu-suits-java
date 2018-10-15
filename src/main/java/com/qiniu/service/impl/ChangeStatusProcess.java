@@ -5,17 +5,13 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
-import com.qiniu.service.auvideo.M3U8Manager;
-import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.ChangeStatus;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.DateUtils;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
@@ -72,7 +68,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     public String[] getProcessParams(String fileInfoStr) {
 
-        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
+        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
 

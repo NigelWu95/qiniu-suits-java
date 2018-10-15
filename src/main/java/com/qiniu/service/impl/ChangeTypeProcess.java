@@ -8,7 +8,7 @@ import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ChangeType;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.DateUtils;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -68,7 +68,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
     public String[] getProcessParams(String fileInfoStr) {
 
-        JsonObject fileInfo = JSONConvertUtils.toJsonObject(fileInfoStr);
+        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
         Long putTime = fileInfo.get("putTime").getAsLong();
         String key = fileInfo.get("key").getAsString();
         short type = fileInfo.get("type").getAsShort();

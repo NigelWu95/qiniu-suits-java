@@ -1,14 +1,10 @@
 package com.qiniu.interfaces;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuSuitsException;
-import com.qiniu.util.JSONConvertUtils;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public interface ILineParser {
 
@@ -29,7 +25,7 @@ public interface ILineParser {
     default String getByKey(String key) {
 
         System.out.println(toString());
-        JsonObject lineJson = JSONConvertUtils.toJsonObject(toString());
+        JsonObject lineJson = JsonConvertUtils.toJsonObject(toString());
         return lineJson.get(key)  == null ? null : lineJson.get(key).getAsString();
     };
 }
