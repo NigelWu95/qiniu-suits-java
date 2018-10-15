@@ -99,12 +99,13 @@ public class ListBucketProcess implements IBucketProcess {
 
         if (doWrite) fileReaderAndWriterMap.writeSuccess(String.join("\n", fileInfoAndMarkerMap.keySet()));
         QiniuException qiniuException = exceptionQueue.poll();
-        if (qiniuException == null) {
-            qiniuException = processFileInfo(fileInfoAndMarkerMap.keySet().parallelStream(), iOssFileProcessor,
-                    false, 3, exceptionQueue).poll();
-            if (qiniuException != null) throw qiniuException;
+        if (iOssFileProcessor != null) {
+            if (qiniuException == null) {
+                qiniuException = processFileInfo(fileInfoAndMarkerMap.keySet().parallelStream(), iOssFileProcessor,
+                        false, 3, exceptionQueue).poll();
+                if (qiniuException != null) throw qiniuException;
+            } else throw qiniuException;
         }
-        else throw qiniuException;
 
         return fileInfoAndMarkerMap.values().parallelStream()
                 .collect(Collectors.toMap(keyAndMarker -> keyAndMarker[0], keyAndMarker -> keyAndMarker[1]));
@@ -127,11 +128,13 @@ public class ListBucketProcess implements IBucketProcess {
         return secondPrefixList;
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, int level, IOssFileProcess iOssFileProcessor) throws QiniuException {
+    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, IOssFileProcess iOssFileProcessor) throws QiniuException {
 
         ListBucket listBucket = new ListBucket(auth, configuration);
         Map<String, String> delimitedFileMap;
         List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+        if (!StringUtils.isNullOrEmpty(customPrefix))
+            prefixList = prefixList.parallelStream().map(prefix -> customPrefix + prefix).collect(Collectors.toList());
         if (level == 2) {
             delimitedFileMap = listByPrefix(listBucket, prefixList, version, false, null);
             prefixList = getSecondFilePrefix(prefixList, delimitedFileMap);
@@ -248,13 +251,13 @@ public class ListBucketProcess implements IBucketProcess {
         return marker;
     }
 
-    public void processBucket(IOssFileProcess iOssFileProcessor, boolean processBatch, int version, int maxThreads,
-                              int level, int unitLen, boolean endFile) throws IOException, CloneNotSupportedException {
+    public void processBucket(int version, int maxThreads, int level, int unitLen, boolean endFile, String customPrefix,
+                              IOssFileProcess iOssFileProcessor, boolean processBatch) throws IOException, CloneNotSupportedException {
 
-        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, iOssFileProcessor);
+        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, customPrefix, iOssFileProcessor);
         List<String> keyList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyList);
-        int runningThreads = delimitedFileMap.size() < maxThreads ? delimitedFileMap.size() : maxThreads;
+        int runningThreads = delimitedFileMap.size() + 1 < maxThreads ? delimitedFileMap.size() + 1 : maxThreads;
         System.out.println("there are " + runningThreads + " threads running...");
 
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
@@ -267,8 +270,9 @@ public class ListBucketProcess implements IBucketProcess {
                 String endFileKey = finalI == keyList.size() - 1 ? "" : keyList.get(finalI + 1);
                 String prefix;
                 if (endFile || finalI == -1 || finalI == keyList.size() - 1) prefix = "";
-                else if (keyList.get(finalI).length() < 2) prefix = keyList.get(finalI);
-                else prefix = level == 2 ? keyList.get(finalI).substring(0,2) : keyList.get(finalI).substring(0, 1);
+                else if (keyList.get(finalI).length() < customPrefix.length() + 2) prefix = keyList.get(finalI);
+                else prefix = level == 2 ? keyList.get(finalI).substring(0, customPrefix.length() + 2) :
+                            keyList.get(finalI).substring(0, customPrefix.length() + 1);
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 while (!StringUtils.isNullOrEmpty(marker)) {
