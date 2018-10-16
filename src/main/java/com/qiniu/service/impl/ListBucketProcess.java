@@ -31,16 +31,12 @@ public class ListBucketProcess implements IBucketProcess {
     private Configuration configuration;
     private String bucket;
     private String resultFileDir;
-    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public ListBucketProcess(QiniuAuth auth, Configuration configuration, String bucket, String resultFileDir)
-            throws IOException {
-
+    public ListBucketProcess(QiniuAuth auth, Configuration configuration, String bucket, String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.resultFileDir = resultFileDir;
-        fileReaderAndWriterMap.initWriter(resultFileDir, "list");
     }
 
     private void writeAndProcess(List<FileInfo> fileInfoList, FileReaderAndWriterMap fileMap, int retryCount, boolean processBatch,
@@ -96,8 +92,8 @@ public class ListBucketProcess implements IBucketProcess {
         return fileInfo;
     }
 
-    private List<FileInfo> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, IOssFileProcess processor,
-                                        int retryCount) throws QiniuException {
+    private List<FileInfo> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, FileReaderAndWriterMap fileMap,
+                                        IOssFileProcess processor, int retryCount) throws QiniuException {
 
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         List<FileInfo> fileInfoList = prefixList.parallelStream()
@@ -109,7 +105,7 @@ public class ListBucketProcess implements IBucketProcess {
                         response = listBucket.run(bucket, prefix, null, null, 1, 3, version);
                         firstFileInfo = getFirstFileInfo(response, null, version);
                     } catch (QiniuException e) {
-                        fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
+                        fileMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
                         if (e.code() > 400) exceptionQueue.add(e);
                     } finally { if (response != null) response.close(); }
                     return firstFileInfo;
@@ -117,7 +113,7 @@ public class ListBucketProcess implements IBucketProcess {
                 .filter(fileInfo -> !(fileInfo == null || StringUtils.isNullOrEmpty(fileInfo.key)))
                 .collect(Collectors.toList());
 
-        writeAndProcess(fileInfoList, fileReaderAndWriterMap, retryCount, false, processor, exceptionQueue);
+        writeAndProcess(fileInfoList, fileMap, retryCount, false, processor, exceptionQueue);
         return fileInfoList;
     }
 
@@ -136,9 +132,11 @@ public class ListBucketProcess implements IBucketProcess {
         return secondPrefixList;
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, IOssFileProcess iOssFileProcessor,
-                                                   int retryCount) throws QiniuException {
+    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, String resultPrefix,
+                                                   IOssFileProcess iOssFileProcessor, int retryCount) throws IOException {
 
+        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        fileMap.initWriter(resultFileDir, resultPrefix);
         ListBucket listBucket = new ListBucket(auth, configuration);
         List<FileInfo> fileInfoList;
         List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
@@ -148,14 +146,14 @@ public class ListBucketProcess implements IBucketProcess {
                     .map(prefix -> customPrefix + prefix)
                     .collect(Collectors.toList());
         if (level == 2) {
-            fileInfoList = listByPrefix(listBucket, prefixList, version, null, retryCount);
+            fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, null, retryCount);
             prefixList = getSecondFilePrefix(prefixList, fileInfoList);
-            fileInfoList.addAll(listByPrefix(listBucket, prefixList, version, iOssFileProcessor, retryCount));
+            fileInfoList.addAll(listByPrefix(listBucket, prefixList, version, fileMap, iOssFileProcessor, retryCount));
         } else {
-            fileInfoList = listByPrefix(listBucket, prefixList, version, iOssFileProcessor, retryCount);
+            fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, iOssFileProcessor, retryCount);
         }
         listBucket.closeBucketManager();
-        fileReaderAndWriterMap.closeWriter();
+        fileMap.closeWriter();
 
         return fileInfoList.parallelStream().collect(Collectors.toMap(
                 fileInfo -> fileInfo.key,
@@ -218,7 +216,7 @@ public class ListBucketProcess implements IBucketProcess {
     public void processBucket(int version, int maxThreads, int level, int unitLen, boolean endFile, String customPrefix,
                               IOssFileProcess iOssFileProcessor, boolean processBatch) throws IOException, CloneNotSupportedException {
 
-        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, customPrefix, iOssFileProcessor, 3);
+        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, customPrefix, "list", iOssFileProcessor, 3);
         List<String> keyList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyList);
         boolean strictPrefix = !StringUtils.isNullOrEmpty(customPrefix);
