@@ -7,6 +7,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ChangeType;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -17,7 +18,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
     private ChangeType changeType;
     private String bucket;
-    private short fileType;
+    private int fileType;
     private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private String pointTime;
@@ -52,7 +53,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         return qiniuException;
     }
 
-    private void changeTypeResult(String bucket, String key, short fileType, int retryCount, boolean batch) {
+    private void changeTypeResult(String bucket, String key, int fileType, int retryCount, boolean batch) {
         try {
             String changeResult = batch ?
                     changeType.batchRun(bucket, key, fileType, retryCount) :
@@ -66,12 +67,11 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public String[] getProcessParams(String fileInfoStr) {
+    public String[] getProcessParams(FileInfo fileInfo) {
 
-        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
-        Long putTime = fileInfo.get("putTime").getAsLong();
-        String key = fileInfo.get("key").getAsString();
-        short type = fileInfo.get("type").getAsShort();
+        Long putTime = fileInfo.putTime;
+        String key = fileInfo.key;
+        int type = fileInfo.type;
 
         boolean isDoProcess = false;
         if (StringUtils.isNullOrEmpty(pointTime)) {
@@ -91,8 +91,8 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         return params;
     }
 
-    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        String[] params = getProcessParams(fileInfoStr);
+    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
+        String[] params = getProcessParams(fileInfo);
         if ("true".equals(params[0]))
             changeTypeResult(bucket, params[1], fileType, retryCount, batch);
         else

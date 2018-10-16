@@ -7,6 +7,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
@@ -65,9 +66,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
-        String key = fileInfo.get("key").getAsString();
+    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
+        String key = fileInfo.key;
         bucketChangeTypeResult(srcBucket, key, tarBucket, key, false, retryCount, batch);
     }
 
