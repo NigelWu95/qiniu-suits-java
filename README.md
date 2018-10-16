@@ -2,11 +2,9 @@
 七牛接口使用套件
 
 ### command
-* list bucket and process per item
+* list bucket and process per parameter
 ```
-java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -max-threads=30 -version=2
- -level=2 -end-file=true -unit-len=1000 -process=copy -process-batch=true -type=1 -status=0 -date=2018-08-01
-  -time=00:00:00 -direction=0 -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
+java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -max-threads=30 -version=2 -level=2 -end-file=true -unit-len=1000 -process=prefix -process-batch=true -time=00:00:00 -date=2018-08-01 -direction=0 -prefix= -days= -type=1 -status=0 -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
 ```
 
 ### property file
@@ -23,11 +21,12 @@ max-threads=30
 version=2
 end-file=true
 level=2
+unit-len=1000
+
 # 对每条记录进行什么操作，目前支持 changeLifecycle(deleteAfterDays)/changeTyep/changeStatus/fileCopy
 process=copy
 # 进行 process 操作时，是否使用 batch 方式处理
 process-batch=true
-unit-len=1000
 
 # date、time 为判断是否进行 process 操作的时间点。direction 0 表示向时间点以前，1 表示向时间点以后
 date=2018-08-01
