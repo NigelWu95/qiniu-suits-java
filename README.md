@@ -13,38 +13,39 @@ java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -ma
 * 不通过命令行传递参数时可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹
   中，文件名为 .qiniu.properties，参数设置如下：
 ```
-# list bucket
+# list bucket 操作的 parameters
+# 相对路径
 ak=
 sk=
 bucket=temp
-# 相对路径
 result-path=../result
 max-threads=30
 version=2
 end-file=true
-parallel=true
 level=2
-# 对每条记录进行什么操作，目前支持 copy/changeTyep/changeStatus
+# 对每条记录进行什么操作，目前支持 changeLifecycle(deleteAfterDays)/changeTyep/changeStatus/fileCopy
 process=copy
 # 进行 process 操作时，是否使用 batch 方式处理
 process-batch=true
 unit-len=1000
 
-# process
-# 1 表示低频存储，0 表示标准存储
-type=1
-# 1 表示文件禁用，0 表示文件启用
-status=0
-# 判断是否进行 process 操作的时间点
+# date、time 为判断是否进行 process 操作的时间点。direction 0 表示向时间点以前，1 表示向时间点以后
 date=2018-08-01
 time=00:00:00
-# 0 表示向时间点以前，1 表示向时间点以后
 direction=0
-
-# file copy
+# prefix 操作的 parameter，值为指定的前缀
+prefix=
+# type 操作的 parameter，1 表示低频存储，0 表示标准存储
+type=1
+# status 操作的 parameter，1 表示文件禁用，0 表示文件启用
+status=0
+# lifecycle 操作的 parameter，为 0 时表示永久的生命周期
+days=0
+# file copy 操作的 parameters，复制操作前提是两个空间在同一账号下，或者是被复制的空间为授权可读权限的空间，access-key 和
+# secret-key 为目标空间的 ak、sk，from 和 to 表示源和目标 bucket 名称，keep-key 为是否保留原文件名，add-prefix 为附加
+# 的目标文件前缀。
 access-key=
 secret-key=
-# 源和目标 bucket 名称
 from=bucket1
 to=bucket2
 keep-key=true
@@ -78,6 +79,18 @@ add-prefix=video/
 
 ```
 
+### list process parameter
+```
+默认值为空，不进行任何处理，直接列举得到文件列表。
+[prefix] 检查空间文件包含的前缀，获取每个前缀的第一个文件信息（用于分段列举的节点）。
+[lifecycle] 将列举出的文件生命周期进行修改。
+[status] 将列举出的文件状态进行修改，可指定某个时间点之前或之后的进行处理。
+[type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储，可指定某个时间点之前或之后的进行处理。
+[copy] 将列举出的文件 copy 至另一个 bucket，需要设置 copy 的账号及空间等参数。
+```
+与 process 同时使用的参数还有 process-batch，通常情况下会选择（true）此操作方式，用集中的请求做批量处理，效果更好，但特殊操作
+不支持 batch 的情况下不能使用。
+
 ### multi list suggestions
 ```
 1、level 1 理论最大分段为 88 个，level 2 理论最大分段为 7744 个，但实际情况空间的文件可能只有几个统一的前缀，通常只会分成几个
@@ -88,16 +101,6 @@ add-prefix=video/
    unit-len 可视总文件数进行调整。
 5、推荐用法：version=2 end-file=false unit-len=10000，100 万以内文件 level=1，100 万以上文件 level=2。
 ```
-
-### list process parameter
-```
-默认值为空，不进行任何处理，直接列举得到文件列表。
-[copy] 将列举出的文件 copy 至另一个 bucket，需要设置 copy 的账号及空间等参数。
-[status] 将列举出的文件状态进行修改，可指定某个时间点之前或之后的进行处理。
-[type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储，可指定某个时间点之前或之后的进行处理。
-```
-与 process 同时使用的参数还有 process-batch，通常情况下会选择（true）此操作方式，用集中的请求做批量处理，效果更好，但特殊操作
-不支持 batch 的情况下不能使用。
 
 ### extra comments
 在起始阶段，由于需要通过前缀做列举检测，会比较耗时，同时，可能出现如下的超时异常，可忽略，原因是因为特殊前缀"|"服务端会超时响应。
