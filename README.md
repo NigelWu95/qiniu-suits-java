@@ -4,7 +4,9 @@
 ### command
 * list bucket and process per parameter
 ```
-java -jar qiniu-java-suits-1.0.jar -ak= -sk= -bucket= -result-path=../result -max-threads=30 -version=2 -level=2 -end-file=true -unit-len=1000 -process=prefix -process-batch=true -time=00:00:00 -date=2018-08-01 -direction=0 -prefix= -days= -type=1 -status=0 -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
+java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=../result -max-threads=30 -version=2 -level=2
+ -end-file=true -unit-len=1000 -prefix= -process=type -process-batch=true -date=2018-08-01 -time=00:00:00
+ -direction=0 -days=0 -type=1 -status=0 -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
 ```
 
 ### property file
@@ -22,6 +24,7 @@ version=2
 end-file=true
 level=2
 unit-len=1000
+prefix=
 
 # 对每条记录进行什么操作，目前支持 changeLifecycle(deleteAfterDays)/changeTyep/changeStatus/fileCopy
 process=copy
@@ -32,8 +35,6 @@ process-batch=true
 date=2018-08-01
 time=00:00:00
 direction=0
-# prefix 操作的 parameter，值为指定的前缀
-prefix=
 # type 操作的 parameter，1 表示低频存储，0 表示标准存储
 type=1
 # status 操作的 parameter，1 表示文件禁用，0 表示文件启用
@@ -75,13 +76,14 @@ add-prefix=video/
               果计算一次可得到，而取出每一个 key 要每一行计算。list v2 的每一行均包含 marker，得到 marker 经过一次 json 
               计算，得到 key 需要经过两次 json 计算。
 [unit-len] -- 一次列举请求的 item 长度（单次文件个数限制），list v1 接口限制 1000，list v2 可设置 10000 甚至更多。
+[prefix] -- 指定前缀进行列举，为空时完整列举
 
 ```
 
 ### list process parameter
 ```
 默认值为空，不进行任何处理，直接列举得到文件列表。
-[prefix] 检查空间文件包含的前缀，获取每个前缀的第一个文件信息（用于分段列举的节点）。
+[check] 检查空间文件包含的前缀，存在几个前缀表明可进行列举的最多并发数，结果文件保存每个前缀的第一个文件信息（用于分段列举的节点）。
 [lifecycle] 将列举出的文件生命周期进行修改。
 [status] 将列举出的文件状态进行修改，可指定某个时间点之前或之后的进行处理。
 [type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储，可指定某个时间点之前或之后的进行处理。
