@@ -72,7 +72,8 @@ public class ListBucketMain {
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
         if ("check".equals(process)) {
-            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, "delimiter", null, 3);
+            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, "delimiter",
+                    null, 3);
         } else
             listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
                     iOssFileProcessor, processBatch);

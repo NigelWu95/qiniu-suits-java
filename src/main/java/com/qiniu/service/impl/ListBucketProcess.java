@@ -39,9 +39,18 @@ public class ListBucketProcess implements IBucketProcess {
         this.resultFileDir = resultFileDir;
     }
 
-    private void writeAndProcess(List<FileInfo> fileInfoList, FileReaderAndWriterMap fileMap, int retryCount, boolean processBatch,
-                                 IOssFileProcess iOssFileProcessor, Queue<QiniuException> exceptionQueue)
+    private void writeAndProcess(List<FileInfo> fileInfoList, String endFileKey, FileReaderAndWriterMap fileMap,
+                                 IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount,
+                                 Queue<QiniuException> exceptionQueue)
             throws QiniuException {
+
+        if (!"".equals(endFileKey)) {
+            fileInfoList = fileInfoList.parallelStream()
+                    .filter(fileInfo -> fileInfo.key.compareTo(endFileKey) < 0)
+                    .collect(Collectors.toList());
+        }
+
+        if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
@@ -52,7 +61,8 @@ public class ListBucketProcess implements IBucketProcess {
         if (iOssFileProcessor != null) {
             fileInfoList.parallelStream().forEach(fileInfo -> {
                 iOssFileProcessor.processFile(fileInfo, retryCount, processBatch);
-                if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400)
+                if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400 &&
+                        exceptionQueue != null)
                     exceptionQueue.add(iOssFileProcessor.qiniuException());
             });
         }
@@ -93,16 +103,15 @@ public class ListBucketProcess implements IBucketProcess {
     }
 
     private List<FileInfo> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, FileReaderAndWriterMap fileMap,
-                                        IOssFileProcess processor, int retryCount) throws QiniuException {
+                                        Queue<QiniuException> exceptionQueue, int retryCount) throws QiniuException {
 
-        Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         List<FileInfo> fileInfoList = prefixList.parallelStream()
 //                .filter(prefix -> !prefix.contains("|"))
                 .map(prefix -> {
                     Response response = null;
                     FileInfo firstFileInfo = null;
                     try {
-                        response = listBucket.run(bucket, prefix, null, null, 1, 3, version);
+                        response = listBucket.run(bucket, prefix, null, null, 1, retryCount, version);
                         firstFileInfo = getFirstFileInfo(response, null, version);
                     } catch (QiniuException e) {
                         fileMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
@@ -113,7 +122,6 @@ public class ListBucketProcess implements IBucketProcess {
                 .filter(fileInfo -> !(fileInfo == null || StringUtils.isNullOrEmpty(fileInfo.key)))
                 .collect(Collectors.toList());
 
-        writeAndProcess(fileInfoList, fileMap, retryCount, false, processor, exceptionQueue);
         return fileInfoList;
     }
 
@@ -135,29 +143,34 @@ public class ListBucketProcess implements IBucketProcess {
     public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, String resultPrefix,
                                                    IOssFileProcess iOssFileProcessor, int retryCount) throws IOException {
 
+        Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, resultPrefix);
         ListBucket listBucket = new ListBucket(auth, configuration);
         List<FileInfo> fileInfoList;
         List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
-        if (!StringUtils.isNullOrEmpty(customPrefix))
+        if (!StringUtils.isNullOrEmpty(customPrefix)) {
             prefixList = prefixList
                     .parallelStream()
                     .map(prefix -> customPrefix + prefix)
                     .collect(Collectors.toList());
+        }
+
+        fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount);
         if (level == 2) {
-            fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, null, retryCount);
             prefixList = getSecondFilePrefix(prefixList, fileInfoList);
-            fileInfoList.addAll(listByPrefix(listBucket, prefixList, version, fileMap, iOssFileProcessor, retryCount));
-        } else {
-            fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, iOssFileProcessor, retryCount);
+            fileInfoList.addAll(listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount));
         }
         listBucket.closeBucketManager();
+        QiniuException qiniuException = exceptionQueue.poll();
+        if (qiniuException != null) throw qiniuException;
+        writeAndProcess(fileInfoList, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
         fileMap.closeWriter();
 
         return fileInfoList.parallelStream().collect(Collectors.toMap(
                 fileInfo -> fileInfo.key,
-                fileInfo -> UrlSafeBase64.encodeToString("{\"c\":" + fileInfo.type + ",\"k\":\"" + fileInfo.key + "\"}")
+                fileInfo -> UrlSafeBase64.encodeToString("{\"c\":" + fileInfo.type + ",\"k\":\"" + fileInfo.key + "\"}"),
+                (value1, value2) -> value2
         ));
     }
 
@@ -209,7 +222,7 @@ public class ListBucketProcess implements IBucketProcess {
 
         List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker, unitLen, version, 3);
         marker = getNextMarker(fileInfoList, endFileKey, unitLen, version);
-        writeAndProcess(fileInfoList, fileMap, 3, processBatch, processor, null);
+        writeAndProcess(fileInfoList, endFileKey, fileMap, processor, processBatch, 3, null);
         return marker;
     }
 

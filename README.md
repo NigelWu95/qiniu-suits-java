@@ -2,7 +2,7 @@
 七牛接口使用套件
 
 ### command
-* list bucket and process per parameter
+* list bucket and process per parameter（字段含义和下述 properties 中各字段的释义一致）
 ```
 java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=../result -max-threads=30 -version=2 -level=2
  -end-file=true -unit-len=1000 -prefix= -process=type -process-batch=true -date=2018-08-01 -time=00:00:00
