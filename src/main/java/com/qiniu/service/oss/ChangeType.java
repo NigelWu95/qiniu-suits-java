@@ -17,7 +17,7 @@ public class ChangeType extends OperationBase implements Cloneable {
         return (ChangeType) super.clone();
     }
 
-    public String run(String bucket, String key, short type, int retryCount) throws QiniuException {
+    public String run(String bucket, String key, int type, int retryCount) throws QiniuException {
         Response response = changeTypeWithRetry(bucket, key, type, retryCount);
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -27,7 +27,7 @@ public class ChangeType extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    synchronized public String batchRun(String bucket, String key, short type, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, String key, int type, int retryCount) throws QiniuException {
         Response response = batchChangeTypeWithRetry(bucket, key, type, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
@@ -39,7 +39,7 @@ public class ChangeType extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeTypeWithRetry(String bucket, String key, short type, int retryCount) throws QiniuException {
+    public Response changeTypeWithRetry(String bucket, String key, int type, int retryCount) throws QiniuException {
 
         Response response = null;
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
@@ -62,7 +62,7 @@ public class ChangeType extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public Response batchChangeTypeWithRetry(String bucket, String key, short type, int retryCount) throws QiniuException {
+    synchronized public Response batchChangeTypeWithRetry(String bucket, String key, int type, int retryCount) throws QiniuException {
 
         Response response = null;
         if (batchOperations.getOps().size() < 1000) batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, key);

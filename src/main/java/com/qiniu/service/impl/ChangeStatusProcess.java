@@ -7,6 +7,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ChangeStatus;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -66,11 +67,10 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public String[] getProcessParams(String fileInfoStr) {
+    public String[] getProcessParams(FileInfo fileInfo) {
 
-        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
-        Long putTime = fileInfo.get("putTime").getAsLong();
-        String key = fileInfo.get("key").getAsString();
+        Long putTime = fileInfo.putTime;
+        String key = fileInfo.key;
 
         boolean isDoProcess = false;
         if (StringUtils.isNullOrEmpty(pointTime)) {
@@ -89,8 +89,8 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return params;
     }
 
-    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        String[] params = getProcessParams(fileInfoStr);
+    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
+        String[] params = getProcessParams(fileInfo);
         if ("true".equals(params[0]))
             changeStatusResult(bucket, params[1], fileStatus, retryCount, batch);
         else
