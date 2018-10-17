@@ -59,12 +59,19 @@ public class ListBucketProcess implements IBucketProcess {
         );
 
         if (iOssFileProcessor != null) {
-            fileInfoList.parallelStream().forEach(fileInfo -> {
-                iOssFileProcessor.processFile(fileInfo, retryCount, processBatch);
-                if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400 &&
-                        exceptionQueue != null)
-                    exceptionQueue.add(iOssFileProcessor.qiniuException());
-            });
+            if (processBatch) {
+                iOssFileProcessor.processFile(fileInfoList.parallelStream()
+                        .map(fileInfo -> fileInfo.key)
+                        .collect(Collectors.toList()), retryCount);
+            } else {
+                fileInfoList.parallelStream().forEach(fileInfo -> {
+                    iOssFileProcessor.processFile(fileInfo.key, retryCount);
+                });
+            }
+
+            if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400 &&
+                    exceptionQueue != null)
+                exceptionQueue.add(iOssFileProcessor.qiniuException());
         }
 
         if (exceptionQueue != null) {
@@ -106,7 +113,7 @@ public class ListBucketProcess implements IBucketProcess {
                                         Queue<QiniuException> exceptionQueue, int retryCount) throws QiniuException {
 
         List<FileInfo> fileInfoList = prefixList.parallelStream()
-//                .filter(prefix -> !prefix.contains("|"))
+                .filter(prefix -> !prefix.contains("|"))
                 .map(prefix -> {
                     Response response = null;
                     FileInfo firstFileInfo = null;
@@ -267,10 +274,7 @@ public class ListBucketProcess implements IBucketProcess {
                     }
                 }
                 listBucket.closeBucketManager();
-                if (processor != null) {
-                    if (processBatch) processor.checkBatchProcess(3);
-                    processor.closeResource();
-                }
+                if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
             });
         }

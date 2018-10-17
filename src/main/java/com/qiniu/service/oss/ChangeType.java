@@ -7,6 +7,8 @@ import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
 
+import java.util.List;
+
 public class ChangeType extends OperationBase implements Cloneable {
 
     public ChangeType(QiniuAuth auth, Configuration configuration) {
@@ -18,23 +20,12 @@ public class ChangeType extends OperationBase implements Cloneable {
     }
 
     public String run(String bucket, String key, int type, int retryCount) throws QiniuException {
+
         Response response = changeTypeWithRetry(bucket, key, type, retryCount);
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
         String reqId = response.reqId;
         response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
-    synchronized public String batchRun(String bucket, String key, int type, int retryCount) throws QiniuException {
-        Response response = batchChangeTypeWithRetry(bucket, key, type, retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-        batchOperations.clearOps();
 
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
@@ -62,12 +53,14 @@ public class ChangeType extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public Response batchChangeTypeWithRetry(String bucket, String key, int type, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, List<String> keys, int type, int retryCount) throws QiniuException {
 
-        Response response = null;
-        if (batchOperations.getOps().size() < 1000) batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, key);
-        else response = batchWithRetry(retryCount);
-
-        return response;
+        batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
+        Response response = batchWithRetry(retryCount, "batch type " + bucket + ":" + keys + " to " + type);
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        batchOperations.clearOps();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 }
