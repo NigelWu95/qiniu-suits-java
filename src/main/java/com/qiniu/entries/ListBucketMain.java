@@ -38,15 +38,14 @@ public class ListBucketMain {
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
                 PointTimeParams pointTimeParams = fileStatusParams.getPointTimeParams();
                 iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
-                        resultFileDir, pointTimeParams.getPointDatetime(),
-                        pointTimeParams.getDirection());
+                        resultFileDir);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFile) : new FileTypeParams(args);
                 PointTimeParams pointTimeParams = fileTypeParams.getPointTimeParams();
                 iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
-                        resultFileDir, pointTimeParams.getPointDatetime(), pointTimeParams.getDirection());
+                        resultFileDir);
                 break;
             }
             case "copy": {
@@ -61,7 +60,7 @@ public class ListBucketMain {
                 LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFile) : new LifecycleParams(args);
                 PointTimeParams pointTimeParams = lifecycleParams.getPointTimeParams();
                 iOssFileProcessor = new UpdateLifecycleProcess(QiniuAuth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
-                        lifecycleParams.getDays(), resultFileDir, pointTimeParams.getPointDatetime(), pointTimeParams.getDirection());
+                        lifecycleParams.getDays(), resultFileDir);
                 break;
             }
             case "filter": {

@@ -22,6 +22,7 @@ public class ChangeType extends OperationBase implements Cloneable {
     public String run(String bucket, String key, int type, int retryCount) throws QiniuException {
 
         Response response = changeTypeWithRetry(bucket, key, type, retryCount);
+        if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
         String reqId = response.reqId;
@@ -57,6 +58,7 @@ public class ChangeType extends OperationBase implements Cloneable {
 
         batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
         Response response = batchWithRetry(retryCount, "batch type " + bucket + ":" + keys + " to " + type);
+        if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
         String reqId = response.reqId;
