@@ -4,10 +4,10 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 public class ListFilterProcess implements IOssFileProcess, Cloneable {
 
@@ -77,18 +77,19 @@ public class ListFilterProcess implements IOssFileProcess, Cloneable {
         else return (fileInfo.type == type);
     }
 
-    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
+    public void processFile(String fileKey, int retryCount) {
 
         String[] keySuffix = new String[]{".m3u8"};
         String[] mimeType = new String[]{"video", "application/x-mpegurl"};
         String[] keyRegex = new String[]{".*_compress_L[\\d].*"};
 
-        boolean filter = filterKeySuffix(fileInfo, keySuffix) || filterMimeType(fileInfo, mimeType);
-        boolean antiFilter = filterKeyRegex(fileInfo, keyRegex);
+//        boolean filter = filterKeySuffix(fileInfo, keySuffix) || filterMimeType(fileInfo, mimeType);
+//        boolean antiFilter = filterKeyRegex(fileInfo, keyRegex);
 
-        if (filter && !antiFilter) {
-            fileReaderAndWriterMap.writeKeyFile("filter_result", JsonConvertUtils.toJson(fileInfo));
-        }
+    }
+
+    public void processFile(List<String> keyList, int retryCount) {
+
     }
 
     public void checkBatchProcess(int retryCount) {}
