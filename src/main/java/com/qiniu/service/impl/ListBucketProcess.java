@@ -268,7 +268,7 @@ public class ListBucketProcess implements IBucketProcess {
                 }
                 listBucket.closeBucketManager();
                 if (processor != null) {
-                    processor.checkBatchProcess(3);
+                    if (processBatch) processor.checkBatchProcess(3);
                     processor.closeResource();
                 }
                 fileMap.closeWriter();
