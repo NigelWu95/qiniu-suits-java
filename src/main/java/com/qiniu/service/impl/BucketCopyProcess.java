@@ -54,14 +54,15 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private void bucketChangeTypeResult(String sourceBucket, String srcKey, String targetBucket, String tarKey, boolean force,
                                        int retryCount, boolean batch) {
         try {
-            String bucketCopyResult = batch ?
+            String result = batch ?
                     bucketCopy.batchRun(sourceBucket, srcKey, targetBucket, keyPrefix + tarKey, force, retryCount) :
                     bucketCopy.run(sourceBucket, srcKey, targetBucket, keyPrefix + tarKey, force, retryCount);
-            if (bucketCopyResult != null) fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             if (batch) fileReaderAndWriterMap.writeErrorOrNull(bucketCopy.getBatchOps() + "\t" + e.error());
-            else fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" + tarKey + "\t" + e.error());
+            else fileReaderAndWriterMap.writeErrorOrNull(sourceBucket + "\t" + srcKey + "\t" + targetBucket + "\t" +
+                    tarKey + "\t" + e.error());
             e.response.close();
         }
     }
@@ -73,8 +74,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     public void checkBatchProcess(int retryCount) {
         try {
-            String bucketCopyResult = bucketCopy.batchCheckRun(retryCount);
-            if (bucketCopyResult != null) fileReaderAndWriterMap.writeSuccess(bucketCopyResult);
+            String result = bucketCopy.batchCheckRun(retryCount);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(bucketCopy.getBatchOps() + "\t" + e.error());
