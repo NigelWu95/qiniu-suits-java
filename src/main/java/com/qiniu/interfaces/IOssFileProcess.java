@@ -1,6 +1,7 @@
 package com.qiniu.interfaces;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.storage.model.FileInfo;
 
 public interface IOssFileProcess {
 
@@ -8,7 +9,7 @@ public interface IOssFileProcess {
 
     QiniuException qiniuException();
 
-    void processFile(String fileInfoStr, int retryCount, boolean batch);
+    void processFile(FileInfo fileInfo, int retryCount, boolean batch);
 
     void checkBatchProcess(int retryCount);
 

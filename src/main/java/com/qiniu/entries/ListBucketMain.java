@@ -21,13 +21,13 @@ public class ListBucketMain {
         String resultFileDir = listBucketParams.getResultFileDir();
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
-        boolean enabledEndFile = listBucketParams.getEnabledEndFile();
         int level = listBucketParams.getLevel();
-        String process = listBucketParams.getProcess();
-        boolean processBatch = listBucketParams.getProcessBatch();
-        String customPrefix = listBucketParams.getCustomPrefix();
+        boolean enabledEndFile = listBucketParams.getEnabledEndFile();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
+        String customPrefix = listBucketParams.getCustomPrefix();
+        String process = listBucketParams.getProcess();
+        boolean processBatch = listBucketParams.getProcessBatch();
         IOssFileProcess iOssFileProcessor = null;
         QiniuAuth auth = QiniuAuth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -71,9 +71,10 @@ public class ListBucketMain {
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        if ("prefix".equals(process))
-            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, null);
-        else
+        if ("check".equals(process)) {
+            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, "delimiter",
+                    null, 3);
+        } else
             listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
                     iOssFileProcessor, processBatch);
 

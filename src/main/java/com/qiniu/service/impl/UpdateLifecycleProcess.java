@@ -7,6 +7,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.UpdateLifecycle;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -57,7 +58,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
             String result = batch ?
                     updateLifecycle.batchRun(bucket, key, days, retryCount) :
                     updateLifecycle.run(bucket, key, days, retryCount);
-            if (result != null) fileReaderAndWriterMap.writeSuccess(result);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             if (batch) fileReaderAndWriterMap.writeErrorOrNull(updateLifecycle.getBatchOps() + "\t" + e.error());
@@ -66,11 +67,10 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public String[] getProcessParams(String fileInfoStr) {
+    public String[] getProcessParams(FileInfo fileInfo) {
 
-        JsonObject fileInfo = JsonConvertUtils.toJsonObject(fileInfoStr);
-        Long putTime = fileInfo.get("putTime").getAsLong();
-        String key = fileInfo.get("key").getAsString();
+        Long putTime = fileInfo.putTime;
+        String key = fileInfo.key;
 
         boolean isDoProcess = false;
         if (StringUtils.isNullOrEmpty(pointTime)) {
@@ -89,8 +89,8 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
         return params;
     }
 
-    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
-        String[] params = getProcessParams(fileInfoStr);
+    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
+        String[] params = getProcessParams(fileInfo);
         if ("true".equals(params[0]))
             updateLifecycleResult(bucket, params[1], days, retryCount, batch);
         else
@@ -100,7 +100,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
     public void checkBatchProcess(int retryCount) {
         try {
             String result = updateLifecycle.batchCheckRun(retryCount);
-            if (result != null) fileReaderAndWriterMap.writeSuccess(result);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(updateLifecycle.getBatchOps() + "\t" + e.error());
