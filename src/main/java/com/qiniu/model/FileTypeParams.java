@@ -3,17 +3,14 @@ package com.qiniu.model;
 public class FileTypeParams extends BaseParams {
 
     private String targetType;
-    private PointTimeParams pointTimeParams;
 
     public FileTypeParams(String[] args) throws Exception {
         super(args);
-        pointTimeParams = new PointTimeParams(args);
         this.targetType = getParamFromArgs("type");
     }
 
     public FileTypeParams(String configFileName) throws Exception {
         super(configFileName);
-        pointTimeParams = new PointTimeParams(configFileName);
         this.targetType = getParamFromConfig("type");
     }
 
@@ -23,9 +20,5 @@ public class FileTypeParams extends BaseParams {
         } else {
             throw new Exception("the direction is incorrect, please set it 0 or 1");
         }
-    }
-
-    public PointTimeParams getPointTimeParams() {
-        return pointTimeParams;
     }
 }
