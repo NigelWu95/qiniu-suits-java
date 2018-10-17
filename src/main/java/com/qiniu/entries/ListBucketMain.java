@@ -36,14 +36,12 @@ public class ListBucketMain {
             // isBiggerThan 标志为 true 时，在 pointTime 时间点之前的记录进行处理，isBiggerThan 标志为 false 时，在 pointTime 时间点之后的记录进行处理。
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
-                PointTimeParams pointTimeParams = fileStatusParams.getPointTimeParams();
                 iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
                         resultFileDir);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFile) : new FileTypeParams(args);
-                PointTimeParams pointTimeParams = fileTypeParams.getPointTimeParams();
                 iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
                         resultFileDir);
                 break;
@@ -58,7 +56,6 @@ public class ListBucketMain {
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFile) : new LifecycleParams(args);
-                PointTimeParams pointTimeParams = lifecycleParams.getPointTimeParams();
                 iOssFileProcessor = new UpdateLifecycleProcess(QiniuAuth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
                         lifecycleParams.getDays(), resultFileDir);
                 break;
