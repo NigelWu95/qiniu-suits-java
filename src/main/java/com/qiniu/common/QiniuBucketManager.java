@@ -558,6 +558,19 @@ public class QiniuBucketManager {
         }
 
         /**
+         * 添加copy指令
+         */
+        public BatchOperations addCopyOps(String fromBucket, String toBucket, boolean force, String targetPrefix, String... fileKeys) {
+            for (String fileKey : fileKeys) {
+                String from = encodedEntry(fromBucket, fileKey);
+                String to = encodedEntry(toBucket, targetPrefix + fileKey);
+                ops.add(String.format("copy/%s/%s/force/%s", from, to, force));
+            }
+            setExecBucket(fromBucket);
+            return this;
+        }
+
+        /**
          * 添加重命名指令
          */
         public BatchOperations addRenameOps(String fromBucket, String fromFileKey, String toFileKey) {
@@ -611,7 +624,7 @@ public class QiniuBucketManager {
         /**
          * 添加changeStatus指令
          */
-        public BatchOperations addChangeStatusOps(String bucket, short status, String... keys) {
+        public BatchOperations addChangeStatusOps(String bucket, int status, String... keys) {
             for (String key : keys) {
                 ops.add(String.format("chstatus/%s/status/%d", encodedEntry(bucket, key), status));
             }

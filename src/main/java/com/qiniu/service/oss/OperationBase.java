@@ -31,11 +31,7 @@ public abstract class OperationBase {
         return operationBase;
     }
 
-    synchronized public ArrayList<String> getBatchOps() {
-        return batchOperations.getOps();
-    }
-
-    synchronized public Response batchWithRetry(int retryCount) throws QiniuException {
+    public Response batchWithRetry(int retryCount, String operation) throws QiniuException {
         Response response = null;
 
         try {
@@ -44,8 +40,7 @@ public abstract class OperationBase {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("batch operations failed: " + e1.error() + ", last "
-                            + retryCount + " times retry...");
+                    System.out.println(operation + " " + e1.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.batch(batchOperations);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -55,21 +50,6 @@ public abstract class OperationBase {
         }
 
         return response;
-    }
-
-    synchronized public String batchCheckRun(int retryCount) throws QiniuException {
-        if (!batchOperations.getOps().isEmpty()) {
-            Response response = batchWithRetry(retryCount);
-            String responseBody = response.bodyString();
-            int statusCode = response.statusCode;
-            String reqId = response.reqId;
-            response.close();
-            batchOperations.clearOps();
-
-            return statusCode + "\t" + reqId + "\t" + responseBody;
-        } else {
-            return "";
-        }
     }
 
     public void closeBucketManager() {

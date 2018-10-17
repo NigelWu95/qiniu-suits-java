@@ -1,10 +1,13 @@
 package com.qiniu.service.oss;
 
 import com.qiniu.common.QiniuAuth;
+import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
+
+import java.util.List;
 
 public class ChangeStatus extends OperationBase implements Cloneable {
 
@@ -23,18 +26,6 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         int statusCode = response.statusCode;
         String reqId = response.reqId;
         response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
-    synchronized public String batchRun(String bucket, String key, short status, int retryCount) throws QiniuException {
-        Response response = batchChangeStatusWithRetry(bucket, key, status, retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-        batchOperations.clearOps();
 
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
@@ -61,11 +52,14 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public Response batchChangeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, List<String> keys, int status, int retryCount) throws QiniuException {
 
-        Response response = null;
-        if (batchOperations.getOps().size() < 1000) batchOperations.addChangeStatusOps(bucket, status, key);
-        else response = batchWithRetry(retryCount);
-        return response;
+        batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
+        Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        batchOperations.clearOps();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 }
