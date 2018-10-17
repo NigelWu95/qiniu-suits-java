@@ -55,10 +55,10 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
     private void changeTypeResult(String bucket, String key, int fileType, int retryCount, boolean batch) {
         try {
-            String changeResult = batch ?
+            String result = batch ?
                     changeType.batchRun(bucket, key, fileType, retryCount) :
                     changeType.run(bucket, key, fileType, retryCount);
-            if (changeResult != null) fileReaderAndWriterMap.writeSuccess(changeResult);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             if (batch) fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());
@@ -101,8 +101,8 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
 
     public void checkBatchProcess(int retryCount) {
         try {
-            String changeResult = changeType.batchCheckRun(retryCount);
-            if (changeResult != null) fileReaderAndWriterMap.writeSuccess(changeResult);
+            String result = changeType.batchCheckRun(retryCount);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(changeType.getBatchOps() + "\t" + e.error());

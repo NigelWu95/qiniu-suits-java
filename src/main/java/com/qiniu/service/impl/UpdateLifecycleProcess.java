@@ -58,7 +58,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
             String result = batch ?
                     updateLifecycle.batchRun(bucket, key, days, retryCount) :
                     updateLifecycle.run(bucket, key, days, retryCount);
-            if (result != null) fileReaderAndWriterMap.writeSuccess(result);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             if (batch) fileReaderAndWriterMap.writeErrorOrNull(updateLifecycle.getBatchOps() + "\t" + e.error());
@@ -100,7 +100,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
     public void checkBatchProcess(int retryCount) {
         try {
             String result = updateLifecycle.batchCheckRun(retryCount);
-            if (result != null) fileReaderAndWriterMap.writeSuccess(result);
+            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(updateLifecycle.getBatchOps() + "\t" + e.error());
