@@ -77,9 +77,8 @@ public class ListFilterProcess implements IOssFileProcess, Cloneable {
         else return (fileInfo.type == type);
     }
 
-    public void processFile(String fileInfoStr, int retryCount, boolean batch) {
+    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
 
-        FileInfo fileInfo = JsonConvertUtils.fromJson(fileInfoStr, FileInfo.class);
         String[] keySuffix = new String[]{".m3u8"};
         String[] mimeType = new String[]{"video", "application/x-mpegurl"};
         String[] keyRegex = new String[]{".*_compress_L[\\d].*"};
@@ -88,7 +87,7 @@ public class ListFilterProcess implements IOssFileProcess, Cloneable {
         boolean antiFilter = filterKeyRegex(fileInfo, keyRegex);
 
         if (filter && !antiFilter) {
-            fileReaderAndWriterMap.writeKeyFile("filter_result", fileInfoStr);
+            fileReaderAndWriterMap.writeKeyFile("filter_result", JsonConvertUtils.toJson(fileInfo));
         }
     }
 
