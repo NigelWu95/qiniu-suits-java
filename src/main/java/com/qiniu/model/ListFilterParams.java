@@ -17,6 +17,8 @@ public class ListFilterParams extends BaseParams {
     private String direction;
     private String mime;
     private String type;
+    private long datetime;
+    private boolean directionFlag;
 
     public ListFilterParams(String[] args) throws Exception {
         super(args);
@@ -28,6 +30,8 @@ public class ListFilterParams extends BaseParams {
         try { this.direction = getParamFromArgs("f-direction"); } catch (Exception e) {}
         try { this.mime = getParamFromArgs("f-mime"); } catch (Exception e) {}
         try { this.type = getParamFromArgs("f-type"); } catch (Exception e) {}
+        this.datetime = getPointDatetime();
+        this.directionFlag = getDirection();
     }
 
     public ListFilterParams(String configFileName) throws Exception {
@@ -40,18 +44,22 @@ public class ListFilterParams extends BaseParams {
         try { this.direction = getParamFromConfig("f-direction"); } catch (Exception e) {}
         try { this.mime = getParamFromConfig("f-mime"); } catch (Exception e) {}
         try { this.type = getParamFromConfig("f-type"); } catch (Exception e) {}
+        this.datetime = getPointDatetime();
+        this.directionFlag = getDirection();
     }
 
     public List<String> getKeyPrefix() {
+        if (StringUtils.isNullOrEmpty(keyPrefix)) return null;
         return Arrays.asList(keyPrefix.split(","));
     }
 
     public List<String> getKeySuffix() {
-
+        if (StringUtils.isNullOrEmpty(keySuffix)) return null;
         return Arrays.asList(keySuffix.split(","));
     }
 
     public List<String> getKeyRegex() {
+        if (StringUtils.isNullOrEmpty(keyRegex)) return null;
         return Arrays.asList(keyRegex.split(","));
     }
 
@@ -81,25 +89,27 @@ public class ListFilterParams extends BaseParams {
         }
     }
 
-    public long getPutTimeMax() throws ParseException {
-        if (getDirection()) return getPointDatetime() * 10000000;
+    public long getPutTimeMax() {
+        if (directionFlag) return datetime * 10000;
         return 0;
     }
 
-    public long getPutTimeMin() throws ParseException {
-        if (!getDirection()) return getPointDatetime() * 10000000;
+    public long getPutTimeMin() {
+        if (!directionFlag) return datetime * 10000;
         return 0;
     }
 
     public List<String> getMime() {
+        if (StringUtils.isNullOrEmpty(mime)) return null;
         return Arrays.asList(mime.split(","));
     }
 
     public int getType() throws Exception {
+        if (StringUtils.isNullOrEmpty(mime)) return -1;
         if (type.matches("(0|1)")) {
             return Integer.valueOf(type);
         } else {
-            throw new Exception("the direction is incorrect, please set it 0 or 1");
+            throw new Exception("the type is incorrect, please set it 0 or 1");
         }
     }
 }

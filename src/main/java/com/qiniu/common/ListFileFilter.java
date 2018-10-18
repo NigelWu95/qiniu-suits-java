@@ -44,37 +44,38 @@ public class ListFileFilter {
 
     private boolean filterKeyPrefix(FileInfo fileInfo) {
 
-        if (keyPrefix == null) return true;
+        if (keyPrefix == null || keyPrefix.size() == 0) return true;
         else return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
     }
 
     private boolean filterKeySuffix(FileInfo fileInfo) {
 
-        if (keySuffix == null) return true;
+        if (keySuffix == null || keySuffix.size() == 0) return true;
         else return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
     }
 
     private boolean filterKeyRegex(FileInfo fileInfo) {
 
-        if (keyRegex == null) return true;
+        if (keyRegex == null || keyRegex.size() == 0) return true;
         else return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
     }
 
     private boolean filterPutTime(FileInfo fileInfo) {
 
-        if (putTimeMin >= putTimeMax || putTimeMax == 0) return true;
-        else return putTimeMin < fileInfo.putTime && fileInfo.putTime <= putTimeMax;
+        if (putTimeMin == 0 && putTimeMax == 0) return true;
+        else if (putTimeMin == 0) return fileInfo.putTime <= putTimeMax;
+        else return putTimeMin <= fileInfo.putTime;
     }
 
     private boolean filterMime(FileInfo fileInfo) {
 
-        if (mime == null) return true;
+        if (mime == null || mime.size() == 0) return true;
         else return mime.stream().anyMatch(mime -> fileInfo.mimeType.contains(mime));
     }
 
     private boolean filterType(FileInfo fileInfo) {
 
-        if (type < 0) return false;
+        if (type < 0) return true;
         else return (fileInfo.type == type);
     }
 
