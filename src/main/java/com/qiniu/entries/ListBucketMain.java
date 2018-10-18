@@ -1,7 +1,6 @@
 package com.qiniu.entries;
 
 import com.qiniu.common.*;
-import com.qiniu.interfaces.IBucketProcess;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
 import com.qiniu.service.impl.*;
@@ -34,7 +33,6 @@ public class ListBucketMain {
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {
-            // isBiggerThan 标志为 true 时，在 pointTime 时间点之前的记录进行处理，isBiggerThan 标志为 false 时，在 pointTime 时间点之后的记录进行处理。
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
                 iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
@@ -75,12 +73,11 @@ public class ListBucketMain {
             listFileFilter.setType(listFilterParams.getType());
         }
 
-        IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
+        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
         if ("check".equals(process)) {
-            ((ListBucketProcess) listBucketProcessor).getDelimitedFileMap(version, level, customPrefix, "delimiter",
-                    null, 3);
+            listBucketProcessor.getDelimitedFileMap(listFileFilter, version, level, customPrefix, "delimiter", null, 3);
         } else
-            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
+            listBucketProcessor.processBucket(listFileFilter, version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
                     iOssFileProcessor, processBatch);
 
         if (iOssFileProcessor != null)

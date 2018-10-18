@@ -4,10 +4,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.interfaces.IBucketProcess;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ListBucket;
 import com.qiniu.storage.Configuration;
@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ListBucketProcess implements IBucketProcess {
+public class ListBucketProcess {
 
     private QiniuAuth auth;
     private Configuration configuration;
@@ -39,15 +39,24 @@ public class ListBucketProcess implements IBucketProcess {
         this.resultFileDir = resultFileDir;
     }
 
-    private void writeAndProcess(List<FileInfo> fileInfoList, String endFileKey, FileReaderAndWriterMap fileMap,
-                                 IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount,
-                                 Queue<QiniuException> exceptionQueue)
-            throws QiniuException {
+    private void writeAndProcess(List<FileInfo> fileInfoList, ListFileFilter listFileFilter, String endFileKey,
+                                 FileReaderAndWriterMap fileMap, IOssFileProcess iOssFileProcessor, boolean processBatch,
+                                 int retryCount, Queue<QiniuException> exceptionQueue) throws QiniuException {
+
+        if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         if (!"".equals(endFileKey)) {
+            fileInfoList = listFileFilter != null ?
+                    fileInfoList.parallelStream()
+                            .filter(fileInfo -> fileInfo.key.compareTo(endFileKey) < 0 && listFileFilter.doFileFilter(fileInfo))
+                            .collect(Collectors.toList()) :
+                    fileInfoList.parallelStream()
+                            .filter(fileInfo -> fileInfo.key.compareTo(endFileKey) < 0)
+                            .collect(Collectors.toList());
+        } else if (listFileFilter != null) {
             fileInfoList = fileInfoList.parallelStream()
-                    .filter(fileInfo -> fileInfo.key.compareTo(endFileKey) < 0)
-                    .collect(Collectors.toList());
+                            .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo))
+                            .collect(Collectors.toList());
         }
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
@@ -147,8 +156,9 @@ public class ListBucketProcess implements IBucketProcess {
         return secondPrefixList;
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, String resultPrefix,
-                                                   IOssFileProcess iOssFileProcessor, int retryCount) throws IOException {
+    public Map<String, String> getDelimitedFileMap(ListFileFilter listFileFilter, int version, int level, String customPrefix,
+                                                   String resultPrefix, IOssFileProcess iOssFileProcessor, int retryCount)
+            throws IOException {
 
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
@@ -171,7 +181,7 @@ public class ListBucketProcess implements IBucketProcess {
         listBucket.closeBucketManager();
         QiniuException qiniuException = exceptionQueue.poll();
         if (qiniuException != null) throw qiniuException;
-        writeAndProcess(fileInfoList, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
+        writeAndProcess(fileInfoList, listFileFilter, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
         fileMap.closeWriter();
 
         return fileInfoList.parallelStream().collect(Collectors.toMap(
@@ -224,19 +234,27 @@ public class ListBucketProcess implements IBucketProcess {
         }
     }
 
-    public String listAndProcess(ListBucket listBucket, int unitLen, String prefix, String endFileKey, String marker, int version,
-                                  FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch) throws IOException {
+    public void listAndProcess(ListBucket listBucket, ListFileFilter listFileFilter, int unitLen, String prefix,
+                                 String endFileKey, String marker, int version, FileReaderAndWriterMap fileMap,
+                                 IOssFileProcess processor, boolean processBatch) {
 
-        List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker, unitLen, version, 3);
-        marker = getNextMarker(fileInfoList, endFileKey, unitLen, version);
-        writeAndProcess(fileInfoList, endFileKey, fileMap, processor, processBatch, 3, null);
-        return marker;
+        while (!StringUtils.isNullOrEmpty(marker)) {
+            try {
+                List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
+                        unitLen, version, 3);
+                writeAndProcess(fileInfoList, listFileFilter, endFileKey, fileMap, processor, processBatch, 3, null);
+                marker = getNextMarker(fileInfoList, endFileKey, unitLen, version);
+            } catch (IOException e) {
+                fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
+                        + "\t" + e.getMessage());
+            }
+        }
     }
 
-    public void processBucket(int version, int maxThreads, int level, int unitLen, boolean endFile, String customPrefix,
+    public void processBucket(ListFileFilter listFileFilter, int version, int maxThreads, int level, int unitLen, boolean endFile, String customPrefix,
                               IOssFileProcess iOssFileProcessor, boolean processBatch) throws IOException, CloneNotSupportedException {
 
-        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, level, customPrefix, "list", iOssFileProcessor, 3);
+        Map<String, String> delimitedFileMap = getDelimitedFileMap(listFileFilter, version, level, customPrefix, "list", iOssFileProcessor, 3);
         List<String> keyList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyList);
         boolean strictPrefix = !StringUtils.isNullOrEmpty(customPrefix);
@@ -264,15 +282,7 @@ public class ListBucketProcess implements IBucketProcess {
                 }
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
-                while (!StringUtils.isNullOrEmpty(marker)) {
-                    try {
-                        marker = listAndProcess(listBucket, unitLen, prefix, endFileKey,
-                                marker.equals("null") ? "" : marker, version, fileMap, processor, processBatch);
-                    } catch (IOException e) {
-                        fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
-                                + "\t" + e.getMessage());
-                    }
-                }
+                listAndProcess(listBucket, listFileFilter, unitLen, prefix, endFileKey, marker, version, fileMap, processor, processBatch);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
