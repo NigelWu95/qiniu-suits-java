@@ -20,7 +20,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
-    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileType, String resultFileDir) throws IOException {
+    public ChangeTypeProcess(QiniuAuth auth, Configuration configuration, String bucket, int fileType, String resultFileDir) throws IOException {
         this.changeType = new ChangeType(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;

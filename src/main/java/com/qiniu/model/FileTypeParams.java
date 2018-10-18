@@ -14,9 +14,9 @@ public class FileTypeParams extends BaseParams {
         this.targetType = getParamFromConfig("type");
     }
 
-    public short getTargetType() throws Exception {
+    public int getTargetType() throws Exception {
         if (targetType.matches("(0|1)")) {
-            return Short.valueOf(targetType);
+            return Integer.valueOf(targetType);
         } else {
             throw new Exception("the direction is incorrect, please set it 0 or 1");
         }

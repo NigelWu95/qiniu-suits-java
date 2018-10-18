@@ -13,8 +13,7 @@ public class ListBucketMain {
 
         String configFile = ".qiniu.properties";
         boolean paramFromConfig = (args == null || args.length == 0);
-        ListBucketParams listBucketParams = paramFromConfig ?
-                new ListBucketParams(configFile) : new ListBucketParams(args);
+        ListBucketParams listBucketParams = paramFromConfig ? new ListBucketParams(configFile) : new ListBucketParams(args);
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
@@ -28,6 +27,8 @@ public class ListBucketMain {
         String customPrefix = listBucketParams.getCustomPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
+        boolean filter = listBucketParams.getFilter();
+        ListFileFilter listFileFilter = null;
         IOssFileProcess iOssFileProcessor = null;
         QiniuAuth auth = QiniuAuth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -60,10 +61,18 @@ public class ListBucketMain {
                         lifecycleParams.getDays(), resultFileDir);
                 break;
             }
-            case "filter": {
-                iOssFileProcessor = new ListFilterProcess(resultFileDir);
-                break;
-            }
+        }
+
+        if (filter) {
+            ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
+            listFileFilter = new ListFileFilter();
+            listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
+            listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
+            listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
+            listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
+            listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
+            listFileFilter.setMime(listFilterParams.getMime());
+            listFileFilter.setType(listFilterParams.getType());
         }
 
         IBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
