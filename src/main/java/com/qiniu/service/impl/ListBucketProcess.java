@@ -44,7 +44,6 @@ public class ListBucketProcess {
                                  int retryCount, Queue<QiniuException> exceptionQueue) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-
         if (!"".equals(endFileKey)) {
             fileInfoList = listFileFilter != null ?
                     fileInfoList.parallelStream()
@@ -58,7 +57,6 @@ public class ListBucketProcess {
                             .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo))
                             .collect(Collectors.toList());
         }
-
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         if (fileMap != null) fileMap.writeSuccess(
