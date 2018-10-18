@@ -42,16 +42,13 @@ public class ListFileFilter {
         this.type = type;
     }
 
-    private boolean filterKeyPrefix(FileInfo fileInfo) {
+    private boolean filterKeyPrefixAndSuffix(FileInfo fileInfo) {
 
-        if (keyPrefix == null || keyPrefix.size() == 0) return true;
-        else return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
-    }
-
-    private boolean filterKeySuffix(FileInfo fileInfo) {
-
-        if (keySuffix == null || keySuffix.size() == 0) return true;
-        else return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
+        if ((keyPrefix == null || keyPrefix.size() == 0) && (keySuffix == null || keySuffix.size() == 0)) return true;
+        else if (keySuffix == null || keySuffix.size() == 0) return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
+        else if (keyPrefix == null || keyPrefix.size() == 0) return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
+        else return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix)) &&
+                    keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
     }
 
     private boolean filterKeyRegex(FileInfo fileInfo) {
@@ -81,7 +78,7 @@ public class ListFileFilter {
 
     public boolean doFileFilter(FileInfo fileInfo) {
         if (fileInfo == null) return false;
-        boolean keyFilter = (filterKeyPrefix(fileInfo) || filterKeySuffix(fileInfo)) && filterKeyRegex(fileInfo);
+        boolean keyFilter = filterKeyPrefixAndSuffix(fileInfo) && filterKeyRegex(fileInfo);
         boolean putTimeFilter = filterPutTime(fileInfo);
         boolean mimeFilter = filterMime(fileInfo);
         boolean typeFilter = filterType(fileInfo);
