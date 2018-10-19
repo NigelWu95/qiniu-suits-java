@@ -191,7 +191,7 @@ public class ListBucketProcess {
         fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount);
         if (level == 2) {
             prefixList = getSecondFilePrefix(prefixList, fileInfoList);
-            fileInfoList.addAll(listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount));
+            fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount);
         }
         listBucket.closeBucketManager();
         QiniuException qiniuException = exceptionQueue.poll();
@@ -297,7 +297,6 @@ public class ListBucketProcess {
                 }
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
-                System.out.println(prefix + "\t" + endFileKey + "\t" + marker);
                 listAndProcess(listBucket, filter, unitLen, prefix, endFileKey, marker, version, fileMap, processor, processBatch);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
