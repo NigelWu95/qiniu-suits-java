@@ -19,6 +19,10 @@ public class ListFilterParams extends BaseParams {
     private String type;
     private long datetime;
     private boolean directionFlag;
+    private String antiKeyPrefix;
+    private String antiKeySuffix;
+    private String antiKeyRegex;
+    private String antiMime;
 
     public ListFilterParams(String[] args) throws Exception {
         super(args);
@@ -32,6 +36,10 @@ public class ListFilterParams extends BaseParams {
         try { this.type = getParamFromArgs("f-type"); } catch (Exception e) {}
         this.datetime = getPointDatetime();
         this.directionFlag = getDirection();
+        try { this.antiKeyPrefix = getParamFromArgs("anti-f-key-prefix"); } catch (Exception e) {}
+        try { this.antiKeySuffix = getParamFromArgs("anti-f-key-suffix"); } catch (Exception e) {}
+        try { this.antiKeyRegex = getParamFromArgs("anti-f-key-regex"); } catch (Exception e) {}
+        try { this.antiMime = getParamFromArgs("anti-f-mime"); } catch (Exception e) {}
     }
 
     public ListFilterParams(String configFileName) throws Exception {
@@ -46,6 +54,10 @@ public class ListFilterParams extends BaseParams {
         try { this.type = getParamFromConfig("f-type"); } catch (Exception e) {}
         this.datetime = getPointDatetime();
         this.directionFlag = getDirection();
+        try { this.antiKeyPrefix = getParamFromConfig("anti-f-key-prefix"); } catch (Exception e) {}
+        try { this.antiKeySuffix = getParamFromConfig("anti-f-key-suffix"); } catch (Exception e) {}
+        try { this.antiKeyRegex = getParamFromConfig("anti-f-key-regex"); } catch (Exception e) {}
+        try { this.antiMime = getParamFromConfig("anti-f-mime"); } catch (Exception e) {}
     }
 
     public List<String> getKeyPrefix() {
@@ -111,5 +123,25 @@ public class ListFilterParams extends BaseParams {
         } else {
             throw new Exception("the type is incorrect, please set it 0 or 1");
         }
+    }
+
+    public List<String> getAntiKeyPrefix() {
+        if (StringUtils.isNullOrEmpty(keyPrefix)) return null;
+        return Arrays.asList(keyPrefix.split(","));
+    }
+
+    public List<String> getAntiKeySuffix() {
+        if (StringUtils.isNullOrEmpty(keySuffix)) return null;
+        return Arrays.asList(keySuffix.split(","));
+    }
+
+    public List<String> getAntiKeyRegex() {
+        if (StringUtils.isNullOrEmpty(keyRegex)) return null;
+        return Arrays.asList(keyRegex.split(","));
+    }
+
+    public List<String> getAntiMime() {
+        if (StringUtils.isNullOrEmpty(mime)) return null;
+        return Arrays.asList(mime.split(","));
     }
 }

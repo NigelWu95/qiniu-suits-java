@@ -3,10 +3,7 @@ package com.qiniu.service.impl;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.ListFileFilter;
-import com.qiniu.common.QiniuAuth;
-import com.qiniu.common.QiniuException;
+import com.qiniu.common.*;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ListBucket;
@@ -32,7 +29,7 @@ public class ListBucketProcess {
     private String bucket;
     private String resultFileDir;
     private ListFileFilter listFileFilter;
-    private ListFileFilter antiListFileFilter;
+    private ListFileAntiFilter listFileAntiFilter;
 
     public ListBucketProcess(QiniuAuth auth, Configuration configuration, String bucket, String resultFileDir) {
         this.auth = auth;
@@ -41,18 +38,18 @@ public class ListBucketProcess {
         this.resultFileDir = resultFileDir;
     }
 
-    public void setFilter(ListFileFilter listFileFilter, ListFileFilter antiListFileFilter) {
+    public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
         this.listFileFilter = listFileFilter;
-        this.antiListFileFilter = antiListFileFilter;
+        this.listFileAntiFilter = listFileAntiFilter;
     }
 
     private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
 
-        if (listFileFilter == null && antiListFileFilter == null) {
+        if (listFileFilter == null && listFileAntiFilter == null) {
             return fileInfoList;
-        } else if (listFileFilter != null && antiListFileFilter != null) {
+        } else if (listFileFilter != null && listFileAntiFilter != null) {
             return fileInfoList.parallelStream()
-                    .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo) && antiListFileFilter.doFileFilter(fileInfo))
+                    .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo) && listFileAntiFilter.doFileAntiFilter(fileInfo))
                     .collect(Collectors.toList());
         } else if (listFileFilter != null) {
             return fileInfoList.parallelStream()
@@ -60,7 +57,7 @@ public class ListBucketProcess {
                     .collect(Collectors.toList());
         } else {
             return fileInfoList.parallelStream()
-                    .filter(fileInfo -> antiListFileFilter.doFileFilter(fileInfo))
+                    .filter(fileInfo -> listFileAntiFilter.doFileAntiFilter(fileInfo))
                     .collect(Collectors.toList());
         }
     }
