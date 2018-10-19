@@ -126,22 +126,22 @@ public class ListFilterParams extends BaseParams {
     }
 
     public List<String> getAntiKeyPrefix() {
-        if (StringUtils.isNullOrEmpty(keyPrefix)) return null;
-        return Arrays.asList(keyPrefix.split(","));
+        if (StringUtils.isNullOrEmpty(antiKeyPrefix)) return null;
+        return Arrays.asList(antiKeyPrefix.split(","));
     }
 
     public List<String> getAntiKeySuffix() {
-        if (StringUtils.isNullOrEmpty(keySuffix)) return null;
-        return Arrays.asList(keySuffix.split(","));
+        if (StringUtils.isNullOrEmpty(antiKeySuffix)) return null;
+        return Arrays.asList(antiKeySuffix.split(","));
     }
 
     public List<String> getAntiKeyRegex() {
-        if (StringUtils.isNullOrEmpty(keyRegex)) return null;
-        return Arrays.asList(keyRegex.split(","));
+        if (StringUtils.isNullOrEmpty(antiKeyRegex)) return null;
+        return Arrays.asList(antiKeyRegex.split(","));
     }
 
     public List<String> getAntiMime() {
-        if (StringUtils.isNullOrEmpty(mime)) return null;
-        return Arrays.asList(mime.split(","));
+        if (StringUtils.isNullOrEmpty(antiMime)) return null;
+        return Arrays.asList(antiMime.split(","));
     }
 }

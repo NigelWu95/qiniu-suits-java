@@ -29,15 +29,17 @@ public class ListFileAntiFilter {
 
     private boolean filterKeyPrefixAndSuffix(FileInfo fileInfo) {
 
-        if ((keyPrefix == null || keyPrefix.size() == 0) && (keySuffix == null || keySuffix.size() == 0)) return true;
-        else if (keySuffix == null || keySuffix.size() == 0) return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
-        else if (keyPrefix == null || keyPrefix.size() == 0) return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
+        boolean keyPrefixCheck = checkList(keyPrefix);
+        boolean keySuffixCheck = checkList(keySuffix);
+        if (!keyPrefixCheck && !keySuffixCheck) return true;
+        else if (!keySuffixCheck) return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
+        else if (!keyPrefixCheck) return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
         else return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix)) &&
                     keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
     }
 
     private boolean filterKeyRegex(FileInfo fileInfo) {
-        if (checkList(keyPrefix)) return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
+        if (checkList(keyRegex)) return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
         else return true;
     }
 
@@ -58,6 +60,6 @@ public class ListFileAntiFilter {
     }
 
     public boolean isValid() {
-        return checkList(keyPrefix) && checkList(keySuffix) && checkList(keyRegex) && checkList(mime);
+        return checkList(keyPrefix) || checkList(keySuffix) || checkList(keyRegex) || checkList(mime);
     }
 }
