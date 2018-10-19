@@ -43,35 +43,32 @@ public class ListFileFilter {
     }
 
     private boolean filterKeyPrefixAndSuffix(FileInfo fileInfo) {
-
-        if ((keyPrefix == null || keyPrefix.size() == 0) && (keySuffix == null || keySuffix.size() == 0)) return true;
-        else if (keySuffix == null || keySuffix.size() == 0) return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
-        else if (keyPrefix == null || keyPrefix.size() == 0) return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
+        boolean keyPrefixCheck = checkList(keyPrefix);
+        boolean keySuffixCheck = checkList(keySuffix);
+        if (!keyPrefixCheck && !keySuffixCheck) return true;
+        else if (!keySuffixCheck) return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix));
+        else if (!keyPrefixCheck) return keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
         else return keyPrefix.stream().anyMatch(prefix -> fileInfo.key.startsWith(prefix)) &&
                     keySuffix.stream().anyMatch(suffix -> fileInfo.key.endsWith(suffix));
     }
 
     private boolean filterKeyRegex(FileInfo fileInfo) {
-
-        if (keyRegex == null || keyRegex.size() == 0) return true;
-        else return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
+        if (checkList(keyRegex)) return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
+        else return true;
     }
 
     private boolean filterPutTime(FileInfo fileInfo) {
-
         if (putTimeMin == 0 && putTimeMax == 0) return true;
         else if (putTimeMin == 0) return fileInfo.putTime <= putTimeMax;
         else return putTimeMin <= fileInfo.putTime;
     }
 
     private boolean filterMime(FileInfo fileInfo) {
-
-        if (mime == null || mime.size() == 0) return true;
-        else return mime.stream().anyMatch(mime -> fileInfo.mimeType.contains(mime));
+        if (checkList(mime)) return mime.stream().anyMatch(mime -> fileInfo.mimeType.contains(mime));
+        else return true;
     }
 
     private boolean filterType(FileInfo fileInfo) {
-
         if (type < 0) return true;
         else return (fileInfo.type == type);
     }
@@ -83,5 +80,14 @@ public class ListFileFilter {
         boolean mimeFilter = filterMime(fileInfo);
         boolean typeFilter = filterType(fileInfo);
         return keyFilter && putTimeFilter && mimeFilter && typeFilter;
+    }
+
+    private boolean checkList(List<String> list) {
+        return list != null && list.size() != 0;
+    }
+
+    public boolean isValid() {
+        return (checkList(keyPrefix) && checkList(keySuffix) && checkList(keyRegex) && checkList(mime) &&
+                putTimeMin == 0 && putTimeMax == 0 && type < 0);
     }
 }
