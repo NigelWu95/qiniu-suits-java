@@ -11,6 +11,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.ListFileFilterUtils;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
 
@@ -45,21 +46,22 @@ public class ListBucketProcess {
 
     private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
 
-        if (listFileFilter == null && listFileAntiFilter == null) {
-            return fileInfoList;
-        } else if (listFileFilter != null && listFileAntiFilter != null) {
+        boolean checkListFileFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
+        boolean checkListFileAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
+
+        if (checkListFileFilter && checkListFileAntiFilter) {
             return fileInfoList.parallelStream()
                     .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo) && listFileAntiFilter.doFileAntiFilter(fileInfo))
                     .collect(Collectors.toList());
-        } else if (listFileFilter != null) {
+        } else if (checkListFileFilter) {
             return fileInfoList.parallelStream()
                     .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo))
                     .collect(Collectors.toList());
-        } else {
+        } else if (checkListFileAntiFilter) {
             return fileInfoList.parallelStream()
                     .filter(fileInfo -> listFileAntiFilter.doFileAntiFilter(fileInfo))
                     .collect(Collectors.toList());
-        }
+        } else return fileInfoList;
     }
 
     private void writeAndProcess(List<FileInfo> fileInfoList, boolean filter, String endFileKey, FileReaderAndWriterMap fileMap,
@@ -73,7 +75,6 @@ public class ListBucketProcess {
                             .collect(Collectors.toList());
         }
         if (filter) fileInfoList = filterFileInfo(fileInfoList);
-
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
@@ -296,6 +297,7 @@ public class ListBucketProcess {
                 }
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
+                System.out.println(prefix + "\t" + endFileKey + "\t" + marker);
                 listAndProcess(listBucket, filter, unitLen, prefix, endFileKey, marker, version, fileMap, processor, processBatch);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();

@@ -37,15 +37,13 @@ public class ListFileAntiFilter {
     }
 
     private boolean filterKeyRegex(FileInfo fileInfo) {
-
-        if (keyRegex == null || keyRegex.size() == 0) return true;
-        else return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
+        if (checkList(keyPrefix)) return keyRegex.stream().anyMatch(regex -> fileInfo.key.matches(regex));
+        else return true;
     }
 
     private boolean filterMime(FileInfo fileInfo) {
-
-        if (mime == null || mime.size() == 0) return true;
-        else return mime.stream().anyMatch(mime -> fileInfo.mimeType.contains(mime));
+        if (checkList(mime)) return mime.stream().anyMatch(mime -> fileInfo.mimeType.contains(mime));
+        else return true;
     }
 
     public boolean doFileAntiFilter(FileInfo fileInfo) {
@@ -53,5 +51,13 @@ public class ListFileAntiFilter {
         boolean keyFilter = filterKeyPrefixAndSuffix(fileInfo) && filterKeyRegex(fileInfo);
         boolean mimeFilter = filterMime(fileInfo);
         return !(keyFilter && mimeFilter);
+    }
+
+    private boolean checkList(List<String> list) {
+        return list != null && list.size() != 0;
+    }
+
+    public boolean isValid() {
+        return checkList(keyPrefix) && checkList(keySuffix) && checkList(keyRegex) && checkList(mime);
     }
 }
