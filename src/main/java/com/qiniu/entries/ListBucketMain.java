@@ -74,10 +74,11 @@ public class ListBucketMain {
         }
 
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
+        listBucketProcessor.setFilter(listFileFilter, null);
         if ("check".equals(process)) {
-            listBucketProcessor.getDelimitedFileMap(listFileFilter, version, level, customPrefix, "delimiter", null, 3);
+            listBucketProcessor.getDelimitedFileMap(filter, version, level, customPrefix, "delimiter", null, 3);
         } else
-            listBucketProcessor.processBucket(listFileFilter, version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
+            listBucketProcessor.processBucket(filter, version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
                     iOssFileProcessor, processBatch);
 
         if (iOssFileProcessor != null)
