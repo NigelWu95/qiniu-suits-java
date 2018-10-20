@@ -79,7 +79,7 @@ public class ListFilterParams extends BaseParams {
 
         String pointDatetime;
 
-        if (StringUtils.isNullOrEmpty(pointDate) && StringUtils.isNullOrEmpty(pointDate)) {
+        if (StringUtils.isNullOrEmpty(pointDate) && StringUtils.isNullOrEmpty(pointTime)) {
             System.out.println("datetime is empty, it will not compare by put time.");
             return 0L;
         } else if(pointDate.matches("\\d{4}-\\d{2}-\\d{2}") && pointTime.matches("\\d{2}:\\d{2}:\\d{2}")) {
@@ -117,7 +117,7 @@ public class ListFilterParams extends BaseParams {
     }
 
     public int getType() throws Exception {
-        if (StringUtils.isNullOrEmpty(mime)) return -1;
+        if (StringUtils.isNullOrEmpty(type)) return -1;
         if (type.matches("(0|1)")) {
             return Integer.valueOf(type);
         } else {
