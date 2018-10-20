@@ -83,13 +83,15 @@ public class ListBucketProcess {
                         .collect(Collectors.toList()))
         );
 
-        if (filter) fileInfoList = filterFileInfo(fileInfoList);
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
-        if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
-                .map(JsonConvertUtils::toJson)
-                .collect(Collectors.toList()))
-        );
+        if (filter) {
+            fileInfoList = filterFileInfo(fileInfoList);
+            if (fileInfoList == null || fileInfoList.size() == 0) return;
+            // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
+            if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
+                    .map(JsonConvertUtils::toJson)
+                    .collect(Collectors.toList()))
+            );
+        }
 
         if (iOssFileProcessor != null) {
             if (processBatch) {
@@ -231,8 +233,7 @@ public class ListBucketProcess {
             InputStream inputStream = new BufferedInputStream(response.bodyStream());
             Reader reader = new InputStreamReader(inputStream);
             BufferedReader bufferedReader = new BufferedReader(reader);
-            Stream<String> lineStream = bufferedReader.lines().parallel();
-            fileInfoList = lineStream
+            fileInfoList = bufferedReader.lines().parallel()
                     .map(line -> getFirstFileInfo(null, line, 2))
                     .collect(Collectors.toList());
             bufferedReader.close();
