@@ -74,12 +74,21 @@ public class ListBucketProcess {
                             .filter(fileInfo -> fileInfo.key.compareTo(endFileKey) < 0)
                             .collect(Collectors.toList());
         }
-        if (filter) fileInfoList = filterFileInfo(fileInfoList);
+
         if (fileInfoList == null || fileInfoList.size() == 0) return;
+        // 如果 list 不为空，将完整的列表先写入。
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
                         .map(JsonConvertUtils::toJson)
                         .collect(Collectors.toList()))
+        );
+
+        if (filter) fileInfoList = filterFileInfo(fileInfoList);
+        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
+        if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
+                .map(JsonConvertUtils::toJson)
+                .collect(Collectors.toList()))
         );
 
         if (iOssFileProcessor != null) {
