@@ -168,12 +168,10 @@ public class ListBucketProcess {
     }
 
     private List<String> getSecondFilePrefix(List<String> prefixList, List<FileInfo> delimitedFileInfo) {
-        List<String> firstKeyList = delimitedFileInfo.parallelStream()
-                .map(fileInfo -> fileInfo.key)
-                .collect(Collectors.toList());
+
         List<String> secondPrefixList = new ArrayList<>();
-        for (String firstKey : firstKeyList) {
-            String firstPrefix = firstKey.substring(0, 1);
+        for (FileInfo firstFileInfo : delimitedFileInfo) {
+            String firstPrefix = firstFileInfo.key.substring(0, 1);
             for (String secondPrefix : prefixList) {
                 secondPrefixList.add(firstPrefix + secondPrefix);
             }
@@ -246,8 +244,10 @@ public class ListBucketProcess {
 
     public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, int unitLen, String marker) {
 
-        if (fileInfoList == null || fileInfoList.size() < unitLen) {
+        if (fileInfoList == null) {
             return marker;
+        } else if (fileInfoList.size() < unitLen) {
+            return null;
         } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoList.parallelStream()
                 .anyMatch(fileInfo -> fileInfo.key.equals(fileFlag))) {
             return null;
