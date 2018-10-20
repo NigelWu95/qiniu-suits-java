@@ -15,7 +15,7 @@ java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=../result -max-threads
 ```
 # list bucket 操作的 parameters，ak、sk 为账号的密钥对字符串，bucket 为空间名称，result-path 为保存列举和处理结果的相对路径，max-threads 
 # 为最大线程数，version 使用的列举接口版本，level 为列举并发级别（1 或 2），end-file 为是否使用结束文件名做分段标志，unit-len 为每次列举请求列
-举的文件个数，prefix 表示只列举某个前缀，filter 表示是否进行一些条件过滤。
+# 举的文件个数，prefix 表示只列举某个前缀，filter 表示是否进行一些条件过滤。
 ak=
 sk=
 bucket=temp
@@ -88,12 +88,12 @@ add-prefix=video/
 ### list result
 * 列举记录，spent time 为列举（或者同时进行 process 的操作）所花费的时间，running threads 为根据前缀列举启动的线程数。    
 
-|version|level|end-file|parallel|unit-len| process | file counts |spent time| machine | running threads |  
-|-------|-----|--------|--------|--------|---------|-------------|----------|---------|-----------------|  
-|   2   |  2  | false  |  false |  10000 |  null   |  94898690   |   2h18m  | 16核32G |      50         |
-|   2   |  1  | false  |  false |  10000 |  null   |  1893275    |   7min   | 8核16G  |      16         | 
-|   2   |  2  | false  |  false |  20000 |  null   |  293940625  |   1h8m   | 16核32G |      200        |
- 
+|version|level|end-file|unit-len| process |  filter  | file counts |spent time| machine | running threads |  
+|-------|-----|--------|--------|---------|----------|-------------|----------|---------|-----------------|  
+|   2   |  2  | false  |  10000 |  null   |  false   |  94898690   |   2h18m  | 16核32G |      50         |
+|   2   |  1  | false  |  10000 |  null   |  false   |  1893275    |   7min   | 8核16G  |      16         | 
+|   2   |  2  | false  |  20000 |  null   |  false   |  293940625  |   1h8m   | 16核32G |      200        |
+|   2   |  1  | false  |  20000 |  null   |  false   |  1526657    |   5min   | 8核16G  |      4          |
 
 ### list process parameter
 ```
@@ -109,13 +109,14 @@ add-prefix=video/
 
 ### multi list suggestions
 ```
-1、level 1 理论最大分段为 88 个，level 2 理论最大分段为 7744 个，但实际情况空间的文件可能只有几个统一的前缀，通常只会分成几个
-   段，分成的段数决定了实际线程数目。
-2、对于 100 万以内的文件，建议不要使用 level 2。
-3、通常情况下建议将 end-file 设置为 false（默认值）。
-4、空间有大量删除时直接使用 list v2，使用 list v1 时 parallel 无效，使用 list v2 时 parallel 默认为 true，同时 v2 的 
-   unit-len 可视总文件数进行调整。
-5、推荐用法：version=2 end-file=false unit-len=10000，100 万以内文件 level=1，100 万以上文件 level=2。
+1、level 1 理论最大分段为 88+1 个，level 2 理论最大分段为 7744+1 个，但实际情况空间的文件可能只有几个统一的前缀，则只会分成几
+   个段，分段数决定了实际线程数目。
+2、通常情况下建议将 end-file 设置为 false（默认值）。
+4、空间有大量删除时直接使用 list v2，即 version=2。
+5、推荐用法：version=2，end-file=false，unit-len=20000（version 2 的时候 unit-len 值可以调高，但是不建议过大，通常不超
+   过 100000），500 万以内文件 level=1，500 万以上文件 level=2，max-threads=100（level 1 的情况下实际最大线程数只能达到
+   89 个；如果使用 level 2，在机器配置较高时可以选择更高的值，如16核32G的机器可选择 200 个以上最大线程）。文件数量非常大时，可
+   以先通过 process=check 方式来检查一下前缀个数，再考虑调整参数配置。
 ```
 
 ### extra comments
