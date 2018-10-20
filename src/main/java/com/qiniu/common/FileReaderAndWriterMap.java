@@ -127,7 +127,7 @@ public class FileReaderAndWriterMap implements Cloneable {
             try {
                 addWriter(targetFileDir, key);
             } catch (IOException ioException) {
-                writeOther(item);
+                writeErrorOrNull(item);
                 ioException.printStackTrace();
             }
         }

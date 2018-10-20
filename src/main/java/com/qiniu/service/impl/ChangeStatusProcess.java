@@ -1,18 +1,15 @@
 package com.qiniu.service.impl;
 
-import com.google.gson.JsonObject;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ChangeStatus;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.DateUtils;
-import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
+import java.util.List;
 
 public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
@@ -21,19 +18,14 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
     private short fileStatus;
     private String resultFileDir;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
-    private String pointTime;
-    private boolean pointTimeIsBiggerThanTimeStamp;
     private QiniuException qiniuException = null;
 
-    public ChangeStatusProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
-                               String pointTime, boolean pointTimeIsBiggerThanTimeStamp) throws IOException {
+    public ChangeStatusProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir) throws IOException {
         this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
         this.resultFileDir = resultFileDir;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
-        this.pointTime = pointTime;
-        this.pointTimeIsBiggerThanTimeStamp = pointTimeIsBiggerThanTimeStamp;
     }
 
     public ChangeStatusProcess clone() throws CloneNotSupportedException {
@@ -53,58 +45,34 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return qiniuException;
     }
 
-    private void changeStatusResult(String bucket, String key, short fileStatus, int retryCount, boolean batch) {
+    public void processFile(String fileKey, int retryCount) {
+
         try {
-            String result = batch ?
-                    changeStatus.batchRun(bucket, key, fileStatus, retryCount) :
-                    changeStatus.run(bucket, key, fileStatus, retryCount);
+            String result = changeStatus.run(bucket, fileKey, fileStatus, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             if (!e.response.needRetry()) qiniuException = e;
-            if (batch) fileReaderAndWriterMap.writeErrorOrNull(changeStatus.getBatchOps() + "\t" + e.error());
-            else fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + key + "\t" + fileStatus + "\t" + e.error());
+            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileKey + "\t" + fileStatus + "\t" + e.error());
             e.response.close();
         }
     }
 
-    public String[] getProcessParams(FileInfo fileInfo) {
+    public void processFile(List<String> keyList, int retryCount) {
 
-        Long putTime = fileInfo.putTime;
-        String key = fileInfo.key;
-
-        boolean isDoProcess = false;
-        if (StringUtils.isNullOrEmpty(pointTime)) {
-            isDoProcess = true;
-        } else {
-            try {
-                // 相较于时间节点的记录进行处理，并保存请求状态码和 id 到文件中。
-                isDoProcess = DateUtils.compareTimeToBreakpoint(pointTime, pointTimeIsBiggerThanTimeStamp, putTime/10000);
-            } catch (Exception ex) {
-                fileReaderAndWriterMap.writeErrorOrNull( key + "\t" + putTime + "\t" + "date error");
+        if (keyList == null || keyList.size() == 0) return;
+        int times = keyList.size()/1000 + 1;
+        for (int i = 0; i < times; i++) {
+            List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
+            if (processList.size() > 0) {
+                try {
+                    String result = changeStatus.batchRun(bucket, processList, fileStatus, retryCount);
+                    if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
+                } catch (QiniuException e) {
+                    if (!e.response.needRetry()) qiniuException = e;
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + fileStatus + "\t" + e.error());
+                    e.response.close();
+                }
             }
-        }
-
-        String[] params = new String[]{"false", key, key + "\t" + fileStatus + "\t" + isDoProcess};
-        if (isDoProcess) params[0] = "true";
-        return params;
-    }
-
-    public void processFile(FileInfo fileInfo, int retryCount, boolean batch) {
-        String[] params = getProcessParams(fileInfo);
-        if ("true".equals(params[0]))
-            changeStatusResult(bucket, params[1], fileStatus, retryCount, batch);
-        else
-            fileReaderAndWriterMap.writeOther(params[2]);
-    }
-
-    public void checkBatchProcess(int retryCount) {
-        try {
-            String result = changeStatus.batchCheckRun(retryCount);
-            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
-        } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
-            fileReaderAndWriterMap.writeErrorOrNull(changeStatus.getBatchOps() + "\t" + e.error());
-            e.response.close();
         }
     }
 

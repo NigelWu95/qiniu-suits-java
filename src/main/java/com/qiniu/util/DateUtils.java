@@ -29,6 +29,11 @@ public final class DateUtils {
         return (breakpoint > parseDateToStamp(timeString)) == isBiggerThan;
     }
 
+    public static Long parseYYYYMMDDHHMMSSdatetime(String datetime) throws ParseException {
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sd.parse(datetime).getTime();
+    }
+
     public static Long parseDateToStamp(String greenwichMeanTime) throws ParseException {
 
         SimpleDateFormat sd;

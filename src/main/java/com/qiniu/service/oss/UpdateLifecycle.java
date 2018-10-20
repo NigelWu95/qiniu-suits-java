@@ -1,10 +1,13 @@
 package com.qiniu.service.oss;
 
 import com.qiniu.common.QiniuAuth;
+import com.qiniu.common.QiniuBucketManager;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.HttpResponseUtils;
+
+import java.util.List;
 
 public class UpdateLifecycle extends OperationBase implements Cloneable {
 
@@ -17,23 +20,13 @@ public class UpdateLifecycle extends OperationBase implements Cloneable {
     }
 
     public String run(String bucket, String key, int days, int retryCount) throws QiniuException {
+
         Response response = updateLifecycleWithRetry(bucket, key, days, retryCount);
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
-    synchronized public String batchRun(String bucket, String key, int days, int retryCount) throws QiniuException {
-        Response response = batchUpdateLifecycleWithRetry(bucket, key, days, retryCount);;
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
         String reqId = response.reqId;
         response.close();
-        batchOperations.clearOps();
 
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
@@ -60,12 +53,15 @@ public class UpdateLifecycle extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public Response batchUpdateLifecycleWithRetry(String bucket, String key, int days, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, List<String> keys, int days, int retryCount) throws QiniuException {
 
-        Response response = null;
-        if (batchOperations.getOps().size() < 1000) batchOperations.addDeleteAfterDaysOps(bucket, days, key);
-        else response = batchWithRetry(retryCount);
-
-        return response;
+        batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
+        Response response = batchWithRetry(retryCount, "batch lifecycle " + bucket + ":" + keys + " to " + days);
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        batchOperations.clearOps();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 }
