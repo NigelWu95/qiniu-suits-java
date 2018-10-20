@@ -79,7 +79,7 @@ public class ListBucketProcess {
         // 如果 list 不为空，将完整的列表先写入。
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
-                        .map(JsonConvertUtils::toJson)
+                        .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                         .collect(Collectors.toList()))
         );
 
@@ -88,7 +88,7 @@ public class ListBucketProcess {
             if (fileInfoList == null || fileInfoList.size() == 0) return;
             // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
             if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
-                    .map(JsonConvertUtils::toJson)
+                    .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                     .collect(Collectors.toList()))
             );
         }
@@ -168,12 +168,10 @@ public class ListBucketProcess {
     }
 
     private List<String> getSecondFilePrefix(List<String> prefixList, List<FileInfo> delimitedFileInfo) {
-        List<String> firstKeyList = delimitedFileInfo.parallelStream()
-                .map(fileInfo -> fileInfo.key)
-                .collect(Collectors.toList());
+
         List<String> secondPrefixList = new ArrayList<>();
-        for (String firstKey : firstKeyList) {
-            String firstPrefix = firstKey.substring(0, 1);
+        for (FileInfo firstFileInfo : delimitedFileInfo) {
+            String firstPrefix = firstFileInfo.key.substring(0, 1);
             for (String secondPrefix : prefixList) {
                 secondPrefixList.add(firstPrefix + secondPrefix);
             }
@@ -191,7 +189,7 @@ public class ListBucketProcess {
         fileMap.initWriter(resultFileDir, resultPrefix);
         ListBucket listBucket = new ListBucket(auth, configuration);
         List<FileInfo> fileInfoList;
-        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
         if (!StringUtils.isNullOrEmpty(customPrefix)) {
             prefixList = prefixList
                     .parallelStream()
@@ -240,14 +238,15 @@ public class ListBucketProcess {
             reader.close();
             inputStream.close();
         }
-
         response.close();
         return fileInfoList;
     }
 
-    public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, int unitLen, int version) {
+    public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, int unitLen, String marker) {
 
-        if (fileInfoList == null || fileInfoList.size() < unitLen) {
+        if (fileInfoList == null) {
+            return marker;
+        } else if (fileInfoList.size() < unitLen) {
             return null;
         } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoList.parallelStream()
                 .anyMatch(fileInfo -> fileInfo.key.equals(fileFlag))) {
@@ -268,7 +267,7 @@ public class ListBucketProcess {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
                         unitLen, version, 3);
                 writeAndProcess(fileInfoList, filter, endFileKey, fileMap, processor, processBatch, 3, null);
-                marker = getNextMarker(fileInfoList, endFileKey, unitLen, version);
+                marker = getNextMarker(fileInfoList, endFileKey, unitLen, marker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
