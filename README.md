@@ -10,12 +10,12 @@ java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=../result -max-threads
 ```
 
 ### property file
-* 不通过命令行传递参数时可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹
-  中，文件名为 .qiniu.properties，参数设置如下：
+* 不通过命令行传递参数时可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹中，
+  文件名为 .qiniu.properties，参数设置如下：
 ```
-# list bucket 操作的 parameters，ak、sk 为账号的密钥对字符串，bucket 为空间名称，result-path 为保存列举和处理结果的相对路径，max-threads 
-# 为最大线程数，version 使用的列举接口版本，level 为列举并发级别（1 或 2），end-file 为是否使用结束文件名做分段标志，unit-len 为每次列举请求列
-# 举的文件个数，prefix 表示只列举某个前缀，filter 表示是否进行一些条件过滤。
+# list bucket 操作的 parameters，ak、sk 为账号的密钥对字符串，bucket 为空间名称，result-path 为保存列举和处理结果的相对
+# 路径，max-threads 为最大线程数，version 使用的列举接口版本，level 为列举并发级别（1 或 2），end-file 为是否使用结束文件
+# 名做分段标志，unit-len 为每次列举请求列举的文件个数，prefix 表示只列举某个前缀，filter 表示是否进行一些条件过滤。
 ak=
 sk=
 bucket=temp
@@ -27,11 +27,11 @@ end-file=true
 unit-len=1000
 prefix=
 filter=true
-# 进行列举时的过滤条件，f-key-prefix 表示过滤的文件名前缀，f-key-suffix 表示过滤的文件名后缀，f-key-regex 表示按正则表达式过滤文件名，f-mime
-# 表示过滤文件的 mime 类型，f-type 表示过滤的文件类型，为 0 或 1。date、time 为判断是否进行 process 操作的时间点。direction 0 表示向时间点
-# 以前，1 表示向时间点以后。过滤条件中，prefix、suffix、regex、mime 可以为列表形式，如 param1,param2,param3。prefix、suffix、regex 三者
-# 为针对文件名 key 的过滤条件，(filter(prefix) || filter(suffix)) && filter(regex) 组成 key 的过滤结果 true/false，存在其他的过滤条件
-# 时为 &&（与）的关系得到最终过滤结果。
+# 进行列举时的过滤条件，f-key-prefix 表示过滤的文件名前缀，f-key-suffix 表示过滤的文件名后缀，f-key-regex 表示按正则表达式
+# 过滤文件名，f-mime 表示过滤文件的 mime 类型，f-type 表示过滤的文件类型，为 0 或 1。date、time 为判断是否进行 process 操
+# 作的时间点。direction 0 表示向时间点以前，1 表示向时间点以后。过滤条件中，prefix、suffix、regex、mime 可以为列表形式，如 
+# param1,param2,param3。prefix、suffix、regex 三者为针对文件名 key 的过滤条件，(filter(prefix) || filter(suffix))
+# && filter(regex) 组成 key 的过滤结果 true/false，存在其他的过滤条件时为 &&（与）的关系得到最终过滤结果。
 f-key-prefix=
 f-key-suffix=
 f-key-regex=
@@ -46,8 +46,8 @@ anti-f-key-suffix=
 anti-f-key-regex=
 anti-f-mime=
 
-# 对每条记录进行什么操作，目前支持 changeLifecycle(deleteAfterDays)/changeTyep/changeStatus/fileCopy, process-batch 表示是否使用
-# batch（批量请求）方式处理
+# 对每条记录设置操作，目前支持 changeLifecycle(deleteAfterDays)/changeTyep/changeStatus/fileCopy, process-batch
+# 表示是否使用 batch（批量请求）方式处理。
 process=copy
 process-batch=true
 # type 操作的 parameter，1 表示低频存储，0 表示标准存储
@@ -109,13 +109,13 @@ add-prefix=video/
 
 ### multi list suggestions
 ```
-1、level 1 理论最大分段为 88+1 个，level 2 理论最大分段为 7744+1 个，但实际情况空间的文件可能只有几个统一的前缀，则只会分成几
+1、level 1 理论最大分段为 94+1 个，level 2 理论最大分段为 8836+1 个，但实际情况空间的文件可能只有几个统一的前缀，则只会分成几
    个段，分段数决定了实际线程数目。
 2、通常情况下建议将 end-file 设置为 false（默认值）。
 4、空间有大量删除时直接使用 list v2，即 version=2。
 5、推荐用法：version=2，end-file=false，unit-len=20000（version 2 的时候 unit-len 值可以调高，但是不建议过大，通常不超
    过 100000），500 万以内文件 level=1，500 万以上文件 level=2，max-threads=100（level 1 的情况下实际最大线程数只能达到
-   89 个；如果使用 level 2，在机器配置较高时可以选择更高的值，如16核32G的机器可选择 200 个以上最大线程）。文件数量非常大时，可
+   95 个；如果使用 level 2，在机器配置较高时可以选择更高的值，如16核32G的机器可选择 200 个以上最大线程）。文件数量非常大时，可
    以先通过 process=check 方式来检查一下前缀个数，再考虑调整参数配置。
 ```
 
