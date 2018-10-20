@@ -88,6 +88,6 @@ public class ListFileFilter {
 
     public boolean isValid() {
         return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyRegex) || checkList(mime) ||
-                (putTimeMin == 0 && putTimeMax == 0) || type < 0);
+                (putTimeMin == 0 && putTimeMax == 0) || type > -1);
     }
 }
