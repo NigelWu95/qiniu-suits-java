@@ -10,11 +10,9 @@ public class FileCopyParams extends BaseParams {
     private String targetBucket;
     private String keepKey;
     private String targetKeyPrefix = "";
-    private PointTimeParams pointTimeParams;
 
     public FileCopyParams(String[] args) throws Exception {
         super(args);
-        this.pointTimeParams = new PointTimeParams(args);
         this.sourceBucket = getParamFromArgs("from");
         this.targetBucket = getParamFromArgs("to");
         try { this.aKey = getParamFromArgs("access-key"); } catch (Exception e) {}
@@ -25,7 +23,6 @@ public class FileCopyParams extends BaseParams {
 
     public FileCopyParams(String configFileName) throws Exception {
         super(configFileName);
-        pointTimeParams = new PointTimeParams(configFileName);
         this.sourceBucket = getParamFromConfig("from");
         this.targetBucket = getParamFromConfig("to");
         try { this.aKey = getParamFromConfig("access-key"); } catch (Exception e) {}
@@ -61,9 +58,5 @@ public class FileCopyParams extends BaseParams {
 
     public String getTargetKeyPrefix() {
         return targetKeyPrefix;
-    }
-
-    public PointTimeParams getPointTimeParams() {
-        return pointTimeParams;
     }
 }

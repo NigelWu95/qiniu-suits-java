@@ -20,7 +20,7 @@ public class BaseParams {
     }
 
     protected BaseParams(String configFileName) throws Exception {
-        propertyConfig = new PropertyConfig(".qiniu.properties");
+        propertyConfig = new PropertyConfig(configFileName);
         this.accessKey = propertyConfig.getProperty("ak");
         this.secretKey = propertyConfig.getProperty("sk");
         this.bucket = propertyConfig.getProperty("bucket");

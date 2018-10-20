@@ -108,7 +108,7 @@ public class AsyncFetchProcess implements IUrlItemProcess {
         try {
             videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
         } catch (IOException ioException) {
-            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8Url);
+            fileReaderAndWriterMap.writeErrorOrNull("list ts failed: " + m3u8Url);
         }
 
         for (VideoTS videoTS : videoTSList) {

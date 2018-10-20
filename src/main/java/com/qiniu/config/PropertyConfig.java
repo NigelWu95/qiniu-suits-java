@@ -1,11 +1,6 @@
 package com.qiniu.config;
 
-import com.qiniu.common.QiniuSuitsException;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Properties;
 
 public class PropertyConfig {
@@ -20,7 +15,7 @@ public class PropertyConfig {
         try {
             inputStream = new FileInputStream(resourceBath + resourceName);
             properties = new Properties();
-            properties.load(inputStream);
+            properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
         } catch (IOException ioException) {
             throw new Exception(ioException);
         } finally {
