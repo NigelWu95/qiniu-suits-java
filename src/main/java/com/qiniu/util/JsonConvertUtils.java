@@ -23,4 +23,9 @@ public final class JsonConvertUtils {
         Gson gson = new Gson();
         return gson.toJson(srcObject);
     }
+
+    public static final String toJsonWithoutUrlEscape(Object srcObject) {
+        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+        return gson.toJson(srcObject);
+    }
 }
