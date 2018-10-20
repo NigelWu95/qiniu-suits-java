@@ -1,5 +1,5 @@
 # qiniu-suits-java
-七牛接口使用套件
+七牛接口使用套件（jdk1.8）
 
 ### command
 * list bucket and process per parameter（字段含义和下述 properties 中各字段的释义一致）
