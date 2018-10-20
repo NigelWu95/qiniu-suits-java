@@ -240,15 +240,14 @@ public class ListBucketProcess {
             reader.close();
             inputStream.close();
         }
-
         response.close();
         return fileInfoList;
     }
 
-    public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, int unitLen, int version) {
+    public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, int unitLen, String marker) {
 
         if (fileInfoList == null || fileInfoList.size() < unitLen) {
-            return null;
+            return marker;
         } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoList.parallelStream()
                 .anyMatch(fileInfo -> fileInfo.key.equals(fileFlag))) {
             return null;
@@ -268,7 +267,7 @@ public class ListBucketProcess {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
                         unitLen, version, 3);
                 writeAndProcess(fileInfoList, filter, endFileKey, fileMap, processor, processBatch, 3, null);
-                marker = getNextMarker(fileInfoList, endFileKey, unitLen, version);
+                marker = getNextMarker(fileInfoList, endFileKey, unitLen, marker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
