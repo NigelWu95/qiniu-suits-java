@@ -191,7 +191,7 @@ public class ListBucketProcess {
         fileMap.initWriter(resultFileDir, resultPrefix);
         ListBucket listBucket = new ListBucket(auth, configuration);
         List<FileInfo> fileInfoList;
-        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
         if (!StringUtils.isNullOrEmpty(customPrefix)) {
             prefixList = prefixList
                     .parallelStream()
