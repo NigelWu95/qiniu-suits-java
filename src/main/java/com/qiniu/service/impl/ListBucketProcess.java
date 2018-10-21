@@ -135,12 +135,11 @@ public class ListBucketProcess {
                         JsonElement marker = json.get("marker");
                         if (item != null && !(item instanceof JsonNull)) {
                             fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
-                        }
-                        if (marker != null && !(marker instanceof JsonNull)) {
-                            fileInfo.nextMarker = marker.getAsString();
-                            if (item == null || item instanceof JsonNull) {
+                        } else {
+                            if (marker != null && !(marker instanceof JsonNull)) {
+                                fileInfo.nextMarker = marker.getAsString();
                                 String itemJson = new String(UrlSafeBase64.decode(fileInfo.nextMarker
-                                        .replace('-', '+').replace('_', '/')));
+                                            .replace('-', '+').replace('_', '/')));
                                 JsonObject jsonObject = JsonConvertUtils.toJsonObject(itemJson);
                                 fileInfo.key = jsonObject.get("k").getAsString();
                                 fileInfo.type = jsonObject.get("c").getAsInt();
@@ -222,7 +221,7 @@ public class ListBucketProcess {
 
         return fileInfoList.parallelStream().collect(Collectors.toMap(
                 fileInfo -> fileInfo.key,
-                fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.nextMarker) ? fileInfo.nextMarker :
+                fileInfo -> StringUtils.isNullOrEmpty(fileInfo.hash) ? fileInfo.nextMarker :
                         UrlSafeBase64.encodeToString("{\"c\":" + fileInfo.type + ",\"k\":\"" + fileInfo.key + "\"}"),
                 (value1, value2) -> value2
         ));
@@ -265,7 +264,7 @@ public class ListBucketProcess {
         } else {
             Optional<FileInfo> lastFileInfo = fileInfoList.parallelStream().max(Comparator.comparing(fileInfo -> fileInfo.key));
             if (lastFileInfo.isPresent()) {
-                if (StringUtils.isNullOrEmpty(lastFileInfo.get().key)) marker = lastFileInfo.get().nextMarker;
+                if (StringUtils.isNullOrEmpty(lastFileInfo.get().hash)) marker = lastFileInfo.get().nextMarker;
                 else marker = UrlSafeBase64.encodeToString("{\"c\":" + lastFileInfo.get().type +
                         ",\"k\":\"" + lastFileInfo.get().key + "\"}");
                 return marker;
