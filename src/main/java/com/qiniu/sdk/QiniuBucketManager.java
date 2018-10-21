@@ -1,13 +1,10 @@
-package com.qiniu.common;
+package com.qiniu.sdk;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
-import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FetchRet;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.storage.model.FileListing;
-import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;

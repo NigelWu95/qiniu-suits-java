@@ -2,7 +2,7 @@ package com.qiniu.service.censor;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuAuth;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Client;

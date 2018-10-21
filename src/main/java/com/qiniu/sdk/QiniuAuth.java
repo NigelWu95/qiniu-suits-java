@@ -1,4 +1,4 @@
-package com.qiniu.common;
+package com.qiniu.sdk;
 
 import com.qiniu.http.Client;
 import com.qiniu.util.*;
