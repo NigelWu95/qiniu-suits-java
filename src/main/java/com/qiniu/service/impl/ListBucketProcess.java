@@ -144,7 +144,6 @@ public class ListBucketProcess {
                                 JsonObject jsonObject = JsonConvertUtils.toJsonObject(itemJson);
                                 fileInfo.key = jsonObject.get("k").getAsString();
                                 fileInfo.type = jsonObject.get("c").getAsInt();
-                                fileInfo.isDelete = true;
                             }
                         }
                     }
@@ -215,8 +214,8 @@ public class ListBucketProcess {
         QiniuException qiniuException = exceptionQueue.poll();
         if (qiniuException != null) throw qiniuException;
         if ("list".equals(resultPrefix))
-            writeAndProcess(fileInfoList.stream().filter(fileInfo -> !fileInfo.isDelete).collect(Collectors.toList()), filter,
-                    "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
+            writeAndProcess(fileInfoList.stream().filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
+                    filter, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
         else
             writeAndProcess(fileInfoList, filter, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
         fileMap.closeWriter();
@@ -282,7 +281,7 @@ public class ListBucketProcess {
             try {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
                         unitLen, version, 3);
-                writeAndProcess(fileInfoList.stream().filter(fileInfo -> !fileInfo.isDelete).collect(Collectors.toList()),
+                writeAndProcess(fileInfoList.stream().filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
                         filter, endFileKey, fileMap, processor, processBatch, 3, null);
                 marker = getNextMarker(fileInfoList, endFileKey, unitLen, marker);
             } catch (IOException e) {
