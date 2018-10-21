@@ -273,7 +273,7 @@ public class ListBucketProcess {
         }
     }
 
-    public void listAndProcess(ListBucket listBucket, boolean filter, int unitLen, String prefix,
+    public void loopListByMarker(ListBucket listBucket, boolean filter, int unitLen, String prefix,
                                  String endFileKey, String marker, int version, FileReaderAndWriterMap fileMap,
                                  IOssFileProcess processor, boolean processBatch) {
 
@@ -281,8 +281,11 @@ public class ListBucketProcess {
             try {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
                         unitLen, version, 3);
-                writeAndProcess(fileInfoList.stream().filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
+                // 只列举到一条的情况有可能是列举到已删除的文件需要过滤
+                if (fileInfoList.size() == 1) writeAndProcess(fileInfoList.stream().
+                                filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
                         filter, endFileKey, fileMap, processor, processBatch, 3, null);
+                else writeAndProcess(fileInfoList, filter, endFileKey, fileMap, processor, processBatch, 3, null);
                 marker = getNextMarker(fileInfoList, endFileKey, unitLen, marker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
@@ -322,7 +325,7 @@ public class ListBucketProcess {
                 }
                 String marker = finalI == -1 ? "null" : delimitedFileMap.get(keyList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
-                listAndProcess(listBucket, filter, unitLen, prefix, endFileKey, marker, version, fileMap, processor, processBatch);
+                loopListByMarker(listBucket, filter, unitLen, prefix, endFileKey, marker, version, fileMap, processor, processBatch);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
