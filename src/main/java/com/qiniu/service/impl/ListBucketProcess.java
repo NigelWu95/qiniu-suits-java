@@ -79,7 +79,7 @@ public class ListBucketProcess {
         // 如果 list 不为空，将完整的列表先写入。
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
-                        .map(JsonConvertUtils::toJsonWithoutUrlEscape)
+                        .map(FileInfo::toString)
                         .collect(Collectors.toList()))
         );
 
@@ -88,7 +88,7 @@ public class ListBucketProcess {
             if (fileInfoList == null || fileInfoList.size() == 0) return;
             // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
             if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
-                    .map(JsonConvertUtils::toJsonWithoutUrlEscape)
+                    .map(FileInfo::toString)
                     .collect(Collectors.toList()))
             );
         }
@@ -99,9 +99,8 @@ public class ListBucketProcess {
                         .map(fileInfo -> fileInfo.key)
                         .collect(Collectors.toList()), retryCount);
             } else {
-                fileInfoList.parallelStream().forEach(fileInfo -> {
-                    iOssFileProcessor.processFile(fileInfo.key, retryCount);
-                });
+                fileInfoList.parallelStream()
+                        .forEach(fileInfo -> iOssFileProcessor.processFile(fileInfo.key, retryCount));
             }
 
             if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400 &&
@@ -133,8 +132,20 @@ public class ListBucketProcess {
                     if (!StringUtils.isNullOrEmpty(line)) {
                         JsonObject json = JsonConvertUtils.toJsonObject(line);
                         JsonElement item = json.get("item");
+                        JsonElement marker = json.get("marker");
                         if (item != null && !(item instanceof JsonNull)) {
                             fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
+                        }
+                        if (marker != null && !(marker instanceof JsonNull)) {
+                            fileInfo.nextMarker = marker.getAsString();
+                            if (item == null || item instanceof JsonNull) {
+                                String itemJson = new String(UrlSafeBase64.decode(fileInfo.nextMarker
+                                        .replace('-', '+').replace('_', '/')));
+                                JsonObject jsonObject = JsonConvertUtils.toJsonObject(itemJson);
+                                fileInfo.key = jsonObject.get("k").getAsString();
+                                fileInfo.type = jsonObject.get("c").getAsInt();
+                                fileInfo.isDelete = true;
+                            }
                         }
                     }
                 }
@@ -145,9 +156,9 @@ public class ListBucketProcess {
     }
 
     private List<FileInfo> listByPrefix(ListBucket listBucket, List<String> prefixList, int version, FileReaderAndWriterMap fileMap,
-                                        Queue<QiniuException> exceptionQueue, int retryCount) throws QiniuException {
+                                        Queue<QiniuException> exceptionQueue, int retryCount) {
 
-        List<FileInfo> fileInfoList = prefixList.parallelStream()
+        return prefixList.parallelStream()
                 .filter(prefix -> !prefix.contains("|"))
                 .map(prefix -> {
                     Response response = null;
@@ -161,10 +172,8 @@ public class ListBucketProcess {
                     } finally { if (response != null) response.close(); }
                     return firstFileInfo;
                 })
-                .filter(fileInfo -> !(fileInfo == null || StringUtils.isNullOrEmpty(fileInfo.key)))
+                .filter(fileInfo -> fileInfo != null && !StringUtils.isNullOrEmpty(fileInfo.key))
                 .collect(Collectors.toList());
-
-        return fileInfoList;
     }
 
     private List<String> getSecondFilePrefix(List<String> prefixList, List<FileInfo> delimitedFileInfo) {
@@ -205,12 +214,17 @@ public class ListBucketProcess {
         listBucket.closeBucketManager();
         QiniuException qiniuException = exceptionQueue.poll();
         if (qiniuException != null) throw qiniuException;
-        writeAndProcess(fileInfoList, filter, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
+        if ("list".equals(resultPrefix))
+            writeAndProcess(fileInfoList.stream().filter(fileInfo -> !fileInfo.isDelete).collect(Collectors.toList()), filter,
+                    "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
+        else
+            writeAndProcess(fileInfoList, filter, "", fileMap, iOssFileProcessor, false, retryCount, exceptionQueue);
         fileMap.closeWriter();
 
         return fileInfoList.parallelStream().collect(Collectors.toMap(
                 fileInfo -> fileInfo.key,
-                fileInfo -> UrlSafeBase64.encodeToString("{\"c\":" + fileInfo.type + ",\"k\":\"" + fileInfo.key + "\"}"),
+                fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.nextMarker) ? fileInfo.nextMarker :
+                        UrlSafeBase64.encodeToString("{\"c\":" + fileInfo.type + ",\"k\":\"" + fileInfo.key + "\"}"),
                 (value1, value2) -> value2
         ));
     }
@@ -246,15 +260,17 @@ public class ListBucketProcess {
 
         if (fileInfoList == null) {
             return marker;
-        } else if (fileInfoList.size() < unitLen) {
-            return null;
         } else if (!StringUtils.isNullOrEmpty(fileFlag) && fileInfoList.parallelStream()
                 .anyMatch(fileInfo -> fileInfo.key.equals(fileFlag))) {
             return null;
         } else {
             Optional<FileInfo> lastFileInfo = fileInfoList.parallelStream().max(Comparator.comparing(fileInfo -> fileInfo.key));
-            return lastFileInfo.isPresent() ? UrlSafeBase64.encodeToString("{\"c\":" + lastFileInfo.get().type +
-                    ",\"k\":\"" + lastFileInfo.get().key + "\"}") : null;
+            if (lastFileInfo.isPresent()) {
+                if (StringUtils.isNullOrEmpty(lastFileInfo.get().key)) marker = lastFileInfo.get().nextMarker;
+                else marker = UrlSafeBase64.encodeToString("{\"c\":" + lastFileInfo.get().type +
+                        ",\"k\":\"" + lastFileInfo.get().key + "\"}");
+                return marker;
+            } else return null;
         }
     }
 
@@ -266,7 +282,8 @@ public class ListBucketProcess {
             try {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
                         unitLen, version, 3);
-                writeAndProcess(fileInfoList, filter, endFileKey, fileMap, processor, processBatch, 3, null);
+                writeAndProcess(fileInfoList.stream().filter(fileInfo -> !fileInfo.isDelete).collect(Collectors.toList()),
+                        filter, endFileKey, fileMap, processor, processBatch, 3, null);
                 marker = getNextMarker(fileInfoList, endFileKey, unitLen, marker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
