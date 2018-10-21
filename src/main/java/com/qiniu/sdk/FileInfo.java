@@ -1,8 +1,5 @@
 package com.qiniu.sdk;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.qiniu.util.Json;
 import com.qiniu.util.JsonConvertUtils;
 
 /**
@@ -42,19 +39,9 @@ public class FileInfo {
      * 从当前位置的 file 得到的下一个 marker
      */
     public String nextMarker;
-    /**
-     * 标记是否是已删除的文件
-     */
-    public boolean isDelete;
 
     public String toString() {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("key", key);
-        jsonObject.addProperty("hash", hash);
-        jsonObject.addProperty("fsize", fsize);
-        jsonObject.addProperty("putTime", putTime);
-        jsonObject.addProperty("mimeType", mimeType);
-        jsonObject.addProperty("type", type);
-        return JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject);
+        this.nextMarker = null;
+        return JsonConvertUtils.toJsonWithoutUrlEscape(this);
     }
 }
