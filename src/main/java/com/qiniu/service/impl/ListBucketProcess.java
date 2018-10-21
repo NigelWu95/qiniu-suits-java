@@ -255,7 +255,7 @@ public class ListBucketProcess {
         return fileInfoList;
     }
 
-    public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, int unitLen, String marker) {
+    public String getNextMarker(List<FileInfo> fileInfoList, String fileFlag, String marker) {
 
         if (fileInfoList == null) {
             return marker;
@@ -286,7 +286,7 @@ public class ListBucketProcess {
                                 filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
                         filter, endFileKey, fileMap, processor, processBatch, 3, null);
                 else writeAndProcess(fileInfoList, filter, endFileKey, fileMap, processor, processBatch, 3, null);
-                marker = getNextMarker(fileInfoList, endFileKey, unitLen, marker);
+                marker = getNextMarker(fileInfoList, endFileKey, marker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
