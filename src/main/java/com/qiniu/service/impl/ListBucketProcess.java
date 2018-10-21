@@ -6,10 +6,11 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.*;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.oss.ListBucket;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.storage.model.FileListing;
+import com.qiniu.sdk.FileInfo;
+import com.qiniu.sdk.FileListing;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.ListFileFilterUtils;
 import com.qiniu.util.StringUtils;
@@ -21,7 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ListBucketProcess {
 
