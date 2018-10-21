@@ -1,7 +1,7 @@
 package com.qiniu.service.oss;
 
 import com.google.gson.Gson;
-import com.qiniu.common.QiniuAuth;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;

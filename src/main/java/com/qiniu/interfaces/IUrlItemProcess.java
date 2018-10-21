@@ -1,6 +1,6 @@
 package com.qiniu.interfaces;
 
-import com.qiniu.common.QiniuAuth;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 
 public interface IUrlItemProcess {

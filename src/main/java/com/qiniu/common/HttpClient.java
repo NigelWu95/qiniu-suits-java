@@ -1,6 +1,6 @@
 package com.qiniu.common;
 
-import com.qiniu.util.Auth;
+import com.qiniu.sdk.QiniuAuth;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Created by qiniu.

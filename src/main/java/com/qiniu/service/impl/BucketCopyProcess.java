@@ -1,7 +1,7 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.QiniuAuth;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.BucketCopy;

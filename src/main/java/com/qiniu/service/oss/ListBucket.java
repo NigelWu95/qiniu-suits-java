@@ -2,6 +2,8 @@ package com.qiniu.service.oss;
 
 import com.qiniu.common.*;
 import com.qiniu.http.Response;
+import com.qiniu.sdk.QiniuAuth;
+import com.qiniu.sdk.QiniuBucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
