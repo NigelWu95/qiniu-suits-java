@@ -1,7 +1,7 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.QiniuAuth;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;

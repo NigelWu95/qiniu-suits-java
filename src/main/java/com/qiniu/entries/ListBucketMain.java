@@ -3,6 +3,7 @@ package com.qiniu.entries;
 import com.qiniu.common.*;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
+import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.impl.*;
 import com.qiniu.storage.Configuration;
 

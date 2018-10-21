@@ -82,8 +82,13 @@ public class ListFilterParams extends BaseParams {
         if (StringUtils.isNullOrEmpty(pointDate) && StringUtils.isNullOrEmpty(pointTime)) {
             System.out.println("datetime is empty, it will not compare by put time.");
             return 0L;
-        } else if(pointDate.matches("\\d{4}-\\d{2}-\\d{2}") && pointTime.matches("\\d{2}:\\d{2}:\\d{2}")) {
-            pointDatetime =  pointDate + " " + pointTime;
+        } else if(pointDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            if (pointTime.matches("\\d{2}:\\d{2}:\\d{2}"))
+                pointDatetime =  pointDate + " " + pointTime;
+            else {
+                System.out.println("time is empty, it will use 00:00:00 as default.");
+                pointDatetime =  pointDate + " " + "00:00:00";
+            }
             return DateUtils.parseYYYYMMDDHHMMSSdatetime(pointDatetime);
         } else {
             System.out.println("datetime is empty, it will not compare by put time.");

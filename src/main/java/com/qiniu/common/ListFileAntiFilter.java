@@ -1,6 +1,6 @@
 package com.qiniu.common;
 
-import com.qiniu.storage.model.FileInfo;
+import com.qiniu.sdk.FileInfo;
 
 import java.util.List;
 
