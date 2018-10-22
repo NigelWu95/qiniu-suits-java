@@ -13,6 +13,7 @@ public class FileReaderAndWriterMap implements Cloneable {
     private List<String> targetWriters;
     private String targetFileDir;
     private String prefix;
+    private int index = 0;
 
     public FileReaderAndWriterMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
@@ -20,12 +21,17 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
+    public FileReaderAndWriterMap(int index) {
+        this();
+        this.index = index;
+    }
+
     public void initWriter(String targetFileDir, String prefix) throws IOException {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
 
         for (int i = 0; i < targetWriters.size(); i++) {
-            addWriter(targetFileDir, prefix + targetWriters.get(i));
+            addWriter(targetFileDir, prefix + targetWriters.get(i) + index);
         }
     }
 
@@ -47,6 +53,8 @@ public class FileReaderAndWriterMap implements Cloneable {
             count--;
         }
 
+        if (count < 3) System.out.println(filePath.getParentFile());
+
         count = 3;
         while (!filePath.exists()) {
             if (count == 0) {
@@ -55,8 +63,6 @@ public class FileReaderAndWriterMap implements Cloneable {
             filePath.createNewFile();
             count--;
         }
-
-        if (count < 3) System.out.println(filePath);
     }
 
     public BufferedWriter getWriter(String key) {
@@ -136,14 +142,14 @@ public class FileReaderAndWriterMap implements Cloneable {
     }
 
     public void writeSuccess(String item) {
-        doWrite(this.prefix + "_success", item);
+        doWrite(this.prefix + "_success" + index, item);
     }
 
     public void writeErrorOrNull(String item) {
-        doWrite(this.prefix + "_error_null", item);
+        doWrite(this.prefix + "_error_null" + index, item);
     }
 
     public void writeOther(String item) {
-        doWrite(this.prefix + "_other", item);
+        doWrite(this.prefix + "_other" + index, item);
     }
 }
