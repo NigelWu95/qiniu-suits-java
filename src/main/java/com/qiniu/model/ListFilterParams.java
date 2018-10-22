@@ -91,7 +91,7 @@ public class ListFilterParams extends BaseParams {
             }
             return DateUtils.parseYYYYMMDDHHMMSSdatetime(pointDatetime);
         } else {
-            System.out.println("datetime is empty, it will not compare by put time.");
+            System.out.println("datetime is empty, it will not compare to the put time.");
             return 0L;
         }
 
