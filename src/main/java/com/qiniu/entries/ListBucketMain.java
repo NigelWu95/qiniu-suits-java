@@ -60,29 +60,29 @@ public class ListBucketMain {
             }
         }
 
-        ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
-        ListFileFilter listFileFilter = new ListFileFilter();
-        ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
-        listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
-        listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
-        listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
-        listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
-        listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
-        listFileFilter.setMime(listFilterParams.getMime());
-        listFileFilter.setType(listFilterParams.getType());
-        listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
-        listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
-        listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
-        listFileAntiFilter.setMime(listFilterParams.getAntiMime());
-
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
         if ("check".equals(process)) {
+            listBucketProcessor.setFilter(null, null);
             listBucketProcessor.getDelimitedFileMap(version, level, customPrefix, "delimiter", null, 3);
-        } else
+        } else {
+            ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
+            ListFileFilter listFileFilter = new ListFileFilter();
+            ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
+            listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
+            listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
+            listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
+            listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
+            listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
+            listFileFilter.setMime(listFilterParams.getMime());
+            listFileFilter.setType(listFilterParams.getType());
+            listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
+            listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
+            listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
+            listFileAntiFilter.setMime(listFilterParams.getAntiMime());
+            listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
             listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
                     iOssFileProcessor, processBatch);
-
+        }
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
     }
