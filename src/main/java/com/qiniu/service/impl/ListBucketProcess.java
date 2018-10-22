@@ -271,11 +271,9 @@ public class ListBucketProcess {
             try {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
                         unitLen, version, 3);
-                // 只列举到一条的情况有可能是列举到已删除的文件需要过滤
-                if (fileInfoList.size() == 1) writeAndProcess(fileInfoList.stream().
-                                filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
+                // 写入和处理时过滤掉已删除的文件（已删除的文件信息包含的 hash 值一定为空）
+                writeAndProcess(fileInfoList.stream().filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash)).collect(Collectors.toList()),
                         endFileKey, fileMap, processor, processBatch, 3, null);
-                else writeAndProcess(fileInfoList, endFileKey, fileMap, processor, processBatch, 3, null);
                 marker = getNextMarker(fileInfoList, endFileKey, marker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFileKey + "\t" + marker + "\t" + unitLen
@@ -308,7 +306,7 @@ public class ListBucketProcess {
                     endFileKey = keyList.get(finalI + 1);
                 } else if (!endFile && finalI < keyList.size() -1 && finalI > -1) {
                     if (keyList.get(finalI).length() < customPrefix.length() + 2) prefix = keyList.get(finalI);
-                    else prefix = keyList.get(finalI).substring(0, customPrefix.length() + level == 2 ? 2 : 1);
+                    else prefix = keyList.get(finalI).substring(0, customPrefix.length() + (level == 2 ? 2 : 1));
                 } else {
                     if (finalI == -1) endFileKey = keyList.get(0);
                     if (strictPrefix) prefix = customPrefix;
