@@ -9,12 +9,9 @@ import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.oss.ListBucket;
 import com.qiniu.storage.Configuration;
-import com.qiniu.sdk.FileInfo;
-import com.qiniu.sdk.FileListing;
-import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.ListFileFilterUtils;
-import com.qiniu.util.StringUtils;
-import com.qiniu.util.UrlSafeBase64;
+import com.qiniu.storage.model.FileInfo;
+import com.qiniu.storage.model.FileListing;
+import com.qiniu.util.*;
 
 import java.io.*;
 import java.util.*;
@@ -80,7 +77,7 @@ public class ListBucketProcess {
         // 如果 list 不为空，将完整的列表先写入。
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
-                        .map(FileInfo::toString)
+                        .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                         .collect(Collectors.toList()))
         );
 
@@ -89,7 +86,7 @@ public class ListBucketProcess {
             if (fileInfoList == null || fileInfoList.size() == 0) return;
             // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
             if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
-                    .map(FileInfo::toString)
+                    .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                     .collect(Collectors.toList()))
             );
         }
@@ -138,8 +135,7 @@ public class ListBucketProcess {
                             fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
                         } else {
                             if (marker != null && !(marker instanceof JsonNull)) {
-                                fileInfo.nextMarker = marker.getAsString();
-                                String itemJson = new String(UrlSafeBase64.decode(fileInfo.nextMarker
+                                String itemJson = new String(UrlSafeBase64.decode(marker.getAsString()
                                             .replace('-', '+').replace('_', '/')));
                                 JsonObject jsonObject = JsonConvertUtils.toJsonObject(itemJson);
                                 fileInfo.key = jsonObject.get("k").getAsString();
@@ -222,8 +218,8 @@ public class ListBucketProcess {
 
         return fileInfoList.parallelStream().collect(Collectors.toMap(
                 fileInfo -> fileInfo.key,
-                fileInfo -> StringUtils.isNullOrEmpty(fileInfo.hash) ? fileInfo.nextMarker :
-                        UrlSafeBase64.encodeToString("{\"c\":" + fileInfo.type + ",\"k\":\"" + fileInfo.key + "\"}"),
+                fileInfo -> StringUtils.isNullOrEmpty(fileInfo.key) ? null :
+                        ListUtils.marker(fileInfo.type, fileInfo.key),
                 (value1, value2) -> value2
         ));
     }
@@ -264,18 +260,13 @@ public class ListBucketProcess {
             return null;
         } else {
             Optional<FileInfo> lastFileInfo = fileInfoList.parallelStream().max(Comparator.comparing(fileInfo -> fileInfo.key));
-            if (lastFileInfo.isPresent()) {
-                if (StringUtils.isNullOrEmpty(lastFileInfo.get().hash)) marker = lastFileInfo.get().nextMarker;
-                else marker = UrlSafeBase64.encodeToString("{\"c\":" + lastFileInfo.get().type +
-                        ",\"k\":\"" + lastFileInfo.get().key + "\"}");
-                return marker;
-            } else return null;
+            return (!lastFileInfo.isPresent() || StringUtils.isNullOrEmpty(lastFileInfo.get().key)) ? null :
+                    ListUtils.marker(lastFileInfo.get().type, lastFileInfo.get().key);
         }
     }
 
     public void loopListByMarker(ListBucket listBucket, int unitLen, String prefix, String endFileKey, String marker,
                                  int version, FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch) {
-
         while (!StringUtils.isNullOrEmpty(marker)) {
             try {
                 List<FileInfo> fileInfoList = list(listBucket, bucket, prefix, "", marker.equals("null") ? "" : marker,
