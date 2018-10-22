@@ -27,9 +27,6 @@ public class ListBucketMain {
         String customPrefix = listBucketParams.getCustomPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
-        boolean filter = listBucketParams.getFilter();
-        ListFileFilter listFileFilter = null;
-        ListFileAntiFilter listFileAntiFilter = null;
         IOssFileProcess iOssFileProcessor = null;
         QiniuAuth auth = QiniuAuth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -63,29 +60,27 @@ public class ListBucketMain {
             }
         }
 
-        if (filter) {
-            ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
-            listFileFilter = new ListFileFilter();
-            listFileAntiFilter = new ListFileAntiFilter();
-            listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
-            listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
-            listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
-            listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
-            listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
-            listFileFilter.setMime(listFilterParams.getMime());
-            listFileFilter.setType(listFilterParams.getType());
-            listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
-            listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
-            listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
-            listFileAntiFilter.setMime(listFilterParams.getAntiMime());
-        }
+        ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
+        ListFileFilter listFileFilter = new ListFileFilter();
+        ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
+        listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
+        listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
+        listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
+        listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
+        listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
+        listFileFilter.setMime(listFilterParams.getMime());
+        listFileFilter.setType(listFilterParams.getType());
+        listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
+        listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
+        listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
+        listFileAntiFilter.setMime(listFilterParams.getAntiMime());
 
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
         listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
         if ("check".equals(process)) {
-            listBucketProcessor.getDelimitedFileMap(filter, version, level, customPrefix, "delimiter", null, 3);
+            listBucketProcessor.getDelimitedFileMap(version, level, customPrefix, "delimiter", null, 3);
         } else
-            listBucketProcessor.processBucket(filter, version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
+            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
                     iOssFileProcessor, processBatch);
 
         if (iOssFileProcessor != null)
