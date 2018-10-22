@@ -296,7 +296,7 @@ public class ListBucketProcess {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         for (int i = strictPrefix ? 0 : -1; i < keyList.size(); i++) {
             int finalI = i;
-            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(strictPrefix ? finalI + 1 : finalI + 2);
             fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             executorPool.execute(() -> {
