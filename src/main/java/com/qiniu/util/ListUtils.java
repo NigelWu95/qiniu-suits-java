@@ -1,6 +1,13 @@
 package com.qiniu.util;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.qiniu.model.ListV2Line;
+import com.qiniu.storage.model.FileInfo;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ListUtils {
 
