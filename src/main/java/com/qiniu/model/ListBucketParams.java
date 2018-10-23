@@ -2,6 +2,9 @@ package com.qiniu.model;
 
 import com.qiniu.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class ListBucketParams extends BaseParams {
 
     private String maxThreads;
@@ -10,6 +13,7 @@ public class ListBucketParams extends BaseParams {
     private String enabledEndFile;
     private String unitLen;
     private String customPrefix;
+    private String antiPrefix;
     private String process;
     private String processBatch;
     private String filter;
@@ -22,6 +26,7 @@ public class ListBucketParams extends BaseParams {
         try { this.enabledEndFile = getParamFromArgs("end-file"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) { this.customPrefix = ""; }
+        try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
         try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
         try { this.filter = getParamFromArgs("filter"); } catch (Exception e) {}
@@ -35,6 +40,7 @@ public class ListBucketParams extends BaseParams {
         try { this.enabledEndFile = getParamFromConfig("end-file"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) { this.customPrefix = ""; }
+        try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
         try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
         try { this.filter = getParamFromConfig("filter"); } catch (Exception e) {}
@@ -83,6 +89,11 @@ public class ListBucketParams extends BaseParams {
 
     public String getCustomPrefix() {
         return customPrefix;
+    }
+
+    public List<String> getAntiPrefix() {
+        if (StringUtils.isNullOrEmpty(antiPrefix)) return null;
+        return Arrays.asList(antiPrefix.split(","));
     }
 
     public int getUnitLen() {
