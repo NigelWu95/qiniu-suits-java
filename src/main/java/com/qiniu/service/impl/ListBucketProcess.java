@@ -188,7 +188,7 @@ public class ListBucketProcess {
         return listResult;
     }
 
-    private List<ListResult> listByPrefix(ListBucket listBucket, List<String> prefixList, int unitLen, int version, FileReaderAndWriterMap fileMap,
+    private List<ListResult> listByPrefixList(ListBucket listBucket, List<String> prefixList, int unitLen, int version, FileReaderAndWriterMap fileMap,
                                         Queue<QiniuException> exceptionQueue, int retryCount) {
 
         return prefixList.parallelStream()
@@ -220,7 +220,7 @@ public class ListBucketProcess {
         writeAndProcess(fileInfoList, "", fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, int unitLen, int level, String customPrefix, List<String> antiPrefix,
+    public Map<String, String> preListForDelimiter(int version, int unitLen, int level, String customPrefix, List<String> antiPrefix,
                                                    String resultPrefix, IOssFileProcess iOssFileProcessor, boolean processBatch,
                                                    int retryCount) throws IOException {
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
@@ -238,9 +238,9 @@ public class ListBucketProcess {
                 .collect(Collectors.toList()) : originPrefixList;
 
         Map<String, String> delimitedFileMap = new HashMap<>();
-        List<ListResult> listResultList = listByPrefix(listBucket, prefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
+        List<ListResult> listResultList = listByPrefixList(listBucket, prefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
         if (level == 2) {
-            processDelimitedFileInfo(listResultList.parallelStream()
+            if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList.parallelStream()
                     .filter(listResult -> listResult.fileInfoList.size() > 0 && listResult.fileInfoList.size() < unitLen)
                     .collect(Collectors.toList()), fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
             List<String> delimiterFileList = listResultList.parallelStream()
@@ -250,25 +250,26 @@ public class ListBucketProcess {
             for (String key : delimiterFileList) {
                 String firstPrefix = key.substring(0, customPrefix.length() + 1);
                 List<String> secondPrefixList = originPrefixList.parallelStream().map(secondPrefix -> firstPrefix + secondPrefix).collect(Collectors.toList());
-                listResultList = listByPrefix(listBucket, secondPrefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
-                processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
+                listResultList = listByPrefixList(listBucket, secondPrefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
                 delimitedFileMap.putAll(listResultList.parallelStream()
                         .collect(Collectors.toMap(
                                 listResult -> listResult.lastFileKey,
                                 listResult -> listResult.nextMarker,
                                 (listResult1, listResult2) -> listResult1
                         )));
+                if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
             }
         } else {
-            processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
             delimitedFileMap.putAll(listResultList.parallelStream()
                     .collect(Collectors.toMap(
                             listResult -> listResult.lastFileKey,
                             listResult -> listResult.nextMarker,
                             (listResult1, listResult2) -> listResult1
                     )));
+            if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
         }
         listBucket.closeBucketManager();
+        if ("delimiter".equals(resultPrefix)) fileMap.writeSuccess(String.join("\n", delimitedFileMap.keySet()));
         fileMap.closeWriter();
 
         return delimitedFileMap;
@@ -300,7 +301,7 @@ public class ListBucketProcess {
                               List<String> antiPrefix, IOssFileProcess iOssFileProcessor, boolean processBatch)
             throws IOException, CloneNotSupportedException {
 
-        Map<String, String> delimitedFileMap = getDelimitedFileMap(version, unitLen, level, customPrefix, antiPrefix,"list",
+        Map<String, String> delimitedFileMap = preListForDelimiter(version, unitLen, level, customPrefix, antiPrefix,"list",
                 iOssFileProcessor, processBatch, 3);
         List<String> keyList = new ArrayList<>(delimitedFileMap.keySet());
         Collections.sort(keyList);
