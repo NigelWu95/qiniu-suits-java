@@ -154,7 +154,6 @@ public class ListBucketProcess {
                                         Queue<QiniuException> exceptionQueue, int retryCount) {
 
         return prefixList.parallelStream()
-                .filter(prefix -> !prefix.contains("|"))
                 .map(prefix -> {
                     Response response = null;
                     FileInfo firstFileInfo = null;
@@ -171,11 +170,11 @@ public class ListBucketProcess {
                 .collect(Collectors.toList());
     }
 
-    private List<String> getSecondFilePrefix(List<String> prefixList, List<FileInfo> delimitedFileInfo) {
+    private List<String> getSecondFilePrefix(List<String> prefixList, int customPrefixLen, List<FileInfo> delimitedFileInfo) {
 
         List<String> secondPrefixList = new ArrayList<>();
         for (FileInfo firstFileInfo : delimitedFileInfo) {
-            String firstPrefix = firstFileInfo.key.substring(0, 1);
+            String firstPrefix = firstFileInfo.key.substring(0, customPrefixLen + 1);
             for (String secondPrefix : prefixList) {
                 secondPrefixList.add(firstPrefix + secondPrefix);
             }
@@ -184,26 +183,22 @@ public class ListBucketProcess {
         return secondPrefixList;
     }
 
-    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix,
-                                                   String resultPrefix, IOssFileProcess iOssFileProcessor, int retryCount)
-            throws IOException {
-
+    public Map<String, String> getDelimitedFileMap(int version, int level, String customPrefix, String resultPrefix,
+                                                   IOssFileProcess iOssFileProcessor, int retryCount) throws IOException {
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, resultPrefix);
         ListBucket listBucket = new ListBucket(auth, configuration);
         List<FileInfo> fileInfoList;
-        List<String> prefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
-        if (!StringUtils.isNullOrEmpty(customPrefix)) {
-            prefixList = prefixList
+        List<String> originPrefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
+        List<String> prefixList = !StringUtils.isNullOrEmpty(customPrefix) ? originPrefixList
                     .parallelStream()
                     .map(prefix -> customPrefix + prefix)
-                    .collect(Collectors.toList());
-        }
+                    .collect(Collectors.toList()) : originPrefixList;
 
         fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount);
         if (level == 2) {
-            prefixList = getSecondFilePrefix(prefixList, fileInfoList);
+            prefixList = getSecondFilePrefix(originPrefixList, customPrefix.length(), fileInfoList);
             fileInfoList = listByPrefix(listBucket, prefixList, version, fileMap, exceptionQueue, retryCount);
         }
         listBucket.closeBucketManager();
