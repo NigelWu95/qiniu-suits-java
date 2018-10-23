@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ListResult {
 
-    public String lastFileKey;
+    public String commonPrefix;
 
     public List<FileInfo> fileInfoList;
 

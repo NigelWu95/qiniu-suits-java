@@ -10,7 +10,6 @@ public class ListBucketParams extends BaseParams {
     private String maxThreads;
     private String version;
     private String level;
-    private String enabledEndFile;
     private String unitLen;
     private String customPrefix;
     private String antiPrefix;
@@ -23,7 +22,6 @@ public class ListBucketParams extends BaseParams {
         try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) {}
         try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
-        try { this.enabledEndFile = getParamFromArgs("end-file"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) { this.customPrefix = ""; }
         try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
@@ -37,7 +35,6 @@ public class ListBucketParams extends BaseParams {
         try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) {}
         try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
-        try { this.enabledEndFile = getParamFromConfig("end-file"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) { this.customPrefix = ""; }
         try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
@@ -102,15 +99,6 @@ public class ListBucketParams extends BaseParams {
             return 1000;
         } else {
             return Integer.valueOf(unitLen);
-        }
-    }
-
-    public boolean getEnabledEndFile() {
-        if (StringUtils.isNullOrEmpty(enabledEndFile) || !enabledEndFile.matches("(true|false)")) {
-            System.out.println("no incorrectly enable end-file, it will use false as default.");
-            return false;
-        } else {
-            return Boolean.valueOf(enabledEndFile);
         }
     }
 
