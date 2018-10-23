@@ -7,6 +7,8 @@ import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.impl.*;
 import com.qiniu.storage.Configuration;
 
+import java.util.List;
+
 public class ListBucketMain {
 
     public static void main(String[] args) throws Exception {
@@ -25,6 +27,7 @@ public class ListBucketMain {
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         String customPrefix = listBucketParams.getCustomPrefix();
+        List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
         IOssFileProcess iOssFileProcessor = null;
@@ -63,7 +66,8 @@ public class ListBucketMain {
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
         if ("check".equals(process)) {
             listBucketProcessor.setFilter(null, null);
-            listBucketProcessor.getDelimitedFileMap(version, unitLen, level, customPrefix,"delimiter", null, 3);
+            listBucketProcessor.getDelimitedFileMap(version, unitLen, level, customPrefix, antiPrefix,"delimiter", null,
+                    processBatch, 3);
         } else {
             ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
             ListFileFilter listFileFilter = new ListFileFilter();
@@ -80,7 +84,7 @@ public class ListBucketMain {
             listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
-            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
+            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix, antiPrefix,
                     iOssFileProcessor, processBatch);
         }
         if (iOssFileProcessor != null)
