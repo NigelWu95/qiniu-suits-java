@@ -23,7 +23,6 @@ public class ListBucketMain {
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
         int level = listBucketParams.getLevel();
-        boolean enabledEndFile = listBucketParams.getEnabledEndFile();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         String customPrefix = listBucketParams.getCustomPrefix();
@@ -84,7 +83,7 @@ public class ListBucketMain {
             listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
-            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, enabledEndFile, customPrefix, antiPrefix,
+            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, customPrefix, antiPrefix,
                     iOssFileProcessor, processBatch);
         }
         if (iOssFileProcessor != null)
