@@ -71,7 +71,7 @@ public class ListBucketProcess {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         if (!"".equals(endFilePrefix)) {
             fileInfoList = fileInfoList.parallelStream()
-                            .filter(fileInfo -> fileInfo.key.compareTo(endFilePrefix) < 0)
+                            .filter(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) > 0)
                             .collect(Collectors.toList());
         }
 
@@ -155,7 +155,7 @@ public class ListBucketProcess {
                     inputStream.close();
                 } catch (IOException e) {}
 
-                if (lineList != null) {
+                if (lineList != null && lineList.size() > 0) {
                     String line = lineList.get(lineList.size() - 1);
                     ListV2Line listV2Line = getItemByList2Line(line);
                     listResult.fileInfoList = lineList.parallelStream()
@@ -176,7 +176,7 @@ public class ListBucketProcess {
         return prefixList.parallelStream()
                 .map(prefix -> {
                     Response response = null;
-                    ListResult listResult = null;
+                    ListResult listResult = new ListResult();
                     try {
                         response = listBucket.run(bucket, prefix, null, null, unitLen, retryCount, version);
                         listResult = getListResult(response, version);
@@ -187,6 +187,7 @@ public class ListBucketProcess {
                     } finally { if (response != null) response.close(); }
                     return listResult;
                 })
+                .filter(ListResult::isValid)
                 .collect(Collectors.toList());
     }
 
@@ -223,10 +224,10 @@ public class ListBucketProcess {
         List<ListResult> listResultList = listByPrefixList(listBucket, prefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
         if (level == 2) {
             if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList.parallelStream()
-                    .filter(listResult -> listResult.fileInfoList.size() > 0 && listResult.fileInfoList.size() < unitLen)
+                    .filter(listResult -> StringUtils.isNullOrEmpty(listResult.nextMarker))
                     .collect(Collectors.toList()), fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
             List<String> delimiterList = listResultList.parallelStream()
-                    .filter(listResult -> listResult.fileInfoList.size() == 0 || listResult.fileInfoList.size() == unitLen)
+                    .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
                     .map(listResult -> listResult.commonPrefix)
                     .collect(Collectors.toList());
             for (String firstPrefix : delimiterList) {
@@ -263,14 +264,11 @@ public class ListBucketProcess {
                 Response response = listBucket.run(bucket, prefix, "", marker.equals("null") ? "" : marker, unitLen, 3, version);
                 ListResult listResult = getListResult(response, version);
                 response.close();
-                // 写入和处理时过滤掉已删除的文件（已删除的文件信息包含的 hash 值一定为空）
                 List<FileInfo> fileInfoList = listResult.fileInfoList;
-                writeAndProcess(fileInfoList.stream()
-                                            .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.hash))
-                                            .collect(Collectors.toList()),
-                        endFilePrefix, fileMap, processor, processBatch, 3, null);
+                writeAndProcess(fileInfoList, endFilePrefix, fileMap, processor, processBatch, 3, null);
                 marker = (!StringUtils.isNullOrEmpty(endFilePrefix) && fileInfoList.parallelStream()
-                        .anyMatch(fileInfo -> fileInfo.key.startsWith(endFilePrefix))) ? null : listResult.nextMarker;
+                        .anyMatch(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) > 0) ?
+                        null : listResult.nextMarker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFilePrefix + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
