@@ -6,7 +6,7 @@ public class ListV2Line {
 
     public FileInfo fileInfo;
 
-    public String marker;
+    public String marker = "";
 
-    public String dir;
+    public String dir = "";
 }
