@@ -79,6 +79,7 @@ public class ListBucketProcess {
         // 如果 list 不为空，将完整的列表先写入。
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
+                        .filter(Objects::nonNull)
                         .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                         .collect(Collectors.toList()))
         );
@@ -88,6 +89,7 @@ public class ListBucketProcess {
             if (fileInfoList == null || fileInfoList.size() == 0) return;
             // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
             if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
+                    .filter(Objects::nonNull)
                     .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                     .collect(Collectors.toList()))
             );
@@ -234,6 +236,7 @@ public class ListBucketProcess {
                 List<String> secondPrefixList = originPrefixList.parallelStream().map(secondPrefix -> firstPrefix + secondPrefix).collect(Collectors.toList());
                 listResultList = listByPrefixList(listBucket, secondPrefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
                 delimiterMap.putAll(listResultList.parallelStream()
+                        .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
                         .collect(Collectors.toMap(
                                 listResult -> listResult.commonPrefix,
                                 listResult -> listResult.nextMarker,
@@ -243,6 +246,7 @@ public class ListBucketProcess {
             }
         } else {
             delimiterMap.putAll(listResultList.parallelStream()
+                    .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
                     .collect(Collectors.toMap(
                             listResult -> listResult.commonPrefix,
                             listResult -> listResult.nextMarker,
@@ -251,7 +255,8 @@ public class ListBucketProcess {
             if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
         }
         listBucket.closeBucketManager();
-        if ("delimiter".equals(resultPrefix)) fileMap.writeSuccess(String.join("\n", delimiterMap.keySet()));
+        if ("delimiter".equals(resultPrefix)) fileMap.writeSuccess(String.join("\n", delimiterMap.toString().replaceAll("[{} ]", "")
+                .split(",")));
         fileMap.closeWriter();
 
         return delimiterMap;
@@ -267,7 +272,7 @@ public class ListBucketProcess {
                 List<FileInfo> fileInfoList = listResult.fileInfoList;
                 writeAndProcess(fileInfoList, endFilePrefix, fileMap, processor, processBatch, 3, null);
                 marker = (!StringUtils.isNullOrEmpty(endFilePrefix) && fileInfoList.parallelStream()
-                        .anyMatch(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) > 0) ?
+                        .anyMatch(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) < 0) ?
                         null : listResult.nextMarker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFilePrefix + "\t" + marker + "\t" + unitLen
