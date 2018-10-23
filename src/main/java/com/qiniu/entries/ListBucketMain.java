@@ -66,7 +66,7 @@ public class ListBucketMain {
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
         if ("check".equals(process)) {
             listBucketProcessor.setFilter(null, null);
-            listBucketProcessor.getDelimitedFileMap(version, unitLen, level, customPrefix, antiPrefix,"delimiter", null,
+            listBucketProcessor.preListForDelimiter(version, 1, level, customPrefix, antiPrefix,"delimiter", null,
                     processBatch, 3);
         } else {
             ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
