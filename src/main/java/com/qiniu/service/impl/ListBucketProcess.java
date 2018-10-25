@@ -236,9 +236,10 @@ public class ListBucketProcess {
 
     public void loopList(ListBucket listBucket, String prefix, String endFilePrefix, String marker,
                          FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch) {
-        while (!"".equals(marker)) {
+        while (!StringUtils.isNullOrEmpty(marker)) {
             try {
-                Response response = listBucket.run(bucket, prefix, "", marker, unitLen, 3, version);
+                Response response = listBucket.run(bucket, prefix, "", "null".equals(marker) ? "" : marker, unitLen,
+                        3, version);
                 ListResult listResult = getListResult(response, version);
                 response.close();
                 List<FileInfo> fileInfoList = listResult.fileInfoList;
@@ -266,7 +267,7 @@ public class ListBucketProcess {
             executorPool.execute(() -> {
                 String endFilePrefix = "";
                 String prefix = "";
-                String marker = null;
+                String marker = "null";
                 if (finalI < listResultList.size() -1 && finalI > -1) {
                     prefix = listResultList.get(finalI).commonPrefix;
                     marker = listResultList.get(finalI).nextMarker;
