@@ -83,8 +83,9 @@ public class ListBucketMain {
             listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
-            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, customPrefix, antiPrefix,
-                    iOssFileProcessor, processBatch);
+            listBucketProcessor.list2(version, unitLen, iOssFileProcessor, processBatch, customPrefix, antiPrefix);
+//            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, customPrefix, antiPrefix,
+//                    iOssFileProcessor, processBatch);
         }
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
