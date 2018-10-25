@@ -17,9 +17,7 @@ import com.qiniu.util.*;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class ListBucketProcess {
@@ -178,7 +176,7 @@ public class ListBucketProcess {
         return listResult;
     }
 
-    private List<ListResult> listByPrefixList(ListBucket listBucket, List<String> prefixList, int retryCount) throws IOException {
+    private List<ListResult> preListByPrefix(ListBucket listBucket, List<String> prefixList, int retryCount) throws IOException {
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list");
@@ -229,12 +227,9 @@ public class ListBucketProcess {
         return Executors.newFixedThreadPool(runningThreads);
     }
 
-    private void listWith2Prefix(int maxThreads, List<String> prefixList, IOssFileProcess iOssFileProcessor,
-                                 boolean processBatch, int retryCount) throws IOException, CloneNotSupportedException {
+    public void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
+                                    boolean processBatch, int retryCount) throws IOException, CloneNotSupportedException {
 
-        ListBucket listBucketLevel1 = new ListBucket(auth, configuration);
-        List<ListResult> listResultList = listByPrefixList(listBucketLevel1, prefixList, retryCount);
-        ExecutorService executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < listResultList.size(); i++) {
             int finalI = i;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(i + 1);
@@ -261,6 +256,36 @@ public class ListBucketProcess {
                 fileMap.closeWriter();
             });
         }
+    }
+
+    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount)
+            throws IOException, CloneNotSupportedException {
+        List<String> level1PrefixList = originPrefixList.parallelStream()
+                .filter(originPrefix -> !antiPrefix.contains(originPrefix))
+                .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
+                .collect(Collectors.toList());
+        ListBucket preListBucket = new ListBucket(auth, configuration);
+        ExecutorService executorPool = Executors.newSingleThreadExecutor();
+
+        if (level == 1) {
+            List<ListResult> listResultList = preListByPrefix(preListBucket, level1PrefixList, retryCount);
+            executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
+            listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
+        } else if (level == 2) {
+            List<String> level2PrefixList = level1PrefixList.parallelStream()
+                    .map(singlePrefix -> originPrefixList.stream()
+                            .map(originPrefix -> singlePrefix + originPrefix)
+                            .collect(Collectors.toList())
+                    )
+                    .reduce((list1, list2) -> {
+                        list1.addAll(list2);
+                        return list1;
+                    })
+                    .get();
+            List<ListResult> listResultList = preListByPrefix(preListBucket, level2PrefixList, retryCount);
+            executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
+            listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
+        }
 
         executorPool.shutdown();
         try {
@@ -268,41 +293,6 @@ public class ListBucketProcess {
                 Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount)
-            throws IOException, CloneNotSupportedException {
-        List<String> prefixList = originPrefixList.parallelStream()
-                .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
-                .collect(Collectors.toList());
-
-        if (level == 2) {
-            listWith2Prefix(maxThreads, prefixList, iOssFileProcessor, processBatch, retryCount);
-        } else {
-            ExecutorService executorPool = getActualExecutorPool(prefixList.size(), maxThreads);
-            for (int i = 0; i < prefixList.size(); i++) {
-                String prefix = prefixList.get(i);
-                FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(i + 1);
-                fileMap.initWriter(resultFileDir, "list");
-                IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
-                executorPool.execute(() -> {
-                    ListBucket listBucket = new ListBucket(auth, configuration);
-                    loopList(listBucket, prefix, "", null, fileMap, processor, processBatch);
-                    listBucket.closeBucketManager();
-                    if (processor != null) processor.closeResource();
-                    fileMap.closeWriter();
-                });
-            }
-
-            executorPool.shutdown();
-            try {
-                while (!executorPool.isTerminated())
-                    Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
