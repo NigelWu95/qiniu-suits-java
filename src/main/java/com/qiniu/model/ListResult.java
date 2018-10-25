@@ -1,6 +1,7 @@
 package com.qiniu.model;
 
 import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.StringUtils;
 
 import java.util.List;
 
@@ -13,6 +14,6 @@ public class ListResult {
     public String nextMarker = "";
 
     public boolean isValid() {
-        return fileInfoList != null || !"".equals(nextMarker);
+        return fileInfoList != null || !StringUtils.isNullOrEmpty(nextMarker);
     }
 }
