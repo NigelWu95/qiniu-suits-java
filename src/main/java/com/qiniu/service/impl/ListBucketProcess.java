@@ -283,7 +283,18 @@ public class ListBucketProcess {
                     marker = listResultList.get(finalI).nextMarker;
                 } else {
                     if (finalI == -1) endFilePrefix = listResultList.get(0).commonPrefix;
-                    else marker = listResultList.get(finalI).nextMarker;
+                    else {
+                        marker = listResultList.get(finalI).nextMarker;
+                        if (StringUtils.isNullOrEmpty(marker)) {
+                            FileInfo fileInfo = listResultList.get(finalI).fileInfoList.parallelStream()
+                                    .max(Comparator.comparing(fileInfo1 -> fileInfo1.key))
+                                    .get();
+                            JsonObject jsonObject = new JsonObject();
+                            jsonObject.addProperty("c", fileInfo.type);
+                            jsonObject.addProperty("k", fileInfo.key);
+                            marker = UrlSafeBase64.encodeToString(JsonConvertUtils.toJson(jsonObject));
+                        }
+                    }
                     if (!StringUtils.isNullOrEmpty(customPrefix)) prefix = customPrefix;
                 }
                 ListBucket listBucket = new ListBucket(auth, configuration);
