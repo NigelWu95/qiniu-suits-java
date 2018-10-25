@@ -62,11 +62,12 @@ public class ListBucketMain {
             }
         }
 
-        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
+        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version, resultFileDir,
+                customPrefix, antiPrefix);
         if ("check".equals(process)) {
             listBucketProcessor.setFilter(null, null);
-            listBucketProcessor.preListForDelimiter(version, 1, level, customPrefix, antiPrefix,"delimiter", null,
-                    processBatch, 3);
+//            listBucketProcessor.preListForDelimiter(version, 1, level, customPrefix, antiPrefix,"delimiter", null,
+//                    processBatch, 3);
         } else {
             ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
             ListFileFilter listFileFilter = new ListFileFilter();
@@ -83,9 +84,7 @@ public class ListBucketMain {
             listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
-            listBucketProcessor.list2(version, unitLen, iOssFileProcessor, processBatch, customPrefix, antiPrefix);
-//            listBucketProcessor.processBucket(version, maxThreads, level, unitLen, customPrefix, antiPrefix,
-//                    iOssFileProcessor, processBatch);
+            listBucketProcessor.processBucket(maxThreads, level, iOssFileProcessor, processBatch, 3);
         }
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
