@@ -7,6 +7,7 @@ import java.util.List;
 
 public class ListBucketParams extends BaseParams {
 
+    private String multiStatus;
     private String maxThreads;
     private String version;
     private String level;
@@ -15,10 +16,10 @@ public class ListBucketParams extends BaseParams {
     private String antiPrefix;
     private String process;
     private String processBatch;
-    private String filter;
 
     public ListBucketParams(String[] args) throws Exception {
         super(args);
+        try { this.multiStatus = getParamFromArgs("multi"); } catch (Exception e) {}
         try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) {}
         try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
@@ -27,11 +28,11 @@ public class ListBucketParams extends BaseParams {
         try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
         try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
-        try { this.filter = getParamFromArgs("filter"); } catch (Exception e) {}
     }
 
     public ListBucketParams(String configFileName) throws Exception {
         super(configFileName);
+        try { this.multiStatus = getParamFromConfig("multi"); } catch (Exception e) {}
         try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) {}
         try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
@@ -40,11 +41,18 @@ public class ListBucketParams extends BaseParams {
         try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
         try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
-        try { this.filter = getParamFromConfig("filter"); } catch (Exception e) {}
+    }
+
+    public boolean getMultiStatus() {
+        if (StringUtils.isNullOrEmpty(multiStatus) || !multiStatus.matches("(true|false)")) {
+            System.out.println("no incorrectly enable filter, it will use true as default.");
+            return true;
+        } else {
+            return Boolean.valueOf(multiStatus);
+        }
     }
 
     public int getMaxThreads() {
-
         if (StringUtils.isNullOrEmpty(unitLen) || !maxThreads.matches("[1-9]\\d*")) {
             System.out.println("no incorrect threads, it will use 10 as default.");
             return 10;
@@ -99,15 +107,6 @@ public class ListBucketParams extends BaseParams {
             return 1000;
         } else {
             return Integer.valueOf(unitLen);
-        }
-    }
-
-    public boolean getFilter() {
-        if (StringUtils.isNullOrEmpty(filter) || !filter.matches("(true|false)")) {
-            System.out.println("no incorrectly enable filter, it will use false as default.");
-            return false;
-        } else {
-            return Boolean.valueOf(filter);
         }
     }
 }

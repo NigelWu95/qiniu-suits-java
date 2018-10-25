@@ -20,6 +20,7 @@ public class ListBucketMain {
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
         String resultFileDir = listBucketParams.getResultFileDir();
+        boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
         int level = listBucketParams.getLevel();
@@ -82,7 +83,11 @@ public class ListBucketMain {
             listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
-            listBucketProcessor.processBucket(maxThreads, level, iOssFileProcessor, processBatch, 3);
+            if (multiStatus) {
+                listBucketProcessor.processBucket(maxThreads, level, iOssFileProcessor, processBatch, 3);
+            } else {
+                listBucketProcessor.straightList(customPrefix, "", "", iOssFileProcessor, processBatch, 3);
+            }
         }
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
