@@ -221,13 +221,6 @@ public class ListBucketProcess {
         }
     }
 
-    private ExecutorService getActualExecutorPool(int listSize, int maxThreads) {
-        int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
-        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
-        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
-        return Executors.newFixedThreadPool(runningThreads);
-    }
-
     public void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
                                     boolean processBatch, int retryCount) throws IOException, CloneNotSupportedException {
 
@@ -259,21 +252,18 @@ public class ListBucketProcess {
         }
     }
 
-    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount)
-            throws IOException, CloneNotSupportedException {
+    public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix, int retryCount)
+            throws IOException {
         List<String> level1PrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
                 .collect(Collectors.toList());
+        List<ListResult> listResultList = new ArrayList<>();
         ListBucket preListBucket = new ListBucket(auth, configuration);
-        ExecutorService executorPool = Executors.newSingleThreadExecutor();
-
         if (level == 1) {
-            List<ListResult> listResultList = preListByPrefix(preListBucket, level1PrefixList, unitLen, retryCount);
-            executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
-            listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
+            listResultList = preListByPrefix(preListBucket, level1PrefixList, unitLen, retryCount);
         } else if (level == 2) {
-            List<ListResult> listResultList = preListByPrefix(preListBucket, level1PrefixList, 1, retryCount);
+            listResultList = preListByPrefix(preListBucket, level1PrefixList, 1, retryCount);
             List<String> level2PrefixList = listResultList.parallelStream()
                     .map(singlePrefix -> originPrefixList.stream()
                             .map(originPrefix -> singlePrefix.commonPrefix + originPrefix)
@@ -285,10 +275,37 @@ public class ListBucketProcess {
                     })
                     .get();
             listResultList = preListByPrefix(preListBucket, level2PrefixList, 1, retryCount);
-            executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
-            listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
         }
 
+        return listResultList;
+    }
+
+    public void checkValidPrefix(int level, String customPrefix, List<String> antiPrefix, String resultPrefix,
+                                 int retryCount) throws IOException {
+        List<ListResult> listResultList = preList(1, level, customPrefix, antiPrefix, retryCount);
+        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        fileMap.initWriter(resultFileDir, resultPrefix);
+        Map<String, String> map = listResultList.parallelStream()
+                .collect(Collectors.toMap(
+                        listResult1 -> listResult1.commonPrefix,
+                        listResult2 -> listResult2.nextMarker
+                ));
+        fileMap.writeSuccess(String.join("\n", map.toString()));
+    }
+
+    private ExecutorService getActualExecutorPool(int listSize, int maxThreads) {
+        int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
+        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
+        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
+        return Executors.newFixedThreadPool(runningThreads);
+    }
+
+    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount)
+            throws IOException, CloneNotSupportedException {
+
+        List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, retryCount);
+        ExecutorService executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
+        listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())
