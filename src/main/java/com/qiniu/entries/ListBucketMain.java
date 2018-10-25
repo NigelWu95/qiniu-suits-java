@@ -7,6 +7,8 @@ import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.impl.*;
 import com.qiniu.storage.Configuration;
 
+import java.util.List;
+
 public class ListBucketMain {
 
     public static void main(String[] args) throws Exception {
@@ -18,18 +20,16 @@ public class ListBucketMain {
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
         String resultFileDir = listBucketParams.getResultFileDir();
+        boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
         int level = listBucketParams.getLevel();
-        boolean enabledEndFile = listBucketParams.getEnabledEndFile();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         String customPrefix = listBucketParams.getCustomPrefix();
+        List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
-        boolean filter = listBucketParams.getFilter();
-        ListFileFilter listFileFilter = null;
-        ListFileAntiFilter listFileAntiFilter = null;
         IOssFileProcess iOssFileProcessor = null;
         QiniuAuth auth = QiniuAuth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -63,10 +63,14 @@ public class ListBucketMain {
             }
         }
 
-        if (filter) {
+        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version, resultFileDir,
+                customPrefix, antiPrefix);
+        if ("check".equals(process)) {
+            listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix, "check", 3);
+        } else {
             ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
-            listFileFilter = new ListFileFilter();
-            listFileAntiFilter = new ListFileAntiFilter();
+            ListFileFilter listFileFilter = new ListFileFilter();
+            ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
             listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
             listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
             listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
@@ -78,16 +82,13 @@ public class ListBucketMain {
             listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
             listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
+            listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
+            if (multiStatus) {
+                listBucketProcessor.processBucket(maxThreads, level, iOssFileProcessor, processBatch, 3);
+            } else {
+                listBucketProcessor.straightList(customPrefix, "", "", iOssFileProcessor, processBatch, 3);
+            }
         }
-
-        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, resultFileDir);
-        listBucketProcessor.setFilter(listFileFilter, listFileAntiFilter);
-        if ("check".equals(process)) {
-            listBucketProcessor.getDelimitedFileMap(filter, version, level, customPrefix, "delimiter", null, 3);
-        } else
-            listBucketProcessor.processBucket(filter, version, maxThreads, level, unitLen, enabledEndFile, customPrefix,
-                    iOssFileProcessor, processBatch);
-
         if (iOssFileProcessor != null)
             iOssFileProcessor.closeResource();
     }
