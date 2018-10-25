@@ -28,6 +28,8 @@ public class ListBucketProcess {
     private Configuration configuration;
     private String bucket;
     private String resultFileDir;
+    private String firstValidPrefix;
+    private String lastValidMarker;
     private ListFileFilter listFileFilter;
     private ListFileAntiFilter listFileAntiFilter;
     private boolean checkListFileFilter;
@@ -69,17 +71,14 @@ public class ListBucketProcess {
                                  Queue<QiniuException> exceptionQueue) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        if (!"".equals(endFilePrefix)) {
-            fileInfoList = fileInfoList.parallelStream()
-                            .filter(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) > 0)
-                            .collect(Collectors.toList());
-        }
-
+        fileInfoList = fileInfoList.parallelStream()
+                .filter(fileInfo ->  StringUtils.isNullOrEmpty(endFilePrefix) ? fileInfo != null :
+                        fileInfo != null && endFilePrefix.compareTo(fileInfo.key) > 0)
+                .collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         // 如果 list 不为空，将完整的列表先写入。
         if (fileMap != null) fileMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
-                        .filter(Objects::nonNull)
                         .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                         .collect(Collectors.toList()))
         );
@@ -173,7 +172,7 @@ public class ListBucketProcess {
     }
 
     private List<ListResult> listByPrefixList(ListBucket listBucket, List<String> prefixList, int unitLen, int version, FileReaderAndWriterMap fileMap,
-                                        Queue<QiniuException> exceptionQueue, int retryCount) {
+                                              Queue<QiniuException> exceptionQueue, int retryCount) {
 
         return prefixList.parallelStream()
                 .map(prefix -> {
@@ -205,6 +204,26 @@ public class ListBucketProcess {
         writeAndProcess(fileInfoList, "", fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
     }
 
+    private Map<String, String> getFirstPrefixAndLastMarker(List<ListResult> listResultList) {
+        listResultList.sort(Comparator.comparing(listResult -> listResult.commonPrefix));
+        firstValidPrefix = listResultList.get(0).commonPrefix;
+        ListResult lastListResult = listResultList.get(listResultList.size() - 1);
+        // 经过 ListResult.isValid() 过滤后的结果 nextMarker 不为空或者 fileInfoList 不为空。
+        if (StringUtils.isNullOrEmpty(lastListResult.nextMarker)) {
+            List<FileInfo> fileInfoList = lastListResult.fileInfoList;
+            fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.key));
+            FileInfo fileInfo = fileInfoList.get(fileInfoList.size() - 1);
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("c", fileInfo.type);
+            jsonObject.addProperty("k", fileInfo.key);
+            lastValidMarker = UrlSafeBase64.encodeToString(JsonConvertUtils.toJson(jsonObject));
+        } else {
+            lastValidMarker = lastListResult.nextMarker;
+        }
+
+        return null;
+    }
+
     public Map<String, String> preListForDelimiter(int version, int unitLen, int level, String customPrefix, List<String> antiPrefix,
                                                    String resultPrefix, IOssFileProcess iOssFileProcessor, boolean processBatch,
                                                    int retryCount) throws IOException {
@@ -212,8 +231,10 @@ public class ListBucketProcess {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, resultPrefix);
         ListBucket listBucket = new ListBucket(auth, configuration);
-        List<String> originPrefixList = Arrays.asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~".split(""));
-        originPrefixList = originPrefixList.parallelStream()
+        List<String> originPrefixList = Arrays
+                .asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+                        .split("")
+                ).parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .collect(Collectors.toList());
         List<String> prefixList = !StringUtils.isNullOrEmpty(customPrefix) ? originPrefixList
@@ -222,58 +243,77 @@ public class ListBucketProcess {
                 .map(prefix -> customPrefix + prefix)
                 .collect(Collectors.toList()) : originPrefixList;
 
-        Map<String, String> delimiterMap = new HashMap<>();
         List<ListResult> listResultList = listByPrefixList(listBucket, prefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
-        if (level == 2) {
-            if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList.parallelStream()
-                    .filter(listResult -> StringUtils.isNullOrEmpty(listResult.nextMarker))
-                    .collect(Collectors.toList()), fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
-            List<String> delimiterList = listResultList.parallelStream()
-                    .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
-                    .map(listResult -> listResult.commonPrefix)
-                    .collect(Collectors.toList());
-            for (String firstPrefix : delimiterList) {
-                List<String> secondPrefixList = originPrefixList.parallelStream().map(secondPrefix -> firstPrefix + secondPrefix).collect(Collectors.toList());
-                listResultList = listByPrefixList(listBucket, secondPrefixList, unitLen, version, fileMap, exceptionQueue, retryCount);
-                delimiterMap.putAll(listResultList.parallelStream()
-                        .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
-                        .collect(Collectors.toMap(
-                                listResult -> listResult.commonPrefix,
-                                listResult -> listResult.nextMarker,
-                                (listResult1, listResult2) -> listResult1
-                        )));
-                if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
-            }
-        } else {
-            delimiterMap.putAll(listResultList.parallelStream()
-                    .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
-                    .collect(Collectors.toMap(
-                            listResult -> listResult.commonPrefix,
-                            listResult -> listResult.nextMarker,
-                            (listResult1, listResult2) -> listResult1
-                    )));
-            if ("list".equals(resultPrefix)) processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
-        }
+        getFirstPrefixAndLastMarker(listResultList);
         listBucket.closeBucketManager();
-        if ("delimiter".equals(resultPrefix)) fileMap.writeSuccess(String.join("\n", delimiterMap.toString().replaceAll("[{} ]", "")
-                .split(",")));
+        if ("list".equals(resultPrefix))
+            processDelimitedFileInfo(listResultList, fileMap, iOssFileProcessor, processBatch, retryCount, exceptionQueue);
+        else if ("delimiter".equals(resultPrefix)) fileMap.writeSuccess(String.join("\n",
+                listResultList.parallelStream().collect(Collectors.toMap(
+                        listResult -> listResult.commonPrefix,
+                        listResult -> listResult.nextMarker,
+                        (listResult1, listResult2) -> listResult1
+                )).toString().replaceAll("[{} ]", "").split(",")));
         fileMap.closeWriter();
+        return listResultList.parallelStream()
+                .filter(listResult -> !StringUtils.isNullOrEmpty(listResult.nextMarker))
+                .collect(Collectors.toMap(
+                        listResult -> listResult.commonPrefix,
+                        listResult -> listResult.nextMarker,
+                        (listResult1, listResult2) -> listResult1
+                ));
+    }
 
-        return delimiterMap;
+    public void list2(int version, int unitLen, IOssFileProcess iOssFileProcessor, boolean processBatch, String customPrefix,
+                      List<String> antiPrefix) throws IOException, CloneNotSupportedException {
+        List<String> originPrefixList = Arrays
+                .asList(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+                        .split("")
+                ).parallelStream()
+                .filter(originPrefix -> !antiPrefix.contains(originPrefix))
+                .collect(Collectors.toList());
+        List<String> prefixList = !StringUtils.isNullOrEmpty(customPrefix) ? originPrefixList
+                .parallelStream()
+                .filter(originPrefix -> !antiPrefix.contains(originPrefix))
+                .map(prefix -> customPrefix + prefix)
+                .collect(Collectors.toList()) : originPrefixList;
+        ExecutorService executorPool = Executors.newFixedThreadPool(prefixList.size());
+
+        for (int i = 0; i < prefixList.size(); i++) {
+            String prefix = prefixList.get(i);
+            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(i + 1);
+            fileMap.initWriter(resultFileDir, "list");
+            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
+            executorPool.execute(() -> {
+                ListBucket listBucket = new ListBucket(auth, configuration);
+                loopListByMarker(listBucket, unitLen, prefix, "", null, version, fileMap, processor, processBatch);
+                listBucket.closeBucketManager();
+                if (processor != null) processor.closeResource();
+                fileMap.closeWriter();
+            });
+        }
+
+        executorPool.shutdown();
+        try {
+            while (!executorPool.isTerminated())
+                Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void loopListByMarker(ListBucket listBucket, int unitLen, String prefix, String endFilePrefix, String marker,
                                  int version, FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch) {
-        while (!StringUtils.isNullOrEmpty(marker)) {
+        while (!"".equals(marker)) {
             try {
-                Response response = listBucket.run(bucket, prefix, "", marker.equals("null") ? "" : marker, unitLen, 3, version);
+                Response response = listBucket.run(bucket, prefix, "", marker, unitLen, 3, version);
                 ListResult listResult = getListResult(response, version);
                 response.close();
                 List<FileInfo> fileInfoList = listResult.fileInfoList;
                 writeAndProcess(fileInfoList, endFilePrefix, fileMap, processor, processBatch, 3, null);
                 marker = (!StringUtils.isNullOrEmpty(endFilePrefix) && fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) < 0) ?
-                        null : listResult.nextMarker);
+                        "" : listResult.nextMarker);
             } catch (IOException e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFilePrefix + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
@@ -300,22 +340,28 @@ public class ListBucketProcess {
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(strictPrefix ? finalI + 1 : finalI + 2);
             fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
-            executorPool.execute(() -> {
+//            executorPool.execute(() -> {
                 String endFilePrefix = "";
                 String prefix = "";
+                String marker;
                 if (finalI < prefixList.size() -1 && finalI > -1) {
                     prefix = prefixList.get(finalI);
+                    marker = delimiterMap.get(prefixList.get(finalI));
                 } else {
-                    if (finalI == -1) endFilePrefix = prefixList.get(0);
+                    if (finalI == -1) {
+                        endFilePrefix = firstValidPrefix;
+                        marker = "null";
+                    } else {
+                        marker = lastValidMarker;
+                    }
                     if (strictPrefix) prefix = customPrefix;
                 }
-                String marker = finalI == -1 ? "null" : delimiterMap.get(prefixList.get(finalI));
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 loopListByMarker(listBucket, unitLen, prefix, endFilePrefix, marker, version, fileMap, processor, processBatch);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
-            });
+//            });
         }
 
         executorPool.shutdown();

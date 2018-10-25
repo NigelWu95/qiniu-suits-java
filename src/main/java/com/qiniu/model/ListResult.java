@@ -13,6 +13,6 @@ public class ListResult {
     public String nextMarker = "";
 
     public boolean isValid() {
-        return "".equals(commonPrefix) || fileInfoList != null || "".equals(nextMarker);
+        return fileInfoList != null || !"".equals(nextMarker);
     }
 }
