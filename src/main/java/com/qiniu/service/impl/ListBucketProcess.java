@@ -176,7 +176,8 @@ public class ListBucketProcess {
         return listResult;
     }
 
-    private List<ListResult> preListByPrefix(ListBucket listBucket, List<String> prefixList, int retryCount) throws IOException {
+    private List<ListResult> preListByPrefix(ListBucket listBucket, List<String> prefixList, int unitLen, int retryCount)
+            throws IOException {
         Queue<QiniuException> exceptionQueue = new ConcurrentLinkedQueue<>();
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list");
@@ -268,13 +269,14 @@ public class ListBucketProcess {
         ExecutorService executorPool = Executors.newSingleThreadExecutor();
 
         if (level == 1) {
-            List<ListResult> listResultList = preListByPrefix(preListBucket, level1PrefixList, retryCount);
+            List<ListResult> listResultList = preListByPrefix(preListBucket, level1PrefixList, unitLen, retryCount);
             executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
             listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
         } else if (level == 2) {
-            List<String> level2PrefixList = level1PrefixList.parallelStream()
+            List<ListResult> listResultList = preListByPrefix(preListBucket, level1PrefixList, 1, retryCount);
+            List<String> level2PrefixList = listResultList.parallelStream()
                     .map(singlePrefix -> originPrefixList.stream()
-                            .map(originPrefix -> singlePrefix + originPrefix)
+                            .map(originPrefix -> singlePrefix.commonPrefix + originPrefix)
                             .collect(Collectors.toList())
                     )
                     .reduce((list1, list2) -> {
@@ -282,7 +284,7 @@ public class ListBucketProcess {
                         return list1;
                     })
                     .get();
-            List<ListResult> listResultList = preListByPrefix(preListBucket, level2PrefixList, retryCount);
+            listResultList = preListByPrefix(preListBucket, level2PrefixList, 1, retryCount);
             executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
             listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
         }
