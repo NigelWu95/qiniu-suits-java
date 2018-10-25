@@ -65,9 +65,7 @@ public class ListBucketMain {
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version, resultFileDir,
                 customPrefix, antiPrefix);
         if ("check".equals(process)) {
-            listBucketProcessor.setFilter(null, null);
-//            listBucketProcessor.preListForDelimiter(version, 1, level, customPrefix, antiPrefix,"delimiter", null,
-//                    processBatch, 3);
+            listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix, "check", 3);
         } else {
             ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
             ListFileFilter listFileFilter = new ListFileFilter();
