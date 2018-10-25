@@ -196,18 +196,18 @@ public class ListBucketProcess {
 
     public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix, String resultPrefix,
                                     int retryCount) throws IOException {
-        List<String> level1PrefixList = originPrefixList.parallelStream()
+        List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
                 .collect(Collectors.toList());
         List<ListResult> listResultList = new ArrayList<>();
         ListBucket preListBucket = new ListBucket(auth, configuration);
         if (level == 1) {
-            listResultList = preListByPrefix(preListBucket, level1PrefixList, unitLen, resultPrefix, retryCount);
+            listResultList = preListByPrefix(preListBucket, validPrefixList, unitLen, resultPrefix, retryCount);
         } else if (level == 2) {
-            listResultList = preListByPrefix(preListBucket, level1PrefixList, 1, resultPrefix, retryCount);
+            listResultList = preListByPrefix(preListBucket, validPrefixList, 1, resultPrefix, retryCount);
             List<String> level2PrefixList = listResultList.parallelStream()
-                    .map(singlePrefix -> originPrefixList.stream()
+                    .map(singlePrefix -> validPrefixList.stream()
                             .map(originPrefix -> singlePrefix.commonPrefix + originPrefix)
                             .collect(Collectors.toList())
                     )
@@ -216,7 +216,7 @@ public class ListBucketProcess {
                         return list1;
                     })
                     .get();
-            listResultList = preListByPrefix(preListBucket, level2PrefixList, 1, resultPrefix, retryCount);
+            listResultList = preListByPrefix(preListBucket, level2PrefixList, unitLen, resultPrefix, retryCount);
         }
 
         return listResultList;

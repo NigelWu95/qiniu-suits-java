@@ -2,6 +2,7 @@ package com.qiniu.model;
 
 import com.qiniu.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -97,7 +98,7 @@ public class ListBucketParams extends BaseParams {
     }
 
     public List<String> getAntiPrefix() {
-        if (StringUtils.isNullOrEmpty(antiPrefix)) return null;
+        if (StringUtils.isNullOrEmpty(antiPrefix)) return new ArrayList<>();
         return Arrays.asList(antiPrefix.split(","));
     }
 
