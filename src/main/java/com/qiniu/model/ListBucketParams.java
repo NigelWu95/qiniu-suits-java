@@ -23,7 +23,7 @@ public class ListBucketParams extends BaseParams {
         try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
-        try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) { this.customPrefix = ""; }
+        try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) {}
         try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
         try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
@@ -36,7 +36,7 @@ public class ListBucketParams extends BaseParams {
         try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
-        try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) { this.customPrefix = ""; }
+        try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) {}
         try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
         try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
