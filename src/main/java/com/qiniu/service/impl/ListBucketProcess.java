@@ -74,17 +74,17 @@ public class ListBucketProcess {
         } else return fileInfoList;
     }
 
-    private void writeAndProcess(List<FileInfo> fileInfoList, String endFilePrefix, FileReaderAndWriterMap fileMap,
+    private void writeAndProcess(List<FileInfo> fileInfoList, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap,
                                  IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         fileInfoList = fileInfoList.parallelStream()
-                .filter(fileInfo ->  StringUtils.isNullOrEmpty(endFilePrefix) ? fileInfo != null :
-                        fileInfo != null && endFilePrefix.compareTo(fileInfo.key) > 0)
+                .filter(fileInfo ->  StringUtils.isNullOrEmpty(endFile) ? fileInfo != null :
+                        fileInfo != null && endFile.compareTo(fileInfo.key) > 0)
                 .collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         // 如果 list 不为空，将完整的列表先写入。
-        if (fileMap != null) fileMap.writeSuccess(
+        if (fileReaderAndWriterMap != null) fileReaderAndWriterMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
                         .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                         .collect(Collectors.toList()))
@@ -94,10 +94,10 @@ public class ListBucketProcess {
             fileInfoList = filterFileInfo(fileInfoList);
             if (fileInfoList == null || fileInfoList.size() == 0) return;
             // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
-            if (fileMap != null) fileMap.writeOther(String.join("\n", fileInfoList.parallelStream()
-                    .filter(Objects::nonNull)
-                    .map(JsonConvertUtils::toJsonWithoutUrlEscape)
-                    .collect(Collectors.toList()))
+            if (fileReaderAndWriterMap != null) fileReaderAndWriterMap.writeOther(String.join("\n",
+                    fileInfoList.parallelStream().filter(Objects::nonNull)
+                            .map(JsonConvertUtils::toJsonWithoutUrlEscape)
+                            .collect(Collectors.toList()))
             );
         }
 
@@ -234,27 +234,37 @@ public class ListBucketProcess {
         fileMap.closeWriter();
     }
 
-    public void loopList(ListBucket listBucket, String prefix, String endFilePrefix, String marker,
-                         FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch) {
+    private void loopList(ListBucket listBucket, String prefix, String endFile, String marker, FileReaderAndWriterMap fileMap,
+                          IOssFileProcess processor, boolean processBatch, int retryCount) {
         while (!StringUtils.isNullOrEmpty(marker)) {
             try {
                 Response response = listBucket.run(bucket, prefix, "", "null".equals(marker) ? "" : marker, unitLen,
-                        3, version);
+                        retryCount, version);
                 ListResult listResult = getListResult(response, version);
                 response.close();
                 List<FileInfo> fileInfoList = listResult.fileInfoList;
-                writeAndProcess(fileInfoList, endFilePrefix, fileMap, processor, processBatch, 3);
-                marker = !StringUtils.isNullOrEmpty(endFilePrefix) && fileInfoList.parallelStream()
-                        .anyMatch(fileInfo -> fileInfo != null && endFilePrefix.compareTo(fileInfo.key) < 0) ?
+                writeAndProcess(fileInfoList, endFile, fileMap, processor, processBatch, 3);
+                marker = !StringUtils.isNullOrEmpty(endFile) && fileInfoList.parallelStream()
+                        .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) < 0) ?
                         "" : listResult.nextMarker;
             } catch (IOException e) {
-                fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFilePrefix + "\t" + marker + "\t" + unitLen
+                fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFile + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
             }
         }
     }
 
-    public void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
+    public void straightList(String prefix, String endFile, String marker, IOssFileProcess iOssFileProcessor, boolean processBatch,
+                             int retryCount) throws IOException {
+        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        fileMap.initWriter(resultFileDir, "list");
+        ListBucket listBucket = new ListBucket(auth, configuration);
+        marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
+        loopList(listBucket, prefix, endFile, marker, fileMap, iOssFileProcessor, processBatch, retryCount);
+        fileMap.closeWriter();
+    }
+
+    private void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
                                     boolean processBatch, int retryCount) throws IOException, CloneNotSupportedException {
 
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < listResultList.size(); i++) {
@@ -277,7 +287,7 @@ public class ListBucketProcess {
                     if (!StringUtils.isNullOrEmpty(customPrefix)) prefix = customPrefix;
                 }
                 ListBucket listBucket = new ListBucket(auth, configuration);
-                loopList(listBucket, prefix, endFilePrefix, marker, fileMap, processor, processBatch);
+                loopList(listBucket, prefix, endFilePrefix, marker, fileMap, processor, processBatch, retryCount);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
