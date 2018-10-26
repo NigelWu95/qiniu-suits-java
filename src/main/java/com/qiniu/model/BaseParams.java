@@ -1,7 +1,9 @@
 package com.qiniu.model;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.util.MainArgsUtils;
+import com.qiniu.util.StringUtils;
 
 public class BaseParams {
 
@@ -27,16 +29,28 @@ public class BaseParams {
         this.resultFileDir = propertyConfig.getProperty("result-path");
     }
 
-    public String getAccessKey() {
-        return accessKey;
+    public String getAccessKey() throws QiniuException {
+        if (StringUtils.isNullOrEmpty(accessKey)) {
+            throw new QiniuException(null, "no incorrect ak, please set it.");
+        } else {
+            return accessKey;
+        }
     }
 
-    public String getSecretKey() {
-        return secretKey;
+    public String getSecretKey() throws QiniuException {
+        if (StringUtils.isNullOrEmpty(secretKey)) {
+            throw new QiniuException(null, "no incorrect sk, please set it.");
+        } else {
+            return secretKey;
+        }
     }
 
-    public String getBucket() {
-        return bucket;
+    public String getBucket() throws QiniuException {
+        if (StringUtils.isNullOrEmpty(bucket)) {
+            throw new QiniuException(null, "no incorrect bucket, please set it.");
+        } else {
+            return bucket;
+        }
     }
 
     public String getResultFileDir() {
