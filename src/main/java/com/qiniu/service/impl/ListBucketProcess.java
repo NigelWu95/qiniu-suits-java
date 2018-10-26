@@ -207,7 +207,8 @@ public class ListBucketProcess {
         } else if (level == 2) {
             listResultList = preListByPrefix(preListBucket, validPrefixList, 1, resultPrefix, retryCount);
             List<String> level2PrefixList = listResultList.parallelStream()
-                    .map(singlePrefix -> validPrefixList.stream()
+                    .map(singlePrefix -> originPrefixList.stream()
+                            .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                             .map(originPrefix -> singlePrefix.commonPrefix + originPrefix)
                             .collect(Collectors.toList())
                     )
