@@ -46,7 +46,7 @@ public class ListBucketParams extends BaseParams {
 
     public boolean getMultiStatus() {
         if (StringUtils.isNullOrEmpty(multiStatus) || !multiStatus.matches("(true|false)")) {
-            System.out.println("no incorrectly enable filter, it will use true as default.");
+            System.out.println("no incorrectly enable multi, it will use true as default.");
             return true;
         } else {
             return Boolean.valueOf(multiStatus);

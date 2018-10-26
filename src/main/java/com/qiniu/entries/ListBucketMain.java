@@ -7,15 +7,37 @@ import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.impl.*;
 import com.qiniu.storage.Configuration;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ListBucketMain {
 
     public static void main(String[] args) throws Exception {
 
-        String configFile = ".qiniu.properties";
-        boolean paramFromConfig = (args == null || args.length == 0);
-        ListBucketParams listBucketParams = paramFromConfig ? new ListBucketParams(configFile) : new ListBucketParams(args);
+        List<String> configFiles = new ArrayList<String>(){{
+            add("resources/qiniu.properties");
+            add("resources/.qiniu.properties");
+        }};
+        boolean paramFromConfig = false;
+        if (args != null && args.length > 0) {
+            if (args[0].startsWith("-config=")) configFiles.add(args[0].split("=")[1]);
+            else paramFromConfig = true;
+        }
+        String configFilePath = null;
+        if (!paramFromConfig) {
+            for (int i = configFiles.size() - 1; i >= 0; i--) {
+                File file = new File(configFiles.get(i));
+                if (file.exists()) {
+                    configFilePath = configFiles.get(i);
+                    break;
+                }
+            }
+            if (configFilePath == null) throw new Exception("there is no config file detected.");
+            else paramFromConfig = true;
+        }
+
+        ListBucketParams listBucketParams = paramFromConfig ? new ListBucketParams(configFilePath) : new ListBucketParams(args);
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
@@ -36,19 +58,19 @@ public class ListBucketMain {
 
         switch (process) {
             case "status": {
-                FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFile) : new FileStatusParams(args);
+                FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFilePath) : new FileStatusParams(args);
                 iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
                         resultFileDir);
                 break;
             }
             case "type": {
-                FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFile) : new FileTypeParams(args);
+                FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFilePath) : new FileTypeParams(args);
                 iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
                         resultFileDir);
                 break;
             }
             case "copy": {
-                FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFile) : new FileCopyParams(args);
+                FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFilePath) : new FileCopyParams(args);
                 accessKey = "".equals(fileCopyParams.getAKey()) ? accessKey : fileCopyParams.getAKey();
                 secretKey = "".equals(fileCopyParams.getSKey()) ? secretKey : fileCopyParams.getSKey();
                 iOssFileProcessor = new BucketCopyProcess(QiniuAuth.create(accessKey, secretKey), configuration, fileCopyParams.getSourceBucket(),
@@ -56,7 +78,7 @@ public class ListBucketMain {
                 break;
             }
             case "lifecycle": {
-                LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFile) : new LifecycleParams(args);
+                LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFilePath) : new LifecycleParams(args);
                 iOssFileProcessor = new UpdateLifecycleProcess(QiniuAuth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
                         lifecycleParams.getDays(), resultFileDir);
                 break;
@@ -68,7 +90,7 @@ public class ListBucketMain {
         if ("check".equals(process)) {
             listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix, "check", 3);
         } else {
-            ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFile) : new ListFilterParams(args);
+            ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFilePath) : new ListFilterParams(args);
             ListFileFilter listFileFilter = new ListFileFilter();
             ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
             listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
