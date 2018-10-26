@@ -25,7 +25,7 @@ public class ListBucketMain {
             else paramFromConfig = false;
         }
         String configFilePath = null;
-        if (!paramFromConfig) {
+        if (paramFromConfig) {
             for (int i = configFiles.size() - 1; i >= 0; i--) {
                 File file = new File(configFiles.get(i));
                 if (file.exists()) {
