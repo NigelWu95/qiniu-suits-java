@@ -13,7 +13,8 @@ java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=./result -multi=true -
 
 ### property file
 * 不通过命令行传递参数时可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹中，
-  文件名为 .qiniu.properties，参数设置如下：
+  文件名为 qiniu.properties 或 .qiniu.properties，或者使用 -config=<config-filepath> 指定配置文件路径，具体操作参数
+  设置如下：
 ```
 # list bucket 操作的 parameters，ak、sk 为账号的密钥对字符串，bucket 为空间名称，result-path 为保存列举和处理结果的相对
 # 路径，multi 表示是否开启并发列举（默认开启），max-threads 为最大线程数，version 使用的列举接口版本，level 为列举并发级别
