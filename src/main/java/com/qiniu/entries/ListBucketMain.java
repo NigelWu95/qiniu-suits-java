@@ -19,10 +19,10 @@ public class ListBucketMain {
             add("resources/qiniu.properties");
             add("resources/.qiniu.properties");
         }};
-        boolean paramFromConfig = false;
+        boolean paramFromConfig = true;
         if (args != null && args.length > 0) {
             if (args[0].startsWith("-config=")) configFiles.add(args[0].split("=")[1]);
-            else paramFromConfig = true;
+            else paramFromConfig = false;
         }
         String configFilePath = null;
         if (!paramFromConfig) {
