@@ -5,15 +5,13 @@ import java.util.Properties;
 
 public class PropertyConfig {
 
-    private String resourceBath;
     private Properties properties;
 
     public PropertyConfig(String resourceName) throws Exception {
-        resourceBath = "resources/";
         InputStream inputStream = null;
 
         try {
-            inputStream = new FileInputStream(resourceBath + resourceName);
+            inputStream = new FileInputStream(resourceName);
             properties = new Properties();
             properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
         } catch (IOException ioException) {
