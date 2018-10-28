@@ -168,7 +168,7 @@ public class ListBucketProcess {
     private List<ListResult> preListByPrefix(ListBucket listBucket, List<String> prefixList, int unitLen, String resultPrefix)
             throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        fileMap.initWriter(resultFileDir, resultPrefix);
+        fileMap.initWriter(resultFileDir, resultPrefix, "pre");
         List<ListResult> listResultList = prefixList.parallelStream()
                 .map(prefix -> {
                     Response response = null;
@@ -223,7 +223,7 @@ public class ListBucketProcess {
             throws IOException {
         List<ListResult> listResultList = preList(1, level, customPrefix, antiPrefix, "check");
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        fileMap.initWriter(resultFileDir, "check");
+        fileMap.initWriter(resultFileDir, "list", "check");
         List<String> validPrefixAndMarker = listResultList.parallelStream()
                 .map(listResult -> listResult.commonPrefix + "\t" + listResult.nextMarker)
                 .collect(Collectors.toList());
@@ -264,7 +264,7 @@ public class ListBucketProcess {
     public void straightList(String prefix, String endFile, String marker, IOssFileProcess iOssFileProcessor, boolean processBatch)
             throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        fileMap.initWriter(resultFileDir, "list");
+        fileMap.initWriter(resultFileDir, "list", "total");
         ListBucket listBucket = new ListBucket(auth, configuration);
         marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
         loopList(listBucket, prefix, endFile, marker, fileMap, iOssFileProcessor, processBatch);
@@ -277,8 +277,10 @@ public class ListBucketProcess {
         listResultList.sort(Comparator.comparing(listResult -> listResult.commonPrefix));
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < listResultList.size(); i++) {
             int finalI = i;
-            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(i + 1);
-            fileMap.initWriter(resultFileDir, "list");
+            String fileSuffix = i == -1 ? "before" : i == listResultList.size() - 1 ?
+                    listResultList.get(finalI).commonPrefix + "_to_behind" : listResultList.get(finalI).commonPrefix;
+            FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+            fileMap.initWriter(resultFileDir, "list", fileSuffix);
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
             writeAndProcess(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap, processor, processBatch);
             executorPool.execute(() -> {

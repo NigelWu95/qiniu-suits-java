@@ -25,7 +25,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         this.bucket = bucket;
         this.fileStatus = fileStatus;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status", null);
     }
 
     public ChangeStatusProcess clone() throws CloneNotSupportedException {
@@ -33,7 +33,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status");
+            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status", null);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();

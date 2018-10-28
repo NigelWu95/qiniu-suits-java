@@ -1,5 +1,7 @@
 package com.qiniu.common;
 
+import com.qiniu.util.StringUtils;
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,7 +15,7 @@ public class FileReaderAndWriterMap implements Cloneable {
     private List<String> targetWriters;
     private String targetFileDir;
     private String prefix;
-    private String suffix = "0";
+    private String suffix;
 
     public FileReaderAndWriterMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
@@ -21,22 +23,18 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
-    public FileReaderAndWriterMap(String suffix) {
-        this();
-        this.suffix = suffix;
-    }
-
-    public FileReaderAndWriterMap(int index) {
-        this(String.valueOf(index));
-    }
-
-    public void initWriter(String targetFileDir, String prefix) throws IOException {
+    public void initWriter(String targetFileDir, String prefix, String suffix) throws IOException {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
+        this.suffix = StringUtils.isNullOrEmpty(suffix) ? "_0" : "_" + suffix;
 
         for (int i = 0; i < targetWriters.size(); i++) {
-            addWriter(targetFileDir, prefix + targetWriters.get(i) + suffix);
+            addWriter(targetFileDir, prefix + targetWriters.get(i) + this.suffix);
         }
+    }
+
+    public void initWriter(String targetFileDir, String prefix, int index) throws IOException {
+        initWriter(targetFileDir, prefix, String.valueOf(index));
     }
 
     public void addWriter(String targetFileDir, String key) throws IOException {

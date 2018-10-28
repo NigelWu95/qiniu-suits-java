@@ -25,7 +25,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
                              String keyPrefix, String resultFileDir) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", null);
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
@@ -36,7 +36,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
+            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", null);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
