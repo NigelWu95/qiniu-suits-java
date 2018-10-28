@@ -667,8 +667,6 @@ public class QiniuBucketManager {
         public String execBucket() {
             return execBucket;
         }
-
-        public ArrayList<String> getOps() { return ops; }
     }
     /**
      * 创建文件列表迭代器
