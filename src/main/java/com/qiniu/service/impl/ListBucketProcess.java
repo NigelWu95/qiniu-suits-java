@@ -8,7 +8,6 @@ import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.ListResult;
 import com.qiniu.model.ListV2Line;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.oss.ListBucket;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class ListBucketProcess {
 
-    private QiniuAuth auth;
+    private Auth auth;
     private Configuration configuration;
     private String bucket;
     private int unitLen;
@@ -39,7 +38,7 @@ public class ListBucketProcess {
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             .split(""));
 
-    public ListBucketProcess(QiniuAuth auth, Configuration configuration, String bucket, int unitLen, int version,
+    public ListBucketProcess(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
                              String resultFileDir, String customPrefix, List<String> antiPrefix, int retryCount) {
         this.auth = auth;
         this.configuration = configuration;
@@ -297,7 +296,6 @@ public class ListBucketProcess {
                 }
                 ListBucket listBucket = new ListBucket(auth, configuration);
                 loopList(listBucket, prefix, endFilePrefix, marker, fileMap, processor, processBatch);
-                listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
             });

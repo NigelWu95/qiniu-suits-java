@@ -1,30 +1,30 @@
 package com.qiniu.service.oss;
 
-import com.qiniu.sdk.QiniuAuth;
-import com.qiniu.sdk.QiniuBucketManager;
-import com.qiniu.sdk.QiniuBucketManager.*;
+import com.qiniu.sdk.BucketManager;
+import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 
 public abstract class OperationBase {
 
-    protected QiniuAuth auth;
+    protected Auth auth;
     protected Configuration configuration;
-    protected QiniuBucketManager bucketManager;
+    protected BucketManager bucketManager;
     protected volatile BatchOperations batchOperations;
 
-    public OperationBase(QiniuAuth auth, Configuration configuration) {
+    public OperationBase(Auth auth, Configuration configuration) {
         this.auth = auth;
         this.configuration = configuration;
-        this.bucketManager = new QiniuBucketManager(auth, configuration);
+        this.bucketManager = new BucketManager(auth, configuration);
         this.batchOperations = new BatchOperations();
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
-        operationBase.bucketManager = new QiniuBucketManager(auth, configuration);
+        operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
         return operationBase;
     }
@@ -48,10 +48,5 @@ public abstract class OperationBase {
         }
 
         return response;
-    }
-
-    public void closeBucketManager() {
-        if (bucketManager != null)
-            bucketManager.closeResponse();
     }
 }
