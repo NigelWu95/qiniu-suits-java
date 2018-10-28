@@ -13,7 +13,7 @@ public class FileReaderAndWriterMap implements Cloneable {
     private List<String> targetWriters;
     private String targetFileDir;
     private String prefix;
-    private int index = 0;
+    private String suffix = "0";
 
     public FileReaderAndWriterMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
@@ -21,9 +21,13 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
-    public FileReaderAndWriterMap(int index) {
+    public FileReaderAndWriterMap(String suffix) {
         this();
-        this.index = index;
+        this.suffix = suffix;
+    }
+
+    public FileReaderAndWriterMap(int index) {
+        this(String.valueOf(index));
     }
 
     public void initWriter(String targetFileDir, String prefix) throws IOException {
@@ -31,7 +35,7 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.prefix = prefix;
 
         for (int i = 0; i < targetWriters.size(); i++) {
-            addWriter(targetFileDir, prefix + targetWriters.get(i) + index);
+            addWriter(targetFileDir, prefix + targetWriters.get(i) + suffix);
         }
     }
 
@@ -142,14 +146,14 @@ public class FileReaderAndWriterMap implements Cloneable {
     }
 
     public void writeSuccess(String item) {
-        doWrite(this.prefix + "_success" + index, item);
+        doWrite(this.prefix + "_success" + suffix, item);
     }
 
     public void writeErrorOrNull(String item) {
-        doWrite(this.prefix + "_error_null" + index, item);
+        doWrite(this.prefix + "_error_null" + suffix, item);
     }
 
     public void writeOther(String item) {
-        doWrite(this.prefix + "_other" + index, item);
+        doWrite(this.prefix + "_other" + suffix, item);
     }
 }
