@@ -236,7 +236,9 @@ public class ListBucketProcess {
         jsonObject.addProperty("prefix", prefix);
         jsonObject.addProperty("end", endFile);
         jsonObject.addProperty("marker", marker);
-        fileMap.writeKeyFile("marker" + prefix, JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
+        String fileSuffix = StringUtils.isNullOrEmpty(prefix) ? StringUtils.isNullOrEmpty(endFile) ? "marker_before" :
+                "marker_behind" : "marker_" + prefix;
+        fileMap.writeKeyFile(fileSuffix, JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
         jsonObject = null;
     }
 
