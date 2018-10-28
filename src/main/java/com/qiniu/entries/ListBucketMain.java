@@ -88,7 +88,7 @@ public class ListBucketMain {
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version, resultFileDir,
                 customPrefix, antiPrefix);
         if ("check".equals(process)) {
-            listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix, "check", 3);
+            listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix, 3);
         } else {
             ListFilterParams listFilterParams = paramFromConfig ? new ListFilterParams(configFilePath) : new ListFilterParams(args);
             ListFileFilter listFileFilter = new ListFileFilter();
