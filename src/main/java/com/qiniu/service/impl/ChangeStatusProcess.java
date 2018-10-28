@@ -11,7 +11,7 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.List;
 
-public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
+public class ChangeStatusProcess implements IOssFileProcess {
 
     private ChangeStatus changeStatus;
     private String bucket;
@@ -20,20 +20,26 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
-    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir) throws IOException {
+    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
+                               String resultFileSuffix) throws IOException {
         this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status", null);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileSuffix);
     }
 
-    public ChangeStatusProcess clone() throws CloneNotSupportedException {
+    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir)
+            throws IOException {
+        this(auth, configuration, bucket, fileStatus, resultFileDir, null);
+    }
+
+    public ChangeStatusProcess getNewInstance(String resultFileSuffix) throws CloneNotSupportedException {
         ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
         changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status", null);
+            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileSuffix);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();

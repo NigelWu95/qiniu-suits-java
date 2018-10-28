@@ -22,21 +22,27 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private QiniuException qiniuException = null;
 
     public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir) throws IOException {
+                             String keyPrefix, String resultFileDir, String resultFileSuffix) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", null);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", resultFileSuffix);
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyProcess clone() throws CloneNotSupportedException {
+    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
+                             String resultFileDir)
+            throws IOException {
+        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir, null);
+    }
+
+    public BucketCopyProcess getNewInstance(String resultFileSuffix) throws CloneNotSupportedException {
         BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", null);
+            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", resultFileSuffix);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
