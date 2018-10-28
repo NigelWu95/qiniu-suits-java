@@ -1,5 +1,6 @@
 package com.qiniu.sdk;
 
+import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
@@ -7,31 +8,31 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FetchRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
-import com.qiniu.util.StringMap;
-import com.qiniu.util.StringUtils;
-import com.qiniu.util.UrlSafeBase64;
+import com.qiniu.storage.model.StorageType;
+import com.qiniu.util.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
+
 /**
  * 主要涉及了空间资源管理及批量操作接口的实现，具体的接口规格可以参考
  * 参考文档：<a href="http://developer.qiniu.com/kodo/api/rs">资源管理</a>
  */
-public class QiniuBucketManager {
+public final class BucketManager {
     /**
      * Auth 对象
      * 该类需要使用QBox鉴权，所以需要指定Auth对象
      */
-    private final QiniuAuth auth;
+    private final Auth auth;
 
     /**
      * Configuration 对象
      * 该类相关的域名配置，解析配置，HTTP请求超时时间设置等
      */
 
-    private final Configuration configuration;
+    private Configuration configuration;
 
     /**
      * HTTP Client 对象
@@ -39,19 +40,23 @@ public class QiniuBucketManager {
      */
     private final Client client;
 
-    private Response response;
-
     /**
      * 构建一个新的 BucketManager 对象
      *
      * @param auth Auth对象
      * @param cfg  Configuration对象
      */
-    public QiniuBucketManager(QiniuAuth auth, Configuration cfg) {
+    public BucketManager(Auth auth, Configuration cfg) {
         this.auth = auth;
         this.configuration = cfg.clone();
         client = new Client(this.configuration);
     }
+
+    public BucketManager(Auth auth, Client client) {
+        this.auth=auth;
+        this.client=client;
+    }
+
 
     /**
      * EncodedEntryURI格式，其中 bucket+":"+key 称之为 entry
@@ -89,16 +94,23 @@ public class QiniuBucketManager {
      * @return 空间名称列表
      */
     public String[] buckets() throws QiniuException {
-        // 获取 bucket 列表 写死用rs.qiniu.com or rs.qbox.me @冯立元
+        // 获取 bucket 列表 写死用rs.qiniu.com or rs.qbox.me
         String url = String.format("%s/buckets", configuration.rsHost());
         Response r = get(url);
-        return r.jsonToObject(String[].class);
+        String[] buckets = r.jsonToObject(String[].class);
+        r.close();
+        return buckets;
     }
 
-    public void createBucket(String bucketName, String region) throws Exception {
+    public Response createBucket(String bucketName, String region) throws Exception {
         String url = String.format("%s/mkbucketv2/%s/region/%s", configuration.rsHost(),
                 UrlSafeBase64.encodeToString(bucketName), region);
-        post(url, null);
+        return post(url, null);
+    }
+
+    public Response deleteBucket(String bucketname) throws QiniuException {
+        String url = String.format("%s/drop/%s", configuration.rsHost(), bucketname);
+        return post(url, null);
     }
 
     /**
@@ -112,7 +124,9 @@ public class QiniuBucketManager {
     public String[] domainList(String bucket) throws QiniuException {
         String url = String.format("%s/v6/domain/list?tbl=%s", configuration.apiHost(), bucket);
         Response r = get(url);
-        return r.jsonToObject(String[].class);
+        String[] domains = r.jsonToObject(String[].class);
+        r.close();
+        return domains;
     }
 
     /**
@@ -154,13 +168,25 @@ public class QiniuBucketManager {
             throws QiniuException {
         StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
                 .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
+
         String url = String.format("%s/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
-        response = get(url);
-        FileListing fileListing = response.jsonToObject(FileListing.class);
-        if (response != null) response.close();
+        Response r = get(url);
+        FileListing fileListing = r.jsonToObject(FileListing.class);
+        r.close();
         return fileListing;
     }
 
+    /**
+     * 列举空间文件 v1 接口，返回一个 response 对象
+     *
+     * @param bucket    空间名
+     * @param prefix    文件名前缀
+     * @param marker    上一次获取文件列表时返回的 marker
+     * @param limit     每次迭代的长度限制，最大1000，推荐值 100
+     * @param delimiter 指定目录分隔符，列出所有公共前缀（模拟列出目录效果）。缺省值为空字符串
+     * @return
+     * @throws QiniuException
+     */
     public Response listV1(String bucket, String prefix, String marker, int limit, String delimiter)
             throws QiniuException {
         StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
@@ -169,6 +195,18 @@ public class QiniuBucketManager {
         return get(url);
     }
 
+    /**
+     * 列举空间文件 v2 接口，返回一个 response 对象。v2 接口可以避免由于大量删除导致的列举超时问题，返回的 response 对象中的 body 可以转换为
+     * string stream 来处理。
+     *
+     * @param bucket    空间名
+     * @param prefix    文件名前缀
+     * @param marker    上一次获取文件列表时返回的 marker
+     * @param limit     每次迭代的长度限制，推荐值 10000
+     * @param delimiter 指定目录分隔符，列出所有公共前缀（模拟列出目录效果）。缺省值为空字符串
+     * @return
+     * @throws QiniuException
+     */
     public Response listV2(String bucket, String prefix, String marker, int limit, String delimiter)
             throws QiniuException {
         StringMap map = new StringMap().put("bucket", bucket).putNotEmpty("marker", marker)
@@ -188,7 +226,9 @@ public class QiniuBucketManager {
      */
     public FileInfo stat(String bucket, String fileKey) throws QiniuException {
         Response r = rsGet(bucket, String.format("/stat/%s", encodedEntry(bucket, fileKey)));
-        return r.jsonToObject(FileInfo.class);
+        FileInfo fileInfo = r.jsonToObject(FileInfo.class);
+        r.close();
+        return fileInfo;
     }
 
     /**
@@ -238,14 +278,6 @@ public class QiniuBucketManager {
             path = String.format("%s/x-qn-meta-!%s/%s", path, k, encodedMetaValue);
         }
         return rsPost(bucket, path, null);
-    }
-
-    //存储类型
-    public enum StorageType {
-        //普通存储
-        COMMON,
-        //低频存储
-        INFREQUENCY
     }
 
     /**
@@ -333,9 +365,9 @@ public class QiniuBucketManager {
      * @param toFileKey   目的文件名称
      * @throws QiniuException
      */
-    public void copy(String fromBucket, String fromFileKey, String toBucket, String toFileKey)
+    public Response copy(String fromBucket, String fromFileKey, String toBucket, String toFileKey)
             throws QiniuException {
-        copy(fromBucket, fromFileKey, toBucket, toFileKey, false);
+        return copy(fromBucket, fromFileKey, toBucket, toFileKey, false);
     }
 
 
@@ -386,7 +418,7 @@ public class QiniuBucketManager {
     }
 
     /**
-     * 抓取指定地址的文件，已指定名称保存在指定空间
+     * 抓取指定地址的文件，以指定名称保存在指定空间
      * 要求指定url可访问，大文件不建议使用此接口抓取。可先下载再上传
      *
      * @param url    待抓取的文件链接
@@ -399,7 +431,70 @@ public class QiniuBucketManager {
         String to = encodedEntry(bucket, key);
         String path = String.format("/fetch/%s/to/%s", resource, to);
         Response r = ioPost(bucket, path);
-        return r.jsonToObject(FetchRet.class);
+        FetchRet fetchRet = r.jsonToObject(FetchRet.class);
+        r.close();
+        return fetchRet;
+    }
+
+    /**
+     * 异步第三方资源抓取 从指定 URL 抓取资源，并将该资源存储到指定空间中。每次只抓取一个文件，抓取时可以指定保存空间名和最终资源名。
+     * 主要对于大文件进行抓取
+     * https://developer.qiniu.com/kodo/api/4097/asynch-fetch
+     *
+     * @param url    待抓取的文件链接，支持设置多个,以';'分隔
+     * @param bucket 文件抓取后保存的空间
+     * @param key    文件抓取后保存的文件名
+     * @return Response
+     * @throws QiniuException
+     */
+
+    public Response asynFetch(String url, String bucket, String key) throws QiniuException {
+        String requesturl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
+        StringMap stringMap = new StringMap().put("url", url).put("bucket", bucket).putNotNull("key", key);
+        byte[] bodyByte = Json.encode(stringMap).getBytes(Constants.UTF_8);
+        return client.post(requesturl, bodyByte, auth.authorizationV2(requesturl, "POST", bodyByte, "application/json"), Client.JsonMime);
+    }
+
+    /**
+     * 异步第三方资源抓取 从指定 URL 抓取资源，并将该资源存储到指定空间中。每次只抓取一个文件，抓取时可以指定保存空间名和最终资源名。
+     * https://developer.qiniu.com/kodo/api/4097/asynch-fetch
+     * 提供更多参数的抓取 可以对抓取文件进行校验 和自定义抓取回调地址等
+     *
+     * @param url              待抓取的文件链接，支持设置多个,以';'分隔
+     * @param bucket           文件抓取后保存的空间
+     * @param key              文件抓取后保存的文件名
+     * @param md5              文件md5,传入以后会在存入存储时对文件做校验，校验失败则不存入指定空间
+     * @param etag             文件etag,传入以后会在存入存储时对文件做校验，校验失败则不存入指定空间
+     * @param callbackurl      回调URL，详细解释请参考上传策略中的callbackUrl
+     * @param callbackbody     回调Body，如果callbackurl不为空则必须指定。与普通上传一致支持魔法变量，
+     * @param callbackbodytype 回调Body内容类型,默认为"application/x-www-form-urlencoded"，
+     * @param callbackhost     回调时使用的Host
+     * @param fileType        存储文件类型 0:正常存储(默认),1:低频存储
+     * @return Response
+     * @throws QiniuException
+     */
+    public Response asynFetch(String url, String bucket, String key, String md5, String etag, String callbackurl,
+                              String callbackbody, String callbackbodytype, String callbackhost, String fileType) throws QiniuException {
+        String requesturl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
+        StringMap stringMap = new StringMap().put("url", url).put("bucket", bucket).putNotNull("key", key).putNotNull("md5", md5).
+                putNotNull("etag", etag).putNotNull("callbackurl", callbackurl).putNotNull("callbackbody", callbackbody).
+                putNotNull("callbackbodytype", callbackbodytype).
+                putNotNull("callbackhost", callbackhost).putNotNull("file_type", fileType);
+        byte[] bodyByte = Json.encode(stringMap).getBytes(Constants.UTF_8);
+        return client.post(requesturl, bodyByte, auth.authorizationV2(requesturl, "POST", bodyByte, "application/json"), Client.JsonMime);
+    }
+
+    /**
+     * 查询异步抓取任务
+     *
+     * @param region      抓取任务所在bucket区域 华东 z0 华北 z1 华南 z2 北美 na0 东南亚 as0
+     * @param fetchWorkId 抓取任务id
+     * @return Response
+     * @throws QiniuException
+     */
+    public Response checkAsynFetchid(String region, String fetchWorkId) throws QiniuException {
+        String path = String.format("http://api-%s.qiniu.com/sisyphus/fetch?id=%s", region, fetchWorkId);
+        return client.get(path, auth.authorization(path));
     }
 
     /**
@@ -410,10 +505,10 @@ public class QiniuBucketManager {
      * @param key    文件名称
      * @throws QiniuException
      */
-    public void prefetch(String bucket, String key) throws QiniuException {
+    public Response prefetch(String bucket, String key) throws QiniuException {
         String resource = encodedEntry(bucket, key);
         String path = String.format("/prefetch/%s", resource);
-        ioPost(bucket, path);
+        return ioPost(bucket, path);
     }
 
     /**
@@ -468,8 +563,8 @@ public class QiniuBucketManager {
     }
 
     /*
-    * 相关请求的方法列表
-    * */
+     * 相关请求的方法列表
+     * */
 
     private Response rsPost(String bucket, String path, byte[] body) throws QiniuException {
         check(bucket);
@@ -517,11 +612,6 @@ public class QiniuBucketManager {
         return rsPost(operations.execBucket(), "/batch", operations.toBody());
     }
 
-    public void closeResponse() {
-        if (response != null)
-            response.close();
-    }
-
     /**
      * 文件管理批量操作指令构建对象
      */
@@ -537,7 +627,7 @@ public class QiniuBucketManager {
          * 添加chgm指令
          */
 
-        public BatchOperations addChgmOps(String bucket, String key, String newMimeType) {
+        public BatchOperations addChgmOp(String bucket, String key, String newMimeType) {
             String resource = encodedEntry(bucket, key);
             String encodedMime = UrlSafeBase64.encodeToString(newMimeType);
             ops.add(String.format("/chgm/%s/mime/%s", resource, encodedMime));
@@ -548,16 +638,16 @@ public class QiniuBucketManager {
         /**
          * 添加copy指令
          */
-        public BatchOperations addCopyOps(String fromBucket, String fromFileKey, String toBucket, String toFileKey, boolean force) {
+        public BatchOperations addCopyOp(String fromBucket, String fromFileKey, String toBucket, String toFileKey) {
             String from = encodedEntry(fromBucket, fromFileKey);
             String to = encodedEntry(toBucket, toFileKey);
-            ops.add(String.format("copy/%s/%s/force/%s", from, to, force));
+            ops.add(String.format("copy/%s/%s", from, to));
             setExecBucket(fromBucket);
             return this;
         }
 
         /**
-         * 添加copy指令
+         * 批量输入文件名方式添加copy指令，会默认保持原文件名，可以使用targetPrefix来设置copy之后添加的文件名前缀
          */
         public BatchOperations addCopyOps(String fromBucket, String toBucket, boolean force, String targetPrefix, String... fileKeys) {
             for (String fileKey : fileKeys) {
@@ -572,14 +662,14 @@ public class QiniuBucketManager {
         /**
          * 添加重命名指令
          */
-        public BatchOperations addRenameOps(String fromBucket, String fromFileKey, String toFileKey) {
-            return addMoveOps(fromBucket, fromFileKey, fromBucket, toFileKey);
+        public BatchOperations addRenameOp(String fromBucket, String fromFileKey, String toFileKey) {
+            return addMoveOp(fromBucket, fromFileKey, fromBucket, toFileKey);
         }
 
         /**
          * 添加move指令
          */
-        public BatchOperations addMoveOps(String fromBucket, String fromKey, String toBucket, String toKey) {
+        public BatchOperations addMoveOp(String fromBucket, String fromKey, String toBucket, String toKey) {
             String from = encodedEntry(fromBucket, fromKey);
             String to = encodedEntry(toBucket, toKey);
             ops.add(String.format("move/%s/%s", from, to));
@@ -588,9 +678,22 @@ public class QiniuBucketManager {
         }
 
         /**
+         * 批量输入文件名方式添加move指令，会默认保持原文件名，可以使用targetPrefix来设置move之后添加的文件名前缀
+         */
+        public BatchOperations addMoveOps(String fromBucket, String toBucket, String targetPrefix, String... fileKeys) {
+            for (String fileKey : fileKeys) {
+                String from = encodedEntry(fromBucket, fileKey);
+                String to = encodedEntry(toBucket, targetPrefix + fileKey);
+                ops.add(String.format("move/%s/%s", from, to));
+            }
+            setExecBucket(fromBucket);
+            return this;
+        }
+
+        /**
          * 添加delete指令
          */
-        public BatchOperations addDeleteOps(String bucket, String... keys) {
+        public BatchOperations addDeleteOp(String bucket, String... keys) {
             for (String key : keys) {
                 ops.add(String.format("delete/%s", encodedEntry(bucket, key)));
             }
@@ -668,6 +771,7 @@ public class QiniuBucketManager {
             return execBucket;
         }
     }
+
     /**
      * 创建文件列表迭代器
      */

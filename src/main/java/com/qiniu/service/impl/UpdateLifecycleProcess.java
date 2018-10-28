@@ -1,11 +1,11 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.UpdateLifecycle;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
-    public UpdateLifecycleProcess(QiniuAuth auth, Configuration configuration, String bucket, int days, String resultFileDir) throws IOException {
+    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir) throws IOException {
         this.updateLifecycle = new UpdateLifecycle(auth, configuration);
         this.bucket = bucket;
         this.days = days;
@@ -77,7 +77,5 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
 
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
-        if (updateLifecycle != null)
-            updateLifecycle.closeBucketManager();
     }
 }

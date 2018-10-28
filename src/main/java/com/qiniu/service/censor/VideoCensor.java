@@ -2,17 +2,17 @@ package com.qiniu.service.censor;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.CensorResp;
+import com.qiniu.util.Auth;
 import com.qiniu.util.StringMap;
 
 public class VideoCensor {
 
-    private QiniuAuth auth;
+    private Auth auth;
     private Client client;
     private Response response;
     private JsonObject dataValueJson;
@@ -21,14 +21,14 @@ public class VideoCensor {
 
     private static volatile VideoCensor videoCensor = null;
 
-    private VideoCensor(QiniuAuth auth) {
+    private VideoCensor(Auth auth) {
         this.auth = auth;
         this.client = new Client();
 
         this.opsValueJsonArray = new JsonArray();
     }
 
-    public static VideoCensor getInstance(QiniuAuth auth) {
+    public static VideoCensor getInstance(Auth auth) {
         if (videoCensor == null) {
             synchronized (VideoCensor.class) {
                 if (videoCensor == null) {

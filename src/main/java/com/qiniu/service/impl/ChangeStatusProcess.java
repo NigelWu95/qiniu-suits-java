@@ -1,11 +1,11 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.ChangeStatus;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
-    public ChangeStatusProcess(QiniuAuth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir) throws IOException {
+    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir) throws IOException {
         this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
@@ -78,7 +78,5 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
-        if (changeStatus != null)
-            changeStatus.closeBucketManager();
     }
 }

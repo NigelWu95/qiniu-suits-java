@@ -1,11 +1,11 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private String keyPrefix;
     private QiniuException qiniuException = null;
 
-    public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
+    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
                              String keyPrefix, String resultFileDir) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
@@ -81,7 +81,5 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
-        if (bucketCopy != null)
-            bucketCopy.closeBucketManager();
     }
 }

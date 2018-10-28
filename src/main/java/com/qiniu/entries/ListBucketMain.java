@@ -3,9 +3,9 @@ package com.qiniu.entries;
 import com.qiniu.common.*;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.service.impl.*;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class ListBucketMain {
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
         IOssFileProcess iOssFileProcessor = null;
-        QiniuAuth auth = QiniuAuth.create(accessKey, secretKey);
+        Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {
@@ -73,13 +73,13 @@ public class ListBucketMain {
                 FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFilePath) : new FileCopyParams(args);
                 accessKey = "".equals(fileCopyParams.getAKey()) ? accessKey : fileCopyParams.getAKey();
                 secretKey = "".equals(fileCopyParams.getSKey()) ? secretKey : fileCopyParams.getSKey();
-                iOssFileProcessor = new BucketCopyProcess(QiniuAuth.create(accessKey, secretKey), configuration, fileCopyParams.getSourceBucket(),
+                iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration, fileCopyParams.getSourceBucket(),
                         fileCopyParams.getTargetBucket(), fileCopyParams.getTargetKeyPrefix(), resultFileDir);
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                iOssFileProcessor = new UpdateLifecycleProcess(QiniuAuth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
+                iOssFileProcessor = new UpdateLifecycleProcess(Auth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
                         lifecycleParams.getDays(), resultFileDir);
                 break;
             }

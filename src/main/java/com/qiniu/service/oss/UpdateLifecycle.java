@@ -1,16 +1,16 @@
 package com.qiniu.service.oss;
 
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.util.List;
 
 public class UpdateLifecycle extends OperationBase implements Cloneable {
 
-    public UpdateLifecycle(QiniuAuth auth, Configuration configuration) {
+    public UpdateLifecycle(Auth auth, Configuration configuration) {
         super(auth, configuration);
     }
 

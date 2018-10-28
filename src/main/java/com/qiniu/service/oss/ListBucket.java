@@ -2,17 +2,16 @@ package com.qiniu.service.oss;
 
 import com.qiniu.common.*;
 import com.qiniu.http.Response;
-import com.qiniu.sdk.QiniuAuth;
-import com.qiniu.sdk.QiniuBucketManager;
+import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 public class ListBucket {
 
-    private QiniuBucketManager bucketManager;
+    private BucketManager bucketManager;
 
-    public ListBucket(QiniuAuth auth, Configuration configuration) {
-        this.bucketManager = new QiniuBucketManager(auth, configuration);
+    public ListBucket(Auth auth, Configuration configuration) {
+        this.bucketManager = new BucketManager(auth, configuration);
     }
 
     /*
@@ -42,10 +41,5 @@ public class ListBucket {
         }
 
         return response;
-    }
-
-    public void closeBucketManager() {
-        if (bucketManager != null)
-            bucketManager.closeResponse();
     }
 }
