@@ -178,7 +178,7 @@ public class ListBucketProcess {
                         listResult = getListResult(response, version);
                         listResult.commonPrefix = prefix;
                     } catch (QiniuException e) {
-                        fileMap.writeErrorOrNull(bucket + "\t" + prefix + "\t" + e.error());
+                        fileMap.writeErrorOrNull(prefix + "\t" + e.error());
                     } finally {
                         if (response != null) response.close();
                     }
@@ -231,8 +231,18 @@ public class ListBucketProcess {
         fileMap.closeWriter();
     }
 
+    private void recordProgress(String prefix, String endFile, String marker, FileReaderAndWriterMap fileMap) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("prefix", prefix);
+        jsonObject.addProperty("end", endFile);
+        jsonObject.addProperty("marker", marker);
+        fileMap.writeKeyFile("marker" + prefix, JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
+        jsonObject = null;
+    }
+
     private void loopList(ListBucket listBucket, String prefix, String endFile, String marker, FileReaderAndWriterMap fileMap,
                           IOssFileProcess processor, boolean processBatch) {
+        recordProgress(prefix, endFile, marker, fileMap);
         while (!StringUtils.isNullOrEmpty(marker)) {
             try {
                 Response response = listBucket.run(bucket, prefix, "", "null".equals(marker) ? "" : marker, unitLen,
@@ -244,9 +254,9 @@ public class ListBucketProcess {
                 marker = !StringUtils.isNullOrEmpty(endFile) && fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) < 0) ?
                         "" : listResult.nextMarker;
+                recordProgress(prefix, endFile, marker, fileMap);
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFile + "\t" + marker + "\t" + unitLen
-                        + "\t" + e.getMessage());
+                fileMap.writeErrorOrNull(prefix + endFile + "\t" + marker + "\t" + e.getMessage());
             }
         }
     }
