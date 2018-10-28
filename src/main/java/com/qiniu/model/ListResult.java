@@ -14,6 +14,6 @@ public class ListResult {
     public String nextMarker = "";
 
     public boolean isValid() {
-        return fileInfoList != null || !StringUtils.isNullOrEmpty(nextMarker);
+        return (fileInfoList != null && fileInfoList.size() > 0) || !StringUtils.isNullOrEmpty(nextMarker);
     }
 }
