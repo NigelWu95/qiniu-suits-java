@@ -283,7 +283,7 @@ public class ListBucketProcess {
                     listResultList.get(finalI).commonPrefix + "_to_behind" : listResultList.get(finalI).commonPrefix;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
             fileMap.initWriter(resultFileDir, "list", fileSuffix);
-            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
+            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(fileSuffix) : null;
             writeAndProcess(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap, processor, processBatch);
             executorPool.execute(() -> {
                 String endFilePrefix = "";

@@ -20,20 +20,26 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
-    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir) throws IOException {
+    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
+                                  String resultFileSuffix) throws IOException {
         this.updateLifecycle = new UpdateLifecycle(auth, configuration);
         this.bucket = bucket;
         this.days = days;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", null);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", resultFileSuffix);
     }
 
-    public UpdateLifecycleProcess clone() throws CloneNotSupportedException {
+    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir)
+            throws IOException {
+        this(auth, configuration, bucket, days, resultFileDir, null);
+    }
+
+    public UpdateLifecycleProcess getNewInstance(String resultFileSuffix) throws CloneNotSupportedException {
         UpdateLifecycleProcess updateLifecycleProcess = (UpdateLifecycleProcess)super.clone();
         updateLifecycleProcess.updateLifecycle = updateLifecycle.clone();
         updateLifecycleProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", null);
+            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", resultFileSuffix);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
