@@ -25,7 +25,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         this.bucket = bucket;
         this.fileType = fileType;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "type", null);
     }
 
     public ChangeTypeProcess clone() throws CloneNotSupportedException {
@@ -33,7 +33,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         changeTypeProcess.changeType = changeType.clone();
         changeTypeProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "type");
+            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "type", null);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();

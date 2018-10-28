@@ -25,7 +25,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
         this.bucket = bucket;
         this.days = days;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", null);
     }
 
     public UpdateLifecycleProcess clone() throws CloneNotSupportedException {
@@ -33,7 +33,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
         updateLifecycleProcess.updateLifecycle = updateLifecycle.clone();
         updateLifecycleProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle");
+            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", null);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();

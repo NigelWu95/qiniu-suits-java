@@ -22,7 +22,7 @@ public class AsyncFetchProcess implements IUrlItemProcess {
 
     public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir) throws IOException {
         this.asyncFetch = AsyncFetch.getInstance(auth, targetBucket);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch", null);
     }
 
     public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
