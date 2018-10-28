@@ -30,6 +30,7 @@ public class ListBucketProcess {
     private String resultFileDir;
     private String customPrefix;
     private List<String> antiPrefix;
+    private int retryCount;
     private ListFileFilter listFileFilter;
     private ListFileAntiFilter listFileAntiFilter;
     private boolean checkListFileFilter;
@@ -39,7 +40,7 @@ public class ListBucketProcess {
             .split(""));
 
     public ListBucketProcess(QiniuAuth auth, Configuration configuration, String bucket, int unitLen, int version,
-                             String resultFileDir, String customPrefix, List<String> antiPrefix) {
+                             String resultFileDir, String customPrefix, List<String> antiPrefix, int retryCount) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -48,6 +49,7 @@ public class ListBucketProcess {
         this.resultFileDir = resultFileDir;
         this.customPrefix = customPrefix;
         this.antiPrefix = antiPrefix;
+        this.retryCount = retryCount;
     }
 
     public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
@@ -75,7 +77,7 @@ public class ListBucketProcess {
     }
 
     private void writeAndProcess(List<FileInfo> fileInfoList, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap,
-                                 IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount) throws QiniuException {
+                                 IOssFileProcess iOssFileProcessor, boolean processBatch) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         fileInfoList = fileInfoList.parallelStream()
@@ -148,29 +150,24 @@ public class ListBucketProcess {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
                 Reader reader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                List<String> lineList = bufferedReader.lines().collect(Collectors.toList());
-                try {
-                    bufferedReader.close();
-                    reader.close();
-                    inputStream.close();
-                } catch (IOException e) {}
-                if (lineList != null && lineList.size() > 0) {
-                    String line = lineList.get(lineList.size() - 1);
-                    ListV2Line listV2Line = getItemByList2Line(line);
-                    listResult.fileInfoList = lineList.parallelStream()
-                            .filter(everyLine -> !StringUtils.isNullOrEmpty(everyLine))
-                            .map(everyLine -> getItemByList2Line(everyLine).fileInfo)
-                            .collect(Collectors.toList());
-                    listResult.nextMarker = listV2Line.marker;
-                }
+                List<ListV2Line> listV2LineList = bufferedReader.lines().parallel()
+                        .filter(line -> !StringUtils.isNullOrEmpty(line))
+                        .map(this::getItemByList2Line)
+                        .collect(Collectors.toList());
+                Optional<ListV2Line> lastListV2Line = listV2LineList.parallelStream()
+                        .max(ListV2Line::compareTo);
+                listResult.fileInfoList = listV2LineList.parallelStream()
+                        .map(listV2Line -> listV2Line.fileInfo)
+                        .collect(Collectors.toList());
+                listResult.nextMarker = lastListV2Line.map(listV2Line -> listV2Line.marker).orElse(null);
             }
         }
 
         return listResult;
     }
 
-    private List<ListResult> preListByPrefix(ListBucket listBucket, List<String> prefixList, int unitLen, String resultPrefix,
-                                             int retryCount) throws IOException {
+    private List<ListResult> preListByPrefix(ListBucket listBucket, List<String> prefixList, int unitLen, String resultPrefix)
+            throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, resultPrefix);
         List<ListResult> listResultList = prefixList.parallelStream()
@@ -194,8 +191,8 @@ public class ListBucketProcess {
         return listResultList;
     }
 
-    public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix, String resultPrefix,
-                                    int retryCount) throws IOException {
+    public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix, String resultPrefix)
+            throws IOException {
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
@@ -203,13 +200,13 @@ public class ListBucketProcess {
         List<ListResult> listResultList = new ArrayList<>();
         ListBucket preListBucket = new ListBucket(auth, configuration);
         if (level == 1) {
-            listResultList = preListByPrefix(preListBucket, validPrefixList, unitLen, resultPrefix, retryCount);
+            listResultList = preListByPrefix(preListBucket, validPrefixList, unitLen, resultPrefix);
         } else if (level == 2) {
-            listResultList = preListByPrefix(preListBucket, validPrefixList, 1, resultPrefix, retryCount);
+            listResultList = preListByPrefix(preListBucket, validPrefixList, 1, resultPrefix);
             List<String> level2PrefixList = listResultList.parallelStream()
-                    .map(singlePrefix -> originPrefixList.stream()
+                    .map(singlePrefixListResult -> originPrefixList.parallelStream()
                             .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                            .map(originPrefix -> singlePrefix.commonPrefix + originPrefix)
+                            .map(originPrefix -> singlePrefixListResult.commonPrefix + originPrefix)
                             .collect(Collectors.toList())
                     )
                     .reduce((list1, list2) -> {
@@ -217,17 +214,17 @@ public class ListBucketProcess {
                         return list1;
                     })
                     .get();
-            listResultList = preListByPrefix(preListBucket, level2PrefixList, unitLen, resultPrefix, retryCount);
+            listResultList = preListByPrefix(preListBucket, level2PrefixList, unitLen, resultPrefix);
         }
 
         return listResultList;
     }
 
-    public void checkValidPrefix(int level, String customPrefix, List<String> antiPrefix, String resultPrefix, int retryCount)
+    public void checkValidPrefix(int level, String customPrefix, List<String> antiPrefix)
             throws IOException {
-        List<ListResult> listResultList = preList(1, level, customPrefix, antiPrefix, resultPrefix, retryCount);
+        List<ListResult> listResultList = preList(1, level, customPrefix, antiPrefix, "check");
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        fileMap.initWriter(resultFileDir, resultPrefix);
+        fileMap.initWriter(resultFileDir, "check");
         List<String> validPrefixAndMarker = listResultList.parallelStream()
                 .map(listResult -> listResult.commonPrefix + "\t" + listResult.nextMarker)
                 .collect(Collectors.toList());
@@ -236,7 +233,7 @@ public class ListBucketProcess {
     }
 
     private void loopList(ListBucket listBucket, String prefix, String endFile, String marker, FileReaderAndWriterMap fileMap,
-                          IOssFileProcess processor, boolean processBatch, int retryCount) {
+                          IOssFileProcess processor, boolean processBatch) {
         while (!StringUtils.isNullOrEmpty(marker)) {
             try {
                 Response response = listBucket.run(bucket, prefix, "", "null".equals(marker) ? "" : marker, unitLen,
@@ -244,37 +241,37 @@ public class ListBucketProcess {
                 ListResult listResult = getListResult(response, version);
                 response.close();
                 List<FileInfo> fileInfoList = listResult.fileInfoList;
-                writeAndProcess(fileInfoList, endFile, fileMap, processor, processBatch, 3);
+                writeAndProcess(fileInfoList, endFile, fileMap, processor, processBatch);
                 marker = !StringUtils.isNullOrEmpty(endFile) && fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) < 0) ?
                         "" : listResult.nextMarker;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 fileMap.writeErrorOrNull(bucket + "\t" + prefix + endFile + "\t" + marker + "\t" + unitLen
                         + "\t" + e.getMessage());
             }
         }
     }
 
-    public void straightList(String prefix, String endFile, String marker, IOssFileProcess iOssFileProcessor, boolean processBatch,
-                             int retryCount) throws IOException {
+    public void straightList(String prefix, String endFile, String marker, IOssFileProcess iOssFileProcessor, boolean processBatch)
+            throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list");
         ListBucket listBucket = new ListBucket(auth, configuration);
         marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
-        loopList(listBucket, prefix, endFile, marker, fileMap, iOssFileProcessor, processBatch, retryCount);
+        loopList(listBucket, prefix, endFile, marker, fileMap, iOssFileProcessor, processBatch);
         fileMap.closeWriter();
     }
 
     private void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
-                                    boolean processBatch, int retryCount) throws IOException, CloneNotSupportedException {
+                                    boolean processBatch) throws IOException, CloneNotSupportedException {
 
+        listResultList.sort(Comparator.comparing(listResult -> listResult.commonPrefix));
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < listResultList.size(); i++) {
             int finalI = i;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap(i + 1);
             fileMap.initWriter(resultFileDir, "list");
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.clone() : null;
-            writeAndProcess(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap, processor, processBatch,
-                    retryCount);
+            writeAndProcess(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap, processor, processBatch);
             executorPool.execute(() -> {
                 String endFilePrefix = "";
                 String prefix = "";
@@ -299,7 +296,7 @@ public class ListBucketProcess {
                     if (!StringUtils.isNullOrEmpty(customPrefix)) prefix = customPrefix;
                 }
                 ListBucket listBucket = new ListBucket(auth, configuration);
-                loopList(listBucket, prefix, endFilePrefix, marker, fileMap, processor, processBatch, retryCount);
+                loopList(listBucket, prefix, endFilePrefix, marker, fileMap, processor, processBatch);
                 listBucket.closeBucketManager();
                 if (processor != null) processor.closeResource();
                 fileMap.closeWriter();
@@ -314,12 +311,12 @@ public class ListBucketProcess {
         return Executors.newFixedThreadPool(runningThreads);
     }
 
-    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch, int retryCount)
+    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch)
             throws IOException, CloneNotSupportedException {
 
-        List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list", retryCount);
+        List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
         ExecutorService executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
-        listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch, retryCount);
+        listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())
