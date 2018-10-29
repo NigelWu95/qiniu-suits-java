@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface IOssFileProcess {
 
-    IOssFileProcess getNewInstance(String resultFileSuffix) throws CloneNotSupportedException;
+    IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
     QiniuException qiniuException();
 

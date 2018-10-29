@@ -21,25 +21,25 @@ public class ChangeStatusProcess implements IOssFileProcess {
     private QiniuException qiniuException = null;
 
     public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
-                               String resultFileSuffix) throws IOException {
+                               int resultFileIndex) throws IOException {
         this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileSuffix);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileIndex);
     }
 
     public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir)
             throws IOException {
-        this(auth, configuration, bucket, fileStatus, resultFileDir, null);
+        this(auth, configuration, bucket, fileStatus, resultFileDir, 0);
     }
 
-    public ChangeStatusProcess getNewInstance(String resultFileSuffix) throws CloneNotSupportedException {
+    public ChangeStatusProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
         changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileSuffix);
+            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
