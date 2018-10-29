@@ -23,6 +23,14 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public String getSuffix() {
+        return suffix;
+    }
+
     public void initWriter(String targetFileDir, String prefix, String suffix) throws IOException {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
