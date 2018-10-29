@@ -21,25 +21,25 @@ public class ChangeTypeProcess implements IOssFileProcess {
     private QiniuException qiniuException = null;
 
     public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
-            String resultFileSuffix) throws IOException {
+            int resultFileIndex) throws IOException {
         this.changeType = new ChangeType(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "type", resultFileSuffix);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "type", resultFileIndex);
     }
 
     public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileStatus, String resultFileDir)
             throws IOException {
-        this(auth, configuration, bucket, fileStatus, resultFileDir, null);
+        this(auth, configuration, bucket, fileStatus, resultFileDir, 0);
     }
 
-    public ChangeTypeProcess getNewInstance(String resultFileSuffix) throws CloneNotSupportedException {
+    public ChangeTypeProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeTypeProcess changeTypeProcess = (ChangeTypeProcess)super.clone();
         changeTypeProcess.changeType = changeType.clone();
         changeTypeProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "type", resultFileSuffix);
+            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "type", resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();

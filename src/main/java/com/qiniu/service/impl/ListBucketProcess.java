@@ -279,11 +279,10 @@ public class ListBucketProcess {
         listResultList.sort(Comparator.comparing(listResult -> listResult.commonPrefix));
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < listResultList.size(); i++) {
             int finalI = i;
-            String fileSuffix = i == -1 ? "before" : i == listResultList.size() - 1 ?
-                    listResultList.get(finalI).commonPrefix + "_to_behind" : listResultList.get(finalI).commonPrefix;
+            int resultIndex = StringUtils.isNullOrEmpty(customPrefix) ? i + 2 : i + 1;
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-            fileMap.initWriter(resultFileDir, "list", fileSuffix);
-            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(fileSuffix) : null;
+            fileMap.initWriter(resultFileDir, "list", resultIndex);
+            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(resultIndex) : null;
             writeAndProcess(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap, processor, processBatch);
             executorPool.execute(() -> {
                 String endFilePrefix = "";

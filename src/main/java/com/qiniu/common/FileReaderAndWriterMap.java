@@ -28,6 +28,7 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.prefix = prefix;
         this.suffix = StringUtils.isNullOrEmpty(suffix) ? "_0" : "_" + suffix;
 
+
         for (int i = 0; i < targetWriters.size(); i++) {
             addWriter(targetFileDir, prefix + targetWriters.get(i) + this.suffix);
         }
