@@ -1,12 +1,13 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.oss.AsyncFetch;
+import com.qiniu.util.Auth;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,12 +20,12 @@ public class AsyncFetchProcess implements IUrlItemProcess {
     private M3U8Manager m3u8Manager;
     private QiniuException qiniuException = null;
 
-    public AsyncFetchProcess(QiniuAuth auth, String targetBucket, String resultFileDir) throws IOException {
+    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir) throws IOException {
         this.asyncFetch = AsyncFetch.getInstance(auth, targetBucket);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch", null);
     }
 
-    public AsyncFetchProcess(QiniuAuth auth, String targetBucket, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
+    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
         this(auth, targetBucket, resultFileDir);
         this.m3u8Manager = m3u8Manager;
     }
@@ -53,11 +54,11 @@ public class AsyncFetchProcess implements IUrlItemProcess {
         fetchResult(url, key);
     }
 
-    public void processItem(QiniuAuth auth, String source, String item) {
+    public void processItem(Auth auth, String source, String item) {
         processItem(auth, source, item, item);
     }
 
-    public void processItem(QiniuAuth auth, String source, String item, String key) {
+    public void processItem(Auth auth, String source, String item, String key) {
         String url = auth.privateDownloadUrl(source + item);
         fetchResult(url, key);
     }
@@ -74,12 +75,12 @@ public class AsyncFetchProcess implements IUrlItemProcess {
         }
     }
 
-    public void processUrl(QiniuAuth auth, String url, String key) {
+    public void processUrl(Auth auth, String url, String key) {
         url = auth.privateDownloadUrl(url);
         fetchResult(url, key);
     }
 
-    public void processUrl(QiniuAuth auth, String url, String key, String format) {
+    public void processUrl(Auth auth, String url, String key, String format) {
         url = auth.privateDownloadUrl(url);
         processUrl(url, key);
 

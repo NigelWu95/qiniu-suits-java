@@ -1,7 +1,7 @@
 package com.qiniu.interfaces;
 
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
+import com.qiniu.util.Auth;
 
 public interface IUrlItemProcess {
 
@@ -11,17 +11,17 @@ public interface IUrlItemProcess {
 
     void processItem(String source, String item, String key);
 
-    void processItem(QiniuAuth auth, String source, String item);
+    void processItem(Auth auth, String source, String item);
 
-    void processItem(QiniuAuth auth, String source, String item, String key);
+    void processItem(Auth auth, String source, String item, String key);
 
     void processUrl(String url, String key);
 
     void processUrl(String url, String key, String format);
 
-    void processUrl(QiniuAuth auth, String url, String key);
+    void processUrl(Auth auth, String url, String key);
 
-    void processUrl(QiniuAuth auth, String url, String key, String format);
+    void processUrl(Auth auth, String url, String key, String format);
 
     void closeResource();
 }

@@ -1,17 +1,17 @@
 package com.qiniu.service.impl;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
 
-public class BucketCopyProcess implements IOssFileProcess, Cloneable {
+public class BucketCopyProcess implements IOssFileProcess {
 
     private BucketCopy bucketCopy;
     private String resultFileDir;
@@ -21,22 +21,28 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private String keyPrefix;
     private QiniuException qiniuException = null;
 
-    public BucketCopyProcess(QiniuAuth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir) throws IOException {
+    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
+                             String keyPrefix, String resultFileDir, int resultFileIndex) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", resultFileIndex);
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyProcess clone() throws CloneNotSupportedException {
+    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
+                             String resultFileDir)
+            throws IOException {
+        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir, 0);
+    }
+
+    public BucketCopyProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy");
+            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
@@ -81,7 +87,5 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     public void closeResource() {
         fileReaderAndWriterMap.closeWriter();
-        if (bucketCopy != null)
-            bucketCopy.closeBucketManager();
     }
 }
