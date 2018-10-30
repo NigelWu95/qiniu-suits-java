@@ -1,17 +1,17 @@
 package com.qiniu.service.oss;
 
-import com.qiniu.sdk.QiniuAuth;
-import com.qiniu.sdk.QiniuBucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.StorageType;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.util.List;
 
 public class ChangeType extends OperationBase implements Cloneable {
 
-    public ChangeType(QiniuAuth auth, Configuration configuration) {
+    public ChangeType(Auth auth, Configuration configuration) {
         super(auth, configuration);
     }
 

@@ -1,10 +1,10 @@
 package com.qiniu.service.oss;
 
 import com.google.gson.Gson;
-import com.qiniu.sdk.QiniuAuth;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringMap;
 
@@ -13,19 +13,19 @@ import java.util.Map;
 
 public class AsyncFetch {
 
-    private QiniuAuth auth;
+    private Auth auth;
     private Client client;
     private String bucket;
 
     private static volatile AsyncFetch asyncFetch = null;
 
-    public AsyncFetch(QiniuAuth auth, String bucket) {
+    public AsyncFetch(Auth auth, String bucket) {
         this.bucket = bucket;
         this.auth = auth;
         this.client = new Client();
     }
 
-    public static AsyncFetch getInstance(QiniuAuth auth, String bucket) {
+    public static AsyncFetch getInstance(Auth auth, String bucket) {
         if (asyncFetch == null) {
             synchronized (AsyncFetch.class) {
                 if (asyncFetch == null) {

@@ -1,6 +1,6 @@
 package com.qiniu.common;
 
-import com.qiniu.sdk.QiniuAuth;
+import com.qiniu.util.Auth;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -15,11 +15,11 @@ import java.util.Map;
  */
 public class HttpClient {
 
-    private QiniuAuth auth;
+    private Auth auth;
 
     private static volatile HttpClient httpClient = null;
 
-    private HttpClient(QiniuAuth auth) {
+    private HttpClient(Auth auth) {
         this.auth = auth;
     }
 
@@ -27,7 +27,7 @@ public class HttpClient {
      * 加载到配置文件里的ak和sk
      * @return
      */
-    public static HttpClient getHttpClient(QiniuAuth auth) {
+    public static HttpClient getHttpClient(Auth auth) {
         if (httpClient == null) {
             synchronized (HttpClient.class) {
                 if (httpClient == null) {
