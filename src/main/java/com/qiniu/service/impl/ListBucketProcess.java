@@ -75,46 +75,53 @@ public class ListBucketProcess {
         } else return fileInfoList;
     }
 
-    private void writeAndProcess(List<FileInfo> fileInfoList, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap,
-                                 IOssFileProcess iOssFileProcessor, boolean processBatch) throws QiniuException {
+    private List<FileInfo> writeResult(List<FileInfo> fileInfoList, String endFile, FileReaderAndWriterMap fileReaderAndWriterMap) {
 
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        if (fileInfoList == null || fileInfoList.size() == 0) return null;
         fileInfoList = fileInfoList.parallelStream()
                 .filter(fileInfo ->  StringUtils.isNullOrEmpty(endFile) ? fileInfo != null :
                         fileInfo != null && endFile.compareTo(fileInfo.key) > 0)
                 .collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        // 如果 list 不为空，将完整的列表先写入。
+        if (fileInfoList == null || fileInfoList.size() == 0) return null;
+        // 如果 list 不为空，将完整的列表写入。
         if (fileReaderAndWriterMap != null) fileReaderAndWriterMap.writeSuccess(
                 String.join("\n", fileInfoList.parallelStream()
+                        .filter(Objects::nonNull)
                         .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                         .collect(Collectors.toList()))
         );
 
         if (checkListFileFilter || checkListFileAntiFilter) {
             fileInfoList = filterFileInfo(fileInfoList);
-            if (fileInfoList == null || fileInfoList.size() == 0) return;
+            if (fileInfoList == null || fileInfoList.size() == 0) return null;
             // 如果有过滤条件的情况下，将过滤之后的结果单独写入到 other 文件中。
-            if (fileReaderAndWriterMap != null) fileReaderAndWriterMap.writeOther(String.join("\n",
-                    fileInfoList.parallelStream().filter(Objects::nonNull)
+            if (fileReaderAndWriterMap != null) fileReaderAndWriterMap.writeOther(
+                    String.join("\n", fileInfoList.parallelStream()
+                            .filter(Objects::nonNull)
                             .map(JsonConvertUtils::toJsonWithoutUrlEscape)
                             .collect(Collectors.toList()))
             );
         }
 
-        if (iOssFileProcessor != null) {
-            if (processBatch) {
-                iOssFileProcessor.processFile(fileInfoList.parallelStream()
-                        .map(fileInfo -> fileInfo.key)
-                        .collect(Collectors.toList()), retryCount);
-            } else {
-                fileInfoList.parallelStream()
-                        .forEach(fileInfo -> iOssFileProcessor.processFile(fileInfo.key, retryCount));
-            }
+        return fileInfoList;
+    }
 
-            if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400)
-                throw iOssFileProcessor.qiniuException();
+    private void processResult(List<FileInfo> fileInfoList, IOssFileProcess iOssFileProcessor, boolean processBatch) throws QiniuException {
+
+        if (iOssFileProcessor == null || fileInfoList == null || fileInfoList.size() == 0) return;
+        if (processBatch) {
+            iOssFileProcessor.processFile(fileInfoList.parallelStream()
+                    .filter(Objects::nonNull)
+                    .map(fileInfo -> fileInfo.key)
+                    .collect(Collectors.toList()), retryCount);
+        } else {
+            fileInfoList.parallelStream()
+                    .filter(Objects::nonNull)
+                    .forEach(fileInfo -> iOssFileProcessor.processFile(fileInfo.key, retryCount));
         }
+
+        if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400)
+            throw iOssFileProcessor.qiniuException();
     }
 
     public ListV2Line getItemByList2Line(String line) {
@@ -243,18 +250,28 @@ public class ListBucketProcess {
     private void loopList(ListBucket listBucket, String prefix, String endFile, String marker, FileReaderAndWriterMap fileMap,
                           IOssFileProcess processor, boolean processBatch) {
         recordProgress(prefix, endFile, marker, fileMap);
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        boolean needRedo = true;
         while (!StringUtils.isNullOrEmpty(marker)) {
             try {
-                Response response = listBucket.run(bucket, prefix, "", "null".equals(marker) ? "" : marker, unitLen,
-                        retryCount, version);
-                ListResult listResult = getListResult(response, version);
-                response.close();
-                List<FileInfo> fileInfoList = listResult.fileInfoList;
-                writeAndProcess(fileInfoList, endFile, fileMap, processor, processBatch);
-                marker = !StringUtils.isNullOrEmpty(endFile) && fileInfoList.parallelStream()
-                        .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) < 0) ?
-                        "" : listResult.nextMarker;
-                recordProgress(prefix, endFile, marker, fileMap);
+                if (needRedo) {
+                    Response response = listBucket.run(bucket, prefix, "", "null".equals(marker) ? "" : marker, unitLen,
+                            retryCount, version);
+                    ListResult listResult = getListResult(response, version);
+                    response.close();
+                    fileInfoList = writeResult(listResult.fileInfoList, endFile, fileMap);
+                    marker = !StringUtils.isNullOrEmpty(endFile) && fileInfoList.parallelStream()
+                            .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) < 0) ?
+                            "" : listResult.nextMarker;
+                    recordProgress(prefix, endFile, marker, fileMap);
+                }
+
+                try {
+                    processResult(fileInfoList, processor, processBatch);
+                    needRedo = true;
+                } catch (QiniuException e) {
+                    needRedo = false;
+                }
             } catch (Exception e) {
                 fileMap.writeErrorOrNull(prefix + endFile + "\t" + marker + "\t" + e.getMessage());
             }
@@ -281,7 +298,8 @@ public class ListBucketProcess {
             FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
             fileMap.initWriter(resultFileDir, "list", resultIndex);
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(resultIndex) : null;
-            writeAndProcess(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap, processor, processBatch);
+            List<FileInfo> fileInfoList = writeResult(i > -1 ? listResultList.get(i).fileInfoList : null, "", fileMap);
+            processResult(fileInfoList, processor, processBatch);
             executorPool.execute(() -> {
                 String endFilePrefix = "";
                 String prefix = "";
