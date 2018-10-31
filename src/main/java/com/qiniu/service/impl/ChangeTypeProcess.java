@@ -57,9 +57,9 @@ public class ChangeTypeProcess implements IOssFileProcess {
             String result = changeType.run(bucket, fileKey, fileType, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileKey + "\t" + fileType + "\t" + e.error());
-            e.response.close();
+            if (!e.response.needRetry()) qiniuException = e;
+            else e.response.close();
         }
     }
 
@@ -74,9 +74,9 @@ public class ChangeTypeProcess implements IOssFileProcess {
                     String result = changeType.batchRun(bucket, processList, fileType, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    if (!e.response.needRetry()) qiniuException = e;
                     fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + fileType + "\t" + e.error());
-                    e.response.close();
+                    if (!e.response.needRetry()) qiniuException = e;
+                    else e.response.close();
                 }
             }
         }
