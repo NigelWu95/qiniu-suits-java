@@ -56,9 +56,9 @@ public class UpdateLifecycleProcess implements IOssFileProcess {
             String result = updateLifecycle.run(bucket, fileKey, days, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileKey + "\t" + days + "\t" + e.error());
-            e.response.close();
+            if (!e.response.needRetry()) qiniuException = e;
+            else e.response.close();
         }
     }
 
@@ -73,9 +73,9 @@ public class UpdateLifecycleProcess implements IOssFileProcess {
                     String result = updateLifecycle.batchRun(bucket, processList, days, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    if (!e.response.needRetry()) qiniuException = e;
                     fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + days + "\t" + e.error());
-                    e.response.close();
+                    if (!e.response.needRetry()) qiniuException = e;
+                    else e.response.close();
                 }
             }
         }
