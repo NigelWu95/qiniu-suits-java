@@ -1,6 +1,7 @@
 package com.qiniu.model;
 
 import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.StringUtils;
 
 public class ListV2Line {
 
@@ -15,5 +16,9 @@ public class ListV2Line {
         else if (this.fileInfo == null) return 1;
         else if (listV2Line.fileInfo == null) return -1;
         else return this.fileInfo.key.compareTo(listV2Line.fileInfo.key);
+    }
+
+    public boolean isDeleted() {
+        return (fileInfo == null || StringUtils.isNullOrEmpty(dir));
     }
 }
