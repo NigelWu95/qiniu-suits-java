@@ -60,9 +60,9 @@ public class BucketCopyProcess implements IOssFileProcess {
             String result = bucketCopy.run(srcBucket, fileKey, tarBucket, fileKey, keyPrefix, false, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
-            if (!e.response.needRetry()) qiniuException = e;
             fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + fileKey + "\t" + tarBucket + "\t" + fileKey + "\t" + e.error());
-            e.response.close();
+            if (!e.response.needRetry()) qiniuException = e;
+            else e.response.close();
         }
     }
 
@@ -77,9 +77,9 @@ public class BucketCopyProcess implements IOssFileProcess {
                     String result = bucketCopy.batchRun(srcBucket, tarBucket, processList, keyPrefix, false, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    if (!e.response.needRetry()) qiniuException = e;
                     fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + processList + "\t" + false + "\t" + e.error());
-                    e.response.close();
+                    if (!e.response.needRetry()) qiniuException = e;
+                    else e.response.close();
                 }
             }
         }
