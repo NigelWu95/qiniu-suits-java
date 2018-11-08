@@ -1,5 +1,7 @@
 package com.qiniu.sdk;
 
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
 import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
@@ -8,9 +10,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.*;
 import com.qiniu.util.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -222,6 +222,27 @@ public final class BucketManager {
                 .putNotEmpty("prefix", prefix).putNotEmpty("delimiter", delimiter).putWhen("limit", limit, limit > 0);
         String url = String.format("%s/v2/list?%s", configuration.rsfHost(auth.accessKey, bucket), map.formString());
         return get(url);
+    }
+
+    public FileListing listFilesV2(String bucket, String prefix, String marker, int limit, String delimiter)
+            throws QiniuException {
+        Response response = listV2(bucket, prefix, marker, limit, delimiter);
+        final String result = response.bodyString();
+        response.close();
+        List<String> lineList = Arrays.asList(result.split("\n"));
+        FileListing fileListing = new FileListing();
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        Set<String> commonPrefixSet = new HashSet<>();
+        for (String line : lineList) {
+            JsonObject jsonObject = Json.decode(line, JsonObject.class);
+            if (!(jsonObject.get("item") instanceof JsonNull))
+                fileInfoList.add(JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+            commonPrefixSet.add(jsonObject.get("dir").getAsString());
+        }
+        fileListing.items = fileInfoList.toArray(new FileInfo[]{});
+        fileListing.commonPrefixes = commonPrefixSet.toArray(new String[]{});
+        fileListing.marker = Json.decode(lineList.get(lineList.size() - 1), JsonObject.class).get("marker").getAsString();
+        return fileListing;
     }
 
     /**
