@@ -34,7 +34,7 @@ public class ListBucketTest {
     public void run() {
         Response response;
         try {
-            response = listBucket.run(bucket, "", "/", "", 10, 3, 1);
+            response = listBucket.run(bucket, "", "/", "", 1000, 3, 2);
             System.out.println(response.bodyString());
             response.close();
         } catch (QiniuException e) {
