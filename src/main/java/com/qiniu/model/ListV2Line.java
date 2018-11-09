@@ -19,6 +19,6 @@ public class ListV2Line {
     }
 
     public boolean isDeleted() {
-        return (fileInfo == null || StringUtils.isNullOrEmpty(dir));
+        return (fileInfo == null && StringUtils.isNullOrEmpty(dir));
     }
 }
