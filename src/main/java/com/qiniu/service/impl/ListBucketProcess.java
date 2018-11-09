@@ -150,6 +150,7 @@ public class ListBucketProcess {
                         .map(listV2Line -> listV2Line.fileInfo)
                         .collect(Collectors.toList());
                 listResult.nextMarker = lastListV2Line.map(listV2Line -> listV2Line.marker).orElse(null);
+//                lastListV2Line.ifPresent(listV2Line -> listResult.nextMarker = listV2Line.marker);
             }
         }
 
@@ -260,14 +261,15 @@ public class ListBucketProcess {
                     processResult(fileInfoList, processor, processBatch);
                     needRedo = true;
                 } catch (QiniuException e) {
-                    System.out.println(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
-                    fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
+                    System.out.println(prefix + "\t" + endFile + "\t" + marker + "\tprocess failed\t" + e.error());
+                    fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\tprocess failed\t" + e.error());
                     needRedo = false;
                     e.response.close();
                 }
-            } catch (Exception e) {
-                System.out.println(prefix + "\t" + endFile + "\t" + marker + "\t" + e.getMessage());
-                fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\t" + e.getMessage());
+            } catch (QiniuException e) {
+                System.out.println(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
+                fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
+                e.response.close();
             }
         }
     }
