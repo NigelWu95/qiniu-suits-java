@@ -31,10 +31,10 @@ public class ListBucketTest {
     }
 
     @Test
-    public void run() {
+    public void testRun() {
         Response response;
         try {
-            response = listBucket.run(bucket, "", "/", "", 1000, 3, 2);
+            response = listBucket.run(bucket, "v2/.6zer.com_2018-11-1", "", "", 1000, 3, 2);
             System.out.println(response.bodyString());
             response.close();
         } catch (QiniuException e) {
