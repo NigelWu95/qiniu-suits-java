@@ -221,15 +221,18 @@ public final class BucketManager {
         FileListing fileListing = new FileListing();
         List<FileInfo> fileInfoList = new ArrayList<>();
         Set<String> commonPrefixSet = new HashSet<>();
+        JsonObject jsonObject = new JsonObject();
         for (String line : lineList) {
-            JsonObject jsonObject = Json.decode(line, JsonObject.class);
+            jsonObject = Json.decode(line, JsonObject.class);
+            if (jsonObject == null) continue;
             if (!(jsonObject.get("item") instanceof JsonNull))
                 fileInfoList.add(JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class));
-            if (!"".equals(jsonObject.get("dir").getAsString())) commonPrefixSet.add(jsonObject.get("dir").getAsString());
+            String dir = jsonObject.get("dir").getAsString();
+            if (!"".equals(dir)) commonPrefixSet.add(dir);
         }
         fileListing.items = fileInfoList.toArray(new FileInfo[]{});
         fileListing.commonPrefixes = commonPrefixSet.toArray(new String[]{});
-        fileListing.marker = Json.decode(lineList.get(lineList.size() - 1), JsonObject.class).get("marker").getAsString();
+        fileListing.marker = jsonObject != null ? jsonObject.get("marker").getAsString() : "";
         return fileListing;
     }
 
@@ -703,19 +706,6 @@ public final class BucketManager {
         }
 
         /**
-         * 批量输入文件名方式添加copy指令，会默认保持原文件名，可以使用prefix来设置copy之后添加的文件名前缀
-         */
-        public BatchOperations addCopyOps(String from, String to, boolean force, String prefix, String... keys) {
-            for (String fileKey : keys) {
-                String fromEntry = encodedEntry(from, fileKey);
-                String toEntry = encodedEntry(to, prefix + fileKey);
-                ops.add(String.format("copy/%s/%s/force/%s", fromEntry, toEntry, force));
-            }
-            setExecBucket(from);
-            return this;
-        }
-
-        /**
          * 添加重命名指令
          */
         public BatchOperations addRenameOp(String fromBucket, String fromFileKey, String toFileKey) {
@@ -732,15 +722,14 @@ public final class BucketManager {
             setExecBucket(fromBucket);
             return this;
         }
-
         /**
-         * 批量输入文件名方式添加move指令，会默认保持原文件名，可以使用prefix来设置move之后添加的文件名前缀
+         * 批量输入文件名方式添加copy指令，会默认保持原文件名，可以使用prefix来设置copy之后添加的文件名前缀
          */
-        public BatchOperations addMoveOps(String from, String to, String prefix, String... keys) {
+        public BatchOperations addCopyOps(String from, String to, boolean force, String prefix, String... keys) {
             for (String fileKey : keys) {
                 String fromEntry = encodedEntry(from, fileKey);
                 String toEntry = encodedEntry(to, prefix + fileKey);
-                ops.add(String.format("move/%s/%s", from, to));
+                ops.add(String.format("copy/%s/%s/force/%s", fromEntry, toEntry, force));
             }
             setExecBucket(from);
             return this;
