@@ -6,6 +6,7 @@ import com.qiniu.model.ListBucketParams;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.Auth;
+import com.sun.org.apache.xml.internal.resolver.helpers.PublicId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,7 +31,7 @@ public class BucketManagerTest {
     }
 
     @Test
-    public void listFilesV2() {
+    public void testListFilesV2() {
         try {
             FileListing fileListing = bucketManager.listFilesV2(bucket, "", "", 1000, "/");
             System.out.println(Arrays.toString(fileListing.items));
@@ -41,4 +42,5 @@ public class BucketManagerTest {
             e.response.close();
         }
     }
+
 }

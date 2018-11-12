@@ -149,8 +149,7 @@ public class ListBucketProcess {
                 listResult.fileInfoList = listV2LineList.parallelStream()
                         .map(listV2Line -> listV2Line.fileInfo)
                         .collect(Collectors.toList());
-                listResult.nextMarker = lastListV2Line.map(listV2Line -> listV2Line.marker).orElse(null);
-//                lastListV2Line.ifPresent(listV2Line -> listResult.nextMarker = listV2Line.marker);
+                lastListV2Line.ifPresent(listV2Line -> listResult.nextMarker = listV2Line.marker);
             }
         }
 
