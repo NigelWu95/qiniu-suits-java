@@ -17,6 +17,7 @@ import java.util.*;
  * 参考文档：<a href="http://developer.qiniu.com/kodo/api/rs">资源管理</a>
  */
 public final class BucketManager {
+
     /**
      * Auth 对象
      * 该类需要使用QBox鉴权，所以需要指定Auth对象
@@ -722,6 +723,7 @@ public final class BucketManager {
             setExecBucket(fromBucket);
             return this;
         }
+
         /**
          * 批量输入文件名方式添加copy指令，会默认保持原文件名，可以使用prefix来设置copy之后添加的文件名前缀
          */
@@ -730,6 +732,19 @@ public final class BucketManager {
                 String fromEntry = encodedEntry(from, fileKey);
                 String toEntry = encodedEntry(to, prefix + fileKey);
                 ops.add(String.format("copy/%s/%s/force/%s", fromEntry, toEntry, force));
+            }
+            setExecBucket(from);
+            return this;
+        }
+
+        /**
+         * 批量输入文件名方式添加move指令，会默认保持原文件名，可以使用prefix来设置move之后添加的文件名前缀
+         */
+        public BatchOperations addMoveOps(String from, String to, String prefix, String... keys) {
+            for (String fileKey : keys) {
+                String fromEntry = encodedEntry(from, fileKey);
+                String toEntry = encodedEntry(to, prefix + fileKey);
+                ops.add(String.format("move/%s/%s", from, to));
             }
             setExecBucket(from);
             return this;
