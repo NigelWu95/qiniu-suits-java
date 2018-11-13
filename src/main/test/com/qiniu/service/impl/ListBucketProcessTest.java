@@ -37,8 +37,8 @@ public class ListBucketProcessTest {
         this.unitLen = listBucketParams.getUnitLen();
         this.unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         this.listBucket = new ListBucket(auth, configuration);
-        this.listBucketProcess = new ListBucketProcess(auth, configuration, bucket, unitLen, version, resultFileDir,
-                customPrefix, antiPrefix, 1);
+        this.listBucketProcess = new ListBucketProcess(auth, configuration, bucket, unitLen, version, customPrefix,
+                antiPrefix, 1);
     }
 
     @Test
