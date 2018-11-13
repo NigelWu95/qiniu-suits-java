@@ -43,9 +43,7 @@ public class ListBucketProcessTest {
 
     @Test
     public void testGetListResult() throws Exception {
-        Response response =
-//                listBucket.run(bucket, "e", "", "", unitLen, 1, version);
-        listBucket.run(bucket, "v2/.6zer.com_2018-11-", "", "", 1000, 3, 2);
+        Response response = listBucket.run(bucket, "e", "", "", unitLen, 1, version);
         ListResult listResult = listBucketProcess.getListResult(response, version);
         response.close();
         Assert.assertTrue(listResult.isValid());
