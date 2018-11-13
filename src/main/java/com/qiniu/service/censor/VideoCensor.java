@@ -39,8 +39,8 @@ public class VideoCensor {
         return videoCensor;
     }
 
-    private void setOp(String op, String hookURL, String labelsLabel, int labelsSelect, float labelsScore
-            , int terminateMode, String terminateLabel, String terminateLabelMax) {
+    private void setOp(String op, String hookURL, String labelsLabel, int labelsSelect, float labelsScore,
+                       int terminateMode, String terminateLabel, String terminateLabelMax) {
 
         JsonObject innerLabels = new JsonObject();
         innerLabels.addProperty("label", labelsLabel);
