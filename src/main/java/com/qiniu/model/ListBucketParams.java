@@ -15,6 +15,8 @@ public class ListBucketParams extends BaseParams {
     private String unitLen;
     private String customPrefix;
     private String antiPrefix;
+    private String resultFormat;
+    private String resultFileDir;
     private String process;
     private String processBatch;
 
@@ -27,6 +29,16 @@ public class ListBucketParams extends BaseParams {
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) {}
         try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
+        try {
+            this.resultFormat = getParamFromArgs("result-format");
+        } catch (Exception e) {
+            this.resultFormat = "json";
+        }
+        try {
+            this.resultFileDir = getParamFromArgs("result-path");
+        } catch (Exception e) {
+            this.resultFileDir = "../result";
+        }
         try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
     }
@@ -40,6 +52,16 @@ public class ListBucketParams extends BaseParams {
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) {}
         try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
+        try {
+            this.resultFormat = getParamFromConfig("result-format");
+        } catch (Exception e) {
+            this.resultFormat = "json";
+        }
+        try {
+            this.resultFileDir = getParamFromConfig("result-path");
+        } catch (Exception e) {
+            this.resultFileDir = "../result";
+        }
         try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
     }
@@ -80,16 +102,12 @@ public class ListBucketParams extends BaseParams {
         }
     }
 
-    public String getProcess() {
-        return process;
-    }
-
-    public boolean getProcessBatch() {
-        if (StringUtils.isNullOrEmpty(processBatch) || !processBatch.matches("(true|false)")) {
-            System.out.println("no incorrectly process-batch, it will use false as default.");
-            return false;
+    public int getUnitLen() {
+        if (StringUtils.isNullOrEmpty(unitLen) || !unitLen.matches("\\d+")) {
+            System.out.println("no incorrect unit-len, it will use 1000 as default.");
+            return 1000;
         } else {
-            return Boolean.valueOf(processBatch);
+            return Integer.valueOf(unitLen);
         }
     }
 
@@ -102,12 +120,24 @@ public class ListBucketParams extends BaseParams {
         return Arrays.asList(antiPrefix.split(","));
     }
 
-    public int getUnitLen() {
-        if (StringUtils.isNullOrEmpty(unitLen) || !unitLen.matches("\\d+")) {
-            System.out.println("no incorrect unit-len, it will use 1000 as default.");
-            return 1000;
+    public String getResultFormat() {
+        return resultFormat;
+    }
+
+    public String getResultFileDir() {
+        return System.getProperty("user.dir") + System.getProperty("file.separator") + resultFileDir;
+    }
+
+    public String getProcess() {
+        return process;
+    }
+
+    public boolean getProcessBatch() {
+        if (StringUtils.isNullOrEmpty(processBatch) || !processBatch.matches("(true|false)")) {
+            System.out.println("no incorrectly process-batch, it will use false as default.");
+            return false;
         } else {
-            return Integer.valueOf(unitLen);
+            return Boolean.valueOf(processBatch);
         }
     }
 }

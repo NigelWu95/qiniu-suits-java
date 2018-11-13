@@ -41,6 +41,7 @@ public class ListBucketMain {
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
+        String resultFormat = listBucketParams.getResultFormat();
         String resultFileDir = listBucketParams.getResultFileDir();
         boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
@@ -87,7 +88,7 @@ public class ListBucketMain {
 
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version,
                 customPrefix, antiPrefix, 3);
-        listBucketProcessor.setResultParams("json", resultFileDir);
+        listBucketProcessor.setResultParams(resultFormat, resultFileDir);
         if ("check".equals(process)) {
             listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix);
         } else {
