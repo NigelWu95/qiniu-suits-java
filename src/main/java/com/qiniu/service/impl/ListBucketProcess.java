@@ -144,11 +144,11 @@ public class ListBucketProcess {
                         .filter(line -> !StringUtils.isNullOrEmpty(line))
                         .map(this::getItemByList2Line)
                         .collect(Collectors.toList());
-                Optional<ListV2Line> lastListV2Line = listV2LineList.parallelStream()
-                        .max(ListV2Line::compareTo);
                 listResult.fileInfoList = listV2LineList.parallelStream()
                         .map(listV2Line -> listV2Line.fileInfo)
                         .collect(Collectors.toList());
+                Optional<ListV2Line> lastListV2Line = listV2LineList.parallelStream()
+                        .max(ListV2Line::compareTo);
                 lastListV2Line.ifPresent(listV2Line -> listResult.nextMarker = listV2Line.marker);
             }
         }

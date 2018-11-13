@@ -12,10 +12,18 @@ public class ListV2Line {
     public String dir = "";
 
     public int compareTo(ListV2Line listV2Line) {
-        if (listV2Line.fileInfo == null && this.fileInfo == null) return 0;
-        else if (this.fileInfo == null) return 1;
-        else if (listV2Line.fileInfo == null) return -1;
-        else return this.fileInfo.key.compareTo(listV2Line.fileInfo.key);
+        if (listV2Line.fileInfo == null && this.fileInfo == null) {
+            return 0;
+        } else if (this.fileInfo == null) {
+            if (!"".equals(marker)) {
+
+            }
+            return 1;
+        } else if (listV2Line.fileInfo == null) {
+            return -1;
+        } else {
+            return this.fileInfo.key.compareTo(listV2Line.fileInfo.key);
+        }
     }
 
     public boolean isDeleted() {
