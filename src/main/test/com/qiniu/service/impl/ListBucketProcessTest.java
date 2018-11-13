@@ -52,6 +52,6 @@ public class ListBucketProcessTest {
 
     @Test
     public void testStraightList() throws IOException {
-        listBucketProcess.straightList("", "", "", null, false);
+        listBucketProcess.straightList("v2", "", "eyJjIjowLCJrIjoidjIvY2RuLmRpYW5kaWFuc2h1LmNvbV8yMDE4LTA3LTA5LTE3X3BhcnQtMDAwMDAuZ3oifQ==", null, false);
     }
 }

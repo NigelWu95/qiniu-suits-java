@@ -1,8 +1,6 @@
 package com.qiniu.service.impl;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.qiniu.common.*;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
@@ -118,7 +116,13 @@ public class ListBucketProcess {
 
         ListV2Line listV2Line = new ListV2Line();
         if (!StringUtils.isNullOrEmpty(line)) {
-            JsonObject json = JsonConvertUtils.toJsonObject(line);
+            JsonObject json = new JsonObject();
+            try {
+                json = JsonConvertUtils.toJsonObject(line);
+            } catch (JsonParseException e) {
+                System.out.println(line);
+                e.printStackTrace();
+            }
             JsonElement item = json.get("item");
             JsonElement marker = json.get("marker");
             if (item != null && !(item instanceof JsonNull)) {
