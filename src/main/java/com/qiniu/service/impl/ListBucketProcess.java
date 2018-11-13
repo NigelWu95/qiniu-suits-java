@@ -18,6 +18,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ListBucketProcess {
 
@@ -26,7 +27,8 @@ public class ListBucketProcess {
     private String bucket;
     private int unitLen;
     private int version;
-    private String resultFileDir;
+    private String resultFormat = "json";
+    private String resultFileDir = "../result";
     private String customPrefix;
     private List<String> antiPrefix;
     private int retryCount;
@@ -39,16 +41,20 @@ public class ListBucketProcess {
             .split(""));
 
     public ListBucketProcess(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
-                             String resultFileDir, String customPrefix, List<String> antiPrefix, int retryCount) {
+                             String customPrefix, List<String> antiPrefix, int retryCount) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
         this.version = version;
-        this.resultFileDir = resultFileDir;
         this.customPrefix = customPrefix;
         this.antiPrefix = antiPrefix;
         this.retryCount = retryCount;
+    }
+
+    public void setResultParams(String resultFormat, String resultFileDir) {
+        this.resultFormat = resultFormat;
+        this.resultFileDir = resultFileDir;
     }
 
     public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
@@ -81,10 +87,10 @@ public class ListBucketProcess {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         if (fileReaderAndWriterMap != null) {
-            List<String> list = fileInfoList.parallelStream()
-                    .filter(Objects::nonNull)
-                    .map(JsonConvertUtils::toJsonWithoutUrlEscape)
-                    .collect(Collectors.toList());
+            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
+            List<String> list = resultFormat.equals("json") ?
+                    fileInfoStream.map(JsonConvertUtils::toJsonWithoutUrlEscape).collect(Collectors.toList()) :
+                    fileInfoStream.map(LineUtils::toSeparatedItemLine).collect(Collectors.toList());
             if (writeType == 1) fileReaderAndWriterMap.writeSuccess(String.join("\n", list));
             if (writeType == 2) fileReaderAndWriterMap.writeOther(String.join("\n", list));
         }
