@@ -59,7 +59,6 @@ public class ListBucketMain {
                 listBucketProcessor.straightList(customPrefix, "", "", iOssFileProcessor, processBatch);
             }
         }
-        if (iOssFileProcessor != null)
-            iOssFileProcessor.closeResource();
+        if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
     }
 }

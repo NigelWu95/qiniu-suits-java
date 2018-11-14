@@ -1,7 +1,7 @@
 package com.qiniu.entries;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.Zone;
+import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineParser;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class SourceFileMain {
@@ -24,6 +26,7 @@ public class SourceFileMain {
         String filePath = sourceFileParams.getFilePath();
         String process = sourceFileParams.getProcess();
         boolean processBatch = sourceFileParams.getProcessBatch();
+        int maxThreads = sourceFileParams.getMaxThreads();
         IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         String sourceFileDir = System.getProperty("user.dir");
         List<String> sourceReaders = new ArrayList<>();
@@ -43,16 +46,21 @@ public class SourceFileMain {
             sourceReaders.add(sourceFile.getName());
         }
 
-        try {
-            FileReaderAndWriterMap targetFileReaderAndWriterMap = new FileReaderAndWriterMap();
-            targetFileReaderAndWriterMap.initReader(sourceFileDir);
-            System.out.println(process + " started...");
-            ILineParser lineParser = new SplitLineParser(separator);;
+        int runningThreads = sourceReaders.size();
+        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
+        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
+        ExecutorService executorPool =  Executors.newFixedThreadPool(runningThreads);
+        FileReaderAndWriterMap resultFileMap = new FileReaderAndWriterMap();
+        resultFileMap.initReader(sourceFileDir);
+        System.out.println(process + " started...");
+        ILineParser lineParser = new SplitLineParser(separator);
 
-            for (int i = 0; i < sourceReaders.size(); i++) {
-                String sourceReaderKey = sourceReaders.get(i);
-                IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
-                BufferedReader bufferedReader = targetFileReaderAndWriterMap.getReader(sourceReaderKey);
+        for (int i = 0; i < sourceReaders.size(); i++) {
+            String sourceReaderKey = sourceReaders.get(i);
+            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
+            if (processor == null) break;
+            executorPool.execute(() -> {
+                BufferedReader bufferedReader = resultFileMap.getReader(sourceReaderKey);
                 if (processBatch) {
                     List<String> fileKeyList = bufferedReader.lines().parallel()
                             .map(line -> lineParser.getItemList(line).get(0))
@@ -65,22 +73,29 @@ public class SourceFileMain {
                             .forEach(line -> processor.processFile(lineParser.getItemList(line).get(0), 3));
                 }
 
-                if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400)
-                    throw iOssFileProcessor.qiniuException();
+                if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400) {
+                    QiniuException e = iOssFileProcessor.qiniuException();
+                    e.printStackTrace();
+                    resultFileMap.writeErrorOrNull(sourceReaderKey + "\tprocess failed\t" + e.error());
+                    e.response.close();
+                }
 
                 try {
                     bufferedReader.close();
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
-            }
-
-            System.out.println(process + " finished.");
-        } catch (IOException ioException) {
-            System.out.println("init stream writer or reader failed: " + ioException.getMessage() + ". it need retry.");
-            ioException.printStackTrace();
-        } finally {
-            if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
+            });
         }
+
+        executorPool.shutdown();
+        try {
+            while (!executorPool.isTerminated())
+                Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(process + " finished.");
+        if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
     }
 }
