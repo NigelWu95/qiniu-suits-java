@@ -12,21 +12,24 @@ public class CommonParams extends BaseParams {
     private String resultFileDir;
     private String process;
     private String processBatch;
+    private String maxThreads;
 
     public CommonParams(String[] args) throws Exception {
         super(args);
-        try { this.resultFormat = getParamFromArgs("result-format"); } catch (Exception e) { this.resultFormat = ""; }
-        try { this.resultFileDir = getParamFromArgs("result-path"); } catch (Exception e) { this.resultFileDir = ""; }
-        try { this.process = getParamFromArgs("process"); } catch (Exception e) { this.process = ""; }
+        try { this.resultFormat = getParamFromArgs("result-format"); } catch (Exception e) {}
+        try { this.resultFileDir = getParamFromArgs("result-path"); } catch (Exception e) {}
+        try { this.process = getParamFromArgs("process"); } catch (Exception e) {}
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
+        try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) {}
     }
 
     public CommonParams(String configFileName) throws Exception {
         super(configFileName);
-        try { this.resultFormat = getParamFromConfig("result-format"); } catch (Exception e) { this.resultFormat = ""; }
-        try { this.resultFileDir = getParamFromConfig("result-path"); } catch (Exception e) { this.resultFileDir = ""; }
-        try { this.process = getParamFromConfig("process"); } catch (Exception e) { this.process = ""; }
+        try { this.resultFormat = getParamFromConfig("result-format"); } catch (Exception e) {}
+        try { this.resultFileDir = getParamFromConfig("result-path"); } catch (Exception e) {}
+        try { this.process = getParamFromConfig("process"); } catch (Exception e) {}
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
+        try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) {}
     }
 
     public String getResultFormat() {
@@ -56,6 +59,15 @@ public class CommonParams extends BaseParams {
             return false;
         } else {
             return Boolean.valueOf(processBatch);
+        }
+    }
+
+    public int getMaxThreads() {
+        if (StringUtils.isNullOrEmpty(maxThreads) || !maxThreads.matches("[1-9]\\d*")) {
+            System.out.println("no incorrect threads, it will use 10 as default.");
+            return 10;
+        } else {
+            return Integer.valueOf(maxThreads);
         }
     }
 }

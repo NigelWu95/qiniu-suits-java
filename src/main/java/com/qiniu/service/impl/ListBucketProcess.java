@@ -270,7 +270,7 @@ public class ListBucketProcess {
                     processResult(fileInfoList, processor, processBatch);
                     needRedo = true;
                 } catch (QiniuException e) {
-                    System.out.println(prefix + "\t" + endFile + "\t" + marker + "\tprocess failed\t" + e.error());
+                    e.printStackTrace();
                     fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\tprocess failed\t" + e.error());
                     needRedo = false;
                     e.response.close();
@@ -349,12 +349,12 @@ public class ListBucketProcess {
         return Executors.newFixedThreadPool(runningThreads);
     }
 
-    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch)
+    public void processBucket(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
             throws IOException, CloneNotSupportedException {
 
         List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
         ExecutorService executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
-        listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch);
+        listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())
@@ -362,6 +362,6 @@ public class ListBucketProcess {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("list and " + iOssFileProcessor.getProcessName() + " finished");
+        System.out.println("list " + (processor == null ? "" : "and " + processor.getProcessName()) + " finished");
     }
 }
