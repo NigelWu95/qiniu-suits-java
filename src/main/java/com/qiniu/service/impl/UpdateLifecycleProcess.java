@@ -11,27 +11,29 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.List;
 
-public class UpdateLifecycleProcess implements IOssFileProcess {
+public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
 
     private UpdateLifecycle updateLifecycle;
     private String bucket;
     private int days;
     private String resultFileDir;
+    private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
     public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                                  int resultFileIndex) throws IOException {
+                                  String processName, int resultFileIndex) throws IOException {
         this.updateLifecycle = new UpdateLifecycle(auth, configuration);
         this.bucket = bucket;
         this.days = days;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", resultFileIndex);
+        this.processName = processName;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir)
-            throws IOException {
-        this(auth, configuration, bucket, days, resultFileDir, 0);
+    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
+                                  String processName) throws IOException {
+        this(auth, configuration, bucket, days, resultFileDir, processName, 0);
     }
 
     public UpdateLifecycleProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -39,12 +41,16 @@ public class UpdateLifecycleProcess implements IOssFileProcess {
         updateLifecycleProcess.updateLifecycle = updateLifecycle.clone();
         updateLifecycleProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "lifecycle", resultFileIndex);
+            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
         return updateLifecycleProcess;
+    }
+
+    public String getProcessName() {
+        return this.processName;
     }
 
     public QiniuException qiniuException() {

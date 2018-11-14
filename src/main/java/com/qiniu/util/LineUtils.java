@@ -1,6 +1,7 @@
 package com.qiniu.util;
 
 import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.storage.model.FileInfo;
 
 public class LineUtils {
 
@@ -14,5 +15,11 @@ public class LineUtils {
         }
 
         return items[index];
+    }
+
+    public static String toSeparatedItemLine(FileInfo fileInfo) {
+
+        return fileInfo.key + "\t" + fileInfo.hash + "\t" + fileInfo.fsize + "\t" + fileInfo.putTime
+                + "\t" + fileInfo.type;
     }
 }

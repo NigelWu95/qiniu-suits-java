@@ -1,8 +1,6 @@
 package com.qiniu.service.impl;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.qiniu.common.*;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IOssFileProcess;
@@ -18,6 +16,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ListBucketProcess {
 
@@ -26,7 +25,8 @@ public class ListBucketProcess {
     private String bucket;
     private int unitLen;
     private int version;
-    private String resultFileDir;
+    private String resultFormat = "json";
+    private String resultFileDir = "../result";
     private String customPrefix;
     private List<String> antiPrefix;
     private int retryCount;
@@ -39,16 +39,20 @@ public class ListBucketProcess {
             .split(""));
 
     public ListBucketProcess(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
-                             String resultFileDir, String customPrefix, List<String> antiPrefix, int retryCount) {
+                             String customPrefix, List<String> antiPrefix, int retryCount) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
         this.version = version;
-        this.resultFileDir = resultFileDir;
         this.customPrefix = customPrefix;
         this.antiPrefix = antiPrefix;
         this.retryCount = retryCount;
+    }
+
+    public void setResultParams(String resultFormat, String resultFileDir) {
+        this.resultFormat = resultFormat;
+        this.resultFileDir = resultFileDir;
     }
 
     public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
@@ -81,10 +85,10 @@ public class ListBucketProcess {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         if (fileReaderAndWriterMap != null) {
-            List<String> list = fileInfoList.parallelStream()
-                    .filter(Objects::nonNull)
-                    .map(JsonConvertUtils::toJsonWithoutUrlEscape)
-                    .collect(Collectors.toList());
+            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
+            List<String> list = resultFormat.equals("json") ?
+                    fileInfoStream.map(JsonConvertUtils::toJsonWithoutUrlEscape).collect(Collectors.toList()) :
+                    fileInfoStream.map(LineUtils::toSeparatedItemLine).collect(Collectors.toList());
             if (writeType == 1) fileReaderAndWriterMap.writeSuccess(String.join("\n", list));
             if (writeType == 2) fileReaderAndWriterMap.writeOther(String.join("\n", list));
         }
@@ -112,7 +116,13 @@ public class ListBucketProcess {
 
         ListV2Line listV2Line = new ListV2Line();
         if (!StringUtils.isNullOrEmpty(line)) {
-            JsonObject json = JsonConvertUtils.toJsonObject(line);
+            JsonObject json = new JsonObject();
+            try {
+                json = JsonConvertUtils.toJsonObject(line);
+            } catch (JsonParseException e) {
+                System.out.println(line);
+                e.printStackTrace();
+            }
             JsonElement item = json.get("item");
             JsonElement marker = json.get("marker");
             if (item != null && !(item instanceof JsonNull)) {
@@ -144,12 +154,12 @@ public class ListBucketProcess {
                         .filter(line -> !StringUtils.isNullOrEmpty(line))
                         .map(this::getItemByList2Line)
                         .collect(Collectors.toList());
-                Optional<ListV2Line> lastListV2Line = listV2LineList.parallelStream()
-                        .max(ListV2Line::compareTo);
                 listResult.fileInfoList = listV2LineList.parallelStream()
                         .map(listV2Line -> listV2Line.fileInfo)
                         .collect(Collectors.toList());
-                listResult.nextMarker = lastListV2Line.map(listV2Line -> listV2Line.marker).orElse(null);
+                Optional<ListV2Line> lastListV2Line = listV2LineList.parallelStream()
+                        .max(ListV2Line::compareTo);
+                lastListV2Line.ifPresent(listV2Line -> listResult.nextMarker = listV2Line.marker);
             }
         }
 
@@ -260,14 +270,16 @@ public class ListBucketProcess {
                     processResult(fileInfoList, processor, processBatch);
                     needRedo = true;
                 } catch (QiniuException e) {
-                    System.out.println(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
-                    fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
+                    e.printStackTrace();
+                    fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\tprocess failed\t" + e.error());
+                    fileMap.flushErrorOrNull();
                     needRedo = false;
                     e.response.close();
                 }
-            } catch (Exception e) {
-                System.out.println(prefix + "\t" + endFile + "\t" + marker + "\t" + e.getMessage());
-                fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\t" + e.getMessage());
+            } catch (QiniuException e) {
+                System.out.println(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
+                fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\t" + e.error());
+                e.response.close();
             }
         }
     }
@@ -280,6 +292,7 @@ public class ListBucketProcess {
         marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
         loopList(listBucket, prefix, endFile, marker, fileMap, iOssFileProcessor, processBatch);
         fileMap.closeWriter();
+        System.out.println("list finished");
     }
 
     private void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
@@ -337,12 +350,12 @@ public class ListBucketProcess {
         return Executors.newFixedThreadPool(runningThreads);
     }
 
-    public void processBucket(int maxThreads, int level, IOssFileProcess iOssFileProcessor, boolean processBatch)
+    public void processBucket(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
             throws IOException, CloneNotSupportedException {
 
         List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
         ExecutorService executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
-        listTotalWithPrefix(executorPool, listResultList, iOssFileProcessor, processBatch);
+        listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())
@@ -350,5 +363,6 @@ public class ListBucketProcess {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("list " + (processor == null ? "" : "and " + processor.getProcessName()) + " finished");
     }
 }
