@@ -29,39 +29,9 @@ public class ListBucketMain {
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
-        IOssFileProcess iOssFileProcessor = null;
+        IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
-
-        switch (process) {
-            case "status": {
-                FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
-                        resultFileDir);
-                break;
-            }
-            case "type": {
-                FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFilePath) : new FileTypeParams(args);
-                iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
-                        resultFileDir);
-                break;
-            }
-            case "copy": {
-                FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                accessKey = "".equals(fileCopyParams.getAKey()) ? accessKey : fileCopyParams.getAKey();
-                secretKey = "".equals(fileCopyParams.getSKey()) ? secretKey : fileCopyParams.getSKey();
-                iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration, fileCopyParams.getSourceBucket(),
-                        fileCopyParams.getTargetBucket(), fileCopyParams.getTargetKeyPrefix(), resultFileDir);
-                break;
-            }
-            case "lifecycle": {
-                LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                iOssFileProcessor = new UpdateLifecycleProcess(Auth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
-                        lifecycleParams.getDays(), resultFileDir);
-                break;
-            }
-        }
-
         ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version,
                 customPrefix, antiPrefix, 3);
         listBucketProcessor.setResultParams(resultFormat, resultFileDir);
