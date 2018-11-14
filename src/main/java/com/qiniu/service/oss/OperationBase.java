@@ -34,15 +34,15 @@ public abstract class OperationBase {
 
         try {
             response = bucketManager.batch(batchOperations);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
+        } catch (QiniuException e) {
+            HttpResponseUtils.checkRetryCount(e, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(operation + " " + e1.error() + ", last " + retryCount + " times retry...");
+                    System.out.println(operation + " " + e.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.batch(batchOperations);
                     retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                } catch (QiniuException e1) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                 }
             }
         }

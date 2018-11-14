@@ -57,7 +57,7 @@ public class SourceFileMain {
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
             if (processor == null) break;
             FileReaderAndWriterMap resultFileMap = new FileReaderAndWriterMap();
-            resultFileMap.initWriter(resultFileDir, process, sourceReaderKey);
+            resultFileMap.initWriter(resultFileDir, "", sourceReaderKey);
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
                 ILineParser lineParser = new SplitLineParser(separator);
