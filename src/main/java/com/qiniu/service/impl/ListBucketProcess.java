@@ -291,6 +291,7 @@ public class ListBucketProcess {
         marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
         loopList(listBucket, prefix, endFile, marker, fileMap, iOssFileProcessor, processBatch);
         fileMap.closeWriter();
+        System.out.println("list finished");
     }
 
     private void listTotalWithPrefix(ExecutorService executorPool, List<ListResult> listResultList, IOssFileProcess iOssFileProcessor,
@@ -361,5 +362,6 @@ public class ListBucketProcess {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("list finished");
     }
 }
