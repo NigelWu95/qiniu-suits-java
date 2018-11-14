@@ -8,16 +8,16 @@ import java.util.*;
 
 public class SplitLineParser implements ILineParser {
 
-    private String delimiter;
+    private String separator;
     private ArrayList<String> itemList;
     private Map<String, String> itemMap;
 
-    public SplitLineParser(String delimiter) {
-        this.delimiter = delimiter;
+    public SplitLineParser(String separator) {
+        this.separator = separator;
     }
 
     public void splitLine(String line) {
-        String[] items = line.split(delimiter);
+        String[] items = line.split(separator);
         this.itemList = new ArrayList<>(Arrays.asList(items));
     }
 
