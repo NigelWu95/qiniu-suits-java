@@ -35,11 +35,11 @@ public class EntryMain {
 
         String sourceType;
         if (paramFromConfig) {
-            MainArgsUtils.setParamsMap(args);
-            sourceType = MainArgsUtils.getParamValue("source-type");
-        } else {
             PropertyConfig propertyConfig = new PropertyConfig(configFilePath);
             sourceType = propertyConfig.getProperty("source-type");
+        } else {
+            MainArgsUtils.setParamsMap(args);
+            sourceType = MainArgsUtils.getParamValue("source-type");
         }
 
         if ("list".equals(sourceType)) ListBucketMain.runMain(paramFromConfig, args, configFilePath);

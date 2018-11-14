@@ -26,28 +26,29 @@ public class ProcessChoice {
         switch (process) {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
-                        resultFileDir);
+                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(),
+                        fileStatusParams.getTargetStatus(), resultFileDir, process);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFilePath) : new FileTypeParams(args);
-                iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
-                        resultFileDir);
+                iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(),
+                        fileTypeParams.getTargetType(), resultFileDir, process);
                 break;
             }
             case "copy": {
                 FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFilePath) : new FileCopyParams(args);
                 accessKey = "".equals(fileCopyParams.getAKey()) ? accessKey : fileCopyParams.getAKey();
                 secretKey = "".equals(fileCopyParams.getSKey()) ? secretKey : fileCopyParams.getSKey();
-                iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration, fileCopyParams.getSourceBucket(),
-                        fileCopyParams.getTargetBucket(), fileCopyParams.getTargetKeyPrefix(), resultFileDir);
+                iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration,
+                        fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(),
+                        fileCopyParams.getTargetKeyPrefix(), resultFileDir, process);
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                iOssFileProcessor = new UpdateLifecycleProcess(Auth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
-                        lifecycleParams.getDays(), resultFileDir);
+                iOssFileProcessor = new UpdateLifecycleProcess(Auth.create(accessKey, secretKey), configuration,
+                        lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir, process);
                 break;
             }
         }

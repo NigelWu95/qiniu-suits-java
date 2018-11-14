@@ -7,6 +7,8 @@ public interface IUrlItemProcess {
 
     QiniuException qiniuException();
 
+    String getProcessName();
+
     void processItem(String source, String item);
 
     void processItem(String source, String item, String key);
