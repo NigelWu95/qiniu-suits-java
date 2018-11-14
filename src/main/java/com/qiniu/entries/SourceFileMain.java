@@ -27,40 +27,40 @@ public class SourceFileMain {
         String process = sourceFileParams.getProcess();
         boolean processBatch = sourceFileParams.getProcessBatch();
         int maxThreads = sourceFileParams.getMaxThreads();
+        String resultFileDir = sourceFileParams.getResultFileDir();
         IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
-        String sourceFileDir = System.getProperty("user.dir");
         List<String> sourceReaders = new ArrayList<>();
-
-        if (filePath.endsWith(System.getProperty("file.separator"))) {
-            File sourceDir = new File(System.getProperty("user.dir") + filePath);
-            File[] fs = sourceDir.listFiles();
-
+        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
+        File sourceFile = new File(sourceFilePath);
+        if (sourceFile.isDirectory()) {
+            File[] fs = sourceFile.listFiles();
             for(File f : fs) {
                 if (!f.isDirectory()) {
                     sourceReaders.add(f.getName());
+                    fileMap.initReader(sourceFile.getPath(), f.getName());
                 }
             }
         } else {
-            File sourceFile = new File(System.getProperty("user.dir") + filePath);
-            sourceFileDir = sourceFile.getParent();
             sourceReaders.add(sourceFile.getName());
+            fileMap.initReader(sourceFile.getParent(), sourceFile.getName());
         }
 
         int runningThreads = sourceReaders.size();
         runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
         System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
         ExecutorService executorPool =  Executors.newFixedThreadPool(runningThreads);
-        FileReaderAndWriterMap resultFileMap = new FileReaderAndWriterMap();
-        resultFileMap.initReader(sourceFileDir);
         System.out.println(process + " started...");
-        ILineParser lineParser = new SplitLineParser(separator);
 
         for (int i = 0; i < sourceReaders.size(); i++) {
             String sourceReaderKey = sourceReaders.get(i);
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
             if (processor == null) break;
+            FileReaderAndWriterMap resultFileMap = new FileReaderAndWriterMap();
+            resultFileMap.initWriter(resultFileDir, process, sourceReaderKey);
             executorPool.execute(() -> {
-                BufferedReader bufferedReader = resultFileMap.getReader(sourceReaderKey);
+                BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
+                ILineParser lineParser = new SplitLineParser(separator);
                 if (processBatch) {
                     List<String> fileKeyList = bufferedReader.lines().parallel()
                             .map(line -> lineParser.getItemList(line).get(0))
@@ -77,6 +77,7 @@ public class SourceFileMain {
                     QiniuException e = iOssFileProcessor.qiniuException();
                     e.printStackTrace();
                     resultFileMap.writeErrorOrNull(sourceReaderKey + "\tprocess failed\t" + e.error());
+                    resultFileMap.flushErrorOrNull();
                     e.response.close();
                 }
 

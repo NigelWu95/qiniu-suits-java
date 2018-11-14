@@ -11,7 +11,7 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.List;
 
-public class UpdateLifecycleProcess implements IOssFileProcess {
+public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
 
     private UpdateLifecycle updateLifecycle;
     private String bucket;

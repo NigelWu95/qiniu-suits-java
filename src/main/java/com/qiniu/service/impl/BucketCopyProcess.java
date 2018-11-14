@@ -11,7 +11,7 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.List;
 
-public class BucketCopyProcess implements IOssFileProcess {
+public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     private BucketCopy bucketCopy;
     private String resultFileDir;

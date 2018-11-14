@@ -11,7 +11,7 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.List;
 
-public class ChangeStatusProcess implements IOssFileProcess {
+public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     private ChangeStatus changeStatus;
     private String bucket;

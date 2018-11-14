@@ -272,6 +272,7 @@ public class ListBucketProcess {
                 } catch (QiniuException e) {
                     e.printStackTrace();
                     fileMap.writeErrorOrNull(prefix + "\t" + endFile + "\t" + marker + "\tprocess failed\t" + e.error());
+                    fileMap.flushErrorOrNull();
                     needRedo = false;
                     e.response.close();
                 }
