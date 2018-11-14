@@ -7,40 +7,17 @@ import com.qiniu.service.impl.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ListBucketMain {
 
-    public static void main(String[] args) throws Exception {
-
-        List<String> configFiles = new ArrayList<String>(){{
-            add("resources/qiniu.properties");
-            add("resources/.qiniu.properties");
-        }};
-        boolean paramFromConfig = true;
-        if (args != null && args.length > 0) {
-            if (args[0].startsWith("-config=")) configFiles.add(args[0].split("=")[1]);
-            else paramFromConfig = false;
-        }
-        String configFilePath = null;
-        if (paramFromConfig) {
-            for (int i = configFiles.size() - 1; i >= 0; i--) {
-                File file = new File(configFiles.get(i));
-                if (file.exists()) {
-                    configFilePath = configFiles.get(i);
-                    break;
-                }
-            }
-            if (configFilePath == null) throw new Exception("there is no config file detected.");
-            else paramFromConfig = true;
-        }
+    public static void runMain(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
 
         ListBucketParams listBucketParams = paramFromConfig ? new ListBucketParams(configFilePath) : new ListBucketParams(args);
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
+        String resultFormat = listBucketParams.getResultFormat();
         String resultFileDir = listBucketParams.getResultFileDir();
         boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
@@ -52,41 +29,12 @@ public class ListBucketMain {
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
-        IOssFileProcess iOssFileProcessor = null;
+        IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
-
-        switch (process) {
-            case "status": {
-                FileStatusParams fileStatusParams = paramFromConfig ? new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(), fileStatusParams.getTargetStatus(),
-                        resultFileDir);
-                break;
-            }
-            case "type": {
-                FileTypeParams fileTypeParams = paramFromConfig ? new FileTypeParams(configFilePath) : new FileTypeParams(args);
-                iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(), fileTypeParams.getTargetType(),
-                        resultFileDir);
-                break;
-            }
-            case "copy": {
-                FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                accessKey = "".equals(fileCopyParams.getAKey()) ? accessKey : fileCopyParams.getAKey();
-                secretKey = "".equals(fileCopyParams.getSKey()) ? secretKey : fileCopyParams.getSKey();
-                iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration, fileCopyParams.getSourceBucket(),
-                        fileCopyParams.getTargetBucket(), fileCopyParams.getTargetKeyPrefix(), resultFileDir);
-                break;
-            }
-            case "lifecycle": {
-                LifecycleParams lifecycleParams = paramFromConfig ? new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                iOssFileProcessor = new UpdateLifecycleProcess(Auth.create(accessKey, secretKey), configuration, lifecycleParams.getBucket(),
-                        lifecycleParams.getDays(), resultFileDir);
-                break;
-            }
-        }
-
-        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version, resultFileDir,
+        ListBucketProcess listBucketProcessor = new ListBucketProcess(auth, configuration, bucket, unitLen, version,
                 customPrefix, antiPrefix, 3);
+        listBucketProcessor.setResultParams(resultFormat, resultFileDir);
         if ("check".equals(process)) {
             listBucketProcessor.checkValidPrefix(level, customPrefix, antiPrefix);
         } else {
@@ -111,7 +59,6 @@ public class ListBucketMain {
                 listBucketProcessor.straightList(customPrefix, "", "", iOssFileProcessor, processBatch);
             }
         }
-        if (iOssFileProcessor != null)
-            iOssFileProcessor.closeResource();
+        if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
     }
 }

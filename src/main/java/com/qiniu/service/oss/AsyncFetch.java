@@ -17,23 +17,10 @@ public class AsyncFetch {
     private Client client;
     private String bucket;
 
-    private static volatile AsyncFetch asyncFetch = null;
-
     public AsyncFetch(Auth auth, String bucket) {
         this.bucket = bucket;
         this.auth = auth;
         this.client = new Client();
-    }
-
-    public static AsyncFetch getInstance(Auth auth, String bucket) {
-        if (asyncFetch == null) {
-            synchronized (AsyncFetch.class) {
-                if (asyncFetch == null) {
-                    asyncFetch = new AsyncFetch(auth, bucket);
-                }
-            }
-        }
-        return asyncFetch;
     }
 
     public String run(String url, String key, int retryCount) throws QiniuException {
