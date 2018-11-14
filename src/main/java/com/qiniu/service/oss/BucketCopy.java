@@ -41,7 +41,7 @@ public class BucketCopy extends OperationBase implements Cloneable {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("status " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + keyPrefix
+                    System.out.println("copy " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + keyPrefix
                             + tarKey + " " + e1.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.copy(fromBucket, srcKey, toBucket, keyPrefix + tarKey, false);
                     retryCount = 0;
@@ -58,8 +58,8 @@ public class BucketCopy extends OperationBase implements Cloneable {
                                         boolean force, int retryCount) throws QiniuException {
 
         batchOperations.addCopyOps(fromBucket, toBucket, force, keyPrefix, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch copy " + fromBucket + ":" + keys + " to "
-                + toBucket + " " + keyPrefix);
+        Response response = batchWithRetry(retryCount, "batch copy " + fromBucket + " to " + toBucket + ":"
+                + keyPrefix);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;

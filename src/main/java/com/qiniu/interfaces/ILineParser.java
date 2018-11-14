@@ -23,9 +23,7 @@ public interface ILineParser {
     String toString();
 
     default String getByKey(String key) {
-
-        System.out.println(toString());
         JsonObject lineJson = JsonConvertUtils.toJsonObject(toString());
         return lineJson.get(key)  == null ? null : lineJson.get(key).getAsString();
-    };
+    }
 }
