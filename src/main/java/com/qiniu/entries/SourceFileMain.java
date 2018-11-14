@@ -22,8 +22,9 @@ public class SourceFileMain {
     public static void runMain(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
 
         SourceFileParams sourceFileParams = paramFromConfig ? new SourceFileParams(configFilePath) : new SourceFileParams(args);
-        String separator = sourceFileParams.getSeparator();
         String filePath = sourceFileParams.getFilePath();
+        String separator = sourceFileParams.getSeparator();
+        int keyIndex = sourceFileParams.getKeyIndex();
         String process = sourceFileParams.getProcess();
         boolean processBatch = sourceFileParams.getProcessBatch();
         int maxThreads = sourceFileParams.getMaxThreads();
@@ -63,14 +64,14 @@ public class SourceFileMain {
                 ILineParser lineParser = new SplitLineParser(separator);
                 if (processBatch) {
                     List<String> fileKeyList = bufferedReader.lines().parallel()
-                            .map(line -> lineParser.getItemList(line).get(0))
+                            .map(line -> lineParser.getItemList(line).get(keyIndex))
                             .filter(key -> !StringUtils.isNullOrEmpty(key))
                             .collect(Collectors.toList());
                     iOssFileProcessor.processFile(fileKeyList, 3);
                 } else {
                     bufferedReader.lines().parallel()
                             .filter(key -> !StringUtils.isNullOrEmpty(key))
-                            .forEach(line -> processor.processFile(lineParser.getItemList(line).get(0), 3));
+                            .forEach(line -> processor.processFile(lineParser.getItemList(line).get(keyIndex), 3));
                 }
 
                 if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400) {
