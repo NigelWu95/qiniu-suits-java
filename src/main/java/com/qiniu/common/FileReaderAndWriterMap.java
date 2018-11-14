@@ -102,16 +102,16 @@ public class FileReaderAndWriterMap implements Cloneable {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
                 reader = new BufferedReader(fileReader);
                 fileKey = f.getName();
-                this.readerMap.put(fileKey.endsWith(".txt") ? fileKey.split("\\.txt")[0] : fileKey, reader);
+                this.readerMap.put(fileKey, reader);
             }
         }
     }
 
     public void initReader(String fileDir, String key) throws IOException {
-        File sourceFile = new File(fileDir, key + ".txt");
+        File sourceFile = new File(fileDir, key);
         FileReader fileReader = new FileReader(sourceFile);
         BufferedReader reader = new BufferedReader(fileReader);
-        this.readerMap.put(key.endsWith(".txt") ? key.split("\\.txt")[0] : key, reader);
+        this.readerMap.put(key, reader);
     }
 
     public BufferedReader getReader(String key) {
@@ -139,6 +139,15 @@ public class FileReaderAndWriterMap implements Cloneable {
         }
     }
 
+    private void doFlush(String key) {
+        try {
+            getWriter(key).flush();
+        } catch (IOException ioException) {
+            System.out.println("Writer " + key + " flush failed");
+            ioException.printStackTrace();
+        }
+    }
+
     public void writeKeyFile(String key, String item) {
         if (!writerMap.keySet().contains(key)) {
             try {
@@ -162,5 +171,17 @@ public class FileReaderAndWriterMap implements Cloneable {
 
     public void writeOther(String item) {
         doWrite(this.prefix + "_other" + suffix, item);
+    }
+
+    public void flushSuccess() {
+        doFlush(this.prefix + "_success" + suffix);
+    }
+
+    public void flushErrorOrNull() {
+        doFlush(this.prefix + "_error_null" + suffix);
+    }
+
+    public void flushOther() {
+        doFlush(this.prefix + "_other" + suffix);
     }
 }
