@@ -17,21 +17,23 @@ public class ChangeStatusProcess implements IOssFileProcess {
     private String bucket;
     private short fileStatus;
     private String resultFileDir;
+    private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
     public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
-                               int resultFileIndex) throws IOException {
+                               String processName, int resultFileIndex) throws IOException {
         this.changeStatus = new ChangeStatus(auth, configuration);
         this.bucket = bucket;
         this.fileStatus = fileStatus;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileIndex);
+        this.processName = processName;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir)
-            throws IOException {
-        this(auth, configuration, bucket, fileStatus, resultFileDir, 0);
+    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, short fileStatus, String resultFileDir,
+                               String processName) throws IOException {
+        this(auth, configuration, bucket, fileStatus, resultFileDir, processName, 0);
     }
 
     public ChangeStatusProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -39,12 +41,16 @@ public class ChangeStatusProcess implements IOssFileProcess {
         changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "status", resultFileIndex);
+            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
         return changeStatusProcess;
+    }
+
+    public String getProcessName() {
+        return this.processName;
     }
 
     public QiniuException qiniuException() {

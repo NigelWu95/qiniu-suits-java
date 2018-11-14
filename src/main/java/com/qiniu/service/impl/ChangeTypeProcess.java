@@ -17,21 +17,23 @@ public class ChangeTypeProcess implements IOssFileProcess {
     private String bucket;
     private int fileType;
     private String resultFileDir;
+    private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private QiniuException qiniuException = null;
 
     public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
-            int resultFileIndex) throws IOException {
+                             String processName, int resultFileIndex) throws IOException {
         this.changeType = new ChangeType(auth, configuration);
         this.bucket = bucket;
         this.fileType = fileType;
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "type", resultFileIndex);
+        this.processName = processName;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileStatus, String resultFileDir)
-            throws IOException {
-        this(auth, configuration, bucket, fileStatus, resultFileDir, 0);
+    public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileStatus, String processName,
+                             String resultFileDir) throws IOException {
+        this(auth, configuration, bucket, fileStatus, resultFileDir, processName, 0);
     }
 
     public ChangeTypeProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -39,12 +41,16 @@ public class ChangeTypeProcess implements IOssFileProcess {
         changeTypeProcess.changeType = changeType.clone();
         changeTypeProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "type", resultFileIndex);
+            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
         return changeTypeProcess;
+    }
+
+    public String getProcessName() {
+        return this.processName;
     }
 
     public QiniuException qiniuException() {

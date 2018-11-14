@@ -10,6 +10,8 @@ public interface IOssFileProcess {
 
     QiniuException qiniuException();
 
+    String getProcessName();
+
     void processFile(String fileKey, int retryCount);
 
     void processFile(List<String> keyList, int retryCount);

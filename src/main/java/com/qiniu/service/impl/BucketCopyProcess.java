@@ -15,6 +15,7 @@ public class BucketCopyProcess implements IOssFileProcess {
 
     private BucketCopy bucketCopy;
     private String resultFileDir;
+    private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private String srcBucket;
     private String tarBucket;
@@ -22,19 +23,20 @@ public class BucketCopyProcess implements IOssFileProcess {
     private QiniuException qiniuException = null;
 
     public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir, int resultFileIndex) throws IOException {
+                             String keyPrefix, String resultFileDir, String processName, int resultFileIndex) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", resultFileIndex);
+        this.processName = processName;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         this.srcBucket = sourceBucket;
         this.tarBucket = targetBucket;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
     public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
-                             String resultFileDir)
+                             String resultFileDir, String processName)
             throws IOException {
-        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir, 0);
+        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir, processName, 0);
     }
 
     public BucketCopyProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -42,12 +44,16 @@ public class BucketCopyProcess implements IOssFileProcess {
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, "copy", resultFileIndex);
+            bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
         return bucketCopyProcess;
+    }
+
+    public String getProcessName() {
+        return this.processName;
     }
 
     public QiniuException qiniuException() {

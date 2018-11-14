@@ -16,18 +16,29 @@ import java.util.List;
 public class AsyncFetchProcess implements IUrlItemProcess {
 
     private AsyncFetch asyncFetch;
+    private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private M3U8Manager m3u8Manager;
     private QiniuException qiniuException = null;
 
-    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir) throws IOException {
+    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
         this.asyncFetch = new AsyncFetch(auth, targetBucket);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch", null);
+        this.processName = processName;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, null);
     }
 
-    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, M3U8Manager m3u8Manager) throws IOException {
-        this(auth, targetBucket, resultFileDir);
+    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName, M3U8Manager m3u8Manager)
+            throws IOException {
+        this(auth, targetBucket, resultFileDir, processName);
         this.m3u8Manager = m3u8Manager;
+    }
+
+    public String getProcessName() {
+        return this.processName;
+    }
+
+    public QiniuException qiniuException() {
+        return qiniuException;
     }
 
     private void fetchResult(String url, String key) {
@@ -39,10 +50,6 @@ public class AsyncFetchProcess implements IUrlItemProcess {
             if (!e.response.needRetry()) qiniuException = e;
             else e.response.close();
         }
-    }
-
-    public QiniuException qiniuException() {
-        return qiniuException;
     }
 
     public void processItem(String source, String item) {

@@ -362,6 +362,6 @@ public class ListBucketProcess {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("list finished");
+        System.out.println("list and " + iOssFileProcessor.getProcessName() + " finished");
     }
 }
