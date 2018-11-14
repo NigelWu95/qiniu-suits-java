@@ -4,8 +4,8 @@ import com.qiniu.util.StringUtils;
 
 public class FileCopyParams extends BaseParams {
 
-    private String aKey = "";
-    private String sKey = "";
+    private String processAk = "";
+    private String processSk = "";
     private String sourceBucket;
     private String targetBucket;
     private String keepKey;
@@ -13,30 +13,30 @@ public class FileCopyParams extends BaseParams {
 
     public FileCopyParams(String[] args) throws Exception {
         super(args);
-        this.sourceBucket = getParamFromArgs("from");
-        this.targetBucket = getParamFromArgs("to");
-        try { this.aKey = getParamFromArgs("access-key"); } catch (Exception e) {}
-        try { this.sKey = getParamFromArgs("secret-key"); } catch (Exception e) {}
+        this.sourceBucket = getParamFromArgs("bucket1");
+        this.targetBucket = getParamFromArgs("bucket2");
+        try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
+        try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
         try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) {}
         try { this.targetKeyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) {}
     }
 
     public FileCopyParams(String configFileName) throws Exception {
         super(configFileName);
-        this.sourceBucket = getParamFromConfig("from");
-        this.targetBucket = getParamFromConfig("to");
-        try { this.aKey = getParamFromConfig("access-key"); } catch (Exception e) {}
-        try { this.sKey = getParamFromConfig("secret-key"); } catch (Exception e) {}
+        this.sourceBucket = getParamFromConfig("bucket1");
+        this.targetBucket = getParamFromConfig("bucket2");
+        try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
+        try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
         try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
         try { this.targetKeyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
     }
 
-    public String getAKey() {
-        return aKey;
+    public String getProcessAk() {
+        return processAk;
     }
 
-    public String getSKey() {
-        return sKey;
+    public String getProcessSk() {
+        return processSk;
     }
 
     public String getSourceBucket() {

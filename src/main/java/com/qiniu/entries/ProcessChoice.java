@@ -38,8 +38,8 @@ public class ProcessChoice {
             }
             case "copy": {
                 FileCopyParams fileCopyParams = paramFromConfig ? new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                accessKey = "".equals(fileCopyParams.getAKey()) ? accessKey : fileCopyParams.getAKey();
-                secretKey = "".equals(fileCopyParams.getSKey()) ? secretKey : fileCopyParams.getSKey();
+                accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getAccessKey();
+                secretKey = "".equals(fileCopyParams.getSecretKey()) ? secretKey : fileCopyParams.getSecretKey();
                 iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration,
                         fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(),
                         fileCopyParams.getTargetKeyPrefix(), resultFileDir, process);

@@ -55,8 +55,8 @@ public class CommonParams extends BaseParams {
 
     public boolean getProcessBatch() {
         if (StringUtils.isNullOrEmpty(processBatch) || !processBatch.matches("(true|false)")) {
-            System.out.println("no incorrect process-batch status, it will use false as default.");
-            return false;
+            System.out.println("no incorrect process-batch status, it will use true as default.");
+            return true;
         } else {
             return Boolean.valueOf(processBatch);
         }
