@@ -1,5 +1,8 @@
 package com.qiniu.entries;
 
+import com.qiniu.config.PropertyConfig;
+import com.qiniu.util.MainArgsUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +33,16 @@ public class EntryMain {
             else paramFromConfig = true;
         }
 
-        ListBucketMain.runMain(paramFromConfig, args, configFilePath);
+        String sourceType;
+        if (paramFromConfig) {
+            MainArgsUtils.setParamsMap(args);
+            sourceType = MainArgsUtils.getParamValue("source-type");
+        } else {
+            PropertyConfig propertyConfig = new PropertyConfig(configFilePath);
+            sourceType = MainArgsUtils.getParamValue("source-type");
+        }
+
+        if ("list".equals(sourceType)) ListBucketMain.runMain(paramFromConfig, args, configFilePath);
+        else if ("file".equals(sourceType));
     }
 }
