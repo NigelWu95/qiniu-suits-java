@@ -57,8 +57,6 @@ public class SourceFileMain {
             String sourceReaderKey = sourceReaders.get(i);
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
             if (processor == null) break;
-            FileReaderAndWriterMap resultFileMap = new FileReaderAndWriterMap();
-            resultFileMap.initWriter(resultFileDir, "", sourceReaderKey);
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
                 ILineParser lineParser = new SplitLineParser(separator);
@@ -77,8 +75,7 @@ public class SourceFileMain {
                 if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400) {
                     QiniuException e = iOssFileProcessor.qiniuException();
                     e.printStackTrace();
-                    resultFileMap.writeErrorOrNull(sourceReaderKey + "\tprocess failed\t" + e.error());
-                    resultFileMap.flushErrorOrNull();
+                    System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());
                     e.response.close();
                 }
 

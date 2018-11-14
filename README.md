@@ -4,11 +4,12 @@
 ### command
 * list bucket and process per parameter（字段含义和下述 properties 中各字段的释义一致）
 ```
-java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=./result -multi=true -max-threads=30 -version=2
- -level=2 -unit-len=1000 -prefix= -anti-prefix= -f-key-prefix= -f-key-suffix= -f-key-regex= -f-mime= 
- -f-type= -f-date=2018-08-01 -f-time=00:00:00 -f-direction=1 -anti-f-key-prefix= -anti-f-key-suffix=
- -anti-f-key-regex= -anti-f-mime= -process=copy -process-batch=true -type=1 -status=0 -days=0 
- -access-key= -secret-key= -from= -to= -keep-key=true -add-prefix=
+java -jar qiniu-suits.jar -source-type=file -ak= -sk= -bucket=temp -result-format=json -result-path=../result
+ -multi=true -max-threads=100 -version=2 -level=1 -unit-len=10000 -prefix= -anti-prefix= -f-key-prefix= -f-key-suffix= 
+ -f-key-regex= -f-mime= -f-type= -f-date=2018-08-01 -f-time=00:00:00 -f-direction=1 -anti-f-key-prefix= 
+ -anti-f-key-suffix= -anti-f-key-regex= -anti-f-mime= -file-path=../test -separator=\t -key-index= -process=
+ -process-batch=true -process-ak= -process-sk= -bucket1=bucket1 -bucket2=bucket2 -keep-key=true -add-prefix=video/ 
+ -type=1 -status=0 -days=0
 ```
 
 ### property file
@@ -16,13 +17,19 @@ java -jar qiniu-suits.jar -ak= -sk= -bucket= -result-path=./result -multi=true -
   文件名为 qiniu.properties 或 .qiniu.properties，或者使用 -config=<config-filepath> 指定配置文件路径，具体操作参数
   设置如下：
 ```
-# list bucket 操作的 parameters，ak、sk 为账号的密钥对字符串，bucket 为空间名称，result-path 为保存列举和处理结果的相对
-# 路径，multi 表示是否开启并发列举（默认开启），max-threads 为最大线程数，version 使用的列举接口版本，level 为列举并发级别
-#（1 或 2, 默认 1），unit-len 为每次列举请求列举的文件个数，prefix 表示只列举某个前缀，anti-prefix 表示过滤掉某个 ascii 
-# 字符前缀（前缀列举中不包含该字符）。
+# 数据源方式，通过 list bucket 或者 local file 输入，输入的数据为文本行内容，可针对每一行数据进行处理，不同输入源方式对应不同的配置参数
+#source-type=list
+source-type=file
+
+# 数据源为 list 方式的参数配置，list bucket 操作的 parameters，ak、sk 为账号的密钥对字符串，bucket 为空间名称，result-format 为列举结果
+# 的保存格式，默认为 json（可选项为 csv）result-path 为保存列举和处理结果的相对路径（默认为 ../result），multi 表示是否开启并发列举（默认开
+# 启），max-threads 表示可使用的最大线程数，实际线程会通过程序计算得到（小于等于该值），version 使用的列举接口版本，level 为列举并发级别（1 或
+# 2, 默认为 2），unit-len 为每次列举请求列举的文件个数，prefix 表示只列举某个前缀下的文件，anti-prefix 表示过滤掉某个字符前缀（列举不包含该字
+# 符作为前缀的文件，只支持设置常见的 ascii 字符）。
 ak=
 sk=
 bucket=temp
+result-format=json
 result-path=../result
 multi=true
 max-threads=100
@@ -31,12 +38,13 @@ level=1
 unit-len=10000
 prefix=
 anti-prefix=
-# 进行列举时的过滤条件，f-key-prefix 表示过滤的文件名前缀，f-key-suffix 表示过滤的文件名后缀，f-key-regex 表示按正则表达式
-# 过滤文件名，f-mime 表示过滤文件的 mime 类型，f-type 表示过滤的文件类型，为 0 或 1。date、time 为判断是否进行 process 操
-# 作的时间点。direction 0 表示向时间点以前，1 表示向时间点以后。过滤条件中，prefix、suffix、regex、mime 可以为列表形式，如
-# param1,param2,param3。prefix、suffix、regex 三者为针对文件名 key 的过滤条件，(filter(prefix) || filter(suffix))
-# && filter(regex) 组成 key 的过滤结果 true/false，结合其他的过滤条件时为 &&（与）的关系得到最终过滤结果。【设置该过滤条件
-# 会从全部列举结果中过滤出对应文件列表单独保存成结果 list_other<index>.txt】
+
+# 进行列举时的过滤条件，f-key-prefix 表示过滤的文件名前缀，f-key-suffix 表示过滤的文件名后缀，f-key-regex 表示按正则表达式过滤文件名，
+# f-mime 表示过滤文件的 mime 类型，f-type 表示过滤的文件类型，为 0 或 1。date、time 为判断是否进行 process 操作的时间点。direction 0 表
+# 示向时间点以前，1 表示向时间点以后。过滤条件中，prefix、suffix、regex、mime 可以为列表形式，如 param1,param2,param3。prefix、suffix、
+# regex 三者为针对文件名 key 的过滤条件，(filter(prefix) || filter(suffix)) && filter(regex) 组成 key 的过滤结果 true/false，结合
+# 其他的过滤条件时为 &&（与）的关系得到最终过滤结果。anti-xx 的参数表示反向过滤条件，设置过滤条件会从全部列举结果中过滤出对应文件列表单独保存成结果
+# list_other<index>.txt。
 f-key-prefix=
 f-key-suffix=
 f-key-regex=
@@ -45,31 +53,40 @@ f-type=
 f-date=2018-08-01
 f-time=00:00:00
 f-direction=1
-# 反向过滤条件
 anti-f-key-prefix=
 anti-f-key-suffix=
 anti-f-key-regex=
 anti-f-mime=
 
-# 对每条记录进行什么操作，目前支持 changeLifecycle(deleteAfterDays)/changeType/changeStatus/fileCopy,
-# process-batch 表示是否使用 batch（批量请求）方式处理
-process=copy
+# 数据源为 local file 方式的参数配置，即输入源为本地文件列表，列表必须包含的信息是文件名，一行匹配一个文件名，file-path 为相对目录路径或相对文件
+# 路径，separator 表示每一行的多个字段间的分割符，key-index 为文件名字段的下标位置（如第一个字段为 key，则 index 为 0），其他参数含义同上，设
+# 置 ak、sk、bucket 是对空间中资源进行处理的必须参数，同时，process 也为必要参数。
+file-path=../test
+separator=\t
+key-index=
+#result-path=../result
+#max-threads=100
+#ak=
+#sk=
+#bucket=temp
+#process=copy
+
+# 对每条记录进行什么操作，目前支持 fileCopy/changeLifecycle(deleteAfterDays)/changeType/changeStatus, process-batch 表示是否使用
+# batch（批量请求）方式处理（默认为 true）。file copy 操作前提是两个空间在同一账号下，或者被复制的空间授权可读权限到目标账号，process-ak 和
+# process-sk 可以设置目标账号的 ak、sk，bucket1 和 bucket2 表示被复制空间和目标空间的名称，keep-key 表示是否保留原文件名（默认为 true），
+# add-prefix 表示复制到目标空间后添加固定文件名前缀。type 操作表示修改文件类型，1 表示低频存储，0 表示标准存储。status 操作表示修改文件状态，1
+# 表示文件禁用，0 表示文件启用。lifecycle 操作表示修改文件生命周期，为 0 时表示永久的生命周期
+process=
 process-batch=true
-# type 操作的 parameter，1 表示低频存储，0 表示标准存储
-type=1
-# status 操作的 parameter，1 表示文件禁用，0 表示文件启用
-status=0
-# lifecycle 操作的 parameter，为 0 时表示永久的生命周期
-days=0
-# file copy 操作的 parameters，复制操作前提是两个空间在同一账号下，或者是被复制的空间为授权可读权限的空间，access-key 和
-# secret-key 为目标空间的 ak、sk，from 和 to 表示源和目标 bucket 名称，keep-key 为是否保留原文件名，add-prefix 为附加
-# 的目标文件前缀。
-access-key=
-secret-key=
-from=bucket1
-to=bucket2
+process-ak=
+process-sk=
+bucket1=bucket1
+bucket2=bucket2
 keep-key=true
 add-prefix=video/
+type=1
+status=0
+days=0
 ```
 
 * main dynamic parameters and description  
@@ -80,11 +97,6 @@ add-prefix=video/
 [level] -- 使用前缀索引的级别（1|2，代表获取分段阶段使用的 prefix 长度）。level 为 1 时只遍历依次 ASCII 字符，得到的前缀为 
            1 个字符，level 为 2 时在第一次前缀列举的基础上再对 ASCII 字符依次进行一次拼接得到新的前缀字符，长度为 2，检测该前
            缀是否存在文件后得到分段的 Map。
-[end-file] -- enable true|false，使用使用文件名判断一段是否列举结束，为 false 时直接利用 prefix 来列举直到 marker 为空。
-              使用 end-file 来判断列举结束需要取出每一条记录中的 key 进行比较，依靠指定 prefix 进行分段列举时通过 marker 
-              为空判断列举结束。理论上使用 end-file 会比 marker 来判断结束耗时更久。因为 list v1 的 marker 直接通过列举结
-              果计算一次可得到，而取出每一个 key 要每一行计算。list v2 的每一行均包含 marker，得到 marker 经过一次 json 
-              计算，得到 key 需要经过两次 json 计算。
 [unit-len] -- 一次列举请求的 item 长度（单次文件个数限制），list v1 接口限制 1000，list v2 可设置 10000 甚至更多。
 [prefix] -- 指定前缀进行列举，为空时完整列举
 
@@ -105,10 +117,10 @@ add-prefix=video/
 ```
 默认值为空，不进行任何处理，直接列举得到文件列表。
 [check] 检查空间文件包含的前缀，存在几个前缀表明可进行列举的最多并发数，结果文件保存每个前缀的第一个文件信息（用于分段列举的节点）。
+[copy] 将列举出的文件 copy 至另一个 bucket，需要设置 copy 的账号及空间等参数。
 [lifecycle] 将列举出的文件生命周期进行修改。
 [status] 将列举出的文件状态进行修改，可指定某个时间点之前或之后的进行处理。
 [type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储，可指定某个时间点之前或之后的进行处理。
-[copy] 将列举出的文件 copy 至另一个 bucket，需要设置 copy 的账号及空间等参数。
 ```
 与 process 同时使用的参数还有 process-batch，通常情况下会选择（true）此操作方式，用集中的请求做批量处理，效果更好，但特殊操作
 不支持 batch 的情况下不能使用。
