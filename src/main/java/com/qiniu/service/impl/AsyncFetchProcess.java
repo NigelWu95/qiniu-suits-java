@@ -21,7 +21,7 @@ public class AsyncFetchProcess implements IUrlItemProcess {
     private QiniuException qiniuException = null;
 
     public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir) throws IOException {
-        this.asyncFetch = AsyncFetch.getInstance(auth, targetBucket);
+        this.asyncFetch = new AsyncFetch(auth, targetBucket);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, "fetch", null);
     }
 

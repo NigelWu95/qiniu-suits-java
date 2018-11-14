@@ -14,7 +14,6 @@ public class VideoCensor {
 
     private Auth auth;
     private Client client;
-    private Response response;
     private JsonObject dataValueJson;
     private JsonObject paramsValueJson;
     private JsonArray opsValueJsonArray;
@@ -24,7 +23,8 @@ public class VideoCensor {
     private VideoCensor(Auth auth) {
         this.auth = auth;
         this.client = new Client();
-
+        this.dataValueJson = new JsonObject();
+        this.paramsValueJson = new JsonObject();
         this.opsValueJsonArray = new JsonArray();
     }
 
@@ -107,6 +107,7 @@ public class VideoCensor {
         String qiniuToken = "Qiniu " + this.auth.signRequestV2(url, "POST", bodyBytes, "application/json");
         StringMap headers = new StringMap();
         headers.put("Authorization", qiniuToken);
+        Response response = null;
         String respBody = "";
 
         try {
