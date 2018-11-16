@@ -65,7 +65,7 @@ public class ListBucketProcess {
     private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
 
         if (fileInfoList == null || fileInfoList.size() == 0 || (!checkListFileFilter && !checkListFileAntiFilter)) {
-            return new ArrayList<>();
+            return fileInfoList;
         } else if (checkListFileFilter && checkListFileAntiFilter) {
             return fileInfoList.parallelStream()
                     .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo) && listFileAntiFilter.doFileAntiFilter(fileInfo))
@@ -343,18 +343,16 @@ public class ListBucketProcess {
         }
     }
 
-    private ExecutorService getActualExecutorPool(int listSize, int maxThreads) {
-        int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
-        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
-        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
-        return Executors.newFixedThreadPool(runningThreads);
-    }
-
     public void processBucket(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
             throws IOException, CloneNotSupportedException {
 
         List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
-        ExecutorService executorPool = getActualExecutorPool(listResultList.size(), maxThreads);
+        int listSize = listResultList.size();
+        int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
+        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
+        String info = "list bucket" + (processor == null ? "" : "and " + processor.getProcessName());
+        System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
+        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
         executorPool.shutdown();
         try {
@@ -363,6 +361,6 @@ public class ListBucketProcess {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("list " + (processor == null ? "" : "and " + processor.getProcessName()) + " finished");
+        System.out.println(info + " finished");
     }
 }
