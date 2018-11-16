@@ -14,7 +14,7 @@ public class FileStatusParams extends BaseParams {
         this.targetStatus = getParamFromConfig("status");
     }
 
-    public short getTargetStatus() throws Exception {
+    public int getTargetStatus() throws Exception {
         if (targetStatus.matches("(0|1)")) {
             return Short.valueOf(targetStatus);
         } else {

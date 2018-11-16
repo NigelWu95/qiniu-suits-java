@@ -31,9 +31,9 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileStatus, String processName,
-                             String resultFileDir) throws IOException {
-        this(auth, configuration, bucket, fileStatus, resultFileDir, processName, 0);
+    public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
+                             String processName) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir, processName, 0);
     }
 
     public ChangeTypeProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -80,7 +80,8 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
                     String result = changeType.batchRun(bucket, processList, fileType, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + fileType + "\t" + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + fileType + "\t"
+                            + e.error());
                     if (!e.response.needRetry()) qiniuException = e;
                     else e.response.close();
                 }
