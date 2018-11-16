@@ -79,7 +79,8 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
                     String result = updateLifecycle.batchRun(bucket, processList, days, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + days + "\t" + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + days + "\t"
+                            + e.error());
                     if (!e.response.needRetry()) qiniuException = e;
                     else e.response.close();
                 }

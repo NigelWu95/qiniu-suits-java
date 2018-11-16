@@ -23,7 +23,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private QiniuException qiniuException = null;
 
     public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir, String processName, int resultFileIndex) throws IOException {
+                             String keyPrefix, String resultFileDir, String processName, int resultFileIndex)
+            throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
         this.processName = processName;
@@ -33,9 +34,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket, String keyPrefix,
-                             String resultFileDir, String processName)
-            throws IOException {
+    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
+                             String keyPrefix, String resultFileDir, String processName) throws IOException {
         this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir, processName, 0);
     }
 
@@ -66,7 +66,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
             String result = bucketCopy.run(srcBucket, fileKey, tarBucket, fileKey, keyPrefix, false, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
-            fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + fileKey + "\t" + tarBucket + "\t" + fileKey + "\t" + e.error());
+            fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + fileKey + "\t" + tarBucket + "\t" + fileKey
+                    + "\t" + e.error());
             if (!e.response.needRetry()) qiniuException = e;
             else e.response.close();
         }
@@ -80,7 +81,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = bucketCopy.batchRun(srcBucket, tarBucket, processList, keyPrefix, false, retryCount);
+                    String result = bucketCopy.batchRun(srcBucket, tarBucket, processList, keyPrefix, false,
+                            retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
                     fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + keyPrefix + "\t"

@@ -18,7 +18,7 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return (ChangeStatus)super.clone();
     }
 
-    public String run(String bucket, String key, short status, int retryCount) throws QiniuException {
+    public String run(String bucket, String key, int status, int retryCount) throws QiniuException {
 
         Response response = changeStatusWithRetry(bucket, key, status, retryCount);
         if (response == null) return null;
@@ -30,7 +30,7 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeStatusWithRetry(String bucket, String key, short status, int retryCount) throws QiniuException {
+    public Response changeStatusWithRetry(String bucket, String key, int status, int retryCount) throws QiniuException {
 
         Response response = null;
         try {
@@ -52,7 +52,8 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public String batchRun(String bucket, List<String> keys, int status, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, List<String> keys, int status, int retryCount)
+            throws QiniuException {
 
         batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
         Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
