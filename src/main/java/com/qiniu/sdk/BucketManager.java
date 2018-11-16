@@ -106,6 +106,7 @@ public final class BucketManager {
         if (!res.isOK()) {
             throw new QiniuException(res);
         }
+        res.close();
     }
 
     public void deleteBucket(String bucketname) throws QiniuException {
@@ -541,7 +542,11 @@ public final class BucketManager {
     public void prefetch(String bucket, String key) throws QiniuException {
         String resource = encodedEntry(bucket, key);
         String path = String.format("/prefetch/%s", resource);
-        ioPost(bucket, path);
+        Response res = ioPost(bucket, path);
+        if (!res.isOK()) {
+            throw new QiniuException(res);
+        }
+        res.close();
     }
 
     /**
@@ -616,8 +621,9 @@ public final class BucketManager {
     }
 
     public void setIndexPage(String bucket, IndexPageType type) throws QiniuException {
-        String urlFormat = "%s/noIndexPage?bucket=%s&noIndexPage=%s";
-        Response res = post(String.format(urlFormat, configuration.ucHost(), bucket, type.getType()), null);
+        String url = String.format("%s/noIndexPage?bucket=%s&noIndexPage=%s",
+                configuration.ucHost(), bucket, type.getType());
+        Response res = post(url, null);
         if (!res.isOK()) {
             throw new QiniuException(res);
         }
