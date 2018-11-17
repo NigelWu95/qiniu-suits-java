@@ -40,6 +40,7 @@ public class ChangeTypeProcess implements IOssFileProcess, Cloneable {
         ChangeTypeProcess changeTypeProcess = (ChangeTypeProcess)super.clone();
         changeTypeProcess.changeType = changeType.clone();
         changeTypeProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        changeTypeProcess.qiniuException = null;
         try {
             changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {

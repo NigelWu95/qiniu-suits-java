@@ -19,30 +19,34 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private String srcBucket;
     private String tarBucket;
+    private boolean keepKey;
     private String keyPrefix;
     private QiniuException qiniuException = null;
 
-    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir, String processName, int resultFileIndex)
-            throws IOException {
+    public BucketCopyProcess(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
+                             boolean keepKey, String keyPrefix, String resultFileDir, String processName,
+                             int resultFileIndex) throws IOException {
         this.bucketCopy = new BucketCopy(auth, configuration);
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
-        this.srcBucket = sourceBucket;
-        this.tarBucket = targetBucket;
+        this.srcBucket = srcBucket;
+        this.tarBucket = tarBucket;
+        this.keepKey = keepKey;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public BucketCopyProcess(Auth auth, Configuration configuration, String sourceBucket, String targetBucket,
-                             String keyPrefix, String resultFileDir, String processName) throws IOException {
-        this(auth, configuration, sourceBucket, targetBucket, keyPrefix, resultFileDir, processName, 0);
+    public BucketCopyProcess(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
+                             boolean keepKey, String keyPrefix, String resultFileDir, String processName)
+            throws IOException {
+        this(auth, configuration, srcBucket, tarBucket, keepKey, keyPrefix, resultFileDir, processName, 0);
     }
 
     public BucketCopyProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        bucketCopyProcess.qiniuException = null;
         try {
             bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
@@ -63,7 +67,8 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     public void processFile(String fileKey, int retryCount) {
 
         try {
-            String result = bucketCopy.run(srcBucket, fileKey, tarBucket, fileKey, keyPrefix, false, retryCount);
+            String result = bucketCopy.run(srcBucket, fileKey, tarBucket, keepKey ? fileKey : null, keyPrefix,
+                    false, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + fileKey + "\t" + tarBucket + "\t" + fileKey
@@ -81,7 +86,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = bucketCopy.batchRun(srcBucket, tarBucket, processList, keyPrefix, false,
+                    String result = bucketCopy.batchRun(srcBucket, tarBucket, processList, keyPrefix, keepKey,
                             retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {

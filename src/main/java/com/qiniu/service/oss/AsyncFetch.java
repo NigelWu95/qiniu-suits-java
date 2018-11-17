@@ -18,9 +18,9 @@ public class AsyncFetch extends OperationBase implements Cloneable {
         return (AsyncFetch) super.clone();
     }
 
-    public String run(FetchBody fetchBody, boolean keepKey, String prefix, int retryCount) throws QiniuException {
+    public String run(FetchBody fetchBody, int retryCount) throws QiniuException {
 
-        Response response = fetchWithRetry(fetchBody, keepKey, prefix, retryCount);
+        Response response = fetchWithRetry(fetchBody, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -30,7 +30,7 @@ public class AsyncFetch extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response fetchWithRetry(FetchBody fetchBody, boolean keepKey, String prefix, int retryCount)
+    public Response fetchWithRetry(FetchBody fetchBody, int retryCount)
             throws QiniuException {
 
         Response response = null;

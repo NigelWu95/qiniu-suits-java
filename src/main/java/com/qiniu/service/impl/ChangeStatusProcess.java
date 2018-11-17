@@ -40,6 +40,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
         changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        changeStatusProcess.qiniuException = null;
         try {
             changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {

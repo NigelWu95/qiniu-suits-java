@@ -731,32 +731,6 @@ public final class BucketManager {
         }
 
         /**
-         * 批量输入文件名方式添加copy指令，会默认保持原文件名，可以使用prefix来设置copy之后添加的文件名前缀
-         */
-        public BatchOperations addCopyOps(String from, String to, boolean force, String prefix, String... keys) {
-            for (String fileKey : keys) {
-                String fromEntry = encodedEntry(from, fileKey);
-                String toEntry = encodedEntry(to, prefix + fileKey);
-                ops.add(String.format("copy/%s/%s/force/%s", fromEntry, toEntry, force));
-            }
-            setExecBucket(from);
-            return this;
-        }
-
-        /**
-         * 批量输入文件名方式添加move指令，会默认保持原文件名，可以使用prefix来设置move之后添加的文件名前缀
-         */
-        public BatchOperations addMoveOps(String from, String to, String prefix, String... keys) {
-            for (String fileKey : keys) {
-                String fromEntry = encodedEntry(from, fileKey);
-                String toEntry = encodedEntry(to, prefix + fileKey);
-                ops.add(String.format("move/%s/%s", from, to));
-            }
-            setExecBucket(from);
-            return this;
-        }
-
-        /**
          * 添加delete指令
          */
         public BatchOperations addDeleteOp(String bucket, String... keys) {
