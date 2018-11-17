@@ -83,8 +83,6 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("copy " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + prefix
-                            + tarKey + " " + e1.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, false);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -105,8 +103,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         } else {
             keys.forEach(fileKey -> batchOperations.addCopyOp(fromBucket, fileKey, toBucket, null));
         }
-        Response response = batchWithRetry(retryCount, "batch copy " + fromBucket + " to " + toBucket + ":"
-                + keyPrefix);
+        Response response = batchWithRetry(retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -123,9 +120,17 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(srcBucket, key, tarBucket, keepKey ? key : null, keyPrefix,
-                        false, retryCount);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                try {
+                    String result = run(srcBucket, key, tarBucket, keepKey ? key : null, keyPrefix,
+                            false, retryCount);
+                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                } catch (QiniuException e) {
+                    System.out.println("type failed. " + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + keyPrefix + "\t"
+                            + key + "\t" + "\t" + e.error());
+                    if (!e.response.needRetry()) throw e;
+                    else e.response.close();
+                }
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
             return;
@@ -140,6 +145,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
                             retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
+                    System.out.println("copy failed. " + e.error());
                     fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + keyPrefix + "\t"
                             + processList + "\t" + "\t" + e.error());
                     if (!e.response.needRetry()) throw e;

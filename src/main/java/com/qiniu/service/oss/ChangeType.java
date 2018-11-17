@@ -19,16 +19,16 @@ import java.util.stream.Collectors;
 public class ChangeType extends OperationBase implements IOssFileProcess, Cloneable {
 
     private String bucket;
-    private int fileType;
+    private int type;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir,
                       String processName, int resultFileIndex) throws IOException {
         super(auth, configuration);
         this.bucket = bucket;
-        this.fileType = fileType;
+        this.type = type;
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -77,8 +77,6 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("type " + bucket + ":" + key + " to " + type + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
                     response = bucketManager.changeType(bucket, key, storageType);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -93,7 +91,7 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
     synchronized public String batchRun(String bucket, int type, List<String> keys, int retryCount) throws QiniuException {
 
         batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch type " + bucket + ":" + keys + " to " + type);
+        Response response = batchWithRetry(retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -110,8 +108,15 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(bucket, fileType, key, retryCount);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                try {
+                    String result = run(bucket, type, key, retryCount);
+                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                } catch (QiniuException e) {
+                    System.out.println("type failed. " + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + type + "\t" + key + "\t" + e.error());
+                    if (!e.response.needRetry()) throw e;
+                    else e.response.close();
+                }
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
             return;
@@ -122,10 +127,11 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = batchRun(bucket, fileType, processList, retryCount);
+                    String result = batchRun(bucket, type, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileType + "\t" + processList + "\t"
+                    System.out.println("batch type failed. " + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + type + "\t" + processList + "\t"
                             + e.error());
                     if (!e.response.needRetry()) throw e;
                     else e.response.close();

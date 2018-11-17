@@ -75,8 +75,6 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
                     response = bucketManager.changeStatus(bucket, key, status);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -92,7 +90,7 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
             throws QiniuException {
 
         batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
+        Response response = batchWithRetry(retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -109,8 +107,15 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(bucket, status, key, retryCount);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                try {
+                    String result = run(bucket, status, key, retryCount);
+                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                } catch (QiniuException e) {
+                    System.out.println("status failed. " + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + status + "\t" + key + "\t" + e.error());
+                    if (!e.response.needRetry()) throw e;
+                    else e.response.close();
+                }
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
             return;
@@ -124,6 +129,7 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
                     String result = batchRun(bucket, status, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
+                    System.out.println("batch status failed. " + e.error());
                     fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + status + "\t" + processList + "\t"
                             + e.error());
                     if (!e.response.needRetry()) throw e;
