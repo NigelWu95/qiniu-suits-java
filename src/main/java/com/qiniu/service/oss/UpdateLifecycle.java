@@ -75,8 +75,6 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("lifecycle " + bucket + ":" + key + " to " + days + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
                     response = bucketManager.deleteAfterDays(bucket, key, days);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -91,7 +89,7 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
     synchronized public String batchRun(String bucket, int days, List<String> keys, int retryCount) throws QiniuException {
 
         batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch lifecycle " + bucket + ":" + keys + " to " + days);
+        Response response = batchWithRetry(retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -108,8 +106,15 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(bucket, days, key, retryCount);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                try {
+                    String result = run(bucket, days, key, retryCount);
+                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                } catch (QiniuException e) {
+                    System.out.println("type failed. " + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + days + "\t" + key + "\t" + e.error());
+                    if (!e.response.needRetry()) throw e;
+                    else e.response.close();
+                }
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
             return;
@@ -123,6 +128,7 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
                     String result = batchRun(bucket, days, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
+                    System.out.println("batch lifecycle failed.  " + e.error());
                     fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + days + "\t" + processList + "\t"
                             + e.error());
                     if (!e.response.needRetry()) throw e;

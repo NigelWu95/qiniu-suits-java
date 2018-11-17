@@ -29,7 +29,7 @@ public abstract class OperationBase {
         return operationBase;
     }
 
-    public Response batchWithRetry(int retryCount, String operation) throws QiniuException {
+    public Response batchWithRetry(int retryCount) throws QiniuException {
         Response response = null;
 
         try {
@@ -38,7 +38,6 @@ public abstract class OperationBase {
             HttpResponseUtils.checkRetryCount(e, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(operation + " " + e.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.batch(batchOperations);
                     retryCount = 0;
                 } catch (QiniuException e1) {
