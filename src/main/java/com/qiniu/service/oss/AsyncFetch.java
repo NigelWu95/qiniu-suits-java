@@ -1,31 +1,26 @@
 package com.qiniu.service.oss;
 
-import com.google.gson.Gson;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Client;
 import com.qiniu.http.Response;
+import com.qiniu.model.FetchBody;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringMap;
 
-import java.util.HashMap;
-import java.util.Map;
+public class AsyncFetch extends OperationBase implements Cloneable {
 
-public class AsyncFetch {
-
-    private Auth auth;
-    private Client client;
-    private String bucket;
-
-    public AsyncFetch(Auth auth, String bucket) {
-        this.bucket = bucket;
-        this.auth = auth;
-        this.client = new Client();
+    public AsyncFetch(Auth auth, Configuration configuration) {
+        super(auth, configuration);
     }
 
-    public String run(String url, String key, int retryCount) throws QiniuException {
+    public AsyncFetch clone() throws CloneNotSupportedException {
+        return (AsyncFetch) super.clone();
+    }
 
-        Response response = asyncFetchWithRetry(url, key, retryCount);
+    public String run(FetchBody fetchBody, boolean keepKey, String prefix, int retryCount) throws QiniuException {
+
+        Response response = fetchWithRetry(fetchBody, keepKey, prefix, retryCount);
+        if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
         String reqId = response.reqId;
@@ -34,29 +29,19 @@ public class AsyncFetch {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response asyncFetchWithRetry(String url, String key, int retryCount) throws QiniuException {
+    public Response fetchWithRetry(FetchBody fetchBody, boolean keepKey, String prefix, int retryCount)
+            throws QiniuException {
 
         Response response = null;
-        Gson gson = new Gson();
-        Map<String, String> bodyMap = new HashMap<>();
-        bodyMap.put("url", url);
-        bodyMap.put("bucket", bucket);
-        bodyMap.put("key", key);
-        String jsonBody = gson.toJson(bodyMap);
-        byte[] bodyBytes = jsonBody.getBytes();
-        String apiUrl = "http://api.qiniu.com/sisyphus/fetch";
-        String accessToken = "Qiniu " + auth.signRequestV2(apiUrl, "POST", bodyBytes, "application/json");
-        StringMap headers = new StringMap();
-        headers.put("Authorization", accessToken);
-
         try {
-            response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
+            response = bucketManager.asynFetch(fetchBody.url, fetchBody.bucket, fetchBody.key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println(url + "\t" + e1.error() + ", last " + retryCount + " times retry...");
-                    response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
+                    System.out.println("async fetch " + fetchBody.url + " to " + fetchBody.bucket + ":" + fetchBody.key
+                            + " " + e1.error() + ", last " + retryCount + " times retry...");
+                    response = bucketManager.asynFetch(fetchBody.url, fetchBody.bucket, fetchBody.key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
