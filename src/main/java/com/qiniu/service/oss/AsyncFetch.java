@@ -5,6 +5,8 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.model.FetchBody;
 import com.qiniu.model.FetchFile;
+import com.qiniu.sdk.BucketManager;
+import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
@@ -20,22 +22,16 @@ import java.util.stream.Collectors;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private String resultFileDir;
-    private String processName;
-    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private FetchBody fetchBody;
     private boolean keepKey;
     private String keyPrefix;
-    private M3U8Manager m3u8Manager;
+    private M3U8Manager m3u8Manager = new M3U8Manager();
 
     public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
                       String processName, int resultFileIndex)
             throws IOException {
-        super(auth, configuration);
-        this.resultFileDir = resultFileDir;
-        this.processName = processName;
+        super(auth, configuration, resultFileDir, processName, resultFileIndex);
         this.fetchBody = fetchBody;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
@@ -46,6 +42,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
         asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        asyncFetch.m3u8Manager = new M3U8Manager();
         try {
             asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
@@ -59,19 +56,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         return this.processName;
     }
 
-    public String run(FetchBody fetchBody, int retryCount) throws QiniuException {
-
-        Response response = fetchWithRetry(fetchBody, retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
-    public Response fetchWithRetry(FetchBody fetchBody, int retryCount)
+    public Response singleWithRetry(String key, int retryCount)
             throws QiniuException {
 
         Response response = null;
@@ -86,8 +71,6 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("async fetch " + fetchFile.url + " to " + fetchBody.bucket + ":" + fetchFile.key
-                            + " " + e1.error() + ", last " + retryCount + " times retry...");
                     response = bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -99,41 +82,12 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         return response;
     }
 
-    public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
+    protected BucketManager.BatchOperations getOperations(List<String> keys){
+        return new BatchOperations();
+    }
 
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
-
-        if (batch) {
-            List<String> resultList = new ArrayList<>();
-            for (String key : keyList) {
-                fetchBody.fetchFiles.add(new FetchFile(key, "", "", ""));
-                String result = run(fetchBody, retryCount);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
-            }
-            if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
-            return;
-        }
-
-        int times = fileInfoList.size()/1000 + 1;
-
-//        if (keyList == null || keyList.size() == 0) return;
-//        int times = keyList.size()/1000 + 1;
-//        for (int i = 0; i < times; i++) {
-//            List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
-//            if (processList.size() > 0) {
-//                try {
-//                    String result = bucketCopy.batchRun(srcBucket, tarBucket, processList, keyPrefix, false,
-//                            retryCount);
-//                    if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
-//                } catch (QiniuException e) {
-//                    fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + keyPrefix + "\t"
-//                            + processList + "\t" + false + "\t" + e.error());
-//                    if (!e.response.needRetry()) qiniuException = e;
-//                    else e.response.close();
-//                }
-//            }
-//        }
+    protected String getInfo() {
+        return keyPrefix;
     }
 
 //    public AsyncFetch(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
@@ -230,8 +184,4 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
 //            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
 //        }
 //    }
-
-    public void closeResource() {
-        fileReaderAndWriterMap.closeWriter();
-    }
 }
