@@ -1,11 +1,11 @@
-package com.qiniu.entries;
+package com.qiniu.entry;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.interfaces.ILineParser;
-import com.qiniu.interfaces.IOssFileProcess;
-import com.qiniu.model.*;
 import com.qiniu.service.fileline.SplitLineParser;
+import com.qiniu.model.*;
+import com.qiniu.service.interfaces.ILineParser;
+import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.StringUtils;
 

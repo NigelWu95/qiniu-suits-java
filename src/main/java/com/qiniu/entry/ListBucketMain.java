@@ -1,9 +1,9 @@
-package com.qiniu.entries;
+package com.qiniu.entry;
 
 import com.qiniu.common.*;
-import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
-import com.qiniu.service.impl.*;
+import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.oss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 

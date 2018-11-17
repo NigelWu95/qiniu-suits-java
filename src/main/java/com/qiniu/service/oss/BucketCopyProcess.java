@@ -1,12 +1,13 @@
-package com.qiniu.service.impl;
+package com.qiniu.service.oss;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.interfaces.IOssFileProcess;
-import com.qiniu.service.oss.BucketCopy;
+import com.qiniu.http.Response;
+import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -14,9 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BucketCopyProcess implements IOssFileProcess, Cloneable {
+public class BucketCopyProcess extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private BucketCopy bucketCopy;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
@@ -28,7 +28,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     public BucketCopyProcess(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
                              boolean keepKey, String keyPrefix, String resultFileDir, String processName,
                              int resultFileIndex) throws IOException {
-        this.bucketCopy = new BucketCopy(auth, configuration);
+        super(auth, configuration);
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -46,7 +46,6 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
 
     public BucketCopyProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
-        bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -61,6 +60,61 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         return this.processName;
     }
 
+    public String run(String fromBucket, String srcKey, String toBucket, String tarKey, String keyPrefix, boolean force,
+                      int retryCount) throws QiniuException {
+
+        Response response = copyWithRetry(fromBucket, srcKey, toBucket, tarKey, keyPrefix, force, retryCount);
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        response.close();
+
+        return statusCode + "\t" + reqId + "\t" + responseBody;
+    }
+
+    public Response copyWithRetry(String fromBucket, String srcKey, String toBucket, String prefix, String tarKey,
+                                  boolean force, int retryCount) throws QiniuException {
+
+        Response response = null;
+        try {
+            response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, force);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    System.out.println("copy " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + prefix
+                            + tarKey + " " + e1.error() + ", last " + retryCount + " times retry...");
+                    response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, false);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return response;
+    }
+
+    synchronized public String batchRun(String fromBucket, String toBucket, String keyPrefix, boolean keepKey,
+                                        List<String> keys, int retryCount) throws QiniuException {
+
+        if (keepKey) {
+            keys.forEach(fileKey -> batchOperations.addCopyOp(fromBucket, fileKey, toBucket,
+                    keyPrefix + fileKey));
+        } else {
+            keys.forEach(fileKey -> batchOperations.addCopyOp(fromBucket, fileKey, toBucket, null));
+        }
+        Response response = batchWithRetry(retryCount, "batch copy " + fromBucket + " to " + toBucket + ":"
+                + keyPrefix);
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        batchOperations.clearOps();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
+    }
+
     public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
@@ -69,7 +123,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = bucketCopy.run(srcBucket, key, tarBucket, keepKey ? key : null, keyPrefix,
+                String result = run(srcBucket, key, tarBucket, keepKey ? key : null, keyPrefix,
                         false, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             }
@@ -82,7 +136,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = bucketCopy.batchRun(srcBucket, tarBucket, keyPrefix, keepKey, processList,
+                    String result = batchRun(srcBucket, tarBucket, keyPrefix, keepKey, processList,
                             retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {

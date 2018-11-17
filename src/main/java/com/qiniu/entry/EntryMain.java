@@ -1,4 +1,4 @@
-package com.qiniu.entries;
+package com.qiniu.entry;
 
 import com.qiniu.config.PropertyConfig;
 import com.qiniu.util.MainArgsUtils;

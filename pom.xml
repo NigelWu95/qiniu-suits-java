@@ -92,7 +92,7 @@
                         <!--<descriptor>resources/assembly.xml</descriptor>-->
                         <archive>
                             <manifest>
-                                <mainClass>com.qiniu.entries.ListBucketMain</mainClass>
+                                <mainClass>com.qiniu.entry.ListBucketMain</mainClass>
                             </manifest>
                         </archive>
                         <descriptorRefs>
