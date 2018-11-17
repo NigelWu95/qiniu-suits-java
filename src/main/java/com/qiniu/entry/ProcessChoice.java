@@ -1,12 +1,12 @@
-package com.qiniu.entries;
+package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
-import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
-import com.qiniu.service.impl.BucketCopyProcess;
-import com.qiniu.service.impl.ChangeStatusProcess;
-import com.qiniu.service.impl.ChangeTypeProcess;
-import com.qiniu.service.impl.UpdateLifecycleProcess;
+import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.oss.BucketCopyProcess;
+import com.qiniu.service.oss.ChangeStatusProcess;
+import com.qiniu.service.oss.ChangeTypeProcess;
+import com.qiniu.service.oss.UpdateLifecycleProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 

@@ -1,13 +1,10 @@
-package com.qiniu.interfaces;
+package com.qiniu.service.interfaces;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public interface ILineParser {
 
@@ -23,7 +20,7 @@ public interface ILineParser {
 
     void setItemMap(ArrayList<String> itemKey, String line);
 
-    public String toJsonString();
+    String toJsonString();
 
     default String getByKey(String key) {
         JsonObject lineJson = JsonConvertUtils.toJsonObject(toJsonString());

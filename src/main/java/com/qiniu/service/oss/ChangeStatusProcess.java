@@ -1,12 +1,13 @@
-package com.qiniu.service.impl;
+package com.qiniu.service.oss;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.interfaces.IOssFileProcess;
-import com.qiniu.service.oss.ChangeStatus;
+import com.qiniu.http.Response;
+import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -14,9 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
+public class ChangeStatusProcess extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private ChangeStatus changeStatus;
     private String bucket;
     private int status;
     private String resultFileDir;
@@ -25,7 +25,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
                                String processName, int resultFileIndex) throws IOException {
-        this.changeStatus = new ChangeStatus(auth, configuration);
+        super(auth, configuration);
         this.bucket = bucket;
         this.status = status;
         this.resultFileDir = resultFileDir;
@@ -40,7 +40,6 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
 
     public ChangeStatusProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
-        changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -55,6 +54,53 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return this.processName;
     }
 
+    public String run(String bucket, int status, String key, int retryCount) throws QiniuException {
+
+        Response response = changeStatusWithRetry(bucket, status, key, retryCount);
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        response.close();
+
+        return statusCode + "\t" + reqId + "\t" + responseBody;
+    }
+
+    public Response changeStatusWithRetry(String bucket, int status, String key, int retryCount) throws QiniuException {
+
+        Response response = null;
+        try {
+            response = bucketManager.changeStatus(bucket, key, status);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
+                            + retryCount + " times retry...");
+                    response = bucketManager.changeStatus(bucket, key, status);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return response;
+    }
+
+    synchronized public String batchRun(String bucket, int status, List<String> keys, int retryCount)
+            throws QiniuException {
+
+        batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
+        Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        batchOperations.clearOps();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
+    }
+
     public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
@@ -63,7 +109,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = changeStatus.run(bucket, status, key, retryCount);
+                String result = run(bucket, status, key, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
@@ -75,7 +121,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = changeStatus.batchRun(bucket, status, processList, retryCount);
+                    String result = batchRun(bucket, status, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
                     fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + status + "\t" + processList + "\t"

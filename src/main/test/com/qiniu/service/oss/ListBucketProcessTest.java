@@ -1,4 +1,4 @@
-package com.qiniu.service.impl;
+package com.qiniu.service.oss;
 
 import com.qiniu.common.Zone;
 import com.qiniu.http.Response;

@@ -1,28 +1,25 @@
-package com.qiniu.service.impl;
+package com.qiniu.service.oss;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.interfaces.IOssFileProcess;
+import com.qiniu.http.Response;
 import com.qiniu.model.FetchBody;
 import com.qiniu.model.FetchFile;
 import com.qiniu.service.auvideo.M3U8Manager;
-import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.service.oss.AsyncFetch;
+import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
+public class AsyncFetchProcess extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private AsyncFetch asyncFetch;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
@@ -34,7 +31,7 @@ public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
     public AsyncFetchProcess(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
                              String processName, int resultFileIndex)
             throws IOException {
-        this.asyncFetch = new AsyncFetch(auth, configuration);
+        super(auth, configuration);
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fetchBody = fetchBody;
@@ -48,7 +45,6 @@ public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
 
     public AsyncFetchProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         AsyncFetchProcess asyncFetchProcess = (AsyncFetchProcess)super.clone();
-        asyncFetchProcess.asyncFetch = asyncFetch.clone();
         asyncFetchProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             asyncFetchProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -63,6 +59,46 @@ public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
         return this.processName;
     }
 
+    public String run(FetchBody fetchBody, int retryCount) throws QiniuException {
+
+        Response response = fetchWithRetry(fetchBody, retryCount);
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        response.close();
+
+        return statusCode + "\t" + reqId + "\t" + responseBody;
+    }
+
+    public Response fetchWithRetry(FetchBody fetchBody, int retryCount)
+            throws QiniuException {
+
+        Response response = null;
+        FetchFile fetchFile = fetchBody.fetchFiles.get(0);
+        try {
+            response = fetchBody.hasCustomArgs() ?
+                    bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key, fetchFile.md5,
+                            fetchFile.etag, fetchBody.callbackUrl, fetchBody.callbackBody, fetchBody.callbackBodyType,
+                            fetchBody.callbackHost, fetchBody.fileType) :
+                    bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    System.out.println("async fetch " + fetchFile.url + " to " + fetchBody.bucket + ":" + fetchFile.key
+                            + " " + e1.error() + ", last " + retryCount + " times retry...");
+                    response = bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return response;
+    }
+
     public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
@@ -72,7 +108,7 @@ public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
                 fetchBody.fetchFiles.add(new FetchFile(key, "", "", ""));
-                String result = asyncFetch.run(fetchBody, retryCount);
+                String result = run(fetchBody, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
@@ -100,22 +136,21 @@ public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
 //        }
     }
 
-    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
-        this.asyncFetch = new AsyncFetch(auth, null);
-        this.processName = processName;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, null);
-    }
-
-    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName, M3U8Manager m3u8Manager)
-            throws IOException {
-        this(auth, targetBucket, resultFileDir, processName);
-        this.m3u8Manager = m3u8Manager;
-    }
+//    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
+//        this.processName = processName;
+//        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, null);
+//    }
+//
+//    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName, M3U8Manager m3u8Manager)
+//            throws IOException {
+//        this(auth, targetBucket, resultFileDir, processName);
+//        this.m3u8Manager = m3u8Manager;
+//    }
 
     private void fetchResult(String url, String key) throws QiniuException {
         try {
 //            String fetchResult = asyncFetch.run(url, key, 0);
-            String fetchResult = asyncFetch.run(null, 0);
+            String fetchResult = run(null, 0);
             fileReaderAndWriterMap.writeSuccess(fetchResult);
         } catch (QiniuException e) {
             fileReaderAndWriterMap.writeErrorOrNull(url + "," + key + "\t" + e.error());

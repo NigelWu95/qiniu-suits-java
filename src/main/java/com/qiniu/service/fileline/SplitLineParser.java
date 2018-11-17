@@ -1,6 +1,6 @@
 package com.qiniu.service.fileline;
 
-import com.qiniu.interfaces.ILineParser;
+import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
