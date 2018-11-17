@@ -31,7 +31,7 @@ public class BucketCopy extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response copyWithRetry(String fromBucket, String srcKey, String toBucket, String tarKey, String prefix,
+    public Response copyWithRetry(String fromBucket, String srcKey, String toBucket, String prefix, String tarKey,
                                   boolean force, int retryCount) throws QiniuException {
 
         Response response = null;
@@ -54,8 +54,8 @@ public class BucketCopy extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public String batchRun(String fromBucket, String toBucket, List<String> keys, String keyPrefix,
-                                        boolean keepKey, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String fromBucket, String toBucket, String keyPrefix, boolean keepKey,
+                                        List<String> keys, int retryCount) throws QiniuException {
 
         if (keepKey) {
             keys.forEach(fileKey -> batchOperations.addCopyOp(fromBucket, fileKey, toBucket,

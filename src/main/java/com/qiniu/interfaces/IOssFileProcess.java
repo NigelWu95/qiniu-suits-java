@@ -1,6 +1,7 @@
 package com.qiniu.interfaces;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public interface IOssFileProcess {
 
     void processFile(String fileKey, int retryCount);
 
-    void processFile(List<String> keyList, int retryCount);
+    void processFile(List<FileInfo> fileInfoList, int retryCount);
 
     void closeResource();
 }

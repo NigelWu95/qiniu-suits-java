@@ -100,7 +100,6 @@ public class ListBucketProcess {
         if (processBatch) {
             iOssFileProcessor.processFile(fileInfoList.parallelStream()
                     .filter(Objects::nonNull)
-                    .map(fileInfo -> fileInfo.key)
                     .collect(Collectors.toList()), retryCount);
         } else {
             fileInfoList.parallelStream()

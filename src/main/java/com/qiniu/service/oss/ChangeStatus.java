@@ -52,7 +52,7 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public String batchRun(String bucket, List<String> keys, int status, int retryCount)
+    synchronized public String batchRun(String bucket, int status, List<String> keys, int retryCount)
             throws QiniuException {
 
         batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));

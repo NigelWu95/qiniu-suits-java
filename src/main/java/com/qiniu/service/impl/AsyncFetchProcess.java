@@ -9,6 +9,7 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.oss.AsyncFetch;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
 
@@ -81,7 +83,11 @@ public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public void processFile(List<String> keyList, int retryCount) {
+    public void processFile(List<FileInfo> fileInfoList, int retryCount) {
+
+        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        int times = fileInfoList.size()/1000 + 1;
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
 
 //        if (keyList == null || keyList.size() == 0) return;
 //        int times = keyList.size()/1000 + 1;

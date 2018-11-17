@@ -5,11 +5,13 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.service.oss.UpdateLifecycle;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
 
@@ -69,18 +71,19 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
         }
     }
 
-    public void processFile(List<String> keyList, int retryCount) {
+    public void processFile(List<FileInfo> fileInfoList, int retryCount) {
 
-        if (keyList == null || keyList.size() == 0) return;
-        int times = keyList.size()/1000 + 1;
+        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        int times = fileInfoList.size()/1000 + 1;
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         for (int i = 0; i < times; i++) {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = updateLifecycle.batchRun(bucket, processList, days, retryCount);
+                    String result = updateLifecycle.batchRun(bucket, days, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + processList + "\t" + days + "\t"
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + days + "\t" + processList + "\t"
                             + e.error());
                     if (!e.response.needRetry()) qiniuException = e;
                     else e.response.close();

@@ -52,7 +52,7 @@ public class UpdateLifecycle extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public String batchRun(String bucket, List<String> keys, int days, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, int days, List<String> keys, int retryCount) throws QiniuException {
 
         batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
         Response response = batchWithRetry(retryCount, "batch lifecycle " + bucket + ":" + keys + " to " + days);
