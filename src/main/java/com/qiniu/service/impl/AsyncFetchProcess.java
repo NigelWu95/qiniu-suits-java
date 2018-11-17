@@ -8,7 +8,6 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.oss.AsyncFetch;
-import com.qiniu.service.oss.BucketCopy;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.JsonConvertUtils;
