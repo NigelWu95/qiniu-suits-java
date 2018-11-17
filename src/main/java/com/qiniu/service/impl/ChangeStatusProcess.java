@@ -10,6 +10,7 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,7 +22,6 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
-    private QiniuException qiniuException = null;
 
     public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
                                String processName, int resultFileIndex) throws IOException {
@@ -42,7 +42,6 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
         changeStatusProcess.changeStatus = changeStatus.clone();
         changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
-        changeStatusProcess.qiniuException = null;
         try {
             changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
@@ -56,27 +55,22 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
         return this.processName;
     }
 
-    public QiniuException qiniuException() {
-        return qiniuException;
-    }
-
-    public void processFile(String fileKey, int retryCount) {
-
-        try {
-            String result = changeStatus.run(bucket, fileKey, status, retryCount);
-            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
-        } catch (QiniuException e) {
-            fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileKey + "\t" + status + "\t" + e.error());
-            if (!e.response.needRetry()) qiniuException = e;
-            else e.response.close();
-        }
-    }
-
-    public void processFile(List<FileInfo> fileInfoList, int retryCount) {
+    public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        int times = fileInfoList.size()/1000 + 1;
         List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+
+        if (batch) {
+            List<String> resultList = new ArrayList<>();
+            for (String key : keyList) {
+                String result = changeStatus.run(bucket, status, key, retryCount);
+                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+            }
+            if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+            return;
+        }
+
+        int times = fileInfoList.size()/1000 + 1;
         for (int i = 0; i < times; i++) {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
@@ -86,7 +80,7 @@ public class ChangeStatusProcess implements IOssFileProcess, Cloneable {
                 } catch (QiniuException e) {
                     fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + status + "\t" + processList + "\t"
                             + e.error());
-                    if (!e.response.needRetry()) qiniuException = e;
+                    if (!e.response.needRetry()) throw e;
                     else e.response.close();
                 }
             }

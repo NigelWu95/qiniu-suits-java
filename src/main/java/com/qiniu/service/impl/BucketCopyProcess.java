@@ -10,6 +10,7 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,6 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
     private String tarBucket;
     private boolean keepKey;
     private String keyPrefix;
-    private QiniuException qiniuException = null;
 
     public BucketCopyProcess(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
                              boolean keepKey, String keyPrefix, String resultFileDir, String processName,
@@ -48,7 +48,6 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         BucketCopyProcess bucketCopyProcess = (BucketCopyProcess)super.clone();
         bucketCopyProcess.bucketCopy = bucketCopy.clone();
         bucketCopyProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
-        bucketCopyProcess.qiniuException = null;
         try {
             bucketCopyProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
@@ -62,29 +61,23 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
         return this.processName;
     }
 
-    public QiniuException qiniuException() {
-        return qiniuException;
-    }
-
-    public void processFile(String fileKey, int retryCount) {
-
-        try {
-            String result = bucketCopy.run(srcBucket, fileKey, tarBucket, keepKey ? fileKey : null, keyPrefix,
-                    false, retryCount);
-            if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
-        } catch (QiniuException e) {
-            fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + fileKey + "\t" + tarBucket + "\t" + fileKey
-                    + "\t" + e.error());
-            if (!e.response.needRetry()) qiniuException = e;
-            else e.response.close();
-        }
-    }
-
-    public void processFile(List<FileInfo> fileInfoList, int retryCount) {
+    public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        int times = fileInfoList.size()/1000 + 1;
         List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+
+        if (batch) {
+            List<String> resultList = new ArrayList<>();
+            for (String key : keyList) {
+                String result = bucketCopy.run(srcBucket, key, tarBucket, keepKey ? key : null, keyPrefix,
+                        false, retryCount);
+                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+            }
+            if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+            return;
+        }
+
+        int times = fileInfoList.size()/1000 + 1;
         for (int i = 0; i < times; i++) {
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
@@ -95,7 +88,7 @@ public class BucketCopyProcess implements IOssFileProcess, Cloneable {
                 } catch (QiniuException e) {
                     fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + keyPrefix + "\t"
                             + processList + "\t" + "\t" + e.error());
-                    if (!e.response.needRetry()) qiniuException = e;
+                    if (!e.response.needRetry()) throw e;
                     else e.response.close();
                 }
             }
