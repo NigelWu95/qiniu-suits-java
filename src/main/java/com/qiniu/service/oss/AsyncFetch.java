@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AsyncFetchProcess extends OperationBase implements IOssFileProcess, Cloneable {
+public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
     private String resultFileDir;
     private String processName;
@@ -28,8 +28,8 @@ public class AsyncFetchProcess extends OperationBase implements IOssFileProcess,
     private String keyPrefix;
     private M3U8Manager m3u8Manager;
 
-    public AsyncFetchProcess(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
-                             String processName, int resultFileIndex)
+    public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
+                      String processName, int resultFileIndex)
             throws IOException {
         super(auth, configuration);
         this.resultFileDir = resultFileDir;
@@ -38,21 +38,21 @@ public class AsyncFetchProcess extends OperationBase implements IOssFileProcess,
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public AsyncFetchProcess(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
-                             String processName) throws IOException {
+    public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
+                      String processName) throws IOException {
         this(auth, configuration, fetchBody, resultFileDir, processName, 0);
     }
 
-    public AsyncFetchProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        AsyncFetchProcess asyncFetchProcess = (AsyncFetchProcess)super.clone();
-        asyncFetchProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
+        asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            asyncFetchProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
-        return asyncFetchProcess;
+        return asyncFetch;
     }
 
     public String getProcessName() {
@@ -136,12 +136,12 @@ public class AsyncFetchProcess extends OperationBase implements IOssFileProcess,
 //        }
     }
 
-//    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
+//    public AsyncFetch(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
 //        this.processName = processName;
 //        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, null);
 //    }
 //
-//    public AsyncFetchProcess(Auth auth, String targetBucket, String resultFileDir, String processName, M3U8Manager m3u8Manager)
+//    public AsyncFetch(Auth auth, String targetBucket, String resultFileDir, String processName, M3U8Manager m3u8Manager)
 //            throws IOException {
 //        this(auth, targetBucket, resultFileDir, processName);
 //        this.m3u8Manager = m3u8Manager;

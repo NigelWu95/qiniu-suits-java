@@ -6,7 +6,6 @@ import com.qiniu.http.Response;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
@@ -16,48 +15,48 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ChangeTypeProcess extends OperationBase implements IOssFileProcess, Cloneable {
+public class ChangeStatus extends OperationBase implements IOssFileProcess, Cloneable {
 
     private String bucket;
-    private int fileType;
+    private int status;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
-                             String processName, int resultFileIndex) throws IOException {
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
+                        String processName, int resultFileIndex) throws IOException {
         super(auth, configuration);
         this.bucket = bucket;
-        this.fileType = fileType;
+        this.status = status;
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public ChangeTypeProcess(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
-                             String processName) throws IOException {
-        this(auth, configuration, bucket, fileType, resultFileDir, processName, 0);
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
+                        String processName) throws IOException {
+        this(auth, configuration, bucket, status, resultFileDir, processName, 0);
     }
 
-    public ChangeTypeProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        ChangeTypeProcess changeTypeProcess = (ChangeTypeProcess)super.clone();
-        changeTypeProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        ChangeStatus changeStatus = (ChangeStatus)super.clone();
+        changeStatus.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeTypeProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            changeStatus.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
-        return changeTypeProcess;
+        return changeStatus;
     }
 
     public String getProcessName() {
         return this.processName;
     }
 
-    public String run(String bucket, int type, String key, int retryCount) throws QiniuException {
+    public String run(String bucket, int status, String key, int retryCount) throws QiniuException {
 
-        Response response = changeTypeWithRetry(bucket, type, key, retryCount);
+        Response response = changeStatusWithRetry(bucket, status, key, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -67,19 +66,18 @@ public class ChangeTypeProcess extends OperationBase implements IOssFileProcess,
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeTypeWithRetry(String bucket, int type, String key, int retryCount) throws QiniuException {
+    public Response changeStatusWithRetry(String bucket, int status, String key, int retryCount) throws QiniuException {
 
         Response response = null;
-        StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         try {
-            response = bucketManager.changeType(bucket, key, storageType);
+            response = bucketManager.changeStatus(bucket, key, status);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("type " + bucket + ":" + key + " to " + type + " " + e1.error() + ", last "
+                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
                             + retryCount + " times retry...");
-                    response = bucketManager.changeType(bucket, key, storageType);
+                    response = bucketManager.changeStatus(bucket, key, status);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -90,10 +88,11 @@ public class ChangeTypeProcess extends OperationBase implements IOssFileProcess,
         return response;
     }
 
-    synchronized public String batchRun(String bucket, int type, List<String> keys, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, int status, List<String> keys, int retryCount)
+            throws QiniuException {
 
-        batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch type " + bucket + ":" + keys + " to " + type);
+        batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
+        Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -110,7 +109,7 @@ public class ChangeTypeProcess extends OperationBase implements IOssFileProcess,
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(bucket, fileType, key, retryCount);
+                String result = run(bucket, status, key, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
@@ -122,10 +121,10 @@ public class ChangeTypeProcess extends OperationBase implements IOssFileProcess,
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = batchRun(bucket, fileType, processList, retryCount);
+                    String result = batchRun(bucket, status, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileType + "\t" + processList + "\t"
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + status + "\t" + processList + "\t"
                             + e.error());
                     if (!e.response.needRetry()) throw e;
                     else e.response.close();

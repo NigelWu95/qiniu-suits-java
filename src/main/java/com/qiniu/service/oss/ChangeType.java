@@ -6,6 +6,7 @@ import com.qiniu.http.Response;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
+import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
@@ -15,48 +16,48 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class UpdateLifecycleProcess extends OperationBase implements IOssFileProcess, Cloneable {
+public class ChangeType extends OperationBase implements IOssFileProcess, Cloneable {
 
     private String bucket;
-    private int days;
+    private int fileType;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                                  String processName, int resultFileIndex) throws IOException {
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
+                      String processName, int resultFileIndex) throws IOException {
         super(auth, configuration);
         this.bucket = bucket;
-        this.days = days;
+        this.fileType = fileType;
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public UpdateLifecycleProcess(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                                  String processName) throws IOException {
-        this(auth, configuration, bucket, days, resultFileDir, processName, 0);
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
+                      String processName) throws IOException {
+        this(auth, configuration, bucket, fileType, resultFileDir, processName, 0);
     }
 
-    public UpdateLifecycleProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        UpdateLifecycleProcess updateLifecycleProcess = (UpdateLifecycleProcess)super.clone();
-        updateLifecycleProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    public ChangeType getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        ChangeType changeType = (ChangeType)super.clone();
+        changeType.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            changeType.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
-        return updateLifecycleProcess;
+        return changeType;
     }
 
     public String getProcessName() {
         return this.processName;
     }
 
-    public String run(String bucket, int days, String key, int retryCount) throws QiniuException {
+    public String run(String bucket, int type, String key, int retryCount) throws QiniuException {
 
-        Response response = updateLifecycleWithRetry(bucket, days, key, retryCount);
+        Response response = changeTypeWithRetry(bucket, type, key, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -66,18 +67,19 @@ public class UpdateLifecycleProcess extends OperationBase implements IOssFilePro
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response updateLifecycleWithRetry(String bucket, int days, String key, int retryCount) throws QiniuException {
+    public Response changeTypeWithRetry(String bucket, int type, String key, int retryCount) throws QiniuException {
 
         Response response = null;
+        StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         try {
-            response = bucketManager.deleteAfterDays(bucket, key, days);
+            response = bucketManager.changeType(bucket, key, storageType);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("lifecycle " + bucket + ":" + key + " to " + days + " " + e1.error() + ", last "
+                    System.out.println("type " + bucket + ":" + key + " to " + type + " " + e1.error() + ", last "
                             + retryCount + " times retry...");
-                    response = bucketManager.deleteAfterDays(bucket, key, days);
+                    response = bucketManager.changeType(bucket, key, storageType);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -88,10 +90,10 @@ public class UpdateLifecycleProcess extends OperationBase implements IOssFilePro
         return response;
     }
 
-    synchronized public String batchRun(String bucket, int days, List<String> keys, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, int type, List<String> keys, int retryCount) throws QiniuException {
 
-        batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch lifecycle " + bucket + ":" + keys + " to " + days);
+        batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
+        Response response = batchWithRetry(retryCount, "batch type " + bucket + ":" + keys + " to " + type);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -108,7 +110,7 @@ public class UpdateLifecycleProcess extends OperationBase implements IOssFilePro
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(bucket, days, key, retryCount);
+                String result = run(bucket, fileType, key, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
@@ -120,10 +122,10 @@ public class UpdateLifecycleProcess extends OperationBase implements IOssFilePro
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = batchRun(bucket, days, processList, retryCount);
+                    String result = batchRun(bucket, fileType, processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + days + "\t" + processList + "\t"
+                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + fileType + "\t" + processList + "\t"
                             + e.error());
                     if (!e.response.needRetry()) throw e;
                     else e.response.close();

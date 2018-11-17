@@ -1,10 +1,10 @@
-package com.qiniu.service.oss;
+package com.qiniu.service.datasource;
 
 import com.qiniu.common.Zone;
 import com.qiniu.http.Response;
 import com.qiniu.model.ListBucketParams;
 import com.qiniu.model.ListResult;
-import com.qiniu.service.oss.ListBucket;
+import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import org.junit.Assert;
@@ -14,10 +14,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-public class ListBucketProcessTest {
+public class ListBucketTest {
 
-    private ListBucketProcess listBucketProcess;
     private ListBucket listBucket;
+    private BucketManager bucketManager;
     private String bucket;
     private int unitLen;
     private int version;
@@ -36,15 +36,15 @@ public class ListBucketProcessTest {
         this.version = listBucketParams.getVersion();
         this.unitLen = listBucketParams.getUnitLen();
         this.unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
-        this.listBucket = new ListBucket(auth, configuration);
-        this.listBucketProcess = new ListBucketProcess(auth, configuration, bucket, unitLen, version, customPrefix,
+        this.bucketManager = new BucketManager(auth, configuration);
+        this.listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, customPrefix,
                 antiPrefix, 1);
     }
 
     @Test
     public void testGetListResult() throws Exception {
-        Response response = listBucket.run(bucket, "e", "", "", unitLen, 1, version);
-        ListResult listResult = listBucketProcess.getListResult(response, version);
+        Response response = listBucket.list(bucketManager, "e", "", "", unitLen);
+        ListResult listResult = listBucket.getListResult(response, version);
         response.close();
         Assert.assertTrue(listResult.isValid());
         Assert.assertEquals(1, listResult.fileInfoList.size());
@@ -52,6 +52,7 @@ public class ListBucketProcessTest {
 
     @Test
     public void testStraightList() throws IOException {
-        listBucketProcess.straightList("v2", "", "==", null, false);
+        listBucket.straightlyList("v2", "", "==", null, false);
     }
+
 }

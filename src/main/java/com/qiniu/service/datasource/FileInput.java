@@ -1,9 +1,8 @@
-package com.qiniu.entry;
+package com.qiniu.service.datasource;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.fileline.SplitLineParser;
-import com.qiniu.model.*;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.model.FileInfo;
@@ -18,42 +17,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public class SourceFileMain {
+public class FileInput {
 
-    public static void runMain(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
+    private String separator;
+    private int keyIndex;
+    private int retryCount;
 
-        SourceFileParams sourceFileParams = paramFromConfig ? new SourceFileParams(configFilePath) : new SourceFileParams(args);
-        String filePath = sourceFileParams.getFilePath();
-        String separator = sourceFileParams.getSeparator();
-        int keyIndex = sourceFileParams.getKeyIndex();
-        String process = sourceFileParams.getProcess();
-        boolean processBatch = sourceFileParams.getProcessBatch();
-        int maxThreads = sourceFileParams.getMaxThreads();
-        String resultFileDir = sourceFileParams.getResultFileDir();
-        IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
-        List<String> sourceReaders = new ArrayList<>();
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        File sourceFile = new File(sourceFilePath);
-        if (sourceFile.isDirectory()) {
-            File[] fs = sourceFile.listFiles();
-            for(File f : fs) {
-                if (!f.isDirectory()) {
-                    sourceReaders.add(f.getName());
-                    fileMap.initReader(sourceFile.getPath(), f.getName());
-                }
-            }
-        } else {
-            sourceReaders.add(sourceFile.getName());
-            fileMap.initReader(sourceFile.getParent(), sourceFile.getName());
-        }
+    public FileInput(String separator, int keyIndex, int retryCount) {
+        this.separator = separator;
+        this.keyIndex = keyIndex;
+        this.retryCount = retryCount;
+    }
 
-        int runningThreads = sourceReaders.size();
-        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
-        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
-        ExecutorService executorPool =  Executors.newFixedThreadPool(runningThreads);
-        System.out.println(process + " started...");
-
+    public void traverseFile(ExecutorService executorPool, FileReaderAndWriterMap fileMap, List<String> sourceReaders,
+                             IOssFileProcess iOssFileProcessor, boolean processBatch) throws CloneNotSupportedException {
         for (int i = 0; i < sourceReaders.size(); i++) {
             String sourceReaderKey = sourceReaders.get(i);
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
@@ -71,7 +48,7 @@ public class SourceFileMain {
                             })
                             .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
                             .collect(Collectors.toList());
-                    iOssFileProcessor.processFile(fileInfoList, processBatch, 3);
+                    iOssFileProcessor.processFile(fileInfoList, processBatch, retryCount);
                 } catch (QiniuException e) {
                     e.printStackTrace();
                     System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());
@@ -85,7 +62,33 @@ public class SourceFileMain {
                 }
             });
         }
+    }
 
+    public void process(int maxThreads, String filePath, IOssFileProcess iOssFileProcessor, boolean processBatch)
+            throws IOException, CloneNotSupportedException {
+
+        List<String> sourceReaders = new ArrayList<>();
+        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        File sourceFile = new File(filePath);
+        if (sourceFile.isDirectory()) {
+            File[] fs = sourceFile.listFiles();
+            for(File f : fs) {
+                if (!f.isDirectory()) {
+                    sourceReaders.add(f.getName());
+                    fileMap.initReader(sourceFile.getPath(), f.getName());
+                }
+            }
+        } else {
+            sourceReaders.add(sourceFile.getName());
+            fileMap.initReader(sourceFile.getParent(), sourceFile.getName());
+        }
+
+        int runningThreads = sourceReaders.size();
+        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
+        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
+        ExecutorService executorPool =  Executors.newFixedThreadPool(runningThreads);
+        System.out.println(iOssFileProcessor.getProcessName() + " started...");
+        traverseFile(executorPool, fileMap, sourceReaders, iOssFileProcessor, processBatch);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())
@@ -93,7 +96,6 @@ public class SourceFileMain {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println(process + " finished.");
-        if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
+        System.out.println(iOssFileProcessor.getProcessName() + " finished.");
     }
 }

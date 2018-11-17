@@ -42,7 +42,7 @@ public class EntryMain {
             sourceType = MainArgsUtils.getParamValue("source-type");
         }
 
-        if ("list".equals(sourceType)) ListBucketMain.runMain(paramFromConfig, args, configFilePath);
-        else if ("file".equals(sourceType)) SourceFileMain.runMain(paramFromConfig, args, configFilePath);
+        if ("list".equals(sourceType)) ListBucketProcess.run(paramFromConfig, args, configFilePath);
+        else if ("file".equals(sourceType)) FileInputProcess.run(paramFromConfig, args, configFilePath);
     }
 }
