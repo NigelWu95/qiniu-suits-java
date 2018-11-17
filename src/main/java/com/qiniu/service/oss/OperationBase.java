@@ -20,16 +20,18 @@ public abstract class OperationBase {
 
     protected Auth auth;
     protected Configuration configuration;
+    protected String bucket;
     protected BucketManager bucketManager;
     protected String resultFileDir;
     protected String processName;
     protected volatile BatchOperations batchOperations;
     protected FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public OperationBase(Auth auth, Configuration configuration, String resultFileDir, String processName,
-                         int resultFileIndex) throws IOException {
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
+                         String processName, int resultFileIndex) throws IOException {
         this.auth = auth;
         this.configuration = configuration;
+        this.bucket = bucket;
         this.bucketManager = new BucketManager(auth, configuration);
         this.resultFileDir = resultFileDir;
         this.processName = processName;
@@ -44,11 +46,31 @@ public abstract class OperationBase {
         return operationBase;
     }
 
-    public abstract Response singleWithRetry(String key, int retryCount) throws QiniuException;
+    protected abstract Response getResponse(String key) throws QiniuException;
 
     public String run(String key, int retryCount) throws QiniuException {
         Response response = singleWithRetry(key, retryCount);
         return getResult(response);
+    }
+
+    public Response singleWithRetry(String key, int retryCount) throws QiniuException {
+
+        Response response = null;
+        try {
+            response = getResponse(key);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    response = getResponse(key);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return response;
     }
 
     public Response batchWithRetry(int retryCount) throws QiniuException {
