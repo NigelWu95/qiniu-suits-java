@@ -10,15 +10,10 @@ import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -30,7 +25,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
                       String processName, int resultFileIndex)
             throws IOException {
-        super(auth, configuration, resultFileDir, processName, resultFileIndex);
+        super(auth, configuration, "", resultFileDir, processName, resultFileIndex);
         this.fetchBody = fetchBody;
     }
 
@@ -56,30 +51,14 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         return this.processName;
     }
 
-    public Response singleWithRetry(String key, int retryCount)
-            throws QiniuException {
+    protected Response getResponse(String key) throws QiniuException {
 
-        Response response = null;
         FetchFile fetchFile = fetchBody.fetchFiles.get(0);
-        try {
-            response = fetchBody.hasCustomArgs() ?
-                    bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key, fetchFile.md5,
-                            fetchFile.etag, fetchBody.callbackUrl, fetchBody.callbackBody, fetchBody.callbackBodyType,
-                            fetchBody.callbackHost, fetchBody.fileType) :
-                    bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-
-        return response;
+        return fetchBody.hasCustomArgs() ?
+                bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key, fetchFile.md5,
+                        fetchFile.etag, fetchBody.callbackUrl, fetchBody.callbackBody, fetchBody.callbackBodyType,
+                        fetchBody.callbackHost, fetchBody.fileType) :
+                bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
     }
 
     protected BucketManager.BatchOperations getOperations(List<String> keys){
