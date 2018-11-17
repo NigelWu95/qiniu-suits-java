@@ -1,16 +1,15 @@
 package com.qiniu.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FetchBody {
 
-    public String url;
+    public List<FetchFile> fetchFiles = new ArrayList<>();
+
+    public String host;
 
     public String bucket;
-
-    public String key;
-
-    public String md5;
-
-    public String etag;
 
     public String callbackUrl;
 
@@ -20,5 +19,12 @@ public class FetchBody {
 
     public String callbackHost;
 
-    public String fileType;
+    public int fileType;
+
+    public boolean ignoreSameKey;
+
+    public boolean hasCustomArgs() {
+        return (host != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
+                || callbackHost != null || fileType == 1 || ignoreSameKey);
+    }
 }

@@ -4,6 +4,7 @@ import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.FetchBody;
+import com.qiniu.model.FetchFile;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.interfaces.IUrlItemProcess;
@@ -68,6 +69,7 @@ public class AsyncFetchProcess implements IUrlItemProcess, IOssFileProcess, Clon
     public void processFile(String fileKey, int retryCount) {
 
         try {
+            fetchBody.fetchFiles.add(new FetchFile(fileKey, "", "", ""));
             String result = asyncFetch.run(fetchBody, false, "", retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
