@@ -40,6 +40,7 @@ public class UpdateLifecycleProcess implements IOssFileProcess, Cloneable {
         UpdateLifecycleProcess updateLifecycleProcess = (UpdateLifecycleProcess)super.clone();
         updateLifecycleProcess.updateLifecycle = updateLifecycle.clone();
         updateLifecycleProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        updateLifecycleProcess.qiniuException = null;
         try {
             updateLifecycleProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {

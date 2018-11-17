@@ -7,7 +7,6 @@ import com.qiniu.model.FetchBody;
 import com.qiniu.model.FetchFile;
 import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
-import com.qiniu.interfaces.IUrlItemProcess;
 import com.qiniu.service.oss.AsyncFetch;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -19,13 +18,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class AsyncFetchProcess implements IUrlItemProcess, IOssFileProcess, Cloneable {
+public class AsyncFetchProcess implements IOssFileProcess, Cloneable {
 
     private AsyncFetch asyncFetch;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
     private FetchBody fetchBody;
+    private boolean keepKey;
+    private String keyPrefix;
     private QiniuException qiniuException = null;
 
     private M3U8Manager m3u8Manager;
@@ -49,6 +50,7 @@ public class AsyncFetchProcess implements IUrlItemProcess, IOssFileProcess, Clon
         AsyncFetchProcess asyncFetchProcess = (AsyncFetchProcess)super.clone();
         asyncFetchProcess.asyncFetch = asyncFetch.clone();
         asyncFetchProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        asyncFetchProcess.qiniuException = null;
         try {
             asyncFetchProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
@@ -70,7 +72,7 @@ public class AsyncFetchProcess implements IUrlItemProcess, IOssFileProcess, Clon
 
         try {
             fetchBody.fetchFiles.add(new FetchFile(fileKey, "", "", ""));
-            String result = asyncFetch.run(fetchBody, false, "", retryCount);
+            String result = asyncFetch.run(fetchBody, retryCount);
             if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
         } catch (QiniuException e) {
             fileReaderAndWriterMap.writeErrorOrNull(JsonConvertUtils.toJson(fetchBody) + "\t" + e.error());
@@ -115,7 +117,7 @@ public class AsyncFetchProcess implements IUrlItemProcess, IOssFileProcess, Clon
     private void fetchResult(String url, String key) {
         try {
 //            String fetchResult = asyncFetch.run(url, key, 0);
-            String fetchResult = asyncFetch.run(null, true, "", 0);
+            String fetchResult = asyncFetch.run(null, 0);
             fileReaderAndWriterMap.writeSuccess(fetchResult);
         } catch (QiniuException e) {
             fileReaderAndWriterMap.writeErrorOrNull(url + "," + key + "\t" + e.error());

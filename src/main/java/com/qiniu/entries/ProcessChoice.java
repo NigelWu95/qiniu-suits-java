@@ -46,7 +46,7 @@ public class ProcessChoice {
                 accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getAccessKey();
                 secretKey = "".equals(fileCopyParams.getSecretKey()) ? secretKey : fileCopyParams.getSecretKey();
                 iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration,
-                        fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(),
+                        fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(),
                         fileCopyParams.getTargetKeyPrefix(), resultFileDir, process);
                 break;
             }
