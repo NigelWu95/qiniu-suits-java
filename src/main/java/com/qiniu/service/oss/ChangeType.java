@@ -54,7 +54,7 @@ public class ChangeType extends OperationBase implements Cloneable {
         return response;
     }
 
-    synchronized public String batchRun(String bucket, List<String> keys, int type, int retryCount) throws QiniuException {
+    synchronized public String batchRun(String bucket, int type, List<String> keys, int retryCount) throws QiniuException {
 
         batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
         Response response = batchWithRetry(retryCount, "batch type " + bucket + ":" + keys + " to " + type);
