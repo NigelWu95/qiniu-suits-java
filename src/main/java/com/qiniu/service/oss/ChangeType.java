@@ -3,6 +3,7 @@ package com.qiniu.service.oss;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
+import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -20,18 +21,12 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
 
     private String bucket;
     private int type;
-    private String resultFileDir;
-    private String processName;
-    private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
     public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir,
                       String processName, int resultFileIndex) throws IOException {
-        super(auth, configuration);
+        super(auth, configuration, resultFileDir, processName, resultFileIndex);
         this.bucket = bucket;
         this.type = type;
-        this.resultFileDir = resultFileDir;
-        this.processName = processName;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ChangeType(Auth auth, Configuration configuration, String bucket, int fileType, String resultFileDir,
@@ -55,19 +50,7 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         return this.processName;
     }
 
-    public String run(String bucket, int type, String key, int retryCount) throws QiniuException {
-
-        Response response = changeTypeWithRetry(bucket, type, key, retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
-    public Response changeTypeWithRetry(String bucket, int type, String key, int retryCount) throws QiniuException {
+    public Response singleWithRetry(String key, int retryCount) throws QiniuException {
 
         Response response = null;
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
@@ -88,59 +71,12 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         return response;
     }
 
-    synchronized public String batchRun(String bucket, int type, List<String> keys, int retryCount) throws QiniuException {
-
-        batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        batchOperations.clearOps();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+    protected BatchOperations getOperations(List<String> keys){
+        return batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,
+                keys.toArray(new String[]{}));
     }
 
-    public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
-
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
-
-        if (batch) {
-            List<String> resultList = new ArrayList<>();
-            for (String key : keyList) {
-                try {
-                    String result = run(bucket, type, key, retryCount);
-                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
-                } catch (QiniuException e) {
-                    System.out.println("type failed. " + e.error());
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + type + "\t" + key + "\t" + e.error());
-                    if (!e.response.needRetry()) throw e;
-                    else e.response.close();
-                }
-            }
-            if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
-            return;
-        }
-
-        int times = fileInfoList.size()/1000 + 1;
-        for (int i = 0; i < times; i++) {
-            List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
-            if (processList.size() > 0) {
-                try {
-                    String result = batchRun(bucket, type, processList, retryCount);
-                    if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
-                } catch (QiniuException e) {
-                    System.out.println("batch type failed. " + e.error());
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + type + "\t" + processList + "\t"
-                            + e.error());
-                    if (!e.response.needRetry()) throw e;
-                    else e.response.close();
-                }
-            }
-        }
-    }
-
-    public void closeResource() {
-        fileReaderAndWriterMap.closeWriter();
+    protected String getInfo() {
+        return bucket + "\t" + type;
     }
 }
