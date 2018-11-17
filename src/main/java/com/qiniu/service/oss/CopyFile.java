@@ -15,48 +15,55 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ChangeStatusProcess extends OperationBase implements IOssFileProcess, Cloneable {
+public class CopyFile extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private String bucket;
-    private int status;
     private String resultFileDir;
     private String processName;
     private FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    private String srcBucket;
+    private String tarBucket;
+    private boolean keepKey;
+    private String keyPrefix;
 
-    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                               String processName, int resultFileIndex) throws IOException {
+    public CopyFile(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
+                    boolean keepKey, String keyPrefix, String resultFileDir, String processName,
+                    int resultFileIndex) throws IOException {
         super(auth, configuration);
-        this.bucket = bucket;
-        this.status = status;
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.srcBucket = srcBucket;
+        this.tarBucket = tarBucket;
+        this.keepKey = keepKey;
+        this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public ChangeStatusProcess(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                               String processName) throws IOException {
-        this(auth, configuration, bucket, status, resultFileDir, processName, 0);
+    public CopyFile(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
+                    boolean keepKey, String keyPrefix, String resultFileDir, String processName)
+            throws IOException {
+        this(auth, configuration, srcBucket, tarBucket, keepKey, keyPrefix, resultFileDir, processName, 0);
     }
 
-    public ChangeStatusProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        ChangeStatusProcess changeStatusProcess = (ChangeStatusProcess)super.clone();
-        changeStatusProcess.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        CopyFile copyFile = (CopyFile)super.clone();
+        copyFile.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            changeStatusProcess.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            copyFile.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             e.printStackTrace();
             throw new CloneNotSupportedException();
         }
-        return changeStatusProcess;
+        return copyFile;
     }
 
     public String getProcessName() {
         return this.processName;
     }
 
-    public String run(String bucket, int status, String key, int retryCount) throws QiniuException {
+    public String run(String fromBucket, String srcKey, String toBucket, String tarKey, String keyPrefix, boolean force,
+                      int retryCount) throws QiniuException {
 
-        Response response = changeStatusWithRetry(bucket, status, key, retryCount);
+        Response response = copyWithRetry(fromBucket, srcKey, toBucket, tarKey, keyPrefix, force, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -66,18 +73,19 @@ public class ChangeStatusProcess extends OperationBase implements IOssFileProces
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeStatusWithRetry(String bucket, int status, String key, int retryCount) throws QiniuException {
+    public Response copyWithRetry(String fromBucket, String srcKey, String toBucket, String prefix, String tarKey,
+                                  boolean force, int retryCount) throws QiniuException {
 
         Response response = null;
         try {
-            response = bucketManager.changeStatus(bucket, key, status);
+            response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, force);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
-                    response = bucketManager.changeStatus(bucket, key, status);
+                    System.out.println("copy " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + prefix
+                            + tarKey + " " + e1.error() + ", last " + retryCount + " times retry...");
+                    response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, false);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -88,11 +96,17 @@ public class ChangeStatusProcess extends OperationBase implements IOssFileProces
         return response;
     }
 
-    synchronized public String batchRun(String bucket, int status, List<String> keys, int retryCount)
-            throws QiniuException {
+    synchronized public String batchRun(String fromBucket, String toBucket, String keyPrefix, boolean keepKey,
+                                        List<String> keys, int retryCount) throws QiniuException {
 
-        batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
+        if (keepKey) {
+            keys.forEach(fileKey -> batchOperations.addCopyOp(fromBucket, fileKey, toBucket,
+                    keyPrefix + fileKey));
+        } else {
+            keys.forEach(fileKey -> batchOperations.addCopyOp(fromBucket, fileKey, toBucket, null));
+        }
+        Response response = batchWithRetry(retryCount, "batch copy " + fromBucket + " to " + toBucket + ":"
+                + keyPrefix);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -109,7 +123,8 @@ public class ChangeStatusProcess extends OperationBase implements IOssFileProces
         if (batch) {
             List<String> resultList = new ArrayList<>();
             for (String key : keyList) {
-                String result = run(bucket, status, key, retryCount);
+                String result = run(srcBucket, key, tarBucket, keepKey ? key : null, keyPrefix,
+                        false, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
@@ -121,11 +136,12 @@ public class ChangeStatusProcess extends OperationBase implements IOssFileProces
             List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    String result = batchRun(bucket, status, processList, retryCount);
+                    String result = batchRun(srcBucket, tarBucket, keyPrefix, keepKey, processList,
+                            retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    fileReaderAndWriterMap.writeErrorOrNull(bucket + "\t" + status + "\t" + processList + "\t"
-                            + e.error());
+                    fileReaderAndWriterMap.writeErrorOrNull(srcBucket + "\t" + tarBucket + "\t" + keyPrefix + "\t"
+                            + processList + "\t" + "\t" + e.error());
                     if (!e.response.needRetry()) throw e;
                     else e.response.close();
                 }

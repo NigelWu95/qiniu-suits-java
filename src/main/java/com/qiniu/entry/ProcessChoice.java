@@ -3,10 +3,10 @@ package com.qiniu.entry;
 import com.qiniu.common.Zone;
 import com.qiniu.model.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
-import com.qiniu.service.oss.BucketCopyProcess;
-import com.qiniu.service.oss.ChangeStatusProcess;
-import com.qiniu.service.oss.ChangeTypeProcess;
-import com.qiniu.service.oss.UpdateLifecycleProcess;
+import com.qiniu.service.oss.CopyFile;
+import com.qiniu.service.oss.ChangeStatus;
+import com.qiniu.service.oss.ChangeType;
+import com.qiniu.service.oss.UpdateLifecycle;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
@@ -15,12 +15,11 @@ public class ProcessChoice {
     public static IOssFileProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
 
-        SourceFileParams sourceFileParams = paramFromConfig ?
-                new SourceFileParams(configFilePath) : new SourceFileParams(args);
-        String accessKey = sourceFileParams.getAccessKey();
-        String secretKey = sourceFileParams.getSecretKey();
-        String process = sourceFileParams.getProcess();
-        String resultFileDir = sourceFileParams.getResultFileDir();
+        CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
+        String accessKey = commonParams.getAccessKey();
+        String secretKey = commonParams.getSecretKey();
+        String process = commonParams.getProcess();
+        String resultFileDir = commonParams.getResultFileDir();
         IOssFileProcess iOssFileProcessor = null;
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -29,14 +28,14 @@ public class ProcessChoice {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                iOssFileProcessor = new ChangeStatusProcess(auth, configuration, fileStatusParams.getBucket(),
+                iOssFileProcessor = new ChangeStatus(auth, configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultFileDir, process);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ?
                         new FileTypeParams(configFilePath) : new FileTypeParams(args);
-                iOssFileProcessor = new ChangeTypeProcess(auth, configuration, fileTypeParams.getBucket(),
+                iOssFileProcessor = new ChangeType(auth, configuration, fileTypeParams.getBucket(),
                         fileTypeParams.getTargetType(), resultFileDir, process);
                 break;
             }
@@ -45,7 +44,7 @@ public class ProcessChoice {
                         new FileCopyParams(configFilePath) : new FileCopyParams(args);
                 accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getAccessKey();
                 secretKey = "".equals(fileCopyParams.getSecretKey()) ? secretKey : fileCopyParams.getSecretKey();
-                iOssFileProcessor = new BucketCopyProcess(Auth.create(accessKey, secretKey), configuration,
+                iOssFileProcessor = new CopyFile(Auth.create(accessKey, secretKey), configuration,
                         fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(),
                         fileCopyParams.getTargetKeyPrefix(), resultFileDir, process);
                 break;
@@ -53,7 +52,7 @@ public class ProcessChoice {
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ?
                         new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                iOssFileProcessor = new UpdateLifecycleProcess(Auth.create(accessKey, secretKey), configuration,
+                iOssFileProcessor = new UpdateLifecycle(Auth.create(accessKey, secretKey), configuration,
                         lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir, process);
                 break;
             }

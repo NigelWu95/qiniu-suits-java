@@ -1,4 +1,4 @@
-package com.qiniu.service.oss;
+package com.qiniu.service.datasource;
 
 import com.google.gson.*;
 import com.qiniu.common.*;
@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ListBucketProcess {
+public class ListBucket {
 
     private Auth auth;
     private Configuration configuration;
@@ -38,8 +38,8 @@ public class ListBucketProcess {
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             .split(""));
 
-    public ListBucketProcess(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
-                             String customPrefix, List<String> antiPrefix, int retryCount) {
+    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
+                      String customPrefix, List<String> antiPrefix, int retryCount) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -300,7 +300,7 @@ public class ListBucketProcess {
         }
     }
 
-    public void straightList(String prefix, String endFile, String marker, IOssFileProcess iOssFileProcessor,
+    public void straightlyList(String prefix, String endFile, String marker, IOssFileProcess iOssFileProcessor,
                              boolean processBatch) throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list", "total");
@@ -362,7 +362,7 @@ public class ListBucketProcess {
         }
     }
 
-    public void processBucket(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
+    public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
             throws IOException, CloneNotSupportedException {
 
         List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
