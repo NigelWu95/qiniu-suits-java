@@ -31,19 +31,19 @@ public class BucketCopy extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response copyWithRetry(String fromBucket, String srcKey, String toBucket, String tarKey, String keyPrefix,
+    public Response copyWithRetry(String fromBucket, String srcKey, String toBucket, String tarKey, String prefix,
                                   boolean force, int retryCount) throws QiniuException {
 
         Response response = null;
         try {
-            response = bucketManager.copy(fromBucket, srcKey, toBucket, keyPrefix + tarKey, force);
+            response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, force);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    System.out.println("copy " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + keyPrefix
+                    System.out.println("copy " + fromBucket + ":" + srcKey + " to " + toBucket + ":" + prefix
                             + tarKey + " " + e1.error() + ", last " + retryCount + " times retry...");
-                    response = bucketManager.copy(fromBucket, srcKey, toBucket, keyPrefix + tarKey, false);
+                    response = bucketManager.copy(fromBucket, srcKey, toBucket, prefix + tarKey, false);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
