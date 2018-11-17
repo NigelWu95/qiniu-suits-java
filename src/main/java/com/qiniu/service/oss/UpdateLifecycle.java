@@ -18,9 +18,9 @@ public class UpdateLifecycle extends OperationBase implements Cloneable {
         return (UpdateLifecycle) super.clone();
     }
 
-    public String run(String bucket, String key, int days, int retryCount) throws QiniuException {
+    public String run(String bucket, int days, String key, int retryCount) throws QiniuException {
 
-        Response response = updateLifecycleWithRetry(bucket, key, days, retryCount);
+        Response response = updateLifecycleWithRetry(bucket, days, key, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -30,7 +30,7 @@ public class UpdateLifecycle extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response updateLifecycleWithRetry(String bucket, String key, int days, int retryCount) throws QiniuException {
+    public Response updateLifecycleWithRetry(String bucket, int days, String key, int retryCount) throws QiniuException {
 
         Response response = null;
         try {

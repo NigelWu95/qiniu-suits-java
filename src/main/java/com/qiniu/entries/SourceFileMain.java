@@ -6,6 +6,7 @@ import com.qiniu.interfaces.ILineParser;
 import com.qiniu.interfaces.IOssFileProcess;
 import com.qiniu.model.*;
 import com.qiniu.service.fileline.SplitLineParser;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.StringUtils;
 
 import java.io.BufferedReader;
@@ -60,20 +61,18 @@ public class SourceFileMain {
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
                 ILineParser lineParser = new SplitLineParser(separator);
-                if (processBatch) {
-                    List<String> fileKeyList = bufferedReader.lines().parallel()
-                            .map(line -> lineParser.getItemList(line).get(keyIndex))
-                            .filter(key -> !StringUtils.isNullOrEmpty(key))
-                            .collect(Collectors.toList());
-                    iOssFileProcessor.processFile(fileKeyList, 3);
-                } else {
-                    bufferedReader.lines().parallel()
-                            .filter(key -> !StringUtils.isNullOrEmpty(key))
-                            .forEach(line -> processor.processFile(lineParser.getItemList(line).get(keyIndex), 3));
-                }
 
-                if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400) {
-                    QiniuException e = iOssFileProcessor.qiniuException();
+                try {
+                    List<FileInfo> fileInfoList = bufferedReader.lines().parallel()
+                            .map(line -> {
+                                FileInfo fileInfo = new FileInfo();
+                                fileInfo.key = lineParser.getItemList(line).get(keyIndex);
+                                return fileInfo;
+                            })
+                            .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
+                            .collect(Collectors.toList());
+                    iOssFileProcessor.processFile(fileInfoList, processBatch, 3);
+                } catch (QiniuException e) {
                     e.printStackTrace();
                     System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());
                     e.response.close();

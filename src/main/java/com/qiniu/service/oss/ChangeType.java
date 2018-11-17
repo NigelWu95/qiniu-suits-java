@@ -19,9 +19,9 @@ public class ChangeType extends OperationBase implements Cloneable {
         return (ChangeType) super.clone();
     }
 
-    public String run(String bucket, String key, int type, int retryCount) throws QiniuException {
+    public String run(String bucket, int type, String key, int retryCount) throws QiniuException {
 
-        Response response = changeTypeWithRetry(bucket, key, type, retryCount);
+        Response response = changeTypeWithRetry(bucket, type, key, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -31,7 +31,7 @@ public class ChangeType extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeTypeWithRetry(String bucket, String key, int type, int retryCount) throws QiniuException {
+    public Response changeTypeWithRetry(String bucket, int type, String key, int retryCount) throws QiniuException {
 
         Response response = null;
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;

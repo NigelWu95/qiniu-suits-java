@@ -94,23 +94,6 @@ public class ListBucketProcess {
         }
     }
 
-    private void processResult(List<FileInfo> fileInfoList, IOssFileProcess iOssFileProcessor, boolean processBatch) throws QiniuException {
-
-        if (iOssFileProcessor == null || fileInfoList == null || fileInfoList.size() == 0) return;
-        if (processBatch) {
-            iOssFileProcessor.processFile(fileInfoList.parallelStream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList()), retryCount);
-        } else {
-            fileInfoList.parallelStream()
-                    .filter(Objects::nonNull)
-                    .forEach(fileInfo -> iOssFileProcessor.processFile(fileInfo.key, retryCount));
-        }
-
-        if (iOssFileProcessor.qiniuException() != null && iOssFileProcessor.qiniuException().code() > 400)
-            throw iOssFileProcessor.qiniuException();
-    }
-
     public ListV2Line getItemByList2Line(String line) {
 
         ListV2Line listV2Line = new ListV2Line();
@@ -266,7 +249,9 @@ public class ListBucketProcess {
                 }
 
                 try {
-                    processResult(fileInfoList, processor, processBatch);
+                    if (processor != null && fileInfoList != null && fileInfoList.size() > 0)
+                        processor.processFile(fileInfoList.parallelStream()
+                                .filter(Objects::nonNull).collect(Collectors.toList()), processBatch, retryCount);
                     needRedo = true;
                 } catch (QiniuException e) {
                     e.printStackTrace();
@@ -310,7 +295,9 @@ public class ListBucketProcess {
             writeResult(fileInfoList, fileMap, 1);
             fileInfoList = filterFileInfo(fileInfoList);
             writeResult(fileInfoList, fileMap, 2);
-            processResult(fileInfoList, processor, processBatch);
+            if (iOssFileProcessor != null && fileInfoList != null && fileInfoList.size() > 0)
+                iOssFileProcessor.processFile(fileInfoList.parallelStream()
+                    .filter(Objects::nonNull).collect(Collectors.toList()), processBatch, retryCount);
             executorPool.execute(() -> {
                 String endFilePrefix = "";
                 String prefix = "";

@@ -18,9 +18,9 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return (ChangeStatus)super.clone();
     }
 
-    public String run(String bucket, String key, int status, int retryCount) throws QiniuException {
+    public String run(String bucket, int status, String key, int retryCount) throws QiniuException {
 
-        Response response = changeStatusWithRetry(bucket, key, status, retryCount);
+        Response response = changeStatusWithRetry(bucket, status, key, retryCount);
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
@@ -30,7 +30,7 @@ public class ChangeStatus extends OperationBase implements Cloneable {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response changeStatusWithRetry(String bucket, String key, int status, int retryCount) throws QiniuException {
+    public Response changeStatusWithRetry(String bucket, int status, String key, int retryCount) throws QiniuException {
 
         Response response = null;
         try {

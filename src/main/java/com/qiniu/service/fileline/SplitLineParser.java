@@ -51,7 +51,7 @@ public class SplitLineParser implements ILineParser {
         }
     }
 
-    public String toString() {
+    public String toJsonString() {
 
         if (this.itemMap == null && this.itemList == null) {
             return "{}";
