@@ -55,8 +55,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
 
         List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         if (keepKey) {
-            keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket,
-                    keyPrefix + fileKey));
+            keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, keyPrefix + fileKey));
         } else {
             keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, null));
         }
