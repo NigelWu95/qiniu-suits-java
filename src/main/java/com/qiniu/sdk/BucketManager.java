@@ -106,6 +106,7 @@ public final class BucketManager {
         if (!res.isOK()) {
             throw new QiniuException(res);
         }
+        res.close();
     }
 
     public void deleteBucket(String bucketname) throws QiniuException {
@@ -505,7 +506,7 @@ public final class BucketManager {
      */
     public Response asynFetch(String url, String bucket, String key, String md5, String etag,
                               String callbackurl, String callbackbody, String callbackbodytype,
-                              String callbackhost, String fileType) throws QiniuException {
+                              String callbackhost, int fileType) throws QiniuException {
         String requesturl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
         StringMap stringMap = new StringMap().put("url", url).put("bucket", bucket).
                 putNotNull("key", key).putNotNull("md5", md5).putNotNull("etag", etag).
@@ -541,7 +542,11 @@ public final class BucketManager {
     public void prefetch(String bucket, String key) throws QiniuException {
         String resource = encodedEntry(bucket, key);
         String path = String.format("/prefetch/%s", resource);
-        ioPost(bucket, path);
+        Response res = ioPost(bucket, path);
+        if (!res.isOK()) {
+            throw new QiniuException(res);
+        }
+        res.close();
     }
 
     /**
@@ -616,8 +621,9 @@ public final class BucketManager {
     }
 
     public void setIndexPage(String bucket, IndexPageType type) throws QiniuException {
-        String urlFormat = "%s/noIndexPage?bucket=%s&noIndexPage=%s";
-        Response res = post(String.format(urlFormat, configuration.ucHost(), bucket, type.getType()), null);
+        String url = String.format("%s/noIndexPage?bucket=%s&noIndexPage=%s",
+                configuration.ucHost(), bucket, type.getType());
+        Response res = post(url, null);
         if (!res.isOK()) {
             throw new QiniuException(res);
         }
@@ -721,32 +727,6 @@ public final class BucketManager {
             String to = encodedEntry(toBucket, toKey);
             ops.add(String.format("move/%s/%s", from, to));
             setExecBucket(fromBucket);
-            return this;
-        }
-
-        /**
-         * 批量输入文件名方式添加copy指令，会默认保持原文件名，可以使用prefix来设置copy之后添加的文件名前缀
-         */
-        public BatchOperations addCopyOps(String from, String to, boolean force, String prefix, String... keys) {
-            for (String fileKey : keys) {
-                String fromEntry = encodedEntry(from, fileKey);
-                String toEntry = encodedEntry(to, prefix + fileKey);
-                ops.add(String.format("copy/%s/%s/force/%s", fromEntry, toEntry, force));
-            }
-            setExecBucket(from);
-            return this;
-        }
-
-        /**
-         * 批量输入文件名方式添加move指令，会默认保持原文件名，可以使用prefix来设置move之后添加的文件名前缀
-         */
-        public BatchOperations addMoveOps(String from, String to, String prefix, String... keys) {
-            for (String fileKey : keys) {
-                String fromEntry = encodedEntry(from, fileKey);
-                String toEntry = encodedEntry(to, prefix + fileKey);
-                ops.add(String.format("move/%s/%s", from, to));
-            }
-            setExecBucket(from);
             return this;
         }
 

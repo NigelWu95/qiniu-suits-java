@@ -1,66 +1,60 @@
 package com.qiniu.service.oss;
 
+import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
+import com.qiniu.sdk.BucketManager.*;
+import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class UpdateLifecycle extends OperationBase implements Cloneable {
+public class UpdateLifecycle extends OperationBase implements IOssFileProcess, Cloneable {
 
-    public UpdateLifecycle(Auth auth, Configuration configuration) {
-        super(auth, configuration);
+    private int days;
+
+    private void initOwnParams(int days) {
+        this.days = days;
     }
 
-    public UpdateLifecycle clone() throws CloneNotSupportedException {
-        return (UpdateLifecycle) super.clone();
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
+                           String processName, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+        initOwnParams(days);
     }
 
-    public String run(String bucket, String key, int days, int retryCount) throws QiniuException {
-
-        Response response = updateLifecycleWithRetry(bucket, key, days, retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
+                           String processName) {
+        super(auth, configuration, bucket, resultFileDir, processName);
+        initOwnParams(days);
     }
 
-    public Response updateLifecycleWithRetry(String bucket, String key, int days, int retryCount) throws QiniuException {
-
-        Response response = null;
+    public UpdateLifecycle getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        UpdateLifecycle updateLifecycle = (UpdateLifecycle)super.clone();
+        updateLifecycle.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            response = bucketManager.deleteAfterDays(bucket, key, days);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    System.out.println("lifecycle " + bucket + ":" + key + " to " + days + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
-                    response = bucketManager.deleteAfterDays(bucket, key, days);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
+            updateLifecycle.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
         }
-
-        return response;
+        return updateLifecycle;
     }
 
-    synchronized public String batchRun(String bucket, List<String> keys, int days, int retryCount) throws QiniuException {
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        return bucketManager.deleteAfterDays(bucket, fileInfo.key, days);
+    }
 
-        batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch lifecycle " + bucket + ":" + keys + " to " + days);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        batchOperations.clearOps();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+        return batchOperations.addDeleteAfterDaysOps(bucket, days, keyList.toArray(new String[]{}));
+    }
+
+    protected String getInfo() {
+        return bucket + "\t" + days;
     }
 }

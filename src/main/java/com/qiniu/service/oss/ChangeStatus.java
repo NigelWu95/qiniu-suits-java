@@ -1,67 +1,60 @@
 package com.qiniu.service.oss;
 
+import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
+import com.qiniu.sdk.BucketManager.*;
+import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class ChangeStatus extends OperationBase implements Cloneable {
+public class ChangeStatus extends OperationBase implements IOssFileProcess, Cloneable {
 
-    public ChangeStatus(Auth auth, Configuration configuration) {
-        super(auth, configuration);
+    private int status;
+
+    private void initOwnParams(int status) {
+        this.status = status;
     }
 
-    public ChangeStatus clone() throws CloneNotSupportedException {
-        return (ChangeStatus)super.clone();
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
+                        String processName, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+        initOwnParams(status);
     }
 
-    public String run(String bucket, String key, int status, int retryCount) throws QiniuException {
-
-        Response response = changeStatusWithRetry(bucket, key, status, retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
+                        String processName) {
+        super(auth, configuration, bucket, resultFileDir, processName);
+        initOwnParams(status);
     }
 
-    public Response changeStatusWithRetry(String bucket, String key, int status, int retryCount) throws QiniuException {
-
-        Response response = null;
+    public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        ChangeStatus changeStatus = (ChangeStatus)super.clone();
+        changeStatus.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
-            response = bucketManager.changeStatus(bucket, key, status);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    System.out.println("status " + bucket + ":" + key + " to " + status + " " + e1.error() + ", last "
-                            + retryCount + " times retry...");
-                    response = bucketManager.changeStatus(bucket, key, status);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
+            changeStatus.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
         }
-
-        return response;
+        return changeStatus;
     }
 
-    synchronized public String batchRun(String bucket, List<String> keys, int status, int retryCount)
-            throws QiniuException {
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        return bucketManager.changeStatus(bucket, fileInfo.key, status);
+    }
 
-        batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
-        Response response = batchWithRetry(retryCount, "batch status " + bucket + ":" + keys + " to " + status);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        batchOperations.clearOps();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+        return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
+    }
+
+    protected String getInfo() {
+        return bucket + "\t" + status;
     }
 }
