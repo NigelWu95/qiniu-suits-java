@@ -1,6 +1,6 @@
 package com.qiniu.service.fileline;
 
-import com.qiniu.interfaces.ILineParser;
+import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class SplitLineParser implements ILineParser {
         }
     }
 
-    public String toString() {
+    public String toJsonString() {
 
         if (this.itemMap == null && this.itemList == null) {
             return "{}";

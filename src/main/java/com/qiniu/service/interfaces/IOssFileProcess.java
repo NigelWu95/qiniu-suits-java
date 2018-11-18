@@ -1,6 +1,7 @@
-package com.qiniu.interfaces;
+package com.qiniu.service.interfaces;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
 
@@ -8,13 +9,9 @@ public interface IOssFileProcess {
 
     IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
-    QiniuException qiniuException();
-
     String getProcessName();
 
-    void processFile(String fileKey, int retryCount);
-
-    void processFile(List<String> keyList, int retryCount);
+    void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException;
 
     void closeResource();
 }
