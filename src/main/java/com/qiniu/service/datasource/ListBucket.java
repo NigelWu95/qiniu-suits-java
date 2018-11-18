@@ -341,7 +341,7 @@ public class ListBucket {
                         fileInfoList = filterFileInfo(fileInfoList);
                         writeResult(fileInfoList, fileMap, 2);
                     }
-                    if (fileProcessor != null) fileProcessor.processFile(fileInfoList, processBatch, retryCount);
+                    if (processor != null) processor.processFile(fileInfoList, processBatch, retryCount);
                     Map<String, String> params = calcListParams(resultList, finalI);
                     String prefix = params.get("prefix");
                     String marker = params.get("marker");

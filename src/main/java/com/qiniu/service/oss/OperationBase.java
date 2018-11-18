@@ -149,7 +149,8 @@ public abstract class OperationBase {
                 String result = run(fileInfo, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() + "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
+                        "\t" + fileInfo.key);
             }
         }
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
