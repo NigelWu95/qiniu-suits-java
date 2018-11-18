@@ -50,7 +50,7 @@ public abstract class OperationBase {
         return this.processName;
     }
 
-    protected abstract Response getResponse(String key) throws QiniuException;
+    protected abstract Response getResponse(FileInfo fileInfo) throws QiniuException;
 
     public String getResult(Response response) throws QiniuException {
         if (response == null) return null;
@@ -61,16 +61,16 @@ public abstract class OperationBase {
         return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
-    public Response singleWithRetry(String key, int retryCount) throws QiniuException {
+    public Response singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
 
         Response response = null;
         try {
-            response = getResponse(key);
+            response = getResponse(fileInfo);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    response = getResponse(key);
+                    response = getResponse(fileInfo);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -81,15 +81,15 @@ public abstract class OperationBase {
         return response;
     }
 
-    public String run(String key, int retryCount) throws QiniuException {
-        Response response = singleWithRetry(key, retryCount);
+    public String run(FileInfo fileInfo, int retryCount) throws QiniuException {
+        Response response = singleWithRetry(fileInfo, retryCount);
         return getResult(response);
     }
 
-    synchronized public Response batchWithRetry(List<String> keys, int retryCount) throws QiniuException {
+    synchronized public Response batchWithRetry(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
         Response response = null;
-        batchOperations = getOperations(keys);
+        batchOperations = getOperations(fileInfoList);
         try {
             response = bucketManager.batch(batchOperations);
         } catch (QiniuException e) {
@@ -108,10 +108,10 @@ public abstract class OperationBase {
         return response;
     }
 
-    protected abstract BatchOperations getOperations(List<String> keys);
+    protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
 
-    public String batchRun(List<String> keys, int retryCount) throws QiniuException {
-        Response response = batchWithRetry(keys, retryCount);
+    public String batchRun(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
+        Response response = batchWithRetry(fileInfoList, retryCount);
         return getResult(response);
     }
 
@@ -128,16 +128,15 @@ public abstract class OperationBase {
     public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
 
         if (batch) {
             List<String> resultList = new ArrayList<>();
-            for (String key : keyList) {
+            for (FileInfo fileInfo : fileInfoList) {
                 try {
-                    String result = run(key, retryCount);
+                    String result = run(fileInfo, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    processException(e, key);
+                    processException(e, fileInfo.key);
                 }
             }
             if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
@@ -146,13 +145,15 @@ public abstract class OperationBase {
 
         int times = fileInfoList.size()/1000 + 1;
         for (int i = 0; i < times; i++) {
-            List<String> processList = keyList.subList(1000 * i, i == times - 1 ? keyList.size() : 1000 * (i + 1));
+            List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
+                    fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
                     String result = batchRun(processList, retryCount);
                     if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                 } catch (QiniuException e) {
-                    processException(e, String.join(",", processList));
+                    processException(e, String.join(",", processList.stream()
+                            .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
                 }
             }
         }

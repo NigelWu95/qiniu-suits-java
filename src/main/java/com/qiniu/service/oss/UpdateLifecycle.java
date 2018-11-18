@@ -6,10 +6,12 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UpdateLifecycle extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -38,12 +40,13 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
         return updateLifecycle;
     }
 
-    protected Response getResponse(String key) throws QiniuException {
-        return bucketManager.deleteAfterDays(bucket, key, days);
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        return bucketManager.deleteAfterDays(bucket, fileInfo.key, days);
     }
 
-    synchronized protected BatchOperations getOperations(List<String> keys){
-        return batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+        return batchOperations.addDeleteAfterDaysOps(bucket, days, keyList.toArray(new String[]{}));
     }
 
     protected String getInfo() {

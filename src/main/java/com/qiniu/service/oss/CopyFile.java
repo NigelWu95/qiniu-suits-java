@@ -6,11 +6,13 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CopyFile extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -45,16 +47,18 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         return copyFile;
     }
 
-    protected Response getResponse(String key) throws QiniuException {
-        return bucketManager.copy(bucket, key, toBucket, keepKey ? keyPrefix + key : null, false);
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        return bucketManager.copy(bucket, fileInfo.key, toBucket, keepKey ? keyPrefix + fileInfo.key : null, false);
     }
 
-    synchronized protected BatchOperations getOperations(List<String> keys) {
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList) {
+
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         if (keepKey) {
-            keys.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket,
+            keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket,
                     keyPrefix + fileKey));
         } else {
-            keys.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, null));
+            keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, null));
         }
 
         return batchOperations;

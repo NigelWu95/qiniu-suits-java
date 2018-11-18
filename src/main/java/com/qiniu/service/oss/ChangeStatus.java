@@ -6,10 +6,12 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ChangeStatus extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -38,12 +40,13 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
         return changeStatus;
     }
 
-    protected Response getResponse(String key) throws QiniuException {
-        return bucketManager.changeStatus(bucket, key, status);
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        return bucketManager.changeStatus(bucket, fileInfo.key, status);
     }
 
-    synchronized protected BatchOperations getOperations(List<String> keys){
-        return batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+        return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
     }
 
     protected String getInfo() {

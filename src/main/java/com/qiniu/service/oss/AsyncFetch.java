@@ -8,11 +8,13 @@ import com.qiniu.service.auvideo.M3U8Manager;
 import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -70,16 +72,17 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         this.hasCustomArgs = true;
     }
 
-    protected Response getResponse(String key) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + key;
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
         if (auth != null) url = auth.privateDownloadUrl(url);
         return hasCustomArgs ?
-                bucketManager.asynFetch(url, bucket, key, "", "", callbackUrl, callbackBody, callbackBodyType,
+                bucketManager.asynFetch(url, bucket, fileInfo.key, "", "", callbackUrl, callbackBody, callbackBodyType,
                         callbackHost, fileType) :
-                bucketManager.asynFetch(url, bucket, key);
+                bucketManager.asynFetch(url, bucket, fileInfo.key);
     }
 
-    synchronized protected BatchOperations getOperations(List<String> keys){
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         return new BatchOperations();
     }
 
