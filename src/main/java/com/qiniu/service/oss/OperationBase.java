@@ -130,33 +130,33 @@ public abstract class OperationBase {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         if (batch) {
-            List<String> resultList = new ArrayList<>();
-            for (FileInfo fileInfo : fileInfoList) {
-                try {
-                    String result = run(fileInfo, retryCount);
-                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
-                } catch (QiniuException e) {
-                    processException(e, fileInfo.key);
+            int times = fileInfoList.size()/1000 + 1;
+            for (int i = 0; i < times; i++) {
+                List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
+                        fileInfoList.size() : 1000 * (i + 1));
+                if (processList.size() > 0) {
+                    try {
+                        String result = batchRun(processList, retryCount);
+                        if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
+                    } catch (QiniuException e) {
+                        processException(e, String.join(",", processList.stream()
+                                .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
+                    }
                 }
             }
-            if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
             return;
         }
 
-        int times = fileInfoList.size()/1000 + 1;
-        for (int i = 0; i < times; i++) {
-            List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
-                    fileInfoList.size() : 1000 * (i + 1));
-            if (processList.size() > 0) {
-                try {
-                    String result = batchRun(processList, retryCount);
-                    if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
-                } catch (QiniuException e) {
-                    processException(e, String.join(",", processList.stream()
-                            .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
-                }
+        List<String> resultList = new ArrayList<>();
+        for (FileInfo fileInfo : fileInfoList) {
+            try {
+                String result = run(fileInfo, retryCount);
+                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+            } catch (QiniuException e) {
+                processException(e, fileInfo.key);
             }
         }
+        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
