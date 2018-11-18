@@ -21,15 +21,15 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
         this.status = status;
     }
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String process, boolean batch, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, process, batch, resultFileIndex);
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, boolean batch,
+                        String resultFileDir, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, "status", batch, resultFileDir, resultFileIndex);
         initOwnParams(status);
     }
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String process, boolean batch) {
-        super(auth, configuration, bucket, resultFileDir, process, batch);
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, boolean batch,
+                        String resultFileDir) {
+        super(auth, configuration, bucket, "status", batch, resultFileDir);
         initOwnParams(status);
     }
 

@@ -150,7 +150,7 @@ public class ListBucket {
         return listV2Line;
     }
 
-    public ListResult getListResult(Response response, int version) throws QiniuException {
+    public ListResult getListResult(Response response) throws QiniuException {
 
         ListResult listResult = new ListResult();
         if (response != null) {
@@ -191,7 +191,7 @@ public class ListBucket {
                     ListResult listResult = new ListResult();
                     try {
                         response = list(bucketManager, prefix, null, null, unitLen);
-                        listResult = getListResult(response, version);
+                        listResult = getListResult(response);
                         listResult.commonPrefix = prefix;
                     } catch (QiniuException e) {
                         fileMap.writeErrorOrNull(prefix + "\t" + e.error());
@@ -206,8 +206,7 @@ public class ListBucket {
         return listResultList;
     }
 
-    public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix,
-                                    String resultPrefix) throws IOException {
+    public List<ListResult> preList(int unitLen, int level, String resultPrefix) throws IOException {
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
@@ -235,7 +234,7 @@ public class ListBucket {
 
     public void checkValidPrefix(int level, String customPrefix, List<String> antiPrefix)
             throws IOException {
-        List<ListResult> listResultList = preList(1, level, customPrefix, antiPrefix, "check");
+        List<ListResult> listResultList = preList(1, level, "check");
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list", "check");
         List<String> validPrefixAndMarker = listResultList.parallelStream()
@@ -262,7 +261,7 @@ public class ListBucket {
             try {
                 marker = "null".equals(marker) ? "" : marker;
                 Response response = list(bucketManager, prefix, "", marker, unitLen);
-                ListResult listResult = getListResult(response, version);
+                ListResult listResult = getListResult(response);
                 response.close();
                 marker = !StringUtils.isNullOrEmpty(endFile) && listResult.fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) <= 0) ?
@@ -358,7 +357,7 @@ public class ListBucket {
 
     public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor)
             throws IOException {
-        List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
+        List<ListResult> listResultList = preList(unitLen, level, "list");
         int listSize = listResultList.size();
         int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
         runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;

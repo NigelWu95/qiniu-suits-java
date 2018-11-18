@@ -21,29 +21,29 @@ public abstract class OperationBase {
 
     protected Auth auth;
     protected Configuration configuration;
-    protected String bucket;
     protected BucketManager bucketManager;
-    protected String resultFileDir;
+    protected String bucket;
     protected String processName;
     protected boolean batch;
     protected volatile BatchOperations batchOperations;
+    protected String resultFileDir;
     protected FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir, String process,
-                         boolean batch) {
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String process, boolean batch,
+                         String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
-        this.bucket = bucket;
         this.bucketManager = new BucketManager(auth, configuration);
-        this.resultFileDir = resultFileDir;
+        this.bucket = bucket;
         this.processName = process;
         this.batch = batch;
         this.batchOperations = new BatchOperations();
+        this.resultFileDir = resultFileDir;
     }
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
-                         String process, boolean batch, int resultFileIndex) throws IOException {
-        this(auth, configuration, bucket, resultFileDir, process, batch);
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String process, boolean batch,
+                         String resultFileDir, int resultFileIndex) throws IOException {
+        this(auth, configuration, bucket, process, batch, resultFileDir);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, process, resultFileIndex);
     }
 
