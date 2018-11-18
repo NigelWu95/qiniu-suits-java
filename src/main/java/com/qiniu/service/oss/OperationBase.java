@@ -29,7 +29,7 @@ public abstract class OperationBase {
     protected FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
     public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
-                         String processName, int resultFileIndex) throws IOException {
+                         String processName) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -37,6 +37,11 @@ public abstract class OperationBase {
         this.resultFileDir = resultFileDir;
         this.processName = processName;
         this.batchOperations = new BatchOperations();
+    }
+
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
+                         String processName, int resultFileIndex) throws IOException {
+        this(auth, configuration, bucket, resultFileDir, processName);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 

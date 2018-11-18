@@ -20,19 +20,23 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
     private boolean keepKey;
     private String keyPrefix;
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
-                    boolean keepKey, String keyPrefix, String resultFileDir, String processName,
-                    int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir, processName, resultFileIndex);
+    private void initOwnParams(String toBucket, boolean keepKey, String keyPrefix) {
         this.toBucket = toBucket;
         this.keepKey = keepKey;
         this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String srcBucket, String tarBucket,
-                    boolean keepKey, String keyPrefix, String resultFileDir, String processName)
-            throws IOException {
-        this(auth, configuration, srcBucket, tarBucket, keepKey, keyPrefix, resultFileDir, processName, 0);
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
+                    boolean keepKey, String keyPrefix, String resultFileDir, String processName,
+                    int resultFileIndex) throws IOException {
+        super(auth, configuration, fromBucket, resultFileDir, processName, resultFileIndex);
+        initOwnParams(toBucket, keepKey, keyPrefix);
+    }
+
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
+                    boolean keepKey, String keyPrefix, String resultFileDir, String processName) {
+        super(auth, configuration, fromBucket, resultFileDir, processName);
+        initOwnParams(toBucket, keepKey, keyPrefix);
     }
 
     public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {

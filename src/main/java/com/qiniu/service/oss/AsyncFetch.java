@@ -10,6 +10,7 @@ import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,10 +34,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private boolean hahCheck;
     private M3U8Manager m3u8Manager;
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir, String processName, int resultFileIndex)
-            throws IOException {
-        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+    private void initOwnParams(boolean keepKey, String keyPrefix, boolean hahCheck) {
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
         this.hahCheck = hahCheck;
@@ -44,8 +42,16 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
+                      boolean hahCheck, String resultFileDir, String processName, int resultFileIndex)
+            throws IOException {
+        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+        initOwnParams(keepKey, keyPrefix, hahCheck);
+    }
+
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
                       boolean hahCheck, String resultFileDir, String processName) throws IOException {
-        this(auth, configuration, bucket, keepKey, keyPrefix, hahCheck, resultFileDir, processName, 0);
+        super(auth, configuration, bucket, resultFileDir, processName);
+        initOwnParams(keepKey, keyPrefix, hahCheck);
     }
 
     public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {

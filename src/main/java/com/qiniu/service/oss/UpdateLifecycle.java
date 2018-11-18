@@ -17,15 +17,20 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
 
     private int days;
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           String processName, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+    private void initOwnParams(int days) {
         this.days = days;
     }
 
     public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           String processName) throws IOException {
-        this(auth, configuration, bucket, days, resultFileDir, processName, 0);
+                           String processName, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+        initOwnParams(days);
+    }
+
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
+                           String processName) {
+        super(auth, configuration, bucket, resultFileDir, processName);
+        initOwnParams(days);
     }
 
     public UpdateLifecycle getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
