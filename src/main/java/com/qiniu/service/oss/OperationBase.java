@@ -14,6 +14,7 @@ import com.qiniu.util.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class OperationBase {
@@ -93,7 +94,6 @@ public abstract class OperationBase {
         try {
             response = bucketManager.batch(batchOperations);
         } catch (QiniuException e) {
-            HttpResponseUtils.checkRetryCount(e, retryCount);
             while (retryCount > 0) {
                 try {
                     response = bucketManager.batch(batchOperations);
@@ -102,6 +102,7 @@ public abstract class OperationBase {
                     retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                 }
             }
+            HttpResponseUtils.checkRetryCount(e, retryCount);
         }
         batchOperations.clearOps();
 
@@ -117,16 +118,10 @@ public abstract class OperationBase {
 
     protected abstract String getInfo();
 
-    public void processException(QiniuException e, String keys) throws QiniuException {
-        System.out.println(processName + " failed. " + e.error());
-        String info = getInfo();
-        fileReaderAndWriterMap.writeErrorOrNull(e.error() + "\t" + keys + "\t" + info);
-        if (!e.response.needRetry()) throw e;
-        else e.response.close();
-    }
-
     public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
 
+        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
+                .filter(Objects::nonNull).collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         if (batch) {
@@ -139,8 +134,9 @@ public abstract class OperationBase {
                         String result = batchRun(processList, retryCount);
                         if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                     } catch (QiniuException e) {
-                        processException(e, String.join(",", processList.stream()
-                                .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
+                        HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() + "\t" +
+                                String.join(",", processList.stream()
+                                        .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
                     }
                 }
             }
@@ -153,7 +149,7 @@ public abstract class OperationBase {
                 String result = run(fileInfo, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                processException(e, fileInfo.key);
+                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() + "\t" + fileInfo.key);
             }
         }
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
