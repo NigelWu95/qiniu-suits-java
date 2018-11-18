@@ -15,7 +15,6 @@ import com.qiniu.util.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +59,7 @@ public class ListBucket {
         this.filter = listFileFilter;
         this.antiFilter = listFileAntiFilter;
         this.doFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
-        this.doFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
+        this.doAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
     }
 
     /*
@@ -353,6 +352,7 @@ public class ListBucket {
                     if (processor != null) processor.closeResource();
                     fileMap.closeWriter();
                 } catch (Exception e) {
+//                    pool.shutdown();
                     throw new RuntimeException(e);
                 }
             });
@@ -361,32 +361,25 @@ public class ListBucket {
 
     public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
             throws IOException {
-
-        AtomicReference<IOException> ioException = new AtomicReference<>(new IOException());
         List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
         int listSize = listResultList.size();
         int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
         runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
         String info = "list bucket " + (processor == null ? "" : "and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
-        ThreadFactory threadFactory = r -> {
-            Thread thread = new Thread(r);
-            thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + e.getMessage());
-            });
+        ThreadFactory threadFactory = runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setUncaughtExceptionHandler((t, e) -> System.out.println(t.getName() + "\t" + e.getMessage()));
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
+        listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
+        executorPool.shutdown();
         try {
-            listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
-        } finally {
-            executorPool.shutdown();
-            try {
-                while (!executorPool.isTerminated())
-                    Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            while (!executorPool.isTerminated())
+                Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         System.out.println(info + " finished");
     }
