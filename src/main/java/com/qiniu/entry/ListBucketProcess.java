@@ -28,7 +28,6 @@ public class ListBucketProcess {
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
-        boolean processBatch = listBucketParams.getProcessBatch();
         IOssFileProcess iOssFileProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
@@ -55,9 +54,9 @@ public class ListBucketProcess {
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucket.setFilter(listFileFilter, listFileAntiFilter);
             if (multiStatus) {
-                listBucket.concurrentlyList(maxThreads, level, iOssFileProcessor, processBatch);
+                listBucket.concurrentlyList(maxThreads, level, iOssFileProcessor);
             } else {
-                listBucket.straightlyList(customPrefix, "", "", iOssFileProcessor, processBatch);
+                listBucket.straightlyList(customPrefix, "", "", iOssFileProcessor);
             }
         }
         if (iOssFileProcessor != null) iOssFileProcessor.closeResource();

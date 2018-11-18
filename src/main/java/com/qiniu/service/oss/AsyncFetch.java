@@ -34,6 +34,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private M3U8Manager m3u8Manager;
 
     private void initOwnParams(boolean keepKey, String keyPrefix, boolean hahCheck) {
+        this.processName = "asyncfetch";
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
         this.hahCheck = hahCheck;
@@ -41,15 +42,16 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, boolean batch, String resultFileDir, int resultFileIndex)
+                      boolean hahCheck, String resultFileDir, int resultFileIndex)
             throws IOException {
-        super(auth, configuration, bucket, "asyncfetch", batch, resultFileDir, resultFileIndex);
+        super(auth, configuration, bucket, resultFileDir);
         initOwnParams(keepKey, keyPrefix, hahCheck);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, boolean batch, String resultFileDir) {
-        super(auth, configuration, bucket, "asyncfetch", batch, resultFileDir);
+                      boolean hahCheck, String resultFileDir) {
+        super(auth, configuration, bucket, resultFileDir);
         initOwnParams(keepKey, keyPrefix, hahCheck);
     }
 
