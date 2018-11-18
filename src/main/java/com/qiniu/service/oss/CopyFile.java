@@ -8,7 +8,6 @@ import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,7 +22,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
     private void initOwnParams(String toBucket, boolean keepKey, String keyPrefix) {
         this.toBucket = toBucket;
         this.keepKey = keepKey;
-        this.keyPrefix = StringUtils.isNullOrEmpty(keyPrefix) ? "" : keyPrefix;
+        this.keyPrefix = keyPrefix;
     }
 
     public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
