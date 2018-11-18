@@ -25,16 +25,16 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         this.keyPrefix = keyPrefix;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
-                    boolean keepKey, String keyPrefix, String resultFileDir, String processName,
-                    int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir, processName, resultFileIndex);
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, boolean keepKey,
+                    String keyPrefix, String resultFileDir, String process, boolean batch, int resultFileIndex)
+            throws IOException {
+        super(auth, configuration, fromBucket, resultFileDir, process, batch, resultFileIndex);
         initOwnParams(toBucket, keepKey, keyPrefix);
     }
 
     public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
-                    boolean keepKey, String keyPrefix, String resultFileDir, String processName) {
-        super(auth, configuration, fromBucket, resultFileDir, processName);
+                    boolean keepKey, String keyPrefix, String resultFileDir, String process, boolean batch) {
+        super(auth, configuration, fromBucket, resultFileDir, process, batch);
         initOwnParams(toBucket, keepKey, keyPrefix);
     }
 

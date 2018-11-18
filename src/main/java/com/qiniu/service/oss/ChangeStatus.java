@@ -22,14 +22,14 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
     }
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String processName, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+                        String process, boolean batch, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir, process, batch, resultFileIndex);
         initOwnParams(status);
     }
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String processName) {
-        super(auth, configuration, bucket, resultFileDir, processName);
+                        String process, boolean batch) {
+        super(auth, configuration, bucket, resultFileDir, process, batch);
         initOwnParams(status);
     }
 
