@@ -72,13 +72,30 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         this.hasCustomArgs = true;
     }
 
+    private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
+        return hasCustomArgs ?
+                bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
+                        callbackHost, fileType) :
+                bucketManager.asynFetch(url, bucket, key);
+    }
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
         if (auth != null) url = auth.privateDownloadUrl(url);
-        return hasCustomArgs ?
-                bucketManager.asynFetch(url, bucket, fileInfo.key, "", "", callbackUrl, callbackBody, callbackBodyType,
-                        callbackHost, fileType) :
-                bucketManager.asynFetch(url, bucket, fileInfo.key);
+        if ("application/x-mpegurl".equals(fileInfo.mimeType)) {
+            List<VideoTS> videoTSList = new ArrayList<>();
+            try {
+                videoTSList = m3u8Manager.getVideoTSListByUrl(url);
+            } catch (IOException ioException) {
+                fileReaderAndWriterMap.writeErrorOrNull("list ts failed: " + url);
+            }
+
+            for (VideoTS videoTS : videoTSList) {
+                fetch(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1],
+                        "", "");
+            }
+        }
+
+        return fetch(url, fileInfo.key, "", "");
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
@@ -88,18 +105,5 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
 
     protected String getInfo() {
         return keyPrefix;
-    }
-
-    private void fetchTSByM3U8(String m3u8Url) {
-        List<VideoTS> videoTSList = new ArrayList<>();
-        try {
-            videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
-        } catch (IOException ioException) {
-            fileReaderAndWriterMap.writeErrorOrNull("list ts failed: " + m3u8Url);
-        }
-
-        for (VideoTS videoTS : videoTSList) {
-//            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
-        }
     }
 }
