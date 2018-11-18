@@ -14,7 +14,6 @@ import com.qiniu.util.Auth;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -28,14 +27,13 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private boolean hasCustomArgs;
     private String domain;
     private boolean https;
-    private Auth auth;
+    private Auth srcAuth;
     private boolean keepKey;
     private String keyPrefix;
     private M3U8Manager m3u8Manager;
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      String resultFileDir, String processName, int resultFileIndex)
-            throws IOException {
+                      String resultFileDir, String processName, int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
@@ -60,6 +58,12 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         return asyncFetch;
     }
 
+    public void setUrlArgs(String domain, boolean https, Auth srcAuth) {
+        this.domain = domain;
+        this.https = https;
+        this.srcAuth = srcAuth;
+    }
+
     public void setFetchArgs(String host, String callbackUrl, String callbackBody, String callbackBodyType,
                              String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;
@@ -78,10 +82,10 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
                         callbackHost, fileType) :
                 bucketManager.asynFetch(url, bucket, key);
     }
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
-        if (auth != null) url = auth.privateDownloadUrl(url);
-        if ("application/x-mpegurl".equals(fileInfo.mimeType)) {
+
+    public Response intelligentlyFetch(String url, String key, String mimeType, String md5, String etag)
+            throws QiniuException {
+        if ("application/x-mpegurl".equals(mimeType) || key.endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
@@ -90,16 +94,21 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
             }
 
             for (VideoTS videoTS : videoTSList) {
-                fetch(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1],
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix +
+                                videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1] : null,
                         "", "");
             }
         }
+        return fetch(url, keepKey ? keyPrefix + key : null, md5, etag);
+    }
 
-        return fetch(url, fileInfo.key, "", "");
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
+        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, "", "");
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         return new BatchOperations();
     }
 
