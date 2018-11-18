@@ -10,7 +10,7 @@ import com.qiniu.service.oss.UpdateLifecycle;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
-public class ProcessChoice {
+public class ProcessorChoice {
 
     public static IOssFileProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
@@ -42,8 +42,8 @@ public class ProcessChoice {
             case "copy": {
                 FileCopyParams fileCopyParams = paramFromConfig ?
                         new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getAccessKey();
-                secretKey = "".equals(fileCopyParams.getSecretKey()) ? secretKey : fileCopyParams.getSecretKey();
+                accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getProcessAk();
+                secretKey = "".equals(fileCopyParams.getProcessSk()) ? secretKey : fileCopyParams.getProcessSk();
                 iOssFileProcessor = new CopyFile(Auth.create(accessKey, secretKey), configuration,
                         fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(),
                         fileCopyParams.getTargetKeyPrefix(), resultFileDir, process);

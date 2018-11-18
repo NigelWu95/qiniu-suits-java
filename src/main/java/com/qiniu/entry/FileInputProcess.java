@@ -16,7 +16,7 @@ public class FileInputProcess {
         boolean processBatch = sourceFileParams.getProcessBatch();
         int maxThreads = sourceFileParams.getMaxThreads();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
+        IOssFileProcess iOssFileProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         FileInput fileInput = new FileInput(separator, keyIndex, 3);
         fileInput.process(maxThreads, sourceFilePath, iOssFileProcessor, processBatch);
         if (iOssFileProcessor != null) iOssFileProcessor.closeResource();

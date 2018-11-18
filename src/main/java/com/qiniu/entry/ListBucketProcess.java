@@ -29,7 +29,7 @@ public class ListBucketProcess {
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
         boolean processBatch = listBucketParams.getProcessBatch();
-        IOssFileProcess iOssFileProcessor = ProcessChoice.getFileProcessor(paramFromConfig, args, configFilePath);
+        IOssFileProcess iOssFileProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,

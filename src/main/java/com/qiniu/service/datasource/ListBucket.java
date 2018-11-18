@@ -340,14 +340,9 @@ public class ListBucket {
                     if (finalI == -1) endFilePrefix = resultList.get(0).commonPrefix;
                     else {
                         marker = resultList.get(finalI).nextMarker;
-                        if (StringUtils.isNullOrEmpty(marker)) {
-                            FileInfo fileInfo = resultList.get(finalI).fileInfoList.parallelStream()
-                                    .max(Comparator.comparing(fileInfo1 -> fileInfo1.key)).get();
-                            JsonObject jsonObject = new JsonObject();
-                            jsonObject.addProperty("c", fileInfo.type);
-                            jsonObject.addProperty("k", fileInfo.key);
-                            marker = UrlSafeBase64.encodeToString(JsonConvertUtils.toJson(jsonObject));
-                        }
+                        marker = !StringUtils.isNullOrEmpty(marker) ? marker :
+                                ListBucketUtils.calcMarker(resultList.get(finalI).fileInfoList.parallelStream()
+                                        .max(Comparator.comparing(fileInfo1 -> fileInfo1.key)).get());
                     }
                     if (!StringUtils.isNullOrEmpty(customPrefix)) prefix = customPrefix;
                 }
@@ -379,7 +374,7 @@ public class ListBucket {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            System.out.println(info + " finished");
         }
+        System.out.println(info + " finished");
     }
 }
