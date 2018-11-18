@@ -28,10 +28,15 @@ public class HttpResponseUtils {
 
     public static void processException(QiniuException e, FileReaderAndWriterMap fileMap, String processName,
                                         String info) throws QiniuException {
-        if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
-        if (e == null) throw new QiniuException(null, processName + " failed.");
-        if (e.response == null || !e.response.needRetry())
-            throw new QiniuException(e, processName + " failed. " + e.error());
-        else e.response.close();
+        if (e != null) {
+            if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
+            if (e.response == null) {
+                throw new QiniuException(e, processName + " failed. " + e.error());
+            } else if (e.response.needSwitchServer()) {
+                throw new QiniuException(e, processName + " failed. " + e.error());
+            } else {
+                e.response.close();
+            }
+        }
     }
 }
