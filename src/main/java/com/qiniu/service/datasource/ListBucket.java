@@ -30,10 +30,10 @@ public class ListBucket {
     private String customPrefix;
     private List<String> antiPrefix;
     private int retryCount;
-    private ListFileFilter listFileFilter;
-    private ListFileAntiFilter listFileAntiFilter;
-    private boolean checkListFileFilter;
-    private boolean checkListFileAntiFilter;
+    private ListFileFilter filter;
+    private ListFileAntiFilter antiFilter;
+    private boolean doFilter;
+    private boolean doAntiFilter;
     private List<String> originPrefixList = Arrays.asList(
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             .split(""));
@@ -56,10 +56,10 @@ public class ListBucket {
     }
 
     public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
-        this.listFileFilter = listFileFilter;
-        this.listFileAntiFilter = listFileAntiFilter;
-        this.checkListFileFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
-        this.checkListFileAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
+        this.filter = listFileFilter;
+        this.antiFilter = listFileAntiFilter;
+        this.doFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
+        this.doFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
     }
 
     /*
@@ -94,33 +94,35 @@ public class ListBucket {
 
     private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
 
-        if (fileInfoList == null || fileInfoList.size() == 0 || (!checkListFileFilter && !checkListFileAntiFilter)) {
+        if (fileInfoList == null || fileInfoList.size() == 0) {
             return fileInfoList;
-        } else if (checkListFileFilter && checkListFileAntiFilter) {
+        } else if (doFilter && doAntiFilter) {
             return fileInfoList.parallelStream()
-                    .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo) && listFileAntiFilter.doFileAntiFilter(fileInfo))
+                    .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
                     .collect(Collectors.toList());
-        } else if (checkListFileFilter) {
+        } else if (doFilter) {
             return fileInfoList.parallelStream()
-                    .filter(fileInfo -> listFileFilter.doFileFilter(fileInfo))
+                    .filter(fileInfo -> filter.doFileFilter(fileInfo))
+                    .collect(Collectors.toList());
+        } else if (doAntiFilter) {
+            return fileInfoList.parallelStream()
+                    .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
                     .collect(Collectors.toList());
         } else {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> listFileAntiFilter.doFileAntiFilter(fileInfo))
-                    .collect(Collectors.toList());
+            return fileInfoList;
         }
     }
 
-    private void writeResult(List<FileInfo> fileInfoList, FileReaderAndWriterMap fileReaderAndWriterMap, int writeType) {
+    private void writeResult(List<FileInfo> fileInfoList, FileReaderAndWriterMap fileMap, int writeType) {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        if (fileReaderAndWriterMap != null) {
+        if (fileMap != null) {
             Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
             List<String> list = resultFormat.equals("json") ?
                     fileInfoStream.map(JsonConvertUtils::toJsonWithoutUrlEscape).collect(Collectors.toList()) :
                     fileInfoStream.map(LineUtils::toSeparatedItemLine).collect(Collectors.toList());
-            if (writeType == 1) fileReaderAndWriterMap.writeSuccess(String.join("\n", list));
-            if (writeType == 2) fileReaderAndWriterMap.writeOther(String.join("\n", list));
+            if (writeType == 1) fileMap.writeSuccess(String.join("\n", list));
+            if (writeType == 2) fileMap.writeOther(String.join("\n", list));
         }
     }
 
@@ -129,6 +131,7 @@ public class ListBucket {
         ListV2Line listV2Line = new ListV2Line();
         if (!StringUtils.isNullOrEmpty(line)) {
             JsonObject json = new JsonObject();
+            // to test the exceptional line.
             try {
                 json = JsonConvertUtils.toJsonObject(line);
             } catch (JsonParseException e) {
@@ -274,8 +277,10 @@ public class ListBucket {
                                     StringUtils.isNullOrEmpty(endFile) || fileInfo.key.compareTo(endFile) <= 0)
                             .collect(Collectors.toList());
                     writeResult(fileInfoList, fileMap, 1);
-                    fileInfoList = filterFileInfo(fileInfoList);
-                    writeResult(fileInfoList, fileMap, 2);
+                    if (doFilter || doAntiFilter) {
+                        fileInfoList = filterFileInfo(fileInfoList);
+                        writeResult(fileInfoList, fileMap, 2);
+                    }
                     recordProgress(prefix, endFile, marker, fileMap);
                 }
 
@@ -326,8 +331,10 @@ public class ListBucket {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList()) : null;
             writeResult(fileInfoList, fileMap, 1);
-            fileInfoList = filterFileInfo(fileInfoList);
-            writeResult(fileInfoList, fileMap, 2);
+            if (doFilter || doAntiFilter) {
+                fileInfoList = filterFileInfo(fileInfoList);
+                writeResult(fileInfoList, fileMap, 2);
+            }
             if (iOssFileProcessor != null && fileInfoList != null && fileInfoList.size() > 0)
                 iOssFileProcessor.processFile(fileInfoList.parallelStream()
                     .filter(Objects::nonNull).collect(Collectors.toList()), processBatch, retryCount);
