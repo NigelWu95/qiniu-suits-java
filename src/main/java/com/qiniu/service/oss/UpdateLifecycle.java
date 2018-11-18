@@ -22,14 +22,14 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
     }
 
     public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           String processName, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+                           String process, boolean batch, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir, process, batch, resultFileIndex);
         initOwnParams(days);
     }
 
     public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           String processName) {
-        super(auth, configuration, bucket, resultFileDir, processName);
+                           String process, boolean batch) {
+        super(auth, configuration, bucket, resultFileDir, process, batch);
         initOwnParams(days);
     }
 

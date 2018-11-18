@@ -25,24 +25,26 @@ public abstract class OperationBase {
     protected BucketManager bucketManager;
     protected String resultFileDir;
     protected String processName;
+    protected boolean batch;
     protected volatile BatchOperations batchOperations;
     protected FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
-                         String processName) {
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir, String process,
+                         boolean batch) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.bucketManager = new BucketManager(auth, configuration);
         this.resultFileDir = resultFileDir;
-        this.processName = processName;
+        this.processName = process;
+        this.batch = batch;
         this.batchOperations = new BatchOperations();
     }
 
     public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
-                         String processName, int resultFileIndex) throws IOException {
-        this(auth, configuration, bucket, resultFileDir, processName);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+                         String process, boolean batch, int resultFileIndex) throws IOException {
+        this(auth, configuration, bucket, resultFileDir, process, batch);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, process, resultFileIndex);
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
@@ -123,7 +125,7 @@ public abstract class OperationBase {
 
     protected abstract String getInfo();
 
-    public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

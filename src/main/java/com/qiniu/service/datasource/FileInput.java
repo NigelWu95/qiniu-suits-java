@@ -48,7 +48,7 @@ public class FileInput {
                             })
                             .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
                             .collect(Collectors.toList());
-                    iOssFileProcessor.processFile(fileInfoList, processBatch, retryCount);
+                    iOssFileProcessor.processFile(fileInfoList, retryCount);
                 } catch (QiniuException e) {
                     e.printStackTrace();
                     System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());

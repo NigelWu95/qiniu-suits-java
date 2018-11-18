@@ -254,7 +254,7 @@ public class ListBucket {
     }
 
     private void listToEnd(BucketManager bucketManager, String prefix, String marker, String endFile,
-                          FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch)
+                          FileReaderAndWriterMap fileMap, IOssFileProcess processor)
             throws QiniuException {
         recordProgress(prefix, marker, endFile, fileMap);
         List<FileInfo> fileInfoList = new ArrayList<>();
@@ -280,17 +280,17 @@ public class ListBucket {
                 HttpResponseUtils.processException(e, fileMap, "list", prefix + "\t" + endFile + "\t" + marker);
             }
             if (processor != null) processor.processFile(fileInfoList.parallelStream()
-                        .filter(Objects::nonNull).collect(Collectors.toList()), processBatch, retryCount);
+                        .filter(Objects::nonNull).collect(Collectors.toList()), retryCount);
         }
     }
 
-    public void straightlyList(String prefix, String marker, String endFile, IOssFileProcess iOssFileProcessor,
-                             boolean processBatch) throws IOException {
+    public void straightlyList(String prefix, String marker, String endFile, IOssFileProcess iOssFileProcessor)
+            throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list", "total");
         BucketManager bucketManager = new BucketManager(auth, configuration);
         marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
-        listToEnd(bucketManager, prefix, marker, endFile, fileMap, iOssFileProcessor, processBatch);
+        listToEnd(bucketManager, prefix, marker, endFile, fileMap, iOssFileProcessor);
         fileMap.closeWriter();
         System.out.println("list finished");
     }
@@ -323,8 +323,7 @@ public class ListBucket {
         }};
     }
 
-    private void listTotalWithPrefix(ExecutorService pool, List<ListResult> resultList, IOssFileProcess fileProcessor,
-                                     boolean processBatch) {
+    private void listTotalWithPrefix(ExecutorService pool, List<ListResult> resultList, IOssFileProcess fileProcessor) {
         resultList.sort(Comparator.comparing(listResult -> listResult.commonPrefix));
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < resultList.size(); i++) {
             int finalI = i;
@@ -341,13 +340,13 @@ public class ListBucket {
                         fileInfoList = filterFileInfo(fileInfoList);
                         writeResult(fileInfoList, fileMap, 2);
                     }
-                    if (processor != null) processor.processFile(fileInfoList, processBatch, retryCount);
+                    if (processor != null) processor.processFile(fileInfoList, retryCount);
                     Map<String, String> params = calcListParams(resultList, finalI);
                     String prefix = params.get("prefix");
                     String marker = params.get("marker");
                     String endFilePrefix = params.get("end");
                     BucketManager bucketManager = new BucketManager(auth, configuration);
-                    listToEnd(bucketManager, prefix, marker, endFilePrefix, fileMap, processor, processBatch);
+                    listToEnd(bucketManager, prefix, marker, endFilePrefix, fileMap, processor);
                     if (processor != null) processor.closeResource();
                     fileMap.closeWriter();
                 } catch (Exception e) {
@@ -357,7 +356,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
+    public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor)
             throws IOException {
         List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
         int listSize = listResultList.size();
@@ -371,7 +370,7 @@ public class ListBucket {
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
-        listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
+        listTotalWithPrefix(executorPool, listResultList, processor);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())
