@@ -251,7 +251,6 @@ public class ListBucket {
         jsonObject.addProperty("marker", marker);
         jsonObject.addProperty("end", endFile);
         fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
-        jsonObject = null;
     }
 
     private void listToEnd(BucketManager bucketManager, String prefix, String marker, String endFile,
