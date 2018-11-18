@@ -352,7 +352,6 @@ public class ListBucket {
                     if (processor != null) processor.closeResource();
                     fileMap.closeWriter();
                 } catch (Exception e) {
-//                    pool.shutdown();
                     throw new RuntimeException(e);
                 }
             });

@@ -94,6 +94,7 @@ public abstract class OperationBase {
         try {
             response = bucketManager.batch(batchOperations);
         } catch (QiniuException e) {
+            HttpResponseUtils.checkRetryCount(e, retryCount);
             while (retryCount > 0) {
                 try {
                     response = bucketManager.batch(batchOperations);
@@ -102,7 +103,6 @@ public abstract class OperationBase {
                     retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                 }
             }
-            HttpResponseUtils.checkRetryCount(e, retryCount);
         }
         batchOperations.clearOps();
 
