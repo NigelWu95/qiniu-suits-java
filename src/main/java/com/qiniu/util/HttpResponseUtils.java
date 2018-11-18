@@ -32,7 +32,7 @@ public class HttpResponseUtils {
             if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
             if (e.response == null) {
                 throw new QiniuException(e, processName + " failed. " + e.error());
-            } else if (e.response.needSwitchServer()) {
+            } else if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                 throw new QiniuException(e, processName + " failed. " + e.error());
             } else {
                 e.response.close();
