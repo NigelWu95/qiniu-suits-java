@@ -150,7 +150,7 @@ public class ListBucket {
         return listV2Line;
     }
 
-    public ListResult getListResult(Response response, int version) throws QiniuException {
+    public ListResult getListResult(Response response) throws QiniuException {
 
         ListResult listResult = new ListResult();
         if (response != null) {
@@ -191,7 +191,7 @@ public class ListBucket {
                     ListResult listResult = new ListResult();
                     try {
                         response = list(bucketManager, prefix, null, null, unitLen);
-                        listResult = getListResult(response, version);
+                        listResult = getListResult(response);
                         listResult.commonPrefix = prefix;
                     } catch (QiniuException e) {
                         fileMap.writeErrorOrNull(prefix + "\t" + e.error());
@@ -206,8 +206,7 @@ public class ListBucket {
         return listResultList;
     }
 
-    public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix,
-                                    String resultPrefix) throws IOException {
+    public List<ListResult> preList(int unitLen, int level, String resultPrefix) throws IOException {
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
@@ -235,7 +234,7 @@ public class ListBucket {
 
     public void checkValidPrefix(int level, String customPrefix, List<String> antiPrefix)
             throws IOException {
-        List<ListResult> listResultList = preList(1, level, customPrefix, antiPrefix, "check");
+        List<ListResult> listResultList = preList(1, level, "check");
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list", "check");
         List<String> validPrefixAndMarker = listResultList.parallelStream()
@@ -254,7 +253,7 @@ public class ListBucket {
     }
 
     private void listToEnd(BucketManager bucketManager, String prefix, String marker, String endFile,
-                          FileReaderAndWriterMap fileMap, IOssFileProcess processor, boolean processBatch)
+                          FileReaderAndWriterMap fileMap, IOssFileProcess processor)
             throws QiniuException {
         recordProgress(prefix, marker, endFile, fileMap);
         List<FileInfo> fileInfoList = new ArrayList<>();
@@ -262,7 +261,7 @@ public class ListBucket {
             try {
                 marker = "null".equals(marker) ? "" : marker;
                 Response response = list(bucketManager, prefix, "", marker, unitLen);
-                ListResult listResult = getListResult(response, version);
+                ListResult listResult = getListResult(response);
                 response.close();
                 marker = !StringUtils.isNullOrEmpty(endFile) && listResult.fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) <= 0) ?
@@ -280,17 +279,17 @@ public class ListBucket {
                 HttpResponseUtils.processException(e, fileMap, "list", prefix + "\t" + endFile + "\t" + marker);
             }
             if (processor != null) processor.processFile(fileInfoList.parallelStream()
-                        .filter(Objects::nonNull).collect(Collectors.toList()), processBatch, retryCount);
+                        .filter(Objects::nonNull).collect(Collectors.toList()), retryCount);
         }
     }
 
-    public void straightlyList(String prefix, String marker, String endFile, IOssFileProcess iOssFileProcessor,
-                             boolean processBatch) throws IOException {
+    public void straightlyList(String prefix, String marker, String endFile, IOssFileProcess iOssFileProcessor)
+            throws IOException {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         fileMap.initWriter(resultFileDir, "list", "total");
         BucketManager bucketManager = new BucketManager(auth, configuration);
         marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
-        listToEnd(bucketManager, prefix, marker, endFile, fileMap, iOssFileProcessor, processBatch);
+        listToEnd(bucketManager, prefix, marker, endFile, fileMap, iOssFileProcessor);
         fileMap.closeWriter();
         System.out.println("list finished");
     }
@@ -323,8 +322,7 @@ public class ListBucket {
         }};
     }
 
-    private void listTotalWithPrefix(ExecutorService pool, List<ListResult> resultList, IOssFileProcess fileProcessor,
-                                     boolean processBatch) {
+    private void listTotalWithPrefix(ExecutorService pool, List<ListResult> resultList, IOssFileProcess fileProcessor) {
         resultList.sort(Comparator.comparing(listResult -> listResult.commonPrefix));
         for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < resultList.size(); i++) {
             int finalI = i;
@@ -341,13 +339,13 @@ public class ListBucket {
                         fileInfoList = filterFileInfo(fileInfoList);
                         writeResult(fileInfoList, fileMap, 2);
                     }
-                    if (processor != null) processor.processFile(fileInfoList, processBatch, retryCount);
+                    if (processor != null) processor.processFile(fileInfoList, retryCount);
                     Map<String, String> params = calcListParams(resultList, finalI);
                     String prefix = params.get("prefix");
                     String marker = params.get("marker");
                     String endFilePrefix = params.get("end");
                     BucketManager bucketManager = new BucketManager(auth, configuration);
-                    listToEnd(bucketManager, prefix, marker, endFilePrefix, fileMap, processor, processBatch);
+                    listToEnd(bucketManager, prefix, marker, endFilePrefix, fileMap, processor);
                     if (processor != null) processor.closeResource();
                     fileMap.closeWriter();
                 } catch (Exception e) {
@@ -357,9 +355,9 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor, boolean processBatch)
+    public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor)
             throws IOException {
-        List<ListResult> listResultList = preList(unitLen, level, customPrefix, antiPrefix, "list");
+        List<ListResult> listResultList = preList(unitLen, level, "list");
         int listSize = listResultList.size();
         int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
         runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
@@ -371,7 +369,7 @@ public class ListBucket {
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
-        listTotalWithPrefix(executorPool, listResultList, processor, processBatch);
+        listTotalWithPrefix(executorPool, listResultList, processor);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())

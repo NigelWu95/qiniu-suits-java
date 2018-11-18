@@ -11,7 +11,11 @@ public interface IOssFileProcess {
 
     String getProcessName();
 
-    void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException;
+    void setBatch(boolean batch);
+
+    void setRetryCount(int retryCount);
+
+    void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException;
 
     void closeResource();
 }

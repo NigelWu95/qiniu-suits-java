@@ -20,21 +20,23 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
     private String keyPrefix;
 
     private void initOwnParams(String toBucket, boolean keepKey, String keyPrefix) {
+        this.processName = "copy";
         this.toBucket = toBucket;
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
-                    boolean keepKey, String keyPrefix, String resultFileDir, String processName,
-                    int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir, processName, resultFileIndex);
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, boolean keepKey,
+                    String keyPrefix, String resultFileDir, int resultFileIndex)
+            throws IOException {
+        super(auth, configuration, fromBucket, resultFileDir);
         initOwnParams(toBucket, keepKey, keyPrefix);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket,
-                    boolean keepKey, String keyPrefix, String resultFileDir, String processName) {
-        super(auth, configuration, fromBucket, resultFileDir, processName);
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, boolean keepKey,
+                    String keyPrefix, String resultFileDir) {
+        super(auth, configuration, fromBucket, resultFileDir);
         initOwnParams(toBucket, keepKey, keyPrefix);
     }
 

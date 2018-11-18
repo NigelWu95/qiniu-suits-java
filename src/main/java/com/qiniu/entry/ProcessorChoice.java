@@ -19,6 +19,7 @@ public class ProcessorChoice {
         String accessKey = commonParams.getAccessKey();
         String secretKey = commonParams.getSecretKey();
         String process = commonParams.getProcess();
+        boolean batch = commonParams.getProcessBatch();
         String resultFileDir = commonParams.getResultFileDir();
         IOssFileProcess iOssFileProcessor = null;
         Auth auth = Auth.create(accessKey, secretKey);
@@ -29,14 +30,14 @@ public class ProcessorChoice {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
                 iOssFileProcessor = new ChangeStatus(auth, configuration, fileStatusParams.getBucket(),
-                        fileStatusParams.getTargetStatus(), resultFileDir, process);
+                        fileStatusParams.getTargetStatus(), resultFileDir);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ?
                         new FileTypeParams(configFilePath) : new FileTypeParams(args);
                 iOssFileProcessor = new ChangeType(auth, configuration, fileTypeParams.getBucket(),
-                        fileTypeParams.getTargetType(), resultFileDir, process);
+                        fileTypeParams.getTargetType(), resultFileDir);
                 break;
             }
             case "copy": {
@@ -46,17 +47,18 @@ public class ProcessorChoice {
                 secretKey = "".equals(fileCopyParams.getProcessSk()) ? secretKey : fileCopyParams.getProcessSk();
                 iOssFileProcessor = new CopyFile(Auth.create(accessKey, secretKey), configuration,
                         fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(),
-                        fileCopyParams.getTargetKeyPrefix(), resultFileDir, process);
+                        fileCopyParams.getTargetKeyPrefix(), resultFileDir);
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ?
                         new LifecycleParams(configFilePath) : new LifecycleParams(args);
                 iOssFileProcessor = new UpdateLifecycle(Auth.create(accessKey, secretKey), configuration,
-                        lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir, process);
+                        lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir);
                 break;
             }
         }
+        if (iOssFileProcessor != null) iOssFileProcessor.setBatch(batch);
 
         return iOssFileProcessor;
     }

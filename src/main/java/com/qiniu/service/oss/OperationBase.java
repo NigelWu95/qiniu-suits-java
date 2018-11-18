@@ -11,7 +11,6 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -21,35 +20,39 @@ public abstract class OperationBase {
 
     protected Auth auth;
     protected Configuration configuration;
-    protected String bucket;
     protected BucketManager bucketManager;
-    protected String resultFileDir;
+    protected String bucket;
     protected String processName;
+    protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
-    protected FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    protected String resultFileDir;
+    protected FileReaderAndWriterMap fileReaderAndWriterMap;
+    protected int retryCount = 3;
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
-                         String processName) {
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
-        this.bucket = bucket;
         this.bucketManager = new BucketManager(auth, configuration);
-        this.resultFileDir = resultFileDir;
-        this.processName = processName;
+        this.bucket = bucket;
         this.batchOperations = new BatchOperations();
-    }
-
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir,
-                         String processName, int resultFileIndex) throws IOException {
-        this(auth, configuration, bucket, resultFileDir, processName);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.resultFileDir = resultFileDir;
+        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
+        operationBase.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         return operationBase;
+    }
+
+    public void setBatch(boolean batch) {
+        this.batch = batch;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
     }
 
     public String getProcessName() {
@@ -123,7 +126,7 @@ public abstract class OperationBase {
 
     protected abstract String getInfo();
 
-    public void processFile(List<FileInfo> fileInfoList, boolean batch, int retryCount) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
