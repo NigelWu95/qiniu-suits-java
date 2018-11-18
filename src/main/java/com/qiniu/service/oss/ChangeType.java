@@ -6,11 +6,13 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ChangeType extends OperationBase implements IOssFileProcess, Cloneable {
 
@@ -39,14 +41,15 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         return changeType;
     }
 
-    protected Response getResponse(String key) throws QiniuException {
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
-        return bucketManager.changeType(bucket, key, storageType);
+        return bucketManager.changeType(bucket, fileInfo.key, storageType);
     }
 
-    synchronized protected BatchOperations getOperations(List<String> keys){
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         return batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,
-                keys.toArray(new String[]{}));
+                keyList.toArray(new String[]{}));
     }
 
     protected String getInfo() {
