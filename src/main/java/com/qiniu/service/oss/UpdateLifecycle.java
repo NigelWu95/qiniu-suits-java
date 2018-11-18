@@ -18,24 +18,24 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
     private int days;
 
     private void initOwnParams(int days) {
+        this.processName = "lifecycle";
         this.days = days;
     }
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, boolean batch,
-                           String resultFileDir, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, "lifecycle", batch, resultFileDir, resultFileIndex);
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
+                           int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir);
         initOwnParams(days);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, boolean batch,
-                           String resultFileDir) {
-        super(auth, configuration, bucket, "lifecycle", batch, resultFileDir);
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir) {
+        super(auth, configuration, bucket, resultFileDir);
         initOwnParams(days);
     }
 
     public UpdateLifecycle getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         UpdateLifecycle updateLifecycle = (UpdateLifecycle)super.clone();
-        updateLifecycle.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             updateLifecycle.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {

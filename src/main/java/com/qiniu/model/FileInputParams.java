@@ -2,20 +2,20 @@ package com.qiniu.model;
 
 import com.qiniu.util.StringUtils;
 
-public class SourceFileParams extends CommonParams {
+public class FileInputParams extends CommonParams {
 
     private String separator;
     private String filePath;
     private String keyIndex;
 
-    public SourceFileParams(String[] args) throws Exception {
+    public FileInputParams(String[] args) throws Exception {
         super(args);
         try { this.separator = getParamFromArgs("separator"); } catch (Exception e) {}
         this.filePath = getParamFromArgs("file-path");
         try { this.keyIndex = getParamFromArgs("key-index"); } catch (Exception e) {}
     }
 
-    public SourceFileParams(String configFileName) throws Exception {
+    public FileInputParams(String configFileName) throws Exception {
         super(configFileName);
         try { this.separator = getParamFromConfig("separator"); } catch (Exception e) { this.separator = ""; }
         this.filePath = getParamFromConfig("file-path");

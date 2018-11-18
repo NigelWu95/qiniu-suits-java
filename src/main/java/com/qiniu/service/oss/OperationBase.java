@@ -11,7 +11,6 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -24,34 +23,36 @@ public abstract class OperationBase {
     protected BucketManager bucketManager;
     protected String bucket;
     protected String processName;
-    protected boolean batch;
+    protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected String resultFileDir;
-    protected FileReaderAndWriterMap fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    protected FileReaderAndWriterMap fileReaderAndWriterMap;
+    protected int retryCount = 3;
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String process, boolean batch,
-                         String resultFileDir) {
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
-        this.processName = process;
-        this.batch = batch;
         this.batchOperations = new BatchOperations();
         this.resultFileDir = resultFileDir;
-    }
-
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String process, boolean batch,
-                         String resultFileDir, int resultFileIndex) throws IOException {
-        this(auth, configuration, bucket, process, batch, resultFileDir);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, process, resultFileIndex);
+        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
+        operationBase.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         return operationBase;
+    }
+
+    public void setBatch(boolean batch) {
+        this.batch = batch;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
     }
 
     public String getProcessName() {

@@ -1,10 +1,5 @@
 package com.qiniu.service.oss;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.model.ListResult;
@@ -18,12 +13,12 @@ import com.qiniu.util.*;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ListFiles {
 
     private Auth auth;
     private Configuration configuration;
+    private BucketManager bucketManager;
     private String bucket;
     private int version;
     private String resultFormat;
@@ -35,6 +30,7 @@ public class ListFiles {
                      String resultFileDir, List<String> prefixList, int retryCount) {
         this.auth = auth;
         this.configuration = configuration;
+        this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
         this.version = version;
         this.prefixList = prefixList;
@@ -46,8 +42,7 @@ public class ListFiles {
     /*
     v2 的 list 接口，通过 IO 流的方式返回文本信息，v1 是单次请求的结果一次性返回。
      */
-    public Response list(BucketManager bucketManager, String prefix, String delimiter, String marker, int limit)
-            throws QiniuException {
+    public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
 
         Response response = null;
         try {
@@ -69,50 +64,13 @@ public class ListFiles {
                 }
             }
         }
-
         return response;
     }
 
-    private void writeResult(List<FileInfo> fileInfoList, FileReaderAndWriterMap fileMap, int writeType) {
-
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        if (fileMap != null) {
-            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
-            List<String> list = resultFormat.equals("json") ?
-                    fileInfoStream.map(JsonConvertUtils::toJsonWithoutUrlEscape).collect(Collectors.toList()) :
-                    fileInfoStream.map(LineUtils::toSeparatedItemLine).collect(Collectors.toList());
-            if (writeType == 1) fileMap.writeSuccess(String.join("\n", list));
-            if (writeType == 2) fileMap.writeOther(String.join("\n", list));
-        }
-    }
-
-    public ListV2Line getItemByList2Line(String line) {
-
-        ListV2Line listV2Line = new ListV2Line();
-        if (!StringUtils.isNullOrEmpty(line)) {
-            JsonObject json = new JsonObject();
-            // to test the exceptional line.
-            try {
-                json = JsonConvertUtils.toJsonObject(line);
-            } catch (JsonParseException e) {
-                System.out.println(line);
-                e.printStackTrace();
-            }
-            JsonElement item = json.get("item");
-            JsonElement marker = json.get("marker");
-            if (item != null && !(item instanceof JsonNull)) {
-                listV2Line.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
-            }
-            if (marker != null && !(marker instanceof JsonNull)) {
-                listV2Line.marker = marker.getAsString();
-            }
-        }
-        return listV2Line;
-    }
-
-    public ListResult getListResult(Response response) throws QiniuException {
+    public ListResult getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
 
         ListResult listResult = new ListResult();
+        Response response = list(prefix, delimiter, marker, limit);
         if (response != null) {
             if (version == 1) {
                 FileListing fileListing = response.jsonToObject(FileListing.class);
@@ -127,7 +85,7 @@ public class ListFiles {
                 BufferedReader bufferedReader = new BufferedReader(reader);
                 List<ListV2Line> listV2LineList = bufferedReader.lines().parallel()
                         .filter(line -> !StringUtils.isNullOrEmpty(line))
-                        .map(this::getItemByList2Line)
+                        .map(line -> new ListV2Line().fromLine(line))
                         .collect(Collectors.toList());
                 listResult.fileInfoList = listV2LineList.parallelStream()
                         .map(listV2Line -> listV2Line.fileInfo)
@@ -136,64 +94,28 @@ public class ListFiles {
                         .max(ListV2Line::compareTo);
                 lastListV2Line.ifPresent(listV2Line -> listResult.nextMarker = listV2Line.marker);
             }
+            response.close();
         }
-
         return listResult;
     }
 
-    private List<ListResult> preListByPrefix(BucketManager bucketManager, List<String> prefixList, int unitLen,
-                                             String resultPrefix) throws IOException {
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        fileMap.initWriter(resultFileDir, resultPrefix, "pre");
-        List<ListResult> listResultList = prefixList.parallelStream()
+    private List<ListResult> getListResultByPrefix(List<String> prefixList, int unitLen) {
+
+        return prefixList.parallelStream()
                 .map(prefix -> {
-                    Response response = null;
-                    ListResult listResult = new ListResult();
                     try {
-                        response = list(bucketManager, prefix, null, null, unitLen);
-                        listResult = getListResult(response);
+                        ListResult listResult = getListResult(prefix, null, null, unitLen);
                         listResult.commonPrefix = prefix;
+                        return listResult;
                     } catch (QiniuException e) {
-                        fileMap.writeErrorOrNull(prefix + "\t" + e.error());
-                    } finally {
-                        if (response != null) response.close();
+                        throw new RuntimeException(prefix + "\t" + e.error(), e);
                     }
-                    return listResult;
                 })
                 .filter(ListResult::isValid)
                 .collect(Collectors.toList());
-        fileMap.closeWriter();
-        return listResultList;
     }
 
-    public List<ListResult> preList(int unitLen, int level, String customPrefix, List<String> antiPrefix,
-                                    String resultPrefix) throws IOException {
-        List<String> validPrefixList = prefixList.parallelStream()
-                .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                .map(prefix -> StringUtils.isNullOrEmpty(customPrefix) ? prefix : customPrefix + prefix)
-                .collect(Collectors.toList());
-        List<ListResult> listResultList = new ArrayList<>();
-        BucketManager bucketManager = new BucketManager(auth, configuration);
-        if (level == 1) {
-            listResultList = preListByPrefix(bucketManager, validPrefixList, unitLen, resultPrefix);
-        } else if (level == 2) {
-            listResultList = preListByPrefix(bucketManager, validPrefixList, 1, resultPrefix);
-            List<String> level2PrefixList = listResultList.parallelStream()
-                    .map(singlePrefixListResult -> prefixList.parallelStream()
-                            .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                            .map(originPrefix -> singlePrefixListResult.commonPrefix + originPrefix)
-                            .collect(Collectors.toList()))
-                    .reduce((list1, list2) -> {
-                        list1.addAll(list2);
-                        return list1;
-                    }).get();
-            listResultList = preListByPrefix(bucketManager, level2PrefixList, unitLen, resultPrefix);
-        }
-
-        return listResultList;
-    }
-
-    public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
-
+    public void processFile() throws QiniuException {
+        Iterator iterator = new ArrayList<>().iterator();
     }
 }
