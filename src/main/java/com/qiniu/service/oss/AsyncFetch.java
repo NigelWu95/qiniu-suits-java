@@ -3,35 +3,46 @@ package com.qiniu.service.oss;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.model.FetchBody;
-import com.qiniu.model.FetchFile;
-import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.auvideo.M3U8Manager;
+import com.qiniu.service.auvideo.VideoTS;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private FetchBody fetchBody;
+    private String host;
+    private String callbackUrl;
+    private String callbackBody;
+    private String callbackBodyType;
+    private String callbackHost;
+    private int fileType;
+    private boolean ignoreSameKey;
+    private boolean hasCustomArgs;
+    private String domain;
+    private boolean https;
+    private Auth auth;
     private boolean keepKey;
     private String keyPrefix;
-    private M3U8Manager m3u8Manager = new M3U8Manager();
+    private M3U8Manager m3u8Manager;
 
-    public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
-                      String processName, int resultFileIndex)
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
+                      String resultFileDir, String processName, int resultFileIndex)
             throws IOException {
-        super(auth, configuration, "", resultFileDir, processName, resultFileIndex);
-        this.fetchBody = fetchBody;
+        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+        this.keepKey = keepKey;
+        this.keyPrefix = keyPrefix;
+        this.m3u8Manager = new M3U8Manager();
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, FetchBody fetchBody, String resultFileDir,
-                      String processName) throws IOException {
-        this(auth, configuration, fetchBody, resultFileDir, processName, 0);
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
+                      String resultFileDir, String processName) throws IOException {
+        this(auth, configuration, bucket, keepKey, keyPrefix, resultFileDir, processName, 0);
     }
 
     public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -47,21 +58,28 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         return asyncFetch;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setFetchArgs(String host, String callbackUrl, String callbackBody, String callbackBodyType,
+                             String callbackHost, int fileType, boolean ignoreSameKey) {
+        this.host = host;
+        this.callbackUrl = callbackUrl;
+        this.callbackBody = callbackBody;
+        this.callbackBodyType = callbackBodyType;
+        this.callbackHost = callbackHost;
+        this.fileType = fileType;
+        this.ignoreSameKey = ignoreSameKey;
+        this.hasCustomArgs = true;
     }
 
     protected Response getResponse(String key) throws QiniuException {
-
-        FetchFile fetchFile = fetchBody.fetchFiles.get(0);
-        return fetchBody.hasCustomArgs() ?
-                bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key, fetchFile.md5,
-                        fetchFile.etag, fetchBody.callbackUrl, fetchBody.callbackBody, fetchBody.callbackBodyType,
-                        fetchBody.callbackHost, fetchBody.fileType) :
-                bucketManager.asynFetch(fetchFile.url, fetchBody.bucket, fetchFile.key);
+        String url = (https ? "https://" : "http://") + domain + "/" + key;
+        if (auth != null) url = auth.privateDownloadUrl(url);
+        return hasCustomArgs ?
+                bucketManager.asynFetch(url, bucket, key, "", "", callbackUrl, callbackBody, callbackBodyType,
+                        callbackHost, fileType) :
+                bucketManager.asynFetch(url, bucket, key);
     }
 
-    protected BucketManager.BatchOperations getOperations(List<String> keys){
+    synchronized protected BatchOperations getOperations(List<String> keys){
         return new BatchOperations();
     }
 
@@ -69,98 +87,16 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         return keyPrefix;
     }
 
-//    public AsyncFetch(Auth auth, String targetBucket, String resultFileDir, String processName) throws IOException {
-//        this.processName = processName;
-//        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, null);
-//    }
-//
-//    public AsyncFetch(Auth auth, String targetBucket, String resultFileDir, String processName, M3U8Manager m3u8Manager)
-//            throws IOException {
-//        this(auth, targetBucket, resultFileDir, processName);
-//        this.m3u8Manager = m3u8Manager;
-//    }
-
-    private void fetchResult(String url, String key) throws QiniuException {
+    private void fetchTSByM3U8(String m3u8Url) {
+        List<VideoTS> videoTSList = new ArrayList<>();
         try {
-//            String fetchResult = asyncFetch.run(url, key, 0);
-            String fetchResult = run(null, 0);
-            fileReaderAndWriterMap.writeSuccess(fetchResult);
-        } catch (QiniuException e) {
-            fileReaderAndWriterMap.writeErrorOrNull(url + "," + key + "\t" + e.error());
-            if (!e.response.needRetry()) throw e;
-            else e.response.close();
+            videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
+        } catch (IOException ioException) {
+            fileReaderAndWriterMap.writeErrorOrNull("list ts failed: " + m3u8Url);
+        }
+
+        for (VideoTS videoTS : videoTSList) {
+//            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
         }
     }
-
-//    public void processItem(String source, String item) {
-//        processItem(source, item, item);
-//    }
-
-//    public void processItem(String source, String item, String key) {
-//        String url = source.endsWith("/") ? source + item : source + "/" + item;
-//        fetchResult(url, key);
-//    }
-//
-//    public void processItem(Auth auth, String source, String item) {
-//        processItem(auth, source, item, item);
-//    }
-//
-//    public void processItem(Auth auth, String source, String item, String key) {
-//        String url = auth.privateDownloadUrl(source + item);
-//        fetchResult(url, key);
-//    }
-//
-//    public void processUrl(String url, String key) {
-//        fetchResult(url, key);
-//    }
-//
-//    public void processUrl(String url, String key, String format) {
-//        processUrl(url, key);
-//
-//        if (Arrays.asList("hls", "HLS", "m3u8", "M3U8").contains(format)) {
-//            fetchTSByM3U8(url);
-//        }
-//    }
-//
-//    public void processUrl(Auth auth, String url, String key) {
-//        url = auth.privateDownloadUrl(url);
-//        fetchResult(url, key);
-//    }
-
-//    public void processUrl(Auth auth, String url, String key, String format) {
-//        url = auth.privateDownloadUrl(url);
-//        processUrl(url, key);
-//
-//        if (Arrays.asList("hls", "HLS", "m3u8", "M3U8").contains(format)) {
-//            fetchTSByM3U8(url);
-//        }
-//    }
-//
-//    private void fetchTSByM3U8(String rootUrl, String m3u8FilePath) {
-//        List<VideoTS> videoTSList = new ArrayList<>();
-//
-//        try {
-//            videoTSList = m3u8Manager.getVideoTSListByFile(rootUrl, m3u8FilePath);
-//        } catch (IOException ioException) {
-//            fileReaderAndWriterMap.writeOther("list ts failed: " + m3u8FilePath);
-//        }
-//
-//        for (VideoTS videoTS : videoTSList) {
-//            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
-//        }
-//    }
-//
-//    private void fetchTSByM3U8(String m3u8Url) {
-//        List<VideoTS> videoTSList = new ArrayList<>();
-//
-//        try {
-//            videoTSList = m3u8Manager.getVideoTSListByUrl(m3u8Url);
-//        } catch (IOException ioException) {
-//            fileReaderAndWriterMap.writeErrorOrNull("list ts failed: " + m3u8Url);
-//        }
-//
-//        for (VideoTS videoTS : videoTSList) {
-//            processUrl(videoTS.getUrl(), videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?ver=)")[1]);
-//        }
-//    }
 }

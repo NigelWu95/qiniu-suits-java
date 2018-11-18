@@ -39,16 +39,12 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         return changeType;
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
     protected Response getResponse(String key) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         return bucketManager.changeType(bucket, key, storageType);
     }
 
-    protected BatchOperations getOperations(List<String> keys){
+    synchronized protected BatchOperations getOperations(List<String> keys){
         return batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,
                 keys.toArray(new String[]{}));
     }
