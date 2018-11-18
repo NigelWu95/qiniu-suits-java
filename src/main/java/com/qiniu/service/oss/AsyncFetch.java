@@ -30,19 +30,22 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private Auth srcAuth;
     private boolean keepKey;
     private String keyPrefix;
+    private boolean hahCheck;
     private M3U8Manager m3u8Manager;
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      String resultFileDir, String processName, int resultFileIndex) throws IOException {
+                      boolean hahCheck, String resultFileDir, String processName, int resultFileIndex)
+            throws IOException {
         super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
+        this.hahCheck = hahCheck;
         this.m3u8Manager = new M3U8Manager();
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      String resultFileDir, String processName) throws IOException {
-        this(auth, configuration, bucket, keepKey, keyPrefix, resultFileDir, processName, 0);
+                      boolean hahCheck, String resultFileDir, String processName) throws IOException {
+        this(auth, configuration, bucket, keepKey, keyPrefix, hahCheck, resultFileDir, processName, 0);
     }
 
     public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -105,7 +108,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, "", "");
+        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, null, hahCheck ? fileInfo.hash : null);
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
