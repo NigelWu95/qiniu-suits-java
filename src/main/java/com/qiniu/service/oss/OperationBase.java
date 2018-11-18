@@ -46,11 +46,19 @@ public abstract class OperationBase {
         return operationBase;
     }
 
+    public String getProcessName() {
+        return this.processName;
+    }
+
     protected abstract Response getResponse(String key) throws QiniuException;
 
-    public String run(String key, int retryCount) throws QiniuException {
-        Response response = singleWithRetry(key, retryCount);
-        return getResult(response);
+    public String getResult(Response response) throws QiniuException {
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        response.close();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 
     public Response singleWithRetry(String key, int retryCount) throws QiniuException {
@@ -73,9 +81,15 @@ public abstract class OperationBase {
         return response;
     }
 
-    public Response batchWithRetry(int retryCount) throws QiniuException {
-        Response response = null;
+    public String run(String key, int retryCount) throws QiniuException {
+        Response response = singleWithRetry(key, retryCount);
+        return getResult(response);
+    }
 
+    synchronized public Response batchWithRetry(List<String> keys, int retryCount) throws QiniuException {
+
+        Response response = null;
+        batchOperations = getOperations(keys);
         try {
             response = bucketManager.batch(batchOperations);
         } catch (QiniuException e) {
@@ -89,31 +103,16 @@ public abstract class OperationBase {
                 }
             }
         }
+        batchOperations.clearOps();
 
         return response;
     }
 
     protected abstract BatchOperations getOperations(List<String> keys);
 
-    synchronized public String batchRun(List<String> keys, int retryCount)
-            throws QiniuException {
-        batchOperations = getOperations(keys);
-        Response response = batchWithRetry(retryCount);
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        batchOperations.clearOps();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
-    public String getResult(Response response) throws QiniuException {
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+    public String batchRun(List<String> keys, int retryCount) throws QiniuException {
+        Response response = batchWithRetry(keys, retryCount);
+        return getResult(response);
     }
 
     protected abstract String getInfo();

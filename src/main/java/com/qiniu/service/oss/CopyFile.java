@@ -45,15 +45,11 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         return copyFile;
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
     protected Response getResponse(String key) throws QiniuException {
         return bucketManager.copy(bucket, key, toBucket, keepKey ? keyPrefix + key : null, false);
     }
 
-    protected BatchOperations getOperations(List<String> keys) {
+    synchronized protected BatchOperations getOperations(List<String> keys) {
         if (keepKey) {
             keys.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket,
                     keyPrefix + fileKey));

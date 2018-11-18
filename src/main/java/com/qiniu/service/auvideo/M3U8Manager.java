@@ -30,7 +30,7 @@ public class M3U8Manager {
     public List<VideoTS> getVideoTSList(BufferedReader bufferedReader, String rootUrl) throws IOException {
 
         List<VideoTS> ret = new ArrayList<>();
-        String line = null;
+        String line;
         float seconds = 0;
 
         while ((line = bufferedReader.readLine()) != null) {

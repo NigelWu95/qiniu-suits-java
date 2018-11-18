@@ -38,15 +38,11 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
         return updateLifecycle;
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
     protected Response getResponse(String key) throws QiniuException {
         return bucketManager.deleteAfterDays(bucket, key, days);
     }
 
-    protected BatchOperations getOperations(List<String> keys){
+    synchronized protected BatchOperations getOperations(List<String> keys){
         return batchOperations.addDeleteAfterDaysOps(bucket, days, keys.toArray(new String[]{}));
     }
 

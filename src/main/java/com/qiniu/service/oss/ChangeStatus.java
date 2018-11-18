@@ -38,15 +38,11 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
         return changeStatus;
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
     protected Response getResponse(String key) throws QiniuException {
         return bucketManager.changeStatus(bucket, key, status);
     }
 
-    protected BatchOperations getOperations(List<String> keys){
+    synchronized protected BatchOperations getOperations(List<String> keys){
         return batchOperations.addChangeStatusOps(bucket, status, keys.toArray(new String[]{}));
     }
 
