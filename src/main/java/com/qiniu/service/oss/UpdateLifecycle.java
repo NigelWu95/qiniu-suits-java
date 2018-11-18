@@ -21,15 +21,15 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
         this.days = days;
     }
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           String process, boolean batch, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, process, batch, resultFileIndex);
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, boolean batch,
+                           String resultFileDir, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, "lifecycle", batch, resultFileDir, resultFileIndex);
         initOwnParams(days);
     }
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           String process, boolean batch) {
-        super(auth, configuration, bucket, resultFileDir, process, batch);
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, boolean batch,
+                           String resultFileDir) {
+        super(auth, configuration, bucket, "lifecycle", batch, resultFileDir);
         initOwnParams(days);
     }
 

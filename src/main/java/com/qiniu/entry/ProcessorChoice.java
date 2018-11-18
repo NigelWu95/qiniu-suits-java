@@ -30,14 +30,14 @@ public class ProcessorChoice {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
                 iOssFileProcessor = new ChangeStatus(auth, configuration, fileStatusParams.getBucket(),
-                        fileStatusParams.getTargetStatus(), resultFileDir, process, batch);
+                        fileStatusParams.getTargetStatus(), batch, resultFileDir);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ?
                         new FileTypeParams(configFilePath) : new FileTypeParams(args);
                 iOssFileProcessor = new ChangeType(auth, configuration, fileTypeParams.getBucket(),
-                        fileTypeParams.getTargetType(), resultFileDir, process, batch);
+                        fileTypeParams.getTargetType(), batch, resultFileDir);
                 break;
             }
             case "copy": {
@@ -47,14 +47,14 @@ public class ProcessorChoice {
                 secretKey = "".equals(fileCopyParams.getProcessSk()) ? secretKey : fileCopyParams.getProcessSk();
                 iOssFileProcessor = new CopyFile(Auth.create(accessKey, secretKey), configuration,
                         fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(),
-                        fileCopyParams.getTargetKeyPrefix(), resultFileDir, process, batch);
+                        fileCopyParams.getTargetKeyPrefix(), batch, resultFileDir);
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ?
                         new LifecycleParams(configFilePath) : new LifecycleParams(args);
                 iOssFileProcessor = new UpdateLifecycle(Auth.create(accessKey, secretKey), configuration,
-                        lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir, process, batch);
+                        lifecycleParams.getBucket(), lifecycleParams.getDays(), batch, resultFileDir);
                 break;
             }
         }

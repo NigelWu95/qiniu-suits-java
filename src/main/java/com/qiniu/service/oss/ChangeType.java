@@ -22,15 +22,15 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         this.type = type;
     }
 
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir,
-                      String process, boolean batch, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, process, batch, resultFileIndex);
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, boolean batch,
+                      String resultFileDir, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, "type", batch, resultFileDir, resultFileIndex);
         initOwnParams(type);
     }
 
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir,
-                      String process, boolean batch) {
-        super(auth, configuration, bucket, resultFileDir, process, batch);
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, boolean batch,
+                      String resultFileDir) {
+        super(auth, configuration, bucket, "type", batch, resultFileDir);
         initOwnParams(type);
     }
 

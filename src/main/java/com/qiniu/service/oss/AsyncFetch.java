@@ -41,15 +41,15 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir, String process, boolean batch, int resultFileIndex)
+                      boolean hahCheck, boolean batch, String resultFileDir, int resultFileIndex)
             throws IOException {
-        super(auth, configuration, bucket, resultFileDir, process, batch, resultFileIndex);
+        super(auth, configuration, bucket, "asyncfetch", batch, resultFileDir, resultFileIndex);
         initOwnParams(keepKey, keyPrefix, hahCheck);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir, String process, boolean batch) {
-        super(auth, configuration, bucket, resultFileDir, process, batch);
+                      boolean hahCheck, boolean batch, String resultFileDir) {
+        super(auth, configuration, bucket, "asyncfetch", batch, resultFileDir);
         initOwnParams(keepKey, keyPrefix, hahCheck);
     }
 
