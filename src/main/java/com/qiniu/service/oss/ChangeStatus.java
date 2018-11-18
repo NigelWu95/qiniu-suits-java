@@ -18,18 +18,19 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
     private int status;
 
     private void initOwnParams(int status) {
+        this.processName = "status";
         this.status = status;
     }
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String processName, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+                        int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir);
         initOwnParams(status);
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String processName) {
-        super(auth, configuration, bucket, resultFileDir, processName);
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir) {
+        super(auth, configuration, bucket, resultFileDir);
         initOwnParams(status);
     }
 

@@ -44,7 +44,7 @@ public class ListBucketTest {
     @Test
     public void testGetListResult() throws Exception {
         Response response = listBucket.list(bucketManager, "e", "", "", unitLen);
-        ListResult listResult = listBucket.getListResult(response, version);
+        ListResult listResult = listBucket.getListResult(response);
         response.close();
         Assert.assertTrue(listResult.isValid());
         Assert.assertEquals(1, listResult.fileInfoList.size());
@@ -52,7 +52,7 @@ public class ListBucketTest {
 
     @Test
     public void testStraightList() throws IOException {
-        listBucket.straightlyList("v2", "", "==", null, false);
+        listBucket.straightlyList("v2", "", "==", null);
     }
 
 }
