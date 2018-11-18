@@ -17,15 +17,20 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
 
     private int status;
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String processName, int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+    private void initOwnParams(int status) {
         this.status = status;
     }
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        String processName) throws IOException {
-        this(auth, configuration, bucket, status, resultFileDir, processName, 0);
+                        String processName, int resultFileIndex) throws IOException {
+        super(auth, configuration, bucket, resultFileDir, processName, resultFileIndex);
+        initOwnParams(status);
+    }
+
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
+                        String processName) {
+        super(auth, configuration, bucket, resultFileDir, processName);
+        initOwnParams(status);
     }
 
     public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
