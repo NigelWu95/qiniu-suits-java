@@ -18,7 +18,7 @@ public class FileStatusParams extends BaseParams {
         if (targetStatus.matches("(0|1)")) {
             return Short.valueOf(targetStatus);
         } else {
-            throw new Exception("the direction is incorrect, please set it 0 or 1");
+            throw new Exception("no incorrect status, please set it 0 or 1");
         }
     }
 }

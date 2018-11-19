@@ -30,46 +30,33 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private Auth srcAuth;
     private boolean keepKey;
     private String keyPrefix;
-    private boolean hahCheck;
+    private boolean hashCheck;
     private M3U8Manager m3u8Manager;
 
-    private void initOwnParams(boolean keepKey, String keyPrefix, boolean hahCheck) {
+    private void initOwnParams(String domain) {
         this.processName = "asyncfetch";
-        this.keepKey = keepKey;
-        this.keyPrefix = keyPrefix;
-        this.hahCheck = hahCheck;
-        this.m3u8Manager = new M3U8Manager();
+        this.domain = domain;
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir, int resultFileIndex)
-            throws IOException {
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir,
+                      int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(keepKey, keyPrefix, hahCheck);
+        initOwnParams(domain);
+        this.m3u8Manager = new M3U8Manager();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir) {
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir) {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(keepKey, keyPrefix, hahCheck);
+        initOwnParams(domain);
     }
 
-    public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
-        asyncFetch.m3u8Manager = new M3U8Manager();
-        try {
-            asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
-        }
-        return asyncFetch;
+    public void setFetchOptions(boolean keepKey, String keyPrefix) {
+        this.keepKey = keepKey;
+        this.keyPrefix = keyPrefix;
     }
 
-    public void setUrlArgs(String domain, boolean https, Auth srcAuth) {
-        this.domain = domain;
+    public void setUrlArgs(boolean https, Auth srcAuth) {
         this.https = https;
         this.srcAuth = srcAuth;
     }
@@ -84,6 +71,19 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         this.fileType = fileType;
         this.ignoreSameKey = ignoreSameKey;
         this.hasCustomArgs = true;
+    }
+
+    public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
+        asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        asyncFetch.m3u8Manager = new M3U8Manager();
+        try {
+            asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CloneNotSupportedException();
+        }
+        return asyncFetch;
     }
 
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
@@ -115,7 +115,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, null, hahCheck ? fileInfo.hash : null);
+        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, null, hashCheck ? fileInfo.hash : null);
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
