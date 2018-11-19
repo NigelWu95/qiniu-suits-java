@@ -1,6 +1,5 @@
 package com.qiniu.service.oss;
 
-import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -17,7 +16,7 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
 
     private int status;
 
-    private void initOwnParams(int status) {
+    private void initBaseParams(int status) {
         this.processName = "status";
         this.status = status;
     }
@@ -25,18 +24,17 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
                         int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(status);
+        initBaseParams(status);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir) {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(status);
+        initBaseParams(status);
     }
 
     public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        changeStatus.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             changeStatus.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {

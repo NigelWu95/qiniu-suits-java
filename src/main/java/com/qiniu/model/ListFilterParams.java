@@ -98,11 +98,12 @@ public class ListFilterParams extends BaseParams {
     }
 
     private boolean getDirection() {
-        if (StringUtils.isNullOrEmpty(direction) || !direction.matches("\\d")) {
-            System.out.println("no incorrect direction, it will use 0(pre) as default. But it will not take effect if datetime is empty.");
-            return true;
-        } else {
+        if (direction.matches("\\d")) {
             return Integer.valueOf(direction) == 0;
+        } else {
+            System.out.println("no incorrect direction, it will use 0(pre) as default. But it will not take effect if" +
+                    " datetime is empty.");
+            return true;
         }
     }
 
@@ -121,12 +122,12 @@ public class ListFilterParams extends BaseParams {
         return Arrays.asList(mime.split(","));
     }
 
-    public int getType() throws Exception {
-        if (StringUtils.isNullOrEmpty(type)) return -1;
+    public int getType() {
         if (type.matches("(0|1)")) {
             return Integer.valueOf(type);
         } else {
-            throw new Exception("the type is incorrect, please set it 0 or 1");
+            System.out.println("no incorrect type, it will use 0 as default");
+            return -1;
         }
     }
 

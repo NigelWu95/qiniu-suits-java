@@ -18,7 +18,7 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
 
     private int type;
 
-    private void initOwnParams(int type) {
+    private void initBaseParams(int type) {
         this.processName = "type";
         this.type = type;
     }
@@ -26,18 +26,17 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
     public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir,
                       int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(type);
+        initBaseParams(type);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir) {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(type);
+        initBaseParams(type);
     }
 
     public ChangeType getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
-        changeType.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             changeType.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
