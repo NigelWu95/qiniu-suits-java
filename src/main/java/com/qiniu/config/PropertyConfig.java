@@ -7,15 +7,13 @@ public class PropertyConfig {
 
     private Properties properties;
 
-    public PropertyConfig(String resourceName) throws Exception {
+    public PropertyConfig(String resourceName) throws IOException {
         InputStream inputStream = null;
 
         try {
             inputStream = new FileInputStream(resourceName);
             properties = new Properties();
             properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
-        } catch (IOException ioException) {
-            throw new Exception(ioException);
         } finally {
             if (inputStream != null) {
                 try {
@@ -27,11 +25,11 @@ public class PropertyConfig {
         }
     }
 
-    public String getProperty(String key) throws Exception {
+    public String getProperty(String key) throws IOException {
         if (this.properties.containsKey(key)) {
             return this.properties.getProperty(key);
         } else {
-            throw new Exception("not set " + key + " param.");
+            throw new IOException("not set " + key + " param.");
         }
     }
 }

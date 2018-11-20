@@ -10,9 +10,9 @@ public class CommonParams extends BaseParams {
 
     private String resultFormat;
     private String resultFileDir;
-    private String process;
-    private String processBatch;
-    private String maxThreads;
+    private String process = "";
+    private String processBatch = "";
+    private String maxThreads = "";
 
     public CommonParams(String[] args) throws Exception {
         super(args);
@@ -54,20 +54,20 @@ public class CommonParams extends BaseParams {
     }
 
     public boolean getProcessBatch() {
-        if (StringUtils.isNullOrEmpty(processBatch) || !processBatch.matches("(true|false)")) {
+        if (processBatch.matches("(true|false)")) {
+            return Boolean.valueOf(processBatch);
+        } else {
             System.out.println("no incorrect process-batch status, it will use true as default.");
             return true;
-        } else {
-            return Boolean.valueOf(processBatch);
         }
     }
 
     public int getMaxThreads() {
-        if (StringUtils.isNullOrEmpty(maxThreads) || !maxThreads.matches("[1-9]\\d*")) {
+        if (maxThreads.matches("[1-9]\\d*")) {
+            return Integer.valueOf(maxThreads);
+        } else {
             System.out.println("no incorrect threads, it will use 10 as default.");
             return 10;
-        } else {
-            return Integer.valueOf(maxThreads);
         }
     }
 }

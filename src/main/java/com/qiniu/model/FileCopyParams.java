@@ -5,7 +5,7 @@ public class FileCopyParams extends BaseParams {
     private String processAk = "";
     private String processSk = "";
     private String targetBucket;
-    private String keepKey;
+    private String keepKey = "";
     private String keyPrefix = "";
 
     public FileCopyParams(String[] args) throws Exception {

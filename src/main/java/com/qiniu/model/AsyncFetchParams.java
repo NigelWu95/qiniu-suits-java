@@ -6,18 +6,18 @@ public class AsyncFetchParams extends BaseParams {
     private String processSk = "";
     private String targetBucket;
     private String domain;
-    private String https;
-    private String needSign;
-    private String keepKey;
+    private String https = "";
+    private String needSign = "";
+    private String keepKey = "";
     private String keyPrefix = "";
-    private String hashCheck;
+    private String hashCheck = "";
     private String host;
     private String callbackUrl;
     private String callbackBody;
     private String callbackBodyType;
     private String callbackHost;
-    private String fileType;
-    private String ignoreSameKey;
+    private String fileType = "";
+    private String ignoreSameKey = "";
 
     public AsyncFetchParams(String[] args) throws Exception {
         super(args);

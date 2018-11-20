@@ -8,10 +8,10 @@ import java.util.List;
 
 public class ListBucketParams extends CommonParams {
 
-    private String multiStatus;
-    private String version;
-    private String level;
-    private String unitLen;
+    private String multiStatus = "";
+    private String version = "";
+    private String level = "";
+    private String unitLen = "";
     private String customPrefix;
     private String antiPrefix;
 
