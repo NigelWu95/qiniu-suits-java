@@ -69,6 +69,6 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
     }
 
     protected String getInfo() {
-        return bucket + "\t" + toBucket + "\t" + keyPrefix;
+        return bucket + "\t" + toBucket + "\t" + keepKey + "\t" + keyPrefix;
     }
 }

@@ -19,14 +19,6 @@ import java.util.List;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
-    private String host;
-    private String callbackUrl;
-    private String callbackBody;
-    private String callbackBodyType;
-    private String callbackHost;
-    private int fileType;
-    private boolean ignoreSameKey;
-    private boolean hasCustomArgs;
     private String domain;
     private boolean https;
     private Auth srcAuth;
@@ -34,6 +26,14 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private String keyPrefix;
     private boolean hashCheck;
     private M3U8Manager m3u8Manager;
+    private boolean hasCustomArgs;
+    private String host;
+    private String callbackUrl;
+    private String callbackBody;
+    private String callbackBodyType;
+    private String callbackHost;
+    private int fileType;
+    private boolean ignoreSameKey;
 
     private void initBaseParams(String domain) throws UnknownHostException {
         this.processName = "asyncfetch";
@@ -118,10 +118,13 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
-        return new BatchOperations();
+        return null;
     }
 
     protected String getInfo() {
-        return keyPrefix;
+        return domain + "\t" + https + "\t" + !(srcAuth == null) + "\t" + keepKey + "\t" + keyPrefix + "\t" +
+                hashCheck + (!hasCustomArgs ? "" : "\t" +
+                host + "\t" + callbackUrl + "\t" + callbackBody + "\t" + callbackBodyType + "\t" + callbackHost +
+                fileType + "\t" + ignoreSameKey);
     }
 }
