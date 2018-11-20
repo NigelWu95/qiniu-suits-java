@@ -10,8 +10,10 @@ import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,9 +35,10 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private boolean hashCheck;
     private M3U8Manager m3u8Manager;
 
-    private void initBaseParams(String domain) {
+    private void initBaseParams(String domain) throws UnknownHostException {
         this.processName = "asyncfetch";
         this.domain = domain;
+        RequestUtils.checkHost(domain);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir,
@@ -46,7 +49,8 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir) {
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir)
+            throws IOException {
         super(auth, configuration, bucket, resultFileDir);
         initBaseParams(domain);
     }
