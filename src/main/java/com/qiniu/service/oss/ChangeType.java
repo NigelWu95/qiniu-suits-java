@@ -40,8 +40,7 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         try {
             changeType.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException("init writer failed.");
         }
         return changeType;
     }

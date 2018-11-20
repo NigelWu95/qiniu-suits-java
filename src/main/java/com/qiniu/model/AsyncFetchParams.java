@@ -46,7 +46,7 @@ public class AsyncFetchParams extends BaseParams {
         this.targetBucket = getParamFromConfig("to-bucket");
         this.domain = getParamFromConfig("domain");
         try { this.https = getParamFromConfig("use-https"); } catch (Exception e) {}
-        try { this.needSign = getParamFromArgs("need-sign"); } catch (Exception e) {}
+        try { this.needSign = getParamFromConfig("need-sign"); } catch (Exception e) {}
         try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
         try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
         try{ this.hashCheck = getParamFromConfig("hash-check"); } catch (Exception e) {}

@@ -47,8 +47,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         try {
             copyFile.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException("init writer failed.");
         }
         return copyFile;
     }

@@ -39,8 +39,7 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
         try {
             updateLifecycle.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException("init writer failed.");
         }
         return updateLifecycle;
     }
