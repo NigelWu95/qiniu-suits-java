@@ -3,63 +3,87 @@ package com.qiniu.entry;
 import com.qiniu.common.Zone;
 import com.qiniu.model.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
-import com.qiniu.service.oss.CopyFile;
-import com.qiniu.service.oss.ChangeStatus;
-import com.qiniu.service.oss.ChangeType;
-import com.qiniu.service.oss.UpdateLifecycle;
+import com.qiniu.service.oss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProcessorChoice {
+
+    public static List<String> unSupportBatch = new ArrayList<String>(){{
+        add("asyncfetch");
+    }};
 
     public static IOssFileProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
-        String accessKey = commonParams.getAccessKey();
-        String secretKey = commonParams.getSecretKey();
+        String ak = commonParams.getAccessKey();
+        String sk = commonParams.getSecretKey();
         String process = commonParams.getProcess();
         boolean batch = commonParams.getProcessBatch();
+        if (unSupportBatch.contains(process)) {
+            System.out.println(process + " is not support batch operation, it will singly process.");
+            batch = false;
+        }
         String resultFileDir = commonParams.getResultFileDir();
-        IOssFileProcess iOssFileProcessor = null;
-        Auth auth = Auth.create(accessKey, secretKey);
+        IOssFileProcess processor = null;
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                iOssFileProcessor = new ChangeStatus(auth, configuration, fileStatusParams.getBucket(),
+                processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultFileDir);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ?
                         new FileTypeParams(configFilePath) : new FileTypeParams(args);
-                iOssFileProcessor = new ChangeType(auth, configuration, fileTypeParams.getBucket(),
+                processor = new ChangeType(Auth.create(ak, sk), configuration, fileTypeParams.getBucket(),
                         fileTypeParams.getTargetType(), resultFileDir);
-                break;
-            }
-            case "copy": {
-                FileCopyParams fileCopyParams = paramFromConfig ?
-                        new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getProcessAk();
-                secretKey = "".equals(fileCopyParams.getProcessSk()) ? secretKey : fileCopyParams.getProcessSk();
-                iOssFileProcessor = new CopyFile(Auth.create(accessKey, secretKey), configuration,
-                        fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(),
-                        fileCopyParams.getTargetKeyPrefix(), resultFileDir);
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ?
                         new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                iOssFileProcessor = new UpdateLifecycle(Auth.create(accessKey, secretKey), configuration,
-                        lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir);
+                processor = new UpdateLifecycle(Auth.create(ak, sk), configuration, lifecycleParams.getBucket(),
+                        lifecycleParams.getDays(), resultFileDir);
+                break;
+            }
+            case "copy": {
+                FileCopyParams fileCopyParams = paramFromConfig ?
+                        new FileCopyParams(configFilePath) : new FileCopyParams(args);
+                ak = "".equals(fileCopyParams.getProcessAk()) ? ak : fileCopyParams.getProcessAk();
+                sk = "".equals(fileCopyParams.getProcessSk()) ? sk : fileCopyParams.getProcessSk();
+                processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
+                        fileCopyParams.getTargetBucket(), resultFileDir);
+                ((CopyFile) processor).setOptions(fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix());
+                break;
+            }
+            case "asyncfetch": {
+                AsyncFetchParams asyncFetchParams = paramFromConfig ?
+                        new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
+                String accessKey = "".equals(asyncFetchParams.getProcessAk()) ? ak : asyncFetchParams.getProcessAk();
+                String secretKey = "".equals(asyncFetchParams.getProcessSk()) ? sk : asyncFetchParams.getProcessSk();
+                processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
+                        asyncFetchParams.getDomain(), resultFileDir);
+                ((AsyncFetch) processor).setOptions(asyncFetchParams.getHttps(), asyncFetchParams.getNeedSign() ?
+                                Auth.create(accessKey, secretKey) : null, asyncFetchParams.getKeepKey(),
+                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck());
+                if (asyncFetchParams.hasCustomArgs())
+                    ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
+                            asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
+                            asyncFetchParams.getCallbackHost(), asyncFetchParams.getFileType(),
+                            asyncFetchParams.getIgnoreSameKey());
                 break;
             }
         }
-        if (iOssFileProcessor != null) iOssFileProcessor.setBatch(batch);
+        if (processor != null) processor.setBatch(batch);
 
-        return iOssFileProcessor;
+        return processor;
     }
 }

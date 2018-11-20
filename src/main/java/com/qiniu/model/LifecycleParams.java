@@ -18,7 +18,7 @@ public class LifecycleParams extends BaseParams {
         if (days.matches("[\\d]+")) {
             return Integer.valueOf(days);
         } else {
-            throw new Exception("the days is incorrect, please set it 0 or other number");
+            throw new Exception("no incorrect days, please set it 0 or other number");
         }
     }
 }

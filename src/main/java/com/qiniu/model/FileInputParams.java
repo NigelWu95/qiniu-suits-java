@@ -1,12 +1,13 @@
 package com.qiniu.model;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.util.StringUtils;
 
 public class FileInputParams extends CommonParams {
 
     private String separator;
     private String filePath;
-    private String keyIndex;
+    private String keyIndex = "";
 
     public FileInputParams(String[] args) throws Exception {
         super(args);
@@ -31,16 +32,20 @@ public class FileInputParams extends CommonParams {
         }
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getFilePath() throws QiniuException {
+        if (StringUtils.isNullOrEmpty(filePath)) {
+            throw new QiniuException(null, "no incorrect file-path, please set it.");
+        } else {
+            return filePath;
+        }
     }
 
     public int getKeyIndex() {
-        if (StringUtils.isNullOrEmpty(keyIndex) || !keyIndex.matches("[\\d]")) {
+        if (keyIndex.matches("[\\d]")) {
+            return Integer.valueOf(keyIndex);
+        } else {
             System.out.println("no incorrect key index, it will use 0 as default.");
             return 0;
-        } else {
-            return Integer.valueOf(keyIndex);
         }
     }
 }
