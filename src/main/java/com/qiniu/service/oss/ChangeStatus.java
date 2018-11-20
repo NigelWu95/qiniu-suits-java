@@ -38,8 +38,7 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
         try {
             changeStatus.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException("init writer failed.");
         }
         return changeStatus;
     }

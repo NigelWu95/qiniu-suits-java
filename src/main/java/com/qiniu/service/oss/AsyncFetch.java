@@ -82,8 +82,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         try {
             asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException("init writer failed.");
         }
         return asyncFetch;
     }
@@ -114,6 +113,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
                 fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, "", "");
             }
         }
+
         return response;
     }
 
