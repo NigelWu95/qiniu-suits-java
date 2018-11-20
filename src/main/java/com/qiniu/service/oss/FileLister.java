@@ -137,25 +137,25 @@ public class FileLister implements Iterator<List<FileInfo>> {
         public String dir = "";
 
         public int compareTo(Object object) {
-            com.qiniu.model.ListV2Line listV2Line = (com.qiniu.model.ListV2Line) object;
-            if (listV2Line.fileInfo == null && this.fileInfo == null) {
+            ListLine listLine = (ListLine) object;
+            if (listLine.fileInfo == null && this.fileInfo == null) {
                 return 0;
             } else if (this.fileInfo == null) {
                 if (!"".equals(marker)) {
                     String markerJson = new String(UrlSafeBase64.decode(marker));
                     String key = JsonConvertUtils.fromJson(markerJson, JsonObject.class).get("k").getAsString();
-                    return key.compareTo(listV2Line.fileInfo.key);
+                    return key.compareTo(listLine.fileInfo.key);
                 }
                 return 1;
-            } else if (listV2Line.fileInfo == null) {
-                if (!"".equals(listV2Line.marker)) {
-                    String markerJson = new String(UrlSafeBase64.decode(listV2Line.marker));
+            } else if (listLine.fileInfo == null) {
+                if (!"".equals(listLine.marker)) {
+                    String markerJson = new String(UrlSafeBase64.decode(listLine.marker));
                     String key = JsonConvertUtils.fromJson(markerJson, JsonObject.class).get("k").getAsString();
                     return this.fileInfo.key.compareTo(key);
                 }
                 return -1;
             } else {
-                return this.fileInfo.key.compareTo(listV2Line.fileInfo.key);
+                return this.fileInfo.key.compareTo(listLine.fileInfo.key);
             }
         }
 
