@@ -25,9 +25,9 @@ public abstract class OperationBase {
     protected String processName;
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
+    protected int retryCount = 3;
     protected String resultFileDir;
     protected FileReaderAndWriterMap fileReaderAndWriterMap;
-    protected int retryCount = 3;
 
     public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
         this.auth = auth;
