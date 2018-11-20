@@ -14,9 +14,9 @@ public class ListFilterParams extends BaseParams {
     private String keyRegex;
     private String pointDate;
     private String pointTime;
-    private String direction;
+    private String direction = "";
     private String mime;
-    private String type;
+    private String type = "";
     private long datetime;
     private boolean directionFlag;
     private String antiKeyPrefix;

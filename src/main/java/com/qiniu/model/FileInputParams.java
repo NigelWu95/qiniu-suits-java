@@ -7,7 +7,7 @@ public class FileInputParams extends CommonParams {
 
     private String separator;
     private String filePath;
-    private String keyIndex;
+    private String keyIndex = "";
 
     public FileInputParams(String[] args) throws Exception {
         super(args);
