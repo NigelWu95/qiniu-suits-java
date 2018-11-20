@@ -10,13 +10,23 @@ import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AsyncFetch extends OperationBase implements IOssFileProcess, Cloneable {
 
+    private String domain;
+    private boolean https;
+    private Auth srcAuth;
+    private boolean keepKey;
+    private String keyPrefix;
+    private boolean hashCheck;
+    private M3U8Manager m3u8Manager;
+    private boolean hasCustomArgs;
     private String host;
     private String callbackUrl;
     private String callbackBody;
@@ -24,54 +34,33 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
-    private boolean hasCustomArgs;
-    private String domain;
-    private boolean https;
-    private Auth srcAuth;
-    private boolean keepKey;
-    private String keyPrefix;
-    private boolean hahCheck;
-    private M3U8Manager m3u8Manager;
 
-    private void initOwnParams(boolean keepKey, String keyPrefix, boolean hahCheck) {
+    private void initBaseParams(String domain) throws UnknownHostException {
         this.processName = "asyncfetch";
-        this.keepKey = keepKey;
-        this.keyPrefix = keyPrefix;
-        this.hahCheck = hahCheck;
-        this.m3u8Manager = new M3U8Manager();
+        this.domain = domain;
+        RequestUtils.checkHost(domain);
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir, int resultFileIndex)
-            throws IOException {
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir,
+                      int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(keepKey, keyPrefix, hahCheck);
+        initBaseParams(domain);
+        this.m3u8Manager = new M3U8Manager();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, boolean keepKey, String keyPrefix,
-                      boolean hahCheck, String resultFileDir) {
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir)
+            throws IOException {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(keepKey, keyPrefix, hahCheck);
+        initBaseParams(domain);
     }
 
-    public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
-        asyncFetch.m3u8Manager = new M3U8Manager();
-        try {
-            asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
-        }
-        return asyncFetch;
-    }
-
-    public void setUrlArgs(String domain, boolean https, Auth srcAuth) {
-        this.domain = domain;
+    public void setOptions(boolean https, Auth srcAuth, boolean keepKey, String keyPrefix, boolean hashCheck) {
         this.https = https;
         this.srcAuth = srcAuth;
+        this.keepKey = keepKey;
+        this.keyPrefix = keyPrefix;
+        this.hashCheck = hashCheck;
     }
 
     public void setFetchArgs(String host, String callbackUrl, String callbackBody, String callbackBodyType,
@@ -86,16 +75,32 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
         this.hasCustomArgs = true;
     }
 
+    public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
+        asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        asyncFetch.m3u8Manager = new M3U8Manager();
+        try {
+            asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return asyncFetch;
+    }
+
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
                         callbackHost, fileType) :
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public Response intelligentlyFetch(String url, String key, String mimeType, String md5, String etag)
-            throws QiniuException {
-        if ("application/x-mpegurl".equals(mimeType) || key.endsWith(".m3u8")) {
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
+        Response response = fetch(url, keepKey ? keyPrefix + fileInfo.key : null,
+                null, hashCheck ? fileInfo.hash : null);
+        if ("application/x-mpegurl".equals(fileInfo.mimeType) || fileInfo.key.endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
@@ -104,25 +109,22 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
             }
 
             for (VideoTS videoTS : videoTSList) {
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix +
-                                videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1] : null,
-                        "", "");
+                String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1];
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, "", "");
             }
         }
-        return fetch(url, keepKey ? keyPrefix + key : null, md5, etag);
-    }
 
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, null, hahCheck ? fileInfo.hash : null);
+        return response;
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
-        return new BatchOperations();
+        return null;
     }
 
     protected String getInfo() {
-        return keyPrefix;
+        return domain + "\t" + https + "\t" + !(srcAuth == null) + "\t" + keepKey + "\t" + keyPrefix + "\t" +
+                hashCheck + (!hasCustomArgs ? "" : "\t" +
+                host + "\t" + callbackUrl + "\t" + callbackBody + "\t" + callbackBodyType + "\t" + callbackHost +
+                fileType + "\t" + ignoreSameKey);
     }
 }
