@@ -58,7 +58,7 @@ public class ProcessorChoice {
                         new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
                 String accessKey = "".equals(asyncFetchParams.getProcessAk()) ? ak : asyncFetchParams.getProcessAk();
                 String secretKey = "".equals(asyncFetchParams.getProcessSk()) ? sk : asyncFetchParams.getProcessSk();
-                processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getBucket(),
+                processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), resultFileDir);
                 ((AsyncFetch) processor).setOptions(asyncFetchParams.getHttps(), asyncFetchParams.getNeedSign() ?
                                 Auth.create(accessKey, secretKey) : null, asyncFetchParams.getKeepKey(),

@@ -4,6 +4,7 @@ public class AsyncFetchParams extends BaseParams {
 
     private String processAk = "";
     private String processSk = "";
+    private String targetBucket;
     private String domain;
     private String https;
     private String needSign;
@@ -22,6 +23,7 @@ public class AsyncFetchParams extends BaseParams {
         super(args);
         try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
         try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
+        this.targetBucket = getParamFromArgs("to-bucket");
         this.domain = getParamFromArgs("domain");
         try { this.https = getParamFromArgs("use-https"); } catch (Exception e) {}
         try { this.needSign = getParamFromArgs("need-sign"); } catch (Exception e) {}
@@ -41,11 +43,12 @@ public class AsyncFetchParams extends BaseParams {
         super(configFileName);
         try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
         try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
-        try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
-        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
+        this.targetBucket = getParamFromConfig("to-bucket");
         this.domain = getParamFromConfig("domain");
         try { this.https = getParamFromConfig("use-https"); } catch (Exception e) {}
         try { this.needSign = getParamFromArgs("need-sign"); } catch (Exception e) {}
+        try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
+        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
         try{ this.hashCheck = getParamFromConfig("hash-check"); } catch (Exception e) {}
         try{ this.host = getParamFromConfig("host"); } catch (Exception e) {}
         try{ this.callbackUrl = getParamFromConfig("callback-url"); } catch (Exception e) {}
@@ -62,6 +65,10 @@ public class AsyncFetchParams extends BaseParams {
 
     public String getProcessSk() {
         return processSk;
+    }
+
+    public String getTargetBucket() {
+        return targetBucket;
     }
 
     public String getDomain() {
