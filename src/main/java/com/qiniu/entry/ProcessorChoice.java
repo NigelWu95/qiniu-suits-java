@@ -7,7 +7,14 @@ import com.qiniu.service.oss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProcessorChoice {
+
+    public static List<String> unSupportBatch = new ArrayList<String>(){{
+        add("asyncfetch");
+    }};
 
     public static IOssFileProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
@@ -17,6 +24,10 @@ public class ProcessorChoice {
         String sk = commonParams.getSecretKey();
         String process = commonParams.getProcess();
         boolean batch = commonParams.getProcessBatch();
+        if (unSupportBatch.contains(process)) {
+            System.out.println(process + " is not support batch operation, it will singly process.");
+            batch = false;
+        }
         String resultFileDir = commonParams.getResultFileDir();
         IOssFileProcess processor = null;
         Configuration configuration = new Configuration(Zone.autoZone());
