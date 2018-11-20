@@ -4,29 +4,26 @@ public class FileCopyParams extends BaseParams {
 
     private String processAk = "";
     private String processSk = "";
-    private String sourceBucket;
     private String targetBucket;
     private String keepKey;
-    private String targetKeyPrefix = "";
+    private String keyPrefix = "";
 
     public FileCopyParams(String[] args) throws Exception {
         super(args);
         try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
         try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
-        this.sourceBucket = getParamFromArgs("bucket1");
-        this.targetBucket = getParamFromArgs("bucket2");
+        this.targetBucket = getParamFromArgs("to-bucket");
         try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) {}
-        try { this.targetKeyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) {}
+        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) {}
     }
 
     public FileCopyParams(String configFileName) throws Exception {
         super(configFileName);
         try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
         try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
-        this.sourceBucket = getParamFromConfig("bucket1");
-        this.targetBucket = getParamFromConfig("bucket2");
+        this.targetBucket = getParamFromConfig("to-bucket");
         try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
-        try { this.targetKeyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
+        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
     }
 
     public String getProcessAk() {
@@ -35,10 +32,6 @@ public class FileCopyParams extends BaseParams {
 
     public String getProcessSk() {
         return processSk;
-    }
-
-    public String getSourceBucket() {
-        return sourceBucket;
     }
 
     public String getTargetBucket() {
@@ -54,7 +47,7 @@ public class FileCopyParams extends BaseParams {
         }
     }
 
-    public String getTargetKeyPrefix() {
-        return targetKeyPrefix;
+    public String getKeyPrefix() {
+        return keyPrefix;
     }
 }
