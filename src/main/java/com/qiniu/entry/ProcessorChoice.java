@@ -23,7 +23,6 @@ public class ProcessorChoice {
 
         switch (process) {
             case "status": {
-//                FileStatusParams fileStatusParams = new FileStatusParams(args);
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
                 processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
