@@ -1,34 +1,29 @@
 package com.qiniu.model;
 
-import com.qiniu.util.StringUtils;
-
 public class FileCopyParams extends BaseParams {
 
     private String processAk = "";
     private String processSk = "";
-    private String sourceBucket;
     private String targetBucket;
-    private String keepKey;
-    private String targetKeyPrefix = "";
+    private String keepKey = "";
+    private String keyPrefix = "";
 
     public FileCopyParams(String[] args) throws Exception {
         super(args);
-        this.sourceBucket = getParamFromArgs("bucket1");
-        this.targetBucket = getParamFromArgs("bucket2");
         try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
         try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
+        this.targetBucket = getParamFromArgs("to-bucket");
         try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) {}
-        try { this.targetKeyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) {}
+        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) {}
     }
 
     public FileCopyParams(String configFileName) throws Exception {
         super(configFileName);
-        this.sourceBucket = getParamFromConfig("bucket1");
-        this.targetBucket = getParamFromConfig("bucket2");
         try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
         try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
+        this.targetBucket = getParamFromConfig("to-bucket");
         try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
-        try { this.targetKeyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
+        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
     }
 
     public String getProcessAk() {
@@ -39,16 +34,12 @@ public class FileCopyParams extends BaseParams {
         return processSk;
     }
 
-    public String getSourceBucket() {
-        return sourceBucket;
-    }
-
     public String getTargetBucket() {
         return targetBucket;
     }
 
     public boolean getKeepKey() {
-        if (StringUtils.isNullOrEmpty(keepKey) || !keepKey.matches("(true|false)")) {
+        if (keepKey.matches("(true|false)")) {
             return Boolean.valueOf(keepKey);
         } else {
             System.out.println("no incorrect keep-key, it will use true as default.");
@@ -56,7 +47,7 @@ public class FileCopyParams extends BaseParams {
         }
     }
 
-    public String getTargetKeyPrefix() {
-        return targetKeyPrefix;
+    public String getKeyPrefix() {
+        return keyPrefix;
     }
 }

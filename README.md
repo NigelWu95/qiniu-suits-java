@@ -37,7 +37,7 @@ version=2
 level=1
 unit-len=10000
 prefix=
-anti-prefix=
+anti-prefix=|
 
 # 进行列举时的过滤条件，f-key-prefix 表示过滤的文件名前缀，f-key-suffix 表示过滤的文件名后缀，f-key-regex 表示按正则表达式过滤文件名，
 # f-mime 表示过滤文件的 mime 类型，f-type 表示过滤的文件类型，为 0 或 1。date、time 为判断是否进行 process 操作的时间点。direction 0 表
@@ -71,22 +71,34 @@ key-index=
 #bucket=temp
 #process=copy
 
-# 对每条记录进行什么操作，目前支持 fileCopy/changeLifecycle(deleteAfterDays)/changeType/changeStatus, process-batch 表示是否使用
-# batch（批量请求）方式处理（默认为 true）。file copy 操作前提是两个空间在同一账号下，或者被复制的空间授权可读权限到目标账号，process-ak 和
-# process-sk 可以设置目标账号的 ak、sk，bucket1 和 bucket2 表示被复制空间和目标空间的名称，keep-key 表示是否保留原文件名（默认为 true），
-# add-prefix 表示复制到目标空间后添加固定文件名前缀。type 操作表示修改文件类型，1 表示低频存储，0 表示标准存储。status 操作表示修改文件状态，1
-# 表示文件禁用，0 表示文件启用。lifecycle 操作表示修改文件生命周期，为 0 时表示永久的生命周期
+# 对每条记录进行什么操作，目前支持 copy/lifecycle/type/status/asyncfetch（复制文件/更新生命周期/修改类型/修改状态/异步抓取）,
+# process-batch 表示是否使用batch（批量请求）方式处理（默认为 true）。file copy 操作前提是两个空间在同一账号下，或者被复制的空间授权可读权限
+# 到目标账号，process-ak 和 process-sk 可以设置目标账号的 ak、sk，to-bucket 表示复制到目标空间的名称，keep-key 表示是否保留原文件名（默认
+# 为 true），add-prefix 表示文件保存到目标空间后添加固定文件名前缀。type 操作表示修改文件类型，0 表示标准存储，1 表示低频存储。status 操作表
+# 示修改文件状态，0表示文件启用，1 表示文件禁用。lifecycle 操作表示修改文件生命周期，为 0 时表示永久的生命周期。domain 至 ignore-same-key
+# 为异步抓取所需参数，domain 为源地址域名，use-https 表示 URL 是否使用 https，need-sign 表示是否需要进行七牛私有签名（七牛的私有空间资源），
+# 其他参数参考：https://developer.qiniu.com/kodo/api/4097/asynch-fetch。
 process=
 process-batch=true
 process-ak=
 process-sk=
-bucket1=bucket1
-bucket2=bucket2
+to-bucket=bucket2
 keep-key=true
 add-prefix=video/
 type=1
 status=0
 days=0
+domain=temp.nigel.qiniuts.com
+use-https=
+need-sign=true
+hash-check=
+host=
+callback-url=
+callback-body=
+callback-body-type=
+callback-host=
+file-type=
+ignore-same-key=
 ```
 
 * main dynamic parameters and description  
@@ -119,8 +131,10 @@ days=0
 [check] 检查空间文件包含的前缀，存在几个前缀表明可进行列举的最多并发数，结果文件保存每个前缀的第一个文件信息（用于分段列举的节点）。
 [copy] 将列举出的文件 copy 至另一个 bucket，需要设置 copy 的账号及空间等参数。
 [lifecycle] 将列举出的文件生命周期进行修改。
-[status] 将列举出的文件状态进行修改，可指定某个时间点之前或之后的进行处理。
-[type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储，可指定某个时间点之前或之后的进行处理。
+[status] 将列举出的文件状态进行修改。
+[type] 将列举出的文件存储类型进行修改，转换为低频存储或者高频存储。
+[asyncfetch] 将列举出的文件进行异步 fetch 到另外一个空间（通常是另一区域的空间）。
+通过空间列举操作进行处理时可指定过滤条件，只对过滤之后的文件进行处理。
 ```
 与 process 同时使用的参数还有 process-batch，通常情况下会选择（true）此操作方式，用集中的请求做批量处理，效果更好，但特殊操作
 不支持 batch 的情况下不能使用。

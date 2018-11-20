@@ -8,10 +8,10 @@ import java.util.List;
 
 public class ListBucketParams extends CommonParams {
 
-    private String multiStatus;
-    private String version;
-    private String level;
-    private String unitLen;
+    private String multiStatus = "";
+    private String version = "";
+    private String level = "";
+    private String unitLen = "";
     private String customPrefix;
     private String antiPrefix;
 
@@ -36,38 +36,38 @@ public class ListBucketParams extends CommonParams {
     }
 
     public boolean getMultiStatus() {
-        if (StringUtils.isNullOrEmpty(multiStatus) || !multiStatus.matches("(true|false)")) {
+        if (multiStatus.matches("(true|false)")) {
+            return Boolean.valueOf(multiStatus);
+        } else {
             System.out.println("no incorrect multi status, it will use true as default.");
             return true;
-        } else {
-            return Boolean.valueOf(multiStatus);
         }
     }
 
     public int getVersion() {
-        if (StringUtils.isNullOrEmpty(version) || !version.matches("[12]")) {
+        if (version.matches("[12]")) {
+            return Integer.valueOf(version);
+        } else {
             System.out.println("no incorrect version, it will use 2 as default.");
             return 2;
-        } else {
-            return Integer.valueOf(version);
         }
     }
 
     public int getLevel() {
-        if (StringUtils.isNullOrEmpty(level) || !level.matches("[12]")) {
+        if (level.matches("[12]")) {
+            return Integer.valueOf(level);
+        } else {
             System.out.println("no incorrect level, it will use 1 as default.");
             return 1;
-        } else {
-            return Integer.valueOf(level);
         }
     }
 
     public int getUnitLen() {
-        if (StringUtils.isNullOrEmpty(unitLen) || !unitLen.matches("\\d+")) {
+        if (unitLen.matches("\\d+")) {
+            return Integer.valueOf(unitLen);
+        } else {
             System.out.println("no incorrect unit-len, it will use 1000 as default.");
             return 1000;
-        } else {
-            return Integer.valueOf(unitLen);
         }
     }
 

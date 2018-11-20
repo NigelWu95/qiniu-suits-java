@@ -19,25 +19,26 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
     private boolean keepKey;
     private String keyPrefix;
 
-    private void initOwnParams(String toBucket, boolean keepKey, String keyPrefix) {
+    private void initBaseParams(String toBucket) {
         this.processName = "copy";
         this.toBucket = toBucket;
-        this.keepKey = keepKey;
-        this.keyPrefix = keyPrefix;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, boolean keepKey,
-                    String keyPrefix, String resultFileDir, int resultFileIndex)
-            throws IOException {
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir,
+                    int resultFileIndex) throws IOException {
         super(auth, configuration, fromBucket, resultFileDir);
-        initOwnParams(toBucket, keepKey, keyPrefix);
+        initBaseParams(toBucket);
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, boolean keepKey,
-                    String keyPrefix, String resultFileDir) {
+    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir) {
         super(auth, configuration, fromBucket, resultFileDir);
-        initOwnParams(toBucket, keepKey, keyPrefix);
+        initBaseParams(toBucket);
+    }
+
+    public void setOptions(boolean keepKey, String keyPrefix) {
+        this.keepKey = keepKey;
+        this.keyPrefix = keyPrefix;
     }
 
     public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -46,8 +47,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         try {
             copyFile.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException("init writer failed.");
         }
         return copyFile;
     }
@@ -69,6 +69,6 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
     }
 
     protected String getInfo() {
-        return bucket + "\t" + toBucket + "\t" + keyPrefix;
+        return bucket + "\t" + toBucket + "\t" + keepKey + "\t" + keyPrefix;
     }
 }
