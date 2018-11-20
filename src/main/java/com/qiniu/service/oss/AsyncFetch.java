@@ -33,7 +33,7 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     private boolean hashCheck;
     private M3U8Manager m3u8Manager;
 
-    private void initOwnParams(String domain) {
+    private void initBaseParams(String domain) {
         this.processName = "asyncfetch";
         this.domain = domain;
     }
@@ -41,24 +41,22 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir,
                       int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(domain);
+        initBaseParams(domain);
         this.m3u8Manager = new M3U8Manager();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir) {
         super(auth, configuration, bucket, resultFileDir);
-        initOwnParams(domain);
+        initBaseParams(domain);
     }
 
-    public void setFetchOptions(boolean keepKey, String keyPrefix) {
-        this.keepKey = keepKey;
-        this.keyPrefix = keyPrefix;
-    }
-
-    public void setUrlArgs(boolean https, Auth srcAuth) {
+    public void setOptions(boolean https, Auth srcAuth, boolean keepKey, String keyPrefix, boolean hashCheck) {
         this.https = https;
         this.srcAuth = srcAuth;
+        this.keepKey = keepKey;
+        this.keyPrefix = keyPrefix;
+        this.hashCheck = hashCheck;
     }
 
     public void setFetchArgs(String host, String callbackUrl, String callbackBody, String callbackBodyType,
@@ -87,15 +85,19 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
     }
 
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
                         callbackHost, fileType) :
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public Response intelligentlyFetch(String url, String key, String mimeType, String md5, String etag)
-            throws QiniuException {
-        if ("application/x-mpegurl".equals(mimeType) || key.endsWith(".m3u8")) {
+    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
+        Response response = fetch(url, keepKey ? keyPrefix + fileInfo.key : null,
+                null, hashCheck ? fileInfo.hash : null);
+        if ("application/x-mpegurl".equals(fileInfo.mimeType) || fileInfo.key.endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
@@ -104,18 +106,11 @@ public class AsyncFetch extends OperationBase implements IOssFileProcess, Clonea
             }
 
             for (VideoTS videoTS : videoTSList) {
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix +
-                                videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1] : null,
-                        "", "");
+                String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1];
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, "", "");
             }
         }
-        return fetch(url, keepKey ? keyPrefix + key : null, md5, etag);
-    }
-
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        return intelligentlyFetch(url, fileInfo.key, fileInfo.mimeType, null, hashCheck ? fileInfo.hash : null);
+        return response;
     }
 
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){

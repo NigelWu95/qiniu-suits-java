@@ -13,54 +13,61 @@ public class ProcessorChoice {
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
-        String accessKey = commonParams.getAccessKey();
-        String secretKey = commonParams.getSecretKey();
+        String ak = commonParams.getAccessKey();
+        String sk = commonParams.getSecretKey();
         String process = commonParams.getProcess();
         boolean batch = commonParams.getProcessBatch();
         String resultFileDir = commonParams.getResultFileDir();
         IOssFileProcess processor = null;
-        Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                processor = new ChangeStatus(auth, configuration, fileStatusParams.getBucket(),
+                processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultFileDir);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ?
                         new FileTypeParams(configFilePath) : new FileTypeParams(args);
-                processor = new ChangeType(auth, configuration, fileTypeParams.getBucket(),
+                processor = new ChangeType(Auth.create(ak, sk), configuration, fileTypeParams.getBucket(),
                         fileTypeParams.getTargetType(), resultFileDir);
-                break;
-            }
-            case "copy": {
-                FileCopyParams fileCopyParams = paramFromConfig ?
-                        new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                accessKey = "".equals(fileCopyParams.getProcessAk()) ? accessKey : fileCopyParams.getProcessAk();
-                secretKey = "".equals(fileCopyParams.getProcessSk()) ? secretKey : fileCopyParams.getProcessSk();
-                processor = new CopyFile(Auth.create(accessKey, secretKey), configuration,
-                        fileCopyParams.getSourceBucket(), fileCopyParams.getTargetBucket(), resultFileDir);
-                ((CopyFile) processor).setCopyOptions(fileCopyParams.getKeepKey(), fileCopyParams.getTargetKeyPrefix());
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ?
                         new LifecycleParams(configFilePath) : new LifecycleParams(args);
-                processor = new UpdateLifecycle(Auth.create(accessKey, secretKey), configuration,
-                        lifecycleParams.getBucket(), lifecycleParams.getDays(), resultFileDir);
+                processor = new UpdateLifecycle(Auth.create(ak, sk), configuration, lifecycleParams.getBucket(),
+                        lifecycleParams.getDays(), resultFileDir);
+                break;
+            }
+            case "copy": {
+                FileCopyParams fileCopyParams = paramFromConfig ?
+                        new FileCopyParams(configFilePath) : new FileCopyParams(args);
+                ak = "".equals(fileCopyParams.getProcessAk()) ? ak : fileCopyParams.getProcessAk();
+                sk = "".equals(fileCopyParams.getProcessSk()) ? sk : fileCopyParams.getProcessSk();
+                processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
+                        fileCopyParams.getTargetBucket(), resultFileDir);
+                ((CopyFile) processor).setOptions(fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix());
                 break;
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = paramFromConfig ?
                         new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
-                accessKey = "".equals(asyncFetchParams.getProcessAk()) ? accessKey : asyncFetchParams.getProcessAk();
-                secretKey = "".equals(asyncFetchParams.getProcessSk()) ? secretKey : asyncFetchParams.getProcessSk();
-                processor = new AsyncFetch(Auth.create(accessKey, secretKey), configuration, "", "",
-                        resultFileDir);
+                String accessKey = "".equals(asyncFetchParams.getProcessAk()) ? ak : asyncFetchParams.getProcessAk();
+                String secretKey = "".equals(asyncFetchParams.getProcessSk()) ? sk : asyncFetchParams.getProcessSk();
+                processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getBucket(),
+                        asyncFetchParams.getDomain(), resultFileDir);
+                ((AsyncFetch) processor).setOptions(asyncFetchParams.getHttps(), asyncFetchParams.getNeedSign() ?
+                                Auth.create(accessKey, secretKey) : null, asyncFetchParams.getKeepKey(),
+                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck());
+                if (asyncFetchParams.hasCustomArgs())
+                    ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
+                            asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
+                            asyncFetchParams.getCallbackHost(), asyncFetchParams.getFileType(),
+                            asyncFetchParams.getIgnoreSameKey());
                 break;
             }
         }

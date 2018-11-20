@@ -36,7 +36,7 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         initBaseParams(toBucket);
     }
 
-    public void setCopyOptions(boolean keepKey, String keyPrefix) {
+    public void setOptions(boolean keepKey, String keyPrefix) {
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
     }
