@@ -56,6 +56,10 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return prefix;
     }
 
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
     public String getDelimiter() {
         return delimiter;
     }
@@ -64,8 +68,16 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return marker;
     }
 
+    public void setMarker(String marker) {
+        this.marker = marker;
+    }
+
     public int getLimit() {
         return limit;
+    }
+
+    public List<FileInfo> getFileInfoList() {
+        return fileInfoList;
     }
 
     /**
