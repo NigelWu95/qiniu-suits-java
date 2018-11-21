@@ -35,7 +35,7 @@ public class ListBucketProcess {
                 customPrefix, antiPrefix, 3);
         listBucket.setResultParams(resultFormat, resultFileDir);
         if ("check".equals(process)) {
-            listBucket.checkValidPrefix(level, customPrefix, antiPrefix);
+            listBucket.checkValidPrefix(level);
         } else {
             ListFilterParams listFilterParams = paramFromConfig ?
                     new ListFilterParams(configFilePath) : new ListFilterParams(args);
@@ -56,7 +56,7 @@ public class ListBucketProcess {
             if (multiStatus) {
                 listBucket.concurrentlyList(maxThreads, level, iOssFileProcessor);
             } else {
-                listBucket.straightlyList(customPrefix, "", "", iOssFileProcessor);
+                listBucket.straightlyList("", "", iOssFileProcessor);
             }
         }
         if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
