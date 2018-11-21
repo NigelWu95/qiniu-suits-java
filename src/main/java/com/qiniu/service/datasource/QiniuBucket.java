@@ -271,6 +271,7 @@ public class QiniuBucket {
         try {
             fileMap.initWriter(resultFileDir, "list", "check");
             List<String> validPrefixAndMarker = fileListerList.parallelStream()
+                    .filter(FileLister::hasNext)
                     .map(fileLister -> fileLister.getPrefix() + "\t" + fileLister.getMarker())
                     .collect(Collectors.toList());
             fileMap.writeSuccess(String.join("\n", validPrefixAndMarker));
