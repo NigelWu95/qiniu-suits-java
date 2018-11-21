@@ -35,7 +35,7 @@ public class QiniuBucketTest {
 
     @Test
     public void testConcurrentlyList() {
-        qiniuBucket.concurrentlyList(10, 1, null);
+        qiniuBucket.concurrentlyList(15, 1, null);
     }
 
     @Test
