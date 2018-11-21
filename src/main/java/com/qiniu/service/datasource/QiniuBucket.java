@@ -144,13 +144,12 @@ public class QiniuBucket {
         fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
-    private void listFilesWithProcess(FileLister fileLister, String prefix, String marker, String endFile,
-                           FileReaderAndWriterMap fileMap, IOssFileProcess processor) throws QiniuException {
-        recordProgress(prefix, marker, endFile, fileMap);
+    private void seekListerToEnd(FileLister fileLister, String prefix, String endFile, FileReaderAndWriterMap fileMap,
+                             IOssFileProcess processor) throws QiniuException {
         List<FileInfo> fileInfoList;
         while (fileLister.hasNext()) {
             fileInfoList = fileLister.next();
-            marker = fileLister.getMarker();
+            String marker = fileLister.getMarker();
             if (!StringUtils.isNullOrEmpty(endFile)) {
                 marker = fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) <= 0)
@@ -174,7 +173,7 @@ public class QiniuBucket {
 
     private Map<String, String> calcListParams(List<FileLister> resultList, int finalI) {
         String prefix = "";
-        String marker = "null";
+        String marker = "";
         String end = "";
         if (finalI < resultList.size() -1 && finalI > -1) {
             prefix = resultList.get(finalI).getPrefix();
@@ -191,7 +190,7 @@ public class QiniuBucket {
                     marker = ListBucketUtils.calcMarker(lastFileInfo);
                 }
             }
-            if (!StringUtils.isNullOrEmpty(customPrefix)) prefix = customPrefix;
+            prefix = customPrefix;
         }
 
         String finalPrefix = prefix;
@@ -204,14 +203,14 @@ public class QiniuBucket {
         }};
     }
 
-    private void list(int finalI, List<FileLister> resultList, IOssFileProcess fileProcessor) {
+    private void listFromLister(int finalI, List<FileLister> fileListerList, IOssFileProcess fileProcessor) {
         int resultIndex = StringUtils.isNullOrEmpty(customPrefix) ? finalI + 2 : finalI + 1;
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         try {
             fileMap.initWriter(resultFileDir, "list", resultIndex);
             IOssFileProcess processor = fileProcessor != null ? fileProcessor.getNewInstance(resultIndex) : null;
             if (finalI > -1) {
-                List<FileInfo> fileInfoList = resultList.get(finalI).next().parallelStream()
+                List<FileInfo> fileInfoList = fileListerList.get(finalI).next().parallelStream()
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
                 writeResult(fileInfoList, fileMap, 1);
@@ -222,14 +221,14 @@ public class QiniuBucket {
                 if (processor != null) processor.processFile(fileInfoList, retryCount);
             }
 
-            Map<String, String> params = calcListParams(resultList, finalI);
+            Map<String, String> params = calcListParams(fileListerList, finalI);
             String prefix = params.get("prefix");
             String marker = params.get("marker");
             String endFilePrefix = params.get("end");
             BucketManager bucketManager = new BucketManager(auth, configuration);
             FileLister fileLister = new FileLister(bucketManager, bucket, prefix, "", marker, unitLen,
                     version, retryCount);
-            listFilesWithProcess(fileLister, prefix, marker, endFilePrefix, fileMap, processor);
+            seekListerToEnd(fileLister, prefix, endFilePrefix, fileMap, processor);
             if (processor != null) processor.closeResource();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -241,7 +240,8 @@ public class QiniuBucket {
     public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor) {
         List<FileLister> fileListerList = getFileListerList(unitLen, level);
         int listSize = fileListerList.size();
-        int runningThreads = StringUtils.isNullOrEmpty(customPrefix) ? listSize + 1 : listSize;
+        boolean hashPrefix = StringUtils.isNullOrEmpty(customPrefix);
+        int runningThreads = hashPrefix ? listSize + 1 : listSize;
         runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
@@ -252,9 +252,9 @@ public class QiniuBucket {
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-        for (int i = StringUtils.isNullOrEmpty(customPrefix) ? -1 : 0; i < fileListerList.size(); i++) {
+        for (int i = hashPrefix ? -1 : 0; i < fileListerList.size(); i++) {
             int finalI = i;
-            executorPool.execute(() -> list(finalI, fileListerList, processor));
+            executorPool.execute(() -> listFromLister(finalI, fileListerList, processor));
         }
         executorPool.shutdown();
         try {
@@ -289,10 +289,9 @@ public class QiniuBucket {
             System.out.println(info + " start...");
             fileMap.initWriter(resultFileDir, "list", "total");
             BucketManager bucketManager = new BucketManager(auth, configuration);
-            marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
             FileLister fileLister = new FileLister(bucketManager, bucket, customPrefix, "", marker, unitLen,
                     version, retryCount);
-            listFilesWithProcess(fileLister, customPrefix, marker, endFile, fileMap, processor);
+            seekListerToEnd(fileLister, customPrefix, endFile, fileMap, processor);
             System.out.println(info + " finished.");
         } catch (IOException e) {
             throw new RuntimeException(e);
