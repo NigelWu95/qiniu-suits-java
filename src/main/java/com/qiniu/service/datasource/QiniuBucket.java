@@ -153,13 +153,13 @@ public class QiniuBucket {
         while (fileLister.hasNext() || fileLister.getPrefix().equals(customPrefix)) {
             String marker = fileLister.getMarker();
             recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
-            fileInfoList = fileLister.next();
+            fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
             if (!StringUtils.isNullOrEmpty(endFile)) {
                 marker = fileInfoList.parallelStream()
-                        .anyMatch(fileInfo -> fileInfo != null && endFile.compareTo(fileInfo.key) <= 0)
+                        .anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0)
                         ? null : marker;
                 fileInfoList = fileInfoList.parallelStream()
-                        .filter(fileInfo -> fileInfo != null && fileInfo.key.compareTo(endFile) <= 0)
+                        .filter(fileInfo -> fileInfo.key.compareTo(endFile) <= 0)
                         .collect(Collectors.toList());
             }
             writeResult(fileInfoList, fileMap, 1);
@@ -186,6 +186,7 @@ public class QiniuBucket {
             FileLister fileLister = resultList.get(finalI);
             if (StringUtils.isNullOrEmpty(marker)) {
                 FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
+                        .filter(Objects::nonNull)
                         .max(Comparator.comparing(fileInfo -> fileInfo.key))
                         .orElse(null);
                 marker = ListBucketUtils.calcMarker(lastFileInfo);
