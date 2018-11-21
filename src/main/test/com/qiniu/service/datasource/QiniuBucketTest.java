@@ -15,9 +15,6 @@ import static org.junit.Assert.*;
 public class QiniuBucketTest {
 
     private QiniuBucket qiniuBucket;
-    private String bucket;
-    private int unitLen;
-    private int version;
 
     @Before
     public void init() throws Exception {
@@ -28,10 +25,10 @@ public class QiniuBucketTest {
         Configuration configuration = new Configuration(Zone.autoZone());
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
-        this.bucket = listBucketParams.getBucket();
-        this.version = listBucketParams.getVersion();
-        this.unitLen = listBucketParams.getUnitLen();
-        this.unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
+        String bucket = listBucketParams.getBucket();
+        int version = listBucketParams.getVersion();
+        int unitLen = listBucketParams.getUnitLen();
+        unitLen = (version == 1 && unitLen > 1000) ? unitLen %1000 : unitLen;
         this.qiniuBucket = new QiniuBucket(auth, configuration, bucket, unitLen, version, customPrefix,
                 antiPrefix, 1);
     }
