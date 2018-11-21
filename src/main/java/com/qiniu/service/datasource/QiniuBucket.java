@@ -147,12 +147,12 @@ public class QiniuBucket {
         fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
-    private void seekListerToEnd(FileLister fileLister, String prefix, String endFile, FileReaderAndWriterMap fileMap,
+    private void seekListerToEnd(FileLister fileLister, String endFile, FileReaderAndWriterMap fileMap,
                              IOssFileProcess processor) throws QiniuException {
         List<FileInfo> fileInfoList;
-        while (fileLister.hasNext() || prefix.equals(customPrefix)) {
+        while (fileLister.hasNext() || fileLister.getPrefix().equals(customPrefix)) {
             String marker = fileLister.getMarker();
-            recordProgress(prefix, marker, endFile, fileMap);
+            recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             fileInfoList = fileLister.next();
             if (!StringUtils.isNullOrEmpty(endFile)) {
                 marker = fileInfoList.parallelStream()
@@ -215,7 +215,7 @@ public class QiniuBucket {
             FileLister fileLister = fileListerList.get(finalI);
             fileLister.setPrefix(prefix);
             fileLister.setMarker(marker);
-            seekListerToEnd(fileLister, prefix, endFilePrefix, fileMap, processor);
+            seekListerToEnd(fileLister, endFilePrefix, fileMap, processor);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -276,7 +276,7 @@ public class QiniuBucket {
             BucketManager bucketManager = new BucketManager(auth, configuration);
             FileLister fileLister = new FileLister(bucketManager, bucket, customPrefix, "", marker, unitLen,
                     version, retryCount);
-            seekListerToEnd(fileLister, customPrefix, endFile, fileMap, processor);
+            seekListerToEnd(fileLister, endFile, fileMap, processor);
             System.out.println(info + " finished.");
         } catch (IOException e) {
             throw new RuntimeException(e);
