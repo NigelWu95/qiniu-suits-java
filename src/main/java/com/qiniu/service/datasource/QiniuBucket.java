@@ -281,7 +281,7 @@ public class QiniuBucket {
         }
     }
 
-    public void straightlyList(String prefix, String marker, String endFile, IOssFileProcess processor) {
+    public void straightlyList(String marker, String endFile, IOssFileProcess processor) {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         try {
             String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
@@ -289,9 +289,9 @@ public class QiniuBucket {
             fileMap.initWriter(resultFileDir, "list", "total");
             BucketManager bucketManager = new BucketManager(auth, configuration);
             marker = StringUtils.isNullOrEmpty(marker) ? "null" : marker;
-            FileLister fileLister = new FileLister(bucketManager, bucket, prefix, "", marker, unitLen,
+            FileLister fileLister = new FileLister(bucketManager, bucket, customPrefix, "", marker, unitLen,
                     version, retryCount);
-            listFilesWithProcess(fileLister, prefix, marker, endFile, fileMap, processor);
+            listFilesWithProcess(fileLister, customPrefix, marker, endFile, fileMap, processor);
             System.out.println(info + " finished.");
         } catch (IOException e) {
             throw new RuntimeException(e);
