@@ -27,11 +27,11 @@ public class FileLister implements Iterator<List<FileInfo>> {
     private int limit;
     private int version;
     private volatile int retryCount;
-    public volatile List<FileInfo> fileInfoList;
+    private volatile List<FileInfo> fileInfoList;
     public volatile QiniuException exception;
 
     public FileLister(BucketManager bucketManager, String bucket, String prefix, String delimiter, String marker,
-                      int limit, int version, int retryCount) {
+                      int limit, int version, int retryCount) throws QiniuException {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
@@ -40,6 +40,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         this.limit = limit;
         this.version = version;
         this.retryCount = retryCount;
+        this.fileInfoList = getListResult(prefix, delimiter, marker, limit);
     }
 
     public String error() {
@@ -51,9 +52,13 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return "";
     }
 
+    public String getMarker() {
+        return marker;
+    }
+
     /*
-    v2 的 list 接口，通过 IO 流的方式返回文本信息，v1 是单次请求的结果一次性返回。
-     */
+        v2 的 list 接口，通过 IO 流的方式返回文本信息，v1 是单次请求的结果一次性返回。
+         */
     synchronized public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
 
         Response response = null;
@@ -77,9 +82,9 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return response;
     }
 
-    synchronized private void getListResult(String prefix, String delimiter, String marker, int limit)
+    synchronized private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
             throws QiniuException {
-        remove();
+        List<FileInfo> resultList = new ArrayList<>();
         Response response = list(prefix, delimiter, marker, limit);
         if (response != null) {
             if (version == 1) {
@@ -87,7 +92,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 if (fileListing != null) {
                     FileInfo[] items = fileListing.items;
                     this.marker = fileListing.marker;
-                    if (items.length > 0) this.fileInfoList = Arrays.asList(items);
+                    if (items.length > 0) resultList = Arrays.asList(items);
                 }
             } else if (version == 2) {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
@@ -97,37 +102,36 @@ public class FileLister implements Iterator<List<FileInfo>> {
                         .filter(line -> !StringUtils.isNullOrEmpty(line))
                         .map(line -> new ListLine().fromLine(line))
                         .collect(Collectors.toList());
-                this.fileInfoList = listLines.parallelStream()
+                resultList = listLines.parallelStream()
                         .map(listLine -> listLine.fileInfo)
                         .collect(Collectors.toList());
-                Optional<ListLine> lastListV2Line = listLines.parallelStream()
+                Optional<ListLine> lastListLine = listLines.parallelStream()
                         .max(ListLine::compareTo);
-                lastListV2Line.ifPresent(listLine -> this.marker = listLine.marker);
+                lastListLine.ifPresent(listLine -> this.marker = listLine.marker);
             }
             response.close();
         }
+
+        return resultList;
     }
 
     @Override
     public boolean hasNext() {
-        try {
-            getListResult(prefix, delimiter, marker, limit);
-        } catch (QiniuException e) {
-            exception = e;
-        }
-        return exception != null && marker != null && !"".equals(marker) && fileInfoList != null &&
-                fileInfoList.size() > 0;
+        return fileInfoList != null && fileInfoList.size() > 0;
     }
 
     @Override
     public List<FileInfo> next() {
-        return fileInfoList;
-    }
-
-    @Override
-    public void remove() {
-        this.fileInfoList.clear();
-        this.marker = "";
+        List<FileInfo> current = fileInfoList;
+        try {
+            fileInfoList = marker == null || "".equals(marker) ? new ArrayList<>() :
+                    getListResult(prefix, delimiter, marker, limit);
+        } catch (QiniuException e) {
+            fileInfoList = null;
+            marker = null;
+            exception = e;
+        }
+        return current;
     }
 
     public class ListLine implements Comparable {
