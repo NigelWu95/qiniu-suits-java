@@ -210,11 +210,15 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 }
                 JsonElement item = json.get("item");
                 JsonElement marker = json.get("marker");
+                JsonElement dir = json.get("dir");
                 if (item != null && !(item instanceof JsonNull)) {
                     this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
                 }
                 if (marker != null && !(marker instanceof JsonNull)) {
                     this.marker = marker.getAsString();
+                }
+                if (dir != null && !(dir instanceof JsonNull)) {
+                    this.dir = dir.getAsString();
                 }
             }
             return this;
