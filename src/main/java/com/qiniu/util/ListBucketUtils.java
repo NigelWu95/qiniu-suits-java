@@ -8,6 +8,7 @@ import com.qiniu.storage.model.FileInfo;
 public class ListBucketUtils {
 
     public static String calcMarker(FileInfo fileInfo) {
+        if (fileInfo == null) return null;
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("c", fileInfo.type);
         jsonObject.addProperty("k", fileInfo.key);

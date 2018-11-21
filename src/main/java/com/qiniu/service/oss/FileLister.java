@@ -52,13 +52,31 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return "";
     }
 
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public String getDelimiter() {
+        return delimiter;
+    }
+
     public String getMarker() {
         return marker;
     }
 
-    /*
-        v2 的 list 接口，通过 IO 流的方式返回文本信息，v1 是单次请求的结果一次性返回。
-         */
+    public int getLimit() {
+        return limit;
+    }
+
+    /**
+     * v2 的 list 接口，通过 IO 流的方式返回文本信息，v1 是单次请求的结果一次性返回。
+     * @param prefix
+     * @param delimiter
+     * @param marker
+     * @param limit
+     * @return
+     * @throws QiniuException
+     */
     synchronized public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
 
         Response response = null;
@@ -124,7 +142,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
     public List<FileInfo> next() {
         List<FileInfo> current = fileInfoList;
         try {
-            fileInfoList = marker == null || "".equals(marker) ? new ArrayList<>() :
+            fileInfoList = (marker == null || "".equals(marker)) ? new ArrayList<>() :
                     getListResult(prefix, delimiter, marker, limit);
         } catch (QiniuException e) {
             fileInfoList = null;
@@ -139,6 +157,10 @@ public class FileLister implements Iterator<List<FileInfo>> {
         public FileInfo fileInfo;
         public String marker = "";
         public String dir = "";
+
+        public boolean isDeleted() {
+            return (fileInfo == null && StringUtils.isNullOrEmpty(dir));
+        }
 
         public int compareTo(Object object) {
             ListLine listLine = (ListLine) object;
@@ -161,10 +183,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
             } else {
                 return this.fileInfo.key.compareTo(listLine.fileInfo.key);
             }
-        }
-
-        public boolean isDeleted() {
-            return (fileInfo == null && StringUtils.isNullOrEmpty(dir));
         }
 
         public ListLine fromLine(String line) {
