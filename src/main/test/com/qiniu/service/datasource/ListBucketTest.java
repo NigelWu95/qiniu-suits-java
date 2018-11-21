@@ -18,9 +18,7 @@ public class ListBucketTest {
 
     private ListBucket listBucket;
     private BucketManager bucketManager;
-    private String bucket;
     private int unitLen;
-    private int version;
 
     @Before
     public void init() throws Exception {
@@ -29,11 +27,10 @@ public class ListBucketTest {
         String secretKey = listBucketParams.getSecretKey();
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
-        String resultFileDir = listBucketParams.getResultFileDir();
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
-        this.bucket = listBucketParams.getBucket();
-        this.version = listBucketParams.getVersion();
+        String bucket = listBucketParams.getBucket();
+        int version = listBucketParams.getVersion();
         this.unitLen = listBucketParams.getUnitLen();
         this.unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         this.bucketManager = new BucketManager(auth, configuration);
