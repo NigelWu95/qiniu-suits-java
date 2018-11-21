@@ -5,10 +5,13 @@ import com.qiniu.common.Zone;
 import com.qiniu.model.ListBucketParams;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 public class FileListerTest {
 
@@ -33,8 +36,9 @@ public class FileListerTest {
 
     @Test
     public void testHasNext() throws QiniuException {
-        fileLister = new FileLister(bucketManager, bucket, "", "", "", unitLen,
+        fileLister = new FileLister(bucketManager, bucket, "~", "", "", unitLen,
                 version, 3);
+        List<FileInfo> list = fileLister.next();
         Assert.assertTrue(fileLister.hasNext());
     }
 
