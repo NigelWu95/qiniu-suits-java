@@ -9,11 +9,13 @@ public interface IOssFileProcess {
 
     IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
-    String getProcessName();
-
     void setBatch(boolean batch);
 
     void setRetryCount(int retryCount);
+
+    String getProcessName();
+
+    String getInfo();
 
     void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException;
 

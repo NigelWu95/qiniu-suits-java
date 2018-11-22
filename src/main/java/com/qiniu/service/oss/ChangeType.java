@@ -45,6 +45,10 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         return changeType;
     }
 
+    public String getInfo() {
+        return bucket + "\t" + type;
+    }
+
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         return bucketManager.changeType(bucket, fileInfo.key, storageType);
@@ -54,9 +58,5 @@ public class ChangeType extends OperationBase implements IOssFileProcess, Clonea
         List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         return batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,
                 keyList.toArray(new String[]{}));
-    }
-
-    protected String getInfo() {
-        return bucket + "\t" + type;
     }
 }

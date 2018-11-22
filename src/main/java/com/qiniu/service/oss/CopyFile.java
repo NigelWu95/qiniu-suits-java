@@ -52,6 +52,10 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         return copyFile;
     }
 
+    public String getInfo() {
+        return bucket + "\t" + toBucket + "\t" + keepKey + "\t" + keyPrefix;
+    }
+
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         return bucketManager.copy(bucket, fileInfo.key, toBucket, keepKey ? keyPrefix + fileInfo.key : null, false);
     }
@@ -66,9 +70,5 @@ public class CopyFile extends OperationBase implements IOssFileProcess, Cloneabl
         }
 
         return batchOperations;
-    }
-
-    protected String getInfo() {
-        return bucket + "\t" + toBucket + "\t" + keepKey + "\t" + keyPrefix;
     }
 }
