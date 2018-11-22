@@ -8,12 +8,14 @@ public class FileInputParams extends CommonParams {
     private String separator;
     private String filePath;
     private String keyIndex = "";
+    private String unitLen = "";
 
     public FileInputParams(String[] args) throws Exception {
         super(args);
         try { this.separator = getParamFromArgs("separator"); } catch (Exception e) {}
         this.filePath = getParamFromArgs("file-path");
         try { this.keyIndex = getParamFromArgs("key-index"); } catch (Exception e) {}
+        try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
     }
 
     public FileInputParams(String configFileName) throws Exception {
@@ -21,6 +23,7 @@ public class FileInputParams extends CommonParams {
         try { this.separator = getParamFromConfig("separator"); } catch (Exception e) { this.separator = ""; }
         this.filePath = getParamFromConfig("file-path");
         try { this.keyIndex = getParamFromConfig("key-index"); } catch (Exception e) {}
+        try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
     }
 
     public String getSeparator() {
@@ -46,6 +49,15 @@ public class FileInputParams extends CommonParams {
         } else {
             System.out.println("no incorrect key index, it will use 0 as default.");
             return 0;
+        }
+    }
+
+    public int getUnitLen() {
+        if (unitLen.matches("\\d+")) {
+            return Integer.valueOf(unitLen);
+        } else {
+            System.out.println("no incorrect unit-len, it will use 1000 as default.");
+            return 1000;
         }
     }
 }

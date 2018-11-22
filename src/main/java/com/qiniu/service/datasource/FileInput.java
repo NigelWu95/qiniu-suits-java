@@ -21,19 +21,21 @@ public class FileInput {
 
     private String separator;
     private int keyIndex;
+    private int unitLen;
     private int retryCount;
 
-    public FileInput(String separator, int keyIndex, int retryCount) {
+    public FileInput(String separator, int keyIndex, int unitLen, int retryCount) {
         this.separator = separator;
         this.keyIndex = keyIndex;
+        this.unitLen = unitLen;
         this.retryCount = retryCount;
     }
 
     public void traverseFile(ExecutorService executorPool, FileReaderAndWriterMap fileMap, List<String> sourceReaders,
-                             IOssFileProcess iOssFileProcessor) throws CloneNotSupportedException {
+                             IOssFileProcess fileProcessor) throws CloneNotSupportedException {
         for (int i = 0; i < sourceReaders.size(); i++) {
             String sourceReaderKey = sourceReaders.get(i);
-            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
+            IOssFileProcess processor = fileProcessor != null ? fileProcessor.getNewInstance(i) : null;
             if (processor == null) break;
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
@@ -48,7 +50,12 @@ public class FileInput {
                             })
                             .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
                             .collect(Collectors.toList());
-                    iOssFileProcessor.processFile(fileInfoList, retryCount);
+                    int size = fileInfoList.size()/unitLen + 1;
+                    for (int j = 0; j < size; j++) {
+                        List<FileInfo> processList = fileInfoList.subList(1000 * j,
+                                j == size - 1 ? fileInfoList.size() : 1000 * (j + 1));
+                        fileProcessor.processFile(processList, retryCount);
+                    }
                 } catch (QiniuException e) {
                     e.printStackTrace();
                     System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());

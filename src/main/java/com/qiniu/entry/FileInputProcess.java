@@ -15,9 +15,10 @@ public class FileInputProcess {
         int keyIndex = fileInputParams.getKeyIndex();
         boolean processBatch = fileInputParams.getProcessBatch();
         int maxThreads = fileInputParams.getMaxThreads();
+        int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         IOssFileProcess iOssFileProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
-        FileInput fileInput = new FileInput(separator, keyIndex, 3);
+        FileInput fileInput = new FileInput(separator, keyIndex, unitLen, 3);
         fileInput.process(maxThreads, sourceFilePath, iOssFileProcessor, processBatch);
         if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
     }
