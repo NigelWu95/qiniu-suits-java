@@ -243,12 +243,7 @@ public class ListBucket {
             executorPool.execute(() -> listFromLister(finalI, fileListerList, processor));
         }
         executorPool.shutdown();
-        try {
-            while (!executorPool.isTerminated()) Thread.sleep(1000);
-            System.out.println(info + " finished");
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        ExecutorsUtils.waitForShutdown(executorPool, info);
     }
 
     public void checkValidPrefix(int level) {

@@ -13,7 +13,6 @@ public class FileInputProcess {
         String filePath = fileInputParams.getFilePath();
         String separator = fileInputParams.getSeparator();
         int keyIndex = fileInputParams.getKeyIndex();
-        boolean processBatch = fileInputParams.getProcessBatch();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;

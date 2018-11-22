@@ -114,6 +114,7 @@ public abstract class OperationBase implements IOssFileProcess, Cloneable {
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
+        List<String> resultList = new ArrayList<>();
         if (batch) {
             int times = fileInfoList.size()/1000 + 1;
             for (int i = 0; i < times; i++) {
@@ -123,7 +124,7 @@ public abstract class OperationBase implements IOssFileProcess, Cloneable {
                     try {
                         Response response = batchWithRetry(fileInfoList, retryCount);
                         String result = HttpResponseUtils.getResult(response);
-                        if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
+                        if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                     } catch (QiniuException e) {
                         HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() + "\t" +
                                 String.join(",", processList.stream()
@@ -131,18 +132,16 @@ public abstract class OperationBase implements IOssFileProcess, Cloneable {
                     }
                 }
             }
-            return;
-        }
-
-        List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
-            try {
-                Response response = singleWithRetry(fileInfo, retryCount);
-                String result = HttpResponseUtils.getResult(response);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
-            } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
-                        "\t" + fileInfo.key);
+        } else {
+            for (FileInfo fileInfo : fileInfoList) {
+                try {
+                    Response response = singleWithRetry(fileInfo, retryCount);
+                    String result = HttpResponseUtils.getResult(response);
+                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                } catch (QiniuException e) {
+                    HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
+                            "\t" + fileInfo.key);
+                }
             }
         }
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
