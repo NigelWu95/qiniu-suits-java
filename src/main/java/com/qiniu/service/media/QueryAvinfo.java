@@ -36,7 +36,7 @@ public class QueryAvinfo implements IOssFileProcess {
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public QueryAvinfo(String domain, String resultFileDir) throws IOException {
+    public QueryAvinfo(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.mediaManager = new MediaManager();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
@@ -76,9 +76,11 @@ public class QueryAvinfo implements IOssFileProcess {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         List<String> resultList = new ArrayList<>();
+        List<String> avinfoList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 Avinfo avinfo = mediaManager.getAvinfo(fileInfo);
+                avinfoList.add(mediaManager.getCurrentAvinfoJson());
                 int width = avinfo.getVideoStream().width;
                 if (width > 1280) {
                     resultList.add("avthumb/mp4/s/1920x1080|saveas/" + UrlSafeBase64.encodeToString(
@@ -106,9 +108,10 @@ public class QueryAvinfo implements IOssFileProcess {
             }
         }
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+        if (avinfoList.size() > 0) fileReaderAndWriterMap.writeKeyFile("avinfo", String.join("\n", avinfoList));
     }
 
     public void closeResource() {
-
+        fileReaderAndWriterMap.closeWriter();
     }
 }
