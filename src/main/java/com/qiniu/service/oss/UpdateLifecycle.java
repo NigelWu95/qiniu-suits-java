@@ -1,6 +1,5 @@
 package com.qiniu.service.oss;
 
-import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;

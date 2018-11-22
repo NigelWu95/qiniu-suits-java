@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryAvinfo implements IOssFileProcess {
+public class QueryAvinfo implements IOssFileProcess, Cloneable {
 
     private String domain;
     private MediaManager mediaManager;
