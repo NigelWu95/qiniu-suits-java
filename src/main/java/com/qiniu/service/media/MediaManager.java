@@ -43,9 +43,9 @@ public class MediaManager {
         RequestUtils.checkHost(domain);
         StringBuilder key = new StringBuilder();
         for (int i = 3; i < addr.length; i++) {
-            key.append(addr[i]);
+            key.append(addr[i]).append("/");
         }
-        return getAvinfo(domain, key.toString());
+        return getAvinfo(domain, key.toString().substring(0, key.length() - 1));
     }
 
     private Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
