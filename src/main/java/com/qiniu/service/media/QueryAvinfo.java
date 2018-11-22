@@ -84,23 +84,23 @@ public class QueryAvinfo implements IOssFileProcess {
                 avinfoList.add(mediaManager.getCurrentAvinfoJson());
                 int width = avinfo.getVideoStream().width;
                 if (width > 1280) {
-                    resultList.add("avthumb/mp4/s/1920x1080|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/1920x1080|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F1080")));
-                    resultList.add("avthumb/mp4/s/1280x720|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/1280x720|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F720")));
-                    resultList.add("avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
                 } else if (width > 1000) {
-                    resultList.add("avthumb/mp4/s/1280x720|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/1280x720|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F720")));
-                    resultList.add("avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
                 } else if (width > 640) {
-                    resultList.add("avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
                 } else {
                     int height = avinfo.getVideoStream().height;
-                    resultList.add("avthumb/mp4/s/" + width + "x" + height + "|saveas/" + UrlSafeBase64.encodeToString(
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/" + width + "x" + height + "|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F1080")));
                 }
             } catch (QiniuException e) {
