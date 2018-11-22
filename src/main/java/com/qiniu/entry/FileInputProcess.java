@@ -1,6 +1,6 @@
 package com.qiniu.entry;
 
-import com.qiniu.model.*;
+import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.IOssFileProcess;
 

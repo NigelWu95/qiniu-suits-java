@@ -5,7 +5,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.IOssFileProcess;
-import com.qiniu.service.oss.FileLister;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.ExecutorsUtils;
 import com.qiniu.util.StringUtils;
@@ -14,7 +13,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,46 +61,6 @@ public class FileInput {
             throw new RuntimeException(e);
         } finally {
             if (processor != null) processor.closeResource();
-        }
-    }
-
-    public void traverseFile(ExecutorService executorPool, FileReaderAndWriterMap fileMap, List<String> sourceReaders,
-                             IOssFileProcess fileProcessor) throws CloneNotSupportedException {
-        for (int i = 0; i < sourceReaders.size(); i++) {
-            String sourceReaderKey = sourceReaders.get(i);
-            IOssFileProcess processor = fileProcessor != null ? fileProcessor.getNewInstance(i) : null;
-            if (processor == null) break;
-            executorPool.execute(() -> {
-                BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
-                ILineParser lineParser = new SplitLineParser(separator);
-
-                try {
-                    List<FileInfo> fileInfoList = bufferedReader.lines().parallel()
-                            .map(line -> {
-                                FileInfo fileInfo = new FileInfo();
-                                fileInfo.key = lineParser.getItemList(line).get(keyIndex);
-                                return fileInfo;
-                            })
-                            .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
-                            .collect(Collectors.toList());
-                    int size = fileInfoList.size()/unitLen + 1;
-                    for (int j = 0; j < size; j++) {
-                        List<FileInfo> processList = fileInfoList.subList(1000 * j,
-                                j == size - 1 ? fileInfoList.size() : 1000 * (j + 1));
-                        fileProcessor.processFile(processList, retryCount);
-                    }
-                } catch (QiniuException e) {
-                    e.printStackTrace();
-                    System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());
-                    e.response.close();
-                }
-
-                try {
-                    bufferedReader.close();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
-            });
         }
     }
 

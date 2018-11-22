@@ -6,8 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.model.ListResult;
-import com.qiniu.model.ListV2Line;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;

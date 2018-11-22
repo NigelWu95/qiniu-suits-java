@@ -1,7 +1,8 @@
 package com.qiniu.entry;
 
 import com.qiniu.common.*;
-import com.qiniu.model.*;
+import com.qiniu.model.parameter.ListBucketParams;
+import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.Configuration;

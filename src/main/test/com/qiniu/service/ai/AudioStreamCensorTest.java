@@ -1,7 +1,7 @@
 package com.qiniu.service.ai;
 
 import com.qiniu.model.CensorResp;
-import com.qiniu.model.ListBucketParams;
+import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.util.Auth;
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.qiniu.model;
+package com.qiniu.model.parameter;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.util.StringUtils;

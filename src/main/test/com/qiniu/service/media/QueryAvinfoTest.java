@@ -1,15 +1,13 @@
 package com.qiniu.service.media;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.AvinfoParams;
+import com.qiniu.model.parameter.AvinfoParams;
 import com.qiniu.storage.model.FileInfo;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class QueryAvinfoTest {
 

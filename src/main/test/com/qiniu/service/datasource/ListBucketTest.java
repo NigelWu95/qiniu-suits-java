@@ -1,7 +1,7 @@
 package com.qiniu.service.datasource;
 
 import com.qiniu.common.Zone;
-import com.qiniu.model.ListBucketParams;
+import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import org.junit.Before;
