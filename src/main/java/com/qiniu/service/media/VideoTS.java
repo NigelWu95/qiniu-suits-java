@@ -1,4 +1,4 @@
-package com.qiniu.service.auvideo;
+package com.qiniu.service.media;
 
 public class VideoTS {
 
