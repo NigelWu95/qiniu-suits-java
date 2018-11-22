@@ -30,6 +30,10 @@ public class MediaManager {
         RequestUtils.checkHost(domain);
     }
 
+    public String getCurrentAvinfoJson() {
+        return JsonConvertUtils.toJson(avinfoJson);
+    }
+
     public Avinfo getAvinfo(FileInfo fileInfo) throws QiniuException {
 
         return getAvinfo(domain, fileInfo.key);
