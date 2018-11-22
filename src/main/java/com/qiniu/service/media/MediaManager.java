@@ -5,8 +5,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.media.*;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.RequestUtils;
 
@@ -17,7 +15,6 @@ public class MediaManager {
     private Client client;
     private Avinfo avinfo;
     private JsonObject avinfoJson;
-    private int retryCount = 3;
 
     public MediaManager() {
         this.client = new Client();
@@ -64,22 +61,7 @@ public class MediaManager {
 
     private void requestAvinfo(String url) throws QiniuException {
 
-        Response response = null;
-        try {
-            response = client.get(url + "?avinfo");
-        } catch (QiniuException e) {
-            HttpResponseUtils.checkRetryCount(e, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = client.get(url + "?avinfo");
-                    retryCount = 0;
-                } catch (QiniuException e1) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
-                }
-            }
-        }
-
-        if (response == null) throw new QiniuException(null, "no response.");
+        Response response = client.get(url + "?avinfo");
         avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();
         JsonElement jsonElement = avinfoJson.get("format");

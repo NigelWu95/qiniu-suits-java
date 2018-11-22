@@ -17,11 +17,11 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
 
     private String domain;
     private MediaManager mediaManager;
-    protected String processName;
-    protected boolean batch = true;
-    protected int retryCount = 3;
+    private String processName;
+    private int retryCount = 3;
     protected String resultFileDir;
-    protected FileReaderAndWriterMap fileReaderAndWriterMap;
+    private int resultFileIndex;
+    private FileReaderAndWriterMap fileReaderAndWriterMap;
 
     private void initBaseParams(String domain) {
         this.processName = "avinfo";
@@ -31,6 +31,7 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
     public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
+        this.resultFileIndex = resultFileIndex;
         this.mediaManager = new MediaManager();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -55,9 +56,7 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         return queryAvinfo;
     }
 
-    public void setBatch(boolean batch) {
-        this.batch = batch;
-    }
+    public void setBatch(boolean batch) {}
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
@@ -71,6 +70,26 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         return domain;
     }
 
+    public Avinfo singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+
+        Avinfo avinfo = null;
+        try {
+            avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return avinfo;
+    }
+
     public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
@@ -81,7 +100,7 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         List<String> avinfoList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                Avinfo avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+                Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
                 avinfoList.add(mediaManager.getCurrentAvinfoJson());
                 int width = avinfo.getVideoStream().width;
                 if (width > 1280) {
@@ -100,8 +119,8 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
                     resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
                 } else {
-                    int height = avinfo.getVideoStream().height;
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/" + width + "x" + height + "|saveas/" + UrlSafeBase64.encodeToString(
+                    String s = width + "x" + avinfo.getVideoStream().height;
+                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/" + s + "|saveas/" + UrlSafeBase64.encodeToString(
                             ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F1080")));
                 }
             } catch (QiniuException e) {
@@ -110,7 +129,8 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
             }
         }
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
-        if (avinfoList.size() > 0) fileReaderAndWriterMap.writeKeyFile("avinfo", String.join("\n", avinfoList));
+        if (avinfoList.size() > 0) fileReaderAndWriterMap.writeKeyFile("avinfo" + resultFileIndex,
+                String.join("\n", avinfoList));
     }
 
     public void closeResource() {
