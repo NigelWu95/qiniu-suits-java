@@ -25,7 +25,7 @@ public class ObjectUtils {
                 shortName.append(names[i]).append(".");
             }
             String ext = names[names.length - 1];
-            return shortName.toString().substring(0, shortName.length() - 1) + suffix + ext;
+            return shortName.toString().substring(0, shortName.length() - 1) + suffix + "." + ext;
         }
     }
 }
