@@ -81,6 +81,8 @@ public class QueryAvinfo implements IOssFileProcess {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 Avinfo avinfo = mediaManager.getAvinfo(fileInfo);
+                int width = avinfo.getVideoStream().width;
+                int height = avinfo.getVideoStream().height;
                 String result = JsonConvertUtils.toJsonWithoutUrlEscape(avinfo);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
