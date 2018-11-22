@@ -46,6 +46,7 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
     public IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.mediaManager = new MediaManager();
+        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             queryAvinfo.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {

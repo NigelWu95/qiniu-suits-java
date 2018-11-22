@@ -71,7 +71,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, IOssFileProcess iOssFileProcessor, boolean processBatch)
+    public void process(int maxThreads, String filePath, IOssFileProcess iOssFileProcessor)
             throws IOException, CloneNotSupportedException {
 
         List<String> sourceReaders = new ArrayList<>();
