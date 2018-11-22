@@ -30,7 +30,7 @@ public class FileInput {
     }
 
     public void traverseFile(ExecutorService executorPool, FileReaderAndWriterMap fileMap, List<String> sourceReaders,
-                             IOssFileProcess iOssFileProcessor, boolean processBatch) throws CloneNotSupportedException {
+                             IOssFileProcess iOssFileProcessor) throws CloneNotSupportedException {
         for (int i = 0; i < sourceReaders.size(); i++) {
             String sourceReaderKey = sourceReaders.get(i);
             IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
@@ -88,7 +88,7 @@ public class FileInput {
         System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
         ExecutorService executorPool =  Executors.newFixedThreadPool(runningThreads);
         System.out.println(iOssFileProcessor.getProcessName() + " started...");
-        traverseFile(executorPool, fileMap, sourceReaders, iOssFileProcessor, processBatch);
+        traverseFile(executorPool, fileMap, sourceReaders, iOssFileProcessor);
         executorPool.shutdown();
         try {
             while (!executorPool.isTerminated())

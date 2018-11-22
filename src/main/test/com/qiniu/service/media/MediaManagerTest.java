@@ -6,6 +6,8 @@ import com.qiniu.util.JsonConvertUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.UnknownHostException;
+
 import static org.junit.Assert.*;
 
 public class MediaManagerTest {
@@ -18,7 +20,7 @@ public class MediaManagerTest {
     }
 
     @Test
-    public void testGetAvinfo() throws QiniuException {
+    public void testGetAvinfo() throws QiniuException, UnknownHostException {
         Avinfo avinfo = mediaManager.getAvinfo("http://temp.nigel.qiniuts.com/1531712104620.mp4");
         System.out.println(JsonConvertUtils.toJsonWithoutUrlEscape(avinfo));
     }

@@ -30,14 +30,15 @@ public class QueryAvinfo implements IOssFileProcess {
 
     public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         initBaseParams(domain);
+        this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
-        this.mediaManager.setDomain(domain);
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QueryAvinfo(String domain, String resultFileDir) {
         initBaseParams(domain);
+        this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
     }
@@ -79,7 +80,7 @@ public class QueryAvinfo implements IOssFileProcess {
         List<String> avinfoList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                Avinfo avinfo = mediaManager.getAvinfo(fileInfo);
+                Avinfo avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
                 avinfoList.add(mediaManager.getCurrentAvinfoJson());
                 int width = avinfo.getVideoStream().width;
                 if (width > 1280) {

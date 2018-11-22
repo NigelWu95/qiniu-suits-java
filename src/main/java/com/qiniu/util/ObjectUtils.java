@@ -10,10 +10,15 @@ public class ObjectUtils {
         return prefix + name;
     }
 
+    public static String addPrefixAndSuffixKeepExt(String prefix, String name, String suffix) {
+
+        return prefix + addSuffixKeepExt(name, suffix);
+    }
+
     public static String addSuffixKeepExt(String name, String suffix) {
 
-        String[] names = name.split(".");
-        if (names.length == 1) return name + suffix;
+        String[] names = name.split("\\.");
+        if (names.length < 2) return name + suffix;
         else {
             StringBuilder shortName = new StringBuilder();
             for (int i = 0; i < names.length - 1; i++) {
@@ -22,10 +27,5 @@ public class ObjectUtils {
             String ext = names[names.length - 1];
             return shortName.toString().substring(0, shortName.length() - 1) + suffix + ext;
         }
-    }
-
-    public static String addPrefixAndSuffixKeepExt(String prefix, String name, String suffix) {
-
-        return prefix + addSuffixKeepExt(name, suffix);
     }
 }
