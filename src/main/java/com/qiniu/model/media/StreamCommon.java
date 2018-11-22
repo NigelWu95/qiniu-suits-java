@@ -1,8 +1,6 @@
 
 package com.qiniu.model.media;
 
-import com.google.gson.JsonObject;
-
 public class StreamCommon {
 
     public Integer index;
@@ -22,6 +20,7 @@ public class StreamCommon {
     public String duration;
     public String bitRate;
     public String nbFrames;
-    public JsonObject disposition;
+    public Disposition disposition;
+    public Tags tags;
 
 }
