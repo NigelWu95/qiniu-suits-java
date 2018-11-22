@@ -15,7 +15,6 @@ import java.net.UnknownHostException;
 public class MediaManager {
 
     private Client client;
-    private String domain;
     private Avinfo avinfo;
     private JsonObject avinfoJson;
     private int retryCount = 3;
@@ -25,18 +24,8 @@ public class MediaManager {
         this.avinfo = new Avinfo();
     }
 
-    public void setDomain(String domain) throws UnknownHostException {
-        this.domain = domain;
-        RequestUtils.checkHost(domain);
-    }
-
     public String getCurrentAvinfoJson() {
         return JsonConvertUtils.toJson(avinfoJson);
-    }
-
-    public Avinfo getAvinfo(FileInfo fileInfo) throws QiniuException {
-
-        return getAvinfo(domain, fileInfo.key);
     }
 
     public Avinfo getAvinfo(String url) throws QiniuException, UnknownHostException {
@@ -52,8 +41,13 @@ public class MediaManager {
         return getAvinfo(domain, key.toString().substring(0, key.length() - 1));
     }
 
-    private Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
+    public Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
 
+        try {
+            RequestUtils.checkHost(domain);
+        } catch (UnknownHostException e) {
+            throw new QiniuException(e);
+        }
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
         requestAvinfo(url);
         this.avinfo.setFormat(JsonConvertUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));

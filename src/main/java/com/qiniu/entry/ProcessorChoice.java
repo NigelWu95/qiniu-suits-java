@@ -3,6 +3,7 @@ package com.qiniu.entry;
 import com.qiniu.common.Zone;
 import com.qiniu.model.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.oss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -79,6 +80,13 @@ public class ProcessorChoice {
                             asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
                             asyncFetchParams.getCallbackHost(), asyncFetchParams.getFileType(),
                             asyncFetchParams.getIgnoreSameKey());
+                break;
+            }
+            case "avinfo": {
+                AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
+                String accessKey = "".equals(avinfoParams.getProcessAk()) ? ak : avinfoParams.getProcessAk();
+                String secretKey = "".equals(avinfoParams.getProcessSk()) ? sk : avinfoParams.getProcessSk();
+                processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
                 break;
             }
         }
