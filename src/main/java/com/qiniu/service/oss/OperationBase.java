@@ -63,15 +63,6 @@ public abstract class OperationBase {
 
     protected abstract Response getResponse(FileInfo fileInfo) throws QiniuException;
 
-    public String getResult(Response response) throws QiniuException {
-        if (response == null) return null;
-        String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-        response.close();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
-    }
-
     public Response singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
 
         Response response = null;
@@ -90,11 +81,6 @@ public abstract class OperationBase {
         }
 
         return response;
-    }
-
-    public String run(FileInfo fileInfo, int retryCount) throws QiniuException {
-        Response response = singleWithRetry(fileInfo, retryCount);
-        return getResult(response);
     }
 
     synchronized public Response batchWithRetry(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
@@ -121,11 +107,6 @@ public abstract class OperationBase {
 
     protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
 
-    public String batchRun(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
-        Response response = batchWithRetry(fileInfoList, retryCount);
-        return getResult(response);
-    }
-
     public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
@@ -139,7 +120,8 @@ public abstract class OperationBase {
                         fileInfoList.size() : 1000 * (i + 1));
                 if (processList.size() > 0) {
                     try {
-                        String result = batchRun(processList, retryCount);
+                        Response response = batchWithRetry(fileInfoList, retryCount);
+                        String result = HttpResponseUtils.getResult(response);
                         if (!StringUtils.isNullOrEmpty(result)) fileReaderAndWriterMap.writeSuccess(result);
                     } catch (QiniuException e) {
                         HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() + "\t" +
@@ -154,7 +136,8 @@ public abstract class OperationBase {
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                String result = run(fileInfo, retryCount);
+                Response response = singleWithRetry(fileInfo, retryCount);
+                String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +

@@ -41,7 +41,7 @@ public class HttpResponseUtils {
         }
     }
 
-    public String getResult(Response response) throws QiniuException {
+    public static String getResult(Response response) throws QiniuException {
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
