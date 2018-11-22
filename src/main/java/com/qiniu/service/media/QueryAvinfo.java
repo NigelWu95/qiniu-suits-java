@@ -2,10 +2,11 @@ package com.qiniu.service.media;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
+import com.qiniu.model.media.Avinfo;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class QueryAvinfo implements IOssFileProcess {
 
+    private String domain;
     private MediaManager mediaManager;
     protected String processName;
     protected boolean batch = true;
@@ -23,19 +25,21 @@ public class QueryAvinfo implements IOssFileProcess {
     protected String resultFileDir;
     protected FileReaderAndWriterMap fileReaderAndWriterMap;
 
-    private void initBaseParams() {
+    private void initBaseParams(String domain) {
         this.processName = "avinfo";
+        this.domain = domain;
     }
 
-    public QueryAvinfo(String resultFileDir, int resultFileIndex) throws IOException {
-        initBaseParams();
+    public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
+        initBaseParams(domain);
         this.mediaManager = new MediaManager();
+        this.mediaManager.setDomain(domain);
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public QueryAvinfo(String resultFileDir) throws IOException {
-        initBaseParams();
+    public QueryAvinfo(String domain, String resultFileDir) throws IOException {
+        initBaseParams(domain);
         this.mediaManager = new MediaManager();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
     }
@@ -64,11 +68,7 @@ public class QueryAvinfo implements IOssFileProcess {
     }
 
     public String getInfo() {
-        return null;
-    }
-
-    public String run(FileInfo fileInfo, int retryCount) throws QiniuException {
-        return null;
+        return domain;
     }
 
     public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
@@ -80,7 +80,8 @@ public class QueryAvinfo implements IOssFileProcess {
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                String result = run(fileInfo, retryCount);
+                Avinfo avinfo = mediaManager.getAvinfo(fileInfo);
+                String result = JsonConvertUtils.toJsonWithoutUrlEscape(avinfo);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
