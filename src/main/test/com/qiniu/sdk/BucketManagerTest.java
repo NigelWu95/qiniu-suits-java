@@ -2,17 +2,14 @@ package com.qiniu.sdk;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;
-import com.qiniu.model.ListBucketParams;
+import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.Auth;
-import com.sun.org.apache.xml.internal.resolver.helpers.PublicId;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-
-import static org.junit.Assert.*;
 
 public class BucketManagerTest {
 

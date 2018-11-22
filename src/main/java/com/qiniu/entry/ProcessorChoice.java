@@ -1,7 +1,7 @@
 package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
-import com.qiniu.model.*;
+import com.qiniu.model.parameter.*;
 import com.qiniu.service.interfaces.IOssFileProcess;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.oss.*;

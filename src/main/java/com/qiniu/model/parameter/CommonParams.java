@@ -1,10 +1,6 @@
-package com.qiniu.model;
+package com.qiniu.model.parameter;
 
 import com.qiniu.util.StringUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class CommonParams extends BaseParams {
 

@@ -1,4 +1,4 @@
-package com.qiniu.model;
+package com.qiniu.model.parameter;
 
 public class AsyncFetchParams extends BaseParams {
 

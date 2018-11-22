@@ -2,7 +2,7 @@ package com.qiniu.service.oss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;
-import com.qiniu.model.ListBucketParams;
+import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
