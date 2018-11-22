@@ -1,4 +1,4 @@
-package com.qiniu.service.auvideo;
+package com.qiniu.service.media;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import org.apache.commons.io.IOUtils;

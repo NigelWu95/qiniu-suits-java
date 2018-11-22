@@ -1,4 +1,4 @@
-package com.qiniu.service.censor;
+package com.qiniu.service.ai;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
