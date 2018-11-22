@@ -17,6 +17,7 @@ public class MediaManager {
     private Client client;
     private String domain;
     private Avinfo avinfo;
+    private JsonObject avinfoJson;
     private int retryCount = 3;
 
     public MediaManager() {
@@ -50,9 +51,9 @@ public class MediaManager {
     private Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
 
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
-        JsonObject jsonObject = requestAvinfo(url);
-        this.avinfo.setFormat(JsonConvertUtils.fromJson(jsonObject.getAsJsonObject("format"), Format.class));
-        JsonElement element = jsonObject.get("streams");
+        requestAvinfo(url);
+        this.avinfo.setFormat(JsonConvertUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
+        JsonElement element = avinfoJson.get("streams");
         JsonArray streams = element.getAsJsonArray();
         for (JsonElement stream : streams) {
             JsonElement typeElement = stream.getAsJsonObject().get("codec_type");
@@ -63,7 +64,7 @@ public class MediaManager {
         return this.avinfo;
     }
 
-    private JsonObject requestAvinfo(String url) throws QiniuException {
+    private void requestAvinfo(String url) throws QiniuException {
 
         Response response = null;
         try {
@@ -81,13 +82,11 @@ public class MediaManager {
         }
 
         if (response == null) throw new QiniuException(null, "no response.");
-        JsonObject bodyJson = JsonConvertUtils.toJsonObject(response.bodyString());
+        avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();
-        JsonElement jsonElement = bodyJson.get("format");
+        JsonElement jsonElement = avinfoJson.get("format");
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(response);
         }
-
-        return bodyJson;
     }
 }
