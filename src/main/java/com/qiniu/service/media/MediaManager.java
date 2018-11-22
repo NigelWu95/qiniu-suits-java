@@ -5,6 +5,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.media.*;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.RequestUtils;
@@ -14,6 +15,7 @@ import java.net.UnknownHostException;
 public class MediaManager {
 
     private Client client;
+    private String domain;
     private Avinfo avinfo;
     private int retryCount = 3;
 
@@ -22,11 +24,22 @@ public class MediaManager {
         this.avinfo = new Avinfo();
     }
 
+    public void setDomain(String domain) throws UnknownHostException {
+        this.domain = domain;
+        RequestUtils.checkHost(domain);
+    }
+
+    public Avinfo getAvinfo(FileInfo fileInfo) throws QiniuException {
+
+        return getAvinfo(domain, fileInfo.key);
+    }
+
     public Avinfo getAvinfo(String url) throws QiniuException, UnknownHostException {
 
         String[] addr = url.split("/");
         if (addr.length < 3) throw new QiniuException(null, "not valid url.");
         String domain = addr[2];
+        RequestUtils.checkHost(domain);
         StringBuilder key = new StringBuilder();
         for (int i = 3; i < addr.length; i++) {
             key.append(addr[i]);
@@ -34,9 +47,8 @@ public class MediaManager {
         return getAvinfo(domain, key.toString());
     }
 
-    public Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException, UnknownHostException {
+    private Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
 
-        RequestUtils.checkHost(domain);
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
         JsonObject jsonObject = requestAvinfo(url);
         this.avinfo.setFormat(JsonConvertUtils.fromJson(jsonObject.getAsJsonObject("format"), Format.class));
@@ -70,6 +82,7 @@ public class MediaManager {
 
         if (response == null) throw new QiniuException(null, "no response.");
         JsonObject bodyJson = JsonConvertUtils.toJsonObject(response.bodyString());
+        response.close();
         JsonElement jsonElement = bodyJson.get("format");
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(response);
