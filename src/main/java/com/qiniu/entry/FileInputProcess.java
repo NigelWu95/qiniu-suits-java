@@ -19,7 +19,7 @@ public class FileInputProcess {
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         IOssFileProcess iOssFileProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen, 3);
-        fileInput.process(maxThreads, sourceFilePath, iOssFileProcessor, processBatch);
+        fileInput.process(maxThreads, sourceFilePath, iOssFileProcessor);
         if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
     }
 }
