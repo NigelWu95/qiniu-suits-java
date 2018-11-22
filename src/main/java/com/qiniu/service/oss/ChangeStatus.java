@@ -43,6 +43,10 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
         return changeStatus;
     }
 
+    public String getInfo() {
+        return bucket + "\t" + status;
+    }
+
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         return bucketManager.changeStatus(bucket, fileInfo.key, status);
     }
@@ -50,9 +54,5 @@ public class ChangeStatus extends OperationBase implements IOssFileProcess, Clon
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
         List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
-    }
-
-    protected String getInfo() {
-        return bucket + "\t" + status;
     }
 }

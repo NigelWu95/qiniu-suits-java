@@ -7,6 +7,9 @@ import com.qiniu.http.Response;
 import com.qiniu.model.media.*;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.RequestUtils;
+
+import java.net.UnknownHostException;
 
 public class MediaManager {
 
@@ -19,7 +22,7 @@ public class MediaManager {
         this.avinfo = new Avinfo();
     }
 
-    public Avinfo getAvinfo(String url) throws QiniuException {
+    public Avinfo getAvinfo(String url) throws QiniuException, UnknownHostException {
 
         String[] addr = url.split("/");
         if (addr.length < 3) throw new QiniuException(null, "not valid url.");
@@ -31,11 +34,11 @@ public class MediaManager {
         return getAvinfo(domain, key.toString());
     }
 
-    public Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
+    public Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException, UnknownHostException {
 
+        RequestUtils.checkHost(domain);
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
         JsonObject jsonObject = requestAvinfo(url);
-        JsonObject formatJson = jsonObject.getAsJsonObject("format");
         this.avinfo.setFormat(JsonConvertUtils.fromJson(jsonObject.getAsJsonObject("format"), Format.class));
         JsonElement element = jsonObject.get("streams");
         JsonArray streams = element.getAsJsonArray();

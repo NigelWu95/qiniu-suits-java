@@ -59,6 +59,8 @@ public abstract class OperationBase {
         return this.processName;
     }
 
+    public abstract String getInfo();
+
     protected abstract Response getResponse(FileInfo fileInfo) throws QiniuException;
 
     public String getResult(Response response) throws QiniuException {
@@ -123,8 +125,6 @@ public abstract class OperationBase {
         Response response = batchWithRetry(fileInfoList, retryCount);
         return getResult(response);
     }
-
-    protected abstract String getInfo();
 
     public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 

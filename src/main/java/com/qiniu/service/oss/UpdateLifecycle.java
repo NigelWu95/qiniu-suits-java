@@ -44,6 +44,10 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
         return updateLifecycle;
     }
 
+    public String getInfo() {
+        return bucket + "\t" + days;
+    }
+
     protected Response getResponse(FileInfo fileInfo) throws QiniuException {
         return bucketManager.deleteAfterDays(bucket, fileInfo.key, days);
     }
@@ -51,9 +55,5 @@ public class UpdateLifecycle extends OperationBase implements IOssFileProcess, C
     synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
         List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
         return batchOperations.addDeleteAfterDaysOps(bucket, days, keyList.toArray(new String[]{}));
-    }
-
-    protected String getInfo() {
-        return bucket + "\t" + days;
     }
 }
