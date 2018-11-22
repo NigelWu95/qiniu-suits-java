@@ -35,6 +35,7 @@ public class MediaManager {
 
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
         JsonObject jsonObject = requestAvinfo(url);
+        JsonObject formatJson = jsonObject.getAsJsonObject("format");
         this.avinfo.setFormat(JsonConvertUtils.fromJson(jsonObject.getAsJsonObject("format"), Format.class));
         JsonElement element = jsonObject.get("streams");
         JsonArray streams = element.getAsJsonArray();

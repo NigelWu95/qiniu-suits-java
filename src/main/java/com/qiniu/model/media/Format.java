@@ -12,6 +12,6 @@ public class Format {
     public String size;
     public String bitRate;
     public Integer probeScore;
-    public String tags;
+    public Tags tags;
 
 }
