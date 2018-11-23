@@ -134,7 +134,7 @@ public class FileReaderAndWriterMap implements Cloneable {
             getWriter(key).write(item);
             getWriter(key).newLine();
         } catch (IOException ioException) {
-            System.out.println("Writer " + key + " write failed");
+            System.out.println("Writer " + key + " write " + item + " failed");
             ioException.printStackTrace();
         }
     }

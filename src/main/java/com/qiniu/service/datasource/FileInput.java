@@ -121,8 +121,7 @@ public class FileInput {
                 .collect(Collectors.toList());
         for (int i = 0; i < sourceReaders.size(); i++) {
             int finalI = i;
-            traverseByReader(finalI, sourceReaders, processor);
-//            executorPool.execute(() -> traverseByReader(finalI, sourceReaders, processor));
+            executorPool.execute(() -> traverseByReader(finalI, sourceReaders, processor));
 //            executorPool.execute(() -> traverseByReader(finalI, sourceReaders, (QueryAvinfo) processor));
         }
         executorPool.shutdown();
