@@ -32,27 +32,6 @@ public class FileInput {
         this.retryCount = retryCount;
     }
 
-//    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, QueryAvinfo fileProcessor) {
-//
-//        QueryAvinfo processor = null;
-//        try {
-//            BufferedReader bufferedReader = sourceReaders.get(finalI);
-//            if (fileProcessor != null) processor = (QueryAvinfo) fileProcessor.getNewInstance(finalI + 1);
-//            List<String> fileInfoList = bufferedReader.lines().parallel().collect(Collectors.toList());
-//            int size = fileInfoList.size()/unitLen + 1;
-//            for (int j = 0; j < size; j++) {
-//                List<String > processList = fileInfoList.subList(1000 * j,
-//                        j == size - 1 ? fileInfoList.size() : 1000 * (j + 1));
-//                if (processor != null) processor.processFile(processList);
-//            }
-//            bufferedReader.close();
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        } finally {
-//            if (processor != null) processor.closeResource();
-//        }
-//    }
-
     public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, IQossProcess fileProcessor) {
 
         IQossProcess processor = null;
@@ -71,8 +50,8 @@ public class FileInput {
                     .collect(Collectors.toList());
             int size = fileInfoList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
-                List<FileInfo> processList = fileInfoList.subList(1000 * j,
-                        j == size - 1 ? fileInfoList.size() : 1000 * (j + 1));
+                List<FileInfo> processList = fileInfoList.subList(unitLen * j,
+                        j == size - 1 ? fileInfoList.size() : unitLen * (j + 1));
                 if (processor != null) processor.processFile(processList, retryCount);
             }
             bufferedReader.close();
@@ -121,7 +100,6 @@ public class FileInput {
         for (int i = 0; i < sourceReaders.size(); i++) {
             int finalI = i;
             executorPool.execute(() -> traverseByReader(finalI, sourceReaders, processor));
-//            executorPool.execute(() -> traverseByReader(finalI, sourceReaders, (QueryAvinfo) processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
