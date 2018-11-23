@@ -6,8 +6,8 @@ import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.BucketManager;
-import com.qiniu.service.interfaces.IOssFileProcess;
-import com.qiniu.service.oss.FileLister;
+import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.qoss.FileLister;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
@@ -148,7 +148,7 @@ public class ListBucket {
     }
 
     private void seekListerToEnd(FileLister fileLister, String endFile, FileReaderAndWriterMap fileMap,
-                             IOssFileProcess processor) throws QiniuException {
+                             IQossProcess processor) throws QiniuException {
         List<FileInfo> fileInfoList;
         while (fileLister.hasNext() || fileLister.getPrefix().equals(customPrefix)) {
             String marker = fileLister.getMarker();
@@ -202,10 +202,10 @@ public class ListBucket {
         }};
     }
 
-    private void listFromLister(int finalI, List<FileLister> fileListerList, IOssFileProcess fileProcessor) {
+    private void listFromLister(int finalI, List<FileLister> fileListerList, IQossProcess fileProcessor) {
         int resultIndex = finalI + 1;
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        IOssFileProcess processor = null;
+        IQossProcess processor = null;
         try {
             fileMap.initWriter(resultFileDir, "list", resultIndex);
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(resultIndex);
@@ -225,7 +225,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, IOssFileProcess processor) {
+    public void concurrentlyList(int maxThreads, int level, IQossProcess processor) {
         List<FileLister> fileListerList = getFileListerList(unitLen, level);
         int listSize = fileListerList.size();
         int runningThreads = listSize < maxThreads ? listSize : maxThreads;
@@ -263,7 +263,7 @@ public class ListBucket {
         }
     }
 
-    public void straightlyList(String marker, String endFile, IOssFileProcess processor) {
+    public void straightlyList(String marker, String endFile, IQossProcess processor) {
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         try {
             String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());

@@ -1,4 +1,4 @@
-package com.qiniu.service.oss;
+package com.qiniu.service.qoss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;

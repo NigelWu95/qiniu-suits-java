@@ -1,11 +1,9 @@
 package com.qiniu.service.datasource;
 
 import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.QiniuException;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.service.interfaces.IOssFileProcess;
-import com.qiniu.service.media.QueryAvinfo;
+import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.ExecutorsUtils;
 import com.qiniu.util.StringUtils;
@@ -55,9 +53,9 @@ public class FileInput {
 //        }
 //    }
 
-    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, IOssFileProcess fileProcessor) {
+    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, IQossProcess fileProcessor) {
 
-        IOssFileProcess processor = null;
+        IQossProcess processor = null;
         ILineParser lineParser = new SplitLineParser(separator);
         try {
             BufferedReader bufferedReader = sourceReaders.get(finalI);
@@ -84,7 +82,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, IOssFileProcess processor) {
+    public void process(int maxThreads, String filePath, IQossProcess processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
         File sourceFile = new File(filePath);

@@ -1,11 +1,11 @@
-package com.qiniu.service.oss;
+package com.qiniu.service.qoss;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public abstract class OperationBase implements IOssFileProcess, Cloneable {
+public abstract class OperationBase implements IQossProcess, Cloneable {
 
     protected Auth auth;
     protected Configuration configuration;

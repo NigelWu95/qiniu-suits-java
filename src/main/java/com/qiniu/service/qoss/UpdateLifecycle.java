@@ -1,9 +1,9 @@
-package com.qiniu.service.oss;
+package com.qiniu.service.qoss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
-import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class UpdateLifecycle extends OperationBase implements IOssFileProcess, Cloneable {
+public class UpdateLifecycle extends OperationBase implements IQossProcess, Cloneable {
 
     private int days;
 
