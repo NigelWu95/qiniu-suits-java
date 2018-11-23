@@ -44,11 +44,11 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
     }
 
-    public IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public QueryAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.resultFileIndex = resultFileIndex;
         queryAvinfo.mediaManager = new MediaManager();
-        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        queryAvinfo.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
             queryAvinfo.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
