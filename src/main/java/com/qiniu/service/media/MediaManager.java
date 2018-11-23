@@ -35,10 +35,10 @@ public class MediaManager {
         for (int i = 3; i < addr.length; i++) {
             key.append(addr[i]).append("/");
         }
-        return getAvinfo(domain, key.toString().substring(0, key.length() - 1));
+        return getAvinfoByUrl(domain, key.toString().substring(0, key.length() - 1));
     }
 
-    public Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
+    public Avinfo getAvinfoByUrl(String domain, String sourceKey) throws QiniuException {
 
         try {
             RequestUtils.checkHost(domain);
@@ -46,21 +46,6 @@ public class MediaManager {
             throw new QiniuException(e);
         }
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
-        requestAvinfo(url);
-        this.avinfo.setFormat(JsonConvertUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
-        JsonElement element = avinfoJson.get("streams");
-        JsonArray streams = element.getAsJsonArray();
-        for (JsonElement stream : streams) {
-            JsonElement typeElement = stream.getAsJsonObject().get("codec_type");
-            String type = (typeElement == null || typeElement instanceof JsonNull) ? "" : typeElement.getAsString();
-            if ("video".equals(type)) this.avinfo.setVideoStream(JsonConvertUtils.fromJson(stream, VideoStream.class));
-            if ("audio".equals(type)) this.avinfo.setAudioStream(JsonConvertUtils.fromJson(stream, AudioStream.class));
-        }
-        return this.avinfo;
-    }
-
-    private void requestAvinfo(String url) throws QiniuException {
-
         Response response = client.get(url + "?avinfo");
         avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();
@@ -68,5 +53,29 @@ public class MediaManager {
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(response);
         }
+        return getAvinfoByJson(avinfoJson) ;
+    }
+
+    public Avinfo getAvinfoByJson(String avinfoJson) throws QiniuException {
+
+        return getAvinfoByJson(JsonConvertUtils.toJsonObject(avinfoJson));
+    }
+
+    public Avinfo getAvinfoByJson(JsonObject avinfoJson) throws QiniuException {
+
+        try {
+            avinfo.setFormat(JsonConvertUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
+            JsonElement element = avinfoJson.get("streams");
+            JsonArray streams = element.getAsJsonArray();
+            for (JsonElement stream : streams) {
+                JsonElement typeElement = stream.getAsJsonObject().get("codec_type");
+                String type = (typeElement == null || typeElement instanceof JsonNull) ? "" : typeElement.getAsString();
+                if ("video".equals(type)) avinfo.setVideoStream(JsonConvertUtils.fromJson(stream, VideoStream.class));
+                if ("audio".equals(type)) avinfo.setAudioStream(JsonConvertUtils.fromJson(stream, AudioStream.class));
+            }
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return avinfo;
     }
 }
