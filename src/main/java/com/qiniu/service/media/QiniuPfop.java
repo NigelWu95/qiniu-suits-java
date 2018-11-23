@@ -30,6 +30,10 @@ public class QiniuPfop implements IQossProcess, Cloneable {
     public String resultFileDir;
     public FileReaderAndWriterMap fileReaderAndWriterMap;
 
+    private void initBaseParams() {
+        this.processName = "pfop";
+    }
+
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
@@ -37,12 +41,14 @@ public class QiniuPfop implements IQossProcess, Cloneable {
         this.bucket = bucket;
         this.pipeline = pipeline;
         this.resultFileDir = resultFileDir;
+        initBaseParams();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
     }
 
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir,
                      int resultFileIndex) throws IOException {
         this(auth, configuration, bucket, pipeline, resultFileDir);
+        initBaseParams();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
