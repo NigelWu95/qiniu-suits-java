@@ -11,7 +11,7 @@ public class LineUtils {
         }
 
         if (items.length < index + 1) {
-            throw new QiniuSuitsException("index is out of pfopItems' length.");
+            throw new QiniuSuitsException("index is out of items' length.");
         }
 
         return items[index];

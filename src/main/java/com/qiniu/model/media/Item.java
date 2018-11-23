@@ -1,6 +1,6 @@
 package com.qiniu.model.media;
 
-public class PfopItem {
+public class Item {
 
     public String cmd;
     public Integer code;

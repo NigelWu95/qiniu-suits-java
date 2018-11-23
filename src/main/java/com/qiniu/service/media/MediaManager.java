@@ -87,7 +87,7 @@ public class MediaManager {
 
     public PfopResult getPfopResultById(String persistentId) throws QiniuException {
 
-        String url = "http://http://api.qiniu.com/status/get/prefop?id=" + persistentId;
+        String url = "http://api.qiniu.com/status/get/prefop?id=" + persistentId;
         Response response = client.get(url);
         JsonObject pfopResultJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();

@@ -5,6 +5,7 @@ import com.qiniu.model.parameter.*;
 import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
+import com.qiniu.service.media.QueryPfopResult;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -92,6 +93,10 @@ public class ProcessorChoice {
                 AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, commonParams.getBucket(),
                         "avthumb-pipline", resultFileDir);
+                break;
+            }
+            case "pfopresult": {
+                processor = new QueryPfopResult(resultFileDir);
                 break;
             }
         }
