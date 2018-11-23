@@ -3,7 +3,7 @@ package com.qiniu.service.media;
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
-import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryAvinfo implements IOssFileProcess, Cloneable {
+public class QueryAvinfo implements IQossProcess, Cloneable {
 
     private String domain;
     private MediaManager mediaManager;
@@ -28,20 +28,17 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         this.domain = domain;
     }
 
-    public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
-        initBaseParams(domain);
-        this.resultFileDir = resultFileDir;
-        this.resultFileIndex = resultFileIndex;
-        this.mediaManager = new MediaManager();
-        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
     public QueryAvinfo(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+    }
+
+    public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
+        this(domain, resultFileDir);
+        this.resultFileIndex = resultFileIndex;
+        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QueryAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {

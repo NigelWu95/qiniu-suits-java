@@ -5,9 +5,9 @@ import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
 
-public interface IOssFileProcess {
+public interface IQossProcess {
 
-    IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
+    IQossProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
     void setBatch(boolean batch);
 

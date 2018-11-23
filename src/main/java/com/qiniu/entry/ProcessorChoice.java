@@ -2,9 +2,9 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.*;
-import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.service.media.QueryAvinfo;
-import com.qiniu.service.oss.*;
+import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
@@ -17,7 +17,7 @@ public class ProcessorChoice {
         add("asyncfetch");
     }};
 
-    public static IOssFileProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
+    public static IQossProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
@@ -30,7 +30,7 @@ public class ProcessorChoice {
             batch = false;
         }
         String resultFileDir = commonParams.getResultFileDir();
-        IOssFileProcess processor = null;
+        IQossProcess processor = null;
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {

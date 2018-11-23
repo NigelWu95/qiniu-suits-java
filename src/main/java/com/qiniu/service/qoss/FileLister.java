@@ -1,4 +1,4 @@
-package com.qiniu.service.oss;
+package com.qiniu.service.qoss;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
