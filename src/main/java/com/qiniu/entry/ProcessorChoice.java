@@ -67,6 +67,10 @@ public class ProcessorChoice {
                 ((CopyFile) processor).setOptions(fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix());
                 break;
             }
+            case "delete": {
+                processor = new DeleteFile(Auth.create(ak, sk), configuration, commonParams.getBucket(), resultFileDir);
+                break;
+            }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = paramFromConfig ?
                         new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
