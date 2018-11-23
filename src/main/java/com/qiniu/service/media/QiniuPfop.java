@@ -2,9 +2,8 @@ package com.qiniu.service.media;
 
 import com.qiniu.common.FileReaderAndWriterMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
-import com.qiniu.model.media.Avinfo;
 import com.qiniu.sdk.OperationManager;
+import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -18,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QiniuPfop implements Cloneable {
+public class QiniuPfop implements IQossProcess, Cloneable {
 
     public Auth auth;
     public Configuration configuration;
@@ -51,6 +50,11 @@ public class QiniuPfop implements Cloneable {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(auth, configuration);
         qiniuPfop.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        try {
+            qiniuPfop.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
         return qiniuPfop;
     }
 
@@ -70,18 +74,17 @@ public class QiniuPfop implements Cloneable {
         return bucket + "\t" + pipeline;
     }
 
-    public String singleWithRetry(String fopInfo, int retryCount) throws QiniuException {
+    public String singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
 
         String persistentId = null;
-        String[] items = fopInfo.split("\t");
         try {
-            persistentId = operationManager.pfop(bucket, items[0], items[1],
+            persistentId = operationManager.pfop(bucket, fileInfo.key, fileInfo.hash,
                     new StringMap().putNotEmpty("pipeline", pipeline));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    persistentId = operationManager.pfop(bucket, items[0], items[1],
+                    persistentId = operationManager.pfop(bucket, fileInfo.key, fileInfo.hash,
                             new StringMap().putNotEmpty("pipeline", pipeline));
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -93,21 +96,25 @@ public class QiniuPfop implements Cloneable {
         return persistentId;
     }
 
-    public void processFile(List<String> fopInfoList, int retryCount) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
-        fopInfoList = fopInfoList == null ? null : fopInfoList.parallelStream()
+        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fopInfoList == null || fopInfoList.size() == 0) return;
+        if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (String fopInfo : fopInfoList) {
+        for (FileInfo fileInfo : fileInfoList) {
             try {
-                String result = singleWithRetry(fopInfo, retryCount);
+                String result = singleWithRetry(fileInfo, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
-                        "\t" + fopInfo);
+                        "\t" + fileInfo.key + "\t" + fileInfo.hash);
             }
         }
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+    }
+
+    public void closeResource() {
+        fileReaderAndWriterMap.closeWriter();
     }
 }

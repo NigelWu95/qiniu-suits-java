@@ -3,6 +3,7 @@ package com.qiniu.entry;
 import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.*;
 import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
@@ -84,9 +85,13 @@ public class ProcessorChoice {
             }
             case "avinfo": {
                 AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
-                String accessKey = "".equals(avinfoParams.getProcessAk()) ? ak : avinfoParams.getProcessAk();
-                String secretKey = "".equals(avinfoParams.getProcessSk()) ? sk : avinfoParams.getProcessSk();
                 processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
+                break;
+            }
+            case "pfop": {
+                AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
+                processor = new QiniuPfop(Auth.create(ak, sk), configuration, commonParams.getBucket(),
+                        "avthumb-pipline", resultFileDir);
                 break;
             }
         }
