@@ -72,8 +72,7 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
 
         Avinfo avinfo = null;
         try {
-//            avinfo = mediaManager.getAvinfoByUrl(domain, fileInfo.key);
-            avinfo = mediaManager.getAvinfoByJson(fileInfo.hash);
+            avinfo = mediaManager.getAvinfoByUrl(domain, fileInfo.key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
@@ -94,59 +93,17 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        List<String> copyList = new ArrayList<>();
-        List<String> mp4FopList = new ArrayList<>();
-        List<String> m3u8FopList = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
-            String srcCopy = fileInfo.key + "\t" + "/copy/" +
-                    UrlSafeBase64.encodeToString("fantasy-tv:" + fileInfo.key) + "/";
-            String mp4Fop720 = fileInfo.key + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
-            String mp4Fop480 = fileInfo.key + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
-            String m3u8Copy = fileInfo.key + "\t" + "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
             try {
                 Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
-                double duration = Double.valueOf(avinfo.getFormat().duration);
-                long size = Long.valueOf(avinfo.getFormat().size);
-                int width = avinfo.getVideoStream().width;
-                if (width > 1280) {
-                    String copyKey1080 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F1080");
-                    copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey1080));
-                    String mp4Key720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
-                    String mp4Key480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
-                    String m3u8Key1080 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F1080", "m3u8");
-                    String m3u8Key720 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F720", "m3u8");
-                    String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
-                    mp4FopList.add(mp4Fop720 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key720 + "\t" + duration + "\t" + size));
-                    mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key1080) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
-                } else if (width > 1000) {
-                    String copyKey720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
-                    copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey720));
-                    String mp4Key480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
-                    String m3u8Key720 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F720", "m3u8");
-                    String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
-                    mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
-                } else {
-                    String copyKey480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
-                    copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey480));
-                    String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
-                }
+                resultList.add(JsonConvertUtils.toJsonWithoutUrlEscape(avinfo));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
                         "\t" + fileInfo.key);
             }
         }
-        if (copyList.size() > 0) fileReaderAndWriterMap.writeKeyFile("tocopy" + resultFileIndex,
-                String.join("\n", copyList));
-        if (mp4FopList.size() > 0) fileReaderAndWriterMap.writeKeyFile("tomp4" + resultFileIndex,
-                String.join("\n", mp4FopList));
-        if (m3u8FopList.size() > 0) fileReaderAndWriterMap.writeKeyFile("tom3u8" + resultFileIndex,
-                String.join("\n", m3u8FopList));
+        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
