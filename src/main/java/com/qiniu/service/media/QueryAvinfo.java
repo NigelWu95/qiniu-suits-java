@@ -46,6 +46,7 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
 
     public IOssFileProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
+        queryAvinfo.resultFileIndex = resultFileIndex;
         queryAvinfo.mediaManager = new MediaManager();
         this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
         try {
@@ -101,28 +102,8 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
-                avinfoList.add(mediaManager.getCurrentAvinfoJson());
-                int width = avinfo.getVideoStream().width;
-                if (width > 1280) {
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/1920x1080|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F1080")));
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/1280x720|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F720")));
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
-                } else if (width > 1000) {
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/1280x720|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F720")));
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
-                } else if (width > 640) {
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/640x480|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F480")));
-                } else {
-                    String s = width + "x" + avinfo.getVideoStream().height;
-                    resultList.add(fileInfo.key + "\t" + "avthumb/mp4/s/" + s + "|saveas/" + UrlSafeBase64.encodeToString(
-                            ObjectUtils.addPrefixAndSuffixKeepExt("fantasy-tv-avthumb:", fileInfo.key, "F1080")));
-                }
+                avinfoList.add(fileInfo.key + "\t" + mediaManager.getCurrentAvinfoJson());
+                resultList.addAll(ConvertFopCommand(fileInfo.key, avinfo));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
                         "\t" + fileInfo.key);
@@ -131,6 +112,62 @@ public class QueryAvinfo implements IOssFileProcess, Cloneable {
         if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
         if (avinfoList.size() > 0) fileReaderAndWriterMap.writeKeyFile("avinfo" + resultFileIndex,
                 String.join("\n", avinfoList));
+    }
+
+    public void processFile(List<String> avinfoList) throws QiniuException {
+
+        avinfoList = avinfoList == null ? null : avinfoList.parallelStream()
+                .filter(Objects::nonNull).collect(Collectors.toList());
+        if (avinfoList == null || avinfoList.size() == 0) return;
+
+        List<String> resultList = new ArrayList<>();
+        for (String avinfoLine : avinfoList) {
+            String[] items = avinfoLine.split("\t");
+            try {
+                Avinfo avinfo = JsonConvertUtils.fromJson(items[1], Avinfo.class);
+                resultList = ConvertFopCommand(items[0], avinfo);
+            } catch (Exception e) {
+                HttpResponseUtils.processException(new QiniuException(e), fileReaderAndWriterMap, processName,
+                        getInfo() + "\t" + items[0]);
+            }
+        }
+        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+    }
+
+    public List<String> ConvertFopCommand(String key, Avinfo avinfo) {
+        List<String> resultList = new ArrayList<>();
+        int width = avinfo.getVideoStream().width;
+        String s = width + "x" + avinfo.getVideoStream().height;
+        if (width > 1280) {
+            String mp4Fop = key + "\t" + "avthumb/mp4/s/" + s + "/saveas/";
+            String mp4Key = ObjectUtils.addSuffixKeepExt(key, "F1080");
+            resultList.add(mp4Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + mp4Key));
+            String m3u8Fop = mp4Key + "\t" + "avthumb/m3u8/s/" + s + "/vcodec/copy/acodec/copy|saveas/";
+            String m3u8Key = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
+            resultList.add(m3u8Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + m3u8Key));
+        } else if (width > 1000) {
+            String mp4Fop = key + "\t" + "avthumb/mp4/s/" + s + "/saveas/";
+            String mp4Key = ObjectUtils.addSuffixKeepExt(key, "F720");
+            resultList.add(mp4Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + mp4Key));
+            String m3u8Fop = mp4Key + "\t" + "avthumb/m3u8/s/" + s + "/vcodec/copy/acodec/copy|saveas/";
+            String m3u8Key = ObjectUtils.addSuffixWithExt(key, "F720", "m3u8");
+            resultList.add(m3u8Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + m3u8Key));
+        } else if (width > 640) {
+            String mp4Fop = key + "\t" + "avthumb/mp4/s/640x480|saveas/";
+            String mp4Key = ObjectUtils.addSuffixKeepExt(key, "F480");
+            resultList.add(mp4Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + mp4Key));
+            String m3u8Fop = mp4Key + "\t" + "avthumb/mp4/s/640x480/vcodec/copy/acodec/copy|saveas/";
+            String m3u8Key = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
+            resultList.add(m3u8Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + m3u8Key));
+        } else {
+            String mp4Fop = key + "\t" + "avthumb/mp4/s/" + s + "/saveas/";
+            String mp4Key = ObjectUtils.addSuffixKeepExt(key, "F480");
+            resultList.add(mp4Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + mp4Key));
+            String m3u8Fop = mp4Key + "\t" + "avthumb/m3u8/s/" + s + "/vcodec/copy/acodec/copy|saveas/";
+            String m3u8Key = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
+            resultList.add(m3u8Fop + UrlSafeBase64.encodeToString("fantasy-tv-avthumb:" + m3u8Key));
+        }
+        return resultList;
     }
 
     public void closeResource() {
