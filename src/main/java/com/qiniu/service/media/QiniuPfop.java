@@ -48,7 +48,6 @@ public class QiniuPfop implements IQossProcess, Cloneable {
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir,
                      int resultFileIndex) throws IOException {
         this(auth, configuration, bucket, pipeline, resultFileDir);
-        initBaseParams();
         this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 

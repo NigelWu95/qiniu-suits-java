@@ -15,14 +15,20 @@ public class MediaManager {
     private Client client;
     private Avinfo avinfo;
     private JsonObject avinfoJson;
+    private PfopResult pfopResult;
 
     public MediaManager() {
         this.client = new Client();
         this.avinfo = new Avinfo();
+        this.pfopResult = new PfopResult();
     }
 
     public String getCurrentAvinfoJson() {
-        return JsonConvertUtils.toJson(avinfoJson);
+        return JsonConvertUtils.toJson(pfopResult);
+    }
+
+    public String getCurrentPfopResultJson() {
+        return JsonConvertUtils.toJson(pfopResult);
     }
 
     public Avinfo getAvinfo(String url) throws QiniuException, UnknownHostException {
@@ -77,5 +83,34 @@ public class MediaManager {
             throw new QiniuException(e, e.getMessage());
         }
         return avinfo;
+    }
+
+    public PfopResult getPfopResultById(String persistentId) throws QiniuException {
+
+        String url = "http://http://api.qiniu.com/status/get/prefop?id=" + persistentId;
+        Response response = client.get(url);
+        JsonObject pfopResultJson = JsonConvertUtils.toJsonObject(response.bodyString());
+        response.close();
+        JsonElement jsonElement = pfopResultJson.get("reqid");
+        if (jsonElement == null || jsonElement instanceof JsonNull) {
+            throw new QiniuException(response);
+        }
+        pfopResult = getPfopResultByJson(pfopResultJson);
+        return pfopResult;
+    }
+
+    public PfopResult getPfopResultByJson(String pfopResultJson) throws QiniuException {
+
+        return getPfopResultByJson(JsonConvertUtils.toJsonObject(pfopResultJson));
+    }
+
+    public PfopResult getPfopResultByJson(JsonObject pfopResultJson) throws QiniuException {
+
+        try {
+            pfopResult = JsonConvertUtils.fromJson(pfopResultJson, PfopResult.class);
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return pfopResult;
     }
 }
