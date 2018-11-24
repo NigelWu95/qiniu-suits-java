@@ -87,7 +87,7 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
         return pfopResult;
     }
 
-    public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

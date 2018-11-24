@@ -108,7 +108,7 @@ public abstract class OperationBase implements IQossProcess, Cloneable {
 
     protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
 
-    public void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

@@ -23,13 +23,11 @@ public class FileInput {
     private String separator;
     private int keyIndex;
     private int unitLen;
-    private int retryCount;
 
-    public FileInput(String separator, int keyIndex, int unitLen, int retryCount) {
+    public FileInput(String separator, int keyIndex, int unitLen) {
         this.separator = separator;
         this.keyIndex = keyIndex;
         this.unitLen = unitLen;
-        this.retryCount = retryCount;
     }
 
     public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, IQossProcess fileProcessor) {
@@ -52,7 +50,7 @@ public class FileInput {
             for (int j = 0; j < size; j++) {
                 List<FileInfo> processList = fileInfoList.subList(unitLen * j,
                         j == size - 1 ? fileInfoList.size() : unitLen * (j + 1));
-                if (processor != null) processor.processFile(processList, retryCount);
+                if (processor != null) processor.processFile(processList);
             }
             bufferedReader.close();
         } catch (Exception e) {
