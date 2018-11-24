@@ -20,7 +20,6 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
     private String processName;
     private int retryCount = 3;
     protected String resultFileDir;
-    private int resultFileIndex;
     private FileMap fileMap;
 
     private void initBaseParams(String domain) {
@@ -37,13 +36,11 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
 
     public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
-        this.resultFileIndex = resultFileIndex;
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QueryAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.resultFileIndex = resultFileIndex;
         queryAvinfo.mediaManager = new MediaManager();
         queryAvinfo.fileMap = new FileMap();
         try {
