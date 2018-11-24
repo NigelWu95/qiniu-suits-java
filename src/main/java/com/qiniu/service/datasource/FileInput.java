@@ -1,6 +1,6 @@
 package com.qiniu.service.datasource;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.IQossProcess;
@@ -64,7 +64,7 @@ public class FileInput {
 
     public void process(int maxThreads, String filePath, IQossProcess processor) {
         List<String> sourceKeys = new ArrayList<>();
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);
         try {
             if (sourceFile.isDirectory()) {

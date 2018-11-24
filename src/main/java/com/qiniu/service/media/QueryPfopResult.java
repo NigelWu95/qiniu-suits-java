@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.PfopResult;
 import com.qiniu.service.interfaces.IQossProcess;
@@ -21,7 +21,7 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
     private int retryCount = 3;
     protected String resultFileDir;
     private int resultFileIndex;
-    private FileReaderAndWriterMap fileReaderAndWriterMap;
+    private FileMap fileMap;
 
     private void initBaseParams() {
         this.processName = "fopresult";
@@ -31,22 +31,22 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
         initBaseParams();
         this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
-        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        this.fileMap = new FileMap();
     }
 
     public QueryPfopResult(String resultFileDir, int resultFileIndex) throws IOException {
         this(resultFileDir);
         this.resultFileIndex = resultFileIndex;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QueryPfopResult getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.resultFileIndex = resultFileIndex;
         queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        queryPfopResult.fileMap = new FileMap();
         try {
-            queryPfopResult.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            queryPfopResult.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
@@ -98,14 +98,14 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
                 PfopResult pfopResult = singleWithRetry(fileInfo, retryCount);
                 resultList.add(JsonConvertUtils.toJsonWithoutUrlEscape(pfopResult));
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
                         "\t" + fileInfo.key);
             }
         }
-        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
-        fileReaderAndWriterMap.closeWriter();
+        fileMap.closeWriter();
     }
 }

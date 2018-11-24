@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -28,7 +28,7 @@ public class CopyFile extends OperationBase implements IQossProcess, Cloneable {
                     int resultFileIndex) throws IOException {
         super(auth, configuration, fromBucket, resultFileDir);
         initBaseParams(toBucket);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir) {
@@ -43,9 +43,9 @@ public class CopyFile extends OperationBase implements IQossProcess, Cloneable {
 
     public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
-        copyFile.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        copyFile.fileMap = new FileMap();
         try {
-            copyFile.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            copyFile.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

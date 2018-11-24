@@ -6,13 +6,11 @@ import com.qiniu.util.CensorResultUtils;
 
 public class CensorResp {
 
-    private String reqId;
     private JsonObject pulpResult;
     private JsonObject terrorResult;
     private JsonObject politicianResult;
 
-    private CensorResp(String reqId, JsonObject pulpResult, JsonObject terrorResult, JsonObject politicianResult) {
-        this.reqId = reqId;
+    private CensorResp(JsonObject pulpResult, JsonObject terrorResult, JsonObject politicianResult) {
         this.pulpResult = pulpResult;
         this.terrorResult = terrorResult;
         this.politicianResult = politicianResult;
@@ -30,13 +28,13 @@ public class CensorResp {
         return politicianResult;
     }
 
-    public static CensorResp parseCensorResp(String reqId, String bodyString) {
+    public static CensorResp parseCensorResp(String bodyString) {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(bodyString, JsonObject.class);
         JsonObject pulpResult = jsonObject.has("pulp") ? jsonObject.get("pulp").getAsJsonObject() : null;
         JsonObject terrorResult = jsonObject.has("terror") ? jsonObject.get("terror").getAsJsonObject() : null;
         JsonObject politicianResult = jsonObject.has("politician") ? jsonObject.get("politician").getAsJsonObject() : null;
-        return new CensorResp(reqId, pulpResult, terrorResult, politicianResult);
+        return new CensorResp(pulpResult, terrorResult, politicianResult);
     }
 
     public boolean isPulpSex() {

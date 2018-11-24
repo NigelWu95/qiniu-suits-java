@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FileReaderAndWriterMap implements Cloneable {
+public class FileMap implements Cloneable {
 
     private HashMap<String, BufferedWriter> writerMap;
     private HashMap<String, BufferedReader> readerMap;
@@ -17,7 +17,7 @@ public class FileReaderAndWriterMap implements Cloneable {
     private String prefix;
     private String suffix;
 
-    public FileReaderAndWriterMap() {
+    public FileMap() {
         this.targetWriters = Arrays.asList("_success", "_error_null", "_other");
         this.writerMap = new HashMap<>();
         this.readerMap = new HashMap<>();
@@ -53,7 +53,7 @@ public class FileReaderAndWriterMap implements Cloneable {
         this.writerMap.put(key, writer);
     }
 
-    public void mkDirAndFile(File filePath) throws IOException {
+    synchronized public void mkDirAndFile(File filePath) throws IOException {
 
         int count = 3;
         while (!filePath.getParentFile().exists()) {
@@ -96,7 +96,7 @@ public class FileReaderAndWriterMap implements Cloneable {
         File[] fs = sourceDir.listFiles();
         String fileKey;
         BufferedReader reader;
-
+        assert fs != null;
         for(File f : fs) {
             if (!f.isDirectory()) {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());

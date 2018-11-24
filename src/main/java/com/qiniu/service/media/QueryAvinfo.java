@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.service.interfaces.IQossProcess;
@@ -21,7 +21,7 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
     private int retryCount = 3;
     protected String resultFileDir;
     private int resultFileIndex;
-    private FileReaderAndWriterMap fileReaderAndWriterMap;
+    private FileMap fileMap;
 
     private void initBaseParams(String domain) {
         this.processName = "avinfo";
@@ -32,22 +32,22 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
-        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        this.fileMap = new FileMap();
     }
 
     public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
         this.resultFileIndex = resultFileIndex;
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QueryAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.resultFileIndex = resultFileIndex;
         queryAvinfo.mediaManager = new MediaManager();
-        queryAvinfo.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        queryAvinfo.fileMap = new FileMap();
         try {
-            queryAvinfo.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            queryAvinfo.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
@@ -97,16 +97,16 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
-                resultList.add(JsonConvertUtils.toJsonWithoutUrlEscape(avinfo));
+                resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(avinfo));
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
                         "\t" + fileInfo.key);
             }
         }
-        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
-        fileReaderAndWriterMap.closeWriter();
+        fileMap.closeWriter();
     }
 }

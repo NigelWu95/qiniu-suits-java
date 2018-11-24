@@ -3,7 +3,6 @@ package com.qiniu.service.ai;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
-import com.qiniu.common.QiniuSuitsException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.CensorResp;
@@ -95,7 +94,7 @@ public class VideoCensor {
         this.paramsValueJson.add("save", saveSetting);
     }
 
-    public CensorResp doCensor(String vid, String url) throws QiniuSuitsException {
+    public CensorResp doCensor(String vid, String url) throws QiniuException {
         String apiUrl = "http://argus.atlab.ai/v1/video/" + vid;
 
         JsonObject bodyJson = new JsonObject();
@@ -103,42 +102,11 @@ public class VideoCensor {
         bodyJson.add("data", dataValueJson);
         bodyJson.add("ops", this.opsValueJsonArray);
         byte[] bodyBytes = bodyJson.toString().getBytes();
-
         String qiniuToken = "Qiniu " + this.auth.signRequestV2(url, "POST", bodyBytes, "application/json");
         StringMap headers = new StringMap();
         headers.put("Authorization", qiniuToken);
-        Response response = null;
-        String respBody = "";
-
-        try {
-            response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
-        } catch (QiniuException e) {
-            QiniuSuitsException qiniuSuitsException = new QiniuSuitsException(e);
-            qiniuSuitsException.addToFieldMap("url", url);
-            qiniuSuitsException.setStackTrace(e.getStackTrace());
-            throw qiniuSuitsException;
-        } finally {
-            if (response != null)
-                response.close();
-        }
-
-        int statusCode = response.statusCode;
-        String reqId = response.reqId;
-
-        try {
-            respBody = response.bodyString();
-        } catch (QiniuException qiniuException) {
-            statusCode = 0;
-        }
-
-        if (statusCode == 200) {
-            return CensorResp.parseCensorResp(reqId, respBody);
-        } else {
-            QiniuSuitsException qiniuSuitsException = new QiniuSuitsException("video censor error");
-            qiniuSuitsException.addToFieldMap("statusCode", String.valueOf(statusCode));
-            qiniuSuitsException.addToFieldMap("reqId", reqId);
-            qiniuSuitsException.addToFieldMap("respBody", respBody);
-            throw qiniuSuitsException;
-        }
+        Response response = client.post(apiUrl, bodyBytes, headers, Client.JsonMime);
+        String respBody = response.bodyString();
+        return CensorResp.parseCensorResp(respBody);
     }
 }
