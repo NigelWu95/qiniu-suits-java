@@ -1,6 +1,6 @@
 package com.qiniu.util;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 
@@ -27,8 +27,8 @@ public class HttpResponseUtils {
         }
     }
 
-    public static void processException(QiniuException e, FileReaderAndWriterMap fileMap, String processName,
-                                        String info) throws QiniuException {
+    public static void processException(QiniuException e, FileMap fileMap, String processName, String info)
+            throws QiniuException {
         if (e != null) {
             if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
             if (e.response == null) {

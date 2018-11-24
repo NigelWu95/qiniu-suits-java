@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -9,10 +9,10 @@ import java.util.List;
 
 public class M3U8Tools {
 
-    private FileReaderAndWriterMap fileReaderAndWriterMap;
+    private FileMap fileMap;
 
-    public M3U8Tools(FileReaderAndWriterMap fileReaderAndWriterMap) {
-        this.fileReaderAndWriterMap = fileReaderAndWriterMap;
+    public M3U8Tools(FileMap fileMap) {
+        this.fileMap = fileMap;
     }
 
     public void merge(List<VideoTS> tsList, String url, String targetFileDir) throws FileNotFoundException {
@@ -25,9 +25,9 @@ public class M3U8Tools {
             try {
                 inputStream = new URL(ts.getUrl()).openStream();
                 IOUtils.copyLarge(inputStream, fileOutputStream);
-                fileReaderAndWriterMap.writeSuccess(ts.getUrl());
+                fileMap.writeSuccess(ts.getUrl());
             } catch (IOException e) {
-                fileReaderAndWriterMap.writeErrorOrNull(ts.getUrl() + "\t" + e.toString());
+                fileMap.writeErrorOrNull(ts.getUrl() + "\t" + e.toString());
             }
         }
 
@@ -62,9 +62,9 @@ public class M3U8Tools {
                 fileOutputStream = new FileOutputStream(file);
                 inputStream = new URL(url).openStream();
                 IOUtils.copyLarge(inputStream, fileOutputStream);
-                fileReaderAndWriterMap.writeSuccess(ts.toString());
+                fileMap.writeSuccess(ts.toString());
             } catch (IOException e) {
-                fileReaderAndWriterMap.writeErrorOrNull(ts + "\t" + e.toString());
+                fileMap.writeErrorOrNull(ts + "\t" + e.toString());
             }
         }
 

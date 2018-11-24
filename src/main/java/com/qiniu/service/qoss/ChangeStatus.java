@@ -25,7 +25,7 @@ public class ChangeStatus extends OperationBase implements IQossProcess, Cloneab
                         int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
         initBaseParams(status);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir) {
@@ -36,7 +36,7 @@ public class ChangeStatus extends OperationBase implements IQossProcess, Cloneab
     public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
         try {
-            changeStatus.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            changeStatus.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

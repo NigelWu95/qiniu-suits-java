@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.IQossProcess;
@@ -28,7 +28,7 @@ public class QiniuPfop implements IQossProcess, Cloneable {
     public boolean batch = true;
     public int retryCount = 3;
     public String resultFileDir;
-    public FileReaderAndWriterMap fileReaderAndWriterMap;
+    public FileMap fileMap;
 
     private void initBaseParams() {
         this.processName = "pfop";
@@ -42,21 +42,21 @@ public class QiniuPfop implements IQossProcess, Cloneable {
         this.pipeline = pipeline;
         this.resultFileDir = resultFileDir;
         initBaseParams();
-        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        this.fileMap = new FileMap();
     }
 
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir,
                      int resultFileIndex) throws IOException {
         this(auth, configuration, bucket, pipeline, resultFileDir);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QiniuPfop getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(auth, configuration);
-        qiniuPfop.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        qiniuPfop.fileMap = new FileMap();
         try {
-            qiniuPfop.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            qiniuPfop.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
@@ -112,14 +112,14 @@ public class QiniuPfop implements IQossProcess, Cloneable {
                 String result = singleWithRetry(fileInfo, retryCount);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
                         "\t" + fileInfo.key + "\t" + fileInfo.hash);
             }
         }
-        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
-        fileReaderAndWriterMap.closeWriter();
+        fileMap.closeWriter();
     }
 }

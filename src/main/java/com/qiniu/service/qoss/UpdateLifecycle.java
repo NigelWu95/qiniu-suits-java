@@ -25,7 +25,7 @@ public class UpdateLifecycle extends OperationBase implements IQossProcess, Clon
                            int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
         initBaseParams(days);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir) {
@@ -36,7 +36,7 @@ public class UpdateLifecycle extends OperationBase implements IQossProcess, Clon
     public UpdateLifecycle getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         UpdateLifecycle updateLifecycle = (UpdateLifecycle)super.clone();
         try {
-            updateLifecycle.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            updateLifecycle.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

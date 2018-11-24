@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.common.QiniuException;
@@ -28,7 +28,7 @@ public abstract class OperationBase implements IQossProcess, Cloneable {
     protected volatile BatchOperations batchOperations;
     protected int retryCount = 3;
     protected String resultFileDir;
-    protected FileReaderAndWriterMap fileReaderAndWriterMap;
+    protected FileMap fileMap;
 
     public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
         this.auth = auth;
@@ -37,14 +37,14 @@ public abstract class OperationBase implements IQossProcess, Cloneable {
         this.bucket = bucket;
         this.batchOperations = new BatchOperations();
         this.resultFileDir = resultFileDir;
-        this.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        this.fileMap = new FileMap();
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
-        operationBase.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        operationBase.fileMap = new FileMap();
         return operationBase;
     }
 
@@ -126,7 +126,7 @@ public abstract class OperationBase implements IQossProcess, Cloneable {
                         String result = HttpResponseUtils.getResult(response);
                         if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                     } catch (QiniuException e) {
-                        HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() + "\t" +
+                        HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
                                 String.join(",", processList.stream()
                                         .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
                     }
@@ -139,15 +139,15 @@ public abstract class OperationBase implements IQossProcess, Cloneable {
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileReaderAndWriterMap, processName, getInfo() +
+                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
                             "\t" + fileInfo.key);
                 }
             }
         }
-        if (resultList.size() > 0) fileReaderAndWriterMap.writeSuccess(String.join("\n", resultList));
+        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
-        fileReaderAndWriterMap.closeWriter();
+        fileMap.closeWriter();
     }
 }

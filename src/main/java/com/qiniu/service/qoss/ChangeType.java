@@ -26,7 +26,7 @@ public class ChangeType extends OperationBase implements IQossProcess, Cloneable
                       int resultFileIndex) throws IOException {
         super(auth, configuration, bucket, resultFileDir);
         initBaseParams(type);
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir) {
@@ -37,7 +37,7 @@ public class ChangeType extends OperationBase implements IQossProcess, Cloneable
     public ChangeType getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
         try {
-            changeType.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            changeType.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

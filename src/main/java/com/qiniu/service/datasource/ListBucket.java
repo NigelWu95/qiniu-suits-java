@@ -1,7 +1,7 @@
 package com.qiniu.service.datasource;
 
 import com.google.gson.JsonObject;
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
@@ -85,7 +85,7 @@ public class ListBucket {
         }
     }
 
-    private void writeResult(List<FileInfo> fileInfoList, FileReaderAndWriterMap fileMap, int writeType) {
+    private void writeResult(List<FileInfo> fileInfoList, FileMap fileMap, int writeType) {
 
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         if (fileMap != null) {
@@ -139,7 +139,7 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void recordProgress(String prefix, String marker, String endFile, FileReaderAndWriterMap fileMap) {
+    private void recordProgress(String prefix, String marker, String endFile, FileMap fileMap) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("prefix", prefix);
         jsonObject.addProperty("marker", marker);
@@ -147,7 +147,7 @@ public class ListBucket {
         fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
-    private void seekListerToEnd(FileLister fileLister, String endFile, FileReaderAndWriterMap fileMap,
+    private void seekListerToEnd(FileLister fileLister, String endFile, FileMap fileMap,
                              IQossProcess processor) throws QiniuException {
         List<FileInfo> fileInfoList;
         while (fileLister.hasNext() || fileLister.getPrefix().equals(customPrefix)) {
@@ -204,7 +204,7 @@ public class ListBucket {
 
     private void listFromLister(int finalI, List<FileLister> fileListerList, IQossProcess fileProcessor) {
         int resultIndex = finalI + 1;
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        FileMap fileMap = new FileMap();
         IQossProcess processor = null;
         try {
             fileMap.initWriter(resultFileDir, "list", resultIndex);
@@ -248,7 +248,7 @@ public class ListBucket {
 
     public void checkValidPrefix(int level) {
         List<FileLister> fileListerList = getFileListerList(1, level);
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        FileMap fileMap = new FileMap();
         try {
             fileMap.initWriter(resultFileDir, "list", "check");
             List<String> validPrefixAndMarker = fileListerList.parallelStream()
@@ -264,7 +264,7 @@ public class ListBucket {
     }
 
     public void straightlyList(String marker, String endFile, IQossProcess processor) {
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
+        FileMap fileMap = new FileMap();
         try {
             String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
             System.out.println(info + " start...");

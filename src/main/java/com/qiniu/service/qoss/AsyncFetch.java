@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -46,7 +46,7 @@ public class AsyncFetch extends OperationBase implements IQossProcess, Cloneable
         super(auth, configuration, bucket, resultFileDir);
         initBaseParams(domain);
         this.m3u8Manager = new M3U8Manager();
-        this.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir)
@@ -77,10 +77,10 @@ public class AsyncFetch extends OperationBase implements IQossProcess, Cloneable
 
     public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.fileReaderAndWriterMap = new FileReaderAndWriterMap();
+        asyncFetch.fileMap = new FileMap();
         asyncFetch.m3u8Manager = new M3U8Manager();
         try {
-            asyncFetch.fileReaderAndWriterMap.initWriter(resultFileDir, processName, resultFileIndex);
+            asyncFetch.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
@@ -112,7 +112,7 @@ public class AsyncFetch extends OperationBase implements IQossProcess, Cloneable
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
             } catch (IOException ioException) {
-                fileReaderAndWriterMap.writeErrorOrNull("list ts failed: " + url);
+                fileMap.writeErrorOrNull("list ts failed: " + url);
             }
 
             for (VideoTS videoTS : videoTSList) {
