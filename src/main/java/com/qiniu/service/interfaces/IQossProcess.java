@@ -17,7 +17,7 @@ public interface IQossProcess {
 
     String getInfo();
 
-    void processFile(List<FileInfo> fileInfoList, int retryCount) throws QiniuException;
+    void processFile(List<FileInfo> fileInfoList) throws QiniuException;
 
     void closeResource();
 }

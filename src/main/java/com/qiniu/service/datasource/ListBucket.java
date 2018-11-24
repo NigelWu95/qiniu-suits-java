@@ -168,7 +168,7 @@ public class ListBucket {
                 writeResult(fileInfoList, fileMap, 2);
             }
             if (processor != null) processor.processFile(fileInfoList.parallelStream()
-                    .filter(Objects::nonNull).collect(Collectors.toList()), retryCount);
+                    .filter(Objects::nonNull).collect(Collectors.toList()));
             if (StringUtils.isNullOrEmpty(marker)) break;
         }
         if (fileLister.exception != null) throw fileLister.exception;
