@@ -28,10 +28,15 @@ public class MediaManager {
         for (int i = 3; i < addr.length; i++) {
             key.append(addr[i]).append("/");
         }
-        return getAvinfoByUrl(domain, key.toString().substring(0, key.length() - 1));
+        return getAvinfo(domain, key.toString().substring(0, key.length() - 1));
     }
 
-    public JsonObject getAvinfoJsonByUrl(String domain, String sourceKey) throws QiniuException {
+    public Avinfo getAvinfo(String domain, String sourceKey) throws QiniuException {
+
+        return getAvinfoByJson(getAvinfoJson(domain, sourceKey)) ;
+    }
+
+    public JsonObject getAvinfoJson(String domain, String sourceKey) throws QiniuException {
 
         try {
             RequestUtils.checkHost(domain);
@@ -47,11 +52,6 @@ public class MediaManager {
             throw new QiniuException(response);
         }
         return avinfoJson;
-    }
-
-    public Avinfo getAvinfoByUrl(String domain, String sourceKey) throws QiniuException {
-
-        return getAvinfoByJson(getAvinfoJsonByUrl(domain, sourceKey)) ;
     }
 
     public Avinfo getAvinfoByJson(String avinfoJson) throws QiniuException {

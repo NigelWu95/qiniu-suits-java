@@ -41,7 +41,7 @@ public class FileInput {
                     .map(line -> {
                         FileInfo fileInfo = new FileInfo();
                         fileInfo.key = lineParser.getItemList(line).get(keyIndex);
-//                        fileInfo.hash = lineParser.getItemList(line).get(keyIndex + 1);
+                        fileInfo.hash = lineParser.getItemList(line).get(keyIndex + 1);
                         return fileInfo;
                     })
                     .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
