@@ -6,7 +6,6 @@ import com.qiniu.model.media.Avinfo;
 import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.service.media.MediaManager;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.ObjectUtils;
 import com.qiniu.util.UrlSafeBase64;
