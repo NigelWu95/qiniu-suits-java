@@ -1,12 +1,13 @@
-package com.qiniu.service.qoss;
+package com.qiniu.custom.miaop;
 
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,10 +15,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryHash implements IQossProcess, Cloneable {
+public class MirrorSrcHash implements IQossProcess, Cloneable {
 
     private String domain;
-    private FileChecker fileChecker;
+    private OkHttpClient httpClient = new OkHttpClient();
     private String processName;
     private int retryCount = 3;
     protected String resultFileDir;
@@ -28,28 +29,28 @@ public class QueryHash implements IQossProcess, Cloneable {
         this.domain = domain;
     }
 
-    public QueryHash(String domain, String resultFileDir) {
+    public MirrorSrcHash(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
-        this.fileChecker = new FileChecker(null);
+        this.httpClient = new OkHttpClient();
         this.fileMap = new FileMap();
     }
 
-    public QueryHash(String domain, String resultFileDir, int resultFileIndex) throws IOException {
+    public MirrorSrcHash(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(null);
-        queryHash.fileMap = new FileMap();
+    public MirrorSrcHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        MirrorSrcHash mirrorSrcHash = (MirrorSrcHash)super.clone();
+        mirrorSrcHash.httpClient = new OkHttpClient();
+        mirrorSrcHash.fileMap = new FileMap();
         try {
-            queryHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            mirrorSrcHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return queryHash;
+        return mirrorSrcHash;
     }
 
     public void setBatch(boolean batch) {}
@@ -66,24 +67,37 @@ public class QueryHash implements IQossProcess, Cloneable {
         return domain;
     }
 
-    public Qhash singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    private String getMd5(String url) throws QiniuException {
 
-        Qhash qhash = null;
+        Request.Builder requestBuilder = new Request.Builder().head().url(url);
+        okhttp3.Response res;
         try {
-            qhash = fileChecker.getQHash(domain, fileInfo.key);
+            res = httpClient.newCall(requestBuilder.build()).execute();
+        } catch (IOException e) {
+            throw new QiniuException(e);
+        }
+        String md5 = res.header("Content-MD5");
+        res.close();
+        return md5;
+    }
+
+    public String singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+
+        String result = "";
+        try {
+            result = getMd5("http://" + domain + "/" + fileInfo.key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = fileChecker.getQHash(domain, fileInfo.key);
+                    result = getMd5("http://" + domain + "/" + fileInfo.key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
                 }
             }
         }
-
-        return qhash;
+        return result;
     }
 
     public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
@@ -94,8 +108,8 @@ public class QueryHash implements IQossProcess, Cloneable {
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                Qhash qhash = singleWithRetry(fileInfo, retryCount);
-                if (qhash != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(qhash));
+                String result = singleWithRetry(fileInfo, retryCount);
+                if (result != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(result));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
             }
