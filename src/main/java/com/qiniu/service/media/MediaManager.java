@@ -88,8 +88,7 @@ public class MediaManager {
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(response);
         }
-        PfopResult pfopResult = getPfopResultByJson(pfopResultJson);
-        return pfopResult;
+        return getPfopResultByJson(pfopResultJson);
     }
 
     public PfopResult getPfopResultByJson(String pfopResultJson) throws QiniuException {

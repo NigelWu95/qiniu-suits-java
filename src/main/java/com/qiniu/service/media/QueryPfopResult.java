@@ -96,10 +96,10 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 PfopResult pfopResult = singleWithRetry(fileInfo, retryCount);
-                resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(pfopResult));
+                if (pfopResult != null)resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJson(pfopResult));
+                else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
-                        "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

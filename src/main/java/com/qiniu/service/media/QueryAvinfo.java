@@ -94,7 +94,8 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
-                if (avinfo != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(avinfo));
+                if (avinfo != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJson(avinfo));
+                else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
             }
