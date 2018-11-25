@@ -110,10 +110,11 @@ public class QiniuPfop implements IQossProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 String result = singleWithRetry(fileInfo, retryCount);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                if (result != null && !"".equals(result)) resultList.add(result);
+                else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
-                        "\t" + fileInfo.key + "\t" + fileInfo.hash);
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key +
+                        "\t" + fileInfo.hash);
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
