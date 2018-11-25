@@ -1,11 +1,13 @@
-package com.qiniu.service.media;
+package com.qiniu.service.qoss;
 
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
+import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.interfaces.IQossProcess;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.*;
+import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,42 +15,42 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryAvinfo implements IQossProcess, Cloneable {
+public class QueryHash implements IQossProcess, Cloneable {
 
     private String domain;
-    private MediaManager mediaManager;
+    private FileChecker fileChecker;
     private String processName;
     private int retryCount = 3;
     protected String resultFileDir;
     private FileMap fileMap;
 
     private void initBaseParams(String domain) {
-        this.processName = "avinfo";
+        this.processName = "hash";
         this.domain = domain;
     }
 
-    public QueryAvinfo(String domain, String resultFileDir) {
+    public QueryHash(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
-        this.mediaManager = new MediaManager();
+        this.fileChecker = new FileChecker(null);
         this.fileMap = new FileMap();
     }
 
-    public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
+    public QueryHash(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public QueryAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager();
-        queryAvinfo.fileMap = new FileMap();
+    public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        QueryHash queryHash = (QueryHash)super.clone();
+        queryHash.fileChecker = new FileChecker(null);
+        queryHash.fileMap = new FileMap();
         try {
-            queryAvinfo.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            queryHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return queryAvinfo;
+        return queryHash;
     }
 
     public void setBatch(boolean batch) {}
@@ -65,16 +67,16 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
         return domain;
     }
 
-    public Avinfo singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    public Qhash singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
 
-        Avinfo avinfo = null;
+        Qhash qhash = null;
         try {
-            avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+            qhash = fileChecker.getQHash(domain, fileInfo.key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+                    qhash = fileChecker.getQHash(domain, fileInfo.key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -82,7 +84,7 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
             }
         }
 
-        return avinfo;
+        return qhash;
     }
 
     public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
@@ -93,8 +95,8 @@ public class QueryAvinfo implements IQossProcess, Cloneable {
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
-                if (avinfo != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(avinfo));
+                Qhash qhash = singleWithRetry(fileInfo, retryCount);
+                if (qhash != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(qhash));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
             }
