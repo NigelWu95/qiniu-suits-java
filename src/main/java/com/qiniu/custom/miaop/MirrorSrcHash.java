@@ -109,7 +109,8 @@ public class MirrorSrcHash implements IQossProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 String result = singleWithRetry(fileInfo, retryCount);
-                if (result != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(result));
+                if (result != null && !"".equals(result)) resultList.add(fileInfo.key + "\t" + result);
+                else throw new QiniuException(null, "empty hash");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
             }
