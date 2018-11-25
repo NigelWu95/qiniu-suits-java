@@ -96,7 +96,7 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
         for (FileInfo fileInfo : fileInfoList) {
             try {
                 PfopResult pfopResult = singleWithRetry(fileInfo, retryCount);
-                resultList.add(JsonConvertUtils.toJsonWithoutUrlEscape(pfopResult));
+                resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(pfopResult));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
                         "\t" + fileInfo.key);
