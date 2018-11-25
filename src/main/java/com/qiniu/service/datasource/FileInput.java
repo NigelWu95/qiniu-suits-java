@@ -67,6 +67,7 @@ public class FileInput {
         try {
             if (sourceFile.isDirectory()) {
                 File[] fs = sourceFile.listFiles();
+                assert fs != null;
                 for(File f : fs) {
                     if (!f.isDirectory()) {
                         sourceKeys.add(f.getName());
