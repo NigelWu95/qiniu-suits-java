@@ -99,7 +99,7 @@ public class MirrorSrcHash implements IQossProcess, Cloneable {
         return result;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList) {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
@@ -109,9 +109,9 @@ public class MirrorSrcHash implements IQossProcess, Cloneable {
             try {
                 String result = singleWithRetry(fileInfo, retryCount);
                 if (result != null && !"".equals(result)) resultList.add(fileInfo.key + "\t" + result);
-                else throw new QiniuException(null, "empty hash");
-            } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+                else throw new Exception("empty hash");
+            } catch (Exception e) {
+                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + fileInfo.key);
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

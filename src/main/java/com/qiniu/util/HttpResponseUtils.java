@@ -30,12 +30,12 @@ public class HttpResponseUtils {
     public static void processException(QiniuException e, FileMap fileMap, String processName, String info)
             throws QiniuException {
         if (e != null) {
-            if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
             if (e.response == null) {
-                throw new QiniuException(e, processName + " failed. " + e.error());
+                if (fileMap != null) fileMap.writeErrorOrNull(e.getMessage() + "\t" + info);
             } else if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                 throw new QiniuException(e, processName + " failed. " + e.error());
             } else {
+                if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
                 e.response.close();
             }
         }

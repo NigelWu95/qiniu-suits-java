@@ -71,7 +71,7 @@ public class AvinfoProcess implements IQossProcess, Cloneable {
         return domain;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processFile(List<FileInfo> fileInfoList) {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
