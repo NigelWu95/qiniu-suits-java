@@ -31,7 +31,7 @@ public class QueryAvinfoTest {
         list.add(fileInfo1);
         list.add(fileInfo2);
         list.add(fileInfo3);
-        queryAvinfo.processFile(list, 3);
+        queryAvinfo.processFile(list);
         queryAvinfo.closeResource();
     }
 }

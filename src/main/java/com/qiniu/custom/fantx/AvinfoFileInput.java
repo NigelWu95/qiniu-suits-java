@@ -1,7 +1,6 @@
 package com.qiniu.custom.fantx;
 
 import com.qiniu.model.parameter.AvinfoParams;
-import com.qiniu.model.parameter.CommonParams;
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.fileline.SplitLineParser;
@@ -16,19 +15,19 @@ import java.util.stream.Collectors;
 
 public class AvinfoFileInput extends FileInput {
 
-    public static void run(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-        FileInputParams fileInputParams = paramFromConfig ?
-                new FileInputParams(configFilePath) : new FileInputParams(args);
+        FileInputParams fileInputParams = new FileInputParams("resources/.qiniu.properties");
         String filePath = fileInputParams.getFilePath();
+        filePath = "../../fantexi/avinfo";
         String separator = fileInputParams.getSeparator();
         int keyIndex = fileInputParams.getKeyIndex();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
-        String resultFileDir = commonParams.getResultFileDir();
-        AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
+        String resultFileDir = fileInputParams.getResultFileDir();
+        resultFileDir = "../../fantexi/avthumb";
+        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu.properties");
         IQossProcess processor = new AvinfoProcess(avinfoParams.getDomain(), resultFileDir);
         AvinfoFileInput fileInput = new AvinfoFileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
