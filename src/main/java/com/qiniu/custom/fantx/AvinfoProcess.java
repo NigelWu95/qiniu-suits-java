@@ -1,4 +1,4 @@
-package com.qiniu.custom;
+package com.qiniu.custom.fantx;
 
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class FtxAvinfo implements IQossProcess, Cloneable {
+public class AvinfoProcess implements IQossProcess, Cloneable {
 
     private String domain;
     private MediaManager mediaManager;
@@ -31,30 +31,30 @@ public class FtxAvinfo implements IQossProcess, Cloneable {
         this.domain = domain;
     }
 
-    public FtxAvinfo(String domain, String resultFileDir) {
+    public AvinfoProcess(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
         this.fileMap = new FileMap();
     }
 
-    public FtxAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
+    public AvinfoProcess(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
         this.resultFileIndex = resultFileIndex;
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public FtxAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        FtxAvinfo ftxAvinfo = (FtxAvinfo)super.clone();
-        ftxAvinfo.resultFileIndex = resultFileIndex;
-        ftxAvinfo.mediaManager = new MediaManager();
-        ftxAvinfo.fileMap = new FileMap();
+    public AvinfoProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        AvinfoProcess avinfoProcess = (AvinfoProcess)super.clone();
+        avinfoProcess.resultFileIndex = resultFileIndex;
+        avinfoProcess.mediaManager = new MediaManager();
+        avinfoProcess.fileMap = new FileMap();
         try {
-            ftxAvinfo.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            avinfoProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return ftxAvinfo;
+        return avinfoProcess;
     }
 
     public void setBatch(boolean batch) {}
@@ -105,6 +105,11 @@ public class FtxAvinfo implements IQossProcess, Cloneable {
             String mp4Fop720 = fileInfo.key + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
             String mp4Fop480 = fileInfo.key + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
             String m3u8Copy = fileInfo.key + "\t" + "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
+            String mp4Key720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
+            String mp4Key480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
+            String m3u8Key1080 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F1080", "m3u8");
+            String m3u8Key720 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F720", "m3u8");
+            String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
             try {
                 Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
                 double duration = Double.valueOf(avinfo.getFormat().duration);
@@ -113,11 +118,6 @@ public class FtxAvinfo implements IQossProcess, Cloneable {
                 if (width > 1280) {
                     String copyKey1080 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F1080");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey1080));
-                    String mp4Key720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
-                    String mp4Key480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
-                    String m3u8Key1080 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F1080", "m3u8");
-                    String m3u8Key720 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F720", "m3u8");
-                    String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
                     mp4FopList.add(mp4Fop720 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key720 + "\t" + duration + "\t" + size));
                     mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key1080) + "\t" + duration + "\t" + size);
@@ -126,16 +126,12 @@ public class FtxAvinfo implements IQossProcess, Cloneable {
                 } else if (width > 1000) {
                     String copyKey720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey720));
-                    String mp4Key480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
-                    String m3u8Key720 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F720", "m3u8");
-                    String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
                     mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
                 } else {
                     String copyKey480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey480));
-                    String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
                 }
             } catch (QiniuException e) {
