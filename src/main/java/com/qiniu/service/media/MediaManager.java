@@ -13,22 +13,9 @@ import java.net.UnknownHostException;
 public class MediaManager {
 
     private Client client;
-    private Avinfo avinfo;
-    private JsonObject avinfoJson;
-    private PfopResult pfopResult;
 
     public MediaManager() {
         this.client = new Client();
-        this.avinfo = new Avinfo();
-        this.pfopResult = new PfopResult();
-    }
-
-    public String getCurrentAvinfoJson() {
-        return JsonConvertUtils.toJson(pfopResult);
-    }
-
-    public String getCurrentPfopResultJson() {
-        return JsonConvertUtils.toJson(pfopResult);
     }
 
     public Avinfo getAvinfo(String url) throws QiniuException, UnknownHostException {
@@ -44,7 +31,7 @@ public class MediaManager {
         return getAvinfoByUrl(domain, key.toString().substring(0, key.length() - 1));
     }
 
-    public Avinfo getAvinfoByUrl(String domain, String sourceKey) throws QiniuException {
+    public JsonObject getAvinfoJsonByUrl(String domain, String sourceKey) throws QiniuException {
 
         try {
             RequestUtils.checkHost(domain);
@@ -53,13 +40,18 @@ public class MediaManager {
         }
         String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
         Response response = client.get(url + "?avinfo");
-        avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
+        JsonObject avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();
         JsonElement jsonElement = avinfoJson.get("format");
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(response);
         }
-        return getAvinfoByJson(avinfoJson) ;
+        return avinfoJson;
+    }
+
+    public Avinfo getAvinfoByUrl(String domain, String sourceKey) throws QiniuException {
+
+        return getAvinfoByJson(getAvinfoJsonByUrl(domain, sourceKey)) ;
     }
 
     public Avinfo getAvinfoByJson(String avinfoJson) throws QiniuException {
@@ -69,6 +61,7 @@ public class MediaManager {
 
     public Avinfo getAvinfoByJson(JsonObject avinfoJson) throws QiniuException {
 
+        Avinfo avinfo = new Avinfo();
         try {
             avinfo.setFormat(JsonConvertUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
             JsonElement element = avinfoJson.get("streams");
@@ -95,7 +88,7 @@ public class MediaManager {
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(response);
         }
-        pfopResult = getPfopResultByJson(pfopResultJson);
+        PfopResult pfopResult = getPfopResultByJson(pfopResultJson);
         return pfopResult;
     }
 
@@ -106,6 +99,7 @@ public class MediaManager {
 
     public PfopResult getPfopResultByJson(JsonObject pfopResultJson) throws QiniuException {
 
+        PfopResult pfopResult;
         try {
             pfopResult = JsonConvertUtils.fromJson(pfopResultJson, PfopResult.class);
         } catch (JsonParseException e) {
