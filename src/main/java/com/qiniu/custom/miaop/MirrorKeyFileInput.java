@@ -1,8 +1,5 @@
 package com.qiniu.custom.miaop;
 
-import com.qiniu.custom.fantx.AvinfoProcess;
-import com.qiniu.model.parameter.AvinfoParams;
-import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
@@ -16,18 +13,15 @@ import java.util.stream.Collectors;
 
 public class MirrorKeyFileInput extends FileInput {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
-        FileInputParams fileInputParams = new FileInputParams("resources/.qiniu.properties");
-        String filePath = fileInputParams.getFilePath();
-        filePath = "../../miaopai/keys";
-        String separator = fileInputParams.getSeparator();
-        int keyIndex = fileInputParams.getKeyIndex();
-        int maxThreads = fileInputParams.getMaxThreads();
-        int unitLen = fileInputParams.getUnitLen();
+        String filePath = "../miaopai/keys";
+        String separator = "\t";
+        int keyIndex = 0;
+        int maxThreads = 200;
+        int unitLen = 3000;
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        String resultFileDir = fileInputParams.getResultFileDir();
-        resultFileDir = "../../miaopai/hash";
+        String resultFileDir = "../miaopai/hash";
         IQossProcess processor = new MirrorSrcHash("miaopai-s.oss-cn-beijing.aliyuncs.com", resultFileDir);
         MirrorKeyFileInput fileInput = new MirrorKeyFileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
