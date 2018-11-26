@@ -187,7 +187,7 @@ public class ListBucket {
                 marker = "";
                 end = resultList.get(1).getPrefix();
             } else if (finalI == resultList.size() -1) {
-                prefix = customPrefix;
+                prefix = customPrefix == null ? "" : customPrefix;
                 FileLister fileLister = resultList.get(finalI);
                 if (StringUtils.isNullOrEmpty(marker)) {
                     FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
