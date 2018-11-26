@@ -182,18 +182,20 @@ public class ListBucket {
         String prefix = resultList.get(finalI).getPrefix();
         String marker = resultList.get(finalI).getMarker();
         String end = "";
-        if (finalI == 0) {
-            marker = "";
-            end = resultList.get(1).getPrefix();
-        } else if (finalI == resultList.size() -1) {
-            prefix = customPrefix;
-            FileLister fileLister = resultList.get(finalI);
-            if (StringUtils.isNullOrEmpty(marker)) {
-                FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
-                        .filter(Objects::nonNull)
-                        .max(Comparator.comparing(fileInfo -> fileInfo.key))
-                        .orElse(null);
-                marker = ListBucketUtils.calcMarker(lastFileInfo);
+        if (resultList.size() > 1) {
+            if (finalI == 0) {
+                marker = "";
+                end = resultList.get(1).getPrefix();
+            } else if (finalI == resultList.size() -1) {
+                prefix = customPrefix;
+                FileLister fileLister = resultList.get(finalI);
+                if (StringUtils.isNullOrEmpty(marker)) {
+                    FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
+                            .filter(Objects::nonNull)
+                            .max(Comparator.comparing(fileInfo -> fileInfo.key))
+                            .orElse(null);
+                    marker = ListBucketUtils.calcMarker(lastFileInfo);
+                }
             }
         }
         String finalPrefix = prefix;
