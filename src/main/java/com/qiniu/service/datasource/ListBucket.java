@@ -147,13 +147,17 @@ public class ListBucket {
         fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
-    private void seekListerToEnd(FileLister fileLister, String endFile, FileMap fileMap,
-                             IQossProcess processor) throws QiniuException {
+    private void seekListerToEnd(FileLister fileLister, String endFile, FileMap fileMap, IQossProcess processor)
+            throws QiniuException {
         List<FileInfo> fileInfoList;
         while (fileLister.hasNext() || fileLister.getPrefix().equals(customPrefix)) {
             String marker = fileLister.getMarker();
             recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+            if (fileLister.exception != null) {
+                HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker);
+                continue;
+            }
             if (!StringUtils.isNullOrEmpty(endFile)) {
                 marker = fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0)
@@ -171,7 +175,6 @@ public class ListBucket {
                     .filter(Objects::nonNull).collect(Collectors.toList()));
             if (StringUtils.isNullOrEmpty(marker)) break;
         }
-        if (fileLister.exception != null) throw fileLister.exception;
     }
 
     private Map<String, String> calcListParams(List<FileLister> resultList, int finalI) {
