@@ -135,7 +135,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
                         .collect(Collectors.toList());
                 Optional<ListLine> lastListLine = listLines.parallelStream()
                         .max(ListLine::compareTo);
-                this.marker = lastListLine.map(listLine -> listLine.marker).orElse(null);
+                this.marker = lastListLine.map(listLine -> listLine.marker).orElse("");
             }
             response.close();
         }

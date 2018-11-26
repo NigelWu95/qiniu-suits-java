@@ -36,16 +36,16 @@ public class FileListerTest {
 
     @Test
     public void testHasNext() throws QiniuException {
-        fileLister = new FileLister(bucketManager, bucket, "~", "", "", unitLen,
-                version, 3);
+        fileLister = new FileLister(bucketManager, bucket, "~", "", "", unitLen, version, 3);
         List<FileInfo> list = fileLister.next();
         Assert.assertTrue(fileLister.hasNext());
     }
 
     @Test
     public void testNext() throws QiniuException {
-        fileLister = new FileLister(bucketManager, bucket, "", "", "", unitLen,
-                version, 3);
-        System.out.println(fileLister.next().size());
+        fileLister = new FileLister(bucketManager, bucket, "U9", "", "", unitLen, version, 3);
+        while (fileLister.hasNext()) {
+            System.out.println(fileLister.next().size());
+        }
     }
 }
