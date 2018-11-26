@@ -29,7 +29,7 @@ public class ListBucketProcess {
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
-        IQossProcess iQossProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
+        IQossProcess iQossProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,

@@ -16,7 +16,7 @@ public class FileInputProcess {
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        IQossProcess iQossProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
+        IQossProcess iQossProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, iQossProcessor);
         if (iQossProcessor != null) iQossProcessor.closeResource();
