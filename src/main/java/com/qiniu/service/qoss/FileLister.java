@@ -156,7 +156,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
                     getListResult(prefix, delimiter, marker, limit);
         } catch (QiniuException e) {
             fileInfoList = null;
-            marker = null;
             exception = e;
         }
         return current;
