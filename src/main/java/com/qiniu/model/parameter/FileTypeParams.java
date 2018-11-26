@@ -1,6 +1,6 @@
 package com.qiniu.model.parameter;
 
-public class FileTypeParams extends BaseParams {
+public class FileTypeParams extends QossParams {
 
     private String targetType;
 

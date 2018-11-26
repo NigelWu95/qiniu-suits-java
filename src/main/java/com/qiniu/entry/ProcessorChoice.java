@@ -23,8 +23,6 @@ public class ProcessorChoice {
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
-        String ak = commonParams.getAccessKey();
-        String sk = commonParams.getSecretKey();
         String process = commonParams.getProcess();
         boolean batch = commonParams.getProcessBatch();
         if (unSupportBatch.contains(process)) {
@@ -39,6 +37,8 @@ public class ProcessorChoice {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
+                String ak = fileStatusParams.getAccessKey();
+                String sk = fileStatusParams.getAccessKey();
                 processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultFileDir);
                 break;
@@ -46,6 +46,8 @@ public class ProcessorChoice {
             case "type": {
                 FileTypeParams fileTypeParams = paramFromConfig ?
                         new FileTypeParams(configFilePath) : new FileTypeParams(args);
+                String ak = fileTypeParams.getProcessAk();
+                String sk = fileTypeParams.getProcessSk();
                 processor = new ChangeType(Auth.create(ak, sk), configuration, fileTypeParams.getBucket(),
                         fileTypeParams.getTargetType(), resultFileDir);
                 break;
@@ -53,6 +55,8 @@ public class ProcessorChoice {
             case "lifecycle": {
                 LifecycleParams lifecycleParams = paramFromConfig ?
                         new LifecycleParams(configFilePath) : new LifecycleParams(args);
+                String ak = lifecycleParams.getProcessAk();
+                String sk = lifecycleParams.getProcessSk();
                 processor = new UpdateLifecycle(Auth.create(ak, sk), configuration, lifecycleParams.getBucket(),
                         lifecycleParams.getDays(), resultFileDir);
                 break;
@@ -60,22 +64,27 @@ public class ProcessorChoice {
             case "copy": {
                 FileCopyParams fileCopyParams = paramFromConfig ?
                         new FileCopyParams(configFilePath) : new FileCopyParams(args);
-                ak = "".equals(fileCopyParams.getProcessAk()) ? ak : fileCopyParams.getProcessAk();
-                sk = "".equals(fileCopyParams.getProcessSk()) ? sk : fileCopyParams.getProcessSk();
+                String ak = fileCopyParams.getProcessAk();
+                String sk = fileCopyParams.getProcessSk();
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
                         fileCopyParams.getTargetBucket(), resultFileDir);
                 ((CopyFile) processor).setOptions(fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix());
                 break;
             }
             case "delete": {
-                processor = new DeleteFile(Auth.create(ak, sk), configuration, commonParams.getBucket(), resultFileDir);
+                QossParams qossParams = paramFromConfig ? new QossParams(configFilePath) : new QossParams(args);
+                String ak = qossParams.getProcessAk();
+                String sk = qossParams.getProcessSk();
+                processor = new DeleteFile(Auth.create(ak, sk), configuration, qossParams.getBucket(), resultFileDir);
                 break;
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = paramFromConfig ?
                         new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
-                String accessKey = "".equals(asyncFetchParams.getProcessAk()) ? ak : asyncFetchParams.getProcessAk();
-                String secretKey = "".equals(asyncFetchParams.getProcessSk()) ? sk : asyncFetchParams.getProcessSk();
+                String ak = asyncFetchParams.getAccessKey();
+                String sk = asyncFetchParams.getAccessKey();
+                String accessKey = asyncFetchParams.getProcessAk();
+                String secretKey = asyncFetchParams.getProcessSk();
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), resultFileDir);
                 ((AsyncFetch) processor).setOptions(asyncFetchParams.getHttps(), asyncFetchParams.getNeedSign() ?
@@ -94,8 +103,10 @@ public class ProcessorChoice {
                 break;
             }
             case "pfop": {
-                AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
-                processor = new QiniuPfop(Auth.create(ak, sk), configuration, commonParams.getBucket(),
+                QossParams qossParams = paramFromConfig ? new QossParams(configFilePath) : new QossParams(args);
+                String ak = qossParams.getProcessAk();
+                String sk = qossParams.getProcessSk();
+                processor = new QiniuPfop(Auth.create(ak, sk), configuration, qossParams.getBucket(),
                         "avthumb-pipline", resultFileDir);
                 break;
             }

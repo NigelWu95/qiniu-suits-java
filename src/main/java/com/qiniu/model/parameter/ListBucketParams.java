@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ListBucketParams extends CommonParams {
+public class ListBucketParams extends QossParams {
 
     private String multiStatus = "";
     private String version = "";

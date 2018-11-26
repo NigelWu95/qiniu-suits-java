@@ -1,9 +1,7 @@
 package com.qiniu.model.parameter;
 
-public class AvinfoParams extends BaseParams {
+public class AvinfoParams extends QossParams {
 
-    private String processAk = "";
-    private String processSk = "";
     private String targetBucket;
     private String domain;
     private String https = "";
@@ -11,8 +9,6 @@ public class AvinfoParams extends BaseParams {
 
     public AvinfoParams(String[] args) throws Exception {
         super(args);
-        try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
-        try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
         this.targetBucket = getParamFromArgs("to-bucket");
         this.domain = getParamFromArgs("domain");
         try { this.https = getParamFromArgs("use-https"); } catch (Exception e) {}
@@ -21,20 +17,10 @@ public class AvinfoParams extends BaseParams {
 
     public AvinfoParams(String configFileName) throws Exception {
         super(configFileName);
-        try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
-        try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
         this.targetBucket = getParamFromConfig("to-bucket");
         this.domain = getParamFromConfig("domain");
         try { this.https = getParamFromConfig("use-https"); } catch (Exception e) {}
         try { this.needSign = getParamFromConfig("need-sign"); } catch (Exception e) {}
-    }
-
-    public String getProcessAk() {
-        return processAk;
-    }
-
-    public String getProcessSk() {
-        return processSk;
     }
 
     public String getTargetBucket() {

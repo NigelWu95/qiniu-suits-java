@@ -1,6 +1,6 @@
 package com.qiniu.model.parameter;
 
-public class AsyncFetchParams extends BaseParams {
+public class AsyncFetchParams extends QossParams {
 
     private String processAk = "";
     private String processSk = "";

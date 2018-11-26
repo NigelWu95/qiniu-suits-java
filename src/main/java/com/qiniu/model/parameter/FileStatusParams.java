@@ -1,6 +1,6 @@
 package com.qiniu.model.parameter;
 
-public class FileStatusParams extends BaseParams {
+public class FileStatusParams extends QossParams {
 
     private String targetStatus;
 

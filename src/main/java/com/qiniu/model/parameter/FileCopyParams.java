@@ -1,6 +1,6 @@
 package com.qiniu.model.parameter;
 
-public class FileCopyParams extends BaseParams {
+public class FileCopyParams extends QossParams {
 
     private String processAk = "";
     private String processSk = "";
