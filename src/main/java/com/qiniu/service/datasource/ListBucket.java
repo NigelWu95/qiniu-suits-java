@@ -114,11 +114,12 @@ public class ListBucket {
     }
 
     private List<FileLister> getFileListerList(int unitLen, int level) {
+        String cPrefix = customPrefix == null ? "" : customPrefix;
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                .map(prefix -> customPrefix + prefix)
+                .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
-        validPrefixList.add(customPrefix);
+        validPrefixList.add(cPrefix);
         List<FileLister> fileListerList = new ArrayList<>();
 
         if (level == 1) {
@@ -132,7 +133,7 @@ public class ListBucket {
                             .collect(Collectors.toList()))
                     .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
                     .orElse(validPrefixList);
-            level2PrefixList.add(customPrefix);
+            level2PrefixList.add(cPrefix);
             fileListerList = prefixList(level2PrefixList, unitLen);
         }
 
