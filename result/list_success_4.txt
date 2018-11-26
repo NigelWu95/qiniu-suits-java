@@ -1,0 +1,8 @@
+{"key":"test.m3u8","hash":"FknHtpAcaR_O5Iq75H9b7cCqKIFi","fsize":984,"putTime":15367328558776535,"mimeType":"application/x-mpegurl","type":0}
+{"key":"test.mp4","hash":"luM3OCMDpnPeUfBmdyipT8axcEiX","fsize":9965450,"putTime":15367329082126836,"mimeType":"video/mp4","type":0}
+{"key":"test.m3u8","hash":"FknHtpAcaR_O5Iq75H9b7cCqKIFi","fsize":984,"putTime":15367328558776535,"mimeType":"application/x-mpegurl","type":0}
+{"key":"test.mp4","hash":"luM3OCMDpnPeUfBmdyipT8axcEiX","fsize":9965450,"putTime":15367329082126836,"mimeType":"video/mp4","type":0}
+{"key":"test.m3u8","hash":"FknHtpAcaR_O5Iq75H9b7cCqKIFi","fsize":984,"putTime":15367328558776535,"mimeType":"application/x-mpegurl","type":0}
+{"key":"test.mp4","hash":"luM3OCMDpnPeUfBmdyipT8axcEiX","fsize":9965450,"putTime":15367329082126836,"mimeType":"video/mp4","type":0}
+{"key":"test.m3u8","hash":"FknHtpAcaR_O5Iq75H9b7cCqKIFi","fsize":984,"putTime":15367328558776535,"mimeType":"application/x-mpegurl","type":0}
+{"key":"test.mp4","hash":"luM3OCMDpnPeUfBmdyipT8axcEiX","fsize":9965450,"putTime":15367329082126836,"mimeType":"video/mp4","type":0}
