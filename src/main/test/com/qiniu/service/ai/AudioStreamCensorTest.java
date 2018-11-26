@@ -1,6 +1,6 @@
 package com.qiniu.service.ai;
 
-import com.qiniu.model.CensorResp;
+import com.qiniu.model.ai.CensorResp;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.util.Auth;
 import org.junit.Test;

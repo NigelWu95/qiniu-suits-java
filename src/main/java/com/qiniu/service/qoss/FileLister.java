@@ -150,7 +150,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
 
     @Override
     public List<FileInfo> next() {
-        List<FileInfo> current = fileInfoList;
+        List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
         try {
             fileInfoList = (marker == null || "".equals(marker)) ? new ArrayList<>() :
                     getListResult(prefix, delimiter, marker, limit);
