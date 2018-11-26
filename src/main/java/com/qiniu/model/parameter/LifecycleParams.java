@@ -1,6 +1,6 @@
 package com.qiniu.model.parameter;
 
-public class LifecycleParams extends BaseParams {
+public class LifecycleParams extends QossParams {
 
     private String days;
 

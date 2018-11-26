@@ -7,7 +7,7 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
-public class ListFilterParams extends BaseParams {
+public class ListFilterParams extends QossParams {
 
     private String keyPrefix;
     private String keySuffix;
