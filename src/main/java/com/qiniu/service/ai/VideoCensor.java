@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
-import com.qiniu.model.CensorResp;
+import com.qiniu.model.ai.CensorResp;
 import com.qiniu.util.Auth;
 import com.qiniu.util.StringMap;
 

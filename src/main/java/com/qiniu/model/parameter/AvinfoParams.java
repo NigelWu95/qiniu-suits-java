@@ -1,6 +1,6 @@
 package com.qiniu.model.parameter;
 
-public class AvinfoParams extends QossParams {
+public class AvinfoParams extends CommonParams {
 
     private String targetBucket;
     private String domain;
