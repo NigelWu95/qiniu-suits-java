@@ -15,11 +15,13 @@ import java.util.List;
 
 public class ProcessorChoice {
 
-    public static List<String> unSupportBatch = new ArrayList<String>(){{
-        add("asyncfetch");
-    }};
+    private List<String> unSupportBatch = new ArrayList<>();
 
-    public static IQossProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
+    public ProcessorChoice() {
+        this.unSupportBatch.add("asyncfetch");
+    }
+
+    public IQossProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
