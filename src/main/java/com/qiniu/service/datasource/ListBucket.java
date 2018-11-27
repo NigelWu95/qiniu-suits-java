@@ -164,6 +164,7 @@ public class ListBucket {
                 HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker);
                 System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
                         fileLister.exception.error() + " retrying...");
+                fileLister.exception = null;
                 continue;
             }
             marker = fileLister.getMarker();
