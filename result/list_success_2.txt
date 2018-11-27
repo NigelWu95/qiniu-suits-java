@@ -1,4 +1,0 @@
-{"key":"1.png","hash":"FsnAWDb53PMzfNHPhh_MqoFvBBvL","fsize":54872,"putTime":15330280839230494,"mimeType":"image/png","type":0}
-{"key":"1.png","hash":"FsnAWDb53PMzfNHPhh_MqoFvBBvL","fsize":54872,"putTime":15330280839230494,"mimeType":"image/png","type":0}
-{"key":"1.png","hash":"FsnAWDb53PMzfNHPhh_MqoFvBBvL","fsize":54872,"putTime":15330280839230494,"mimeType":"image/png","type":0}
-{"key":"1.png","hash":"FsnAWDb53PMzfNHPhh_MqoFvBBvL","fsize":54872,"putTime":15330280839230494,"mimeType":"image/png","type":0}
