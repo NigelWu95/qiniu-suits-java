@@ -5,6 +5,7 @@ import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 public interface ILineParser {
 
@@ -19,6 +20,8 @@ public interface ILineParser {
     void setItemMap(ArrayList<String> itemKey) throws IOException;
 
     void setItemMap(ArrayList<String> itemKey, String line);
+
+    Map<String, String> getItemMap(String line);
 
     String toJsonString();
 

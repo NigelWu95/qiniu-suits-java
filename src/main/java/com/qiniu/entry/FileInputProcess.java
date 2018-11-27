@@ -1,8 +1,8 @@
 package com.qiniu.entry;
 
-import com.qiniu.model.*;
+import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.datasource.FileInput;
-import com.qiniu.service.interfaces.IOssFileProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 
 public class FileInputProcess {
 
@@ -13,12 +13,12 @@ public class FileInputProcess {
         String filePath = fileInputParams.getFilePath();
         String separator = fileInputParams.getSeparator();
         int keyIndex = fileInputParams.getKeyIndex();
-        boolean processBatch = fileInputParams.getProcessBatch();
         int maxThreads = fileInputParams.getMaxThreads();
+        int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        IOssFileProcess iOssFileProcessor = ProcessorChoice.getFileProcessor(paramFromConfig, args, configFilePath);
-        FileInput fileInput = new FileInput(separator, keyIndex, 3);
-        fileInput.process(maxThreads, sourceFilePath, iOssFileProcessor, processBatch);
-        if (iOssFileProcessor != null) iOssFileProcessor.closeResource();
+        ILineProcess iLineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+        FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
+        fileInput.process(maxThreads, sourceFilePath, iLineProcessor);
+        if (iLineProcessor != null) iLineProcessor.closeResource();
     }
 }

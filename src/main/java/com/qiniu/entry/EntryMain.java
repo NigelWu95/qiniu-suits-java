@@ -1,7 +1,7 @@
 package com.qiniu.entry;
 
+import com.qiniu.config.MainArgs;
 import com.qiniu.config.PropertyConfig;
-import com.qiniu.util.MainArgsUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -38,8 +38,8 @@ public class EntryMain {
             PropertyConfig propertyConfig = new PropertyConfig(configFilePath);
             sourceType = propertyConfig.getProperty("source-type");
         } else {
-            MainArgsUtils.setParamsMap(args);
-            sourceType = MainArgsUtils.getParamValue("source-type");
+            MainArgs mainArgs = new MainArgs(args);
+            sourceType = mainArgs.getParamValue("source-type");
         }
 
         if ("list".equals(sourceType)) ListBucketProcess.run(paramFromConfig, args, configFilePath);
