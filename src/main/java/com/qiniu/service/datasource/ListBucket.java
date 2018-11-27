@@ -119,10 +119,10 @@ public class ListBucket {
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
-        validPrefixList.add(cPrefix);
         List<FileLister> fileListerList = new ArrayList<>();
 
         if (level == 1) {
+            validPrefixList.add(cPrefix);
             fileListerList = prefixList(validPrefixList, unitLen);
         } else if (level == 2) {
             fileListerList = prefixList(validPrefixList, 1);
