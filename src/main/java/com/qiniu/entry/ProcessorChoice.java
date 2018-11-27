@@ -105,11 +105,11 @@ public class ProcessorChoice {
                 break;
             }
             case "pfop": {
-                QossParams qossParams = paramFromConfig ? new QossParams(configFilePath) : new QossParams(args);
-                String ak = qossParams.getProcessAk();
-                String sk = qossParams.getProcessSk();
-                processor = new QiniuPfop(Auth.create(ak, sk), configuration, qossParams.getBucket(),
-                        "avthumb-pipline", resultFileDir);
+                PfopParams pfopParams = paramFromConfig ? new PfopParams(configFilePath) : new PfopParams(args);
+                String ak = pfopParams.getProcessAk();
+                String sk = pfopParams.getProcessSk();
+                processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
+                        pfopParams.getPipeline(), resultFileDir);
                 break;
             }
             case "pfopresult": {

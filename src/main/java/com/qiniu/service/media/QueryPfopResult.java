@@ -20,7 +20,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private String processName;
     private int retryCount = 3;
     protected String resultFileDir;
-    private int resultFileIndex;
     private FileMap fileMap;
 
     private void initBaseParams() {
@@ -36,13 +35,11 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     public QueryPfopResult(String resultFileDir, int resultFileIndex) throws IOException {
         this(resultFileDir);
-        this.resultFileIndex = resultFileIndex;
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public QueryPfopResult getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
-        queryPfopResult.resultFileIndex = resultFileIndex;
         queryPfopResult.mediaManager = new MediaManager();
         queryPfopResult.fileMap = new FileMap();
         try {
