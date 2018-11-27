@@ -157,7 +157,7 @@ public class ListBucket {
             throws QiniuException {
         List<FileInfo> fileInfoList;
         String marker = fileLister.getMarker();
-        while (fileLister.hasNext() || !StringUtils.isNullOrEmpty(marker) || fileLister.getPrefix().equals(cPrefix)) {
+        while (fileLister.hasNext() || !StringUtils.isNullOrEmpty(marker)) {
             recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
             if (fileLister.exception != null) {
@@ -183,7 +183,6 @@ public class ListBucket {
             }
             if (processor != null) processor.processLine(fileInfoList.parallelStream()
                     .filter(Objects::nonNull).collect(Collectors.toList()));
-            if (StringUtils.isNullOrEmpty(marker)) break;
         }
     }
 
