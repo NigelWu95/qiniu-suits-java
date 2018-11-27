@@ -166,6 +166,7 @@ public class ListBucket {
                         fileLister.exception.error() + " retrying...");
                 continue;
             }
+            marker = fileLister.getMarker();
             if (!StringUtils.isNullOrEmpty(endFile)) {
                 marker = fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0)
