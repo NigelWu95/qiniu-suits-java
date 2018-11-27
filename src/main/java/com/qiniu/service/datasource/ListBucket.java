@@ -106,23 +106,29 @@ public class ListBucket {
                         return new FileLister(new BucketManager(auth, configuration), bucket, prefix, null,
                                 null, unitLen, version, retryCount);
                     } catch (QiniuException e) {
-                        throw new RuntimeException(prefix + "\t" + e.error(), e.getCause());
+                        System.out.println(prefix + "\t" + e.error());
+                        return null;
+//                        throw new RuntimeException(prefix + "\t" + e.error(), e.getCause());
                     }
                 })
+                .filter(Objects::nonNull)
                 .filter(FileLister::hasNext)
                 .collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int unitLen, int level) {
+    private List<FileLister> getFileListerList(int unitLen, int level) throws QiniuException {
         String cPrefix = customPrefix;
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
         List<FileLister> fileListerList = new ArrayList<>();
+        FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix, null,
+                null, unitLen, version, retryCount);
+        fileListerList.add(firstFileLister);
 
         if (level == 1) {
-            validPrefixList.add(cPrefix);
+//            validPrefixList.add(cPrefix);
             fileListerList = prefixList(validPrefixList, unitLen);
         } else if (level == 2) {
             fileListerList = prefixList(validPrefixList, 1);
@@ -133,7 +139,7 @@ public class ListBucket {
                             .collect(Collectors.toList()))
                     .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
                     .orElse(validPrefixList);
-            level2PrefixList.add(cPrefix);
+//            level2PrefixList.add(cPrefix);
             fileListerList = prefixList(level2PrefixList, unitLen);
         }
 
@@ -231,7 +237,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, ILineProcess processor) {
+    public void concurrentlyList(int maxThreads, int level, ILineProcess processor) throws QiniuException {
         List<FileLister> fileListerList = getFileListerList(unitLen, level);
         int listSize = fileListerList.size();
         int runningThreads = listSize < maxThreads ? listSize : maxThreads;
@@ -252,7 +258,7 @@ public class ListBucket {
         ExecutorsUtils.waitForShutdown(executorPool, info);
     }
 
-    public void checkValidPrefix(int level) {
+    public void checkValidPrefix(int level) throws QiniuException {
         List<FileLister> fileListerList = getFileListerList(1, level);
         FileMap fileMap = new FileMap();
         try {
