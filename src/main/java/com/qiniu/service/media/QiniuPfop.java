@@ -5,7 +5,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringMap;
@@ -13,10 +12,11 @@ import com.qiniu.util.StringMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QiniuPfop implements ILineProcess<String>, Cloneable {
+public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public Auth auth;
     public Configuration configuration;
@@ -78,18 +78,17 @@ public class QiniuPfop implements ILineProcess<String>, Cloneable {
         return bucket + "\t" + pipeline;
     }
 
-    public String singleWithRetry(String line, int retryCount) throws QiniuException {
+    public String singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
 
-        String[] items = line.split("\t");
         String persistentId = null;
         try {
-            persistentId = operationManager.pfop(bucket, items[0], items[1],
+            persistentId = operationManager.pfop(bucket, line.get("0"), line.get("1"),
                     new StringMap().putNotEmpty("pipeline", pipeline));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    persistentId = operationManager.pfop(bucket, items[0], items[1],
+                    persistentId = operationManager.pfop(bucket, line.get("0"), line.get("1"),
                             new StringMap().putNotEmpty("pipeline", pipeline));
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -103,13 +102,13 @@ public class QiniuPfop implements ILineProcess<String>, Cloneable {
         return persistentId;
     }
 
-    public void processLine(List<String> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
         lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (String line : lineList) {
+        for (Map<String, String> line : lineList) {
             try {
                 String result = singleWithRetry(line, retryCount);
                 if (result != null && !"".equals(result)) resultList.add(result);
