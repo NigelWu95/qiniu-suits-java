@@ -9,6 +9,8 @@ import com.qiniu.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class MirrorKeyFileInput extends FileInput {
@@ -47,18 +49,14 @@ public class MirrorKeyFileInput extends FileInput {
         try {
             BufferedReader bufferedReader = sourceReaders.get(finalI);
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
-            List<FileInfo> fileInfoList = bufferedReader.lines().parallel()
-                    .map(line -> {
-                        FileInfo fileInfo = new FileInfo();
-                        fileInfo.key = lineParser.getItemList(line).get(keyIndex);
-                        return fileInfo;
-                    })
-                    .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
+            List<Map<String, String>> lineList = bufferedReader.lines().parallel()
+                    .map(lineParser::getItemMap)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-            int size = fileInfoList.size()/unitLen + 1;
+            int size = lineList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
-                List<FileInfo> processList = fileInfoList.subList(unitLen * j,
-                        j == size - 1 ? fileInfoList.size() : unitLen * (j + 1));
+                List<Map<String, String>> processList = lineList.subList(unitLen * j,
+                        j == size - 1 ? lineList.size() : unitLen * (j + 1));
                 if (processor != null) processor.processLine(processList);
             }
             bufferedReader.close();

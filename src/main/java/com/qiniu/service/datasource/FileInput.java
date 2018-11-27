@@ -36,14 +36,14 @@ public class FileInput {
         try {
             BufferedReader bufferedReader = sourceReaders.get(finalI);
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
-            List<Map<String, String>> fileInfoList = bufferedReader.lines().parallel()
+            List<Map<String, String>> lineList = bufferedReader.lines().parallel()
                     .map(lineParser::getItemMap)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-            int size = fileInfoList.size()/unitLen + 1;
+            int size = lineList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
-                List<Map<String, String>> processList = fileInfoList.subList(unitLen * j,
-                        j == size - 1 ? fileInfoList.size() : unitLen * (j + 1));
+                List<Map<String, String>> processList = lineList.subList(unitLen * j,
+                        j == size - 1 ? lineList.size() : unitLen * (j + 1));
                 if (processor != null) processor.processLine(processList);
             }
             bufferedReader.close();

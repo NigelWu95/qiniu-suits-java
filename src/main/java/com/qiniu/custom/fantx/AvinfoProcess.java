@@ -3,7 +3,6 @@ package com.qiniu.custom.fantx;
 import com.qiniu.common.FileMap;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.ObjectUtils;
 import com.qiniu.util.UrlSafeBase64;
@@ -11,10 +10,11 @@ import com.qiniu.util.UrlSafeBase64;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class AvinfoProcess implements ILineProcess<FileInfo>, Cloneable {
+public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private String processName;
@@ -63,32 +63,34 @@ public class AvinfoProcess implements ILineProcess<FileInfo>, Cloneable {
         return domain;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) {
+    public void processLine(List<Map<String, String>> lineList) {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
+        lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        if (lineList == null || lineList.size() == 0) return;
         List<String> copyList = new ArrayList<>();
         List<String> mp4FopList = new ArrayList<>();
         List<String> m3u8FopList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
-            String srcCopy = fileInfo.key + "\t" + "/copy/" + UrlSafeBase64.encodeToString("fantasy-tv:" + fileInfo.key) + "/";
-            String mp4Fop720 = fileInfo.key + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
-            String mp4Fop480 = fileInfo.key + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
-            String m3u8Copy = fileInfo.key + "\t" + "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
-            String mp4Key720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
-            String mp4Key480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
-            String m3u8Key1080 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F1080", "m3u8");
-            String m3u8Key720 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F720", "m3u8");
-            String m3u8Key480 = ObjectUtils.addSuffixWithExt(fileInfo.key, "F480", "m3u8");
+
+        for (Map<String, String> line : lineList) {
+            String key = line.get("0");
+            String srcCopy = key + "\t" + "/copy/" + UrlSafeBase64.encodeToString("fantasy-tv:" + key) + "/";
+            String mp4Fop720 = key + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
+            String mp4Fop480 = key + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
+            String m3u8Copy = key + "\t" + "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
+            String mp4Key720 = ObjectUtils.addSuffixKeepExt(key, "F720");
+            String mp4Key480 = ObjectUtils.addSuffixKeepExt(key, "F480");
+            String m3u8Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
+            String m3u8Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "m3u8");
+            String m3u8Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
 
             try {
-                Avinfo avinfo = JsonConvertUtils.fromJson(fileInfo.hash, Avinfo.class);
+                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("1"), Avinfo.class);
                 double duration = Double.valueOf(avinfo.getFormat().duration);
                 long size = Long.valueOf(avinfo.getFormat().size);
                 int width = avinfo.getVideoStream().width;
                 if (width > 1280) {
-                    String copyKey1080 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F1080");
+                    String copyKey1080 = ObjectUtils.addSuffixKeepExt(key, "F1080");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey1080));
                     mp4FopList.add(mp4Fop720 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key720 + "\t" + duration + "\t" + size));
                     mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
@@ -96,18 +98,18 @@ public class AvinfoProcess implements ILineProcess<FileInfo>, Cloneable {
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
                 } else if (width > 1000) {
-                    String copyKey720 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F720");
+                    String copyKey720 = ObjectUtils.addSuffixKeepExt(key, "F720");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey720));
                     mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
                 } else {
-                    String copyKey480 = ObjectUtils.addSuffixKeepExt(fileInfo.key, "F480");
+                    String copyKey480 = ObjectUtils.addSuffixKeepExt(key, "F480");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey480));
                     m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
                 }
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + fileInfo.key);
+                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + key);
             }
         }
         if (copyList.size() > 0) fileMap.writeKeyFile("tocopy" + resultFileIndex, String.join("\n", copyList));
