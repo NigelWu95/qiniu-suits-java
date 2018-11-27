@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QiniuPfop implements ILineProcess<FileInfo>, Cloneable {
+public class QiniuPfop implements ILineProcess<String>, Cloneable {
 
     public Auth auth;
     public Configuration configuration;
@@ -78,42 +78,44 @@ public class QiniuPfop implements ILineProcess<FileInfo>, Cloneable {
         return bucket + "\t" + pipeline;
     }
 
-    public String singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    public String singleWithRetry(String line, int retryCount) throws QiniuException {
 
+        String[] items = line.split("\t");
         String persistentId = null;
         try {
-            persistentId = operationManager.pfop(bucket, fileInfo.key, fileInfo.hash,
+            persistentId = operationManager.pfop(bucket, items[0], items[1],
                     new StringMap().putNotEmpty("pipeline", pipeline));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    persistentId = operationManager.pfop(bucket, fileInfo.key, fileInfo.hash,
+                    persistentId = operationManager.pfop(bucket, items[0], items[1],
                             new StringMap().putNotEmpty("pipeline", pipeline));
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
                 }
             }
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
         }
 
         return persistentId;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<String> lineList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
+        lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (String line : lineList) {
             try {
-                String result = singleWithRetry(fileInfo, retryCount);
+                String result = singleWithRetry(line, retryCount);
                 if (result != null && !"".equals(result)) resultList.add(result);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key +
-                        "\t" + fileInfo.hash);
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line);
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

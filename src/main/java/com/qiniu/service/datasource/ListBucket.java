@@ -106,7 +106,7 @@ public class ListBucket {
                         return new FileLister(new BucketManager(auth, configuration), bucket, prefix, null,
                                 null, unitLen, version, retryCount);
                     } catch (QiniuException e) {
-                        System.out.println(prefix + "\t" + e.error());
+                        System.out.println("list prefix:" + prefix + " failed.\t" + e.error());
                         return null;
 //                        throw new RuntimeException(prefix + "\t" + e.error(), e.getCause());
                     }
