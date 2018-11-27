@@ -29,7 +29,7 @@ public class ListBucket {
     private int version;
     private String resultFormat = "json";
     private String resultFileDir = "../result";
-    private String customPrefix;
+    private String cPrefix;
     private List<String> antiPrefix;
     private int retryCount;
     private ListFileFilter filter;
@@ -47,7 +47,7 @@ public class ListBucket {
         this.bucket = bucket;
         this.unitLen = unitLen;
         this.version = version;
-        this.customPrefix = customPrefix == null ? "" : customPrefix;
+        this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix;
         this.retryCount = retryCount;
     }
@@ -117,7 +117,6 @@ public class ListBucket {
     }
 
     private List<FileLister> getFileListerList(int unitLen, int level) throws QiniuException {
-        String cPrefix = customPrefix;
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> cPrefix + prefix)
@@ -157,12 +156,14 @@ public class ListBucket {
     private void seekListerToEnd(FileLister fileLister, String endFile, FileMap fileMap, ILineProcess processor)
             throws QiniuException {
         List<FileInfo> fileInfoList;
-        while (fileLister.hasNext() || fileLister.getPrefix().equals(customPrefix)) {
-            String marker = fileLister.getMarker();
+        String marker = fileLister.getMarker();
+        while (fileLister.hasNext() || !StringUtils.isNullOrEmpty(marker) || fileLister.getPrefix().equals(cPrefix)) {
             recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
             if (fileLister.exception != null) {
                 HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker);
+                System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
+                        fileLister.exception.error() + " retrying...");
                 continue;
             }
             if (!StringUtils.isNullOrEmpty(endFile)) {
@@ -193,7 +194,7 @@ public class ListBucket {
                 marker = "";
                 end = resultList.get(1).getPrefix();
             } else if (finalI == resultList.size() -1) {
-                prefix = customPrefix;
+                prefix = cPrefix;
                 FileLister fileLister = resultList.get(finalI);
                 if (StringUtils.isNullOrEmpty(marker)) {
                     FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
@@ -282,7 +283,7 @@ public class ListBucket {
             System.out.println(info + " start...");
             fileMap.initWriter(resultFileDir, "list", "total");
             BucketManager bucketManager = new BucketManager(auth, configuration);
-            FileLister fileLister = new FileLister(bucketManager, bucket, customPrefix, "", marker, unitLen,
+            FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen,
                     version, retryCount);
             seekListerToEnd(fileLister, endFile, fileMap, processor);
             System.out.println(info + " finished.");
