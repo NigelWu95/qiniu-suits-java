@@ -116,6 +116,11 @@ public class ProcessorChoice {
                 processor = new QueryPfopResult(resultFileDir);
                 break;
             }
+            case "qhash": {
+                QhashParams qhashParams = paramFromConfig ? new QhashParams(configFilePath) : new QhashParams(args);
+                processor = new QueryHash(qhashParams.getDomain(), qhashParams.getResultFileDir());
+                break;
+            }
         }
         if (processor != null) processor.setBatch(batch);
 
