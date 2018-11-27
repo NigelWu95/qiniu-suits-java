@@ -19,6 +19,11 @@ public class ProcessorChoice {
 
     public ProcessorChoice() {
         this.unSupportBatch.add("asyncfetch");
+        this.unSupportBatch.add("avinfo");
+        this.unSupportBatch.add("pfop");
+        this.unSupportBatch.add("pfopresult");
+        this.unSupportBatch.add("qhash");
+        this.unSupportBatch.add("stat");
     }
 
     public ILineProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
@@ -119,6 +124,12 @@ public class ProcessorChoice {
             case "qhash": {
                 QhashParams qhashParams = paramFromConfig ? new QhashParams(configFilePath) : new QhashParams(args);
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getResultFileDir());
+                break;
+            }
+            case "stat": {
+                FileStatParams fileStatParams = paramFromConfig ?
+                        new FileStatParams(configFilePath) : new FileStatParams(args);
+                processor = new FileStat(fileStatParams.getDomain(), fileStatParams.getResultFileDir());
                 break;
             }
         }

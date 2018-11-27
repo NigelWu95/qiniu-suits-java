@@ -23,7 +23,7 @@ public class FileStat implements ILineProcess<FileInfo>, Cloneable {
     private FileMap fileMap;
 
     private void initBaseParams(String domain) {
-        this.processName = "hash";
+        this.processName = "stat";
         this.domain = domain;
     }
 

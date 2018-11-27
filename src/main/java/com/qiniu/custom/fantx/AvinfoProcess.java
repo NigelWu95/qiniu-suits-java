@@ -17,24 +17,27 @@ import java.util.stream.Collectors;
 public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
+    private String saveBucket;
     private String processName;
     protected String resultFileDir;
     private int resultFileIndex;
     private FileMap fileMap;
 
-    private void initBaseParams(String domain) {
+    private void initBaseParams(String domain, String saveBucket) {
         this.processName = "avinfo";
         this.domain = domain;
+        this.saveBucket = saveBucket;
     }
 
-    public AvinfoProcess(String domain, String resultFileDir) {
-        initBaseParams(domain);
+    public AvinfoProcess(String domain, String saveBucket, String resultFileDir) {
+        initBaseParams(domain, saveBucket);
         this.resultFileDir = resultFileDir;
         this.fileMap = new FileMap();
     }
 
-    public AvinfoProcess(String domain, String resultFileDir, int resultFileIndex) throws IOException {
-        this(domain, resultFileDir);
+    public AvinfoProcess(String domain, String saveBucket, String resultFileDir, int resultFileIndex)
+            throws IOException {
+        this(domain, saveBucket, resultFileDir);
         this.resultFileIndex = resultFileIndex;
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
@@ -74,7 +77,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
 
         for (Map<String, String> line : lineList) {
             String key = line.get("0");
-            String srcCopy = key + "\t" + "/copy/" + UrlSafeBase64.encodeToString("fantasy-tv:" + key) + "/";
+            String srcCopy = key + "\t" + "/copy/" + UrlSafeBase64.encodeToString(saveBucket + ":" + key) + "/";
             String mp4Fop720 = key + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
             String mp4Fop480 = key + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
             String m3u8Copy = key + "\t" + "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
@@ -88,25 +91,26 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                 Avinfo avinfo = JsonConvertUtils.fromJson(line.get("1"), Avinfo.class);
                 double duration = Double.valueOf(avinfo.getFormat().duration);
                 long size = Long.valueOf(avinfo.getFormat().size);
+                String other = "\t" + duration + "\t" + size;
                 int width = avinfo.getVideoStream().width;
                 if (width > 1280) {
                     String copyKey1080 = ObjectUtils.addSuffixKeepExt(key, "F1080");
-                    copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey1080));
-                    mp4FopList.add(mp4Fop720 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key720 + "\t" + duration + "\t" + size));
-                    mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key1080) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
+                    copyList.add(srcCopy + UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey1080));
+                    mp4FopList.add(mp4Fop720 + UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key720 + other));
+                    mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key480) + other);
+                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key1080) + other);
+                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720) + other);
+                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
                 } else if (width > 1000) {
                     String copyKey720 = ObjectUtils.addSuffixKeepExt(key, "F720");
-                    copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey720));
-                    mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString("fantasy-tv:" + mp4Key480) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key720) + "\t" + duration + "\t" + size);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
+                    copyList.add(srcCopy + UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey720));
+                    mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key480) + other);
+                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720) + other);
+                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
                 } else {
                     String copyKey480 = ObjectUtils.addSuffixKeepExt(key, "F480");
-                    copyList.add(srcCopy + UrlSafeBase64.encodeToString("fantasy-tv:" + copyKey480));
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString("fantasy-tv:" + m3u8Key480) + "\t" + duration + "\t" + size);
+                    copyList.add(srcCopy + UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey480));
+                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
                 }
             } catch (Exception e) {
                 fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + key);
