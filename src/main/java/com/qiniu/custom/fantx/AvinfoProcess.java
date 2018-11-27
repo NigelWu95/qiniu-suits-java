@@ -80,7 +80,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
             String srcCopy = key + "\t" + "/copy/" + UrlSafeBase64.encodeToString(saveBucket + ":" + key) + "/";
             String mp4Fop720 = key + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
             String mp4Fop480 = key + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
-            String m3u8Copy = key + "\t" + "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
+            String m3u8Copy = "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
             String mp4Key720 = ObjectUtils.addSuffixKeepExt(key, "F720");
             String mp4Key480 = ObjectUtils.addSuffixKeepExt(key, "F480");
             String m3u8Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
@@ -98,19 +98,19 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey1080));
                     mp4FopList.add(mp4Fop720 + UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key720 + other));
                     mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key480) + other);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key1080) + other);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720) + other);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
+                    m3u8FopList.add(copyKey1080 + "\t" + m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key1080) + other);
+                    m3u8FopList.add(mp4Key720 + "\t" + m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720) + other);
+                    m3u8FopList.add(mp4Key480 + "\t" + m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
                 } else if (width > 1000) {
                     String copyKey720 = ObjectUtils.addSuffixKeepExt(key, "F720");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey720));
                     mp4FopList.add(mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key480) + other);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720) + other);
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
+                    m3u8FopList.add(mp4Key720 + "\t" + m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720) + other);
+                    m3u8FopList.add(mp4Key480 + "\t" + m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
                 } else {
                     String copyKey480 = ObjectUtils.addSuffixKeepExt(key, "F480");
                     copyList.add(srcCopy + UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey480));
-                    m3u8FopList.add(m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
+                    m3u8FopList.add(copyKey480 + "\t" + m3u8Copy + UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480) + other);
                 }
             } catch (Exception e) {
                 fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + key);
