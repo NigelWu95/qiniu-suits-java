@@ -3,17 +3,7 @@ package com.qiniu.custom.miaop;
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.QhashParams;
 import com.qiniu.service.datasource.FileInput;
-import com.qiniu.service.fileline.SplitLineParser;
-import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.StringUtils;
-
-import java.io.BufferedReader;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class MirrorKeyFileInput extends FileInput {
 
