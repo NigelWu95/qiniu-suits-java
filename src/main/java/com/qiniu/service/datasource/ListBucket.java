@@ -124,7 +124,6 @@ public class ListBucket {
         List<FileLister> fileListerList = new ArrayList<>();
         FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix, null,
                 null, unitLen, version, retryCount);
-        fileListerList.add(firstFileLister);
 
         if (level == 1) {
 //            validPrefixList.add(cPrefix);
@@ -141,6 +140,7 @@ public class ListBucket {
 //            level2PrefixList.add(cPrefix);
             fileListerList = prefixList(level2PrefixList, unitLen);
         }
+        fileListerList.add(firstFileLister);
 
         return fileListerList;
     }
@@ -173,7 +173,7 @@ public class ListBucket {
                         .anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0)
                         ? null : marker;
                 fileInfoList = fileInfoList.parallelStream()
-                        .filter(fileInfo -> fileInfo.key.compareTo(endFile) <= 0)
+                        .filter(fileInfo -> fileInfo.key.compareTo(endFile) < 0)
                         .collect(Collectors.toList());
             }
             writeResult(fileInfoList, fileMap, 1);
