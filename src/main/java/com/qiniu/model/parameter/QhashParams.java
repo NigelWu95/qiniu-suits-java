@@ -1,19 +1,19 @@
 package com.qiniu.model.parameter;
 
-public class AvinfoParams extends QossParams {
+public class QhashParams extends QossParams {
 
     private String domain;
     private String https = "";
     private String needSign = "";
 
-    public AvinfoParams(String[] args) throws Exception {
+    public QhashParams(String[] args) throws Exception {
         super(args);
         this.domain = getParamFromArgs("domain");
         try { this.https = getParamFromArgs("use-https"); } catch (Exception e) {}
         try { this.needSign = getParamFromArgs("need-sign"); } catch (Exception e) {}
     }
 
-    public AvinfoParams(String configFileName) throws Exception {
+    public QhashParams(String configFileName) throws Exception {
         super(configFileName);
         this.domain = getParamFromConfig("domain");
         try { this.https = getParamFromConfig("use-https"); } catch (Exception e) {}
