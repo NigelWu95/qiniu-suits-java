@@ -3,7 +3,7 @@ package com.qiniu.service.datasource;
 import com.qiniu.common.FileMap;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.ExecutorsUtils;
 import com.qiniu.util.StringUtils;
@@ -30,9 +30,9 @@ public class FileInput {
         this.unitLen = unitLen;
     }
 
-    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, IQossProcess fileProcessor) {
+    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, ILineProcess fileProcessor) {
 
-        IQossProcess processor = null;
+        ILineProcess processor = null;
         ILineParser lineParser = new SplitLineParser(separator);
         try {
             BufferedReader bufferedReader = sourceReaders.get(finalI);
@@ -50,7 +50,7 @@ public class FileInput {
             for (int j = 0; j < size; j++) {
                 List<FileInfo> processList = fileInfoList.subList(unitLen * j,
                         j == size - 1 ? fileInfoList.size() : unitLen * (j + 1));
-                if (processor != null) processor.processFile(processList);
+                if (processor != null) processor.processLine(processList);
             }
             bufferedReader.close();
         } catch (Exception e) {
@@ -60,7 +60,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, IQossProcess processor) {
+    public void process(int maxThreads, String filePath, ILineProcess processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);

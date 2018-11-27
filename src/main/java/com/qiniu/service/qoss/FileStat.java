@@ -2,7 +2,7 @@ package com.qiniu.service.qoss;
 
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class FileStat implements IQossProcess, Cloneable {
+public class FileStat implements ILineProcess<FileInfo>, Cloneable {
 
     private String domain;
     private FileChecker fileChecker;
@@ -85,7 +85,7 @@ public class FileStat implements IQossProcess, Cloneable {
         return stat;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

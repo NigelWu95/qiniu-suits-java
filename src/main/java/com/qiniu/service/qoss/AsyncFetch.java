@@ -6,7 +6,7 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.media.M3U8Manager;
 import com.qiniu.service.media.VideoTS;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -17,7 +17,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AsyncFetch extends OperationBase implements IQossProcess, Cloneable {
+public class AsyncFetch extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
 
     private String domain;
     private boolean https;

@@ -5,7 +5,7 @@ import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public abstract class OperationBase implements IQossProcess, Cloneable {
+public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable {
 
     protected Auth auth;
     protected Configuration configuration;
@@ -108,7 +108,7 @@ public abstract class OperationBase implements IQossProcess, Cloneable {
 
     protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
 
-    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

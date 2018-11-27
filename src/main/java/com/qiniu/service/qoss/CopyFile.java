@@ -4,7 +4,7 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class CopyFile extends OperationBase implements IQossProcess, Cloneable {
+public class CopyFile extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
 
     private String toBucket;
     private boolean keepKey;
