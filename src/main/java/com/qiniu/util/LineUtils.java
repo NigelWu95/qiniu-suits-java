@@ -1,17 +1,17 @@
 package com.qiniu.util;
 
-import com.qiniu.common.QiniuSuitsException;
+import com.qiniu.common.QiniuException;
 import com.qiniu.storage.model.FileInfo;
 
 public class LineUtils {
 
-    public static String getIndexItem(String[] items, int index) throws QiniuSuitsException {
+    public static String getIndexItem(String[] items, int index) throws QiniuException {
         if (items == null) {
-            throw new QiniuSuitsException("line is null.");
+            throw new QiniuException(null, "line is null.");
         }
 
         if (items.length < index + 1) {
-            throw new QiniuSuitsException("index is out of items' length.");
+            throw new QiniuException(null, "index is out of items' length.");
         }
 
         return items[index];

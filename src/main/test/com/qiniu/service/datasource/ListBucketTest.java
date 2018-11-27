@@ -1,7 +1,8 @@
 package com.qiniu.service.datasource;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;
-import com.qiniu.model.ListBucketParams;
+import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import org.junit.Before;
@@ -11,7 +12,7 @@ import java.util.List;
 
 public class ListBucketTest {
 
-    private ListBucket qiniuBucket;
+    private ListBucket listBucket;
 
     @Before
     public void init() throws Exception {
@@ -26,22 +27,22 @@ public class ListBucketTest {
         int version = listBucketParams.getVersion();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen %1000 : unitLen;
-        this.qiniuBucket = new ListBucket(auth, configuration, bucket, unitLen, version, customPrefix,
+        this.listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, customPrefix,
                 antiPrefix, 1);
     }
 
     @Test
-    public void testConcurrentlyList() {
-        qiniuBucket.concurrentlyList(15, 1, null);
+    public void testConcurrentlyList() throws QiniuException {
+        listBucket.concurrentlyList(15, 1, null);
     }
 
     @Test
-    public void testCheckValidPrefix() {
-        qiniuBucket.checkValidPrefix(1);
+    public void testCheckValidPrefix() throws QiniuException {
+        listBucket.checkValidPrefix(1);
     }
 
     @Test
     public void testStraightlyList() {
-        qiniuBucket.straightlyList(null, null, null);
+        listBucket.straightlyList(null, null, null);
     }
 }

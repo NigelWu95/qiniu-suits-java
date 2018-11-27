@@ -1,5 +1,4 @@
 package com.qiniu.util;
-import com.qiniu.common.QiniuSuitsException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -9,7 +8,8 @@ import java.util.regex.Pattern;
 
 public final class DateUtils {
 
-    public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, Long timeStamp) throws ParseException, QiniuSuitsException {
+    public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, Long timeStamp)
+            throws ParseException {
         if (StringUtils.isNullOrEmpty(pointTime)) {
             return true;
         }
@@ -19,7 +19,8 @@ public final class DateUtils {
         return (breakpoint > timeStamp) == isBiggerThan;
     }
 
-    public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, String timeString) throws ParseException, QiniuSuitsException {
+    public static boolean compareTimeToBreakpoint(String pointTime, boolean isBiggerThan, String timeString)
+            throws ParseException {
         if (StringUtils.isNullOrEmpty(pointTime)) {
             return true;
         }

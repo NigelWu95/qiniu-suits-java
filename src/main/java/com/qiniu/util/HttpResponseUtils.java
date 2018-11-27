@@ -1,7 +1,8 @@
 package com.qiniu.util;
 
-import com.qiniu.common.FileReaderAndWriterMap;
+import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
 
 public class HttpResponseUtils {
 
@@ -26,17 +27,26 @@ public class HttpResponseUtils {
         }
     }
 
-    public static void processException(QiniuException e, FileReaderAndWriterMap fileMap, String processName,
-                                        String info) throws QiniuException {
+    public static void processException(QiniuException e, FileMap fileMap, String processName, String info)
+            throws QiniuException {
         if (e != null) {
-            if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
             if (e.response == null) {
-                throw new QiniuException(e, processName + " failed. " + e.error());
+                if (fileMap != null) fileMap.writeErrorOrNull(e.getMessage() + "\t" + info);
             } else if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                 throw new QiniuException(e, processName + " failed. " + e.error());
             } else {
+                if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
                 e.response.close();
             }
         }
+    }
+
+    public static String getResult(Response response) throws QiniuException {
+        if (response == null) return null;
+        String responseBody = response.bodyString();
+        int statusCode = response.statusCode;
+        String reqId = response.reqId;
+        response.close();
+        return statusCode + "\t" + reqId + "\t" + responseBody;
     }
 }

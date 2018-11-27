@@ -1,101 +1,99 @@
 package com.qiniu.service.datasource;
 
-import com.qiniu.common.FileReaderAndWriterMap;
-import com.qiniu.common.QiniuException;
+import com.qiniu.common.FileMap;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.service.interfaces.IOssFileProcess;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.StringUtils;
+import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.util.ExecutorsUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 public class FileInput {
 
     private String separator;
     private int keyIndex;
-    private int retryCount;
+    private int unitLen;
 
-    public FileInput(String separator, int keyIndex, int retryCount) {
+    public FileInput(String separator, int keyIndex, int unitLen) {
         this.separator = separator;
         this.keyIndex = keyIndex;
-        this.retryCount = retryCount;
+        this.unitLen = unitLen;
     }
 
-    public void traverseFile(ExecutorService executorPool, FileReaderAndWriterMap fileMap, List<String> sourceReaders,
-                             IOssFileProcess iOssFileProcessor, boolean processBatch) throws CloneNotSupportedException {
-        for (int i = 0; i < sourceReaders.size(); i++) {
-            String sourceReaderKey = sourceReaders.get(i);
-            IOssFileProcess processor = iOssFileProcessor != null ? iOssFileProcessor.getNewInstance(i) : null;
-            if (processor == null) break;
-            executorPool.execute(() -> {
-                BufferedReader bufferedReader = fileMap.getReader(sourceReaderKey);
-                ILineParser lineParser = new SplitLineParser(separator);
+    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, ILineProcess fileProcessor) {
 
-                try {
-                    List<FileInfo> fileInfoList = bufferedReader.lines().parallel()
-                            .map(line -> {
-                                FileInfo fileInfo = new FileInfo();
-                                fileInfo.key = lineParser.getItemList(line).get(keyIndex);
-                                return fileInfo;
-                            })
-                            .filter(fileInfo -> !StringUtils.isNullOrEmpty(fileInfo.key))
-                            .collect(Collectors.toList());
-                    iOssFileProcessor.processFile(fileInfoList, retryCount);
-                } catch (QiniuException e) {
-                    e.printStackTrace();
-                    System.out.println(sourceReaderKey + "\tprocess failed\t" + e.error());
-                    e.response.close();
-                }
-
-                try {
-                    bufferedReader.close();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
-            });
-        }
-    }
-
-    public void process(int maxThreads, String filePath, IOssFileProcess iOssFileProcessor, boolean processBatch)
-            throws IOException, CloneNotSupportedException {
-
-        List<String> sourceReaders = new ArrayList<>();
-        FileReaderAndWriterMap fileMap = new FileReaderAndWriterMap();
-        File sourceFile = new File(filePath);
-        if (sourceFile.isDirectory()) {
-            File[] fs = sourceFile.listFiles();
-            for(File f : fs) {
-                if (!f.isDirectory()) {
-                    sourceReaders.add(f.getName());
-                    fileMap.initReader(sourceFile.getPath(), f.getName());
-                }
-            }
-        } else {
-            sourceReaders.add(sourceFile.getName());
-            fileMap.initReader(sourceFile.getParent(), sourceFile.getName());
-        }
-
-        int runningThreads = sourceReaders.size();
-        runningThreads = runningThreads < maxThreads ? runningThreads : maxThreads;
-        System.out.println("list bucket concurrently running with " + runningThreads + " threads ...");
-        ExecutorService executorPool =  Executors.newFixedThreadPool(runningThreads);
-        System.out.println(iOssFileProcessor.getProcessName() + " started...");
-        traverseFile(executorPool, fileMap, sourceReaders, iOssFileProcessor, processBatch);
-        executorPool.shutdown();
+        ILineProcess processor = null;
+        ILineParser lineParser = new SplitLineParser(separator);
         try {
-            while (!executorPool.isTerminated())
-                Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            BufferedReader bufferedReader = sourceReaders.get(finalI);
+            if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
+            List<Map<String, String>> lineList = bufferedReader.lines().parallel()
+                    .map(lineParser::getItemMap)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            int size = lineList.size()/unitLen + 1;
+            for (int j = 0; j < size; j++) {
+                List<Map<String, String>> processList = lineList.subList(unitLen * j,
+                        j == size - 1 ? lineList.size() : unitLen * (j + 1));
+                if (processor != null) processor.processLine(processList);
+            }
+            bufferedReader.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (processor != null) processor.closeResource();
         }
-        System.out.println(iOssFileProcessor.getProcessName() + " finished.");
+    }
+
+    public void process(int maxThreads, String filePath, ILineProcess processor) {
+        List<String> sourceKeys = new ArrayList<>();
+        FileMap fileMap = new FileMap();
+        File sourceFile = new File(filePath);
+        try {
+            if (sourceFile.isDirectory()) {
+                File[] fs = sourceFile.listFiles();
+                assert fs != null;
+                for(File f : fs) {
+                    if (!f.isDirectory()) {
+                        sourceKeys.add(f.getName());
+                        fileMap.initReader(sourceFile.getPath(), f.getName());
+                    }
+                }
+            } else {
+                sourceKeys.add(sourceFile.getName());
+                fileMap.initReader(sourceFile.getParent(), sourceFile.getName());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        int listSize = sourceKeys.size();
+        int runningThreads = listSize < maxThreads ? listSize : maxThreads;
+        String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
+        System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
+        ThreadFactory threadFactory = runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setUncaughtExceptionHandler((t, e) -> System.out.println(t.getName() + "\t" + e.getMessage()));
+            return thread;
+        };
+        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
+
+        List<BufferedReader> sourceReaders = sourceKeys.parallelStream()
+                .map(fileMap::getReader)
+                .collect(Collectors.toList());
+        for (int i = 0; i < sourceReaders.size(); i++) {
+            int finalI = i;
+            executorPool.execute(() -> traverseByReader(finalI, sourceReaders, processor));
+        }
+        executorPool.shutdown();
+        ExecutorsUtils.waitForShutdown(executorPool, info);
+        fileMap.closeWriter();
     }
 }
