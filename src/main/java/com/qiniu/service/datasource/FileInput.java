@@ -4,9 +4,7 @@ import com.qiniu.common.FileMap;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.ExecutorsUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
