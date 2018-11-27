@@ -1,5 +1,6 @@
 package com.qiniu.custom.miaop;
 
+import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.QhashParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.fileline.SplitLineParser;
@@ -18,13 +19,16 @@ public class MirrorKeyFileInput extends FileInput {
 
     public static void main(String[] args) throws Exception {
 
-        String filePath = "../miaopai/keys";
-        String separator = "\t";
-        int keyIndex = 0;
-        int maxThreads = 200;
-        int unitLen = 3000;
+        FileInputParams fileInputParams = new FileInputParams("resources/.qiniu.properties");
+        String filePath = fileInputParams.getFilePath();
+        filePath = "../miaopai/keys";
+        String separator = fileInputParams.getSeparator();
+        int keyIndex = fileInputParams.getKeyIndex();
+        int maxThreads = fileInputParams.getMaxThreads();
+        int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        String resultFileDir = "../miaopai/hash";
+        String resultFileDir = fileInputParams.getResultFileDir();
+        resultFileDir = "../miaopai/hash";
         QhashParams qhashParams = new QhashParams("resources/.qiniu.properties");
         ILineProcess processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
         MirrorKeyFileInput fileInput = new MirrorKeyFileInput(separator, keyIndex, unitLen);
