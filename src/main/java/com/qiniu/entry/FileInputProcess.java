@@ -2,7 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.datasource.FileInput;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 
 public class FileInputProcess {
 
@@ -16,9 +16,9 @@ public class FileInputProcess {
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        IQossProcess iQossProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+        ILineProcess iLineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
-        fileInput.process(maxThreads, sourceFilePath, iQossProcessor);
-        if (iQossProcessor != null) iQossProcessor.closeResource();
+        fileInput.process(maxThreads, sourceFilePath, iLineProcessor);
+        if (iLineProcessor != null) iLineProcessor.closeResource();
     }
 }

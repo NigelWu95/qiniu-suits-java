@@ -1,10 +1,8 @@
 package com.qiniu.custom.fantx;
 
 import com.qiniu.common.FileMap;
-import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
-import com.qiniu.service.interfaces.IQossProcess;
-import com.qiniu.service.media.MediaManager;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.ObjectUtils;
@@ -16,12 +14,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class AvinfoProcess implements IQossProcess, Cloneable {
+public class AvinfoProcess implements ILineProcess<FileInfo>, Cloneable {
 
     private String domain;
-    private MediaManager mediaManager;
     private String processName;
-    private int retryCount = 3;
     protected String resultFileDir;
     private int resultFileIndex;
     private FileMap fileMap;
@@ -34,7 +30,6 @@ public class AvinfoProcess implements IQossProcess, Cloneable {
     public AvinfoProcess(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
-        this.mediaManager = new MediaManager();
         this.fileMap = new FileMap();
     }
 
@@ -47,7 +42,6 @@ public class AvinfoProcess implements IQossProcess, Cloneable {
     public AvinfoProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         AvinfoProcess avinfoProcess = (AvinfoProcess)super.clone();
         avinfoProcess.resultFileIndex = resultFileIndex;
-        avinfoProcess.mediaManager = new MediaManager();
         avinfoProcess.fileMap = new FileMap();
         try {
             avinfoProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -59,9 +53,7 @@ public class AvinfoProcess implements IQossProcess, Cloneable {
 
     public void setBatch(boolean batch) {}
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
-    }
+    public void setRetryCount(int retryCount) {}
 
     public String getProcessName() {
         return this.processName;
@@ -71,7 +63,7 @@ public class AvinfoProcess implements IQossProcess, Cloneable {
         return domain;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) {
+    public void processLine(List<FileInfo> fileInfoList) {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

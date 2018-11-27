@@ -2,7 +2,7 @@ package com.qiniu.custom.miaop;
 
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
 import okhttp3.OkHttpClient;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class MirrorSrcHash implements IQossProcess, Cloneable {
+public class MirrorSrcHash implements ILineProcess<FileInfo>, Cloneable {
 
     private String domain;
     private OkHttpClient httpClient = new OkHttpClient();
@@ -99,7 +99,7 @@ public class MirrorSrcHash implements IQossProcess, Cloneable {
         return result;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) {
+    public void processLine(List<FileInfo> fileInfoList) {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

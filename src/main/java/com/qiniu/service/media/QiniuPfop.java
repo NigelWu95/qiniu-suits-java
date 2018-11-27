@@ -3,13 +3,12 @@ package com.qiniu.service.media;
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.OperationManager;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringMap;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QiniuPfop implements IQossProcess, Cloneable {
+public class QiniuPfop implements ILineProcess<FileInfo>, Cloneable {
 
     public Auth auth;
     public Configuration configuration;
@@ -101,7 +100,7 @@ public class QiniuPfop implements IQossProcess, Cloneable {
         return persistentId;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

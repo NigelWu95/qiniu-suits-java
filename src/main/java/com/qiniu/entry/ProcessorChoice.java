@@ -2,7 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.*;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
@@ -21,7 +21,7 @@ public class ProcessorChoice {
         this.unSupportBatch.add("asyncfetch");
     }
 
-    public IQossProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
+    public ILineProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
@@ -32,7 +32,7 @@ public class ProcessorChoice {
             batch = false;
         }
         String resultFileDir = commonParams.getResultFileDir();
-        IQossProcess processor = null;
+        ILineProcess processor = null;
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {

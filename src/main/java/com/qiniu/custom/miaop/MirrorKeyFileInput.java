@@ -3,7 +3,7 @@ package com.qiniu.custom.miaop;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.StringUtils;
 
@@ -22,7 +22,7 @@ public class MirrorKeyFileInput extends FileInput {
         int unitLen = 3000;
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         String resultFileDir = "../miaopai/hash";
-        IQossProcess processor = new MirrorSrcHash("miaopai-s.oss-cn-beijing.aliyuncs.com", resultFileDir);
+        ILineProcess processor = new MirrorSrcHash("miaopai-s.oss-cn-beijing.aliyuncs.com", resultFileDir);
         MirrorKeyFileInput fileInput = new MirrorKeyFileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
@@ -40,9 +40,9 @@ public class MirrorKeyFileInput extends FileInput {
     }
 
     @Override
-    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, IQossProcess fileProcessor) {
+    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, ILineProcess fileProcessor) {
 
-        IQossProcess processor = null;
+        ILineProcess processor = null;
         ILineParser lineParser = new SplitLineParser(separator);
         try {
             BufferedReader bufferedReader = sourceReaders.get(finalI);
@@ -59,7 +59,7 @@ public class MirrorKeyFileInput extends FileInput {
             for (int j = 0; j < size; j++) {
                 List<FileInfo> processList = fileInfoList.subList(unitLen * j,
                         j == size - 1 ? fileInfoList.size() : unitLen * (j + 1));
-                if (processor != null) processor.processFile(processList);
+                if (processor != null) processor.processLine(processList);
             }
             bufferedReader.close();
         } catch (Exception e) {

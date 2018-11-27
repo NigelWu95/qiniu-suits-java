@@ -4,7 +4,7 @@ import com.qiniu.common.*;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.ListBucket;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
@@ -29,7 +29,7 @@ public class ListBucketProcess {
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
-        IQossProcess iQossProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+        ILineProcess iLineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
@@ -55,11 +55,11 @@ public class ListBucketProcess {
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucket.setFilter(listFileFilter, listFileAntiFilter);
             if (multiStatus) {
-                listBucket.concurrentlyList(maxThreads, level, iQossProcessor);
+                listBucket.concurrentlyList(maxThreads, level, iLineProcessor);
             } else {
-                listBucket.straightlyList("", "", iQossProcessor);
+                listBucket.straightlyList("", "", iLineProcessor);
             }
         }
-        if (iQossProcessor != null) iQossProcessor.closeResource();
+        if (iLineProcessor != null) iLineProcessor.closeResource();
     }
 }

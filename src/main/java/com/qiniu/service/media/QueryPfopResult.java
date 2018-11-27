@@ -3,7 +3,7 @@ package com.qiniu.service.media;
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.PfopResult;
-import com.qiniu.service.interfaces.IQossProcess;
+import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryPfopResult implements IQossProcess, Cloneable {
+public class QueryPfopResult implements ILineProcess<FileInfo>, Cloneable {
 
     private MediaManager mediaManager;
     private String processName;
@@ -87,7 +87,7 @@ public class QueryPfopResult implements IQossProcess, Cloneable {
         return pfopResult;
     }
 
-    public void processFile(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

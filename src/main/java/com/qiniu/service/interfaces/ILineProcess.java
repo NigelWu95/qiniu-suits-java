@@ -1,13 +1,12 @@
 package com.qiniu.service.interfaces;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
 
-public interface IQossProcess {
+public interface ILineProcess<T> {
 
-    IQossProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
+    ILineProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
     void setBatch(boolean batch);
 
@@ -17,7 +16,7 @@ public interface IQossProcess {
 
     String getInfo();
 
-    void processFile(List<FileInfo> fileInfoList) throws QiniuException;
+    void processLine(List<T> list) throws QiniuException;
 
     void closeResource();
 }
