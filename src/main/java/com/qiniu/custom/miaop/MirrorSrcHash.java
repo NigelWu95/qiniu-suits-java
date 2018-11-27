@@ -100,7 +100,7 @@ public class MirrorSrcHash implements ILineProcess<Map<String, String>>, Cloneab
         return result;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) {
 
         lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

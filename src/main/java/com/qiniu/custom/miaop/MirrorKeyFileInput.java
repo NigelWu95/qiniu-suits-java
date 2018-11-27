@@ -1,5 +1,6 @@
 package com.qiniu.custom.miaop;
 
+import com.qiniu.model.parameter.QhashParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class MirrorKeyFileInput extends FileInput {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         String filePath = "../miaopai/keys";
         String separator = "\t";
@@ -24,7 +25,8 @@ public class MirrorKeyFileInput extends FileInput {
         int unitLen = 3000;
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         String resultFileDir = "../miaopai/hash";
-        ILineProcess processor = new MirrorSrcHash("miaopai-s.oss-cn-beijing.aliyuncs.com", resultFileDir);
+        QhashParams qhashParams = new QhashParams("resources/.qiniu.properties");
+        ILineProcess processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
         MirrorKeyFileInput fileInput = new MirrorKeyFileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
@@ -39,31 +41,5 @@ public class MirrorKeyFileInput extends FileInput {
         this.separator = separator;
         this.keyIndex = keyIndex;
         this.unitLen = unitLen;
-    }
-
-    @Override
-    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, ILineProcess fileProcessor) {
-
-        ILineProcess processor = null;
-        ILineParser lineParser = new SplitLineParser(separator);
-        try {
-            BufferedReader bufferedReader = sourceReaders.get(finalI);
-            if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
-            List<Map<String, String>> lineList = bufferedReader.lines().parallel()
-                    .map(lineParser::getItemMap)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            int size = lineList.size()/unitLen + 1;
-            for (int j = 0; j < size; j++) {
-                List<Map<String, String>> processList = lineList.subList(unitLen * j,
-                        j == size - 1 ? lineList.size() : unitLen * (j + 1));
-                if (processor != null) processor.processLine(processList);
-            }
-            bufferedReader.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (processor != null) processor.closeResource();
-        }
     }
 }
