@@ -11,10 +11,11 @@ import okhttp3.Request;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class MirrorSrcHash implements ILineProcess<FileInfo>, Cloneable {
+public class MirrorSrcHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private OkHttpClient httpClient = new OkHttpClient();
@@ -80,16 +81,16 @@ public class MirrorSrcHash implements ILineProcess<FileInfo>, Cloneable {
         return md5;
     }
 
-    public String singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    public String singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
 
         String result = "";
         try {
-            result = getMd5("http://" + domain + "/" + fileInfo.key);
+            result = getMd5("http://" + domain + "/" + line.get("0"));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    result = getMd5("http://" + domain + "/" + fileInfo.key);
+                    result = getMd5("http://" + domain + "/" + line.get("0"));
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -99,19 +100,19 @@ public class MirrorSrcHash implements ILineProcess<FileInfo>, Cloneable {
         return result;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
+        lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (Map<String, String> line : lineList) {
             try {
-                String result = singleWithRetry(fileInfo, retryCount);
-                if (result != null && !"".equals(result)) resultList.add(fileInfo.key + "\t" + result);
+                String result = singleWithRetry(line, retryCount);
+                if (result != null && !"".equals(result)) resultList.add(line.toString() + "\t" + result);
                 else throw new Exception("empty hash");
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + fileInfo.key);
+                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

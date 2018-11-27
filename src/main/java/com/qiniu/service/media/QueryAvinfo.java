@@ -4,16 +4,16 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryAvinfo implements ILineProcess<FileInfo>, Cloneable {
+public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private MediaManager mediaManager;
@@ -65,16 +65,16 @@ public class QueryAvinfo implements ILineProcess<FileInfo>, Cloneable {
         return domain;
     }
 
-    public Avinfo singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    public Avinfo singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
 
         Avinfo avinfo = null;
         try {
-            avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+            avinfo = mediaManager.getAvinfo(domain, line.get("0"));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    avinfo = mediaManager.getAvinfo(domain, fileInfo.key);
+                    avinfo = mediaManager.getAvinfo(domain, line.get("0"));
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -85,19 +85,19 @@ public class QueryAvinfo implements ILineProcess<FileInfo>, Cloneable {
         return avinfo;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
+        lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
+        if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (Map<String, String> line : lineList) {
             try {
-                Avinfo avinfo = singleWithRetry(fileInfo, retryCount);
-                if (avinfo != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJson(avinfo));
+                Avinfo avinfo = singleWithRetry(line, retryCount);
+                if (avinfo != null) resultList.add(line.toString() + "\t" + JsonConvertUtils.toJson(avinfo));
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
