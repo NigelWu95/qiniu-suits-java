@@ -1,5 +1,6 @@
 package com.qiniu.service.datasource;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.storage.Configuration;
@@ -31,12 +32,12 @@ public class ListBucketTest {
     }
 
     @Test
-    public void testConcurrentlyList() {
+    public void testConcurrentlyList() throws QiniuException {
         listBucket.concurrentlyList(15, 1, null);
     }
 
     @Test
-    public void testCheckValidPrefix() {
+    public void testCheckValidPrefix() throws QiniuException {
         listBucket.checkValidPrefix(1);
     }
 

@@ -7,7 +7,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class QueryAvinfoTest {
 
@@ -21,17 +23,11 @@ public class QueryAvinfoTest {
 
     @Test
     public void testProcessFile() throws QiniuException {
-        List<FileInfo> list = new ArrayList<>();
-        FileInfo fileInfo1 = new FileInfo();
-        FileInfo fileInfo2 = new FileInfo();
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo1.key = "video/335991/403191/1523488434903607_new.mp4";
-        fileInfo2.key = "video/335991/403191/1523488480906009_new.mp4";
-        fileInfo3.key = "video/335991/403191/1523488528908834_new.mp4";
-        list.add(fileInfo1);
-        list.add(fileInfo2);
-        list.add(fileInfo3);
-        queryAvinfo.processLine(list);
+        List<Map<String, String>> lineList = new ArrayList<>();
+        lineList.add(new HashMap<String, String>(){{ put("0", "video/335991/403191/1523488434903607_new.mp4"); }});
+        lineList.add(new HashMap<String, String>(){{ put("0", "video/335991/403191/1523488480906009_new.mp4"); }});
+        lineList.add(new HashMap<String, String>(){{ put("0", "video/335991/403191/1523488528908834_new.mp4"); }});
+        queryAvinfo.processLine(lineList);
         queryAvinfo.closeResource();
     }
 }

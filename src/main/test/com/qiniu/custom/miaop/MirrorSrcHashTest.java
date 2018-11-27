@@ -6,6 +6,9 @@ import com.qiniu.storage.model.FileInfo;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.*;
 
 public class MirrorSrcHashTest {
@@ -19,9 +22,8 @@ public class MirrorSrcHashTest {
 
     @Test
     public void testSingleWithRetry() throws QiniuException {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.key = "images%2F6469036258323595265_audit_9.jpg";
-        String md5 = mirrorSrcHash.singleWithRetry(fileInfo, 3);
+        Map<String,String> line = new HashMap<String, String>(){{ put("0", "images%2F6469036258323595265_audit_9.jpg"); }};
+        String md5 = mirrorSrcHash.singleWithRetry(line, 3);
         System.out.println(md5);
     }
 }
