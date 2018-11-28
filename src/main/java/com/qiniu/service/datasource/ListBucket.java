@@ -163,9 +163,9 @@ public class ListBucket {
             fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
             if (fileLister.exception != null) {
                 maxError--;
-                HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker, maxError);
+                if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker);
                 System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
-                        fileLister.exception.error() + " retrying...");
+                        fileLister.error() + " retrying...");
                 fileLister.exception = null;
                 continue;
             }

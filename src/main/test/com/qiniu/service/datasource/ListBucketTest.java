@@ -8,6 +8,7 @@ import com.qiniu.util.Auth;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 public class ListBucketTest {
@@ -37,12 +38,12 @@ public class ListBucketTest {
     }
 
     @Test
-    public void testCheckValidPrefix() throws QiniuException {
+    public void testCheckValidPrefix() throws IOException {
         listBucket.checkValidPrefix(1);
     }
 
     @Test
-    public void testStraightlyList() {
+    public void testStraightlyList() throws IOException {
         listBucket.straightlyList(null, null, null);
     }
 }
