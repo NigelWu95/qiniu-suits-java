@@ -64,16 +64,16 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return "";
     }
 
-    public PfopResult singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
+    public PfopResult singleWithRetry(String id, int retryCount) throws QiniuException {
 
         PfopResult pfopResult = null;
         try {
-            pfopResult = mediaManager.getPfopResultById(line.get("0"));
+            pfopResult = mediaManager.getPfopResultById(id);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    pfopResult = mediaManager.getPfopResultById(line.get("0"));
+                    pfopResult = mediaManager.getPfopResultById(id);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -92,7 +92,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                PfopResult pfopResult = singleWithRetry(line, retryCount);
+                PfopResult pfopResult = singleWithRetry(line.get("0"), retryCount);
                 if (pfopResult != null)resultList.add(JsonConvertUtils.toJson(pfopResult));
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {

@@ -65,16 +65,16 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return domain;
     }
 
-    public Avinfo singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
+    public Avinfo singleWithRetry(String key, int retryCount) throws QiniuException {
 
         Avinfo avinfo = null;
         try {
-            avinfo = mediaManager.getAvinfo(domain, line.get("0"));
+            avinfo = mediaManager.getAvinfo(domain, key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    avinfo = mediaManager.getAvinfo(domain, line.get("0"));
+                    avinfo = mediaManager.getAvinfo(domain, key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -93,11 +93,11 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                Avinfo avinfo = singleWithRetry(line, retryCount);
+                Avinfo avinfo = singleWithRetry(line.get("0"), retryCount);
                 if (avinfo != null) resultList.add(line.toString() + "\t" + JsonConvertUtils.toJson(avinfo));
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

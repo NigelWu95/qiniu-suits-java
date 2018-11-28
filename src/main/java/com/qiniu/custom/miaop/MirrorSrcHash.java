@@ -81,16 +81,16 @@ public class MirrorSrcHash implements ILineProcess<Map<String, String>>, Cloneab
         return md5;
     }
 
-    public String singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
+    public String singleWithRetry(String key, int retryCount) throws QiniuException {
 
         String result = "";
         try {
-            result = getMd5("http://" + domain + "/" + line.get("0"));
+            result = getMd5("http://" + domain + "/" + key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    result = getMd5("http://" + domain + "/" + line.get("0"));
+                    result = getMd5("http://" + domain + "/" + key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -108,11 +108,11 @@ public class MirrorSrcHash implements ILineProcess<Map<String, String>>, Cloneab
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                String result = singleWithRetry(line, retryCount);
+                String result = singleWithRetry(line.get("0"), retryCount);
                 if (result != null && !"".equals(result)) resultList.add(line.toString() + "\t" + result);
                 else throw new Exception("empty hash");
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
+                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.get("0"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
