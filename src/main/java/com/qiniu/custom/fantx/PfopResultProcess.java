@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable {
+public class PfopResultProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
     protected String resultFileDir;
@@ -24,19 +24,19 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         this.processName = "fopresult";
     }
 
-    public PfopProcess(String resultFileDir) {
+    public PfopResultProcess(String resultFileDir) {
         initBaseParams();
         this.resultFileDir = resultFileDir;
         this.fileMap = new FileMap();
     }
 
-    public PfopProcess(String resultFileDir, int resultFileIndex) throws IOException {
+    public PfopResultProcess(String resultFileDir, int resultFileIndex) throws IOException {
         this(resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public PfopProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        PfopProcess queryPfopResult = (PfopProcess)super.clone();
+    public PfopResultProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        PfopResultProcess queryPfopResult = (PfopResultProcess)super.clone();
         queryPfopResult.fileMap = new FileMap();
         try {
             queryPfopResult.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -70,7 +70,7 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
                 PfopResult pfopResult = JsonConvertUtils.fromJson(line.get("0"), PfopResult.class);
                 if (pfopResult == null) throw new QiniuException(null, "empty pfop result");
                 if (pfopResult.code == 0) successList.add(pfopResult.inputKey + "\t" + pfopResult.items.get(0).key);
-                else failList.add(pfopResult.inputKey + "\t" + pfopResult.code + "\t" + pfopResult.desc);
+                else failList.add(pfopResult.inputKey + "\t" + pfopResult.id + "\t" + pfopResult.code + "\t" + pfopResult.desc);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
             }
