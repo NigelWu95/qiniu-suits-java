@@ -111,7 +111,7 @@ public class ListBucket {
                         } catch (QiniuException e1) {
                             HttpResponseUtils.checkRetryCount(e1, retryCount);
                             while (retryCount > 0) {
-                                System.out.println("list prefix:" + prefix + "\t" + fileLister.error() + " retrying...");
+                                System.out.println("list prefix:" + prefix + "\tretrying...");
                                 try {
                                     fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
                                             null, null, unitLen, version, retryCount);
@@ -249,7 +249,7 @@ public class ListBucket {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
-            String finalEnd = i == fileListerList.size() - 1 ? endFilePrefix : "";
+            String finalEnd = i == 0 ? endFilePrefix : "";
             executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1, processor));
         }
         executorPool.shutdown();
