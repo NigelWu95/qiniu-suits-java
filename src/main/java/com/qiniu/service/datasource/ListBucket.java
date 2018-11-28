@@ -222,9 +222,9 @@ public class ListBucket {
     public void concurrentlyList(int maxThreads, int level, ILineProcess processor) throws QiniuException {
         List<FileLister> fileListerList = getFileListerList(unitLen, level);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-        String endFilePrefix = "";
+        String firstEnd = "";
         if (fileListerList.size() > 1) {
-            endFilePrefix = fileListerList.get(1).getPrefix();
+            firstEnd = fileListerList.get(1).getPrefix();
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
             fileLister.setPrefix(cPrefix);
             if (StringUtils.isNullOrEmpty(fileLister.getMarker())) {
@@ -248,7 +248,7 @@ public class ListBucket {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
-            String finalEnd = i == 0 ? endFilePrefix : "";
+            String finalEnd = i == 0 ? firstEnd : "";
             executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1, processor));
         }
         executorPool.shutdown();
