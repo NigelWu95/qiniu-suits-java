@@ -138,6 +138,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 }
                 resultList = listLines.parallelStream()
                         .map(listLine -> listLine.fileInfo)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
                 Optional<ListLine> lastListLine = listLines.parallelStream()
                         .max(ListLine::compareTo);
@@ -151,7 +152,10 @@ public class FileLister implements Iterator<List<FileInfo>> {
 
     @Override
     public boolean hasNext() {
-        return fileInfoList != null && fileInfoList.size() > 0;
+        if (marker == null || "".equals(marker)) {
+            return fileInfoList != null && fileInfoList.size() > 0;
+        }
+        return true;
     }
 
     @Override
