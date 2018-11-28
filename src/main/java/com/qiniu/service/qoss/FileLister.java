@@ -126,10 +126,14 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
                 Reader reader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                List<ListLine> listLines = bufferedReader.lines().parallel()
+                List<String> lines = bufferedReader.lines().collect(Collectors.toList());
+                List<ListLine> listLines = lines.parallelStream()
                         .filter(line -> !StringUtils.isNullOrEmpty(line))
                         .map(line -> new ListLine().fromLine(line))
                         .collect(Collectors.toList());
+                if (listLines.size() < lines.size()) {
+                    throw new QiniuException(null, "convert line to file info error.");
+                }
                 resultList = listLines.parallelStream()
                         .map(listLine -> listLine.fileInfo)
                         .collect(Collectors.toList());
@@ -198,13 +202,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
 
             if (!StringUtils.isNullOrEmpty(line)) {
                 JsonObject json = new JsonObject();
-                // to test the exceptional line.
-                try {
-                    json = JsonConvertUtils.toJsonObject(line);
-                } catch (JsonParseException e) {
-                    System.out.println(line);
-                    e.printStackTrace();
-                }
                 JsonElement item = json.get("item");
                 JsonElement marker = json.get("marker");
                 JsonElement dir = json.get("dir");
