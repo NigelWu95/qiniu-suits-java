@@ -93,10 +93,11 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         for (Map<String, String> line : lineList) {
             try {
                 PfopResult pfopResult = singleWithRetry(line, retryCount);
-                if (pfopResult != null)resultList.add(line.toString() + "\t" + JsonConvertUtils.toJson(pfopResult));
+                if (pfopResult != null)resultList.add(pfopResult.inputKey + "\t" + line.get("0") + "\t" +
+                        JsonConvertUtils.toJson(pfopResult));
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
