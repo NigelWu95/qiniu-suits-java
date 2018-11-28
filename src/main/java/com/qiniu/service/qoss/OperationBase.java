@@ -64,26 +64,6 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
 
     protected abstract Response getResponse(FileInfo fileInfo) throws QiniuException;
 
-    public Response singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
-
-        Response response = null;
-        try {
-            response = getResponse(fileInfo);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = getResponse(fileInfo);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-
-        return response;
-    }
-
     synchronized public Response batchWithRetry(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
 
         Response response = null;
@@ -113,7 +93,20 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                Response response = singleWithRetry(fileInfo, retryCount);
+                Response response = null;
+                try {
+                    response = getResponse(fileInfo);
+                } catch (QiniuException e1) {
+                    HttpResponseUtils.checkRetryCount(e1, retryCount);
+                    while (retryCount > 0) {
+                        try {
+                            response = getResponse(fileInfo);
+                            retryCount = 0;
+                        } catch (QiniuException e2) {
+                            retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                        }
+                    }
+                }
                 String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
