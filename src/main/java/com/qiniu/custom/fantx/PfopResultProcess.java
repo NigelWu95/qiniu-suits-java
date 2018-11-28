@@ -67,12 +67,12 @@ public class PfopResultProcess implements ILineProcess<Map<String, String>>, Clo
         List<String> failList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                PfopResult pfopResult = JsonConvertUtils.fromJson(line.get("0"), PfopResult.class);
+                PfopResult pfopResult = JsonConvertUtils.fromJson(line.get("1"), PfopResult.class);
                 if (pfopResult == null) throw new QiniuException(null, "empty pfop result");
                 if (pfopResult.code == 0) successList.add(pfopResult.inputKey + "\t" + pfopResult.items.get(0).key);
                 else failList.add(pfopResult.inputKey + "\t" + pfopResult.id + "\t" + pfopResult.code + "\t" + pfopResult.desc);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("1"));
             }
         }
         if (successList.size() > 0) fileMap.writeSuccess(String.join("\n", successList));
