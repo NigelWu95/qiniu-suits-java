@@ -131,6 +131,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
                         .collect(Collectors.toList());
                 List<ListLine> listLines = lines.parallelStream()
                         .map(line -> new ListLine().fromLine(line))
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
                 if (listLines.size() < lines.size()) {
                     throw new QiniuException(new QiniuException(response), "convert line to file info error.");
