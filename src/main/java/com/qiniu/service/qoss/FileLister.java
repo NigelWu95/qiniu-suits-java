@@ -21,12 +21,12 @@ public class FileLister implements Iterator<List<FileInfo>> {
     private String bucket;
     private String prefix;
     private String delimiter;
-    private volatile String marker;
+    private String marker;
     private int limit;
     private int version;
-    private volatile int retryCount;
-    private volatile List<FileInfo> fileInfoList;
-    public volatile QiniuException exception;
+    private int retryCount;
+    private List<FileInfo> fileInfoList;
+    public QiniuException exception;
 
     public FileLister(BucketManager bucketManager, String bucket, String prefix, String delimiter, String marker,
                       int limit, int version, int retryCount) throws QiniuException {
@@ -87,7 +87,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
      * @return
      * @throws QiniuException
      */
-    synchronized public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
+    public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
 
         Response response = null;
         try {
@@ -110,7 +110,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return response;
     }
 
-    synchronized private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
+    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
             throws QiniuException {
         List<FileInfo> resultList = new ArrayList<>();
         Response response = list(prefix, delimiter, marker, limit);

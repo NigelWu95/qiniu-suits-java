@@ -188,36 +188,6 @@ public class ListBucket {
         }
     }
 
-    private Map<String, String> calcListParams(List<FileLister> resultList, int finalI) {
-        String prefix = resultList.get(finalI).getPrefix();
-        String marker = resultList.get(finalI).getMarker();
-        String end = "";
-        if (resultList.size() > 1) {
-            if (finalI == 0) {
-                marker = "";
-                end = resultList.get(1).getPrefix();
-            } else if (finalI == resultList.size() -1) {
-                prefix = cPrefix;
-                FileLister fileLister = resultList.get(finalI);
-                if (StringUtils.isNullOrEmpty(marker)) {
-                    FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
-                            .filter(Objects::nonNull)
-                            .max(Comparator.comparing(fileInfo -> fileInfo.key))
-                            .orElse(null);
-                    marker = ListBucketUtils.calcMarker(lastFileInfo);
-                }
-            }
-        }
-        String finalPrefix = prefix;
-        String finalMarker = marker;
-        String finalEnd = end;
-        return new HashMap<String, String>(){{
-            put("prefix", finalPrefix);
-            put("marker", finalMarker);
-            put("end", finalEnd);
-        }};
-    }
-
     private void listFromLister(int finalI, List<FileLister> fileListerList, ILineProcess fileProcessor) {
         int resultIndex = finalI + 1;
         FileMap fileMap = new FileMap();
@@ -225,16 +195,27 @@ public class ListBucket {
         try {
             fileMap.initWriter(resultFileDir, "list", resultIndex);
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(resultIndex);
-            Map<String, String> params = calcListParams(fileListerList, finalI);
-            String prefix = params.get("prefix");
-            String marker = params.get("marker");
-            String endFilePrefix = params.get("end");
+            String endFilePrefix = "";
             FileLister fileLister = fileListerList.get(finalI);
-            fileLister.setPrefix(prefix);
-            fileLister.setMarker(marker);
+            if (fileListerList.size() > 1) {
+                if (finalI == 0) {
+                    fileLister.setMarker("");
+                    endFilePrefix = fileListerList.get(1).getPrefix();
+                } else if (finalI == fileListerList.size() -1) {
+                    fileLister.setPrefix(cPrefix);
+                    if (StringUtils.isNullOrEmpty(fileLister.getMarker())) {
+                        FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
+                                .filter(Objects::nonNull)
+                                .max(Comparator.comparing(fileInfo -> fileInfo.key))
+                                .orElse(null);
+                        String marker = ListBucketUtils.calcMarker(lastFileInfo);
+                        fileLister.setMarker(marker);
+                    }
+                }
+            }
             seekListerToEnd(fileLister, endFilePrefix, fileMap, processor);
         } catch (Exception e) {
-            throw new RuntimeException(e.getCause());
+            throw new RuntimeException(e);
         } finally {
             fileMap.closeWriter();
             if (processor != null) processor.closeResource();
@@ -262,7 +243,7 @@ public class ListBucket {
         ExecutorsUtils.waitForShutdown(executorPool, info);
     }
 
-    public void checkValidPrefix(int level) throws QiniuException {
+    public void checkValidPrefix(int level) throws IOException {
         List<FileLister> fileListerList = getFileListerList(1, level);
         FileMap fileMap = new FileMap();
         try {
@@ -272,14 +253,12 @@ public class ListBucket {
                     .map(fileLister -> fileLister.getPrefix() + "\t" + fileLister.getMarker())
                     .collect(Collectors.toList());
             fileMap.writeSuccess(String.join("\n", validPrefixAndMarker));
-        } catch (IOException e) {
-            throw new RuntimeException(e.getCause());
         } finally {
             fileMap.closeWriter();
         }
     }
 
-    public void straightlyList(String marker, String endFile, ILineProcess processor) {
+    public void straightlyList(String marker, String endFile, ILineProcess processor) throws IOException {
         FileMap fileMap = new FileMap();
         try {
             String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
@@ -290,8 +269,6 @@ public class ListBucket {
                     version, retryCount);
             seekListerToEnd(fileLister, endFile, fileMap, processor);
             System.out.println(info + " finished.");
-        } catch (IOException e) {
-            throw new RuntimeException(e.getCause());
         } finally {
             fileMap.closeWriter();
         }
