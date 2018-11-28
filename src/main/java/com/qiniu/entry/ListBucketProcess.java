@@ -57,7 +57,7 @@ public class ListBucketProcess {
             if (multiStatus) {
                 listBucket.concurrentlyList(maxThreads, level, iLineProcessor);
             } else {
-                listBucket.straightlyList("", "", iLineProcessor);
+                listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), iLineProcessor);
             }
         }
         if (iLineProcessor != null) iLineProcessor.closeResource();
