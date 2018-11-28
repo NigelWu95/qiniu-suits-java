@@ -25,18 +25,18 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
         // parse avinfo from files.
 //        ILineProcess processor = new AvinfoProcess(avinfoParams.getDomain(), avinfoParams.getBucket(), resultFileDir);
         // query persistent id and parse
-//        ILineProcess processor = new QueryPfopResult(resultFileDir);
+        ILineProcess processor = new QueryPfopResult(resultFileDir);
         // filter pfop result
 //        ILineProcess processor = new PfopResultProcess(resultFileDir);
         // process avinfo
 //        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
         // copy file
-        FileCopyParams fileCopyParams = new FileCopyParams("resources/.qiniu-fantx.properties");
-        String ak = fileCopyParams.getProcessAk();
-        String sk = fileCopyParams.getProcessSk();
-        Configuration configuration = new Configuration(Zone.autoZone());
-        ILineProcess processor = new FileCopy(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
-                fileCopyParams.getTargetBucket(), resultFileDir);
+//        FileCopyParams fileCopyParams = new FileCopyParams("resources/.qiniu-fantx.properties");
+//        String ak = fileCopyParams.getProcessAk();
+//        String sk = fileCopyParams.getProcessSk();
+//        Configuration configuration = new Configuration(Zone.autoZone());
+//        ILineProcess processor = new FileCopy(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
+//                fileCopyParams.getTargetBucket(), resultFileDir);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();

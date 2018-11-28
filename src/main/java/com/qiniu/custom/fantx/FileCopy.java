@@ -150,7 +150,7 @@ public class FileCopy implements ILineProcess<Map<String, String>>, Cloneable {
         return resultList;
     }
 
-    public BatchOperations getOperations(List<Map<String, String>> lineList) throws QiniuException {
+    public BatchOperations getOperations(List<Map<String, String>> lineList) {
 
         return batchOperations;
     }
