@@ -210,7 +210,6 @@ public class ListBucket {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         } finally {
             fileMap.closeWriter();

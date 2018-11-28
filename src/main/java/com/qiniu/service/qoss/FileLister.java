@@ -150,20 +150,29 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return resultList;
     }
 
+    private boolean checkMarkerValid() {
+        return marker != null && !"".equals(marker);
+    }
+
+    private boolean checkListValid() {
+        return fileInfoList != null && fileInfoList.size() > 0;
+    }
+
     @Override
     public boolean hasNext() {
-        if (marker == null || "".equals(marker)) {
-            return fileInfoList != null && fileInfoList.size() > 0;
-        }
-        return true;
+        return checkMarkerValid() || checkListValid();
     }
 
     @Override
     public List<FileInfo> next() {
         List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
         try {
-            fileInfoList = (marker == null || "".equals(marker)) ? new ArrayList<>() :
-                    getListResult(prefix, delimiter, marker, limit);
+            if (!checkMarkerValid()) fileInfoList = null;
+            else {
+                do {
+                    fileInfoList = getListResult(prefix, delimiter, marker, limit);
+                } while (!checkListValid() && checkMarkerValid());
+            }
         } catch (QiniuException e) {
             fileInfoList = null;
             exception = e;
