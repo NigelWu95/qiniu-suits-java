@@ -139,8 +139,7 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() +
-                            "\t" + fileInfo.key);
+                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
                 }
             }
         }

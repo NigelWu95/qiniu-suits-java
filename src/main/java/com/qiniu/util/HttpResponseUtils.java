@@ -45,6 +45,7 @@ public class HttpResponseUtils {
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
+        if (statusCode != 200) throw new QiniuException(response);
         String reqId = response.reqId;
         response.close();
         return statusCode + "\t" + reqId + "\t" + responseBody;

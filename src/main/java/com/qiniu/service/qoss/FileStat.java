@@ -1,9 +1,12 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
+import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
 
@@ -13,36 +16,27 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class FileStat implements ILineProcess<FileInfo>, Cloneable {
+public class FileStat extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
 
-    private String domain;
-    private FileChecker fileChecker;
     private String processName;
-    private int retryCount = 3;
-    protected String resultFileDir;
-    private FileMap fileMap;
 
-    private void initBaseParams(String domain) {
+    private void initBaseParams() {
         this.processName = "stat";
-        this.domain = domain;
     }
 
-    public FileStat(String domain, String resultFileDir) {
-        initBaseParams(domain);
-        this.resultFileDir = resultFileDir;
-        this.fileChecker = new FileChecker(null);
-        this.fileMap = new FileMap();
+    public FileStat(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
+        super(auth, configuration, bucket, resultFileDir);
+        initBaseParams();
     }
 
-    public FileStat(String domain, String resultFileDir, int resultFileIndex) throws IOException {
-        this(domain, resultFileDir);
+    public FileStat(Auth auth, Configuration configuration, String bucket, String resultFileDir, int resultFileIndex)
+            throws IOException {
+        this(auth, configuration, bucket, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public FileStat getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
-        fileStat.fileChecker = new FileChecker(null);
-        fileStat.fileMap = new FileMap();
         try {
             fileStat.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
@@ -62,19 +56,24 @@ public class FileStat implements ILineProcess<FileInfo>, Cloneable {
     }
 
     public String getInfo() {
-        return domain;
+        return "";
     }
 
-    public FileInfo singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    @Override
+    protected Response getResponse(FileInfo fileInfo) {
+        return null;
+    }
+
+    public FileInfo statWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
 
         FileInfo stat = null;
         try {
-            stat = fileChecker.getStat(domain, fileInfo.key);
+            stat = bucketManager.stat(bucket, fileInfo.key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    stat = fileChecker.getStat(domain, fileInfo.key);
+                    stat = bucketManager.stat(bucket, fileInfo.key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -85,6 +84,11 @@ public class FileStat implements ILineProcess<FileInfo>, Cloneable {
         return stat;
     }
 
+    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList) {
+        return null;
+    }
+
+    @Override
     public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
@@ -93,8 +97,8 @@ public class FileStat implements ILineProcess<FileInfo>, Cloneable {
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                FileInfo stat = singleWithRetry(fileInfo, retryCount);
-                if (stat != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(stat));
+                FileInfo stat = statWithRetry(fileInfo, retryCount);
+                if (stat != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJson(stat));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
             }
