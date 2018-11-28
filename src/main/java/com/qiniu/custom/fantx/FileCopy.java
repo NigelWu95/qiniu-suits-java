@@ -141,7 +141,7 @@ public class FileCopy implements ILineProcess<Map<String, String>>, Cloneable {
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
-                            String.join(",", processList.stream()
+                            String.join("\n", processList.stream()
                                     .map(line -> line.get("0") + "\t" + line.get("1"))
                                     .collect(Collectors.toList())));
                 }

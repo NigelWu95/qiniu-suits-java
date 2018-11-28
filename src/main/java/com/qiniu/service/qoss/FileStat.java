@@ -86,7 +86,6 @@ public class FileStat extends OperationBase implements ILineProcess<FileInfo>, C
         return null;
     }
 
-    @Override
     public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
