@@ -82,13 +82,13 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
         String persistentId = null;
         try {
-            persistentId = operationManager.pfop(bucket, line.get("0"), line.get("1"),
+            persistentId = operationManager.pfop(bucket, line.get("2"), line.get("3"),
                     new StringMap().putNotEmpty("pipeline", pipeline));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    persistentId = operationManager.pfop(bucket, line.get("0"), line.get("1"),
+                    persistentId = operationManager.pfop(bucket, line.get("2"), line.get("3"),
                             new StringMap().putNotEmpty("pipeline", pipeline));
                     retryCount = 0;
                 } catch (QiniuException e2) {

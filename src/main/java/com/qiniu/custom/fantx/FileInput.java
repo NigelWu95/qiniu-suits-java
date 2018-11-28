@@ -4,7 +4,9 @@ import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.AvinfoParams;
 import com.qiniu.model.parameter.FileCopyParams;
 import com.qiniu.model.parameter.FileInputParams;
+import com.qiniu.model.parameter.PfopParams;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
 import com.qiniu.storage.Configuration;
@@ -35,10 +37,16 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //        FileCopyParams fileCopyParams = new FileCopyParams("resources/.qiniu-fantx.properties");
 //        String ak = fileCopyParams.getProcessAk();
 //        String sk = fileCopyParams.getProcessSk();
-//        Configuration configuration = new Configuration(Zone.autoZone());
+        Configuration configuration = new Configuration(Zone.autoZone());
 //        ILineProcess processor = new FileCopy(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
 //                fileCopyParams.getTargetBucket(), resultFileDir);
 //        ILineProcess processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
+        // pfop request
+        PfopParams pfopParams = new PfopParams("resources/.qiniu-fantx.properties");
+        String ak = pfopParams.getProcessAk();
+        String sk = pfopParams.getProcessSk();
+        processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
+                pfopParams.getPipeline(), resultFileDir);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
