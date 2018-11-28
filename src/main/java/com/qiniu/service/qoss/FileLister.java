@@ -167,6 +167,13 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return current;
     }
 
+    @Override
+    public void remove() {
+        this.bucketManager = null;
+        this.fileInfoList = null;
+        this.exception = null;
+    }
+
     public class ListLine implements Comparable {
 
         public FileInfo fileInfo;

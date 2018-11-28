@@ -196,6 +196,8 @@ public class ListBucket {
         } finally {
             fileMap.closeWriter();
             if (fileProcessor != null) fileProcessor.closeResource();
+            fileLister.remove();
+            fileLister = null;
         }
     }
 

@@ -23,7 +23,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private FileMap fileMap;
 
     private void initBaseParams() {
-        this.processName = "fopresult";
+        this.processName = "pfopresult";
     }
 
     public QueryPfopResult(String resultFileDir) {

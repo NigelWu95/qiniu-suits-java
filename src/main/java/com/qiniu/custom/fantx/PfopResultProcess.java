@@ -21,7 +21,7 @@ public class PfopResultProcess implements ILineProcess<Map<String, String>>, Clo
     private FileMap fileMap;
 
     private void initBaseParams() {
-        this.processName = "fopresult";
+        this.processName = "result";
     }
 
     public PfopResultProcess(String resultFileDir) {
