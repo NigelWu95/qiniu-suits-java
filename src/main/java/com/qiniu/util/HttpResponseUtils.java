@@ -41,6 +41,12 @@ public class HttpResponseUtils {
         }
     }
 
+    public static void processException(QiniuException e, FileMap fileMap, String processName, String info, int count)
+            throws QiniuException {
+        if (count > 0) if (e != null && e.response != null) e.response.close();
+        processException(e, fileMap, processName, info);
+    }
+
     public static String getResult(Response response) throws QiniuException {
         if (response == null) return null;
         String responseBody = response.bodyString();

@@ -157,11 +157,13 @@ public class ListBucket {
             throws QiniuException {
         List<FileInfo> fileInfoList;
         String marker = fileLister.getMarker();
+        int maxError = 50 * retryCount;
         while (fileLister.hasNext() || !StringUtils.isNullOrEmpty(marker)) {
             recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
             if (fileLister.exception != null) {
-                HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker);
+                maxError--;
+                HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker, maxError);
                 System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
                         fileLister.exception.error() + " retrying...");
                 fileLister.exception = null;
