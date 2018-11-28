@@ -126,9 +126,10 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
                 Reader reader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                List<String> lines = bufferedReader.lines().collect(Collectors.toList());
-                List<ListLine> listLines = lines.parallelStream()
+                List<String> lines = bufferedReader.lines()
                         .filter(line -> !StringUtils.isNullOrEmpty(line))
+                        .collect(Collectors.toList());
+                List<ListLine> listLines = lines.parallelStream()
                         .map(line -> new ListLine().fromLine(line))
                         .collect(Collectors.toList());
                 if (listLines.size() < lines.size()) {
@@ -201,7 +202,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         public ListLine fromLine(String line) {
 
             if (!StringUtils.isNullOrEmpty(line)) {
-                JsonObject json = new JsonObject();
+                JsonObject json = JsonConvertUtils.toJsonObject(line);
                 JsonElement item = json.get("item");
                 JsonElement marker = json.get("marker");
                 JsonElement dir = json.get("dir");
