@@ -122,8 +122,8 @@ public class ListBucket {
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
         List<FileLister> fileListerList = new ArrayList<>();
-        FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix, null,
-                null, unitLen, version, retryCount);
+        FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix,
+                null, null, unitLen, version, retryCount);
 
         if (level == 1) {
 //            validPrefixList.add(cPrefix);
