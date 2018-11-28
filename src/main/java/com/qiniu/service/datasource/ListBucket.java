@@ -158,8 +158,8 @@ public class ListBucket {
         List<FileInfo> fileInfoList;
         String marker = fileLister.getMarker();
         int maxError = 50 * retryCount;
+        recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
         while (fileLister.hasNext() || !StringUtils.isNullOrEmpty(marker)) {
-            recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
             if (fileLister.exception != null) {
                 maxError--;
@@ -170,6 +170,7 @@ public class ListBucket {
                 continue;
             }
             marker = fileLister.getMarker();
+            recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             if (!StringUtils.isNullOrEmpty(endFile)) {
                 marker = fileInfoList.parallelStream()
                         .anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0)
