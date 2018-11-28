@@ -108,41 +108,50 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
 
     protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
 
+    public List<String> singleRun(List<FileInfo> fileInfoList) throws QiniuException {
+
+        List<String> resultList = new ArrayList<>();
+        for (FileInfo fileInfo : fileInfoList) {
+            try {
+                Response response = singleWithRetry(fileInfo, retryCount);
+                String result = HttpResponseUtils.getResult(response);
+                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+            } catch (QiniuException e) {
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+            }
+        }
+
+        return resultList;
+    }
+
+    public List<String> batchRun(List<FileInfo> fileInfoList) throws QiniuException {
+
+        List<String> resultList = new ArrayList<>();
+        int times = fileInfoList.size()/1000 + 1;
+        for (int i = 0; i < times; i++) {
+            List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
+                    fileInfoList.size() : 1000 * (i + 1));
+            if (processList.size() > 0) {
+                try {
+                    Response response = batchWithRetry(fileInfoList, retryCount);
+                    String result = HttpResponseUtils.getResult(response);
+                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                } catch (QiniuException e) {
+                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
+                            String.join(",", processList.stream()
+                                    .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
+                }
+            }
+        }
+        return resultList;
+    }
+
     public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-
-        List<String> resultList = new ArrayList<>();
-        if (batch) {
-            int times = fileInfoList.size()/1000 + 1;
-            for (int i = 0; i < times; i++) {
-                List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
-                        fileInfoList.size() : 1000 * (i + 1));
-                if (processList.size() > 0) {
-                    try {
-                        Response response = batchWithRetry(fileInfoList, retryCount);
-                        String result = HttpResponseUtils.getResult(response);
-                        if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
-                    } catch (QiniuException e) {
-                        HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
-                                String.join(",", processList.stream()
-                                        .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
-                    }
-                }
-            }
-        } else {
-            for (FileInfo fileInfo : fileInfoList) {
-                try {
-                    Response response = singleWithRetry(fileInfo, retryCount);
-                    String result = HttpResponseUtils.getResult(response);
-                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
-                } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
-                }
-            }
-        }
+        List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
