@@ -5,6 +5,7 @@ import com.qiniu.model.parameter.AvinfoParams;
 import com.qiniu.model.parameter.FileCopyParams;
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -21,15 +22,15 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         String resultFileDir = fileInputParams.getResultFileDir();
-//        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu-fantx.properties");
+        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu-fantx.properties");
         // parse avinfo from files.
-//        ILineProcess processor = new AvinfoProcess(avinfoParams.getDomain(), avinfoParams.getBucket(), resultFileDir);
+//        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
         // query persistent id and parse
-        ILineProcess processor = new QueryPfopResult(resultFileDir);
+//        ILineProcess processor = new QueryPfopResult(resultFileDir);
         // filter pfop result
 //        ILineProcess processor = new PfopResultProcess(resultFileDir);
         // process avinfo
-//        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
+        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
         // copy file
 //        FileCopyParams fileCopyParams = new FileCopyParams("resources/.qiniu-fantx.properties");
 //        String ak = fileCopyParams.getProcessAk();
@@ -37,6 +38,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //        Configuration configuration = new Configuration(Zone.autoZone());
 //        ILineProcess processor = new FileCopy(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
 //                fileCopyParams.getTargetBucket(), resultFileDir);
+//        ILineProcess processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();

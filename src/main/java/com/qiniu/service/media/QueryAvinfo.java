@@ -94,7 +94,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         for (Map<String, String> line : lineList) {
             try {
                 Avinfo avinfo = singleWithRetry(line.get("0"), retryCount);
-                if (avinfo != null) resultList.add(line.toString() + "\t" + JsonConvertUtils.toJson(avinfo));
+                if (avinfo != null) resultList.add(line.get("0") + "\t" + JsonConvertUtils.toJson(avinfo));
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));

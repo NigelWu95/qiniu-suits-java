@@ -124,6 +124,32 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         if (m3u8FopList.size() > 0) fileMap.writeKeyFile("tom3u8" + resultFileIndex, String.join("\n", m3u8FopList));
     }
 
+//    public void processLine(List<Map<String, String>> lineList) {
+//
+//        lineList = lineList == null ? null : lineList.parallelStream()
+//                .filter(Objects::nonNull).collect(Collectors.toList());
+//        if (lineList == null || lineList.size() == 0) return;
+//        List<String> mp4FopList = new ArrayList<>();
+//
+//        for (Map<String, String> line : lineList) {
+//            try {
+//                String toKey = line.get("0");
+//                String srcKey = line.get("1");
+//                String mp4Fop720 = srcKey + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
+//                String mp4Fop480 = srcKey + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
+//
+//                if (toKey.contains("F480")) {
+//                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + UrlSafeBase64.encodeToString(saveBucket + ":" + toKey));
+//                } else if (toKey.contains("F720")) {
+//                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + toKey));
+//                }
+//            } catch (Exception e) {
+//                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
+//            }
+//        }
+//        if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultFileIndex, String.join("\n", mp4FopList));
+//    }
+
     public void closeResource() {
         fileMap.closeWriter();
     }
