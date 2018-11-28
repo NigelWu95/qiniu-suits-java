@@ -2,14 +2,14 @@ package com.qiniu.custom.fantx;
 
 import com.qiniu.model.parameter.AvinfoParams;
 import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.media.QueryPfopResult;
 
-public class AvinfoFileInput extends FileInput {
+public class FileInput extends com.qiniu.service.datasource.FileInput {
 
     public static void main(String[] args) throws Exception {
 
-        FileInputParams fileInputParams = new FileInputParams("resources/.qiniu.properties");
+        FileInputParams fileInputParams = new FileInputParams("resources/.qiniu-fantx.properties");
         String filePath = fileInputParams.getFilePath();
         String separator = fileInputParams.getSeparator();
         int keyIndex = fileInputParams.getKeyIndex();
@@ -17,9 +17,12 @@ public class AvinfoFileInput extends FileInput {
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         String resultFileDir = fileInputParams.getResultFileDir();
-        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu.properties");
-        ILineProcess processor = new AvinfoProcess(avinfoParams.getDomain(), avinfoParams.getBucket(), resultFileDir);
-        AvinfoFileInput fileInput = new AvinfoFileInput(separator, keyIndex, unitLen);
+        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu-fantx.properties");
+        // parse avinfo from files.
+//        ILineProcess processor = new AvinfoProcess(avinfoParams.getDomain(), avinfoParams.getBucket(), resultFileDir);
+        // query persistent id and parse
+        ILineProcess processor = new QueryPfopResult(resultFileDir);
+        FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
     }
@@ -28,7 +31,7 @@ public class AvinfoFileInput extends FileInput {
     private int keyIndex;
     private int unitLen;
 
-    public AvinfoFileInput(String separator, int keyIndex, int unitLen) {
+    public FileInput(String separator, int keyIndex, int unitLen) {
         super(separator, keyIndex, unitLen);
         this.separator = separator;
         this.keyIndex = keyIndex;
