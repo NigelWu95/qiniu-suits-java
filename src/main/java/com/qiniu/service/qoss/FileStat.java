@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 
 public class FileStat extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
 
-    private String processName;
-
     private void initBaseParams() {
         this.processName = "stat";
     }
