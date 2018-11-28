@@ -6,7 +6,6 @@ import com.qiniu.model.parameter.FileCopyParams;
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QueryPfopResult;
-import com.qiniu.service.qoss.CopyFile;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
