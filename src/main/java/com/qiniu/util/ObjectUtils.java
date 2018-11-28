@@ -26,6 +26,7 @@ public class ObjectUtils {
 
     public static String addSuffixWithExt(String name, String suffix, String ext) {
 
+        if (name == null) return suffix + "null." + ext;
         String[] names = name.split("\\.");
         if (names.length < 2) return name + suffix;
         else {

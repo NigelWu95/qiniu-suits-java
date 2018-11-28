@@ -52,12 +52,10 @@ public class SplitLineParser implements ILineParser {
     }
 
     public Map<String, String> getItemMap(String line) {
-        if (itemMap == null) {
-            if (line != null) splitLine(line);
-            this.itemMap = new HashMap<>();
-            for (int i = 0; i < itemList.size(); i++) {
-                this.itemMap.put(String.valueOf(i), itemList.get(i));
-            }
+        if (line != null) splitLine(line);
+        this.itemMap = new HashMap<>();
+        for (int i = 0; i < itemList.size(); i++) {
+            this.itemMap.put(String.valueOf(i), itemList.get(i));
         }
         return itemMap;
     }

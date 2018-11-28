@@ -23,7 +23,9 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
         // query persistent id and parse
 //        ILineProcess processor = new QueryPfopResult(resultFileDir);
         // filter pfop result
-        ILineProcess processor = new PfopResultProcess(resultFileDir);
+//        ILineProcess processor = new PfopResultProcess(resultFileDir);
+        // process avinfo
+        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
