@@ -24,6 +24,10 @@ public class ObjectUtils {
         return prefix + addSuffixWithExt(name, suffix, ext);
     }
 
+    public static String replaceExt(String name, String ext) {
+        return addSuffixWithExt(name, "", ext);
+    }
+
     public static String addSuffixWithExt(String name, String suffix, String ext) {
 
         if (name == null) return "null" + suffix + "." + ext;

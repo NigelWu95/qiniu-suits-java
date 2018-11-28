@@ -45,7 +45,9 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
         PfopParams pfopParams = new PfopParams("resources/.qiniu-fantx.properties");
         String ak = pfopParams.getProcessAk();
         String sk = pfopParams.getProcessSk();
-        processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
+//        processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
+//                pfopParams.getPipeline(), resultFileDir);
+        processor = new PfopProcess(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
                 pfopParams.getPipeline(), resultFileDir);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
