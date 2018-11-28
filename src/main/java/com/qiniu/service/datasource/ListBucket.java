@@ -155,26 +155,19 @@ public class ListBucket {
 
     private void seekListerToEnd(FileLister fileLister, String endFile, FileMap fileMap, ILineProcess processor)
             throws QiniuException {
-        List<FileInfo> fileInfoList;
-        String marker = fileLister.getMarker();
-        int maxError = 50 * retryCount;
-        recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
-        while (fileLister.hasNext() || !StringUtils.isNullOrEmpty(marker)) {
-            fileInfoList = fileLister.next().parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
-            if (fileLister.exception != null) {
+        while (fileLister.hasNext()) {
+            List<FileInfo> fileInfoList = fileLister.next();
+            int maxError = 20 * retryCount;
+            while (fileLister.exception != null) {
                 maxError--;
-                if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap, "list", marker);
+                if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap, "list",
+                        fileLister.getPrefix() + "|" + fileLister.getMarker());
                 System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
                         fileLister.error() + " retrying...");
                 fileLister.exception = null;
-                continue;
+                fileInfoList = fileLister.next();
             }
-            marker = fileLister.getMarker();
-            recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
             if (!StringUtils.isNullOrEmpty(endFile)) {
-                marker = fileInfoList.parallelStream()
-                        .anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0)
-                        ? null : marker;
                 fileInfoList = fileInfoList.parallelStream()
                         .filter(fileInfo -> fileInfo.key.compareTo(endFile) < 0)
                         .collect(Collectors.toList());
@@ -186,6 +179,11 @@ public class ListBucket {
             }
             if (processor != null) processor.processLine(fileInfoList.parallelStream()
                     .filter(Objects::nonNull).collect(Collectors.toList()));
+            recordProgress(fileLister.getPrefix(), fileLister.getMarker(), endFile, fileMap);
+            if (!StringUtils.isNullOrEmpty(endFile)) {
+                if (fileInfoList.parallelStream().anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0))
+                    break;
+            }
         }
     }
 
