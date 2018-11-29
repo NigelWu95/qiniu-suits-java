@@ -221,23 +221,27 @@ public class FileLister implements Iterator<List<FileInfo>> {
         }
 
         public ListLine fromLine(String line) {
-
-            if (!StringUtils.isNullOrEmpty(line)) {
-                JsonObject json = JsonConvertUtils.toJsonObject(line);
-                JsonElement item = json.get("item");
-                JsonElement marker = json.get("marker");
-                JsonElement dir = json.get("dir");
-                if (item != null && !(item instanceof JsonNull)) {
-                    this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
+            try {
+                if (!StringUtils.isNullOrEmpty(line)) {
+                    JsonObject json = JsonConvertUtils.toJsonObject(line);
+                    JsonElement item = json.get("item");
+                    JsonElement marker = json.get("marker");
+                    JsonElement dir = json.get("dir");
+                    if (item != null && !(item instanceof JsonNull)) {
+                        this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
+                    }
+                    if (marker != null && !(marker instanceof JsonNull)) {
+                        this.marker = marker.getAsString();
+                    }
+                    if (dir != null && !(dir instanceof JsonNull)) {
+                        this.dir = dir.getAsString();
+                    }
                 }
-                if (marker != null && !(marker instanceof JsonNull)) {
-                    this.marker = marker.getAsString();
-                }
-                if (dir != null && !(dir instanceof JsonNull)) {
-                    this.dir = dir.getAsString();
-                }
+                return this;
+            } catch (Exception e) {
+                return null;
             }
-            return this;
+
         }
     }
 }
