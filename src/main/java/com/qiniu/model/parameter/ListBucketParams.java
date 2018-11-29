@@ -13,6 +13,8 @@ public class ListBucketParams extends QossParams {
     private String level = "";
     private String unitLen = "";
     private String customPrefix;
+    private String marker;
+    private String end;
     private String antiPrefix;
 
     public ListBucketParams(String[] args) throws Exception {
@@ -22,6 +24,8 @@ public class ListBucketParams extends QossParams {
         try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) {}
+        try { this.marker = getParamFromArgs("marker"); } catch (Exception e) {}
+        try { this.end = getParamFromArgs("end"); } catch (Exception e) {}
         try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
     }
 
@@ -32,6 +36,8 @@ public class ListBucketParams extends QossParams {
         try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) {}
+        try { this.marker = getParamFromConfig("marker"); } catch (Exception e) {}
+        try { this.end = getParamFromConfig("end"); } catch (Exception e) {}
         try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
     }
 
@@ -73,6 +79,14 @@ public class ListBucketParams extends QossParams {
 
     public String getCustomPrefix() {
         return customPrefix;
+    }
+
+    public String getMarker() {
+        return marker;
+    }
+
+    public String getEnd() {
+        return end;
     }
 
     public List<String> getAntiPrefix() {

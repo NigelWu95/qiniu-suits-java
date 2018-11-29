@@ -21,6 +21,10 @@ public class FileChecker {
         this.algorithm = (algorithm == null || "".equals(algorithm)) ? "md5" : algorithm;
     }
 
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
     public Qhash getQHash(String url) throws QiniuException, UnknownHostException {
 
         String[] addr = url.split("/");

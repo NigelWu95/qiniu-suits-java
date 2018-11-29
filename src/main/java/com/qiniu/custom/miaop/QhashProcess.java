@@ -67,16 +67,16 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
         return domain;
     }
 
-    public Qhash singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
+    public Qhash singleWithRetry(String key, int retryCount) throws QiniuException {
 
         Qhash qhash = null;
         try {
-            qhash = fileChecker.getQHash(domain, line.get("0"));
+            qhash = fileChecker.getQHash(domain, key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = fileChecker.getQHash(domain, line.get("0"));
+                    qhash = fileChecker.getQHash(domain, key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -96,13 +96,13 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
         List<String> failList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                Qhash qhash = singleWithRetry(line, retryCount);
+                Qhash qhash = singleWithRetry(line.get("0"), retryCount);
                 if (qhash == null) throw new QiniuException(null, "empty qhash");
                 String md5 = qhash.hash;
-                if (md5.equals(line.get("1"))) successList.add(line.toString() + "\t" + JsonConvertUtils.toJson(qhash));
+                if (md5.equals(line.get("1"))) successList.add(line.get("0") + "\t" + JsonConvertUtils.toJson(qhash));
                 else failList.add(line.toString() + "\t" + JsonConvertUtils.toJson(qhash));
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
             }
         }
         if (successList.size() > 0) fileMap.writeSuccess(String.join("\n", successList));

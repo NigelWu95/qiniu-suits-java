@@ -27,12 +27,11 @@ public class FileInput {
         this.unitLen = unitLen;
     }
 
-    public void traverseByReader(int finalI, List<BufferedReader> sourceReaders, ILineProcess fileProcessor) {
+    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess fileProcessor) {
 
         ILineProcess processor = null;
         ILineParser lineParser = new SplitLineParser(separator);
         try {
-            BufferedReader bufferedReader = sourceReaders.get(finalI);
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
             List<Map<String, String>> lineList = bufferedReader.lines().parallel()
                     .map(lineParser::getItemMap)
@@ -84,13 +83,12 @@ public class FileInput {
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
-
         List<BufferedReader> sourceReaders = sourceKeys.parallelStream()
                 .map(fileMap::getReader)
                 .collect(Collectors.toList());
         for (int i = 0; i < sourceReaders.size(); i++) {
             int finalI = i;
-            executorPool.execute(() -> traverseByReader(finalI, sourceReaders, processor));
+            executorPool.execute(() -> traverseByReader(finalI, sourceReaders.get(finalI), processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);

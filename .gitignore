@@ -22,6 +22,6 @@ out/
 .idea_modules/
 
 ### custom
-resources/.qiniu.properties
+resources/.*.properties
 assembly/
 .DS_Store
