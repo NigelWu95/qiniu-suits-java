@@ -10,6 +10,7 @@ import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.*;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.util.*;
@@ -126,9 +127,14 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
                 Reader reader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                List<String> lines = bufferedReader.lines()
-                        .filter(line -> !StringUtils.isNullOrEmpty(line))
-                        .collect(Collectors.toList());
+                List<String> lines;
+                try {
+                    lines = bufferedReader.lines()
+                            .filter(line -> !StringUtils.isNullOrEmpty(line))
+                            .collect(Collectors.toList());
+                } catch (Exception e) {
+                    throw new QiniuException(e);
+                }
                 List<ListLine> listLines = lines.parallelStream()
                         .map(line -> new ListLine().fromLine(line))
                         .filter(Objects::nonNull)

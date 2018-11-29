@@ -5,7 +5,6 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.qoss.FileLister;
@@ -191,10 +190,13 @@ public class ListBucket {
                     fileLister.exception = null;
                     fileInfoList = fileLister.next();
                 }
+                int size = fileInfoList.size();
+                int finaSize = size;
                 if (!StringUtils.isNullOrEmpty(endFile)) {
                     fileInfoList = fileInfoList.parallelStream()
                             .filter(fileInfo -> fileInfo.key.compareTo(endFile) < 0)
                             .collect(Collectors.toList());
+                    finaSize = fileInfoList.size();
                 }
                 writeResult(fileInfoList, fileMap, 1);
                 if (doFilter || doAntiFilter) {
@@ -204,10 +206,7 @@ public class ListBucket {
                 if (fileProcessor != null) fileProcessor.processLine(fileInfoList.parallelStream()
                         .filter(Objects::nonNull).collect(Collectors.toList()));
                 recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
-                if (!StringUtils.isNullOrEmpty(endFile)) {
-                    if (fileInfoList.parallelStream().anyMatch(fileInfo -> endFile.compareTo(fileInfo.key) <= 0))
-                        break;
-                }
+                if (finaSize < size) break;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
