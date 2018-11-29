@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qiniu-suits-java</artifactId>
-    <version>1.7</version>
+    <version>2.0</version>
     <name>qiniu-suits-java</name>
 
     <properties>
