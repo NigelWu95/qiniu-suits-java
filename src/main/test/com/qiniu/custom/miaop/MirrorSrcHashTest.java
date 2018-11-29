@@ -23,7 +23,7 @@ public class MirrorSrcHashTest {
     @Test
     public void testSingleWithRetry() throws QiniuException {
         Map<String,String> line = new HashMap<String, String>(){{ put("0", "images%2F6469036258323595265_audit_9.jpg"); }};
-        String md5 = mirrorSrcHash.singleWithRetry(line, 3);
+        String md5 = mirrorSrcHash.singleWithRetry(line.get("0"), 3);
         System.out.println(md5);
     }
 }

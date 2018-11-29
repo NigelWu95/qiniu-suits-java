@@ -10,6 +10,7 @@ import com.qiniu.sdk.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.*;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.util.*;
@@ -21,12 +22,12 @@ public class FileLister implements Iterator<List<FileInfo>> {
     private String bucket;
     private String prefix;
     private String delimiter;
-    private volatile String marker;
+    private String marker;
     private int limit;
     private int version;
-    private volatile int retryCount;
-    private volatile List<FileInfo> fileInfoList;
-    public volatile QiniuException exception;
+    private int retryCount;
+    private List<FileInfo> fileInfoList;
+    public QiniuException exception;
 
     public FileLister(BucketManager bucketManager, String bucket, String prefix, String delimiter, String marker,
                       int limit, int version, int retryCount) throws QiniuException {
@@ -87,7 +88,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
      * @return
      * @throws QiniuException
      */
-    synchronized public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
+    public Response list(String prefix, String delimiter, String marker, int limit) throws QiniuException {
 
         Response response = null;
         try {
@@ -110,7 +111,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return response;
     }
 
-    synchronized private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
+    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
             throws QiniuException {
         List<FileInfo> resultList = new ArrayList<>();
         Response response = list(prefix, delimiter, marker, limit);
@@ -126,12 +127,24 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
                 Reader reader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                List<ListLine> listLines = bufferedReader.lines().parallel()
-                        .filter(line -> !StringUtils.isNullOrEmpty(line))
+                List<String> lines;
+                try {
+                    lines = bufferedReader.lines()
+                            .filter(line -> !StringUtils.isNullOrEmpty(line))
+                            .collect(Collectors.toList());
+                } catch (Exception e) {
+                    throw new QiniuException(e);
+                }
+                List<ListLine> listLines = lines.parallelStream()
                         .map(line -> new ListLine().fromLine(line))
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
+                if (listLines.size() < lines.size()) {
+                    throw new QiniuException(new QiniuException(response), "convert line to file info error.");
+                }
                 resultList = listLines.parallelStream()
                         .map(listLine -> listLine.fileInfo)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
                 Optional<ListLine> lastListLine = listLines.parallelStream()
                         .max(ListLine::compareTo);
@@ -143,22 +156,41 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return resultList;
     }
 
+    private boolean checkMarkerValid() {
+        return marker != null && !"".equals(marker);
+    }
+
+    private boolean checkListValid() {
+        return fileInfoList != null && fileInfoList.size() > 0;
+    }
+
     @Override
     public boolean hasNext() {
-        return fileInfoList != null && fileInfoList.size() > 0;
+        return checkMarkerValid() || checkListValid();
     }
 
     @Override
     public List<FileInfo> next() {
         List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
         try {
-            fileInfoList = (marker == null || "".equals(marker)) ? new ArrayList<>() :
-                    getListResult(prefix, delimiter, marker, limit);
+            if (!checkMarkerValid()) fileInfoList = null;
+            else {
+                do {
+                    fileInfoList = getListResult(prefix, delimiter, marker, limit);
+                } while (!checkListValid() && checkMarkerValid());
+            }
         } catch (QiniuException e) {
             fileInfoList = null;
             exception = e;
         }
         return current;
+    }
+
+    @Override
+    public void remove() {
+        this.bucketManager = null;
+        this.fileInfoList = null;
+        this.exception = null;
     }
 
     public class ListLine implements Comparable {
@@ -195,30 +227,27 @@ public class FileLister implements Iterator<List<FileInfo>> {
         }
 
         public ListLine fromLine(String line) {
-
-            if (!StringUtils.isNullOrEmpty(line)) {
-                JsonObject json = new JsonObject();
-                // to test the exceptional line.
-                try {
-                    json = JsonConvertUtils.toJsonObject(line);
-                } catch (JsonParseException e) {
-                    System.out.println(line);
-                    e.printStackTrace();
+            try {
+                if (!StringUtils.isNullOrEmpty(line)) {
+                    JsonObject json = JsonConvertUtils.toJsonObject(line);
+                    JsonElement item = json.get("item");
+                    JsonElement marker = json.get("marker");
+                    JsonElement dir = json.get("dir");
+                    if (item != null && !(item instanceof JsonNull)) {
+                        this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
+                    }
+                    if (marker != null && !(marker instanceof JsonNull)) {
+                        this.marker = marker.getAsString();
+                    }
+                    if (dir != null && !(dir instanceof JsonNull)) {
+                        this.dir = dir.getAsString();
+                    }
                 }
-                JsonElement item = json.get("item");
-                JsonElement marker = json.get("marker");
-                JsonElement dir = json.get("dir");
-                if (item != null && !(item instanceof JsonNull)) {
-                    this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
-                }
-                if (marker != null && !(marker instanceof JsonNull)) {
-                    this.marker = marker.getAsString();
-                }
-                if (dir != null && !(dir instanceof JsonNull)) {
-                    this.dir = dir.getAsString();
-                }
+                return this;
+            } catch (Exception e) {
+                return null;
             }
-            return this;
+
         }
     }
 }

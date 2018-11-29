@@ -2,10 +2,10 @@ package com.qiniu.custom.fantx;
 
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.media.PfopResult;
+import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.storage.Configuration;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,46 +16,64 @@ import java.util.stream.Collectors;
 
 public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private String processName;
-    protected String resultFileDir;
-    private FileMap fileMap;
+    public Auth auth;
+    public Configuration configuration;
+    public OperationManager operationManager;
+    public String bucket;
+    public String pipeline;
+    public String processName;
+    public boolean batch = true;
+    public int retryCount = 3;
+    public String resultFileDir;
+    public FileMap fileMap;
 
     private void initBaseParams() {
-        this.processName = "fopresult";
+        this.processName = "pfop";
     }
 
-    public PfopProcess(String resultFileDir) {
-        initBaseParams();
+    public PfopProcess(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir) {
+        this.auth = auth;
+        this.configuration = configuration;
+        this.operationManager = new OperationManager(auth, configuration);
+        this.bucket = bucket;
+        this.pipeline = pipeline;
         this.resultFileDir = resultFileDir;
+        initBaseParams();
         this.fileMap = new FileMap();
     }
 
-    public PfopProcess(String resultFileDir, int resultFileIndex) throws IOException {
-        this(resultFileDir);
+    public PfopProcess(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir,
+                       int resultFileIndex) throws IOException {
+        this(auth, configuration, bucket, pipeline, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public PfopProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        PfopProcess queryPfopResult = (PfopProcess)super.clone();
-        queryPfopResult.fileMap = new FileMap();
+        PfopProcess qiniuPfop = (PfopProcess)super.clone();
+        qiniuPfop.operationManager = new OperationManager(auth, configuration);
+        qiniuPfop.fileMap = new FileMap();
         try {
-            queryPfopResult.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            qiniuPfop.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return queryPfopResult;
+        return qiniuPfop;
     }
 
-    public void setBatch(boolean batch) {}
+    public void setBatch(boolean batch) {
+        this.batch = batch;
+    }
 
-    public void setRetryCount(int retryCount) {}
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
 
     public String getProcessName() {
         return this.processName;
     }
 
     public String getInfo() {
-        return "";
+        return bucket + "\t" + pipeline;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
@@ -63,20 +81,39 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (lineList == null || lineList.size() == 0) return;
-        List<String> successList = new ArrayList<>();
-        List<String> failList = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                PfopResult pfopResult = JsonConvertUtils.fromJson(line.get("0"), PfopResult.class);
-                if (pfopResult == null) throw new QiniuException(null, "empty pfop result");
-                if (pfopResult.code == 0) successList.add(pfopResult.inputKey + "\t" + pfopResult.items.get(0).key);
-                else failList.add(pfopResult.inputKey + "\t" + pfopResult.code + "\t" + pfopResult.desc);
+                String key = line.get("0");
+                String m3u8Key = ObjectUtils.replaceExt(key, "m3u8");
+                String m3u8Copy = "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
+                String fop = m3u8Copy + UrlSafeBase64.encodeToString(bucket + ":" + m3u8Key);
+                String persistentId = null;
+                try {
+                    persistentId = operationManager.pfop(bucket, key, fop, new StringMap()
+                            .putNotEmpty("pipeline", pipeline));
+                } catch (QiniuException e1) {
+                    HttpResponseUtils.checkRetryCount(e1, retryCount);
+                    while (retryCount > 0) {
+                        try {
+                            persistentId = operationManager.pfop(bucket, key, fop, new StringMap()
+                                    .putNotEmpty("pipeline", pipeline));
+                            retryCount = 0;
+                        } catch (QiniuException e2) {
+                            retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new QiniuException(e, e.getMessage());
+                }
+
+                if (persistentId != null && !"".equals(persistentId)) resultList.add(persistentId);
+                else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
             }
         }
-        if (successList.size() > 0) fileMap.writeSuccess(String.join("\n", successList));
-        if (failList.size() > 0) fileMap.writeErrorOrNull(String.join("\n", failList));
+        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {

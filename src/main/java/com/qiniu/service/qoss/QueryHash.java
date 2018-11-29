@@ -66,16 +66,16 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         return domain;
     }
 
-    public Qhash singleWithRetry(FileInfo fileInfo, int retryCount) throws QiniuException {
+    public Qhash singleWithRetry(String key, int retryCount) throws QiniuException {
 
         Qhash qhash = null;
         try {
-            qhash = fileChecker.getQHash(domain, fileInfo.key);
+            qhash = fileChecker.getQHash(domain, key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = fileChecker.getQHash(domain, fileInfo.key);
+                    qhash = fileChecker.getQHash(domain, key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -94,7 +94,7 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         List<String> resultList = new ArrayList<>();
         for (FileInfo fileInfo : fileInfoList) {
             try {
-                Qhash qhash = singleWithRetry(fileInfo, retryCount);
+                Qhash qhash = singleWithRetry(fileInfo.key, retryCount);
                 if (qhash != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(qhash));
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);

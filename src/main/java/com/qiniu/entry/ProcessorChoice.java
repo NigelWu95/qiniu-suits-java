@@ -127,9 +127,11 @@ public class ProcessorChoice {
                 break;
             }
             case "stat": {
-                FileStatParams fileStatParams = paramFromConfig ?
-                        new FileStatParams(configFilePath) : new FileStatParams(args);
-                processor = new FileStat(fileStatParams.getDomain(), fileStatParams.getResultFileDir());
+                QossParams qossParams = paramFromConfig ? new QossParams(configFilePath) : new QossParams(args);
+                String ak = qossParams.getProcessAk();
+                String sk = qossParams.getProcessSk();
+                processor = new FileStat(Auth.create(ak, sk), configuration, qossParams.getBucket(),
+                        qossParams.getResultFileDir());
                 break;
             }
         }
