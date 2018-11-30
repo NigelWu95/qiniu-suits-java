@@ -124,6 +124,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         if (m3u8FopList.size() > 0) fileMap.writeKeyFile("tom3u8" + resultFileIndex, String.join("\n", m3u8FopList));
     }
 
+    // mp4 retry
 //    public void processLine(List<Map<String, String>> lineList) {
 //
 //        lineList = lineList == null ? null : lineList.parallelStream()

@@ -76,6 +76,11 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         return bucket + "\t" + pipeline;
     }
 
+    /**
+     * 从转码成功的 mp4 进行 copy m3u8
+     * @param lineList
+     * @throws QiniuException
+     */
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
         lineList = lineList == null ? null : lineList.parallelStream()
@@ -110,7 +115,7 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
                 if (persistentId != null && !"".equals(persistentId)) resultList.add(persistentId);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
