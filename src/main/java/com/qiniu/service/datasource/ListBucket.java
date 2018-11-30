@@ -241,7 +241,10 @@ public class ListBucket {
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler((t, e) -> System.out.println(t.getName() + "\t" + e.getMessage()));
+            thread.setUncaughtExceptionHandler((t, e) -> {
+                System.out.println(t.getName() + "\t" + e.getMessage());
+                e.printStackTrace();
+            });
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
