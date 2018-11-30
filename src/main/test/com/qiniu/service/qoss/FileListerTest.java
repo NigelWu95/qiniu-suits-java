@@ -39,8 +39,8 @@ public class FileListerTest {
 //        fileLister = new FileLister(bucketManager, bucket, "~", "", "", unitLen, version, 3);
 //        fileLister = new FileLister(bucketManager, bucket, "X1", "",
 //                "eyJjIjowLCJrIjoiWDFaSDk3V0FERFBLMTY2QzExMUFfODE5MzE0M18yMDE4MTAwNTEzMjY1NTc2MSJ9", unitLen, 1, 3);
-        fileLister = new FileLister(bucketManager, bucket, "X1", "",
-                "eyJjIjowLCJrIjoiWDFaSDk3V0FERFBLMTY2QzExMUFfNDA2ODUyNV8yMDE4MDczMDE4MTkyODY2OSJ9", unitLen, version, 3);
+        fileLister = new FileLister(bucketManager, bucket, "up", "",
+                "eyJjIjowLCJrIjoidXBnY3hjb2RlLzE1LzE2LzM3NTMxNjE1LzM3NTMxNjE1LTYtMTUuZmx2In0=", unitLen, version, 3);
         List<FileInfo> list = fileLister.next();
         Assert.assertTrue(fileLister.hasNext());
     }

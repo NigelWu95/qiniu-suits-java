@@ -125,14 +125,9 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 InputStream inputStream = new BufferedInputStream(response.bodyStream());
                 Reader reader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                List<String> lines;
-                try {
-                    lines = bufferedReader.lines()
+                List<String> lines = bufferedReader.lines()
                             .filter(line -> !StringUtils.isNullOrEmpty(line))
                             .collect(Collectors.toList());
-                } catch (Exception e) {
-                    throw new QiniuException(e);
-                }
                 List<ListLine> listLines = lines.parallelStream()
                         .map(line -> new ListLine().fromLine(line))
                         .filter(Objects::nonNull)
@@ -177,9 +172,9 @@ public class FileLister implements Iterator<List<FileInfo>> {
                     fileInfoList = getListResult(prefix, delimiter, marker, limit);
                 } while (!checkListValid() && checkMarkerValid());
             }
-        } catch (QiniuException e) {
+        } catch (Exception e) {
             fileInfoList = null;
-            exception = e;
+            exception = new QiniuException(e);
         }
         return current;
     }
