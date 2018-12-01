@@ -116,7 +116,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<FileInfo>,
             }
 
             for (VideoTS videoTS : videoTSList) {
-                String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/\\.]{1,3}/)|(\\?.+)")[1];
+                String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
                 fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, "", "");
             }
         }
