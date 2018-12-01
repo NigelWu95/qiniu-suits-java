@@ -137,27 +137,33 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                 }
                 int width = videoStream.width;
 
-                if (key.endsWith(".mp4") || key.endsWith(".MP4")) copyList.add(generateCopyLine(key, width));
-                else mp4FopList.add(generateMp4FopLine(key, width, other));
-
+                String mp4Key1080 = ObjectUtils.addSuffixKeepExt(key, "F1080");
                 String mp4Key720 = ObjectUtils.addSuffixKeepExt(key, "F720");
                 String mp4Key480 = ObjectUtils.addSuffixKeepExt(key, "F480");
                 String m3u8Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
                 String m3u8Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "m3u8");
                 String m3u8Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
 
+                if (key.endsWith(".mp4") || key.endsWith(".MP4")) copyList.add(generateCopyLine(key, width));
+                else {
+                    mp4Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "mp4");
+                    mp4Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "mp4");
+                    mp4Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "mp4");
+                    mp4FopList.add(generateMp4FopLine(key, width, other));
+                }
+
                 if (width > 1280) {
                     mp4FopList.add(generateFopLine(key, mp4Key720, mp4Fop720, other));
                     mp4FopList.add(generateFopLine(key, mp4Key480, mp4Fop480, other));
-                    m3u8FopList.add(generateFopLine(key, m3u8Key1080, m3u8Copy, other));
+                    m3u8FopList.add(generateFopLine(mp4Key1080, m3u8Key1080, m3u8Copy, other));
                     m3u8FopList.add(generateFopLine(mp4Key720, m3u8Key720, m3u8Copy, other));
                     m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy, other));
                 } else if (width > 1000) {
                     mp4FopList.add(generateFopLine(key, mp4Key480, mp4Fop480, other));
-                    m3u8FopList.add(generateFopLine(key, m3u8Key720, m3u8Copy, other));
+                    m3u8FopList.add(generateFopLine(mp4Key720, m3u8Key720, m3u8Copy, other));
                     m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy, other));
                 } else {
-                    m3u8FopList.add(generateFopLine(key, m3u8Key480, m3u8Copy, other));
+                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy, other));
                 }
             } catch (Exception e) {
                 fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage() + "\t" + getInfo());
