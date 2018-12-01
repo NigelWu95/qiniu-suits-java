@@ -29,7 +29,7 @@ public class ListBucketProcess {
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         String process = listBucketParams.getProcess();
-        ILineProcess iLineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+        ILineProcess processor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
@@ -55,11 +55,11 @@ public class ListBucketProcess {
             listFileAntiFilter.setMime(listFilterParams.getAntiMime());
             listBucket.setFilter(listFileFilter, listFileAntiFilter);
             if (multiStatus) {
-                listBucket.concurrentlyList(maxThreads, level, iLineProcessor);
+                listBucket.concurrentlyList(maxThreads, level, processor);
             } else {
-                listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), iLineProcessor);
+                listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
             }
         }
-        if (iLineProcessor != null) iLineProcessor.closeResource();
+        if (processor != null) processor.closeResource();
     }
 }
