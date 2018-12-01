@@ -90,7 +90,7 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         for (Map<String, String> line : lineList) {
             try {
                 String key = line.get("0");
-                String m3u8Key = ObjectUtils.replaceExt(key, "m3u8");
+                String m3u8Key = FileNameUtils.replaceExt(key, "m3u8");
                 String m3u8Copy = "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
                 String fop = m3u8Copy + UrlSafeBase64.encodeToString(bucket + ":" + m3u8Key);
                 String persistentId = null;

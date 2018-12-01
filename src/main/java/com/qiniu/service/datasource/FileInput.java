@@ -4,6 +4,7 @@ import com.qiniu.common.FileMap;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
 
 import java.io.BufferedReader;
@@ -20,6 +21,7 @@ public class FileInput {
     private String separator;
     private int keyIndex;
     private int unitLen;
+    private ITypeConvert typeConverter;
 
     public FileInput(String separator, int keyIndex, int unitLen) {
         this.separator = separator;
