@@ -1,8 +1,7 @@
 package com.qiniu.service.datasource;
 
 import com.qiniu.common.FileMap;
-import com.qiniu.service.fileline.SplitLineParser;
-import com.qiniu.service.interfaces.ILineParser;
+import com.qiniu.service.convert.FileLineConverter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
@@ -18,10 +17,10 @@ import java.util.stream.Collectors;
 
 public class FileInput {
 
+    private String parserTye;
     private String separator;
     private int keyIndex;
     private int unitLen;
-    private ITypeConvert typeConverter;
 
     public FileInput(String separator, int keyIndex, int unitLen) {
         this.separator = separator;
@@ -32,18 +31,15 @@ public class FileInput {
     public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess fileProcessor) {
 
         ILineProcess processor = null;
-        ILineParser lineParser = new SplitLineParser(separator);
+        ITypeConvert typeConverter = new FileLineConverter(parserTye, separator);
         try {
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
-            List<Map<String, String>> lineList = bufferedReader.lines().parallel()
-                    .map(lineParser::getItemMap)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());
             int size = lineList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
-                List<Map<String, String>> processList = lineList.subList(unitLen * j,
+                List<String> processList = lineList.subList(unitLen * j,
                         j == size - 1 ? lineList.size() : unitLen * (j + 1));
-                if (processor != null) processor.processLine(processList);
+                if (processor != null) processor.processLine(typeConverter.convertToVList(processList));
             }
             bufferedReader.close();
         } catch (Exception e) {
