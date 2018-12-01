@@ -1,6 +1,7 @@
 package com.qiniu.custom.fantx;
 
 import com.qiniu.common.FileMap;
+import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -82,7 +83,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
 
     }
 
-    private String generateCopyLine(String key, int width) {
+    private String generateCopyLine(String key, int width) throws QiniuException {
         String keySuffix;
         if (width > 1280) keySuffix = "F1080";
         else if (width > 1000) keySuffix = "F720";
@@ -93,7 +94,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         return copyKey + "\t" + key + "\t" + srcCopy + copySaveAs;
     }
 
-    private String generateMp4FopLine(String key, int width, String other) {
+    private String generateMp4FopLine(String key, int width, String other) throws QiniuException {
         String keySuffix;
         String fop;
         if (width > 1280) {
@@ -109,8 +110,12 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
             fop = mp4Fop480;
         }
         String mp4Key = ObjectUtils.addSuffixWithExt(key, keySuffix, "mp4");
-        String mp41080SaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key);
-        return mp4Key + "\t" + key + "\t" + fop + mp41080SaveAs + other;
+        return generateFopLine(key, mp4Key, fop, other);
+    }
+
+    private String generateFopLine(String key, String toKey, String fop, String other) {
+        String saveAsEntry = UrlSafeBase64.encodeToString(saveBucket + ":" + toKey);
+        return toKey + "\t" + key + "\t" + fop + saveAsEntry + other;
     }
 
     public void processLine1(List<Map<String, String>> lineList) {
@@ -121,19 +126,6 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
 
         for (Map<String, String> line : lineList) {
             String key = line.get("0");
-
-            String mp4Key720 = ObjectUtils.addSuffixKeepExt(key, "F720");
-            String mp4Key480 = ObjectUtils.addSuffixKeepExt(key, "F480");
-            String m3u8Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
-            String m3u8Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "m3u8");
-            String m3u8Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
-
-            String mp4720SaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key720);
-            String mp4480SaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + mp4Key480);
-            String m3u81080SaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key1080);
-            String m3u8720SaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key720);
-            String m3u8480SaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + m3u8Key480);
-
             try {
                 Avinfo avinfo = JsonConvertUtils.fromJson(line.get("1"), Avinfo.class);
                 double duration = Double.valueOf(avinfo.getFormat().duration);
@@ -147,21 +139,28 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
 
                 if (key.endsWith(".mp4") || key.endsWith(".MP4")) copyList.add(generateCopyLine(key, width));
                 else mp4FopList.add(generateMp4FopLine(key, width, other));
+
+                String mp4Key720 = ObjectUtils.addSuffixKeepExt(key, "F720");
+                String mp4Key480 = ObjectUtils.addSuffixKeepExt(key, "F480");
+                String m3u8Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
+                String m3u8Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "m3u8");
+                String m3u8Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
+
                 if (width > 1280) {
-                    mp4FopList.add(mp4Key720 + "\t" + key + "\t" + mp4Fop720 + mp4720SaveAs + other);
-                    mp4FopList.add(mp4Key480 + "\t" + key + "\t" + mp4Fop480 + mp4480SaveAs + other);
-                    m3u8FopList.add(m3u8Key1080 + "\t" + key + "\t" + m3u8Copy + m3u81080SaveAs + other);
-                    m3u8FopList.add(m3u8Key720 + "\t" + mp4Key720 + "\t" + m3u8Copy + m3u8720SaveAs + other);
-                    m3u8FopList.add(m3u8Key480 + "\t" + mp4Key480 + "\t" + m3u8Copy + m3u8480SaveAs + other);
+                    mp4FopList.add(generateFopLine(key, mp4Key720, mp4Fop720, other));
+                    mp4FopList.add(generateFopLine(key, mp4Key480, mp4Fop480, other));
+                    m3u8FopList.add(generateFopLine(key, m3u8Key1080, m3u8Copy, other));
+                    m3u8FopList.add(generateFopLine(mp4Key720, m3u8Key720, m3u8Copy, other));
+                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy, other));
                 } else if (width > 1000) {
-                    mp4FopList.add(mp4Key480 + "\t" + mp4Fop480 + mp4480SaveAs + other);
-                    m3u8FopList.add(m3u8Key720 + "\t" + key + "\t" + m3u8Copy + m3u8720SaveAs + other);
-                    m3u8FopList.add(m3u8Key480 + "\t" + mp4Key480 + "\t" + m3u8Copy + m3u8480SaveAs + other);
+                    mp4FopList.add(generateFopLine(key, mp4Key480, mp4Fop480, other));
+                    m3u8FopList.add(generateFopLine(key, m3u8Key720, m3u8Copy, other));
+                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy, other));
                 } else {
-                    m3u8FopList.add(m3u8Key480 + "\t" + key + "\t" + m3u8Copy + m3u8480SaveAs + other);
+                    m3u8FopList.add(generateFopLine(key, m3u8Key480, m3u8Copy, other));
                 }
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
+                fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage() + "\t" + getInfo());
             }
         }
         if (copyList.size() > 0) fileMap.writeKeyFile("tocopy" + resultFileIndex, String.join("\n", copyList));
@@ -169,23 +168,14 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         if (m3u8FopList.size() > 0) fileMap.writeKeyFile("tom3u8" + resultFileIndex, String.join("\n", m3u8FopList));
     }
 
-    // mp4 retry
+    // non mp4 video process
     public void processLine2(List<Map<String, String>> lineList) {
 
         List<String> mp4FopList = new ArrayList<>();
 
         for (Map<String, String> line : lineList) {
             try {
-                String toKey = line.get("0");
-                String srcKey = line.get("1");
-                String mp4Fop720 = srcKey + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
-                String mp4Fop480 = srcKey + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
-
-                if (toKey.contains("F480")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + UrlSafeBase64.encodeToString(saveBucket + ":" + toKey));
-                } else if (toKey.contains("F720")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + toKey));
-                }
+                String key = line.get("0");
             } catch (Exception e) {
                 fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
             }
@@ -201,14 +191,14 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         for (Map<String, String> line : lineList) {
             try {
                 String toKey = line.get("0");
+                String toSaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + toKey);
                 String srcKey = line.get("1");
-                String mp4Fop720 = srcKey + "\t" + "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
-                String mp4Fop480 = srcKey + "\t" + "avthumb/mp4/s/640x480/autoscale/1|saveas/";
-
                 if (toKey.contains("F480")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + UrlSafeBase64.encodeToString(saveBucket + ":" + toKey));
+                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + toSaveAs);
                 } else if (toKey.contains("F720")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop480 + UrlSafeBase64.encodeToString(saveBucket + ":" + toKey));
+                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop480 + toSaveAs);
+                } else if (toKey.contains("F1080")) {
+                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop1080 + toSaveAs);
                 }
             } catch (Exception e) {
                 fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
