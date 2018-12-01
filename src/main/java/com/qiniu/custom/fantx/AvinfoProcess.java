@@ -6,7 +6,7 @@ import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.ObjectUtils;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.UrlSafeBase64;
 
 import java.io.IOException;
@@ -89,7 +89,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         else if (width > 1000) keySuffix = "F720";
         else keySuffix = "F480";
         String srcCopy = "/copy/" + UrlSafeBase64.encodeToString(saveBucket + ":" + key) + "/";
-        String copyKey = ObjectUtils.addSuffixKeepExt(key, keySuffix);
+        String copyKey = FileNameUtils.addSuffixKeepExt(key, keySuffix);
         String copySaveAs = UrlSafeBase64.encodeToString(saveBucket + ":" + copyKey);
         return copyKey + "\t" + key + "\t" + srcCopy + copySaveAs;
     }
@@ -109,7 +109,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
             keySuffix = "F480";
             fop = mp4Fop480;
         }
-        String mp4Key = ObjectUtils.addSuffixWithExt(key, keySuffix, "mp4");
+        String mp4Key = FileNameUtils.addSuffixWithExt(key, keySuffix, "mp4");
         return generateFopLine(key, mp4Key, fop, other);
     }
 
@@ -137,18 +137,18 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                 }
                 int width = videoStream.width;
 
-                String mp4Key1080 = ObjectUtils.addSuffixKeepExt(key, "F1080");
-                String mp4Key720 = ObjectUtils.addSuffixKeepExt(key, "F720");
-                String mp4Key480 = ObjectUtils.addSuffixKeepExt(key, "F480");
-                String m3u8Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "m3u8");
-                String m3u8Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "m3u8");
-                String m3u8Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "m3u8");
+                String mp4Key1080 = FileNameUtils.addSuffixKeepExt(key, "F1080");
+                String mp4Key720 = FileNameUtils.addSuffixKeepExt(key, "F720");
+                String mp4Key480 = FileNameUtils.addSuffixKeepExt(key, "F480");
+                String m3u8Key1080 = FileNameUtils.addSuffixWithExt(key, "F1080", "m3u8");
+                String m3u8Key720 = FileNameUtils.addSuffixWithExt(key, "F720", "m3u8");
+                String m3u8Key480 = FileNameUtils.addSuffixWithExt(key, "F480", "m3u8");
 
                 if (key.endsWith(".mp4") || key.endsWith(".MP4")) copyList.add(generateCopyLine(key, width));
                 else {
-                    mp4Key1080 = ObjectUtils.addSuffixWithExt(key, "F1080", "mp4");
-                    mp4Key720 = ObjectUtils.addSuffixWithExt(key, "F720", "mp4");
-                    mp4Key480 = ObjectUtils.addSuffixWithExt(key, "F480", "mp4");
+                    mp4Key1080 = FileNameUtils.addSuffixWithExt(key, "F1080", "mp4");
+                    mp4Key720 = FileNameUtils.addSuffixWithExt(key, "F720", "mp4");
+                    mp4Key480 = FileNameUtils.addSuffixWithExt(key, "F480", "mp4");
                     mp4FopList.add(generateMp4FopLine(key, width, other));
                 }
 
@@ -207,7 +207,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                     mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop1080 + toSaveAs);
                 }
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
+                fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" +e.getMessage() + "\t" + getInfo());
             }
         }
         if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultFileIndex, String.join("\n", mp4FopList));
