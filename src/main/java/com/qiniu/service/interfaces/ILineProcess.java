@@ -8,13 +8,17 @@ public interface ILineProcess<T> {
 
     ILineProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
-    void setBatch(boolean batch);
+    default void setBatch(boolean batch) {}
 
     void setRetryCount(int retryCount);
 
-    String getProcessName();
+    default String getProcessName() {
+        return "";
+    }
 
-    String getInfo();
+    default String getInfo() {
+        return "";
+    }
 
     void processLine(List<T> list) throws QiniuException;
 
