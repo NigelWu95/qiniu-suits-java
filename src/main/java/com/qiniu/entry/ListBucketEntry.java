@@ -10,7 +10,7 @@ import com.qiniu.util.Auth;
 
 import java.util.List;
 
-public class ListBucketProcess {
+public class ListBucketEntry {
 
     public static void run(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
 

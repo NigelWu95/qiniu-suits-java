@@ -3,9 +3,7 @@ package com.qiniu.service.convert;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ITypeConvert;
-import com.qiniu.storage.model.FileInfo;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 

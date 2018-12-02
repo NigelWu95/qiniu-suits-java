@@ -4,7 +4,7 @@ import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
 
-public class FileInputProcess {
+public class FileInputEntry {
 
     public static void run(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
 
