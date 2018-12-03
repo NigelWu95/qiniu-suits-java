@@ -1,7 +1,7 @@
 package com.qiniu.service.datasource;
 
 import com.qiniu.common.FileMap;
-import com.qiniu.service.convert.FileLineConverter;
+import com.qiniu.service.convert.FileLineToMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
@@ -31,7 +31,7 @@ public class FileInput {
     public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess fileProcessor) {
 
         ILineProcess processor = null;
-        ITypeConvert typeConverter = new FileLineConverter(parserTye, separator);
+        ITypeConvert typeConverter = new FileLineToMap(parserTye, separator);
         try {
             if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
             List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());

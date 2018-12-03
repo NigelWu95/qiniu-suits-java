@@ -7,11 +7,11 @@ import com.qiniu.service.interfaces.ITypeConvert;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FileLineConverter implements ITypeConvert<String, Map<String, String>> {
+public class FileLineToMap implements ITypeConvert<String, Map<String, String>> {
 
     private ILineParser lineParser;
 
-    public FileLineConverter(String parserTye, String separator) {
+    public FileLineToMap(String parserTye, String separator) {
         if ("json".equals(parserTye)) {}
         else {
             lineParser = new SplitLineParser(separator);
@@ -25,8 +25,15 @@ public class FileLineConverter implements ITypeConvert<String, Map<String, Strin
 
     public List<Map<String, String>> convertToVList(List<String> srcList) {
         return srcList.parallelStream()
-                .map(lineParser::getItemMap)
-                .filter(Objects::nonNull)
+                .filter(line -> line != null && !"".equals(line))
+                .map(line -> {
+                    Map<String, String> itemMap = lineParser.getItemMap(line);
+                    if (itemMap.get("0") == null || "".equals(itemMap.get("0"))) {
+                        System.out.println();
+                        itemMap = lineParser.getItemMap(line);
+                    }
+                    return itemMap;
+                })
                 .collect(Collectors.toList());
     }
 }
