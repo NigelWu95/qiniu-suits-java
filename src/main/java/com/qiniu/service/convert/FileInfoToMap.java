@@ -7,20 +7,20 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FileInfoConverter implements ITypeConvert<FileInfo, Map<String, String>> {
+public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
 
     private Map<String, Boolean> variablesIfUse;
     private List<String> fieldList;
 
-    public FileInfoConverter() {
+    public FileInfoToMap() {
         variablesIfUse = new HashMap<>();
         variablesIfUse.put("key", true);
         Field[] fields = FileInfo.class.getFields();
         Arrays.asList(fields).forEach(field -> this.fieldList.add(field.getName()));
     }
 
-    public FileInfoConverter(boolean hash, boolean fsize, boolean putTime, boolean mimeType, boolean endUser,
-                             boolean type, boolean status) {
+    public FileInfoToMap(boolean hash, boolean fsize, boolean putTime, boolean mimeType, boolean endUser,
+                         boolean type, boolean status) {
         this();
         variablesIfUse.put("hash", hash);
         variablesIfUse.put("fsize", fsize);
