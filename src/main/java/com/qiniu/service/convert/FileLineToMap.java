@@ -26,14 +26,7 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
     public List<Map<String, String>> convertToVList(List<String> srcList) {
         return srcList.parallelStream()
                 .filter(line -> line != null && !"".equals(line))
-                .map(line -> {
-                    Map<String, String> itemMap = lineParser.getItemMap(line);
-                    if (itemMap.get("0") == null || "".equals(itemMap.get("0"))) {
-                        System.out.println();
-                        itemMap = lineParser.getItemMap(line);
-                    }
-                    return itemMap;
-                })
+                .map(lineParser::getItemMap)
                 .collect(Collectors.toList());
     }
 }
