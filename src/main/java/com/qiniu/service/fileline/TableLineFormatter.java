@@ -9,7 +9,7 @@ public class TableLineFormatter implements IStringFormat {
 
     private String separator;
 
-    public void setSeparator(String separator) {
+    public TableLineFormatter(String separator) {
         this.separator = separator;
     }
 

@@ -12,14 +12,14 @@ public class SplitLineParser implements ILineParser {
         this.separator = separator;
     }
 
-    public ArrayList<String> splitLine(String line) {
+    public ArrayList<String> parseLine(String line) {
         if (line == null) return new ArrayList<>();
         String[] items = line.split(separator);
         return new ArrayList<>(Arrays.asList(items));
     }
 
     public Map<String, String> getItemMapByKeys(String line, ArrayList<String> itemKey) {
-        List<String> itemList = splitLine(line);
+        List<String> itemList = parseLine(line);
         Map<String, String> itemMap = new HashMap<>();
         for (int i = 0; i < itemKey.size(); i++) {
             itemMap.put(itemKey.get(i), itemList.get(i));
@@ -29,7 +29,7 @@ public class SplitLineParser implements ILineParser {
     }
 
     public Map<String, String> getItemMap(String line) {
-        List<String> itemList = splitLine(line);
+        List<String> itemList = parseLine(line);
         Map<String, String> itemMap = new HashMap<>();
         for (int i = 0; i < itemList.size(); i++) {
             itemMap.put(String.valueOf(i), itemList.get(i));

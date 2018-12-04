@@ -1,5 +1,6 @@
 package com.qiniu.service.convert;
 
+import com.qiniu.service.fileline.JsonLineParser;
 import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ITypeConvert;
@@ -12,7 +13,9 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
     private ILineParser lineParser;
 
     public FileLineToMap(String parserTye, String separator) {
-        if ("json".equals(parserTye)) {}
+        if ("json".equals(parserTye)) {
+            lineParser = new JsonLineParser();
+        }
         else {
             lineParser = new SplitLineParser(separator);
         }
