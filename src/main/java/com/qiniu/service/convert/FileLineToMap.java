@@ -25,10 +25,14 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
         return true;
     }
 
+    public Map<String, String> toV(String line) {
+        return lineParser.getItemMap(line);
+    }
+
     public List<Map<String, String>> convertToVList(List<String> srcList) {
         return srcList.parallelStream()
                 .filter(line -> line != null && !"".equals(line))
-                .map(lineParser::getItemMap)
+                .map(this::toV)
                 .collect(Collectors.toList());
     }
 }

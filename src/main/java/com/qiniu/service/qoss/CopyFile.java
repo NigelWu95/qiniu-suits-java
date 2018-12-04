@@ -6,14 +6,14 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class CopyFile extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String toBucket;
     private boolean keepKey;
@@ -56,13 +56,14 @@ public class CopyFile extends OperationBase implements ILineProcess<FileInfo>, C
         return bucket + "\t" + toBucket + "\t" + keepKey + "\t" + keyPrefix;
     }
 
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        return bucketManager.copy(bucket, fileInfo.key, toBucket, keepKey ? keyPrefix + fileInfo.key : null, false);
+    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
+        return bucketManager.copy(bucket, fileInfo.get("key"), toBucket, keepKey ? keyPrefix +
+                fileInfo.get("key") : null, false);
     }
 
-    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList) {
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList) {
 
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList());
         if (keepKey) {
             keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, keyPrefix + fileKey));
         } else {

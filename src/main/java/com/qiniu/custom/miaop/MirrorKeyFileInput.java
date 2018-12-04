@@ -29,7 +29,7 @@ public class MirrorKeyFileInput extends FileInput {
     private int unitLen;
 
     public MirrorKeyFileInput(String separator, int keyIndex, int unitLen) {
-        super(separator, keyIndex, unitLen);
+        super(separator, unitLen);
         this.separator = separator;
         this.keyIndex = keyIndex;
         this.unitLen = unitLen;

@@ -26,7 +26,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         variablesIfUse.put("status", status);
     }
 
-    public Map<String, String> toMap(FileInfo fileInfo) {
+    public Map<String, String> toV(FileInfo fileInfo) {
         Map<String, String> converted = new HashMap<>();
         variablesIfUse.forEach((key, value) -> {
             if (value) {
@@ -52,8 +52,8 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
         return srcList.parallelStream()
                 .filter(Objects::nonNull)
-                .filter(this::filterFileInfo)
-                .map(this::toMap)
+//                .filter(this::filterFileInfo)
+                .map(this::toV)
                 .collect(Collectors.toList());
     }
 }

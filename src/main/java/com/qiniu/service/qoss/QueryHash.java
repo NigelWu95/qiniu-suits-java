@@ -3,18 +3,19 @@ package com.qiniu.service.qoss;
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qoss.Qhash;
+import com.qiniu.service.convert.QhashToString;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
+import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
+public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private FileChecker fileChecker;
@@ -22,6 +23,7 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
     private int retryCount = 3;
     protected String resultFileDir;
     private FileMap fileMap;
+    private ITypeConvert<Qhash, String> typeConverter;
 
     private void initBaseParams(String domain) {
         this.processName = "hash";
@@ -38,6 +40,10 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
     public QueryHash(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    }
+
+    public void setTypeConverter(String format, String separator) {
+        this.typeConverter = new QhashToString(format, separator);
     }
 
     public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -66,16 +72,16 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         return domain;
     }
 
-    public Qhash singleWithRetry(String key, int retryCount) throws QiniuException {
+    public String singleWithRetry(String key, int retryCount) throws QiniuException {
 
-        Qhash qhash = null;
+        String qhash = null;
         try {
-            qhash = fileChecker.getQHash(domain, key);
+            qhash = typeConverter.toV(fileChecker.getQHash(domain, key));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = fileChecker.getQHash(domain, key);
+                    qhash = typeConverter.toV(fileChecker.getQHash(domain, key));
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -86,18 +92,18 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (Map<String, String> fileInfo : fileInfoList) {
             try {
-                Qhash qhash = singleWithRetry(fileInfo.key, retryCount);
-                if (qhash != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(qhash));
+                String qhash = singleWithRetry(fileInfo.get("key"), retryCount);
+                if (qhash != null) resultList.add(fileInfo.get("key") + "\t" + qhash);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
