@@ -1,9 +1,5 @@
 package com.qiniu.service.datasource;
 
-import com.google.gson.JsonObject;
-import com.qiniu.common.FileMap;
-import com.qiniu.common.ListFileAntiFilter;
-import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.service.help.ProgressRecorder;
@@ -19,7 +15,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ListBucket {
 
@@ -28,19 +23,12 @@ public class ListBucket {
     private String bucket;
     private int unitLen;
     private int version;
-    private String resultFormat = "json";
-    private String resultFileDir = "../result";
     private String cPrefix;
     private List<String> antiPrefix;
     private int retryCount;
-    private ListFileFilter filter;
-    private ListFileAntiFilter antiFilter;
-    private boolean doFilter;
-    private boolean doAntiFilter;
     private List<String> originPrefixList = Arrays.asList(
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
                     .split(""));
-
     private ProgressRecorder progressRecorder;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
@@ -55,54 +43,8 @@ public class ListBucket {
         this.retryCount = retryCount;
     }
 
-    public void setResultParams(String resultFormat, String resultFileDir) {
-        this.resultFormat = resultFormat;
-        this.resultFileDir = resultFileDir;
-    }
-
-    public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
-        this.filter = listFileFilter;
-        this.antiFilter = listFileAntiFilter;
-        this.doFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
-        this.doAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
-    }
-
     public void setProgressRecorder(ProgressRecorder progressRecorder) {
         this.progressRecorder = progressRecorder;
-    }
-
-    private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
-
-        if (fileInfoList == null || fileInfoList.size() == 0) {
-            return fileInfoList;
-        } else if (doFilter && doAntiFilter) {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
-                    .collect(Collectors.toList());
-        } else if (doFilter) {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> filter.doFileFilter(fileInfo))
-                    .collect(Collectors.toList());
-        } else if (doAntiFilter) {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
-                    .collect(Collectors.toList());
-        } else {
-            return fileInfoList;
-        }
-    }
-
-    private void writeResult(List<FileInfo> fileInfoList, FileMap fileMap, int writeType) {
-
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        if (fileMap != null) {
-            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
-            List<String> list = resultFormat.equals("json") ?
-                    fileInfoStream.map(JsonConvertUtils::toJsonWithoutUrlEscape).collect(Collectors.toList()) :
-                    fileInfoStream.map(LineUtils::toSeparatedItemLine).collect(Collectors.toList());
-            if (writeType == 1) fileMap.writeSuccess(String.join("\n", list));
-            if (writeType == 2) fileMap.writeOther(String.join("\n", list));
-        }
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
@@ -166,14 +108,6 @@ public class ListBucket {
         fileListerList.add(firstFileLister);
 
         return fileListerList;
-    }
-
-    private void recordProgress(String prefix, String marker, String endFile, FileMap fileMap) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("prefix", prefix);
-        jsonObject.addProperty("marker", marker);
-        jsonObject.addProperty("end", endFile);
-        fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
     private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess processor) {
@@ -255,21 +189,6 @@ public class ListBucket {
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         if (processor != null) processor.closeResource();
-    }
-
-    public void checkValidPrefix(int level) throws IOException {
-        List<FileLister> fileListerList = getFileListerList(1, level);
-        FileMap fileMap = new FileMap();
-        try {
-            fileMap.initWriter(resultFileDir, "list", "check");
-            List<String> validPrefixAndMarker = fileListerList.parallelStream()
-                    .filter(FileLister::hasNext)
-                    .map(fileLister -> fileLister.getPrefix() + "\t" + fileLister.getMarker())
-                    .collect(Collectors.toList());
-            fileMap.writeSuccess(String.join("\n", validPrefixAndMarker));
-        } finally {
-            fileMap.closeWriter();
-        }
     }
 
     public void straightlyList(String marker, String end, ILineProcess processor) throws IOException {

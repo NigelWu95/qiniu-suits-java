@@ -1,8 +1,12 @@
 package com.qiniu.service.interfaces;
 
+import com.qiniu.common.ListFileAntiFilter;
+import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
+import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ILineProcess<T> {
 
@@ -20,7 +24,11 @@ public interface ILineProcess<T> {
         return "";
     }
 
+    default void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {}
+
     void processLine(List<T> list) throws QiniuException;
+
+    default void setNextProcessor(ILineProcess<FileInfo> nextProcessor) {}
 
     void closeResource();
 }

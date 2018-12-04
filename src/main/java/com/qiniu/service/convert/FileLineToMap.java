@@ -15,8 +15,7 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
     public FileLineToMap(String parserTye, String separator) {
         if ("json".equals(parserTye)) {
             lineParser = new JsonLineParser();
-        }
-        else {
+        } else {
             lineParser = new SplitLineParser(separator);
         }
     }

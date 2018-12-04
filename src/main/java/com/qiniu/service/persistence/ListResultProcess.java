@@ -29,7 +29,7 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private boolean doFilter;
     private boolean doAntiFilter;
     private boolean saveTotal = false;
-    private ILineProcess<Map<String, String>> nextProcessor;
+    private ILineProcess<FileInfo> nextProcessor;
 
     private void initBaseParams() {
         this.processName = "list";
@@ -48,7 +48,7 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
+    public void setNextProcessor(ILineProcess<FileInfo> nextProcessor) {
         this.nextProcessor = nextProcessor;
     }
 
@@ -104,6 +104,7 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
                 }
             }
             fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
+            if (nextProcessor != null) nextProcessor.processLine(fileInfoList);
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
