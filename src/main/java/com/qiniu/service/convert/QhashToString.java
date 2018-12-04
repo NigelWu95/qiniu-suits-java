@@ -6,10 +6,7 @@ import com.qiniu.service.fileline.QhashTableFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +37,10 @@ public class QhashToString implements ITypeConvert<Qhash, String> {
     }
 
     public List<String> convertToVList(List<Qhash> srcList) {
-        Stream<Qhash> fileInfoStream = srcList.parallelStream().filter(Objects::nonNull);
-        return fileInfoStream.map(this::toV).collect(Collectors.toList());
+        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
+        return srcList.parallelStream()
+                .filter(Objects::nonNull)
+                .map(this::toV)
+                .collect(Collectors.toList());
     }
 }

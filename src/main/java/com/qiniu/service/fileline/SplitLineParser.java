@@ -13,7 +13,6 @@ public class SplitLineParser implements ILineParser {
     }
 
     public ArrayList<String> parseLine(String line) {
-        if (line == null) return new ArrayList<>();
         String[] items = line.split(separator);
         return new ArrayList<>(Arrays.asList(items));
     }

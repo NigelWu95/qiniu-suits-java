@@ -50,6 +50,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
     }
 
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
+        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
         return srcList.parallelStream()
                 .filter(Objects::nonNull)
 //                .filter(this::filterFileInfo)

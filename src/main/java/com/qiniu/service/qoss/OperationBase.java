@@ -64,28 +64,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract Response getResponse(Map<String, String> fileInfo) throws QiniuException;
 
-    synchronized public Response batchWithRetry(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
-
-        Response response = null;
-        batchOperations = getOperations(fileInfoList);
-        try {
-            response = bucketManager.batch(batchOperations);
-        } catch (QiniuException e) {
-            HttpResponseUtils.checkRetryCount(e, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = bucketManager.batch(batchOperations);
-                    retryCount = 0;
-                } catch (QiniuException e1) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
-                }
-            }
-        }
-        batchOperations.clearOps();
-
-        return response;
-    }
-
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
     public List<String> singleRun(List<Map<String, String>> fileInfoList) throws QiniuException {
@@ -96,14 +74,14 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                 Response response = null;
                 try {
                     response = getResponse(fileInfo);
-                } catch (QiniuException e1) {
-                    HttpResponseUtils.checkRetryCount(e1, retryCount);
+                } catch (QiniuException e) {
+                    HttpResponseUtils.checkRetryCount(e, retryCount);
                     while (retryCount > 0) {
                         try {
                             response = getResponse(fileInfo);
                             retryCount = 0;
-                        } catch (QiniuException e2) {
-                            retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                        } catch (QiniuException e1) {
+                            retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                         }
                     }
                 }
@@ -126,7 +104,22 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    Response response = batchWithRetry(fileInfoList, retryCount);
+                    Response response = null;
+                    batchOperations = getOperations(fileInfoList);
+                    try {
+                        response = bucketManager.batch(batchOperations);
+                    } catch (QiniuException e) {
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
+                        while (retryCount > 0) {
+                            try {
+                                response = bucketManager.batch(batchOperations);
+                                retryCount = 0;
+                            } catch (QiniuException e1) {
+                                retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                            }
+                        }
+                    }
+                    batchOperations.clearOps();
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
@@ -141,9 +134,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }

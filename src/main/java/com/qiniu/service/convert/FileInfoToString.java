@@ -42,7 +42,10 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
     }
 
     public List<String> convertToVList(List<FileInfo> srcList) {
-        Stream<FileInfo> fileInfoStream = srcList.parallelStream().filter(Objects::nonNull);
-        return fileInfoStream.map(this::toV).collect(Collectors.toList());
+        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
+        return srcList.parallelStream()
+                .filter(Objects::nonNull)
+                .map(this::toV)
+                .collect(Collectors.toList());
     }
 }
