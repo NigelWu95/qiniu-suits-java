@@ -5,6 +5,7 @@ import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.convert.FileInfoToMap;
+import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
@@ -18,7 +19,8 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
     private String processName;
     private int retryCount = 3;
-    private String resultFormat = "json";
+    private String resultFormat;
+    private String separator;
     private String resultFileDir;
     private FileMap fileMap;
     private ITypeConvert typeConverter;
@@ -28,26 +30,30 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private boolean doAntiFilter;
     private boolean saveTotal = false;
     private ILineProcess<FileInfo> nextProcessor;
+    private ITypeConvert nextTypeConverter;
 
     private void initBaseParams() {
         this.processName = "list";
     }
 
-    public ListResultProcess(ITypeConvert typeConverter, String resultFormat, String resultFileDir) {
+    public ListResultProcess(String resultFormat, String separator, String resultFileDir) {
         initBaseParams();
         this.resultFormat = resultFormat;
+        this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
         this.resultFileDir = resultFileDir;
         this.fileMap = new FileMap();
-        this.typeConverter = typeConverter;
+        this.typeConverter = new FileInfoToString(resultFormat, "\t");
     }
 
-    public ListResultProcess(ITypeConvert typeConverter, String resultFormat, String resultFileDir, int resultFileIndex) throws IOException {
-        this(typeConverter, resultFormat, resultFileDir);
+    public ListResultProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex)
+            throws IOException {
+        this(resultFormat, separator, resultFileDir);
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public void setNextProcessor(ILineProcess<FileInfo> nextProcessor) {
         this.nextProcessor = nextProcessor;
+        this.nextTypeConverter = new FileInfoToMap();
     }
 
     public ListResultProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -100,7 +106,6 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
                 }
             }
             fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
-            ITypeConvert nextTypeConverter = new FileInfoToMap();
             if (nextProcessor != null) nextProcessor.processLine(nextTypeConverter.convertToVList(fileInfoList));
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());

@@ -51,8 +51,7 @@ public class ListBucketEntry {
         listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
         listFileAntiFilter.setMime(listFilterParams.getAntiMime());
 
-        ITypeConvert typeConverter = new FileInfoToString(resultFormat, "\t");
-        ILineProcess processor = new ListResultProcess(typeConverter, resultFormat, resultFileDir);
+        ILineProcess processor = new ListResultProcess(resultFormat, null, resultFileDir);
         ILineProcess nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         processor.setNextProcessor(nextProcessor);
         processor.setFilter(listFileFilter, listFileAntiFilter);
