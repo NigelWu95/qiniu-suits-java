@@ -30,6 +30,7 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
     }
 
     public List<Map<String, String>> convertToVList(List<String> srcList) {
+        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
         return srcList.parallelStream()
                 .filter(line -> line != null && !"".equals(line))
                 .map(this::toV)
