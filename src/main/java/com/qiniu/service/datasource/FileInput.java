@@ -19,12 +19,10 @@ public class FileInput {
 
     private String parserTye;
     private String separator;
-    private int keyIndex;
     private int unitLen;
 
-    public FileInput(String separator, int keyIndex, int unitLen) {
+    public FileInput(String separator, int unitLen) {
         this.separator = separator;
-        this.keyIndex = keyIndex;
         this.unitLen = unitLen;
     }
 
