@@ -5,7 +5,9 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
+import com.qiniu.entry.ProcessorChoice;
 import com.qiniu.sdk.BucketManager;
+import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.qoss.FileLister;
 import com.qiniu.storage.Configuration;
@@ -40,6 +42,8 @@ public class ListBucket {
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
                     .split(""));
 
+    private ProgressRecorder progressRecorder;
+
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
                       String customPrefix, List<String> antiPrefix, int retryCount) {
         this.auth = auth;
@@ -62,6 +66,10 @@ public class ListBucket {
         this.antiFilter = listFileAntiFilter;
         this.doFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
         this.doAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
+    }
+
+    public void setProgressRecorder(ProgressRecorder progressRecorder) {
+        this.progressRecorder = progressRecorder;
     }
 
     private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
@@ -171,22 +179,21 @@ public class ListBucket {
 
     private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess processor) {
 
-        FileMap fileMap = new FileMap();
         ILineProcess fileProcessor = null;
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
-            fileMap.initWriter(resultFileDir, "list", resultIndex);
+            ProgressRecorder recorder = progressRecorder != null ? progressRecorder.getNewInstance(resultIndex) : null;
 
             while (fileLister.hasNext()) {
                 String marker = fileLister.getMarker();
                 List<FileInfo> fileInfoList = fileLister.next();
                 int maxError = 20 * retryCount;
                 while (fileLister.exception != null) {
-                    maxError--;
-                    if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap, "list",
-                            fileLister.getPrefix() + "|" + marker);
                     System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
                             fileLister.error() + " retrying...");
+                    maxError--;
+                    if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, null, "list",
+                            fileLister.getPrefix() + "|" + marker);
                     fileLister.exception = null;
                     fileInfoList = fileLister.next();
                 }
@@ -198,20 +205,13 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finaSize = fileInfoList.size();
                 }
-                writeResult(fileInfoList, fileMap, 1);
-                if (doFilter || doAntiFilter) {
-                    fileInfoList = filterFileInfo(fileInfoList);
-                    writeResult(fileInfoList, fileMap, 2);
-                }
-                if (fileProcessor != null) fileProcessor.processLine(fileInfoList.parallelStream()
-                        .filter(Objects::nonNull).collect(Collectors.toList()));
-                recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
+                if (fileProcessor != null) fileProcessor.processLine(fileInfoList);
+                if (recorder != null) recorder.record(fileLister.getPrefix(), marker, endFile);
                 if (finaSize < size) break;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            fileMap.closeWriter();
             if (fileProcessor != null) fileProcessor.closeResource();
             fileLister.remove();
             fileLister = null;
