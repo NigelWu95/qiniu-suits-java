@@ -26,16 +26,16 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
         String resultFileDir = fileInputParams.getResultFileDir();
         AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu-fantx.properties");
         // parse avinfo from files.
-        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
+//        ILineProcess processor = new AvinfoProcess(avinfoParams.getBucket(), resultFileDir);
         // query persistent id and parse
 //        ILineProcess processor = new QueryPfopResult(resultFileDir);
         // filter pfop result
-//        ILineProcess processor = new PfopResultProcess(resultFileDir);
+        ILineProcess processor = new PfopResultProcess(resultFileDir);
         // copy file
 //        FileCopyParams fileCopyParams = new FileCopyParams("resources/.qiniu-fantx.properties");
 //        String ak = fileCopyParams.getProcessAk();
 //        String sk = fileCopyParams.getProcessSk();
-//        Configuration configuration = new Configuration(Zone.autoZone());
+        Configuration configuration = new Configuration(Zone.autoZone());
 //        ILineProcess processor = new FileCopy(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
 //                fileCopyParams.getTargetBucket(), resultFileDir);
 //        ILineProcess processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
@@ -45,7 +45,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //        String sk = pfopParams.getProcessSk();
 //        ILineProcess processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
 //                pfopParams.getPipeline(), resultFileDir);
-//        processor = new PfopProcess(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
+//        ILineProcess processor = new PfopProcess(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
 //                pfopParams.getPipeline(), resultFileDir);
         FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
