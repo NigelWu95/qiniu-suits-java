@@ -7,17 +7,17 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     protected Auth auth;
     protected Configuration configuration;
@@ -62,9 +62,9 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
 
     public abstract String getInfo();
 
-    protected abstract Response getResponse(FileInfo fileInfo) throws QiniuException;
+    protected abstract Response getResponse(Map<String, String> fileInfo) throws QiniuException;
 
-    synchronized public Response batchWithRetry(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
+    synchronized public Response batchWithRetry(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
 
         Response response = null;
         batchOperations = getOperations(fileInfoList);
@@ -86,12 +86,12 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
         return response;
     }
 
-    protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
+    protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    public List<String> singleRun(List<FileInfo> fileInfoList) throws QiniuException {
+    public List<String> singleRun(List<Map<String, String>> fileInfoList) throws QiniuException {
 
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (Map<String, String> fileInfo : fileInfoList) {
             try {
                 Response response = null;
                 try {
@@ -110,19 +110,19 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
                 String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.get("key"));
             }
         }
 
         return resultList;
     }
 
-    public List<String> batchRun(List<FileInfo> fileInfoList) throws QiniuException {
+    public List<String> batchRun(List<Map<String, String>> fileInfoList) throws QiniuException {
 
         List<String> resultList = new ArrayList<>();
         int times = fileInfoList.size()/1000 + 1;
         for (int i = 0; i < times; i++) {
-            List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
+            List<Map<String, String>> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
                     fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
@@ -132,14 +132,14 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
                             String.join("\n", processList.stream()
-                                    .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
+                                    .map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList())));
                 }
             }
         }
         return resultList;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
         fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());

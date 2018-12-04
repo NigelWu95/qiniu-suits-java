@@ -12,9 +12,7 @@ import com.qiniu.util.ListFileFilterUtils;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
@@ -83,22 +81,20 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         try {
-            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
-
             if (doFilter || doAntiFilter) {
                 if (saveTotal) {
                     fileMap.writeOther(String.join("\n", typeConverter.convertToVList(fileInfoList)));
                 }
                 if (doFilter) {
-                    fileInfoList = fileInfoStream
+                    fileInfoList = fileInfoList.parallelStream()
                             .filter(fileInfo -> filter.doFileFilter(fileInfo))
                             .collect(Collectors.toList());
                 } else if (doAntiFilter) {
-                    fileInfoList = fileInfoStream
+                    fileInfoList = fileInfoList.parallelStream()
                             .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
                             .collect(Collectors.toList());
                 } else {
-                    fileInfoList = fileInfoStream
+                    fileInfoList = fileInfoList.parallelStream()
                             .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
                             .collect(Collectors.toList());
                 }

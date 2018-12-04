@@ -1,10 +1,8 @@
 package com.qiniu.service.interfaces;
 
-import com.qiniu.storage.model.FileInfo;
-
 import java.util.Map;
 
-public interface IStringFormat {
+public interface IStringFormat<T> {
 
-    String toFormatString(FileInfo fileInfo, Map<String, Boolean> variablesIfUse);
+    String toFormatString(T t, Map<String, Boolean> variablesIfUse);
 }

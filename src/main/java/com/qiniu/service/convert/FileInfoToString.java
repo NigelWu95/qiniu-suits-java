@@ -1,14 +1,11 @@
 package com.qiniu.service.convert;
 
-import com.qiniu.service.fileline.JsonLineFormatter;
-import com.qiniu.service.fileline.TableLineFormatter;
+import com.qiniu.service.fileline.FileInfoJsonFormatter;
+import com.qiniu.service.fileline.FileInfoTableFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.LineUtils;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,9 +17,9 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
     public FileInfoToString(String format, String separator) {
         if ("format".equals(format)) {
-            stringFormatter = new JsonLineFormatter();
+            stringFormatter = new FileInfoJsonFormatter();
         } else {
-            stringFormatter = new TableLineFormatter(separator);
+            stringFormatter = new FileInfoTableFormatter(separator);
         }
         variablesIfUse = new HashMap<>();
         variablesIfUse.put("key", true);
@@ -39,13 +36,13 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
         variablesIfUse.put("status", status);
     }
 
-    public String toJson(FileInfo fileInfo) {
+    public String toV(FileInfo fileInfo) {
 
         return stringFormatter.toFormatString(fileInfo, variablesIfUse);
     }
 
     public List<String> convertToVList(List<FileInfo> srcList) {
         Stream<FileInfo> fileInfoStream = srcList.parallelStream().filter(Objects::nonNull);
-        return fileInfoStream.map(this::toJson).collect(Collectors.toList());
+        return fileInfoStream.map(this::toV).collect(Collectors.toList());
     }
 }

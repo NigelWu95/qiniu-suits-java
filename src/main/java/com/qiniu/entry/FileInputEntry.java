@@ -12,12 +12,11 @@ public class FileInputEntry {
                 new FileInputParams(configFilePath) : new FileInputParams(args);
         String filePath = fileInputParams.getFilePath();
         String separator = fileInputParams.getSeparator();
-        int keyIndex = fileInputParams.getKeyIndex();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         ILineProcess iLineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
-        FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
+        FileInput fileInput = new FileInput(separator, unitLen);
         fileInput.process(maxThreads, sourceFilePath, iLineProcessor);
         if (iLineProcessor != null) iLineProcessor.closeResource();
     }
