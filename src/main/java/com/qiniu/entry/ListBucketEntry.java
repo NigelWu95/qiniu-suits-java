@@ -10,9 +10,11 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.persistence.ListResultProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
 import java.util.List;
+import java.util.Map;
 
 public class ListBucketEntry {
 
@@ -51,8 +53,9 @@ public class ListBucketEntry {
         listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
         listFileAntiFilter.setMime(listFilterParams.getAntiMime());
 
-        ILineProcess processor = new ListResultProcess(resultFormat, null, resultFileDir);
-        ILineProcess nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+        ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir);
+        ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig,
+                args, configFilePath);
         processor.setNextProcessor(nextProcessor);
         processor.setFilter(listFileFilter, listFileAntiFilter);
 

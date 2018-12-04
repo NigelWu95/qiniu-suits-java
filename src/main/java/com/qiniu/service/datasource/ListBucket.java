@@ -110,9 +110,9 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess processor) {
+    private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess<FileInfo> processor) {
 
-        ILineProcess fileProcessor = null;
+        ILineProcess<FileInfo> fileProcessor = null;
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
             ProgressRecorder recorder = progressRecorder != null ? progressRecorder.getNewInstance(resultIndex) : null;
@@ -151,7 +151,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, ILineProcess processor) throws QiniuException {
+    public void concurrentlyList(int maxThreads, int level, ILineProcess<FileInfo> processor) throws QiniuException {
         List<FileLister> fileListerList = getFileListerList(unitLen, level);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
@@ -191,7 +191,7 @@ public class ListBucket {
         if (processor != null) processor.closeResource();
     }
 
-    public void straightlyList(String marker, String end, ILineProcess processor) throws IOException {
+    public void straightlyList(String marker, String end, ILineProcess<FileInfo> processor) throws IOException {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
