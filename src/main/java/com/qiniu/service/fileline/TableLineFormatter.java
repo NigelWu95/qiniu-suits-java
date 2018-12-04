@@ -27,6 +27,7 @@ public class TableLineFormatter implements IStringFormat {
                     case "type": converted.append(String.valueOf(fileInfo.type)); break;
 //                    case "status": converted.append(key, fileInfo.status); break;
                 }
+                converted.append(separator);
             }
         });
         return converted.toString();

@@ -11,6 +11,7 @@ import com.qiniu.util.ListFileFilterUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private boolean doFilter;
     private boolean doAntiFilter;
     private boolean saveTotal = false;
+    private ILineProcess<Map<String, String>> nextProcessor;
 
     private void initBaseParams() {
         this.processName = "list";
@@ -46,11 +48,16 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
+        this.nextProcessor = nextProcessor;
+    }
+
     public ListResultProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ListResultProcess listResultProcess = (ListResultProcess)super.clone();
         listResultProcess.fileMap = new FileMap();
         try {
             listResultProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            if (nextProcessor != null) listResultProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
@@ -74,27 +81,32 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
     public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
-        Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
 
-        if (doFilter || doAntiFilter) {
-            if (saveTotal) {
-                fileMap.writeOther(String.join("\n", typeConverter.convertToVList(fileInfoList)));
+        try {
+            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
+
+            if (doFilter || doAntiFilter) {
+                if (saveTotal) {
+                    fileMap.writeOther(String.join("\n", typeConverter.convertToVList(fileInfoList)));
+                }
+                if (doFilter) {
+                    fileInfoList = fileInfoStream
+                            .filter(fileInfo -> filter.doFileFilter(fileInfo))
+                            .collect(Collectors.toList());
+                } else if (doAntiFilter) {
+                    fileInfoList = fileInfoStream
+                            .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
+                            .collect(Collectors.toList());
+                } else {
+                    fileInfoList = fileInfoStream
+                            .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
+                            .collect(Collectors.toList());
+                }
             }
-            if (doFilter) {
-                fileInfoList = fileInfoStream
-                        .filter(fileInfo -> filter.doFileFilter(fileInfo))
-                        .collect(Collectors.toList());
-            } else if (doAntiFilter) {
-                fileInfoList = fileInfoStream
-                        .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
-                        .collect(Collectors.toList());
-            } else {
-                fileInfoList = fileInfoStream
-                        .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
-                        .collect(Collectors.toList());
-            }
+            fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
         }
-        fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
     }
 
     public void closeResource() {

@@ -5,7 +5,6 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
-import com.qiniu.entry.ProcessorChoice;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;

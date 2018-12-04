@@ -1,6 +1,7 @@
 package com.qiniu.service.convert;
 
 import com.qiniu.service.fileline.JsonLineFormatter;
+import com.qiniu.service.fileline.TableLineFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
@@ -12,18 +13,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FileInfoToJson implements ITypeConvert<FileInfo, String> {
+public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
-    private String format;
-    private String separator;
     private IStringFormat stringFormatter;
     private Map<String, Boolean> variablesIfUse;
 
-    public FileInfoToJson(String format, String separator) {
+    public FileInfoToString(String format, String separator) {
         if ("format".equals(format)) {
             stringFormatter = new JsonLineFormatter();
         } else {
-            stringFormatter = new JsonLineFormatter();
+            stringFormatter = new TableLineFormatter();
+            stringFormatter.setSeparator(separator);
         }
         variablesIfUse = new HashMap<>();
         variablesIfUse.put("key", true);
