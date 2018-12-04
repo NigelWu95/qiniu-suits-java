@@ -3,8 +3,12 @@ package com.qiniu.entry;
 import com.qiniu.common.*;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.model.parameter.ListFilterParams;
+import com.qiniu.service.convert.FileInfoToMap;
+import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.interfaces.ITypeConvert;
+import com.qiniu.service.persistence.ListResultProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
@@ -28,38 +32,40 @@ public class ListBucketEntry {
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
-        String process = listBucketParams.getProcess();
-        ILineProcess processor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
+
+        ListFilterParams listFilterParams = paramFromConfig ?
+                new ListFilterParams(configFilePath) : new ListFilterParams(args);
+        ListFileFilter listFileFilter = new ListFileFilter();
+        ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
+        listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
+        listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
+        listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
+        listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
+        listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
+        listFileFilter.setMime(listFilterParams.getMime());
+        listFileFilter.setType(listFilterParams.getType());
+        listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
+        listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
+        listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
+        listFileAntiFilter.setMime(listFilterParams.getAntiMime());
+
+        ITypeConvert typeConverter = new FileInfoToString(resultFormat, "\t");
+        ILineProcess processor = new ListResultProcess(typeConverter, resultFormat, resultFileDir);
+        ILineProcess nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+        processor.setNextProcessor(nextProcessor);
+        processor.setFilter(listFileFilter, listFileAntiFilter);
+
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
                 customPrefix, antiPrefix, 3);
-        listBucket.setResultParams(resultFormat, resultFileDir);
-        if ("check".equals(process)) {
-            listBucket.checkValidPrefix(level);
+        if (multiStatus) {
+            listBucket.concurrentlyList(maxThreads, level, processor);
         } else {
-            ListFilterParams listFilterParams = paramFromConfig ?
-                    new ListFilterParams(configFilePath) : new ListFilterParams(args);
-            ListFileFilter listFileFilter = new ListFileFilter();
-            ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
-            listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
-            listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
-            listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
-            listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
-            listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
-            listFileFilter.setMime(listFilterParams.getMime());
-            listFileFilter.setType(listFilterParams.getType());
-            listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
-            listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
-            listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
-            listFileAntiFilter.setMime(listFilterParams.getAntiMime());
-            listBucket.setFilter(listFileFilter, listFileAntiFilter);
-            if (multiStatus) {
-                listBucket.concurrentlyList(maxThreads, level, processor);
-            } else {
-                listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
-            }
+            listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
         }
-        if (processor != null) processor.closeResource();
+
+        processor.closeResource();
+        if (nextProcessor != null) nextProcessor.closeResource();
     }
 }
