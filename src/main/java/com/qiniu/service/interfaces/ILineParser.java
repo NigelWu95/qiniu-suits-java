@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface ILineParser {
 
-    ArrayList<String> splitLine(String line);
+    ArrayList<String> parseLine(String line);
 
     Map<String, String> getItemMapByKeys(String line, ArrayList<String> itemKey);
 

@@ -22,8 +22,7 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
         if ("format".equals(format)) {
             stringFormatter = new JsonLineFormatter();
         } else {
-            stringFormatter = new TableLineFormatter();
-            stringFormatter.setSeparator(separator);
+            stringFormatter = new TableLineFormatter(separator);
         }
         variablesIfUse = new HashMap<>();
         variablesIfUse.put("key", true);

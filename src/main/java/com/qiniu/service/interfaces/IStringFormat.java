@@ -6,7 +6,5 @@ import java.util.Map;
 
 public interface IStringFormat {
 
-    default void setSeparator(String separator) {}
-
     String toFormatString(FileInfo fileInfo, Map<String, Boolean> variablesIfUse);
 }
