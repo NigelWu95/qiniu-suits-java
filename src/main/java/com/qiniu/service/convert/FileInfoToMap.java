@@ -3,25 +3,20 @@ package com.qiniu.service.convert;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
 
     private Map<String, Boolean> variablesIfUse;
-    private List<String> fieldList;
 
     public FileInfoToMap() {
         variablesIfUse = new HashMap<>();
         variablesIfUse.put("key", true);
-        Field[] fields = FileInfo.class.getFields();
-        Arrays.asList(fields).forEach(field -> this.fieldList.add(field.getName()));
     }
 
-    public FileInfoToMap(boolean hash, boolean fsize, boolean putTime, boolean mimeType, boolean endUser,
+    public void chooseVariables(boolean hash, boolean fsize, boolean putTime, boolean mimeType, boolean endUser,
                          boolean type, boolean status) {
-        this();
         variablesIfUse.put("hash", hash);
         variablesIfUse.put("fsize", fsize);
         variablesIfUse.put("putTime", putTime);
@@ -31,17 +26,19 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         variablesIfUse.put("status", status);
     }
 
-    public Map<String, String> fileInfoToMap(FileInfo fileInfo) {
+    public Map<String, String> toMap(FileInfo fileInfo) {
         Map<String, String> converted = new HashMap<>();
         variablesIfUse.forEach((key, value) -> {
             if (value) {
-                if ("key".equals(key)) converted.put(key, fileInfo.key);
-                else if ("fsize".equals(key)) converted.put(key, String.valueOf(fileInfo.fsize));
-                else if ("putTime".equals(key)) converted.put(key, String.valueOf(fileInfo.putTime));
-                else if ("mimeType".equals(key)) converted.put(key, fileInfo.mimeType);
-                else if ("endUser".equals(key)) converted.put(key, fileInfo.endUser);
-                else if ("type".equals(key)) converted.put(key, String.valueOf(fileInfo.type));
-//                else if ("status".equals(key)) converted.put(key, fileInfo.status);
+                switch (key) {
+                    case "key": converted.put(key, fileInfo.key); break;
+                    case "fsize": converted.put(key, String.valueOf(fileInfo.fsize)); break;
+                    case "putTime": converted.put(key, String.valueOf(fileInfo.putTime)); break;
+                    case "mimeType": converted.put(key, fileInfo.mimeType); break;
+                    case "endUser": converted.put(key, fileInfo.endUser); break;
+                    case "type": converted.put(key, String.valueOf(fileInfo.type)); break;
+//                    case "status": converted.put(key, fileInfo.status); break;
+                }
             }
         });
         return converted;
@@ -56,7 +53,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         return srcList.parallelStream()
                 .filter(Objects::nonNull)
                 .filter(this::filterFileInfo)
-                .map(this::fileInfoToMap)
+                .map(this::toMap)
                 .collect(Collectors.toList());
     }
 }
