@@ -4,6 +4,7 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
+import com.qiniu.service.convert.FileInfoToMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
@@ -11,7 +12,6 @@ import com.qiniu.util.ListFileFilterUtils;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -104,7 +104,8 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
                 }
             }
             fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
-            if (nextProcessor != null) nextProcessor.processLine(fileInfoList);
+            ITypeConvert nextTypeConverter = new FileInfoToMap();
+            if (nextProcessor != null) nextProcessor.processLine(nextTypeConverter.convertToVList(fileInfoList));
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }

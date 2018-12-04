@@ -6,7 +6,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ILineProcess<T> {
 
