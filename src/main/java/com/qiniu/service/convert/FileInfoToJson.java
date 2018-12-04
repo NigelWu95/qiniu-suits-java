@@ -14,11 +14,10 @@ import java.util.stream.Stream;
 
 public class FileInfoToJson implements ITypeConvert<FileInfo, String> {
 
-    private Map<String, Boolean> variablesIfUse;
-    private List<String> fieldList;
     private String format;
     private String separator;
     private IStringFormat stringFormatter;
+    private Map<String, Boolean> variablesIfUse;
 
     public FileInfoToJson(String format, String separator) {
         if ("format".equals(format)) {
@@ -26,10 +25,28 @@ public class FileInfoToJson implements ITypeConvert<FileInfo, String> {
         } else {
             stringFormatter = new JsonLineFormatter();
         }
+        variablesIfUse = new HashMap<>();
+        variablesIfUse.put("key", true);
+    }
+
+    public void chooseVariables(boolean hash, boolean fsize, boolean putTime, boolean mimeType, boolean endUser,
+                         boolean type, boolean status) {
+        variablesIfUse.put("hash", hash);
+        variablesIfUse.put("fsize", fsize);
+        variablesIfUse.put("putTime", putTime);
+        variablesIfUse.put("mimeType", mimeType);
+        variablesIfUse.put("endUser", endUser);
+        variablesIfUse.put("type", type);
+        variablesIfUse.put("status", status);
+    }
+
+    public String toJson(FileInfo fileInfo) {
+
+        return stringFormatter.toFormatString(fileInfo, variablesIfUse);
     }
 
     public List<String> convertToVList(List<FileInfo> srcList) {
         Stream<FileInfo> fileInfoStream = srcList.parallelStream().filter(Objects::nonNull);
-        return fileInfoStream.map(stringFormatter::toFormatString).collect(Collectors.toList());
+        return fileInfoStream.map(this::toJson).collect(Collectors.toList());
     }
 }
