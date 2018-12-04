@@ -11,7 +11,9 @@ import com.qiniu.util.ListFileFilterUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
@@ -25,15 +27,10 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private ListFileAntiFilter antiFilter;
     private boolean doFilter;
     private boolean doAntiFilter;
-    private boolean saveTotal;
+    private boolean saveTotal = false;
 
     private void initBaseParams() {
         this.processName = "list";
-    }
-
-    public ListResultProcess(ITypeConvert typeConverter, String resultFormat, String resultFileDir, int resultFileIndex) throws IOException {
-        this(typeConverter, resultFormat, resultFileDir);
-        fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ListResultProcess(ITypeConvert typeConverter, String resultFormat, String resultFileDir) {
@@ -41,6 +38,12 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         this.resultFormat = resultFormat;
         this.resultFileDir = resultFileDir;
         this.fileMap = new FileMap();
+        this.typeConverter = typeConverter;
+    }
+
+    public ListResultProcess(ITypeConvert typeConverter, String resultFormat, String resultFileDir, int resultFileIndex) throws IOException {
+        this(typeConverter, resultFormat, resultFileDir);
+        fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public ListResultProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -71,21 +74,22 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
     public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
+        Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
 
         if (doFilter || doAntiFilter) {
             if (saveTotal) {
                 fileMap.writeOther(String.join("\n", typeConverter.convertToVList(fileInfoList)));
             }
             if (doFilter) {
-                fileInfoList = fileInfoList.parallelStream()
+                fileInfoList = fileInfoStream
                         .filter(fileInfo -> filter.doFileFilter(fileInfo))
                         .collect(Collectors.toList());
             } else if (doAntiFilter) {
-                fileInfoList = fileInfoList.parallelStream()
+                fileInfoList = fileInfoStream
                         .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
                         .collect(Collectors.toList());
             } else {
-                fileInfoList = fileInfoList.parallelStream()
+                fileInfoList = fileInfoStream
                         .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
                         .collect(Collectors.toList());
             }
