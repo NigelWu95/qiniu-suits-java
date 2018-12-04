@@ -13,6 +13,7 @@ import com.qiniu.util.ListFileFilterUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
@@ -23,14 +24,14 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private String separator;
     private String resultFileDir;
     private FileMap fileMap;
-    private ITypeConvert typeConverter;
+    private ITypeConvert<FileInfo, String> typeConverter;
     private ListFileFilter filter;
     private ListFileAntiFilter antiFilter;
     private boolean doFilter;
     private boolean doAntiFilter;
     private boolean saveTotal = false;
-    private ILineProcess<FileInfo> nextProcessor;
-    private ITypeConvert nextTypeConverter;
+    private ILineProcess<Map<String, String>> nextProcessor;
+    private ITypeConvert<FileInfo, Map<String, String>> nextTypeConverter;
 
     private void initBaseParams() {
         this.processName = "list";
@@ -51,7 +52,7 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public void setNextProcessor(ILineProcess<FileInfo> nextProcessor) {
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
         this.nextTypeConverter = new FileInfoToMap();
     }

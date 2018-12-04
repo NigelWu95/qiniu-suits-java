@@ -12,6 +12,7 @@ import com.qiniu.util.Auth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ProcessorChoice {
 
@@ -26,7 +27,7 @@ public class ProcessorChoice {
         this.unSupportBatch.add("stat");
     }
 
-    public ILineProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
+    public ILineProcess<Map<String, String>> getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
 
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
@@ -37,7 +38,7 @@ public class ProcessorChoice {
             batch = false;
         }
         String resultFileDir = commonParams.getResultFileDir();
-        ILineProcess processor = null;
+        ILineProcess<Map<String, String>> processor = null;
         Configuration configuration = new Configuration(Zone.autoZone());
 
         switch (process) {

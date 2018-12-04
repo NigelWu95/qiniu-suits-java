@@ -3,13 +3,13 @@ package com.qiniu.service.interfaces;
 import com.qiniu.common.ListFileAntiFilter;
 import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
-import com.qiniu.storage.model.FileInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ILineProcess<T> {
 
-    ILineProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
+    ILineProcess<T> getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
     default void setBatch(boolean batch) {}
 
@@ -27,7 +27,7 @@ public interface ILineProcess<T> {
 
     void processLine(List<T> list) throws QiniuException;
 
-    default void setNextProcessor(ILineProcess<FileInfo> nextProcessor) {}
+    default void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {}
 
     void closeResource();
 }

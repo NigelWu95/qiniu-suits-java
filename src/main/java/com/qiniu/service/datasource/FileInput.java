@@ -26,28 +26,28 @@ public class FileInput {
         this.unitLen = unitLen;
     }
 
-    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess fileProcessor) {
+    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
 
-        ILineProcess processor = null;
-        ITypeConvert typeConverter = new FileLineToMap(parserTye, separator);
+        ILineProcess<Map<String, String>> fileProcessor = null;
+        ITypeConvert<String, Map<String, String>> typeConverter = new FileLineToMap(parserTye, separator);
         try {
-            if (fileProcessor != null) processor = fileProcessor.getNewInstance(finalI + 1);
+            if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
             List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());
             int size = lineList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
                 List<String> processList = lineList.subList(unitLen * j,
                         j == size - 1 ? lineList.size() : unitLen * (j + 1));
-                if (processor != null) processor.processLine(typeConverter.convertToVList(processList));
+                if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(processList));
             }
             bufferedReader.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (processor != null) processor.closeResource();
+            if (fileProcessor != null) fileProcessor.closeResource();
         }
     }
 
-    public void process(int maxThreads, String filePath, ILineProcess processor) {
+    public void process(int maxThreads, String filePath, ILineProcess<Map<String, String>> processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);
