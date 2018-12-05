@@ -248,13 +248,17 @@ public final class BucketManager {
      * @link http://developer.qiniu.com/kodo/api/stat
      */
     public FileInfo stat(String bucket, String fileKey) throws QiniuException {
-        Response res = rsGet(bucket, String.format("/stat/%s", encodedEntry(bucket, fileKey)));
+        Response res = statResponse(bucket, fileKey);
         if (!res.isOK()) {
             throw new QiniuException(res);
         }
         FileInfo fileInfo = res.jsonToObject(FileInfo.class);
         res.close();
         return fileInfo;
+    }
+
+    public Response statResponse(String bucket, String fileKey) throws QiniuException {
+        return rsGet(bucket, String.format("/stat/%s", encodedEntry(bucket, fileKey)));
     }
 
     /**

@@ -3,20 +3,15 @@ package com.qiniu.service.media;
 import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.PfopResult;
-import com.qiniu.service.convert.AvinfoToString;
 import com.qiniu.service.convert.PfopResultToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -77,12 +72,12 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
         String pfopResult = null;
         try {
-            pfopResult = typeConverter.toV(mediaManager.getPfopResultById(id));
+            pfopResult = mediaManager.getPfopResultBodyById(id);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    pfopResult = typeConverter.toV(mediaManager.getPfopResultById(id));
+                    pfopResult = mediaManager.getPfopResultBodyById(id);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);

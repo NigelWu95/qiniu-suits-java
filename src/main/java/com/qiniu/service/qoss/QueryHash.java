@@ -82,12 +82,12 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
         String qhash = null;
         try {
-            qhash = typeConverter.toV(fileChecker.getQHash(domain, key));
+            qhash = fileChecker.getQHashBody(domain, key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = typeConverter.toV(fileChecker.getQHash(domain, key));
+                    qhash = fileChecker.getQHashBody(domain, key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
