@@ -23,7 +23,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         variablesIfUse.put("mimeType", mimeType);
         variablesIfUse.put("endUser", endUser);
         variablesIfUse.put("type", type);
-        variablesIfUse.put("status", status);
+//        variablesIfUse.put("status", status);
     }
 
     public Map<String, String> toV(FileInfo fileInfo) {
@@ -44,16 +44,10 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         return converted;
     }
 
-    public boolean filterFileInfo(FileInfo fileInfo) {
-        // TODO add filter method
-        return true;
-    }
-
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
         return srcList.parallelStream()
                 .filter(Objects::nonNull)
-//                .filter(this::filterFileInfo)
                 .map(this::toV)
                 .collect(Collectors.toList());
     }
