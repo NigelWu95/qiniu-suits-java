@@ -6,6 +6,7 @@ import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.convert.QhashToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -16,6 +17,8 @@ import java.util.Map;
 public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
+    private boolean https;
+    private Auth srcAuth;
     private FileChecker fileChecker;
     private String processName;
     private int retryCount = 3;
@@ -31,7 +34,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     public QueryHash(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
-        this.fileChecker = new FileChecker(null);
+        this.fileChecker = new FileChecker(null, https, srcAuth);
         this.fileMap = new FileMap();
     }
 
@@ -40,13 +43,18 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
+    public void setOptions(boolean https, Auth srcAuth) {
+        this.https = https;
+        this.srcAuth = srcAuth;
+    }
+
     public void setTypeConverter(String format, String separator) {
         this.typeConverter = new QhashToString(format, separator);
     }
 
     public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(null);
+        queryHash.fileChecker = new FileChecker(null, https, srcAuth);
         queryHash.fileMap = new FileMap();
         try {
             queryHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);

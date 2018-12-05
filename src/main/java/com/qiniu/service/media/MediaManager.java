@@ -5,6 +5,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.media.*;
+import com.qiniu.util.Auth;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.RequestUtils;
 
@@ -13,9 +14,17 @@ import java.net.UnknownHostException;
 public class MediaManager {
 
     private Client client;
+    private boolean https;
+    private Auth srcAuth;
 
     public MediaManager() {
         this.client = new Client();
+    }
+
+    public MediaManager(boolean https, Auth srcAuth) {
+        this();
+        this.https = https;
+        this.srcAuth = srcAuth;
     }
 
     public Avinfo getAvinfo(String url) throws QiniuException, UnknownHostException {
@@ -43,7 +52,8 @@ public class MediaManager {
         } catch (UnknownHostException e) {
             throw new QiniuException(e);
         }
-        String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
+        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         Response response = client.get(url + "?avinfo");
         JsonObject avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();
