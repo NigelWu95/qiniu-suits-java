@@ -45,28 +45,24 @@ public class MediaManager {
         return getAvinfoByJson(getAvinfoJson(domain, sourceKey)) ;
     }
 
-    public JsonObject getAvinfoJson(String domain, String sourceKey) throws QiniuException {
-
-        try {
-            RequestUtils.checkHost(domain);
-        } catch (UnknownHostException e) {
-            throw new QiniuException(e);
-        }
-        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        Response response = client.get(url + "?avinfo");
-        JsonObject avinfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
-        response.close();
-        JsonElement jsonElement = avinfoJson.get("format");
-        if (jsonElement == null || jsonElement instanceof JsonNull) {
-            throw new QiniuException(response);
-        }
-        return avinfoJson;
-    }
-
     public Avinfo getAvinfoByJson(String avinfoJson) throws QiniuException {
 
-        return getAvinfoByJson(JsonConvertUtils.toJsonObject(avinfoJson));
+        Avinfo avinfo = new Avinfo();
+        try {
+            JsonObject jsonObject = JsonConvertUtils.fromJson(avinfoJson, JsonObject.class);
+            avinfo.setFormat(JsonConvertUtils.fromJson(jsonObject.getAsJsonObject("format"), Format.class));
+            JsonElement element = jsonObject.get("streams");
+            JsonArray streams = element.getAsJsonArray();
+            for (JsonElement stream : streams) {
+                JsonElement typeElement = stream.getAsJsonObject().get("codec_type");
+                String type = (typeElement == null || typeElement instanceof JsonNull) ? "" : typeElement.getAsString();
+                if ("video".equals(type)) avinfo.setVideoStream(JsonConvertUtils.fromJson(stream, VideoStream.class));
+                if ("audio".equals(type)) avinfo.setAudioStream(JsonConvertUtils.fromJson(stream, AudioStream.class));
+            }
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return avinfo;
     }
 
     public Avinfo getAvinfoByJson(JsonObject avinfoJson) throws QiniuException {
@@ -88,22 +84,41 @@ public class MediaManager {
         return avinfo;
     }
 
-    public PfopResult getPfopResultById(String persistentId) throws QiniuException {
+    public JsonObject getAvinfoJson(String domain, String sourceKey) throws QiniuException {
 
-        String url = "http://api.qiniu.com/status/get/prefop?id=" + persistentId;
-        Response response = client.get(url);
-        JsonObject pfopResultJson = JsonConvertUtils.toJsonObject(response.bodyString());
-        response.close();
-        JsonElement jsonElement = pfopResultJson.get("reqid");
+        JsonParser jsonParser = new JsonParser();
+        JsonObject avinfoJson = jsonParser.parse(getAvinfoBody(domain, sourceKey)).getAsJsonObject();
+        JsonElement jsonElement = avinfoJson.get("format");
         if (jsonElement == null || jsonElement instanceof JsonNull) {
-            throw new QiniuException(response);
+            throw new QiniuException(null, "body error.");
         }
-        return getPfopResultByJson(pfopResultJson);
+        return avinfoJson;
+    }
+
+    public String getAvinfoBody(String domain, String sourceKey) throws QiniuException {
+
+        try {
+            RequestUtils.checkHost(domain);
+        } catch (UnknownHostException e) {
+            throw new QiniuException(e);
+        }
+        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?avinfo") : url + "?avinfo";
+        Response response = client.get(url);
+        String avinfo = response.bodyString();
+        response.close();
+        return avinfo;
     }
 
     public PfopResult getPfopResultByJson(String pfopResultJson) throws QiniuException {
 
-        return getPfopResultByJson(JsonConvertUtils.toJsonObject(pfopResultJson));
+        PfopResult pfopResult;
+        try {
+            pfopResult = JsonConvertUtils.fromJson(pfopResultJson, PfopResult.class);
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return pfopResult;
     }
 
     public PfopResult getPfopResultByJson(JsonObject pfopResultJson) throws QiniuException {
@@ -114,6 +129,25 @@ public class MediaManager {
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
+        return pfopResult;
+    }
+
+    public PfopResult getPfopResultById(String persistentId) throws QiniuException {
+
+        JsonObject pfopResultJson = JsonConvertUtils.toJsonObject(getPfopResultBodyById(persistentId));
+        JsonElement jsonElement = pfopResultJson.get("reqid");
+        if (jsonElement == null || jsonElement instanceof JsonNull) {
+            throw new QiniuException(null, "body error.");
+        }
+        return getPfopResultByJson(pfopResultJson);
+    }
+
+    public String getPfopResultBodyById(String persistentId) throws QiniuException {
+
+        String url = "http://api.qiniu.com/status/get/prefop?id=" + persistentId;
+        Response response = client.get(url);
+        String pfopResult = response.bodyString();
+        response.close();
         return pfopResult;
     }
 }

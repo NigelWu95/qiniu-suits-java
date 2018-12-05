@@ -7,7 +7,6 @@ import com.qiniu.http.Response;
 import com.qiniu.model.qoss.Qhash;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.net.UnknownHostException;
@@ -45,17 +44,39 @@ public class FileChecker {
 
     public Qhash getQHash(String domain, String sourceKey) throws QiniuException {
 
-        return getQHashByJson(getQHashJson(domain, sourceKey)) ;
+        return getQHashByJson(getQHashBody(domain, sourceKey));
     }
 
-    /**
-     *
-     * @param domain
-     * @param sourceKey
-     * @return
-     * @throws QiniuException
-     */
+    public Qhash getQHashByJson(String qHashJson) throws QiniuException {
+
+        Qhash qhash;
+        try {
+            Gson gson = new Gson();
+            qhash = gson.fromJson(qHashJson, Qhash.class);
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return qhash;
+    }
+
+    public Qhash getQHashByJson(JsonObject qHashJson) throws QiniuException {
+
+        Qhash qhash;
+        try {
+            Gson gson = new Gson();
+            qhash = gson.fromJson(qHashJson, Qhash.class);
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return qhash;
+    }
+
     public JsonObject getQHashJson(String domain, String sourceKey) throws QiniuException {
+        JsonParser jsonParser = new JsonParser();
+        return jsonParser.parse(getQHashBody(domain, sourceKey)).getAsJsonObject();
+    }
+
+    public String getQHashBody(String domain, String sourceKey) throws QiniuException {
 
         try {
             RequestUtils.checkHost(domain);
@@ -63,26 +84,10 @@ public class FileChecker {
             throw new QiniuException(e);
         }
         String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        Response response = client.get(url + "?qhash/" + algorithm);
-        JsonObject qhashJson = JsonConvertUtils.toJsonObject(response.bodyString());
+        url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?qhash/" + algorithm) : url + "?qhash/" + algorithm;
+        Response response = client.get(url);
+        String qhash = response.bodyString();
         response.close();
-        return qhashJson;
-    }
-
-    public Qhash getQHashByJson(String qHashJson) throws QiniuException {
-
-        return getQHashByJson(JsonConvertUtils.toJsonObject(qHashJson));
-    }
-
-    public Qhash getQHashByJson(JsonObject qHashJson) throws QiniuException {
-
-        Qhash qhash;
-        try {
-            qhash = JsonConvertUtils.fromJson(qHashJson, Qhash.class);
-        } catch (JsonParseException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
         return qhash;
     }
 
@@ -101,43 +106,51 @@ public class FileChecker {
 
     public FileInfo getStat(String domain, String sourceKey) throws QiniuException {
 
-        return getStatByJson(getStatJson(domain, sourceKey)) ;
+        return getStatByJson(getStatBody(domain, sourceKey)) ;
     }
 
-    /**
-     *
-     * @param domain
-     * @param sourceKey
-     * @return
-     * @throws QiniuException
-     */
+    public FileInfo getStatByJson(String fileInfoJson) throws QiniuException {
+
+        FileInfo stat;
+        try {
+            Gson gson = new Gson();
+            stat = gson.fromJson(fileInfoJson, FileInfo.class);
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return stat;
+    }
+
+    public FileInfo getStatByJson(JsonObject fileInfoJson) throws QiniuException {
+
+        FileInfo stat;
+        try {
+            Gson gson = new Gson();
+            stat = gson.fromJson(fileInfoJson, FileInfo.class);
+        } catch (JsonParseException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        return stat;
+    }
+
     public JsonObject getStatJson(String domain, String sourceKey) throws QiniuException {
+
+        JsonParser jsonParser = new JsonParser();
+        return jsonParser.parse(getStatBody(domain, sourceKey)).getAsJsonObject();
+    }
+
+    public String getStatBody(String domain, String sourceKey) throws QiniuException {
 
         try {
             RequestUtils.checkHost(domain);
         } catch (UnknownHostException e) {
             throw new QiniuException(e);
         }
-        String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
-        Response response = client.get(url + "?stat");
-        JsonObject fileInfoJson = JsonConvertUtils.toJsonObject(response.bodyString());
+        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?stat") : url + "?stat";
+        Response response = client.get(url);
+        String stat = response.bodyString();
         response.close();
-        return fileInfoJson;
-    }
-
-    public FileInfo getStatByJson(String fileInfoJson) throws QiniuException {
-
-        return getStatByJson(JsonConvertUtils.toJsonObject(fileInfoJson));
-    }
-
-    public FileInfo getStatByJson(JsonObject fileInfoJson) throws QiniuException {
-
-        FileInfo fileInfo;
-        try {
-            fileInfo = JsonConvertUtils.fromJson(fileInfoJson, FileInfo.class);
-        } catch (JsonParseException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
-        return fileInfo;
+        return stat;
     }
 }
