@@ -80,30 +80,37 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
         return domain;
     }
 
+    public String singleWithRetry(String key, int retryCount) throws QiniuException {
+
+        String qhash = null;
+        try {
+            qhash = fileChecker.getQHashBody(domain, key);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    qhash = fileChecker.getQHashBody(domain, key);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
+        }
+
+        return qhash;
+    }
+
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
         List<String> successList = new ArrayList<>();
         List<String> failList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                Qhash qhash = null;
-                try {
-                    qhash = fileChecker.getQHash(domain, line.get("0"));
-                } catch (QiniuException e1) {
-                    HttpResponseUtils.checkRetryCount(e1, retryCount);
-                    while (retryCount > 0) {
-                        try {
-                            qhash = fileChecker.getQHash(domain, line.get("0"));
-                            retryCount = 0;
-                        } catch (QiniuException e2) {
-                            retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                        }
-                    }
-                }
-                if (qhash == null) throw new QiniuException(null, "empty qhash");
-                String md5 = qhash.hash;
-                if (md5.equals(line.get("1"))) successList.add(line.get("0") + "\t" + typeConverter.toV(qhash));
-                else failList.add(line.get("1") + "\t" + typeConverter.toV(qhash));
+                String qhashBody = singleWithRetry(line.get("0"), retryCount);
+                if (qhashBody == null) throw new QiniuException(null, "empty qhash");
+                String md5 = JsonConvertUtils.fromJson(qhashBody, Qhash.class).hash;
+                if (md5.equals(line.get("1"))) successList.add(line.get("0") + "\t" + qhashBody);
+                else failList.add(line.get("0") + "\t" + qhashBody);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
             }

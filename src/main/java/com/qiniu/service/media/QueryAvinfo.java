@@ -4,18 +4,14 @@ import com.qiniu.common.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.service.convert.AvinfoToString;
-import com.qiniu.service.convert.QhashToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -85,12 +81,12 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
 
         String avinfo = null;
         try {
-            avinfo = typeConverter.toV(mediaManager.getAvinfo(domain, key));
+            avinfo = mediaManager.getAvinfoBody(domain, key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    avinfo = typeConverter.toV(mediaManager.getAvinfo(domain, key));
+                    avinfo = mediaManager.getAvinfoBody(domain, key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);

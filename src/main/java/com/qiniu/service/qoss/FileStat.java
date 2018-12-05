@@ -15,8 +15,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -73,12 +71,12 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
 
         String stat = "";
         try {
-            stat = typeConverter.toV(bucketManager.stat(bucket, fileInfo.get("key")));
+            stat = bucketManager.statResponse(bucket, fileInfo.get("key")).bodyString();
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    stat = typeConverter.toV(bucketManager.stat(bucket, fileInfo.get("key")));
+                    stat = bucketManager.statResponse(bucket, fileInfo.get("key")).bodyString();
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
