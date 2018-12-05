@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -94,9 +92,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> fileInfo : fileInfoList) {
             try {

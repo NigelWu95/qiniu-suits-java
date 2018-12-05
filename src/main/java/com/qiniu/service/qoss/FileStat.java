@@ -95,9 +95,6 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
 
     public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> fileInfo : fileInfoList) {
             try {

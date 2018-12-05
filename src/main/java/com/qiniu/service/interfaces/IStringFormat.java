@@ -4,5 +4,11 @@ import java.util.Map;
 
 public interface IStringFormat<T> {
 
-    String toFormatString(T t, Map<String, Boolean> variablesIfUse);
+    default String toFormatString(T t, Map<String, Boolean> variablesIfUse) {
+        return null;
+    }
+
+    default String toFormatString(T t) {
+        return null;
+    }
 }
