@@ -104,9 +104,6 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
-        lineList = lineList == null ? null : lineList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {

@@ -108,6 +108,10 @@ public class ProcessorChoice {
             case "avinfo": {
                 AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
                 processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
+                String accessKey = avinfoParams.getProcessAk();
+                String secretKey = avinfoParams.getProcessSk();
+                ((QueryAvinfo) processor).setOptions(avinfoParams.getHttps(), avinfoParams.getNeedSign() ?
+                                Auth.create(accessKey, secretKey) : null);
                 break;
             }
             case "pfop": {
