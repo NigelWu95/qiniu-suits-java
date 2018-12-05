@@ -6,6 +6,7 @@ import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.qoss.Qhash;
 import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.Auth;
 import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.RequestUtils;
 
@@ -15,10 +16,14 @@ public class FileChecker {
 
     private Client client;
     private String algorithm;
+    private boolean https;
+    private Auth srcAuth;
 
-    public FileChecker(String algorithm) {
+    public FileChecker(String algorithm, boolean https, Auth srcAuth) {
         this.client = new Client();
         this.algorithm = (algorithm == null || "".equals(algorithm)) ? "md5" : algorithm;
+        this.https = https;
+        this.srcAuth = srcAuth;
     }
 
     public String getAlgorithm() {
@@ -57,7 +62,8 @@ public class FileChecker {
         } catch (UnknownHostException e) {
             throw new QiniuException(e);
         }
-        String url = "http://" + domain + "/" + sourceKey.split("\\?")[0];
+        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         Response response = client.get(url + "?qhash/" + algorithm);
         JsonObject qhashJson = JsonConvertUtils.toJsonObject(response.bodyString());
         response.close();
