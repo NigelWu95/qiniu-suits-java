@@ -20,11 +20,6 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
         }
     }
 
-    public boolean filterLine(String line) {
-        // TODO add filter method
-        return true;
-    }
-
     public Map<String, String> toV(String line) {
         return lineParser.getItemMap(line);
     }

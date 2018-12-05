@@ -37,18 +37,19 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         this.processName = "list";
     }
 
-    public ListResultProcess(String resultFormat, String separator, String resultFileDir) {
+    public ListResultProcess(String resultFormat, String separator, String resultFileDir, boolean saveTotal) {
         initBaseParams();
         this.resultFormat = resultFormat;
         this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
         this.resultFileDir = resultFileDir;
+        this.saveTotal = saveTotal;
         this.fileMap = new FileMap();
-        this.typeConverter = new FileInfoToString(resultFormat, "\t");
+        this.typeConverter = new FileInfoToString(resultFormat, separator);
     }
 
-    public ListResultProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex)
-            throws IOException {
-        this(resultFormat, separator, resultFileDir);
+    public ListResultProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
+                             boolean saveTotal) throws IOException {
+        this(resultFormat, separator, resultFileDir, saveTotal);
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
@@ -62,7 +63,11 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         listResultProcess.fileMap = new FileMap();
         try {
             listResultProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-            if (nextProcessor != null) listResultProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
+            listResultProcess.typeConverter = new FileInfoToString(resultFormat, separator);
+            if (nextProcessor != null) {
+                listResultProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
+                listResultProcess.nextTypeConverter = new FileInfoToMap();
+            }
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

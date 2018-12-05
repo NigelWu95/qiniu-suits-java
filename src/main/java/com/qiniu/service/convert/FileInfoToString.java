@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
-    private IStringFormat stringFormatter;
+    private IStringFormat<FileInfo> stringFormatter;
     private Map<String, Boolean> variablesIfUse;
 
     public FileInfoToString(String format, String separator) {
@@ -33,7 +33,7 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
         variablesIfUse.put("mimeType", mimeType);
         variablesIfUse.put("endUser", endUser);
         variablesIfUse.put("type", type);
-        variablesIfUse.put("status", status);
+//        variablesIfUse.put("status", status);
     }
 
     public String toV(FileInfo fileInfo) {

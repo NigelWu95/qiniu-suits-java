@@ -53,7 +53,7 @@ public class ListBucketEntry {
         listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
         listFileAntiFilter.setMime(listFilterParams.getAntiMime());
 
-        ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir);
+        ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir, false);
         ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig,
                 args, configFilePath);
         processor.setNextProcessor(nextProcessor);
