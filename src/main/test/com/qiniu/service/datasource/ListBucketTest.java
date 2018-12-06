@@ -38,11 +38,6 @@ public class ListBucketTest {
     }
 
     @Test
-    public void testCheckValidPrefix() throws IOException {
-        listBucket.checkValidPrefix(1);
-    }
-
-    @Test
     public void testStraightlyList() throws IOException {
         listBucket.straightlyList(null, null, null);
     }

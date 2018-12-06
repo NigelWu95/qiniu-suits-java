@@ -88,6 +88,7 @@ public class FileInput {
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
+        fileMap.closeReader();
         fileMap.closeWriter();
     }
 }
