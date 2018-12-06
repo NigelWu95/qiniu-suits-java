@@ -95,7 +95,7 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         try {
             if (doFilter || doAntiFilter) {
                 if (saveTotal) {
-                    fileMap.writeOther(String.join("\n", typeConverter.convertToVList(fileInfoList)));
+                    fileMap.writeKeyFile("total", String.join("\n", typeConverter.convertToVList(fileInfoList)));
                 }
                 if (doFilter) {
                     fileInfoList = fileInfoList.parallelStream()

@@ -51,8 +51,8 @@ public class ListBucketEntry {
         listFileAntiFilter.setMime(listFilterParams.getAntiMime());
 
         ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir, false);
-        ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig,
-                args, configFilePath);
+        ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args,
+                configFilePath);
         processor.setNextProcessor(nextProcessor);
         processor.setFilter(listFileFilter, listFileAntiFilter);
 
