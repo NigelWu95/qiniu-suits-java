@@ -1,7 +1,7 @@
 package com.qiniu.service.interfaces;
 
-import com.qiniu.common.ListFileAntiFilter;
-import com.qiniu.common.ListFileFilter;
+import com.qiniu.service.process.ListFileAntiFilter;
+import com.qiniu.service.process.ListFileFilter;
 import com.qiniu.common.QiniuException;
 
 import java.util.List;

@@ -1,8 +1,6 @@
-package com.qiniu.service.persistence;
+package com.qiniu.service.process;
 
-import com.qiniu.common.FileMap;
-import com.qiniu.common.ListFileAntiFilter;
-import com.qiniu.common.ListFileFilter;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.convert.FileInfoToMap;
 import com.qiniu.service.convert.FileInfoToString;

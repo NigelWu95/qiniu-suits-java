@@ -1,4 +1,4 @@
-package com.qiniu.common;
+package com.qiniu.persistence;
 
 import com.qiniu.util.StringUtils;
 

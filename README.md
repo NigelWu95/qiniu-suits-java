@@ -114,17 +114,6 @@ ignore-same-key=
 
 ```
 
-### list result
-* 列举记录，spent time 为列举（或者同时进行 process 的操作）所花费的时间，running threads 为根据前缀列举启动的线程数。    
-
-|version|level|unit-len| process |  filter  | file counts |spent time| machine | running threads |  
-|-------|-----|--------|---------|----------|-------------|----------|---------|-----------------|  
-|   2   |  2  |  10000 |  null   |  false   |  94898690   |   2h18m  | 16核32G |      50         |
-|   2   |  1  |  10000 |  null   |  false   |  1893275    |  7minxxs | 8核16G  |      16         | 
-|   2   |  2  |  20000 |  null   |  false   |  293940625  |   1h8m   | 16核32G |      200        |
-|   2   |  1  |  20000 |  null   |  false   |  1526657    |  5minxxs | 8核16G  |      4          |
-|   2   |  1  |  10000 |  null   |  false   |  911559     |  2minxxs | 8核16G  |      15         |
-
 ### list process parameter
 ```
 默认值为空，不进行任何处理，直接列举得到文件列表。

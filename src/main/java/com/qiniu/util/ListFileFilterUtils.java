@@ -1,7 +1,7 @@
 package com.qiniu.util;
 
-import com.qiniu.common.ListFileAntiFilter;
-import com.qiniu.common.ListFileFilter;
+import com.qiniu.service.process.ListFileAntiFilter;
+import com.qiniu.service.process.ListFileFilter;
 
 public class ListFileFilterUtils {
 

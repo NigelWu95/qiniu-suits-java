@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.common.QiniuException;
@@ -14,7 +14,6 @@ import com.qiniu.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {

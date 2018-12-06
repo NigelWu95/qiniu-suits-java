@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.convert.QhashToString;

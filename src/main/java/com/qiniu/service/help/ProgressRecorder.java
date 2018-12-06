@@ -1,7 +1,7 @@
 package com.qiniu.service.help;
 
 import com.google.gson.JsonObject;
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
