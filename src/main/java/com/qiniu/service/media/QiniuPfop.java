@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -13,8 +13,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 

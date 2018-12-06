@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;

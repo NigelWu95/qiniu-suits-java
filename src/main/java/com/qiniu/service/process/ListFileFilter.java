@@ -1,4 +1,4 @@
-package com.qiniu.common;
+package com.qiniu.service.process;
 
 import com.qiniu.storage.model.FileInfo;
 

@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.PfopResult;
 import com.qiniu.service.convert.PfopResultToString;
