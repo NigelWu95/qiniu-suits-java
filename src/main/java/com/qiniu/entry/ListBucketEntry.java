@@ -5,8 +5,7 @@ import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.process.ListFileAntiFilter;
-import com.qiniu.service.process.ListFileFilter;
+import com.qiniu.service.process.FileFilter;
 import com.qiniu.service.process.ListResultProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -38,25 +37,19 @@ public class ListBucketEntry {
 
         ListFilterParams listFilterParams = paramFromConfig ?
                 new ListFilterParams(configFilePath) : new ListFilterParams(args);
-        ListFileFilter listFileFilter = new ListFileFilter();
-        ListFileAntiFilter listFileAntiFilter = new ListFileAntiFilter();
-        listFileFilter.setKeyPrefix(listFilterParams.getKeyPrefix());
-        listFileFilter.setKeySuffix(listFilterParams.getKeySuffix());
-        listFileFilter.setKeyRegex(listFilterParams.getKeyRegex());
-        listFileFilter.setPutTimeMax(listFilterParams.getPutTimeMax());
-        listFileFilter.setPutTimeMin(listFilterParams.getPutTimeMin());
-        listFileFilter.setMime(listFilterParams.getMime());
-        listFileFilter.setType(listFilterParams.getType());
-        listFileAntiFilter.setKeyPrefix(listFilterParams.getAntiKeyPrefix());
-        listFileAntiFilter.setKeySuffix(listFilterParams.getAntiKeySuffix());
-        listFileAntiFilter.setKeyRegex(listFilterParams.getAntiKeyRegex());
-        listFileAntiFilter.setMime(listFilterParams.getAntiMime());
+        FileFilter fileFilter = new FileFilter();
+        fileFilter.setKeyConditions(listFilterParams.getKeyPrefix(), listFilterParams.getKeySuffix(),
+                listFilterParams.getKeyRegex());
+        fileFilter.setAntiKeyConditions(listFilterParams.getAntiKeyPrefix(), listFilterParams.getAntiKeySuffix(),
+                listFilterParams.getAntiKeyRegex());
+        fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
+        fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
+                listFilterParams.getType());
 
         ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir, false);
         ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args,
                 configFilePath);
         processor.setNextProcessor(nextProcessor);
-        processor.setFilter(listFileFilter, listFileAntiFilter);
 
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
                 customPrefix, antiPrefix, 3);
