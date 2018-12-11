@@ -1,7 +1,5 @@
 package com.qiniu.service.interfaces;
 
-import com.qiniu.service.process.ListFileAntiFilter;
-import com.qiniu.service.process.ListFileFilter;
 import com.qiniu.common.QiniuException;
 
 import java.util.List;
@@ -22,8 +20,6 @@ public interface ILineProcess<T> {
     default String getInfo() {
         return "";
     }
-
-    default void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {}
 
     void processLine(List<T> list) throws QiniuException;
 

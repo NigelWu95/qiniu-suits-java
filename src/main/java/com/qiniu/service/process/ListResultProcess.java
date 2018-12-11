@@ -7,12 +7,10 @@ import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.ListFileFilterUtils;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
@@ -23,10 +21,6 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private String resultFileDir;
     private FileMap fileMap;
     private ITypeConvert<FileInfo, String> typeConverter;
-    private ListFileFilter filter;
-    private ListFileAntiFilter antiFilter;
-    private boolean doFilter;
-    private boolean doAntiFilter;
     private boolean saveTotal = false;
     private ILineProcess<Map<String, String>> nextProcessor;
     private ITypeConvert<FileInfo, Map<String, String>> nextTypeConverter;
@@ -72,13 +66,6 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         return listResultProcess;
     }
 
-    public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
-        this.filter = listFileFilter;
-        this.antiFilter = listFileAntiFilter;
-        this.doFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
-        this.doAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
-    }
-
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
@@ -91,23 +78,8 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
 
         try {
-            if (doFilter || doAntiFilter) {
-                if (saveTotal) {
-                    fileMap.writeKeyFile("total", String.join("\n", typeConverter.convertToVList(fileInfoList)));
-                }
-                if (doFilter) {
-                    fileInfoList = fileInfoList.parallelStream()
-                            .filter(fileInfo -> filter.doFileFilter(fileInfo))
-                            .collect(Collectors.toList());
-                } else if (doAntiFilter) {
-                    fileInfoList = fileInfoList.parallelStream()
-                            .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
-                            .collect(Collectors.toList());
-                } else {
-                    fileInfoList = fileInfoList.parallelStream()
-                            .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
-                            .collect(Collectors.toList());
-                }
+            if (saveTotal) {
+                fileMap.writeKeyFile("total", String.join("\n", typeConverter.convertToVList(fileInfoList)));
             }
             fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
             if (nextProcessor != null) nextProcessor.processLine(nextTypeConverter.convertToVList(fileInfoList));
