@@ -1,7 +1,13 @@
 package com.qiniu.service.datasource;
 
+import com.qiniu.model.parameter.InfoMapParams;
 import com.qiniu.persistence.FileMap;
+import com.qiniu.service.convert.InfoMapToString;
+import com.qiniu.service.fileline.JsonLineParser;
+import com.qiniu.service.fileline.SplitLineParser;
+import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
 
 import java.io.BufferedReader;
@@ -15,22 +21,83 @@ import java.util.stream.Collectors;
 
 public class FileInput {
 
+    private ILineParser lineParser;
+    private int retryCount;
     private int unitLen;
+    private String resultFileDir;
+    private boolean saveTotal = false;
+    private String resultFormat;
+    private String separator;
 
-    public FileInput(int unitLen) {
+    public FileInput(String parserTye, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+                     String resultFileDir) {
+
+        Map<String, String> infoIndexMap = new HashMap<>();
+        infoIndexMap.put(infoMapParams.getKeyIndex(), "key");
+        infoIndexMap.put(infoMapParams.getHashIndex(), "hash");
+        infoIndexMap.put(infoMapParams.getFsizeIndex(), "fsize");
+        infoIndexMap.put(infoMapParams.getPutTimeIndex(), "putTime");
+        infoIndexMap.put(infoMapParams.getMimeTypeIndex(), "mimeType");
+        infoIndexMap.put(infoMapParams.getEndUserIndex(), "endUser");
+        infoIndexMap.put(infoMapParams.getTypeIndex(), "type");
+        infoIndexMap.put(infoMapParams.getStatusIndex(), "status");
+        infoIndexMap.put(infoMapParams.getMd5Index(), "md5");
+        infoIndexMap.put(infoMapParams.getFopsIndex(), "fops");
+        infoIndexMap.put(infoMapParams.getPersistentIdIndex(), "persistentId");
+
+        if ("json".equals(parserTye)) {
+            this.lineParser = new JsonLineParser(infoIndexMap);
+        } else {
+            this.lineParser = new SplitLineParser(separator, infoIndexMap);
+        }
+        this.retryCount = retryCount;
         this.unitLen = unitLen;
+        this.resultFileDir = resultFileDir;
     }
 
-    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<String> processor) {
+    public void setSaveTotalOptions(String resultFormat, String separator) {
+        this.saveTotal = true;
+        this.resultFormat = resultFormat;
+        this.separator = separator;
+    }
 
-        ILineProcess<String> fileProcessor = null;
+    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
+
+        FileMap fileMap = new FileMap();
+        ILineProcess<Map<String, String>> fileProcessor = null;
         try {
+            fileMap.initWriter("fileinput", resultFileDir, finalI + 1);
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
-            List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());
-            int size = lineList.size()/unitLen + 1;
+            List<Map<String, String>> infoMapList = bufferedReader.lines().parallel()
+                    .filter(line -> line != null && !"".equals(line))
+                    .map(line -> {
+                        Map<String, String> infoMap = null;
+                        try {
+                            infoMap = lineParser.getItemMap(line);
+                        } catch (Exception e) {
+                            while (retryCount > 0) {
+                                System.out.println("covert input line:" + line + "to map failed. retrying...");
+                                try {
+                                    retryCount = 0;
+                                } catch (Exception e1) {
+                                    retryCount--;
+                                    if (retryCount <= 0)
+                                        fileMap.writeErrorOrNull(line + "\t" + e1.getCause());
+                                }
+                            }
+                        }
+                        return infoMap;
+                    })
+                    .collect(Collectors.toList());
+            if (saveTotal) {
+                ITypeConvert<Map<String, String>, String> typeConverter = new InfoMapToString(resultFormat, separator,
+                        true, true, true, true, true, true, true);
+                fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(infoMapList)));
+            }
+            int size = infoMapList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
-                List<String> processList = lineList.subList(unitLen * j,
-                        j == size - 1 ? lineList.size() : unitLen * (j + 1));
+                List<Map<String, String>> processList = infoMapList.subList(unitLen * j,
+                        j == size - 1 ? infoMapList.size() : unitLen * (j + 1));
                 if (fileProcessor != null) fileProcessor.processLine(processList);
             }
             bufferedReader.close();
@@ -41,7 +108,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, ILineProcess<String> processor) {
+    public void process(int maxThreads, String filePath, ILineProcess<Map<String, String>> processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);
