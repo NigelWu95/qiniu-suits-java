@@ -6,7 +6,7 @@ import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.process.FileFilter;
-import com.qiniu.service.process.FilterProcess;
+import com.qiniu.service.process.FileInfoFilterProcess;
 import com.qiniu.service.process.ListResultProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -51,7 +51,7 @@ public class ListBucketEntry {
         ILineProcess<Map<String, String>> lastProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args,
                 configFilePath);
         if (fileFilter.isValid()) {
-            nextProcessor = new FilterProcess(resultFormat, null, resultFileDir, fileFilter);
+            nextProcessor = new FileInfoFilterProcess(resultFormat, null, resultFileDir, fileFilter);
             nextProcessor.setNextProcessor(lastProcessor);
         } else {
             nextProcessor = lastProcessor;

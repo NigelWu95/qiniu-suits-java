@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
+public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
     private String resultFormat;
@@ -29,7 +29,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.processName = "filter";
     }
 
-    public FilterProcess(String resultFormat, String separator, String resultFileDir, FileFilter filter)
+    public FileInfoFilterProcess(String resultFormat, String separator, String resultFileDir, FileFilter filter)
             throws Exception {
         initBaseParams();
         this.resultFormat = resultFormat;
@@ -64,26 +64,26 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         };
     }
 
-    public FilterProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
-                         FileFilter filter) throws Exception {
+    public FileInfoFilterProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
+                                 FileFilter filter) throws Exception {
         this(resultFormat, separator, resultFileDir, filter);
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public FilterProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        FilterProcess filterProcess = (FilterProcess)super.clone();
-        filterProcess.fileMap = new FileMap();
+    public FileInfoFilterProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+        FileInfoFilterProcess fileInfoFilterProcess = (FileInfoFilterProcess)super.clone();
+        fileInfoFilterProcess.fileMap = new FileMap();
         try {
-            filterProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-            filterProcess.typeConverter = new InfoMapToString(resultFormat, separator, true, true,
+            fileInfoFilterProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, separator, true, true,
                     true, true, true, true, true);
             if (nextProcessor != null) {
-                filterProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
+                fileInfoFilterProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
             }
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return filterProcess;
+        return fileInfoFilterProcess;
     }
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {

@@ -10,6 +10,8 @@ public class InfoMapParams extends CommonParams {
     private String endUserIndex;
     private String typeIndex;
     private String statusIndex;
+    private String fopsIndex;
+    private String persistentIdIndex;
 
     public InfoMapParams(String[] args) throws Exception {
         super(args);
@@ -21,6 +23,8 @@ public class InfoMapParams extends CommonParams {
         try { this.endUserIndex = getParamFromArgs("endUser-index"); } catch (Exception e) {}
         try { this.typeIndex = getParamFromArgs("type-index"); } catch (Exception e) {}
         try { this.statusIndex = getParamFromArgs("status-index"); } catch (Exception e) {}
+        try { this.fopsIndex = getParamFromArgs("fops-index"); } catch (Exception e) {}
+        try { this.persistentIdIndex = getParamFromArgs("persistentId-index"); } catch (Exception e) {}
     }
 
     public InfoMapParams(String configFileName) throws Exception {
@@ -33,6 +37,8 @@ public class InfoMapParams extends CommonParams {
         try { this.endUserIndex = getParamFromConfig("endUser-index"); } catch (Exception e) {}
         try { this.typeIndex = getParamFromConfig("type-index"); } catch (Exception e) {}
         try { this.statusIndex = getParamFromConfig("status-index"); } catch (Exception e) {}
+        try { this.fopsIndex = getParamFromConfig("fops-index"); } catch (Exception e) {}
+        try { this.persistentIdIndex = getParamFromConfig("persistentId-index"); } catch (Exception e) {}
     }
 
 //    public int getKeyIndex() {
@@ -176,6 +182,24 @@ public class InfoMapParams extends CommonParams {
             return "7";
         } else {
             return statusIndex;
+        }
+    }
+
+    public String getFopsIndex() {
+        if (fopsIndex == null || "".equals(fopsIndex)) {
+            System.out.println("no incorrect fops index, it will use 1 as default");
+            return "1";
+        } else {
+            return fopsIndex;
+        }
+    }
+
+    public String getPersistentIdIndex() {
+        if (persistentIdIndex == null || "".equals(persistentIdIndex)) {
+            System.out.println("no incorrect persistentId index, it will use 0 as default");
+            return "0";
+        } else {
+            return persistentIdIndex;
         }
     }
 }

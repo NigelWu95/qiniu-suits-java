@@ -11,6 +11,7 @@ public class MirrorKeyFileInput extends FileInput {
 
         FileInputParams fileInputParams = new FileInputParams("resources/.qiniu.properties");
         String filePath = fileInputParams.getFilePath();
+        String parserType = fileInputParams.getParserType();
         String separator = fileInputParams.getSeparator();
         int keyIndex = fileInputParams.getKeyIndex();
         int maxThreads = fileInputParams.getMaxThreads();
@@ -19,7 +20,7 @@ public class MirrorKeyFileInput extends FileInput {
         String resultFileDir = fileInputParams.getResultFileDir();
         QhashParams qhashParams = new QhashParams("resources/.qiniu.properties");
         ILineProcess processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
-        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(separator, keyIndex, unitLen);
+        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parserType, separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
     }
@@ -28,8 +29,8 @@ public class MirrorKeyFileInput extends FileInput {
     private int keyIndex;
     private int unitLen;
 
-    public MirrorKeyFileInput(String separator, int keyIndex, int unitLen) {
-        super(separator, unitLen, null);
+    public MirrorKeyFileInput(String parserType, String separator, int keyIndex, int unitLen) {
+        super(parserType, separator, unitLen, null);
         this.separator = separator;
         this.keyIndex = keyIndex;
         this.unitLen = unitLen;

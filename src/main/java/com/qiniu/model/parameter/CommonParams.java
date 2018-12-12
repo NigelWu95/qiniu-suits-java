@@ -50,6 +50,12 @@ public class CommonParams {
         return propertyConfig.getProperty(key);
     }
 
+    public String getParamByKey(String key) throws IOException {
+        if (mainArgs != null) return mainArgs.getParamValue(key);
+        else if (propertyConfig != null) return propertyConfig.getProperty(key);
+        return "";
+    }
+
     public String getResultFormat() {
         if (StringUtils.isNullOrEmpty(resultFormat)) {
             System.out.println("no incorrect result format, it will use \"json\" as default.");

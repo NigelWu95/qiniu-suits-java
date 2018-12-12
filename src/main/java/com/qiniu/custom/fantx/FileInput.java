@@ -20,6 +20,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 
         FileInputParams fileInputParams = new FileInputParams("resources/.qiniu-fantx.properties");
         String filePath = fileInputParams.getFilePath();
+        String parserType = fileInputParams.getParserType();
         String separator = fileInputParams.getSeparator();
         int keyIndex = fileInputParams.getKeyIndex();
         int maxThreads = fileInputParams.getMaxThreads();
@@ -49,7 +50,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
 //        ILineProcess<Map<String, String>> processor = new PfopProcess(Auth.create(ak, sk), configuration,
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
-        FileInput fileInput = new FileInput(separator, keyIndex, unitLen);
+        FileInput fileInput = new FileInput(parserType, separator, keyIndex, unitLen);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
     }
@@ -58,8 +59,8 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
     private int keyIndex;
     private int unitLen;
 
-    public FileInput(String separator, int keyIndex, int unitLen) {
-        super(separator, unitLen, null);
+    public FileInput(String parseType, String separator, int keyIndex, int unitLen) {
+        super(parseType, separator, unitLen, null);
         this.separator = separator;
         this.keyIndex = keyIndex;
         this.unitLen = unitLen;
