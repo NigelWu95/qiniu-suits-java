@@ -3,7 +3,6 @@ package com.qiniu.service.process;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.convert.FileInfoToMap;
-import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
@@ -15,12 +14,8 @@ import java.util.Map;
 public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
     private String processName;
-    private String resultFormat;
-    private String separator;
     private String resultFileDir;
-    private boolean saveTotal = false;
     private FileMap fileMap;
-    private ITypeConvert<FileInfo, String> typeConverter;
     private ITypeConvert<FileInfo, Map<String, String>> nextTypeConverter;
     private ILineProcess<Map<String, String>> nextProcessor;
 
@@ -28,20 +23,14 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         this.processName = "list";
     }
 
-    public ListResultProcess(String resultFormat, String separator, String resultFileDir, boolean saveTotal) {
+    public ListResultProcess(String resultFileDir) {
         initBaseParams();
-        this.resultFormat = resultFormat;
-        this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
         this.resultFileDir = resultFileDir;
-        this.saveTotal = saveTotal;
         this.fileMap = new FileMap();
-        this.typeConverter = new FileInfoToString(resultFormat, separator, true, true, true,
-                true, true, true, true);
     }
 
-    public ListResultProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
-                             boolean saveTotal) throws IOException {
-        this(resultFormat, separator, resultFileDir, saveTotal);
+    public ListResultProcess(String resultFileDir, int resultFileIndex) throws IOException {
+        this(resultFileDir);
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
@@ -56,8 +45,6 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         listResultProcess.fileMap = new FileMap();
         try {
             listResultProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-            listResultProcess.typeConverter = new FileInfoToString(resultFormat, separator, true, true,
-                    true, true, true, true, true);
             if (nextProcessor != null) {
                 listResultProcess.nextTypeConverter = new FileInfoToMap(true, true, true,
                         true, true, true, true);
@@ -76,9 +63,6 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
         if (fileInfoList == null || fileInfoList.size() == 0) return;
         try {
-            if (saveTotal) {
-                fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
-            }
             if (nextProcessor != null) nextProcessor.processLine(nextTypeConverter.convertToVList(fileInfoList));
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());

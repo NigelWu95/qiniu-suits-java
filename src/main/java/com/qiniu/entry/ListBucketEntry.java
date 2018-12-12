@@ -23,8 +23,9 @@ public class ListBucketEntry {
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
-        String resultFormat = listBucketParams.getResultFormat();
         String resultFileDir = listBucketParams.getResultFileDir();
+        String resultFormat = listBucketParams.getResultFormat();
+        String resultSeparator = "\t";
         boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
@@ -35,7 +36,7 @@ public class ListBucketEntry {
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
-        ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir, false);
+        ILineProcess<FileInfo> processor = new ListResultProcess(resultFileDir);
 
         ListFilterParams listFilterParams = paramFromConfig ?
                 new ListFilterParams(configFilePath) : new ListFilterParams(args);
@@ -59,7 +60,8 @@ public class ListBucketEntry {
         processor.setNextProcessor(nextProcessor);
 
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
-                customPrefix, antiPrefix, 3);
+                customPrefix, antiPrefix, 3, resultFileDir);
+        listBucket.setSaveTotalOptions(resultFormat, resultSeparator);
         if (multiStatus) {
             listBucket.concurrentlyList(maxThreads, level, processor);
         } else {

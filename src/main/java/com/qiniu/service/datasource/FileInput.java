@@ -22,14 +22,14 @@ import java.util.stream.Collectors;
 public class FileInput {
 
     private ILineParser lineParser;
-    private int retryCount;
     private int unitLen;
+    private int retryCount;
     private String resultFileDir;
     private boolean saveTotal = false;
     private String resultFormat;
     private String separator;
 
-    public FileInput(String parserTye, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+    public FileInput(String parseType, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
                      String resultFileDir) {
 
         Map<String, String> infoIndexMap = new HashMap<>();
@@ -45,13 +45,13 @@ public class FileInput {
         infoIndexMap.put(infoMapParams.getFopsIndex(), "fops");
         infoIndexMap.put(infoMapParams.getPersistentIdIndex(), "persistentId");
 
-        if ("json".equals(parserTye)) {
+        if ("json".equals(parseType)) {
             this.lineParser = new JsonLineParser(infoIndexMap);
         } else {
             this.lineParser = new SplitLineParser(separator, infoIndexMap);
         }
-        this.retryCount = retryCount;
         this.unitLen = unitLen;
+        this.retryCount = retryCount;
         this.resultFileDir = resultFileDir;
     }
 
@@ -66,7 +66,7 @@ public class FileInput {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
-            fileMap.initWriter("fileinput", resultFileDir, finalI + 1);
+            fileMap.initWriter(resultFileDir, "fileinput", finalI + 1);
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
             List<Map<String, String>> infoMapList = bufferedReader.lines().parallel()
                     .filter(line -> line != null && !"".equals(line))
