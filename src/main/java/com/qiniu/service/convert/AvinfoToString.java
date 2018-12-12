@@ -1,7 +1,8 @@
 package com.qiniu.service.convert;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.qiniu.model.media.Avinfo;
-import com.qiniu.service.fileline.AvinfoJsonFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 
@@ -13,12 +14,15 @@ public class AvinfoToString implements ITypeConvert<Avinfo, String> {
     private IStringFormat<Avinfo> stringFormatter;
 
     public AvinfoToString() {
-        stringFormatter = new AvinfoJsonFormatter();
+        stringFormatter = (avinfo, variablesIfUse) -> {
+            Gson gson = new GsonBuilder().create();
+            return gson.toJson(avinfo);
+        };
     }
 
     public String toV(Avinfo avinfo) {
 
-        return stringFormatter.toFormatString(avinfo);
+        return stringFormatter.toFormatString(avinfo, null);
     }
 
     public List<String> convertToVList(List<Avinfo> srcList) {
