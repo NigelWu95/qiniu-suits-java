@@ -1,36 +1,57 @@
 package com.qiniu.service.convert;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class InfoMapToString implements ITypeConvert<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
     private Map<String, Boolean> variablesIfUse;
 
-    public InfoMapToString(String format, String separator) {
+    public InfoMapToString(String format, String separator, boolean hash, boolean fsize, boolean putTime,
+                           boolean mimeType, boolean endUser, boolean type, boolean status) {
         if ("format".equals(format)) {
             stringFormatter = (infoMap, variablesIfUse) -> {
-                Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                return gson.toJson(infoMap).replace("\\\\", "\\");
+                JsonObject converted = new JsonObject();
+                variablesIfUse.forEach((key, value) -> {
+                    if (value) {
+                        converted.addProperty(key, String.valueOf(infoMap.get(key)));
+                    }
+                });
+                return converted.toString();
             };
         } else {
-            stringFormatter = (stringStringMap, variablesIfUse) -> null;
+            stringFormatter = (infoMap, variablesIfUse) -> {
+                StringBuilder converted = new StringBuilder();
+                variablesIfUse.forEach((key, value) -> {
+                    if (value) {
+                        converted.append(String.valueOf(infoMap.get(key)));
+                        converted.append(separator);
+                    }
+                });
+                return converted.toString();
+            };
         }
         variablesIfUse = new HashMap<>();
         variablesIfUse.put("key", true);
-    }
-    public String toV(Map<String, String> stringStringMap) {
-        return null;
+        variablesIfUse.put("hash", hash);
+        variablesIfUse.put("fsize", fsize);
+        variablesIfUse.put("putTime", putTime);
+        variablesIfUse.put("mimeType", mimeType);
+        variablesIfUse.put("endUser", endUser);
+        variablesIfUse.put("type", type);
+//        variablesIfUse.put("status", status);
     }
 
     public List<String> convertToVList(List<Map<String, String>> srcList) {
-        return null;
+        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
+        return srcList.parallelStream()
+                .filter(Objects::nonNull)
+                .map(infoMap -> stringFormatter.toFormatString(infoMap, variablesIfUse))
+                .collect(Collectors.toList());
     }
 }

@@ -2,6 +2,7 @@ package com.qiniu.service.process;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
+import com.qiniu.service.convert.InfoMapToString;
 import com.qiniu.service.interfaces.ILineFilter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
@@ -28,8 +29,16 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.processName = "filter";
     }
 
-    public FilterProcess(FileFilter filter) throws Exception {
-        List<String> methodNameList = new ArrayList<String>(){{
+    public FilterProcess(String resultFormat, String separator, String resultFileDir, FileFilter filter)
+            throws Exception {
+        initBaseParams();
+        this.resultFormat = resultFormat;
+        this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
+        this.resultFileDir = resultFileDir;
+        this.fileMap = new FileMap();
+        this.typeConverter = new InfoMapToString(resultFormat, separator, true, true, true,
+                true, true, true, true);
+        List<String> methodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
             if (filter.checkKeySuffix()) add("filterKeySuffix");
             if (filter.checkKeyRegex()) add("filterKeyRegex");
@@ -41,7 +50,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiKeyRegex()) add("filterAntiKeyRegex");
             if (filter.checkAntiMime()) add("filterAntiMime");
         }};
-        List<Method> methods = new ArrayList<Method>(){{
+        List<Method> methods = new ArrayList<Method>() {{
             for (String name : methodNameList) {
                 add(filter.getClass().getMethod(name, Map.class));
             }
@@ -55,12 +64,19 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         };
     }
 
+    public FilterProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
+                         FileFilter filter) throws Exception {
+        this(resultFormat, separator, resultFileDir, filter);
+        fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    }
+
     public FilterProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         FilterProcess filterProcess = (FilterProcess)super.clone();
         filterProcess.fileMap = new FileMap();
         try {
             filterProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-//            filterProcess.typeConverter = new FileInfoToString(resultFormat, separator);
+            filterProcess.typeConverter = new InfoMapToString(resultFormat, separator, true, true,
+                    true, true, true, true, true);
             if (nextProcessor != null) {
                 filterProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
             }
@@ -79,7 +95,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     public void setRetryCount(int retryCount) {
-
+        this.retryCount = retryCount;
     }
 
     public void processLine(List<Map<String, String>> list) throws QiniuException {
@@ -103,10 +119,10 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (result) resultList.add(line);
         }
         fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(resultList)));
-        nextProcessor.processLine(resultList);
+        if (nextProcessor != null) nextProcessor.processLine(resultList);
     }
 
     public void closeResource() {
-
+        fileMap.closeWriter();
     }
 }
