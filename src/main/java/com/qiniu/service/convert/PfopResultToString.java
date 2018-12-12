@@ -1,12 +1,14 @@
 package com.qiniu.service.convert;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.qiniu.model.media.PfopResult;
-import com.qiniu.service.fileline.PfopResultJsonFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -15,12 +17,15 @@ public class PfopResultToString implements ITypeConvert<PfopResult, String> {
     private IStringFormat<PfopResult> stringFormatter;
 
     public PfopResultToString() {
-        stringFormatter = new PfopResultJsonFormatter();
+        stringFormatter = (pfopResult, variablesIfUse) -> {
+            Gson gson = new GsonBuilder().create();
+            return gson.toJson(pfopResult);
+        };
     }
 
     public String toV(PfopResult pfopResult) {
 
-        return stringFormatter.toFormatString(pfopResult);
+        return stringFormatter.toFormatString(pfopResult, null);
     }
 
     public List<String> convertToVList(List<PfopResult> srcList) {
