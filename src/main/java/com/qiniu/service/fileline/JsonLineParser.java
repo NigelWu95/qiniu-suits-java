@@ -15,7 +15,7 @@ public class JsonLineParser implements ILineParser {
         return jsonParser.parse(line).getAsJsonObject();
     }
 
-    public ArrayList<String> parseLine(String line) {
+    private ArrayList<String> parseLine(String line) {
         ArrayList<String> result = new ArrayList<>();
         try {
             JsonObject parsed = parseJsonLine(line);

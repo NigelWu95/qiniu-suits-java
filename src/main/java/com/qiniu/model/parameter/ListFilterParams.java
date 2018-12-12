@@ -123,10 +123,10 @@ public class ListFilterParams extends CommonParams {
     }
 
     public int getType() {
-        if (type.matches("(0|1)")) {
+        if (type.matches("([01])")) {
             return Integer.valueOf(type);
         } else {
-            System.out.println("no incorrect type, it will use 0 as default");
+            System.out.println("no incorrect type, it will be not compared.");
             return -1;
         }
     }
