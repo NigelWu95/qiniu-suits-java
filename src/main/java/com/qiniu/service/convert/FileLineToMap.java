@@ -24,6 +24,7 @@ public class FileLineToMap implements ITypeConvert<String, Map<String, String>> 
         infoIndexMap.put(infoMapParams.getEndUserIndex(), "endUser");
         infoIndexMap.put(infoMapParams.getTypeIndex(), "type");
         infoIndexMap.put(infoMapParams.getStatusIndex(), "status");
+        infoIndexMap.put(infoMapParams.getMd5Index(), "md5");
         infoIndexMap.put(infoMapParams.getFopsIndex(), "fops");
         infoIndexMap.put(infoMapParams.getPersistentIdIndex(), "persistentId");
 
