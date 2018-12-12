@@ -10,6 +10,7 @@ public class InfoMapParams extends CommonParams {
     private String endUserIndex;
     private String typeIndex;
     private String statusIndex;
+    private String md5Index;
     private String fopsIndex;
     private String persistentIdIndex;
 
@@ -23,6 +24,7 @@ public class InfoMapParams extends CommonParams {
         try { this.endUserIndex = getParamFromArgs("endUser-index"); } catch (Exception e) {}
         try { this.typeIndex = getParamFromArgs("type-index"); } catch (Exception e) {}
         try { this.statusIndex = getParamFromArgs("status-index"); } catch (Exception e) {}
+        try { this.md5Index = getParamFromArgs("md5-index"); } catch (Exception e) {}
         try { this.fopsIndex = getParamFromArgs("fops-index"); } catch (Exception e) {}
         try { this.persistentIdIndex = getParamFromArgs("persistentId-index"); } catch (Exception e) {}
     }
@@ -37,6 +39,7 @@ public class InfoMapParams extends CommonParams {
         try { this.endUserIndex = getParamFromConfig("endUser-index"); } catch (Exception e) {}
         try { this.typeIndex = getParamFromConfig("type-index"); } catch (Exception e) {}
         try { this.statusIndex = getParamFromConfig("status-index"); } catch (Exception e) {}
+        try { this.md5Index = getParamFromConfig("md5-index"); } catch (Exception e) {}
         try { this.fopsIndex = getParamFromConfig("fops-index"); } catch (Exception e) {}
         try { this.persistentIdIndex = getParamFromConfig("persistentId-index"); } catch (Exception e) {}
     }
@@ -182,6 +185,15 @@ public class InfoMapParams extends CommonParams {
             return "7";
         } else {
             return statusIndex;
+        }
+    }
+
+    public String getMd5Index() {
+        if (md5Index == null || "".equals(md5Index)) {
+            System.out.println("no incorrect md5 index, it will use 8 as default");
+            return "8";
+        } else {
+            return md5Index;
         }
     }
 

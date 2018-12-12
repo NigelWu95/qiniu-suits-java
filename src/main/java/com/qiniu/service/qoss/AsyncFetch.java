@@ -106,7 +106,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.get("key");
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         Response response = fetch(url, keepKey ? keyPrefix + fileInfo.get("key") : null,
-                null, hashCheck ? fileInfo.get("hash") : null);
+                fileInfo.get("md5"), hashCheck ? fileInfo.get("hash") : null);
         if ("application/x-mpegurl".equals(fileInfo.get("mimeType")) || fileInfo.get("key").endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
@@ -117,7 +117,8 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
 
             for (VideoTS videoTS : videoTSList) {
                 String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, "", "");
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, fileInfo.get("md5"),
+                        hashCheck ? fileInfo.get("hash") : null);
             }
         }
 
