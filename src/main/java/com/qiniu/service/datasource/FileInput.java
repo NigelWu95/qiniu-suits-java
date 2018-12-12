@@ -1,5 +1,6 @@
 package com.qiniu.service.datasource;
 
+import com.qiniu.model.parameter.InfoMapParams;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.FileLineToMap;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -19,17 +20,19 @@ public class FileInput {
 
     private String parserTye;
     private String separator;
+    private InfoMapParams infoMapParams;
     private int unitLen;
 
-    public FileInput(String separator, int unitLen) {
+    public FileInput(String separator, int unitLen, InfoMapParams infoMapParams) {
         this.separator = separator;
         this.unitLen = unitLen;
+        this.infoMapParams = infoMapParams;
     }
 
     public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
 
         ILineProcess<Map<String, String>> fileProcessor = null;
-        ITypeConvert<String, Map<String, String>> typeConverter = new FileLineToMap(parserTye, separator);
+        ITypeConvert<String, Map<String, String>> typeConverter = new FileLineToMap(parserTye, separator, infoMapParams);
         try {
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
             List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());

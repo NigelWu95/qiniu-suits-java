@@ -36,7 +36,8 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     }
 
     public void setTypeConverter(String format, String separator) {
-        this.typeConverter = new FileInfoToString(format, separator);
+        this.typeConverter = new FileInfoToString(format, separator, true, true, true, true,
+                true, true, true);
     }
 
     public FileStat getNewInstance(int resultFileIndex) throws CloneNotSupportedException {

@@ -59,7 +59,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
     private int unitLen;
 
     public FileInput(String separator, int keyIndex, int unitLen) {
-        super(separator, unitLen);
+        super(separator, unitLen, null);
         this.separator = separator;
         this.keyIndex = keyIndex;
         this.unitLen = unitLen;

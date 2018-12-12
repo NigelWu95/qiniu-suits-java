@@ -1,5 +1,6 @@
 package com.qiniu.service.fileline;
 
+import com.qiniu.model.parameter.InfoMapParams;
 import com.qiniu.service.interfaces.ILineParser;
 
 import java.util.*;
@@ -7,12 +8,22 @@ import java.util.*;
 public class SplitLineParser implements ILineParser {
 
     private String separator;
+    private Map<String, String> infoIndexMap;
 
-    public SplitLineParser(String separator) {
+    public SplitLineParser(String separator, InfoMapParams infoMapParams) {
         this.separator = separator;
+        this.infoIndexMap = new HashMap<>();
+        this.infoIndexMap.put(infoMapParams.getKeyIndex(), "key");
+        this.infoIndexMap.put(infoMapParams.getHashIndex(), "hash");
+        this.infoIndexMap.put(infoMapParams.getFsizeIndex(), "fsize");
+        this.infoIndexMap.put(infoMapParams.getPutTimeIndex(), "putTime");
+        this.infoIndexMap.put(infoMapParams.getMimeTypeIndex(), "mimeType");
+        this.infoIndexMap.put(infoMapParams.getEndUserIndex(), "endUser");
+        this.infoIndexMap.put(infoMapParams.getTypeIndex(), "type");
+        this.infoIndexMap.put(infoMapParams.getStatusIndex(), "status");
     }
 
-    public ArrayList<String> parseLine(String line) {
+    private ArrayList<String> parseLine(String line) {
         String[] items = line.split(separator);
         return new ArrayList<>(Arrays.asList(items));
     }
