@@ -18,12 +18,13 @@ import java.util.stream.Collectors;
 
 public class FileInput {
 
-    private String parserTye;
+    private String parserType;
     private String separator;
     private InfoMapParams infoMapParams;
     private int unitLen;
 
-    public FileInput(String separator, int unitLen, InfoMapParams infoMapParams) {
+    public FileInput(String parserType, String separator, int unitLen, InfoMapParams infoMapParams) {
+        this.parserType = parserType;
         this.separator = separator;
         this.unitLen = unitLen;
         this.infoMapParams = infoMapParams;
@@ -32,7 +33,7 @@ public class FileInput {
     public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
 
         ILineProcess<Map<String, String>> fileProcessor = null;
-        ITypeConvert<String, Map<String, String>> typeConverter = new FileLineToMap(parserTye, separator, infoMapParams);
+        ITypeConvert<String, Map<String, String>> typeConverter = new FileLineToMap(parserType, separator, infoMapParams);
         try {
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
             List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());

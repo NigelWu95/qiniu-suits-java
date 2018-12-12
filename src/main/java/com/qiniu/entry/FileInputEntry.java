@@ -14,13 +14,14 @@ public class FileInputEntry {
         FileInputParams fileInputParams = paramFromConfig ? new FileInputParams(configFilePath) : new FileInputParams(args);
         InfoMapParams infoMapParams = paramFromConfig ? new InfoMapParams(configFilePath) : new InfoMapParams(args);
         String filePath = fileInputParams.getFilePath();
+        String parserType = fileInputParams.getParserType();
         String separator = fileInputParams.getSeparator();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         ILineProcess<Map<String, String>> iLineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig,
                 args, configFilePath);
-        FileInput fileInput = new FileInput(separator, unitLen, infoMapParams);
+        FileInput fileInput = new FileInput(parserType, separator, unitLen, infoMapParams);
         fileInput.process(maxThreads, sourceFilePath, iLineProcessor);
         if (iLineProcessor != null) iLineProcessor.closeResource();
     }
