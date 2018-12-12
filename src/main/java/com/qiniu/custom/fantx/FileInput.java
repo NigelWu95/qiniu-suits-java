@@ -1,14 +1,12 @@
 package com.qiniu.custom.fantx;
 
 import com.qiniu.common.Zone;
-import com.qiniu.model.parameter.AvinfoParams;
-import com.qiniu.model.parameter.FileCopyParams;
-import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.model.parameter.PfopParams;
+import com.qiniu.model.parameter.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
+import com.qiniu.service.process.FileInputResultProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
@@ -19,14 +17,20 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
     public static void main(String[] args) throws Exception {
 
         FileInputParams fileInputParams = new FileInputParams("resources/.qiniu-fantx.properties");
+        InfoMapParams infoMapParams = new InfoMapParams("resources/.qiniu-fantx.properties");
         String filePath = fileInputParams.getFilePath();
         String parserType = fileInputParams.getParserType();
-        String separator = fileInputParams.getSeparator();
-        int keyIndex = fileInputParams.getKeyIndex();
+        String inputSeparator = fileInputParams.getSeparator();
+        String resultFormat = fileInputParams.getResultFormat();
+        String resultSeparator = fileInputParams.getResultFormat();
+        String resultFileDir = fileInputParams.getResultFileDir();
+        boolean saveTotal = false;
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        String resultFileDir = fileInputParams.getResultFileDir();
+        ILineProcess<String> inputResultProcessor = new FileInputResultProcess(parserType, inputSeparator, infoMapParams,
+                resultFormat, resultSeparator, resultFileDir, saveTotal);
+
         Configuration configuration = new Configuration(Zone.autoZone());
 //        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu-fantx.properties");
         // parse avinfo from files.
@@ -50,19 +54,13 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
 //        ILineProcess<Map<String, String>> processor = new PfopProcess(Auth.create(ak, sk), configuration,
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
-        FileInput fileInput = new FileInput(parserType, separator, keyIndex, unitLen);
-        fileInput.process(maxThreads, sourceFilePath, processor);
-        processor.closeResource();
+        inputResultProcessor.setNextProcessor(processor);
+        FileInput fileInput = new FileInput(unitLen);
+        fileInput.process(maxThreads, sourceFilePath, inputResultProcessor);
+        inputResultProcessor.closeResource();
     }
 
-    private String separator;
-    private int keyIndex;
-    private int unitLen;
-
-    public FileInput(String parseType, String separator, int keyIndex, int unitLen) {
-        super(parseType, separator, unitLen, null);
-        this.separator = separator;
-        this.keyIndex = keyIndex;
-        this.unitLen = unitLen;
+    public FileInput(int unitLen) {
+        super(unitLen);
     }
 }

@@ -18,11 +18,11 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     private String resultFormat;
     private String separator;
     private String resultFileDir;
+    private boolean saveTotal = false;
     private FileMap fileMap;
     private ITypeConvert<FileInfo, String> typeConverter;
-    private boolean saveTotal = false;
-    private ILineProcess<Map<String, String>> nextProcessor;
     private ITypeConvert<FileInfo, Map<String, String>> nextTypeConverter;
+    private ILineProcess<Map<String, String>> nextProcessor;
 
     private void initBaseParams() {
         this.processName = "list";
@@ -46,9 +46,9 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
     }
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
-        this.nextProcessor = nextProcessor;
         this.nextTypeConverter = new FileInfoToMap(true, true, true, true, true,
                 true, true);
+        this.nextProcessor = nextProcessor;
     }
 
     public ListResultProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -59,9 +59,9 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
             listResultProcess.typeConverter = new FileInfoToString(resultFormat, separator, true, true,
                     true, true, true, true, true);
             if (nextProcessor != null) {
-                listResultProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
                 listResultProcess.nextTypeConverter = new FileInfoToMap(true, true, true,
                         true, true, true, true);
+                listResultProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
             }
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");

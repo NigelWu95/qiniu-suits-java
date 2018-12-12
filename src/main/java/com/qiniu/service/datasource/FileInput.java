@@ -1,10 +1,7 @@
 package com.qiniu.service.datasource;
 
-import com.qiniu.model.parameter.InfoMapParams;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.service.convert.FileLineToMap;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
 
 import java.io.BufferedReader;
@@ -18,22 +15,15 @@ import java.util.stream.Collectors;
 
 public class FileInput {
 
-    private String parserType;
-    private String separator;
-    private InfoMapParams infoMapParams;
     private int unitLen;
 
-    public FileInput(String parserType, String separator, int unitLen, InfoMapParams infoMapParams) {
-        this.parserType = parserType;
-        this.separator = separator;
+    public FileInput(int unitLen) {
         this.unitLen = unitLen;
-        this.infoMapParams = infoMapParams;
     }
 
-    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
+    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<String> processor) {
 
-        ILineProcess<Map<String, String>> fileProcessor = null;
-        ITypeConvert<String, Map<String, String>> typeConverter = new FileLineToMap(parserType, separator, infoMapParams);
+        ILineProcess<String> fileProcessor = null;
         try {
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
             List<String> lineList = bufferedReader.lines().parallel().collect(Collectors.toList());
@@ -41,7 +31,7 @@ public class FileInput {
             for (int j = 0; j < size; j++) {
                 List<String> processList = lineList.subList(unitLen * j,
                         j == size - 1 ? lineList.size() : unitLen * (j + 1));
-                if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(processList));
+                if (fileProcessor != null) fileProcessor.processLine(processList);
             }
             bufferedReader.close();
         } catch (Exception e) {
@@ -51,7 +41,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, ILineProcess<Map<String, String>> processor) {
+    public void process(int maxThreads, String filePath, ILineProcess<String> processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);
