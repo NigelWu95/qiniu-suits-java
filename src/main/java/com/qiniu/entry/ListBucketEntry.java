@@ -6,6 +6,7 @@ import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.process.FileFilter;
+import com.qiniu.service.process.FilterProcess;
 import com.qiniu.service.process.ListResultProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -34,6 +35,7 @@ public class ListBucketEntry {
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
+        ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir, false);
 
         ListFilterParams listFilterParams = paramFromConfig ?
                 new ListFilterParams(configFilePath) : new ListFilterParams(args);
@@ -45,10 +47,15 @@ public class ListBucketEntry {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-
-        ILineProcess<FileInfo> processor = new ListResultProcess(resultFormat, null, resultFileDir, false);
-        ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args,
+        ILineProcess<Map<String, String>> nextProcessor;
+        ILineProcess<Map<String, String>> lastProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args,
                 configFilePath);
+        if (fileFilter.isValid()) {
+            nextProcessor = new FilterProcess(resultFormat, null, resultFileDir, fileFilter);
+            nextProcessor.setNextProcessor(lastProcessor);
+        } else {
+            nextProcessor = lastProcessor;
+        }
         processor.setNextProcessor(nextProcessor);
 
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
@@ -60,6 +67,5 @@ public class ListBucketEntry {
         }
 
         processor.closeResource();
-        if (nextProcessor != null) nextProcessor.closeResource();
     }
 }
