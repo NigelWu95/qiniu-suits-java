@@ -19,17 +19,15 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
         FileInputParams fileInputParams = new FileInputParams("resources/.qiniu-fantx.properties");
         InfoMapParams infoMapParams = new InfoMapParams("resources/.qiniu-fantx.properties");
         String filePath = fileInputParams.getFilePath();
-        String parserType = fileInputParams.getParserType();
-        String inputSeparator = fileInputParams.getSeparator();
-        String resultFormat = fileInputParams.getResultFormat();
-        String resultSeparator = fileInputParams.getResultFormat();
+        String parseType = fileInputParams.getParseType();
+        String separator = fileInputParams.getSeparator();
         String resultFileDir = fileInputParams.getResultFileDir();
         boolean saveTotal = false;
+        String resultFormat = fileInputParams.getResultFormat();
+        String resultSeparator = fileInputParams.getResultFormat();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        ILineProcess<String> inputResultProcessor = new FileInputResultProcess(parserType, inputSeparator, infoMapParams,
-                resultFormat, resultSeparator, resultFileDir, saveTotal);
 
         Configuration configuration = new Configuration(Zone.autoZone());
 //        AvinfoParams avinfoParams = new AvinfoParams("resources/.qiniu-fantx.properties");
@@ -54,13 +52,13 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
 //        ILineProcess<Map<String, String>> processor = new PfopProcess(Auth.create(ak, sk), configuration,
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
-        inputResultProcessor.setNextProcessor(processor);
-        FileInput fileInput = new FileInput(unitLen);
-        fileInput.process(maxThreads, sourceFilePath, inputResultProcessor);
-        inputResultProcessor.closeResource();
+        FileInput fileInput = new FileInput(parseType, separator, infoMapParams, 3, unitLen, resultFileDir);
+        fileInput.process(maxThreads, sourceFilePath, processor);
+        processor.closeResource();
     }
 
-    public FileInput(int unitLen) {
-        super(unitLen);
+    public FileInput(String parseType, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+                     String resultFileDir) {
+        super(parseType, separator, infoMapParams, retryCount, unitLen, resultFileDir);
     }
 }

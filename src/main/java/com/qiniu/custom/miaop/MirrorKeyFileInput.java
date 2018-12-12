@@ -16,26 +16,25 @@ public class MirrorKeyFileInput extends FileInput {
         FileInputParams fileInputParams = new FileInputParams("resources/.qiniu.properties");
         InfoMapParams infoMapParams = new InfoMapParams("resources/.qiniu.properties");
         String filePath = fileInputParams.getFilePath();
-        String parserType = fileInputParams.getParserType();
-        String inputSeparator = fileInputParams.getSeparator();
-        String resultFormat = fileInputParams.getResultFormat();
-        String resultSeparator = fileInputParams.getResultFormat();
+        String parseType = fileInputParams.getParseType();
+        String separator = fileInputParams.getSeparator();
         String resultFileDir = fileInputParams.getResultFileDir();
         boolean saveTotal = false;
+        String resultFormat = fileInputParams.getResultFormat();
+        String resultSeparator = fileInputParams.getResultFormat();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         QhashParams qhashParams = new QhashParams("resources/.qiniu.properties");
         ILineProcess<Map<String, String>> processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
-        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(unitLen);
-        ILineProcess<String> inputResultProcessor = new FileInputResultProcess(parserType, inputSeparator, infoMapParams,
-                resultFormat, resultSeparator, resultFileDir, saveTotal);
-        inputResultProcessor.setNextProcessor(processor);
-        fileInput.process(maxThreads, sourceFilePath, inputResultProcessor);
-        inputResultProcessor.closeResource();
+        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parseType, separator, infoMapParams, 3, unitLen,
+                resultFileDir);
+        fileInput.process(maxThreads, sourceFilePath, processor);
+        processor.closeResource();
     }
 
-    public MirrorKeyFileInput(int unitLen) {
-        super(unitLen);
+    public MirrorKeyFileInput(String parseType, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+                              String resultFileDir) {
+        super(parseType, separator, infoMapParams, retryCount, unitLen, resultFileDir);
     }
 }

@@ -5,7 +5,7 @@ import com.qiniu.util.StringUtils;
 
 public class FileInputParams extends CommonParams {
 
-    private String parserType;
+    private String parseType;
     private String separator;
     private String filePath;
     private String keyIndex = "";
@@ -13,7 +13,7 @@ public class FileInputParams extends CommonParams {
 
     public FileInputParams(String[] args) throws Exception {
         super(args);
-        try { this.parserType = getParamFromArgs("parser-type"); } catch (Exception e) {}
+        try { this.parseType = getParamFromArgs("parse-type"); } catch (Exception e) {}
         try { this.separator = getParamFromArgs("separator"); } catch (Exception e) {}
         this.filePath = getParamFromArgs("file-path");
         try { this.keyIndex = getParamFromArgs("key-index"); } catch (Exception e) {}
@@ -22,19 +22,19 @@ public class FileInputParams extends CommonParams {
 
     public FileInputParams(String configFileName) throws Exception {
         super(configFileName);
-        try { this.parserType = getParamFromConfig("parser-type"); } catch (Exception e) {}
+        try { this.parseType = getParamFromConfig("parser-type"); } catch (Exception e) {}
         try { this.separator = getParamFromConfig("separator"); } catch (Exception e) { this.separator = ""; }
         this.filePath = getParamFromConfig("file-path");
         try { this.keyIndex = getParamFromConfig("key-index"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
     }
 
-    public String getParserType() {
-        if (StringUtils.isNullOrEmpty(parserType)) {
-            System.out.println("no incorrect parser type, it will use \"json\" as default.");
+    public String getParseType() {
+        if (StringUtils.isNullOrEmpty(parseType)) {
+            System.out.println("no incorrect parse type, it will use \"json\" as default.");
             return "json";
         } else {
-            return parserType;
+            return parseType;
         }
     }
 

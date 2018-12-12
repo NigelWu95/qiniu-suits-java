@@ -1,9 +1,12 @@
 package com.qiniu.service.datasource;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.sdk.BucketManager;
+import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileLister;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -29,10 +32,14 @@ public class ListBucket {
     private List<String> originPrefixList = Arrays.asList(
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
                     .split(""));
+    private String resultFileDir;
+    private boolean saveTotal = false;
+    private String resultFormat;
+    private String separator;
     private ProgressRecorder progressRecorder;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
-                      String customPrefix, List<String> antiPrefix, int retryCount) {
+                      String customPrefix, List<String> antiPrefix, int retryCount, String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -41,6 +48,13 @@ public class ListBucket {
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix;
         this.retryCount = retryCount;
+        this.resultFileDir = resultFileDir;
+    }
+
+    public void setSaveTotalOptions(String resultFormat, String separator) {
+        this.saveTotal = true;
+        this.resultFormat = resultFormat;
+        this.separator = separator;
     }
 
     public void setProgressRecorder(ProgressRecorder progressRecorder) {
@@ -112,9 +126,16 @@ public class ListBucket {
 
     private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess<FileInfo> processor) {
 
+        FileMap fileMap = new FileMap();
         ILineProcess<FileInfo> fileProcessor = null;
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
+            ITypeConvert<FileInfo, String> typeConverter = null;
+            if (saveTotal) {
+                typeConverter = new FileInfoToString(resultFormat, separator,
+                        true, true, true, true, true, true, true);
+                fileMap.initWriter(resultFileDir, "list", resultIndex);
+            }
             ProgressRecorder recorder = progressRecorder != null ? progressRecorder.getNewInstance(resultIndex) : null;
 
             while (fileLister.hasNext()) {
@@ -138,6 +159,7 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finaSize = fileInfoList.size();
                 }
+                if (saveTotal) fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
                 if (fileProcessor != null) fileProcessor.processLine(fileInfoList);
                 if (recorder != null) recorder.record(fileLister.getPrefix(), marker, endFile);
                 if (finaSize < size) break;
