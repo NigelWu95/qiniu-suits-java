@@ -11,7 +11,7 @@ public interface ILineProcess<T> {
 
     default void setBatch(boolean batch) {}
 
-    void setRetryCount(int retryCount);
+    default void setRetryCount(int retryCount) {}
 
     default String getProcessName() {
         return "";

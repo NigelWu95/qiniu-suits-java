@@ -18,9 +18,9 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     private String processName;
     private String resultFormat;
     private String separator;
-    protected int retryCount = 3;
     private String resultFileDir;
     private FileMap fileMap;
+    protected int retryCount = 3;
     private ITypeConvert<Map<String, String>, String> typeConverter;
     private ILineFilter<Map<String, String>> filter;
     private ILineProcess<Map<String, String>> nextProcessor;
@@ -101,28 +101,33 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     public void processLine(List<Map<String, String>> list) throws QiniuException {
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> resultList = new ArrayList<>();
-        for (Map<String, String> line : list) {
-            boolean result = true;
-            try {
-                result = filter.doFilter(line);
-            } catch (ReflectiveOperationException e) {
-                while (retryCount > 0) {
-                    try {
-                        result = filter.doFilter(line);
-                        retryCount = 0;
-                    } catch (ReflectiveOperationException e1) {
-                        retryCount--;
-                        if (retryCount <= 0) throw new QiniuException(e1, "");
+        try {
+            for (Map<String, String> line : list) {
+                boolean result = true;
+                try {
+                    result = filter.doFilter(line);
+                } catch (ReflectiveOperationException e) {
+                    while (retryCount > 0) {
+                        try {
+                            result = filter.doFilter(line);
+                            retryCount = 0;
+                        } catch (ReflectiveOperationException e1) {
+                            retryCount--;
+                            if (retryCount <= 0) throw e1;
+                        }
                     }
                 }
+                if (result) resultList.add(line);
             }
-            if (result) resultList.add(line);
+            fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(resultList)));
+            if (nextProcessor != null) nextProcessor.processLine(resultList);
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
         }
-        fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(resultList)));
-        if (nextProcessor != null) nextProcessor.processLine(resultList);
     }
 
     public void closeResource() {
         fileMap.closeWriter();
+        if (nextProcessor != null) nextProcessor.closeResource();
     }
 }
