@@ -36,7 +36,8 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         this.resultFileDir = resultFileDir;
         this.saveTotal = saveTotal;
         this.fileMap = new FileMap();
-        this.typeConverter = new FileInfoToString(resultFormat, separator);
+        this.typeConverter = new FileInfoToString(resultFormat, separator, true, true, true,
+                true, true, true, true);
     }
 
     public ListResultProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
@@ -47,7 +48,8 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
-        this.nextTypeConverter = new FileInfoToMap();
+        this.nextTypeConverter = new FileInfoToMap(true, true, true, true, true,
+                true, true);
     }
 
     public ListResultProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -55,10 +57,12 @@ public class ListResultProcess implements ILineProcess<FileInfo>, Cloneable {
         listResultProcess.fileMap = new FileMap();
         try {
             listResultProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-            listResultProcess.typeConverter = new FileInfoToString(resultFormat, separator);
+            listResultProcess.typeConverter = new FileInfoToString(resultFormat, separator, true, true,
+                    true, true, true, true, true);
             if (nextProcessor != null) {
                 listResultProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
-                listResultProcess.nextTypeConverter = new FileInfoToMap();
+                listResultProcess.nextTypeConverter = new FileInfoToMap(true, true, true,
+                        true, true, true, true);
             }
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
