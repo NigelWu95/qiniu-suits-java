@@ -15,7 +15,7 @@
 **source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
 `list` 表示从七牛存储空间列举出资源，`file` 表示从本地路径读取文件内容中的资源列表  
 
-##### *关于并发处理*：  
+###### *关于并发处理*：  
 
 ```
 (1) list 源，从存储空间中列举文件，支持多线程并发列举，线程数在配置文件中指定，自动按照线程数并发  
@@ -32,8 +32,19 @@
 `asyncfetch` 表示异步抓取资源到指定空间  
 
 ### 3 结果持久化
-对上一步输出的结果进行持久化操作（目前支持写入到本地文件），保存结果到指定位置:  
-**result-path=../result** [相对路径] (命令行方式则指定 **-result-path=../result**)  
-**result-format=json/table** (命令行方式则指定 **-result-format=**)  
-`json` 表示使用 json 字符串形式保存每一条记录  
-`table` 表示使用表格形式保存每一条记录，并且指定分隔符 **separator=xxx**  
+对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：
+```
+result-path=../result
+result-format=
+result-separator=
+save-total=
+```
+`result-path` 表示保存结果的文件路径  
+`result-format` 结果保存格式（json/table，将每一条结果记录格式化为对应格式）  
+`result-separator` 结果保存为 table 格式时使用的分隔符  
+`save-total` 用于选择是否直接保存数据源输出结果  
+
+###### *命令行方式*
+```
+-result-path= -save-total=true -result-format= -result-separator=
+```

@@ -6,7 +6,6 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
-import com.qiniu.service.process.FileInputResultProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 

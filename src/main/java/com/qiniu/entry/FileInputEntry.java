@@ -4,7 +4,6 @@ import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.InfoMapParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.process.FileInputResultProcess;
 
 import java.util.Map;
 
