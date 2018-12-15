@@ -16,7 +16,6 @@ level=1
 unit-len=10000
 prefix=
 anti-prefix=|
-sava-total=true
 ```
 `ak, sk` 表示账号的密钥对字符串  
 `bucket` 空间名称  
@@ -27,11 +26,10 @@ sava-total=true
 `unit-len` 表示每次列举请求列举的文件个数  
 `prefix` 表示只列举某个文件名前缀的资源  
 `anti-prefix` 表示不列举某个文件名前缀的资源，支持以 `,` 分隔的列表  
-`sava-total` 表示是否保存完整的原始列举结果  
 
 ### 命令行方式
 ```
--ak= -sk= -bucket= -multi= -max-threads= -version= -level= -unit-len= -prefix= -anti-prefix= -sava-total=true
+-ak= -sk= -bucket= -multi= -max-threads= -version= -level= -unit-len= -prefix= -anti-prefix=
 ```
 
 ### 关于并发列举
