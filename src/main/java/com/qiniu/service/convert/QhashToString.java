@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public class QhashToString implements ITypeConvert<Qhash, String> {
 
     private IStringFormat<Qhash> stringFormatter;
+    volatile private List<String> errorList = new ArrayList<>();
 
     public QhashToString(String format, String separator) {
         if ("format".equals(format)) {
@@ -28,20 +29,21 @@ public class QhashToString implements ITypeConvert<Qhash, String> {
 
     public List<String> convertToVList(List<Qhash> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<Qhash> errorList = new ArrayList<>();
-        List<String> successList = srcList.parallelStream()
+        return srcList.parallelStream()
                 .filter(Objects::nonNull)
                 .map(qhash -> {
                     try {
                         return stringFormatter.toFormatString(qhash, null);
                     } catch (Exception e) {
-                        errorList.add(qhash);
+                        errorList.add(String.valueOf(qhash));
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        srcList = errorList;
-        return successList;
+    }
+
+    public List<String> getErrorList() {
+        return errorList;
     }
 }
