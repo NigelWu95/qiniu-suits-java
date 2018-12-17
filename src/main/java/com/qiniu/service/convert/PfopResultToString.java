@@ -8,6 +8,7 @@ import com.qiniu.service.interfaces.ITypeConvert;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -24,9 +25,20 @@ public class PfopResultToString implements ITypeConvert<PfopResult, String> {
 
     public List<String> convertToVList(List<PfopResult> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.parallelStream()
+        List<PfopResult> errorList = new ArrayList<>();
+        List<String> successList = srcList.parallelStream()
                 .filter(Objects::nonNull)
-                .map(pfopResult -> stringFormatter.toFormatString(pfopResult, null))
+                .map(pfopResult -> {
+                    try {
+                        return stringFormatter.toFormatString(pfopResult, null);
+                    } catch (Exception e) {
+                        errorList.add(pfopResult);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        srcList = errorList;
+        return successList;
     }
 }
