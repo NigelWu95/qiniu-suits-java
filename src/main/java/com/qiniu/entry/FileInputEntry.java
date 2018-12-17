@@ -14,10 +14,10 @@ public class FileInputEntry {
         String filePath = fileInputParams.getFilePath();
         String parseType = fileInputParams.getParseType();
         String separator = fileInputParams.getSeparator();
-        String resultFileDir = fileInputParams.getResultFileDir();
-        boolean saveTotal = false;
+        boolean saveTotal = fileInputParams.getSaveTotal();
         String resultFormat = fileInputParams.getResultFormat();
         String resultSeparator = fileInputParams.getResultFormat();
+        String resultFileDir = fileInputParams.getResultFileDir();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
@@ -25,6 +25,7 @@ public class FileInputEntry {
                 args, configFilePath);
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, 3, unitLen, resultFileDir);
+        fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         fileInput.process(maxThreads, sourceFilePath, lineProcessor);
         lineProcessor.closeResource();
     }

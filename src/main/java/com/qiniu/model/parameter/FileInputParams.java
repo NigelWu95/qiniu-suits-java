@@ -89,6 +89,15 @@ public class FileInputParams extends CommonParams {
         }
     }
 
+    public Boolean getSaveTotal() {
+        if (saveTotal.matches("(true|false)")) {
+            return Boolean.valueOf(saveTotal);
+        } else {
+            System.out.println("not incorrectly set result save total option, it will use \"false\" as default.");
+            return false;
+        }
+    }
+
     public String getKeyIndex() throws QiniuException {
         if (keyIndex == null || "".equals(keyIndex)) {
             if ("json".equals(parseType)) {
