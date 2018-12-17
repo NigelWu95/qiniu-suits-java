@@ -17,10 +17,6 @@ public interface ILineProcess<T> {
         return "";
     }
 
-    default String getInfo() {
-        return "";
-    }
-
     void processLine(List<T> list) throws QiniuException;
 
     default void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {}

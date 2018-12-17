@@ -42,10 +42,6 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
         return copyFile;
     }
 
-    public String getInfo() {
-        return bucket;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.delete(bucket, fileInfo.get("key"));
     }

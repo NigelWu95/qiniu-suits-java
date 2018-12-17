@@ -44,10 +44,6 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
         return updateLifecycle;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + days;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.deleteAfterDays(bucket, fileInfo.get("key"), days);
     }

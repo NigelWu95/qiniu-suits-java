@@ -19,7 +19,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private String algorithm;
     private FileChecker fileChecker;
     private String processName;
-    private int retryCount = 3;
+    private int retryCount;
     protected String resultFileDir;
     private FileMap fileMap;
 
@@ -69,10 +69,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return this.processName;
     }
 
-    public String getInfo() {
-        return domain;
-    }
-
     public String singleWithRetry(String key, int retryCount) throws QiniuException {
 
         String qhash = null;
@@ -101,7 +97,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 String qhash = singleWithRetry(fileInfo.get("key"), retryCount);
                 if (qhash != null) resultList.add(fileInfo.get("key") + "\t" + qhash);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, processName, fileInfo.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

@@ -52,10 +52,6 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         return copyFile;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + toBucket + "\t" + keepKey + "\t" + keyPrefix;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.copy(bucket, fileInfo.get("key"), toBucket, keepKey ? keyPrefix +
                 fileInfo.get("key") : null, false);

@@ -23,9 +23,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected BucketManager bucketManager;
     protected String bucket;
     protected String processName;
-    protected boolean batch = true;
+    protected boolean batch;
     protected volatile BatchOperations batchOperations;
-    protected int retryCount = 3;
+    protected int retryCount;
     protected String resultFileDir;
     protected FileMap fileMap;
 
@@ -59,8 +59,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return this.processName;
     }
 
-    public abstract String getInfo();
-
     protected abstract Response getResponse(Map<String, String> fileInfo) throws QiniuException;
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
@@ -87,7 +85,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                 String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, processName, fileInfo.get("key"));
             }
         }
 
@@ -122,8 +120,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
-                            String.join("\n", processList.stream()
+                    HttpResponseUtils.processException(e, fileMap, processName, String.join("\n", processList.stream()
                                     .map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList())));
                 }
             }

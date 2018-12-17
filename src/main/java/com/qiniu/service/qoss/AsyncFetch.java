@@ -87,13 +87,6 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         return asyncFetch;
     }
 
-    public String getInfo() {
-        return domain + "\t" + https + "\t" + !(srcAuth == null) + "\t" + keepKey + "\t" + keyPrefix + "\t" +
-                hashCheck + (!hasCustomArgs ? "" : "\t" +
-                host + "\t" + callbackUrl + "\t" + callbackBody + "\t" + callbackBodyType + "\t" + callbackHost +
-                fileType + "\t" + ignoreSameKey);
-    }
-
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
