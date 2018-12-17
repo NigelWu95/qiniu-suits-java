@@ -33,7 +33,7 @@ public class ListBucket {
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
                     .split(""));
     private String resultFileDir;
-    private boolean saveTotal = false;
+    private boolean saveTotal;
     private String resultFormat;
     private String separator;
     private ProgressRecorder progressRecorder;
@@ -51,8 +51,8 @@ public class ListBucket {
         this.resultFileDir = resultFileDir;
     }
 
-    public void setSaveTotalOptions(String resultFormat, String separator) {
-        this.saveTotal = true;
+    public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
+        this.saveTotal = saveTotal;
         this.resultFormat = resultFormat;
         this.separator = separator;
     }

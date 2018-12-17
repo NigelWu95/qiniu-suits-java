@@ -93,4 +93,13 @@ public class ListBucketParams extends QossParams {
         if (StringUtils.isNullOrEmpty(antiPrefix)) return new ArrayList<>();
         return Arrays.asList(antiPrefix.split(","));
     }
+
+    public Boolean getSaveTotal() {
+        if (saveTotal.matches("(true|false)")) {
+            return Boolean.valueOf(saveTotal);
+        } else {
+            System.out.println("not incorrectly set result save total option, it will use \"true\" as default.");
+            return true;
+        }
+    }
 }

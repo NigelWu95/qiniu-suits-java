@@ -12,7 +12,7 @@ public class CommonParams {
     private String resultFileDir;
     private String resultFormat;
     private String resultSeparator;
-    private String saveTotal;
+    protected String saveTotal;
     private String process = "";
     private String processBatch = "";
     private String maxThreads = "";
@@ -106,15 +106,6 @@ public class CommonParams {
             return "\t";
         } else {
             return resultSeparator;
-        }
-    }
-
-    public Boolean getSaveTotal() {
-        if (saveTotal.matches("(true|false)")) {
-            return Boolean.valueOf(saveTotal);
-        } else {
-            System.out.println("not incorrectly set result save total option, it will use \"true\" as default.");
-            return true;
         }
     }
 }

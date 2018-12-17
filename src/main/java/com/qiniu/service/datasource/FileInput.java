@@ -24,7 +24,7 @@ public class FileInput {
     private int unitLen;
     private int retryCount;
     private String resultFileDir;
-    private boolean saveTotal = false;
+    private boolean saveTotal;
     private String resultFormat;
     private String separator;
 
@@ -40,8 +40,8 @@ public class FileInput {
         this.resultFileDir = resultFileDir;
     }
 
-    public void setSaveTotalOptions(String resultFormat, String separator) {
-        this.saveTotal = true;
+    public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
+        this.saveTotal = saveTotal;
         this.resultFormat = resultFormat;
         this.separator = separator;
     }
