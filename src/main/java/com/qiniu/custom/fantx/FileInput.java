@@ -1,6 +1,7 @@
 package com.qiniu.custom.fantx;
 
 import com.qiniu.common.Zone;
+import com.qiniu.entry.InputInfoParser;
 import com.qiniu.model.parameter.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
@@ -9,7 +10,6 @@ import com.qiniu.service.media.QueryPfopResult;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class FileInput extends com.qiniu.service.datasource.FileInput {
@@ -17,7 +17,6 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
     public static void main(String[] args) throws Exception {
 
         FileInputParams fileInputParams = new FileInputParams("resources/.qiniu-fantx.properties");
-        InfoMapParams infoMapParams = new InfoMapParams("resources/.qiniu-fantx.properties");
         String filePath = fileInputParams.getFilePath();
         String parseType = fileInputParams.getParseType();
         String separator = fileInputParams.getSeparator();
@@ -53,18 +52,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //        ILineProcess<Map<String, String>> processor = new PfopProcess(Auth.create(ak, sk), configuration,
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
 
-        Map<String, String> infoIndexMap = new HashMap<>();
-        infoIndexMap.put(fileInputParams.getKeyIndex(), "key");
-        infoIndexMap.put(fileInputParams.getHashIndex(), "hash");
-        infoIndexMap.put(fileInputParams.getFsizeIndex(), "fsize");
-        infoIndexMap.put(fileInputParams.getPutTimeIndex(), "putTime");
-        infoIndexMap.put(fileInputParams.getMimeTypeIndex(), "mimeType");
-        infoIndexMap.put(fileInputParams.getEndUserIndex(), "endUser");
-        infoIndexMap.put(fileInputParams.getTypeIndex(), "type");
-        infoIndexMap.put(fileInputParams.getStatusIndex(), "status");
-        infoIndexMap.put(fileInputParams.getMd5Index(), "md5");
-        infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
-        infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
+        Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, 3, unitLen, resultFileDir);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
