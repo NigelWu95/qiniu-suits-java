@@ -16,9 +16,9 @@ import java.util.Map;
 public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
+    private String resultFileDir;
     private String resultFormat;
     private String separator;
-    private String resultFileDir;
     private FileMap fileMap;
     protected int retryCount = 3;
     private ITypeConvert<Map<String, String>, String> typeConverter;
@@ -29,7 +29,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.processName = "filter";
     }
 
-    public FileInfoFilterProcess(String resultFormat, String separator, String resultFileDir, FileFilter filter)
+    public FileInfoFilterProcess(String resultFileDir, String resultFormat, String separator, FileFilter filter)
             throws Exception {
         initBaseParams();
         this.resultFormat = resultFormat;

@@ -7,11 +7,10 @@ import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.process.FileFilter;
 import com.qiniu.service.process.FileInfoFilterProcess;
-import com.qiniu.service.process.ListResultProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +36,6 @@ public class ListBucketEntry {
         String resultFileDir = listBucketParams.getResultFileDir();
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
-        ILineProcess<FileInfo> processor = new ListResultProcess(resultFileDir);
 
         ListFilterParams listFilterParams = paramFromConfig ?
                 new ListFilterParams(configFilePath) : new ListFilterParams(args);
@@ -49,16 +47,42 @@ public class ListBucketEntry {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-        ILineProcess<Map<String, String>> nextProcessor;
-        ILineProcess<Map<String, String>> lastProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig, args,
-                configFilePath);
-        if (fileFilter.isValid()) {
-            nextProcessor = new FileInfoFilterProcess(resultFormat, null, resultFileDir, fileFilter);
-            nextProcessor.setNextProcessor(lastProcessor);
+
+        List<String> canFilterProcesses = new ArrayList<String>(){{
+            add("asyncfetch");
+            add("status");
+            add("type");
+            add("copy");
+            add("delete");
+            add("stat");
+            add("qhash");
+            add("lifecycle");
+            add("pfop");
+            add("avinfo");
+        }};
+
+        ILineProcess<Map<String, String>> processor;
+        if (canFilterProcesses.contains(listBucketParams.getProcess())) {
+            ILineProcess<Map<String, String>> nextProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig,
+                    args, configFilePath);
+            if (!fileFilter.isValid()) {
+                processor = nextProcessor;
+            } else {
+                processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter);
+                processor.setNextProcessor(nextProcessor);
+            }
         } else {
-            nextProcessor = lastProcessor;
+            if ("filter".equals(listBucketParams.getProcess())) {
+                if (fileFilter.isValid()) {
+                    processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter);
+                } else {
+                    throw new Exception("please set the correct filter conditions.");
+                }
+            } else {
+                System.out.println("this process dons't need filter.");
+                processor = new ProcessorChoice().getFileProcessor(paramFromConfig, args, configFilePath);
+            }
         }
-        processor.setNextProcessor(nextProcessor);
 
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
                 customPrefix, antiPrefix, 3, resultFileDir);
