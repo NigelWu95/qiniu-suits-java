@@ -2,10 +2,7 @@ package com.qiniu.service.media;
 
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.media.Avinfo;
-import com.qiniu.service.convert.AvinfoToString;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -23,7 +20,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private int retryCount = 3;
     protected String resultFileDir;
     private FileMap fileMap;
-    private ITypeConvert<Avinfo, String> typeConverter;
 
     private void initBaseParams(String domain) {
         this.processName = "avinfo";
@@ -40,10 +36,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
         this(domain, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public void setTypeConverter() {
-        this.typeConverter = new AvinfoToString();
     }
 
     public void setOptions(boolean https, Auth srcAuth) {

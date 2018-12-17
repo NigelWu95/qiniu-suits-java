@@ -2,10 +2,7 @@ package com.qiniu.service.media;
 
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.media.PfopResult;
-import com.qiniu.service.convert.PfopResultToString;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -20,7 +17,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private int retryCount = 3;
     protected String resultFileDir;
     private FileMap fileMap;
-    private ITypeConvert<PfopResult, String> typeConverter;
 
     private void initBaseParams() {
         this.processName = "pfopresult";
@@ -36,10 +32,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     public QueryPfopResult(String resultFileDir, int resultFileIndex) throws IOException {
         this(resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public void setTypeConverter() {
-        this.typeConverter = new PfopResultToString();
     }
 
     public QueryPfopResult getNewInstance(int resultFileIndex) throws CloneNotSupportedException {

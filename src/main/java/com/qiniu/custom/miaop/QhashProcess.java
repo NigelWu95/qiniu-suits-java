@@ -3,9 +3,7 @@ package com.qiniu.custom.miaop;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qoss.Qhash;
-import com.qiniu.service.convert.QhashToString;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileChecker;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
@@ -26,7 +24,6 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
     private int retryCount = 3;
     protected String resultFileDir;
     private FileMap fileMap;
-    private ITypeConvert<Qhash, String> typeConverter;
 
     private void initBaseParams(String domain) {
         this.processName = "hash";
@@ -48,10 +45,6 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
     public void setOptions(boolean https, Auth srcAuth) {
         this.https = https;
         this.srcAuth = srcAuth;
-    }
-
-    public void setTypeConverter(String format, String separator) {
-        this.typeConverter = new QhashToString(format, separator);
     }
 
     public QhashProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -106,13 +99,13 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
         List<String> failList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                String qhashBody = singleWithRetry(line.get("0"), retryCount);
+                String qhashBody = singleWithRetry(line.get("key"), retryCount);
                 if (qhashBody == null) throw new QiniuException(null, "empty qhash");
                 String md5 = JsonConvertUtils.fromJson(qhashBody, Qhash.class).hash;
-                if (md5.equals(line.get("1"))) successList.add(line.get("0") + "\t" + qhashBody);
+                if (md5.equals(line.get("1"))) successList.add(line.get("key") + "\t" + qhashBody);
                 else failList.add(line.get("0") + "\t" + qhashBody);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
+                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("key"));
             }
         }
         if (successList.size() > 0) fileMap.writeSuccess(String.join("\n", successList));

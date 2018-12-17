@@ -1,17 +1,14 @@
 package com.qiniu.model.parameter;
 
-import com.qiniu.util.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class ListBucketParams extends QossParams {
 
-    private String multiStatus = "";
-    private String version = "";
-    private String level = "";
-    private String unitLen = "";
+    private String multiStatus;
+    private String version;
+    private String level;
     private String customPrefix;
     private String marker;
     private String end;
@@ -19,10 +16,9 @@ public class ListBucketParams extends QossParams {
 
     public ListBucketParams(String[] args) throws Exception {
         super(args);
-        try { this.multiStatus = getParamFromArgs("multi"); } catch (Exception e) {}
-        try { this.version = getParamFromArgs("version"); } catch (Exception e) {}
-        try { this.level = getParamFromArgs("level"); } catch (Exception e) {}
-        try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
+        try { this.multiStatus = getParamFromArgs("multi"); } catch (Exception e) { multiStatus = ""; }
+        try { this.version = getParamFromArgs("version"); } catch (Exception e) { version = ""; }
+        try { this.level = getParamFromArgs("level"); } catch (Exception e) { level = ""; }
         try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) {}
         try { this.marker = getParamFromArgs("marker"); } catch (Exception e) {}
         try { this.end = getParamFromArgs("end"); } catch (Exception e) {}
@@ -31,10 +27,9 @@ public class ListBucketParams extends QossParams {
 
     public ListBucketParams(String configFileName) throws Exception {
         super(configFileName);
-        try { this.multiStatus = getParamFromConfig("multi"); } catch (Exception e) {}
-        try { this.version = getParamFromConfig("version"); } catch (Exception e) {}
-        try { this.level = getParamFromConfig("level"); } catch (Exception e) {}
-        try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
+        try { this.multiStatus = getParamFromConfig("multi"); } catch (Exception e) { multiStatus = "";}
+        try { this.version = getParamFromConfig("version"); } catch (Exception e) { version = ""; }
+        try { this.level = getParamFromConfig("level"); } catch (Exception e) { level = ""; }
         try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) {}
         try { this.marker = getParamFromConfig("marker"); } catch (Exception e) {}
         try { this.end = getParamFromConfig("end"); } catch (Exception e) {}
@@ -68,15 +63,6 @@ public class ListBucketParams extends QossParams {
         }
     }
 
-    public int getUnitLen() {
-        if (unitLen.matches("\\d+")) {
-            return Integer.valueOf(unitLen);
-        } else {
-            System.out.println("no incorrect unit-len, it will use 1000 as default.");
-            return 1000;
-        }
-    }
-
     public String getCustomPrefix() {
         return customPrefix;
     }
@@ -90,7 +76,7 @@ public class ListBucketParams extends QossParams {
     }
 
     public List<String> getAntiPrefix() {
-        if (StringUtils.isNullOrEmpty(antiPrefix)) return new ArrayList<>();
+        if (antiPrefix == null || "".equals(antiPrefix)) return new ArrayList<>();
         return Arrays.asList(antiPrefix.split(","));
     }
 

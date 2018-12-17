@@ -3,11 +3,8 @@ package com.qiniu.service.qoss;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
-import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 
@@ -17,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
-
-    private ITypeConvert<FileInfo, String> typeConverter;
 
     private void initBaseParams() {
         this.processName = "stat";
@@ -33,11 +28,6 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
             throws IOException {
         this(auth, configuration, bucket, resultFileDir);
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public void setTypeConverter(String format, String separator) {
-        this.typeConverter = new FileInfoToString(format, separator, true, true, true, true,
-                true, true, true);
     }
 
     public FileStat getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
@@ -68,16 +58,16 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         return null;
     }
 
-    public String statWithRetry(Map<String, String> fileInfo, int retryCount) throws QiniuException {
+    public String statWithRetry(String key, int retryCount) throws QiniuException {
 
         String stat = "";
         try {
-            stat = bucketManager.statResponse(bucket, fileInfo.get("key")).bodyString();
+            stat = bucketManager.statResponse(bucket, key).bodyString();
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    stat = bucketManager.statResponse(bucket, fileInfo.get("key")).bodyString();
+                    stat = bucketManager.statResponse(bucket, key).bodyString();
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -97,7 +87,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> fileInfo : fileInfoList) {
             try {
-                String stat = statWithRetry(fileInfo, retryCount);
+                String stat = statWithRetry(fileInfo.get("key"), retryCount);
                 if (stat != null) resultList.add(fileInfo.get("key") + "\t" + stat);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.get("key"));
