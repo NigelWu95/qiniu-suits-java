@@ -9,6 +9,7 @@ import com.qiniu.service.media.QueryPfopResult;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class FileInput extends com.qiniu.service.datasource.FileInput {
@@ -51,13 +52,26 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
 //        ILineProcess<Map<String, String>> processor = new PfopProcess(Auth.create(ak, sk), configuration,
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
-        FileInput fileInput = new FileInput(parseType, separator, infoMapParams, 3, unitLen, resultFileDir);
+
+        Map<String, String> infoIndexMap = new HashMap<>();
+        infoIndexMap.put(fileInputParams.getKeyIndex(), "key");
+        infoIndexMap.put(fileInputParams.getHashIndex(), "hash");
+        infoIndexMap.put(fileInputParams.getFsizeIndex(), "fsize");
+        infoIndexMap.put(fileInputParams.getPutTimeIndex(), "putTime");
+        infoIndexMap.put(fileInputParams.getMimeTypeIndex(), "mimeType");
+        infoIndexMap.put(fileInputParams.getEndUserIndex(), "endUser");
+        infoIndexMap.put(fileInputParams.getTypeIndex(), "type");
+        infoIndexMap.put(fileInputParams.getStatusIndex(), "status");
+        infoIndexMap.put(fileInputParams.getMd5Index(), "md5");
+        infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
+        infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
+        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, 3, unitLen, resultFileDir);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
     }
 
-    public FileInput(String parseType, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int retryCount, int unitLen,
                      String resultFileDir) {
-        super(parseType, separator, infoMapParams, retryCount, unitLen, resultFileDir);
+        super(parseType, separator, infoIndexMap, retryCount, unitLen, resultFileDir);
     }
 }

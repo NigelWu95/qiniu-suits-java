@@ -2,7 +2,6 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.config.MainArgs;
 import com.qiniu.config.PropertyConfig;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 
@@ -10,16 +9,20 @@ public class CommonParams {
 
     private MainArgs mainArgs;
     private PropertyConfig propertyConfig;
-    private String resultFormat;
     private String resultFileDir;
+    private String resultFormat;
+    private String resultSeparator;
+    private String saveTotal;
     private String process = "";
     private String processBatch = "";
     private String maxThreads = "";
 
     public CommonParams(MainArgs mainArgs) {
         this.mainArgs = mainArgs;
-        try { this.resultFormat = getParamFromArgs("result-format"); } catch (Exception e) {}
         try { this.resultFileDir = getParamFromArgs("result-path"); } catch (Exception e) {}
+        try { this.resultFormat = getParamFromArgs("result-format"); } catch (Exception e) {}
+        try { this.resultSeparator = getParamFromArgs("result-separator"); } catch (Exception e) {}
+        try { this.saveTotal = getParamFromArgs("save-total"); } catch (Exception e) {}
         try { this.process = getParamFromArgs("process"); } catch (Exception e) {}
         try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) {}
         try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) {}
@@ -27,8 +30,10 @@ public class CommonParams {
 
     public CommonParams(PropertyConfig propertyConfig) {
         this.propertyConfig = propertyConfig;
-        try { this.resultFormat = getParamFromConfig("result-format"); } catch (Exception e) {}
         try { this.resultFileDir = getParamFromConfig("result-path"); } catch (Exception e) {}
+        try { this.resultFormat = getParamFromConfig("result-format"); } catch (Exception e) {}
+        try { this.resultSeparator = getParamFromConfig("result-separator"); } catch (Exception e) {}
+        try { this.saveTotal = getParamFromConfig("save-total"); } catch (Exception e) {}
         try { this.process = getParamFromConfig("process"); } catch (Exception e) {}
         try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) {}
         try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) {}
@@ -57,7 +62,7 @@ public class CommonParams {
     }
 
     public String getResultFormat() {
-        if (StringUtils.isNullOrEmpty(resultFormat)) {
+        if (resultFormat == null || "".equals(resultFormat)) {
             System.out.println("no incorrect result format, it will use \"json\" as default.");
             return "json";
         } else {
@@ -66,7 +71,7 @@ public class CommonParams {
     }
 
     public String getResultFileDir() {
-        if (StringUtils.isNullOrEmpty(resultFileDir)) {
+        if (resultFileDir == null || "".equals(resultFileDir)) {
             System.out.println("no incorrect result file directory, it will use \"../result\" as default.");
             return "../result";
         }
@@ -92,6 +97,24 @@ public class CommonParams {
         } else {
             System.out.println("no incorrect threads, it will use 10 as default.");
             return 10;
+        }
+    }
+
+    public String getResultSeparator() {
+        if (resultSeparator == null || "".equals(resultSeparator)) {
+            System.out.println("no incorrect result separator, it will use \"\t\" as default.");
+            return "\t";
+        } else {
+            return resultSeparator;
+        }
+    }
+
+    public Boolean getSaveTotal() {
+        if (saveTotal.matches("(true|false)")) {
+            return Boolean.valueOf(saveTotal);
+        } else {
+            System.out.println("not incorrectly set result save total option, it will use \"true\" as default.");
+            return true;
         }
     }
 }
