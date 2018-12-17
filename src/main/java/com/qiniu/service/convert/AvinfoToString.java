@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public class AvinfoToString implements ITypeConvert<Avinfo, String> {
 
     private IStringFormat<Avinfo> stringFormatter;
+    volatile private List<String> errorList = new ArrayList<>();
 
     public AvinfoToString() {
         stringFormatter = (avinfo, variablesIfUse) -> {
@@ -23,20 +24,21 @@ public class AvinfoToString implements ITypeConvert<Avinfo, String> {
 
     public List<String> convertToVList(List<Avinfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<Avinfo> errorList = new ArrayList<>();
-        List<String> successList = srcList.parallelStream()
+        return srcList.parallelStream()
                 .filter(Objects::nonNull)
                 .map(avinfo -> {
                     try {
                         return stringFormatter.toFormatString(avinfo, null);
                     } catch (Exception e) {
-                        errorList.add(avinfo);
+                        errorList.add(String.valueOf(avinfo));
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        srcList = errorList;
-        return successList;
+    }
+
+    public List<String> getErrorList() {
+        return errorList;
     }
 }

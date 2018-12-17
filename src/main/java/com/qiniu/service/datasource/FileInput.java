@@ -2,9 +2,7 @@ package com.qiniu.service.datasource;
 
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.InfoMapToString;
-import com.qiniu.service.fileline.JsonLineParser;
-import com.qiniu.service.fileline.SplitLineParser;
-import com.qiniu.service.interfaces.ILineParser;
+import com.qiniu.service.convert.LineToInfoMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
@@ -20,23 +18,20 @@ import java.util.stream.Collectors;
 
 public class FileInput {
 
-    private ILineParser lineParser;
+    private String parseType;
+    private String separator;
+    private Map<String, String> infoIndexMap;
     private int unitLen;
-    private int retryCount;
     private String resultFileDir;
     private boolean saveTotal;
     private String resultFormat;
-    private String separator;
 
-    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int retryCount, int unitLen,
+    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
                      String resultFileDir) {
-        if ("json".equals(parseType)) {
-            this.lineParser = new JsonLineParser(infoIndexMap);
-        } else {
-            this.lineParser = new SplitLineParser(separator, infoIndexMap);
-        }
+        this.parseType = parseType;
+        this.separator = separator;
+        this.infoIndexMap = infoIndexMap;
         this.unitLen = unitLen;
-        this.retryCount = retryCount;
         this.resultFileDir = resultFileDir;
     }
 
@@ -53,31 +48,16 @@ public class FileInput {
         try {
             fileMap.initWriter(resultFileDir, "fileinput", finalI + 1);
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
-            List<Map<String, String>> infoMapList = bufferedReader.lines().parallel()
-                    .filter(line -> line != null && !"".equals(line))
-                    .map(line -> {
-                        Map<String, String> infoMap = null;
-                        try {
-                            infoMap = lineParser.getItemMap(line);
-                        } catch (Exception e) {
-                            while (retryCount > 0) {
-                                System.out.println("covert input line:" + line + "to map failed. retrying...");
-                                try {
-                                    retryCount = 0;
-                                } catch (Exception e1) {
-                                    retryCount--;
-                                    if (retryCount <= 0)
-                                        fileMap.writeErrorOrNull(line + "\t" + e1.getCause());
-                                }
-                            }
-                        }
-                        return infoMap;
-                    })
-                    .collect(Collectors.toList());
+            // TODO
+            ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
+            List<String> srcList = bufferedReader.lines().parallel().collect(Collectors.toList());
+            List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
+            fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
             if (saveTotal) {
-                ITypeConvert<Map<String, String>, String> typeConverter = new InfoMapToString(resultFormat, separator,
+                ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat, separator,
                         true, true, true, true, true, true, true);
-                fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(infoMapList)));
+                fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
+                fileMap.writeKeyFile("write_error", String.join("\n", writeTypeConverter.getErrorList()));
             }
             int size = infoMapList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {

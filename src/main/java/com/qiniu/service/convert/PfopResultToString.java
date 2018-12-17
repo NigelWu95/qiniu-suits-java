@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class PfopResultToString implements ITypeConvert<PfopResult, String> {
 
     private IStringFormat<PfopResult> stringFormatter;
+    volatile private List<String> errorList = new ArrayList<>();
 
     public PfopResultToString() {
         stringFormatter = (pfopResult, variablesIfUse) -> {
@@ -25,20 +26,21 @@ public class PfopResultToString implements ITypeConvert<PfopResult, String> {
 
     public List<String> convertToVList(List<PfopResult> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<PfopResult> errorList = new ArrayList<>();
-        List<String> successList = srcList.parallelStream()
+        return srcList.parallelStream()
                 .filter(Objects::nonNull)
                 .map(pfopResult -> {
                     try {
                         return stringFormatter.toFormatString(pfopResult, null);
                     } catch (Exception e) {
-                        errorList.add(pfopResult);
+                        errorList.add(String.valueOf(pfopResult));
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        srcList = errorList;
-        return successList;
+    }
+
+    public List<String> getErrorList() {
+        return errorList;
     }
 }

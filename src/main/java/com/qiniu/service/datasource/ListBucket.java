@@ -30,9 +30,8 @@ public class ListBucket {
     private String cPrefix;
     private List<String> antiPrefix;
     private int retryCount;
-    private List<String> originPrefixList = Arrays.asList(
-            " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-                    .split(""));
+    private List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
+            "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
     private String resultFileDir;
     private boolean saveTotal;
     private String resultFormat;
@@ -163,8 +162,12 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finaSize = fileInfoList.size();
                 }
-                if (saveTotal) fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
+                if (saveTotal) {
+                    fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
+                    fileMap.writeKeyFile("write_error", String.join("\n", writeTypeConverter.getErrorList()));
+                }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
+                fileMap.writeKeyFile("process_error", String.join("\n", typeConverter.getErrorList()));
                 if (recorder != null) recorder.record(fileLister.getPrefix(), marker, endFile);
                 if (finaSize < size) break;
             }

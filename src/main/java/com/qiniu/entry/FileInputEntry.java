@@ -24,7 +24,7 @@ public class FileInputEntry {
         ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(paramFromConfig, args, configFilePath)
                 .getFileProcessor();
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
-        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, 3, unitLen, resultFileDir);
+        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
         fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         fileInput.process(maxThreads, sourceFilePath, lineProcessor);
         lineProcessor.closeResource();

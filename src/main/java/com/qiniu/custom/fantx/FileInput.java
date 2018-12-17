@@ -53,13 +53,13 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 //                pfopParams.getBucket(), pfopParams.getPipeline(), resultFileDir);
 
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
-        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, 3, unitLen, resultFileDir);
+        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
     }
 
-    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int retryCount, int unitLen,
+    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
                      String resultFileDir) {
-        super(parseType, separator, infoIndexMap, retryCount, unitLen, resultFileDir);
+        super(parseType, separator, infoIndexMap, unitLen, resultFileDir);
     }
 }

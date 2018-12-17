@@ -1,6 +1,5 @@
 package com.qiniu.service.convert;
 
-import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
 
@@ -10,6 +9,7 @@ import java.util.stream.Collectors;
 public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
 
     private Map<String, Boolean> variablesIfUse;
+    volatile private List<String> errorList = new ArrayList<>();
 
     public FileInfoToMap(boolean hash, boolean fsize, boolean putTime, boolean mimeType, boolean endUser, boolean type,
                          boolean status) {
@@ -26,8 +26,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
 
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<FileInfo> errorList = new ArrayList<>();
-        List<Map<String, String>> successList = srcList.parallelStream()
+        return srcList.parallelStream()
                 .filter(Objects::nonNull)
                 .map(fileInfo -> {
                     Map<String, String> converted = new HashMap<>();
@@ -47,13 +46,15 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
                         });
                         return converted;
                     } catch (Exception e) {
-                        errorList.add(fileInfo);
+                        errorList.add(String.valueOf(fileInfo));
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        srcList = errorList;
-        return successList;
+    }
+
+    public List<String> getErrorList() {
+        return errorList;
     }
 }
