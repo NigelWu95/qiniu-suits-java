@@ -48,9 +48,11 @@ public class InputInfoParser {
     }};
     private List<String> needMd5Processes = new ArrayList<String>(){{
         add("asyncfetch");
+        add("filter");
     }};
     private List<String> needFopsProcesses = new ArrayList<String>(){{
         add("pfop");
+        add("filter");
     }};
     private List<String> needPersistentIdProcesses = new ArrayList<String>(){{
         add("pfopresult");

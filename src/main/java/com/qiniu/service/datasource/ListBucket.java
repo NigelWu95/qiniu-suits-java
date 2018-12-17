@@ -3,6 +3,7 @@ package com.qiniu.service.datasource;
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.sdk.BucketManager;
+import com.qiniu.service.convert.FileInfoToMap;
 import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -124,15 +125,18 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess<FileInfo> processor) {
+    private void listFromLister(FileLister fileLister, String endFile, int resultIndex,
+                                ILineProcess<Map<String, String>> processor) {
 
         FileMap fileMap = new FileMap();
-        ILineProcess<FileInfo> fileProcessor = null;
+        ILineProcess<Map<String, String>> fileProcessor = null;
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
-            ITypeConvert<FileInfo, String> typeConverter = null;
+            ITypeConvert<FileInfo, String> writeTypeConverter = null;
+            // TODO
+            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(true, true, true, true, true, true, true);
             if (saveTotal) {
-                typeConverter = new FileInfoToString(resultFormat, separator,
+                writeTypeConverter = new FileInfoToString(resultFormat, separator,
                         true, true, true, true, true, true, true);
                 fileMap.initWriter(resultFileDir, "list", resultIndex);
             }
@@ -159,8 +163,8 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finaSize = fileInfoList.size();
                 }
-                if (saveTotal) fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(fileInfoList)));
-                if (fileProcessor != null) fileProcessor.processLine(fileInfoList);
+                if (saveTotal) fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
+                if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
                 if (recorder != null) recorder.record(fileLister.getPrefix(), marker, endFile);
                 if (finaSize < size) break;
             }
@@ -173,7 +177,8 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, ILineProcess<FileInfo> processor) throws QiniuException {
+    public void concurrentlyList(int maxThreads, int level, ILineProcess<Map<String, String>> processor)
+            throws QiniuException {
         List<FileLister> fileListerList = getFileListerList(unitLen, level);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
@@ -213,7 +218,7 @@ public class ListBucket {
         if (processor != null) processor.closeResource();
     }
 
-    public void straightlyList(String marker, String end, ILineProcess<FileInfo> processor) throws IOException {
+    public void straightlyList(String marker, String end, ILineProcess<Map<String, String>> processor) throws IOException {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
