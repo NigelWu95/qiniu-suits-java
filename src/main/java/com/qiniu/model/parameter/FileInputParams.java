@@ -108,92 +108,192 @@ public class FileInputParams extends CommonParams {
         }
     }
 
-    public String getHashIndex() {
+    public String getHashIndex() throws QiniuException {
         if (hashIndex == null || "".equals(hashIndex)) {
-            System.out.println("no incorrect hash index, it will use 1 as default");
-            return "1";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect hash index, it will use \"hash\" as default");
+                return "hash";
+            } else {
+                System.out.println("no incorrect hash index, it will use 1 as default");
+                return "1";
+            }
+        } else if (hashIndex.matches("\\d")) {
+            return hashIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect hash index, it should be a number.");
+            }
             return hashIndex;
         }
     }
 
-    public String getFsizeIndex() {
+    public String getFsizeIndex() throws QiniuException {
         if (fsizeIndex == null || "".equals(fsizeIndex)) {
-            System.out.println("no incorrect fsize index, it will use 2 as default");
-            return "2";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect fsize index, it will use \"fsize\" as default");
+                return "fsize";
+            } else {
+                System.out.println("no incorrect fsize index, it will use 2 as default");
+                return "2";
+            }
+        } else if (fsizeIndex.matches("\\d")) {
+            return fsizeIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect fsize index, it should be a number.");
+            }
             return fsizeIndex;
         }
     }
 
-    public String getPutTimeIndex() {
+    public String getPutTimeIndex() throws QiniuException {
         if (putTimeIndex == null || "".equals(putTimeIndex)) {
-            System.out.println("no incorrect putTime index, it will use 3 as default");
-            return "3";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect putTime index, it will use \"putTime\" as default");
+                return "putTime";
+            } else {
+                System.out.println("no incorrect putTime index, it will use 3 as default");
+                return "2";
+            }
+        } else if (putTimeIndex.matches("\\d")) {
+            return putTimeIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect putTime index, it should be a number.");
+            }
             return putTimeIndex;
         }
     }
 
-    public String getMimeTypeIndex() {
+    public String getMimeTypeIndex() throws QiniuException {
         if (mimeTypeIndex == null || "".equals(mimeTypeIndex)) {
-            System.out.println("no incorrect mimeType index, it will use 4 as default");
-            return "4";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect mimeType index, it will use \"mimeType\" as default");
+                return "mimeType";
+            } else {
+                System.out.println("no incorrect mimeType index, it will use 4 as default");
+                return "4";
+            }
+        } else if (mimeTypeIndex.matches("\\d")) {
+            return mimeTypeIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect mimeType index, it should be a number.");
+            }
             return mimeTypeIndex;
         }
     }
 
-    public String getEndUserIndex() {
+    public String getEndUserIndex() throws QiniuException {
         if (endUserIndex == null || "".equals(endUserIndex)) {
-            System.out.println("no incorrect endUser index, it will use 5 as default");
-            return "5";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect endUser index, it will use \"endUser\" as default");
+                return "endUser";
+            } else {
+                System.out.println("no incorrect endUser index, it will use 5 as default");
+                return "5";
+            }
+        } else if (endUserIndex.matches("\\d")) {
+            return endUserIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect endUser index, it should be a number.");
+            }
             return endUserIndex;
         }
     }
 
-    public String getTypeIndex() {
+    public String getTypeIndex() throws QiniuException {
         if (typeIndex == null || "".equals(typeIndex)) {
-            System.out.println("no incorrect type index, it will use 6 as default");
-            return "6";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect type index, it will use \"type\" as default");
+                return "type";
+            } else {
+                System.out.println("no incorrect type index, it will use 6 as default");
+                return "6";
+            }
+        } else if (typeIndex.matches("\\d")) {
+            return typeIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect type index, it should be a number.");
+            }
             return typeIndex;
         }
     }
 
-    public String getStatusIndex() {
+    public String getStatusIndex() throws QiniuException {
         if (statusIndex == null || "".equals(statusIndex)) {
-            System.out.println("no incorrect type index, it will use 7 as default");
-            return "7";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect status index, it will use \"status\" as default");
+                return "status";
+            } else {
+                System.out.println("no incorrect status index, it will use 7 as default");
+                return "7";
+            }
+        } else if (statusIndex.matches("\\d")) {
+            return statusIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect status index, it should be a number.");
+            }
             return statusIndex;
         }
     }
 
-    public String getMd5Index() {
+    public String getMd5Index() throws QiniuException {
         if (md5Index == null || "".equals(md5Index)) {
-            System.out.println("no incorrect md5 index, it will use 8 as default");
-            return "8";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect md5 index, it will use \"md5\" as default");
+                return "md5";
+            } else {
+                System.out.println("no incorrect md5 index, it will use 8 as default");
+                return "8";
+            }
+        } else if (md5Index.matches("\\d")) {
+            return md5Index;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect md5 index, it should be a number.");
+            }
             return md5Index;
         }
     }
 
-    public String getFopsIndex() {
+    public String getFopsIndex() throws QiniuException {
         if (fopsIndex == null || "".equals(fopsIndex)) {
-            System.out.println("no incorrect fops index, it will use 1 as default");
-            return "1";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect fops index, it will use \"fops\" as default");
+                return "fops";
+            } else {
+                System.out.println("no incorrect fops index, it will use 1 as default");
+                return "1";
+            }
+        } else if (fopsIndex.matches("\\d")) {
+            return fopsIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect fops index, it should be a number.");
+            }
             return fopsIndex;
         }
     }
 
-    public String getPersistentIdIndex() {
+    public String getPersistentIdIndex() throws QiniuException {
         if (persistentIdIndex == null || "".equals(persistentIdIndex)) {
-            System.out.println("no incorrect persistentId index, it will use 0 as default");
-            return "0";
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect persistentId index, it will use \"persistentId\" as default");
+                return "persistentId";
+            } else {
+                System.out.println("no incorrect persistentId index, it will use 0 as default");
+                return "0";
+            }
+        } else if (persistentIdIndex.matches("\\d")) {
+            return persistentIdIndex;
         } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect persistentId index, it should be a number.");
+            }
             return persistentIdIndex;
         }
     }
