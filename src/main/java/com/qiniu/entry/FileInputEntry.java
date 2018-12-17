@@ -21,8 +21,8 @@ public class FileInputEntry {
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice().getFileProcessor(paramFromConfig,
-                args, configFilePath);
+        ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(paramFromConfig, args, configFilePath)
+                .getFileProcessor();
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, 3, unitLen, resultFileDir);
         fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);

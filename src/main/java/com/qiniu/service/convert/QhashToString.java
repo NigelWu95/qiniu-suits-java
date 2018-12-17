@@ -2,6 +2,7 @@ package com.qiniu.service.convert;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.qiniu.model.media.PfopResult;
 import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
@@ -27,9 +28,20 @@ public class QhashToString implements ITypeConvert<Qhash, String> {
 
     public List<String> convertToVList(List<Qhash> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.parallelStream()
+        List<Qhash> errorList = new ArrayList<>();
+        List<String> successList = srcList.parallelStream()
                 .filter(Objects::nonNull)
-                .map(qhash -> stringFormatter.toFormatString(qhash, null))
+                .map(qhash -> {
+                    try {
+                        return stringFormatter.toFormatString(qhash, null);
+                    } catch (Exception e) {
+                        errorList.add(qhash);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        srcList = errorList;
+        return successList;
     }
 }

@@ -49,9 +49,20 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
 
     public List<String> convertToVList(List<Map<String, String>> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.parallelStream()
+        List<Map<String, String>> errorList = new ArrayList<>();
+        List<String> successList = srcList.parallelStream()
                 .filter(Objects::nonNull)
-                .map(infoMap -> stringFormatter.toFormatString(infoMap, variablesIfUse))
+                .map(infoMap -> {
+                    try {
+                        return stringFormatter.toFormatString(infoMap, variablesIfUse);
+                    } catch (Exception e) {
+                        errorList.add(infoMap);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        srcList = errorList;
+        return successList;
     }
 }

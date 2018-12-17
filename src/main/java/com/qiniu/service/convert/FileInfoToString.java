@@ -1,5 +1,6 @@
 package com.qiniu.service.convert;
 
+import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.fileline.FileInfoJsonFormatter;
 import com.qiniu.service.fileline.FileInfoTableFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
@@ -34,9 +35,20 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
     public List<String> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.parallelStream()
+        List<FileInfo> errorList = new ArrayList<>();
+        List<String> successList = srcList.parallelStream()
                 .filter(Objects::nonNull)
-                .map(fileInfo -> stringFormatter.toFormatString(fileInfo, variablesIfUse))
+                .map(fileInfo -> {
+                    try {
+                        return stringFormatter.toFormatString(fileInfo, variablesIfUse);
+                    } catch (Exception e) {
+                        errorList.add(fileInfo);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        srcList = errorList;
+        return successList;
     }
 }
