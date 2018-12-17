@@ -1,6 +1,5 @@
 package com.qiniu.service.datasource;
 
-import com.qiniu.model.parameter.InfoMapParams;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.InfoMapToString;
 import com.qiniu.service.fileline.JsonLineParser;
@@ -29,22 +28,8 @@ public class FileInput {
     private String resultFormat;
     private String separator;
 
-    public FileInput(String parseType, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int retryCount, int unitLen,
                      String resultFileDir) {
-
-        Map<String, String> infoIndexMap = new HashMap<>();
-        infoIndexMap.put(infoMapParams.getKeyIndex(), "key");
-        infoIndexMap.put(infoMapParams.getHashIndex(), "hash");
-        infoIndexMap.put(infoMapParams.getFsizeIndex(), "fsize");
-        infoIndexMap.put(infoMapParams.getPutTimeIndex(), "putTime");
-        infoIndexMap.put(infoMapParams.getMimeTypeIndex(), "mimeType");
-        infoIndexMap.put(infoMapParams.getEndUserIndex(), "endUser");
-        infoIndexMap.put(infoMapParams.getTypeIndex(), "type");
-        infoIndexMap.put(infoMapParams.getStatusIndex(), "status");
-        infoIndexMap.put(infoMapParams.getMd5Index(), "md5");
-        infoIndexMap.put(infoMapParams.getFopsIndex(), "fops");
-        infoIndexMap.put(infoMapParams.getPersistentIdIndex(), "persistentId");
-
         if ("json".equals(parseType)) {
             this.lineParser = new JsonLineParser(infoIndexMap);
         } else {

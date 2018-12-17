@@ -6,6 +6,7 @@ import com.qiniu.model.parameter.QhashParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class MirrorKeyFileInput extends FileInput {
@@ -26,14 +27,26 @@ public class MirrorKeyFileInput extends FileInput {
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         QhashParams qhashParams = new QhashParams("resources/.qiniu.properties");
         ILineProcess<Map<String, String>> processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
-        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parseType, separator, infoMapParams, 3, unitLen,
+        Map<String, String> infoIndexMap = new HashMap<>();
+        infoIndexMap.put(fileInputParams.getKeyIndex(), "key");
+        infoIndexMap.put(fileInputParams.getHashIndex(), "hash");
+        infoIndexMap.put(fileInputParams.getFsizeIndex(), "fsize");
+        infoIndexMap.put(fileInputParams.getPutTimeIndex(), "putTime");
+        infoIndexMap.put(fileInputParams.getMimeTypeIndex(), "mimeType");
+        infoIndexMap.put(fileInputParams.getEndUserIndex(), "endUser");
+        infoIndexMap.put(fileInputParams.getTypeIndex(), "type");
+        infoIndexMap.put(fileInputParams.getStatusIndex(), "status");
+        infoIndexMap.put(fileInputParams.getMd5Index(), "md5");
+        infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
+        infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
+        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parseType, separator, infoIndexMap, 3, unitLen,
                 resultFileDir);
         fileInput.process(maxThreads, sourceFilePath, processor);
         processor.closeResource();
     }
 
-    public MirrorKeyFileInput(String parseType, String separator, InfoMapParams infoMapParams, int retryCount, int unitLen,
+    public MirrorKeyFileInput(String parseType, String separator, Map<String, String> infoIndexMap, int retryCount, int unitLen,
                               String resultFileDir) {
-        super(parseType, separator, infoMapParams, retryCount, unitLen, resultFileDir);
+        super(parseType, separator, infoIndexMap, retryCount, unitLen, resultFileDir);
     }
 }
