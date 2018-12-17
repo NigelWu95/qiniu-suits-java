@@ -5,7 +5,6 @@ import com.qiniu.common.QiniuException;
 public class FileInputParams extends CommonParams {
 
     private String filePath;
-    private String unitLen;
     private String parseType;
     private String separator;
     private String keyIndex;
@@ -23,7 +22,6 @@ public class FileInputParams extends CommonParams {
     public FileInputParams(String[] args) throws Exception {
         super(args);
         this.filePath = getParamFromArgs("file-path");
-        try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) {}
         try { this.parseType = getParamFromArgs("parse-type"); } catch (Exception e) {}
         try { this.separator = getParamFromArgs("separator"); } catch (Exception e) {}
         try { this.keyIndex = getParamFromArgs("key-index"); } catch (Exception e) {}
@@ -42,7 +40,6 @@ public class FileInputParams extends CommonParams {
     public FileInputParams(String configFileName) throws Exception {
         super(configFileName);
         this.filePath = getParamFromConfig("file-path");
-        try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) {}
         try { this.parseType = getParamFromConfig("parser-type"); } catch (Exception e) {}
         try { this.separator = getParamFromConfig("separator"); } catch (Exception e) {}
         try { this.keyIndex = getParamFromConfig("key-index"); } catch (Exception e) {}
@@ -78,15 +75,6 @@ public class FileInputParams extends CommonParams {
 
     public String getFilePath() {
         return filePath;
-    }
-
-    public int getUnitLen() {
-        if (unitLen.matches("\\d+")) {
-            return Integer.valueOf(unitLen);
-        } else {
-            System.out.println("no incorrect unit-len, it will use 1000 as default.");
-            return 1000;
-        }
     }
 
     public Boolean getSaveTotal() {

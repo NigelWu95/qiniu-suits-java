@@ -2,10 +2,7 @@ package com.qiniu.service.qoss;
 
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.qoss.Qhash;
-import com.qiniu.service.convert.QhashToString;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 
@@ -19,12 +16,12 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private String domain;
     private boolean https;
     private Auth srcAuth;
+    private String algorithm;
     private FileChecker fileChecker;
     private String processName;
     private int retryCount = 3;
     protected String resultFileDir;
     private FileMap fileMap;
-    private ITypeConvert<Qhash, String> typeConverter;
 
     private void initBaseParams(String domain) {
         this.processName = "hash";
@@ -43,18 +40,16 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
-    public void setOptions(boolean https, Auth srcAuth) {
+    public void setOptions(String algorithm, boolean https, Auth srcAuth) {
+        this.algorithm = algorithm;
         this.https = https;
         this.srcAuth = srcAuth;
-    }
-
-    public void setTypeConverter(String format, String separator) {
-        this.typeConverter = new QhashToString(format, separator);
+        this.fileChecker = new FileChecker(algorithm, https, srcAuth);
     }
 
     public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(null, https, srcAuth);
+        queryHash.fileChecker = new FileChecker(algorithm, https, srcAuth);
         queryHash.fileMap = new FileMap();
         try {
             queryHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
