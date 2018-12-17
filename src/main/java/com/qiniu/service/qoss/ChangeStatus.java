@@ -43,10 +43,6 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         return changeStatus;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + status;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.changeStatus(bucket, fileInfo.get("key"), status);
     }

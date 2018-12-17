@@ -17,7 +17,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private Auth srcAuth;
     private MediaManager mediaManager;
     private String processName;
-    private int retryCount = 3;
+    private int retryCount;
     protected String resultFileDir;
     private FileMap fileMap;
 
@@ -65,10 +65,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return this.processName;
     }
 
-    public String getInfo() {
-        return domain;
-    }
-
     public String singleWithRetry(String key, int retryCount) throws QiniuException {
 
         String avinfo = null;
@@ -98,7 +94,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 if (avinfo != null) resultList.add(line.get("key") + "\t" + avinfo);
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("key"));
+                HttpResponseUtils.processException(e, fileMap, processName, line.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

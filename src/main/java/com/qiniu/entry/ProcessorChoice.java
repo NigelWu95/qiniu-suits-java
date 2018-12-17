@@ -43,6 +43,7 @@ public class ProcessorChoice {
     private String configFilePath;
     private String process;
     private boolean batch;
+    private int retryCount;
     private String resultFileDir;
     private String resultFormat;
     private String resultSeparator;
@@ -60,7 +61,10 @@ public class ProcessorChoice {
             System.out.println(process + " is not support batch operation, it will singly process.");
             batch = false;
         }
+        retryCount = commonParams.getRetryCount();
         resultFileDir = commonParams.getResultFileDir();
+        resultFormat = commonParams.getResultFormat();
+        resultSeparator = commonParams.getResultSeparator();
     }
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
@@ -170,10 +174,10 @@ public class ProcessorChoice {
             case "avinfo": {
                 AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
                 processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
-                String accessKey = avinfoParams.getProcessAk();
-                String secretKey = avinfoParams.getProcessSk();
+                String ak = avinfoParams.getProcessAk();
+                String sk = avinfoParams.getProcessSk();
                 ((QueryAvinfo) processor).setOptions(avinfoParams.getHttps(), avinfoParams.getNeedSign() ?
-                        Auth.create(accessKey, secretKey) : null);
+                        Auth.create(ak, sk) : null);
                 break;
             }
             case "pfop": {
@@ -191,6 +195,12 @@ public class ProcessorChoice {
             case "qhash": {
                 QhashParams qhashParams = paramFromConfig ? new QhashParams(configFilePath) : new QhashParams(args);
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getResultFileDir());
+                if (qhashParams.needOptions()) {
+                    String ak = qhashParams.getProcessAk();
+                    String sk = qhashParams.getProcessSk();
+                    ((QueryHash) processor).setOptions(qhashParams.getAlgorithm(),
+                            qhashParams.getHttps(), qhashParams.getNeedSign() ? Auth.create(ak, sk) : null);
+                }
                 break;
             }
             case "stat": {
@@ -202,7 +212,10 @@ public class ProcessorChoice {
                 break;
             }
         }
-        if (processor != null) processor.setBatch(batch);
+        if (processor != null) {
+            processor.setBatch(batch);
+            processor.setRetryCount(retryCount);
+        }
 
         return processor;
     }

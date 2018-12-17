@@ -22,8 +22,8 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     public String bucket;
     public String pipeline;
     public String processName;
-    public boolean batch = true;
-    public int retryCount = 3;
+    public boolean batch;
+    public int retryCount;
     public String resultFileDir;
     public FileMap fileMap;
 
@@ -72,10 +72,6 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return this.processName;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + pipeline;
-    }
-
     public String singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
 
         String persistentId = null;
@@ -109,7 +105,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                 if (result != null && !"".equals(result)) resultList.add(result);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("key") + "\t" +
+                HttpResponseUtils.processException(e, fileMap, processName, line.get("key") + "\t" +
                         line.get("fops"));
             }
         }

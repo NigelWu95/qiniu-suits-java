@@ -10,17 +10,19 @@ public class CommonParams {
     private MainArgs mainArgs;
     private PropertyConfig propertyConfig;
     private String unitLen;
+    private String retryCount;
     private String resultFileDir;
     private String resultFormat;
     private String resultSeparator;
     protected String saveTotal;
     private String process;
-    private String processBatch = "";
-    private String maxThreads = "";
+    private String processBatch;
+    private String maxThreads;
 
     public CommonParams(MainArgs mainArgs) {
         this.mainArgs = mainArgs;
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) { unitLen = ""; }
+        try { this.retryCount = getParamFromArgs("retry-times"); } catch (Exception e) { retryCount = ""; }
         try { this.resultFileDir = getParamFromArgs("result-path"); } catch (Exception e) {}
         try { this.resultFormat = getParamFromArgs("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = getParamFromArgs("result-separator"); } catch (Exception e) {}
@@ -33,6 +35,7 @@ public class CommonParams {
     public CommonParams(PropertyConfig propertyConfig) {
         this.propertyConfig = propertyConfig;
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) { unitLen = ""; }
+        try { this.retryCount = getParamFromConfig("retry-times"); } catch (Exception e) { retryCount = ""; }
         try { this.resultFileDir = getParamFromConfig("result-path"); } catch (Exception e) {}
         try { this.resultFormat = getParamFromConfig("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = getParamFromConfig("result-separator"); } catch (Exception e) {}
@@ -70,6 +73,15 @@ public class CommonParams {
         } else {
             System.out.println("no incorrect unit-len, it will use 1000 as default.");
             return 1000;
+        }
+    }
+
+    public int getRetryCount() {
+        if (retryCount.matches("\\d+")) {
+            return Integer.valueOf(retryCount);
+        } else {
+            System.out.println("no incorrect retry times, it will use 3 as default.");
+            return 3;
         }
     }
 

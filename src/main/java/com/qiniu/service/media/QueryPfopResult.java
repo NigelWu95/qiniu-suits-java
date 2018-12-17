@@ -14,7 +14,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     private MediaManager mediaManager;
     private String processName;
-    private int retryCount = 3;
+    private int retryCount;
     protected String resultFileDir;
     private FileMap fileMap;
 
@@ -56,10 +56,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return this.processName;
     }
 
-    public String getInfo() {
-        return "";
-    }
-
     public String singleWithRetry(String id, int retryCount) throws QiniuException {
 
         String pfopResult = null;
@@ -89,7 +85,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 if (pfopResult != null)resultList.add(pfopResult);
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("persistentId"));
+                HttpResponseUtils.processException(e, fileMap, processName, line.get("persistentId"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

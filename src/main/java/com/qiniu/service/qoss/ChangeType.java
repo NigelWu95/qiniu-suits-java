@@ -44,10 +44,6 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
         return changeType;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + type;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         return bucketManager.changeType(bucket, fileInfo.get("key"), storageType);
