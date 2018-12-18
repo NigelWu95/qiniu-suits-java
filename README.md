@@ -49,3 +49,13 @@ save-total=
 ```
 -result-path= -save-total=true -result-format= -result-separator=
 ```
+
+### 补充
+一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
+```
+listV2 xxx:|:null:1:null null, last 3 times retry...
+listV2 xxx:|:null:1:null null, last 2 times retry...
+java.net.SocketTimeoutException: timeout
+```
+超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
+[ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。

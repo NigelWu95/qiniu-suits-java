@@ -82,26 +82,30 @@ public class ProcessorChoice {
         ListFieldParams fieldParams = paramFromConfig ? new ListFieldParams(configFilePath) : new ListFieldParams(args);
 
         ILineProcess<Map<String, String>> processor;
+        ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (canFilterProcesses.contains(process)) {
-            ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
-            if (!fileFilter.isValid()) {
-                processor = nextProcessor;
-            } else {
+            if (fileFilter.isValid()) {
                 processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter,
                         fieldParams.getUsedFields());
                 processor.setNextProcessor(nextProcessor);
+            } else {
+                processor = nextProcessor;
             }
         } else {
-            if ("filter".equals(process)) {
-                if (fileFilter.isValid()) {
+            if (fileFilter.isValid()) {
+                if (process == null || "".equals(process) || "filter".equals(process)) {
                     processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter,
                             fieldParams.getUsedFields());
                 } else {
-                    throw new Exception("please set the correct filter conditions.");
+                    System.out.println("this process dons't need filter.");
+                    processor = nextProcessor;
                 }
             } else {
-                System.out.println("this process dons't need filter.");
-                processor = whichNextProcessor();
+                if ("filter".equals(process)) {
+                    throw new Exception("please set the correct filter conditions.");
+                } else {
+                    processor = nextProcessor;
+                }
             }
         }
         if (processor != null) processor.setRetryCount(retryCount);
