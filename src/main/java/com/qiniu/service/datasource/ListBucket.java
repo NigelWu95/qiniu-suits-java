@@ -87,8 +87,15 @@ public class ListBucket {
 //                        throw new RuntimeException("list prefix:" + prefix + "\t" + e.error(), e.fillInStackTrace());
                     }
                 })
-                .filter(Objects::nonNull)
-                .filter(FileLister::hasNext)
+//                .filter(Objects::nonNull)
+//                .filter(FileLister::hasNext)
+                .filter(fileLister -> {
+                    if (fileLister != null && fileLister.hasNext()) return true;
+                    else {
+                        fileLister = null;
+                        return false;
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
@@ -98,25 +105,37 @@ public class ListBucket {
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
-        int lastSize = 0;
-        while (fileListerList.size() < maxThreads && lastSize != fileListerList.size()) {
-            lastSize = fileListerList.size();
+        while (fileListerList.size() < maxThreads) {
             Map<Boolean, List<FileLister>> groupedFileListerMap = fileListerList.stream()
                     .collect(Collectors.groupingBy(
                             fileLister -> fileLister.getMarker() != null && !"".equals(fileLister.getMarker())
                     ));
-            Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream()
-                    .map(singlePrefixFileLister -> originPrefixList.stream()
-                            .map(originPrefix -> singlePrefixFileLister.getPrefix() + originPrefix)
-                            .collect(Collectors.toList()))
-                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-            if (listOptional.isPresent()) {
-                validPrefixList = listOptional.get().parallelStream()
-                        .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                        .collect(Collectors.toList());
-                fileListerList = prefixList(validPrefixList, unitLen);
+            if (groupedFileListerMap.get(true) != null) {
+                Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream()
+                        .map(fileLister -> {
+                            List<FileInfo> list = fileLister.getFileInfoList();
+                            String point = "";
+                            if (list != null && list.size() > 0) {
+                                int prefixLen = fileLister.getPrefix().length();
+                                point = list.get(0).key.substring(prefixLen, prefixLen + 1);
+                            }
+                            String finalPoint = point;
+                            return originPrefixList.stream()
+                                    .filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                                    .map(originPrefix -> fileLister.getPrefix() + originPrefix)
+                                    .collect(Collectors.toList());
+                        })
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+                if (listOptional.isPresent()) {
+                    validPrefixList = listOptional.get().parallelStream()
+                            .filter(originPrefix -> !antiPrefix.contains(originPrefix))
+                            .collect(Collectors.toList());
+                    fileListerList = prefixList(validPrefixList, unitLen);
+                }
+            } else {
+                break;
             }
-            fileListerList.addAll(groupedFileListerMap.get(false));
+            if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
         }
         FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix,
                 null, null, unitLen, version, retryCount);
@@ -206,7 +225,8 @@ public class ListBucket {
 
     public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor)
             throws QiniuException {
-        List<FileLister> fileListerList = getFileListerList(unitLen, 2);
+//        List<FileLister> fileListerList = getFileListerList(unitLen, 2);
+        List<FileLister> fileListerList = getFileListerList(unitLen);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
         if (fileListerList.size() > 1) {
