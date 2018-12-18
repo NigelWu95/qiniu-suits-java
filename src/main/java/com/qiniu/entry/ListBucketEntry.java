@@ -41,7 +41,6 @@ public class ListBucketEntry {
         } else {
             listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
         }
-
-        processor.closeResource();
+        if (processor != null) processor.closeResource();
     }
 }

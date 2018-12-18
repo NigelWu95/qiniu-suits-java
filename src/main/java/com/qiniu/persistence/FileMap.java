@@ -35,8 +35,6 @@ public class FileMap implements Cloneable {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
         this.suffix = StringUtils.isNullOrEmpty(suffix) ? "_0" : "_" + suffix;
-
-
         for (int i = 0; i < targetWriters.size(); i++) {
             addWriter(targetFileDir, prefix + targetWriters.get(i) + this.suffix);
         }
@@ -148,16 +146,8 @@ public class FileMap implements Cloneable {
         }
     }
 
-    public void writeKeyFile(String key, String item) {
-        if (!writerMap.keySet().contains(key)) {
-            try {
-                addWriter(targetFileDir, key);
-            } catch (IOException ioException) {
-                writeErrorOrNull(item);
-                ioException.printStackTrace();
-            }
-        }
-
+    public void writeKeyFile(String key, String item) throws IOException {
+        if (!writerMap.keySet().contains(key)) addWriter(targetFileDir, key);
         doWrite(key, item);
     }
 

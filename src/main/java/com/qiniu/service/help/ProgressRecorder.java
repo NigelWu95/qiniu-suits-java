@@ -31,12 +31,12 @@ public class ProgressRecorder implements Cloneable {
         return progressRecorder;
     }
 
-    public void record(String key, String... progress) {
+    public void record(String... progress) throws IOException {
         JsonObject jsonObject = new JsonObject();
         for (int i = 0; i < keys.length; i++) {
             if (progress.length < i) break;
             jsonObject.addProperty(keys[i], progress[i]);
         }
-        fileMap.writeKeyFile(key + "_" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
+        fileMap.writeKeyFile(processName + "_" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 }
