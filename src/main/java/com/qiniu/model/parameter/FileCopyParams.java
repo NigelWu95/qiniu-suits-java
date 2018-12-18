@@ -2,36 +2,22 @@ package com.qiniu.model.parameter;
 
 public class FileCopyParams extends QossParams {
 
-    private String processAk = "";
-    private String processSk = "";
     private String targetBucket;
-    private String keepKey = "";
-    private String keyPrefix = "";
+    private String keepKey;
+    private String keyPrefix;
 
     public FileCopyParams(String[] args) throws Exception {
         super(args);
-        try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
-        try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
         this.targetBucket = getParamFromArgs("to-bucket");
-        try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) {}
-        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) {}
+        try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) { keepKey = ""; }
+        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
     }
 
     public FileCopyParams(String configFileName) throws Exception {
         super(configFileName);
-        try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
-        try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
         this.targetBucket = getParamFromConfig("to-bucket");
-        try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) {}
-        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) {}
-    }
-
-    public String getProcessAk() {
-        return processAk;
-    }
-
-    public String getProcessSk() {
-        return processSk;
+        try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) { keepKey = ""; }
+        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
     }
 
     public String getTargetBucket() {

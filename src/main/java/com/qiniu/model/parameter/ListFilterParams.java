@@ -14,9 +14,9 @@ public class ListFilterParams extends CommonParams {
     private String keyRegex;
     private String pointDate;
     private String pointTime;
-    private String direction = "";
+    private String direction;
     private String mime;
-    private String type = "";
+    private String type;
     private long datetime;
     private boolean directionFlag;
     private String antiKeyPrefix;
@@ -31,9 +31,9 @@ public class ListFilterParams extends CommonParams {
         try { this.keyRegex = getParamFromArgs("f-key-regex"); } catch (Exception e) {}
         try { this.pointDate = getParamFromArgs("f-date"); } catch (Exception e) {}
         try { this.pointTime = getParamFromArgs("f-time"); } catch (Exception e) {}
-        try { this.direction = getParamFromArgs("f-direction"); } catch (Exception e) {}
+        try { this.direction = getParamFromArgs("f-direction"); } catch (Exception e) { direction = ""; }
         try { this.mime = getParamFromArgs("f-mime"); } catch (Exception e) {}
-        try { this.type = getParamFromArgs("f-type"); } catch (Exception e) {}
+        try { this.type = getParamFromArgs("f-type"); } catch (Exception e) { type = ""; }
         this.datetime = getPointDatetime();
         this.directionFlag = getDirection();
         try { this.antiKeyPrefix = getParamFromArgs("anti-f-key-prefix"); } catch (Exception e) {}
@@ -49,9 +49,9 @@ public class ListFilterParams extends CommonParams {
         try { this.keyRegex = getParamFromConfig("f-key-regex"); } catch (Exception e) {}
         try { this.pointDate = getParamFromConfig("f-date"); } catch (Exception e) {}
         try { this.pointTime = getParamFromConfig("f-time"); } catch (Exception e) {}
-        try { this.direction = getParamFromConfig("f-direction"); } catch (Exception e) {}
+        try { this.direction = getParamFromConfig("f-direction"); } catch (Exception e) { direction = ""; }
         try { this.mime = getParamFromConfig("f-mime"); } catch (Exception e) {}
-        try { this.type = getParamFromConfig("f-type"); } catch (Exception e) {}
+        try { this.type = getParamFromConfig("f-type"); } catch (Exception e) { type = ""; }
         this.datetime = getPointDatetime();
         this.directionFlag = getDirection();
         try { this.antiKeyPrefix = getParamFromConfig("anti-f-key-prefix"); } catch (Exception e) {}
@@ -123,10 +123,10 @@ public class ListFilterParams extends CommonParams {
     }
 
     public int getType() {
-        if (type.matches("(0|1)")) {
+        if (type.matches("([01])")) {
             return Integer.valueOf(type);
         } else {
-            System.out.println("no incorrect type, it will use 0 as default");
+            System.out.println("no incorrect type, it will be not compared.");
             return -1;
         }
     }

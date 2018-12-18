@@ -15,10 +15,6 @@ public class PfopParams extends QossParams {
     }
 
     public String getPipeline() throws Exception {
-        if (pipeline == null || "".equals(pipeline)) {
-            throw new Exception("no incorrect pipeline, please set it");
-        } else {
-            return pipeline;
-        }
+        return pipeline;
     }
 }

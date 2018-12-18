@@ -1,24 +1,20 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.media.PfopResult;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
     private MediaManager mediaManager;
     private String processName;
-    private int retryCount = 3;
+    private int retryCount;
     protected String resultFileDir;
     private FileMap fileMap;
 
@@ -60,20 +56,16 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return this.processName;
     }
 
-    public String getInfo() {
-        return "";
-    }
+    public String singleWithRetry(String id, int retryCount) throws QiniuException {
 
-    public PfopResult singleWithRetry(String id, int retryCount) throws QiniuException {
-
-        PfopResult pfopResult = null;
+        String pfopResult = null;
         try {
-            pfopResult = mediaManager.getPfopResultById(id);
+            pfopResult = mediaManager.getPfopResultBodyById(id);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    pfopResult = mediaManager.getPfopResultById(id);
+                    pfopResult = mediaManager.getPfopResultBodyById(id);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -86,17 +78,14 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
-        lineList = lineList == null ? null : lineList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                PfopResult pfopResult = singleWithRetry(line.get("0"), retryCount);
-                if (pfopResult != null)resultList.add(JsonConvertUtils.toJsonWithoutUrlEscape(pfopResult));
+                String pfopResult = singleWithRetry(line.get("persistentId"), retryCount);
+                if (pfopResult != null)resultList.add(pfopResult);
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
+                HttpResponseUtils.processException(e, fileMap, line.get("persistentId"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
