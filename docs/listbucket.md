@@ -12,7 +12,6 @@ bucket=
 multi=true
 max-threads=100
 version=2
-level=1
 unit-len=10000
 prefix=
 anti-prefix=|
@@ -21,8 +20,7 @@ anti-prefix=|
 `bucket` 空间名称  
 `multi` 表示是否开启并发列举 (默认开启)  
 `max-threads` 表示线程数  
-`version` 表示列举接口版本 (1 或 2, 默认为 2)   
-`level` 表示列举并发级别 (1 或 2, 默认为 1)  
+`version` 表示列举接口版本 (1 或 2, 默认为 2)  
 `unit-len` 表示每次列举请求列举的文件个数  
 `prefix` 表示只列举某个文件名前缀的资源  
 `anti-prefix` 表示不列举某个文件名前缀的资源，支持以 `,` 分隔的列表  
@@ -40,19 +38,18 @@ anti-prefix=|
 
 * 列举记录，spent time 为列举（或者同时进行 process 的操作）所花费的时间，running threads 为线程数。  
 
-|version|level|unit-len| process |  filter  | file counts |spent time| machine | running threads |  
-|-------|-----|--------|---------|----------|-------------|----------|---------|-----------------|  
-|   2   |  2  |  10000 |  null   |  false   |  94898690   |   2h18m  | 16核32G |      50         |
-|   2   |  1  |  10000 |  null   |  false   |  1893275    |  7minxxs | 8核16G  |      16         | 
-|   2   |  2  |  20000 |  null   |  false   |  293940625  |   1h8m   | 16核32G |      200        |
-|   2   |  1  |  20000 |  null   |  false   |  1526657    |  5minxxs | 8核16G  |      4          |
-|   2   |  1  |  10000 |  null   |  false   |  911559     |  2minxxs | 8核16G  |      15         |
+|version|unit-len| process |  filter  | file counts |spent time| machine | running threads |  
+|-------|--------|---------|----------|-------------|----------|---------|-----------------|  
+|   2   |  10000 |  null   |  false   |  94898690   |   2h18m  | 16核32G |      50         |
+|   2   |  10000 |  null   |  false   |  1893275    |  7minxxs | 8核16G  |      16         | 
+|   2   |  20000 |  null   |  false   |  293940625  |   1h8m   | 16核32G |      200        |
+|   2   |  20000 |  null   |  false   |  1526657    |  5minxxs | 8核16G  |      4          |
+|   2   |  10000 |  null   |  false   |  911559     |  2minxxs | 8核16G  |      15         |
 
 ### multi list suggestions
 ```
 1、空间有大量删除时使用 list v1 可能会超时，而且单次请求最大 unit-len 为 1000，直接使用 list v2，即 version=2，实际情况也  
    是 list v2 效率更高，建议默认使用 2。
-2、推荐用法：version=2，unit-len=20000（version 2 的时候 unit-len 值可以调高，但是不建议过大，通常不超过 100000），500  
-   万以内文件 level=1，500 万以上文件 level=2，max-threads=100（在机器配置较高时可以选择更高的值，如16核32G的机器可选择  
-   200 个以上线程）。
+2、推荐用法：version=2，unit-len=20000（version 2 的时候 unit-len 值可以调高，但是不建议过大，通常不超过 100000），500
+   万以内文件 max-threads<=100（在机器配置较高时可以选择更高的值，如16核32G的机器可选择 200 个以上线程）。
 ```

@@ -21,7 +21,6 @@ public class ListBucketEntry {
         boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
         int version = listBucketParams.getVersion();
-        int level = listBucketParams.getLevel();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         String customPrefix = listBucketParams.getCustomPrefix();
@@ -38,7 +37,7 @@ public class ListBucketEntry {
                 antiPrefix, 3, resultFileDir);
         listBucket.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         if (multiStatus) {
-            listBucket.concurrentlyList(maxThreads, level, processor);
+            listBucket.concurrentlyList(maxThreads, processor);
         } else {
             listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
         }
