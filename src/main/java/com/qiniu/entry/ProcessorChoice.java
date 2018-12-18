@@ -118,8 +118,8 @@ public class ProcessorChoice {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                String ak = fileStatusParams.getAccessKey();
-                String sk = fileStatusParams.getAccessKey();
+                String ak = fileStatusParams.getProcessAk();
+                String sk = fileStatusParams.getProcessSk();
                 processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultFileDir);
                 break;
@@ -162,14 +162,14 @@ public class ProcessorChoice {
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = paramFromConfig ?
                         new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
-                String ak = asyncFetchParams.getAccessKey();
-                String sk = asyncFetchParams.getAccessKey();
-                String accessKey = asyncFetchParams.getProcessAk();
-                String secretKey = asyncFetchParams.getProcessSk();
+                String srcAk = asyncFetchParams.getAccessKey();
+                String srcSk = asyncFetchParams.getAccessKey();
+                String ak = asyncFetchParams.getProcessAk();
+                String sk = asyncFetchParams.getProcessSk();
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), resultFileDir);
                 ((AsyncFetch) processor).setOptions(asyncFetchParams.getHttps(), asyncFetchParams.getNeedSign() ?
-                                Auth.create(accessKey, secretKey) : null, asyncFetchParams.getKeepKey(),
+                                Auth.create(srcAk, srcSk) : null, asyncFetchParams.getKeepKey(),
                         asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck());
                 if (asyncFetchParams.hasCustomArgs())
                     ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),

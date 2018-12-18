@@ -2,8 +2,6 @@ package com.qiniu.model.parameter;
 
 public class AsyncFetchParams extends QossParams {
 
-    private String processAk;
-    private String processSk;
     private String targetBucket;
     private String domain;
     private String https;
@@ -21,8 +19,6 @@ public class AsyncFetchParams extends QossParams {
 
     public AsyncFetchParams(String[] args) throws Exception {
         super(args);
-        try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) { processAk = ""; }
-        try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) { processSk = ""; }
         this.targetBucket = getParamFromArgs("to-bucket");
         this.domain = getParamFromArgs("domain");
         try { this.https = getParamFromArgs("use-https"); } catch (Exception e) { https = ""; }
@@ -41,8 +37,6 @@ public class AsyncFetchParams extends QossParams {
 
     public AsyncFetchParams(String configFileName) throws Exception {
         super(configFileName);
-        try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) { processAk = ""; }
-        try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) { processSk = ""; }
         this.targetBucket = getParamFromConfig("to-bucket");
         this.domain = getParamFromConfig("domain");
         try { this.https = getParamFromConfig("use-https"); } catch (Exception e) { https = ""; }
@@ -57,14 +51,6 @@ public class AsyncFetchParams extends QossParams {
         try{ this.callbackHost = getParamFromConfig("callback-host"); } catch (Exception e) {}
         try{ this.fileType = getParamFromConfig("file-type"); } catch (Exception e) { fileType = ""; }
         try{ this.ignoreSameKey = getParamFromConfig("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
-    }
-
-    public String getProcessAk() {
-        return processAk;
-    }
-
-    public String getProcessSk() {
-        return processSk;
     }
 
     public String getTargetBucket() {
