@@ -30,13 +30,15 @@ public class HttpResponseUtils {
     public static void processException(QiniuException e, FileMap fileMap, String info)
             throws QiniuException {
         if (e != null) {
-            if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
             if (e.response != null) {
+                if (fileMap != null) fileMap.writeErrorOrNull(e.response.reqId + "\t" + info + "\t" + e.error());
                 if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                     throw e;
                 } else {
                     e.response.close();
                 }
+            } else {
+                if (fileMap != null) fileMap.writeErrorOrNull( info+ "\t" + e.error());
             }
         }
     }
@@ -45,9 +47,9 @@ public class HttpResponseUtils {
         if (response == null) return null;
         String responseBody = response.bodyString();
         int statusCode = response.statusCode;
-        if (statusCode != 200) throw new QiniuException(response);
-        String reqId = response.reqId;
+        if ((statusCode == -1) || (statusCode >= 300 && statusCode != 579))
+            throw new QiniuException(response);
         response.close();
-        return reqId + "\t" + responseBody;
+        return responseBody;
     }
 }

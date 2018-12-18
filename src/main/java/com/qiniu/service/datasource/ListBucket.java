@@ -150,7 +150,6 @@ public class ListBucket {
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
-            // TODO
             ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(usedFields);
             if (saveTotal) {
                 writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
