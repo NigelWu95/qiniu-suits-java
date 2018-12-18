@@ -141,7 +141,8 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void listFromLister(FileLister fileLister, String end, int resultIndex, ILineProcess<Map<String, String>> processor) {
+    private void listFromLister(FileLister fileLister, String end, int resultIndex, List<String> usedFields,
+                                ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir, fileMap,
@@ -150,9 +151,9 @@ public class ListBucket {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
             // TODO
-            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(true, true, true, true, true, true, true);
+            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(usedFields);
             if (saveTotal) {
-                writeTypeConverter = new FileInfoToString(resultFormat, separator, true, true, true, true, true, true, true);
+                writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
                 fileMap.initWriter(resultFileDir, "list", resultIndex);
             }
             while (fileLister.hasNext()) {
@@ -196,9 +197,8 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor)
+    public void concurrentlyList(int maxThreads, List<String> usedFields, ILineProcess<Map<String, String>> processor)
             throws QiniuException {
-//        List<FileLister> fileListerList = getFileListerList(unitLen, 2);
         List<FileLister> fileListerList = getFileListerList(unitLen);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
@@ -231,19 +231,21 @@ public class ListBucket {
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
-            executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1, processor));
+            executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1,
+                    usedFields, processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         if (processor != null) processor.closeResource();
     }
 
-    public void straightlyList(String marker, String end, ILineProcess<Map<String, String>> processor) throws IOException {
+    public void straightlyList(String marker, String end, List<String> usedFields,
+                               ILineProcess<Map<String, String>> processor) throws IOException {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
         FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen, version);
-        listFromLister(fileLister, end, 0, processor);
+        listFromLister(fileLister, end, 0, usedFields, processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }

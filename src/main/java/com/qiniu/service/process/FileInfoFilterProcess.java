@@ -23,21 +23,22 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     protected int retryCount;
     private ITypeConvert<Map<String, String>, String> typeConverter;
     private ILineFilter<Map<String, String>> filter;
+    private List<String> usedFields;
     private ILineProcess<Map<String, String>> nextProcessor;
 
     private void initBaseParams() {
         this.processName = "filter";
     }
 
-    public FileInfoFilterProcess(String resultFileDir, String resultFormat, String separator, FileFilter filter)
-            throws Exception {
+    public FileInfoFilterProcess(String resultFileDir, String resultFormat, String separator, FileFilter filter,
+                                 List<String> usedFields) throws Exception {
         initBaseParams();
         this.resultFormat = resultFormat;
         this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
         this.resultFileDir = resultFileDir;
         this.fileMap = new FileMap();
-        this.typeConverter = new InfoMapToString(resultFormat, separator, true, true, true,
-                true, true, true, true);
+        this.typeConverter = new InfoMapToString(resultFormat, separator, usedFields);
+        this.usedFields = usedFields;
         List<String> methodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
             if (filter.checkKeySuffix()) add("filterKeySuffix");
@@ -65,8 +66,8 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     }
 
     public FileInfoFilterProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
-                                 FileFilter filter) throws Exception {
-        this(resultFormat, separator, resultFileDir, filter);
+                                 FileFilter filter, List<String> usedFields) throws Exception {
+        this(resultFormat, separator, resultFileDir, filter, usedFields);
         fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
@@ -75,8 +76,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         fileInfoFilterProcess.fileMap = new FileMap();
         try {
             fileInfoFilterProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, separator, true, true,
-                    true, true, true, true, true);
+            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, separator, usedFields);
             if (nextProcessor != null) {
                 fileInfoFilterProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
             }

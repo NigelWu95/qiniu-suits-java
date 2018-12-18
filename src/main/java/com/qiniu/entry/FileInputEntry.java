@@ -1,6 +1,7 @@
 package com.qiniu.entry;
 
 import com.qiniu.model.parameter.FileInputParams;
+import com.qiniu.model.parameter.ListFieldParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
 
@@ -26,7 +27,8 @@ public class FileInputEntry {
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
         fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
-        fileInput.process(maxThreads, sourceFilePath, lineProcessor);
+        ListFieldParams fieldParams = paramFromConfig ? new ListFieldParams(configFilePath) : new ListFieldParams(args);
+        fileInput.process(maxThreads, sourceFilePath, fieldParams.getUsedFields(), lineProcessor);
         if (lineProcessor != null) lineProcessor.closeResource();
     }
 }

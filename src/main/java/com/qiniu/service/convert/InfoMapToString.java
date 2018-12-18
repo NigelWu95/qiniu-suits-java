@@ -10,42 +10,27 @@ import java.util.stream.Collectors;
 public class InfoMapToString implements ITypeConvert<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
-    private Map<String, Boolean> variablesIfUse;
+    private List<String> usedFields;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public InfoMapToString(String format, String separator, boolean hash, boolean fsize, boolean putTime,
-                           boolean mimeType, boolean endUser, boolean type, boolean status) {
+    public InfoMapToString(String format, String separator, List<String> usedFields) {
         if ("format".equals(format)) {
-            stringFormatter = (infoMap, variablesIfUse) -> {
+            stringFormatter = (infoMap, fields) -> {
                 JsonObject converted = new JsonObject();
-                variablesIfUse.forEach((key, value) -> {
-                    if (value) {
-                        converted.addProperty(key, String.valueOf(infoMap.get(key)));
-                    }
-                });
+                fields.forEach(key -> converted.addProperty(key, String.valueOf(infoMap.get(key))));
                 return converted.toString();
             };
         } else {
             stringFormatter = (infoMap, variablesIfUse) -> {
                 StringBuilder converted = new StringBuilder();
-                variablesIfUse.forEach((key, value) -> {
-                    if (value) {
+                variablesIfUse.forEach(key -> {
                         converted.append(String.valueOf(infoMap.get(key)));
                         converted.append(separator);
-                    }
                 });
                 return converted.toString();
             };
         }
-        variablesIfUse = new HashMap<>();
-        variablesIfUse.put("key", true);
-        variablesIfUse.put("hash", hash);
-        variablesIfUse.put("fsize", fsize);
-        variablesIfUse.put("putTime", putTime);
-        variablesIfUse.put("mimeType", mimeType);
-        variablesIfUse.put("endUser", endUser);
-        variablesIfUse.put("type", type);
-//        variablesIfUse.put("status", status);
+        this.usedFields = usedFields;
     }
 
     public List<String> convertToVList(List<Map<String, String>> srcList) {
@@ -54,7 +39,7 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                 .filter(Objects::nonNull)
                 .map(infoMap -> {
                     try {
-                        return stringFormatter.toFormatString(infoMap, variablesIfUse);
+                        return stringFormatter.toFormatString(infoMap, usedFields);
                     } catch (Exception e) {
                         errorList.add(String.valueOf(infoMap));
                         return null;

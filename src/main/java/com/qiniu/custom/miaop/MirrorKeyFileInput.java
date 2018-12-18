@@ -2,6 +2,7 @@ package com.qiniu.custom.miaop;
 
 import com.qiniu.entry.InputInfoParser;
 import com.qiniu.model.parameter.FileInputParams;
+import com.qiniu.model.parameter.ListFieldParams;
 import com.qiniu.model.parameter.QhashParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -17,18 +18,15 @@ public class MirrorKeyFileInput extends FileInput {
         String parseType = fileInputParams.getParseType();
         String separator = fileInputParams.getSeparator();
         String resultFileDir = fileInputParams.getResultFileDir();
-        boolean saveTotal = false;
-        String resultFormat = fileInputParams.getResultFormat();
-        String resultSeparator = fileInputParams.getResultFormat();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         QhashParams qhashParams = new QhashParams("resources/.qiniu.properties");
         ILineProcess<Map<String, String>> processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
-        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parseType, separator, infoIndexMap, unitLen,
-                resultFileDir);
-        fileInput.process(maxThreads, sourceFilePath, processor);
+        MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
+        ListFieldParams fieldParams = new ListFieldParams("resources/.qiniu.properties");
+        fileInput.process(maxThreads, sourceFilePath, fieldParams.getUsedFields(), processor);
         processor.closeResource();
     }
 
