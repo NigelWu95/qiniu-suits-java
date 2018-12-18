@@ -118,8 +118,8 @@ public class ProcessorChoice {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
                         new FileStatusParams(configFilePath) : new FileStatusParams(args);
-                String ak = fileStatusParams.getAccessKey();
-                String sk = fileStatusParams.getAccessKey();
+                String ak = fileStatusParams.getProcessAk();
+                String sk = fileStatusParams.getProcessSk();
                 processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultFileDir);
                 break;
