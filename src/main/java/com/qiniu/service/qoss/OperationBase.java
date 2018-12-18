@@ -1,32 +1,31 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     protected Auth auth;
     protected Configuration configuration;
     protected BucketManager bucketManager;
     protected String bucket;
     protected String processName;
-    protected boolean batch = true;
+    protected boolean batch;
     protected volatile BatchOperations batchOperations;
-    protected int retryCount = 3;
+    protected int retryCount;
     protected String resultFileDir;
     protected FileMap fileMap;
 
@@ -60,90 +59,77 @@ public abstract class OperationBase implements ILineProcess<FileInfo>, Cloneable
         return this.processName;
     }
 
-    public abstract String getInfo();
+    protected abstract Response getResponse(Map<String, String> fileInfo) throws QiniuException;
 
-    protected abstract Response getResponse(FileInfo fileInfo) throws QiniuException;
+    protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    synchronized public Response batchWithRetry(List<FileInfo> fileInfoList, int retryCount) throws QiniuException {
-
-        Response response = null;
-        batchOperations = getOperations(fileInfoList);
-        try {
-            response = bucketManager.batch(batchOperations);
-        } catch (QiniuException e) {
-            HttpResponseUtils.checkRetryCount(e, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = bucketManager.batch(batchOperations);
-                    retryCount = 0;
-                } catch (QiniuException e1) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
-                }
-            }
-        }
-        batchOperations.clearOps();
-
-        return response;
-    }
-
-    protected abstract BatchOperations getOperations(List<FileInfo> fileInfoList);
-
-    public List<String> singleRun(List<FileInfo> fileInfoList) throws QiniuException {
+    public List<String> singleRun(List<Map<String, String>> fileInfoList) throws QiniuException {
 
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (Map<String, String> fileInfo : fileInfoList) {
             try {
                 Response response = null;
                 try {
                     response = getResponse(fileInfo);
-                } catch (QiniuException e1) {
-                    HttpResponseUtils.checkRetryCount(e1, retryCount);
+                } catch (QiniuException e) {
+                    HttpResponseUtils.checkRetryCount(e, retryCount);
                     while (retryCount > 0) {
                         try {
                             response = getResponse(fileInfo);
                             retryCount = 0;
-                        } catch (QiniuException e2) {
-                            retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                        } catch (QiniuException e1) {
+                            retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                         }
                     }
                 }
                 String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }
         }
 
         return resultList;
     }
 
-    public List<String> batchRun(List<FileInfo> fileInfoList) throws QiniuException {
+    public List<String> batchRun(List<Map<String, String>> fileInfoList) throws QiniuException {
 
         List<String> resultList = new ArrayList<>();
         int times = fileInfoList.size()/1000 + 1;
         for (int i = 0; i < times; i++) {
-            List<FileInfo> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
+            List<Map<String, String>> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
                     fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    Response response = batchWithRetry(fileInfoList, retryCount);
+                    Response response = null;
+                    batchOperations = getOperations(fileInfoList);
+                    try {
+                        response = bucketManager.batch(batchOperations);
+                    } catch (QiniuException e) {
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
+                        while (retryCount > 0) {
+                            try {
+                                response = bucketManager.batch(batchOperations);
+                                retryCount = 0;
+                            } catch (QiniuException e1) {
+                                retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                            }
+                        }
+                    }
+                    batchOperations.clearOps();
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
-                            String.join("\n", processList.stream()
-                                    .map(fileInfo -> fileInfo.key).collect(Collectors.toList())));
+                    HttpResponseUtils.processException(e, fileMap, String.join("\n", processList.stream()
+                                    .map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList())));
                 }
             }
         }
         return resultList;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }

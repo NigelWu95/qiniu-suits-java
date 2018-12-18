@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -8,7 +8,6 @@ import com.qiniu.service.media.M3U8Manager;
 import com.qiniu.service.media.VideoTS;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.RequestUtils;
 
@@ -16,8 +15,9 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public class AsyncFetch extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public class AsyncFetch extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private boolean https;
@@ -87,13 +87,6 @@ public class AsyncFetch extends OperationBase implements ILineProcess<FileInfo>,
         return asyncFetch;
     }
 
-    public String getInfo() {
-        return domain + "\t" + https + "\t" + !(srcAuth == null) + "\t" + keepKey + "\t" + keyPrefix + "\t" +
-                hashCheck + (!hasCustomArgs ? "" : "\t" +
-                host + "\t" + callbackUrl + "\t" + callbackBody + "\t" + callbackBodyType + "\t" + callbackHost +
-                fileType + "\t" + ignoreSameKey);
-    }
-
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
@@ -102,12 +95,12 @@ public class AsyncFetch extends OperationBase implements ILineProcess<FileInfo>,
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.key;
+    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
+        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.get("key");
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        Response response = fetch(url, keepKey ? keyPrefix + fileInfo.key : null,
-                null, hashCheck ? fileInfo.hash : null);
-        if ("application/x-mpegurl".equals(fileInfo.mimeType) || fileInfo.key.endsWith(".m3u8")) {
+        Response response = fetch(url, keepKey ? keyPrefix + fileInfo.get("key") : null,
+                fileInfo.get("md5"), hashCheck ? fileInfo.get("hash") : null);
+        if ("application/x-mpegurl".equals(fileInfo.get("mimeType")) || fileInfo.get("key").endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
@@ -117,14 +110,15 @@ public class AsyncFetch extends OperationBase implements ILineProcess<FileInfo>,
 
             for (VideoTS videoTS : videoTSList) {
                 String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, "", "");
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, fileInfo.get("md5"),
+                        hashCheck ? fileInfo.get("hash") : null);
             }
         }
 
         return response;
     }
 
-    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
         return null;
     }
 }

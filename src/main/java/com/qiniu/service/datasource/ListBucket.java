@@ -1,12 +1,13 @@
 package com.qiniu.service.datasource;
 
-import com.google.gson.JsonObject;
-import com.qiniu.common.FileMap;
-import com.qiniu.common.ListFileAntiFilter;
-import com.qiniu.common.ListFileFilter;
 import com.qiniu.common.QiniuException;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.sdk.BucketManager;
+import com.qiniu.service.convert.FileInfoToMap;
+import com.qiniu.service.convert.FileInfoToString;
+import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileLister;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -18,7 +19,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ListBucket {
 
@@ -27,75 +27,35 @@ public class ListBucket {
     private String bucket;
     private int unitLen;
     private int version;
-    private String resultFormat = "json";
-    private String resultFileDir = "../result";
+    private int maxThreads;
     private String cPrefix;
     private List<String> antiPrefix;
     private int retryCount;
-    private ListFileFilter filter;
-    private ListFileAntiFilter antiFilter;
-    private boolean doFilter;
-    private boolean doAntiFilter;
-    private List<String> originPrefixList = Arrays.asList(
-            " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-                    .split(""));
+    private List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
+            "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
+    private String resultFileDir;
+    private boolean saveTotal;
+    private String resultFormat;
+    private String separator;
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version,
-                      String customPrefix, List<String> antiPrefix, int retryCount) {
+    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version, int maxThreads,
+                      String customPrefix, List<String> antiPrefix, int retryCount, String resultFileDir) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
         this.version = version;
+        this.maxThreads = maxThreads;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix;
         this.retryCount = retryCount;
-    }
-
-    public void setResultParams(String resultFormat, String resultFileDir) {
-        this.resultFormat = resultFormat;
         this.resultFileDir = resultFileDir;
     }
 
-    public void setFilter(ListFileFilter listFileFilter, ListFileAntiFilter listFileAntiFilter) {
-        this.filter = listFileFilter;
-        this.antiFilter = listFileAntiFilter;
-        this.doFilter = ListFileFilterUtils.checkListFileFilter(listFileFilter);
-        this.doAntiFilter = ListFileFilterUtils.checkListFileAntiFilter(listFileAntiFilter);
-    }
-
-    private List<FileInfo> filterFileInfo(List<FileInfo> fileInfoList) {
-
-        if (fileInfoList == null || fileInfoList.size() == 0) {
-            return fileInfoList;
-        } else if (doFilter && doAntiFilter) {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> filter.doFileFilter(fileInfo) && antiFilter.doFileAntiFilter(fileInfo))
-                    .collect(Collectors.toList());
-        } else if (doFilter) {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> filter.doFileFilter(fileInfo))
-                    .collect(Collectors.toList());
-        } else if (doAntiFilter) {
-            return fileInfoList.parallelStream()
-                    .filter(fileInfo -> antiFilter.doFileAntiFilter(fileInfo))
-                    .collect(Collectors.toList());
-        } else {
-            return fileInfoList;
-        }
-    }
-
-    private void writeResult(List<FileInfo> fileInfoList, FileMap fileMap, int writeType) {
-
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
-        if (fileMap != null) {
-            Stream<FileInfo> fileInfoStream = fileInfoList.parallelStream().filter(Objects::nonNull);
-            List<String> list = resultFormat.equals("json") ?
-                    fileInfoStream.map(JsonConvertUtils::toJsonWithoutUrlEscape).collect(Collectors.toList()) :
-                    fileInfoStream.map(LineUtils::toSeparatedItemLine).collect(Collectors.toList());
-            if (writeType == 1) fileMap.writeSuccess(String.join("\n", list));
-            if (writeType == 2) fileMap.writeOther(String.join("\n", list));
-        }
+    public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
+        this.saveTotal = saveTotal;
+        this.resultFormat = resultFormat;
+        this.separator = separator;
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
@@ -106,14 +66,14 @@ public class ListBucket {
                         FileLister fileLister = null;
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    null, null, unitLen, version, retryCount);
+                                    null, null, unitLen, version);
                         } catch (QiniuException e1) {
                             HttpResponseUtils.checkRetryCount(e1, retryCount);
                             while (retryCount > 0) {
                                 System.out.println("list prefix:" + prefix + "\tretrying...");
                                 try {
                                     fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                            null, null, unitLen, version, retryCount);
+                                            null, null, unitLen, version);
                                     retryCount = 0;
                                 } catch (QiniuException e2) {
                                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -127,99 +87,119 @@ public class ListBucket {
 //                        throw new RuntimeException("list prefix:" + prefix + "\t" + e.error(), e.fillInStackTrace());
                     }
                 })
-                .filter(Objects::nonNull)
-                .filter(FileLister::hasNext)
+//                .filter(Objects::nonNull)
+//                .filter(FileLister::hasNext)
+                .filter(fileLister -> {
+                    if (fileLister != null && fileLister.hasNext()) return true;
+                    else {
+                        fileLister = null;
+                        return false;
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int unitLen, int level) throws QiniuException {
+    private List<FileLister> getFileListerList(int unitLen) throws QiniuException {
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
-        List<FileLister> fileListerList = new ArrayList<>();
-        FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix,
-                null, null, unitLen, version, retryCount);
-
-        if (level == 1) {
-//            validPrefixList.add(cPrefix);
-            fileListerList = prefixList(validPrefixList, unitLen);
-        } else if (level == 2) {
-            fileListerList = prefixList(validPrefixList, 1);
-            List<String> level2PrefixList = fileListerList.parallelStream()
-                    .map(singlePrefixFileLister -> originPrefixList.parallelStream()
+        List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
+        Map<Boolean, List<FileLister>> groupedFileListerMap;
+        while (fileListerList.size() < maxThreads - 1) {
+            groupedFileListerMap = fileListerList.stream().collect(Collectors.groupingBy(
+                            fileLister -> fileLister.getMarker() != null && !"".equals(fileLister.getMarker())
+                    ));
+            if (groupedFileListerMap.get(true) != null) {
+                Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream()
+                        .map(fileLister -> {
+                            List<FileInfo> list = fileLister.getFileInfoList();
+                            String point = "";
+                            if (list != null && list.size() > 0) {
+                                int prefixLen = fileLister.getPrefix().length();
+                                point = list.get(0).key.substring(prefixLen, prefixLen + 1);
+                            }
+                            String finalPoint = point;
+                            return originPrefixList.stream()
+                                    .filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                                    .map(originPrefix -> fileLister.getPrefix() + originPrefix)
+                                    .collect(Collectors.toList());
+                        })
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+                if (listOptional.isPresent()) {
+                    validPrefixList = listOptional.get().parallelStream()
                             .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                            .map(originPrefix -> singlePrefixFileLister.getPrefix() + originPrefix)
-                            .collect(Collectors.toList()))
-                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
-                    .orElse(validPrefixList);
-//            level2PrefixList.add(cPrefix);
-            fileListerList = prefixList(level2PrefixList, unitLen);
+                            .collect(Collectors.toList());
+                    fileListerList = prefixList(validPrefixList, unitLen);
+                }
+            } else {
+                break;
+            }
+            if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
         }
-        fileListerList.add(firstFileLister);
-
+        fileListerList.addAll(prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen));
         return fileListerList;
     }
 
-    private void recordProgress(String prefix, String marker, String endFile, FileMap fileMap) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("prefix", prefix);
-        jsonObject.addProperty("marker", marker);
-        jsonObject.addProperty("end", endFile);
-        fileMap.writeKeyFile("marker" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
-    }
-
-    private void listFromLister(FileLister fileLister, String endFile, int resultIndex, ILineProcess processor) {
-
+    private void listFromLister(FileLister fileLister, String end, int resultIndex, List<String> usedFields,
+                                ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
-        ILineProcess fileProcessor = null;
+        ILineProcess<Map<String, String>> fileProcessor = null;
+        ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir, fileMap,
+                new String[]{"prefix", "marker", "end"});
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
-            fileMap.initWriter(resultFileDir, "list", resultIndex);
-
+            ITypeConvert<FileInfo, String> writeTypeConverter = null;
+            // TODO
+            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(usedFields);
+            if (saveTotal) {
+                writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
+                fileMap.initWriter(resultFileDir, "list", resultIndex);
+            }
             while (fileLister.hasNext()) {
                 String marker = fileLister.getMarker();
                 List<FileInfo> fileInfoList = fileLister.next();
                 int maxError = 20 * retryCount;
                 while (fileLister.exception != null) {
+                    System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
                     maxError--;
-                    if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap, "list",
+                    if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap,
                             fileLister.getPrefix() + "|" + marker);
-                    System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + endFile + "\t" +
-                            fileLister.error() + " retrying...");
                     fileLister.exception = null;
                     fileInfoList = fileLister.next();
                 }
                 int size = fileInfoList.size();
-                int finaSize = size;
-                if (!StringUtils.isNullOrEmpty(endFile)) {
+                int finalSize = size;
+                if (!StringUtils.isNullOrEmpty(end)) {
                     fileInfoList = fileInfoList.parallelStream()
-                            .filter(fileInfo -> fileInfo.key.compareTo(endFile) < 0)
+                            .filter(fileInfo -> fileInfo.key.compareTo(end) < 0)
                             .collect(Collectors.toList());
-                    finaSize = fileInfoList.size();
+                    finalSize = fileInfoList.size();
                 }
-                writeResult(fileInfoList, fileMap, 1);
-                if (doFilter || doAntiFilter) {
-                    fileInfoList = filterFileInfo(fileInfoList);
-                    writeResult(fileInfoList, fileMap, 2);
+                if (saveTotal && fileInfoList.size() > 0) {
+                    fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
+                    fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
                 }
-                if (fileProcessor != null) fileProcessor.processLine(fileInfoList.parallelStream()
-                        .filter(Objects::nonNull).collect(Collectors.toList()));
-                recordProgress(fileLister.getPrefix(), marker, endFile, fileMap);
-                if (finaSize < size) break;
+                if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
+                if (typeConverter.getErrorList().size() > 0) fileMap.writeKeyFile("process_error" + resultIndex,
+                        String.join("\n", typeConverter.getErrorList()));
+                recorder.record(fileLister.getPrefix(), marker, end);
+                if (finalSize < size) break;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             fileMap.closeWriter();
             if (fileProcessor != null) fileProcessor.closeResource();
+            recorder.close();
             fileLister.remove();
             fileLister = null;
         }
     }
 
-    public void concurrentlyList(int maxThreads, int level, ILineProcess processor) throws QiniuException {
-        List<FileLister> fileListerList = getFileListerList(unitLen, level);
+    public void concurrentlyList(int maxThreads, List<String> usedFields, ILineProcess<Map<String, String>> processor)
+            throws QiniuException {
+        List<FileLister> fileListerList = getFileListerList(unitLen);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
         if (fileListerList.size() > 1) {
@@ -251,35 +231,21 @@ public class ListBucket {
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
-            executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1, processor));
+            executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1,
+                    usedFields, processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         if (processor != null) processor.closeResource();
     }
 
-    public void checkValidPrefix(int level) throws IOException {
-        List<FileLister> fileListerList = getFileListerList(1, level);
-        FileMap fileMap = new FileMap();
-        try {
-            fileMap.initWriter(resultFileDir, "list", "check");
-            List<String> validPrefixAndMarker = fileListerList.parallelStream()
-                    .filter(FileLister::hasNext)
-                    .map(fileLister -> fileLister.getPrefix() + "\t" + fileLister.getMarker())
-                    .collect(Collectors.toList());
-            fileMap.writeSuccess(String.join("\n", validPrefixAndMarker));
-        } finally {
-            fileMap.closeWriter();
-        }
-    }
-
-    public void straightlyList(String marker, String end, ILineProcess processor) throws IOException {
+    public void straightlyList(String marker, String end, List<String> usedFields,
+                               ILineProcess<Map<String, String>> processor) throws IOException {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
-        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen,
-                version, retryCount);
-        listFromLister(fileLister, end, 0, processor);
+        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen, version);
+        listFromLister(fileLister, end, 0, usedFields, processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }

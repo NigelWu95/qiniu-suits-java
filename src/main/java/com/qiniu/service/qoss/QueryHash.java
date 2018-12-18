@@ -1,25 +1,25 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
-import com.qiniu.model.qoss.Qhash;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
+public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
+    private boolean https;
+    private Auth srcAuth;
+    private String algorithm;
     private FileChecker fileChecker;
     private String processName;
-    private int retryCount = 3;
+    private int retryCount;
     protected String resultFileDir;
     private FileMap fileMap;
 
@@ -31,7 +31,7 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
     public QueryHash(String domain, String resultFileDir) {
         initBaseParams(domain);
         this.resultFileDir = resultFileDir;
-        this.fileChecker = new FileChecker(null);
+        this.fileChecker = new FileChecker(null, https, srcAuth);
         this.fileMap = new FileMap();
     }
 
@@ -40,9 +40,16 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
+    public void setOptions(String algorithm, boolean https, Auth srcAuth) {
+        this.algorithm = algorithm;
+        this.https = https;
+        this.srcAuth = srcAuth;
+        this.fileChecker = new FileChecker(algorithm, https, srcAuth);
+    }
+
     public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(null);
+        queryHash.fileChecker = new FileChecker(algorithm, https, srcAuth);
         queryHash.fileMap = new FileMap();
         try {
             queryHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
@@ -62,20 +69,16 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         return this.processName;
     }
 
-    public String getInfo() {
-        return domain;
-    }
+    public String singleWithRetry(String key, int retryCount) throws QiniuException {
 
-    public Qhash singleWithRetry(String key, int retryCount) throws QiniuException {
-
-        Qhash qhash = null;
+        String qhash = null;
         try {
-            qhash = fileChecker.getQHash(domain, key);
+            qhash = fileChecker.getQHashBody(domain, key);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = fileChecker.getQHash(domain, key);
+                    qhash = fileChecker.getQHashBody(domain, key);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -86,18 +89,15 @@ public class QueryHash implements ILineProcess<FileInfo>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<FileInfo> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
 
-        fileInfoList = fileInfoList == null ? null : fileInfoList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (fileInfoList == null || fileInfoList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (Map<String, String> fileInfo : fileInfoList) {
             try {
-                Qhash qhash = singleWithRetry(fileInfo.key, retryCount);
-                if (qhash != null) resultList.add(fileInfo.key + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(qhash));
+                String qhash = singleWithRetry(fileInfo.get("key"), retryCount);
+                if (qhash != null) resultList.add(fileInfo.get("key") + "\t" + qhash);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + fileInfo.key);
+                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

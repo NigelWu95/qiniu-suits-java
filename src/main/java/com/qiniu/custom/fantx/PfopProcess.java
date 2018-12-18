@@ -1,6 +1,6 @@
 package com.qiniu.custom.fantx;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -72,10 +72,6 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         return this.processName;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + pipeline;
-    }
-
     /**
      * 从转码成功的 mp4 进行 copy m3u8
      * @param lineList
@@ -90,7 +86,7 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         for (Map<String, String> line : lineList) {
             try {
                 String key = line.get("0");
-                String m3u8Key = ObjectUtils.replaceExt(key, "m3u8");
+                String m3u8Key = FileNameUtils.replaceExt(key, "m3u8");
                 String m3u8Copy = "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
                 String fop = m3u8Copy + UrlSafeBase64.encodeToString(bucket + ":" + m3u8Key);
                 String persistentId = null;
@@ -115,7 +111,7 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
                 if (persistentId != null && !"".equals(persistentId)) resultList.add(persistentId);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
+                HttpResponseUtils.processException(e, fileMap, line.get("0"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

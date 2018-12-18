@@ -1,9 +1,8 @@
 package com.qiniu.custom.miaop;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.HttpResponseUtils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
