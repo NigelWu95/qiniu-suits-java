@@ -69,10 +69,6 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
         return this.processName;
     }
 
-    public String getInfo() {
-        return domain;
-    }
-
     public String singleWithRetry(String key, int retryCount) throws QiniuException {
 
         String qhash = null;
@@ -105,7 +101,7 @@ public class QhashProcess implements ILineProcess<Map<String, String>>, Cloneabl
                 if (md5.equals(line.get("1"))) successList.add(line.get("key") + "\t" + qhashBody);
                 else failList.add(line.get("0") + "\t" + qhashBody);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("key"));
+                HttpResponseUtils.processException(e, fileMap, line.get("key"));
             }
         }
         if (successList.size() > 0) fileMap.writeSuccess(String.join("\n", successList));

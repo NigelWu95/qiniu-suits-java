@@ -72,10 +72,6 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
         return this.processName;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + pipeline;
-    }
-
     /**
      * 从转码成功的 mp4 进行 copy m3u8
      * @param lineList
@@ -115,7 +111,7 @@ public class PfopProcess implements ILineProcess<Map<String, String>>, Cloneable
                 if (persistentId != null && !"".equals(persistentId)) resultList.add(persistentId);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
+                HttpResponseUtils.processException(e, fileMap, line.get("0"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

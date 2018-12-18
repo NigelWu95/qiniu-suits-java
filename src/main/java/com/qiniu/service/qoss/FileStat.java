@@ -86,7 +86,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 String stat = statWithRetry(fileInfo.get("key"), retryCount);
                 if (stat != null) resultList.add(fileInfo.get("key") + "\t" + stat);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

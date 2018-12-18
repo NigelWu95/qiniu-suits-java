@@ -97,7 +97,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 String qhash = singleWithRetry(fileInfo.get("key"), retryCount);
                 if (qhash != null) resultList.add(fileInfo.get("key") + "\t" + qhash);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

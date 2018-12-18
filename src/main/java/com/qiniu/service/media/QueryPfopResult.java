@@ -85,7 +85,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 if (pfopResult != null)resultList.add(pfopResult);
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, line.get("persistentId"));
+                HttpResponseUtils.processException(e, fileMap, line.get("persistentId"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

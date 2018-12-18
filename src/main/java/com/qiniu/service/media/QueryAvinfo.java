@@ -94,7 +94,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 if (avinfo != null) resultList.add(line.get("key") + "\t" + avinfo);
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, line.get("key"));
+                HttpResponseUtils.processException(e, fileMap, line.get("key"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
