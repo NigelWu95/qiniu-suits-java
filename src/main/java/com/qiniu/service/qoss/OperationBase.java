@@ -85,7 +85,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                 String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }
         }
 
@@ -120,7 +120,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processName, String.join("\n", processList.stream()
+                    HttpResponseUtils.processException(e, fileMap, String.join("\n", processList.stream()
                                     .map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList())));
                 }
             }

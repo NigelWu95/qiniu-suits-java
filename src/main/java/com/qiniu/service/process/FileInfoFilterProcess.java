@@ -20,7 +20,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     private String resultFormat;
     private String separator;
     private FileMap fileMap;
-    protected int retryCount = 3;
+    protected int retryCount;
     private ITypeConvert<Map<String, String>, String> typeConverter;
     private ILineFilter<Map<String, String>> filter;
     private ILineProcess<Map<String, String>> nextProcessor;

@@ -34,8 +34,8 @@ public class ListBucketEntry {
         Configuration configuration = new Configuration(Zone.autoZone());
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(paramFromConfig, args, configFilePath)
                 .getFileProcessor();
-        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version,
-                customPrefix, antiPrefix, 3, resultFileDir);
+        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, maxThreads, customPrefix,
+                antiPrefix, 3, resultFileDir);
         listBucket.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         if (multiStatus) {
             listBucket.concurrentlyList(maxThreads, level, processor);

@@ -27,10 +27,10 @@ public class HttpResponseUtils {
         }
     }
 
-    public static void processException(QiniuException e, FileMap fileMap, String processName, String info)
+    public static void processException(QiniuException e, FileMap fileMap, String info)
             throws QiniuException {
         if (e != null) {
-            if (fileMap != null) fileMap.writeErrorOrNull(processName + " failed. " + e.error() + "\t" + info);
+            if (fileMap != null) fileMap.writeErrorOrNull(e.error() + "\t" + info);
             if (e.response != null) {
                 if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                     throw e;
@@ -48,6 +48,6 @@ public class HttpResponseUtils {
         if (statusCode != 200) throw new QiniuException(response);
         String reqId = response.reqId;
         response.close();
-        return statusCode + "\t" + reqId + "\t" + responseBody;
+        return reqId + "\t" + responseBody;
     }
 }

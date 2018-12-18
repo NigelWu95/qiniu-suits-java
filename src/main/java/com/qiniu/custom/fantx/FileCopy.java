@@ -78,10 +78,6 @@ public class FileCopy implements ILineProcess<Map<String, String>>, Cloneable {
         return processName;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + toBucket;
-    }
-
     public List<String> singleRun(List<Map<String, String>> lineList) throws QiniuException {
 
         List<String> resultList = new ArrayList<>();
@@ -104,7 +100,7 @@ public class FileCopy implements ILineProcess<Map<String, String>>, Cloneable {
                 String result = HttpResponseUtils.getResult(response);
                 if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + copyLine.toString());
+                HttpResponseUtils.processException(e, fileMap, copyLine.toString());
             }
         }
 
@@ -140,8 +136,7 @@ public class FileCopy implements ILineProcess<Map<String, String>>, Cloneable {
                     String result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" +
-                            String.join("\n", processList.stream()
+                    HttpResponseUtils.processException(e, fileMap, String.join("\n", processList.stream()
                                     .map(line -> line.get("0") + "\t" + line.get("1"))
                                     .collect(Collectors.toList())));
                 }

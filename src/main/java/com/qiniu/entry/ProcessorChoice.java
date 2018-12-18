@@ -101,6 +101,7 @@ public class ProcessorChoice {
                 processor = whichNextProcessor();
             }
         }
+        if (processor != null) processor.setRetryCount(retryCount);
 
         return processor;
     }
