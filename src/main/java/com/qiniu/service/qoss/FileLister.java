@@ -90,27 +90,24 @@ public class FileLister implements Iterator<List<FileInfo>> {
 
         Response response = null;
         try {
-            response = version == 2 ?
-                    bucketManager.listV2(bucket, prefix, marker, limit, delimiter) :
+            response = version == 2 ? bucketManager.listV2(bucket, prefix, marker, limit, delimiter) :
                     bucketManager.listV1(bucket, prefix, marker, limit, delimiter);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
+        } catch (Exception e1) {
+            HttpResponseUtils.checkRetryCount(new QiniuException(e1), retryCount);
             while (retryCount > 0) {
                 try {
-                    response = version == 2 ?
-                            bucketManager.listV2(bucket, prefix, marker, limit, delimiter) :
+                    response = version == 2 ? bucketManager.listV2(bucket, prefix, marker, limit, delimiter) :
                             bucketManager.listV1(bucket, prefix, marker, limit, delimiter);
                     retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                } catch (Exception e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(new QiniuException(e2), retryCount);
                 }
             }
         }
         return response;
     }
 
-    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
-            throws QiniuException {
+    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         List<FileInfo> resultList = new ArrayList<>();
         Response response = list(prefix, delimiter, marker, limit);
         if (response != null) {
