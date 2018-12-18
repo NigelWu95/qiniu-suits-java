@@ -2,7 +2,7 @@ package com.qiniu.custom.miaop;
 
 import com.qiniu.entry.InputInfoParser;
 import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.model.parameter.ListFieldParams;
+import com.qiniu.model.parameter.InputFieldParams;
 import com.qiniu.model.parameter.QhashParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -25,7 +25,7 @@ public class MirrorKeyFileInput extends FileInput {
         ILineProcess<Map<String, String>> processor = new MirrorSrcHash(qhashParams.getDomain(), resultFileDir);
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
         MirrorKeyFileInput fileInput = new MirrorKeyFileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
-        ListFieldParams fieldParams = new ListFieldParams("resources/.qiniu.properties");
+        InputFieldParams fieldParams = new InputFieldParams("resources/.qiniu.properties");
         fileInput.process(maxThreads, sourceFilePath, fieldParams.getUsedFields(), processor);
         processor.closeResource();
     }

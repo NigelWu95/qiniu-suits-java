@@ -54,7 +54,7 @@ public class FileInput extends com.qiniu.service.datasource.FileInput {
 
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
-        ListFieldParams fieldParams = new ListFieldParams("resources/.qiniu-fantx.properties");
+        InputFieldParams fieldParams = new InputFieldParams("resources/.qiniu-fantx.properties");
         fileInput.process(maxThreads, sourceFilePath, fieldParams.getUsedFields(), processor);
         processor.closeResource();
     }
