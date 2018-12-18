@@ -24,7 +24,6 @@ public class ProcessorChoice {
         add("pfop");
         add("pfopresult");
         add("qhash");
-        add("stat");
     }};
     private List<String> canFilterProcesses = new ArrayList<String>(){{
         add("asyncfetch");

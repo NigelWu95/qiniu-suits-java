@@ -1,5 +1,7 @@
 package com.qiniu.service.qoss;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.sdk.BucketManager;
 import com.qiniu.sdk.BucketManager.*;
@@ -83,7 +85,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                 }
                 String result = HttpResponseUtils.getResult(response);
-                if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                if (!StringUtils.isNullOrEmpty(result)) {
+                    resultList.add(fileInfo.get("key") + "\t" + response.statusCode + "\t" + result);
+                }
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }
@@ -118,7 +122,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                     batchOperations.clearOps();
                     String result = HttpResponseUtils.getResult(response);
-                    if (!StringUtils.isNullOrEmpty(result)) resultList.add(result);
+                    if (!StringUtils.isNullOrEmpty(result)) {
+                        JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
+                        for (int j = 0; j < fileInfoList.size(); j++) {
+                            resultList.add(fileInfoList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        }
+                    }
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, String.join("\n", processList.stream()
                                     .map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList())));
