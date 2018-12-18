@@ -10,12 +10,14 @@ public class ProgressRecorder implements Cloneable {
 
     private String processName;
     private String resultFileDir;
+    private int resultIndex;
     private FileMap fileMap;
     private String[] keys;
 
-    public ProgressRecorder(String processName, String resultFileDir, FileMap fileMap, String[] keys) {
+    public ProgressRecorder(String processName, String resultFileDir, int resultIndex, FileMap fileMap, String[] keys) {
         this.processName = processName;
         this.resultFileDir = resultFileDir;
+        this.resultIndex = resultIndex;
         this.fileMap = fileMap;
         this.keys = keys;
     }
@@ -37,7 +39,7 @@ public class ProgressRecorder implements Cloneable {
             if (progress.length < i) break;
             jsonObject.addProperty(keys[i], progress[i]);
         }
-        fileMap.writeKeyFile(processName + "_" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
+        fileMap.writeKeyFile(processName + "_" + resultIndex, JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
     public void close() {
