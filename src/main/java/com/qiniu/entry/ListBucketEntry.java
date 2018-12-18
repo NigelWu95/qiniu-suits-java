@@ -27,7 +27,7 @@ public class ListBucketEntry {
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         boolean saveTotal = listBucketParams.getSaveTotal();
         String resultFormat = listBucketParams.getResultFormat();
-        String resultSeparator = listBucketParams.getResultFormat();
+        String resultSeparator = listBucketParams.getResultSeparator();
         String resultFileDir = listBucketParams.getResultFileDir();
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
