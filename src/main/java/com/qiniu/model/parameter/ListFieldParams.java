@@ -46,12 +46,12 @@ public class ListFieldParams extends CommonParams {
         if (keySave == null || keySave.equals("true")) usedFields.add(0, "key");
         if (hashSave == null || hashSave.equals("true")) usedFields.add(1, "hash");
         if (fsizeSave == null || fsizeSave.equals("true")) usedFields.add(2, "fsize");
-        if (putTimeSave == null || putTimeSave.equals("true")) usedFields.add(3, "hash");
-        if (mimeTypeSave == null || mimeTypeSave.equals("true")) usedFields.add(4, "hash");
-        if (endUserSave == null || endUserSave.equals("true")) usedFields.add(5, "hash");
-        if (typeSave == null || typeSave.equals("true")) usedFields.add(6, "hash");
-        if (statusSave == null || statusSave.equals("true")) usedFields.add(7, "hash");
-        if (md5Save == null || md5Save.equals("true")) usedFields.add(8, "hash");
+        if (putTimeSave == null || putTimeSave.equals("true")) usedFields.add(3, "putTime");
+        if (mimeTypeSave == null || mimeTypeSave.equals("true")) usedFields.add(4, "mimeType");
+        if (endUserSave == null || endUserSave.equals("true")) usedFields.add(5, "endUser");
+        if (typeSave == null || typeSave.equals("true")) usedFields.add(6, "type");
+        if (statusSave == null || statusSave.equals("true")) usedFields.add(7, "status");
+        if (md5Save == null || md5Save.equals("true")) usedFields.add(8, "md5");
 
         return usedFields;
     }

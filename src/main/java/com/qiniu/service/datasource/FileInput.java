@@ -48,7 +48,6 @@ public class FileInput {
         try {
             fileMap.initWriter(resultFileDir, "fileinput", finalI + 1);
             if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
-            // TODO
             ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
             List<String> srcList = bufferedReader.lines().parallel().collect(Collectors.toList());
             List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
