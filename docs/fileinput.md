@@ -6,6 +6,7 @@
 
 ### 配置文件选项
 ```
+file-path=
 parse-type=
 separator=
 key-index=
@@ -20,6 +21,7 @@ md5-index=
 fops-index=
 persistentId-index=
 ```
+`file-path` 输入文件路径（相对路径目录或者相对路径文件名）
 `parse-type` 行格式（json/table）  
 `separator` table 格式分隔符  
 `key-index` 资源名索引（下标）  
@@ -36,7 +38,7 @@ persistentId-index=
 
 ### 命令行方式
 ```
--key-index= -hash-index= -fsize-index= -putTime-index= -mimeType-index= -endUser-index= -type-index= -status-index= -md5-index= -fops-index= -persistentId-index=
+-file-path= -parse-type= -separator= -key-index= -hash-index= -fsize-index= -putTime-index= -mimeType-index= -endUser-index= -type-index= -status-index= -md5-index= -fops-index= -persistentId-index=
 ```
 
 ### 关于格式和索引
