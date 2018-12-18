@@ -1,6 +1,5 @@
 package com.qiniu.model.parameter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InputFieldParams extends ListFieldParams {
@@ -21,7 +20,7 @@ public class InputFieldParams extends ListFieldParams {
     }
 
     public List<String> getUsedFields() {
-        List<String> usedFields = new ArrayList<>();
+        List<String> usedFields = super.getUsedFields();
         if (fopsSave == null || fopsSave.equals("true")) usedFields.add(9, "fops");
         if (persistentIdSave == null || persistentIdSave.equals("true")) usedFields.add(10, "persistentId");
 

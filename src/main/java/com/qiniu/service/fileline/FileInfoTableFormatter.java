@@ -20,11 +20,11 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
         usedFields.forEach(key -> {
             switch (key) {
                 case "key": converted.append(fileInfo.key); break;
-                case "fsize": converted.append(String.valueOf(fileInfo.fsize)); break;
-                case "putTime": converted.append(String.valueOf(fileInfo.putTime)); break;
+                case "fsize": converted.append(fileInfo.fsize); break;
+                case "putTime": converted.append(fileInfo.putTime); break;
                 case "mimeType": converted.append(fileInfo.mimeType); break;
                 case "endUser": converted.append(fileInfo.endUser); break;
-                case "type": converted.append(String.valueOf(fileInfo.type)); break;
+                case "type": converted.append(fileInfo.type); break;
 //              case "status": converted.append(key, fileInfo.status); break;
             }
             converted.append(separator);
