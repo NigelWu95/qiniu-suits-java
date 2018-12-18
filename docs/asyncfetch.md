@@ -8,7 +8,7 @@
 process=asyncfetch
 process-ak=
 process-sk=
-to-bucket=bucket2
+to-bucket=bucket
 keep-key=true
 add-prefix=video/
 file-type=
