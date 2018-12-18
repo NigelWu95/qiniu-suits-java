@@ -1,8 +1,5 @@
 package com.qiniu.model.parameter;
 
-import com.qiniu.common.QiniuException;
-import com.qiniu.util.StringUtils;
-
 import java.io.IOException;
 
 public class QossParams extends CommonParams {
@@ -43,11 +40,11 @@ public class QossParams extends CommonParams {
 
     public String getSecretKey() throws IOException {
         if ("list".equals(getSourceType())) {
-            if (accessKey == null || "".equals(accessKey))
+            if (secretKey == null || "".equals(secretKey))
                 throw new IOException("no incorrect sk, please set it.");
-            else return accessKey;
+            else return secretKey;
         } else {
-            return accessKey;
+            return secretKey;
         }
     }
 
