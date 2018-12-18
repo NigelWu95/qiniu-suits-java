@@ -79,6 +79,7 @@ public class ProcessorChoice {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
+        ListFieldParams fieldParams = paramFromConfig ? new ListFieldParams(configFilePath) : new ListFieldParams(args);
 
         ILineProcess<Map<String, String>> processor;
         if (canFilterProcesses.contains(process)) {
@@ -86,13 +87,15 @@ public class ProcessorChoice {
             if (!fileFilter.isValid()) {
                 processor = nextProcessor;
             } else {
-                processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter);
+                processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter,
+                        fieldParams.getUsedFields());
                 processor.setNextProcessor(nextProcessor);
             }
         } else {
             if ("filter".equals(process)) {
                 if (fileFilter.isValid()) {
-                    processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter);
+                    processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter,
+                            fieldParams.getUsedFields());
                 } else {
                     throw new Exception("please set the correct filter conditions.");
                 }

@@ -12,25 +12,16 @@ import java.util.stream.Collectors;
 public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
     private IStringFormat<FileInfo> stringFormatter;
-    private Map<String, Boolean> variablesIfUse;
+    private  List<String> usedFields;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public FileInfoToString(String format, String separator, boolean hash, boolean fsize, boolean putTime,
-                            boolean mimeType, boolean endUser, boolean type, boolean status) {
+    public FileInfoToString(String format, String separator, List<String> usedFields) {
         if ("json".equals(format)) {
             stringFormatter = new FileInfoJsonFormatter();
         } else {
             stringFormatter = new FileInfoTableFormatter(separator);
         }
-        variablesIfUse = new HashMap<>();
-        variablesIfUse.put("key", true);
-        variablesIfUse.put("hash", hash);
-        variablesIfUse.put("fsize", fsize);
-        variablesIfUse.put("putTime", putTime);
-        variablesIfUse.put("mimeType", mimeType);
-        variablesIfUse.put("endUser", endUser);
-        variablesIfUse.put("type", type);
-//        variablesIfUse.put("status", status);
+        this.usedFields = usedFields;
     }
 
     public List<String> convertToVList(List<FileInfo> srcList) {
@@ -39,7 +30,7 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
                 .filter(Objects::nonNull)
                 .map(fileInfo -> {
                     try {
-                        return stringFormatter.toFormatString(fileInfo, variablesIfUse);
+                        return stringFormatter.toFormatString(fileInfo, usedFields);
                     } catch (Exception e) {
                         errorList.add(String.valueOf(fileInfo));
                         return null;

@@ -41,8 +41,8 @@ public class FileInput {
         this.separator = separator;
     }
 
-    public void traverseByReader(int finalI, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
-
+    public void traverseByReader(int finalI, BufferedReader bufferedReader, List<String> usedFields,
+                                 ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
@@ -55,7 +55,7 @@ public class FileInput {
             fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
             if (saveTotal) {
                 ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat, separator,
-                        true, true, true, true, true, true, true);
+                        usedFields);
                 fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
                 fileMap.writeKeyFile("write_error", String.join("\n", writeTypeConverter.getErrorList()));
             }
@@ -73,7 +73,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, ILineProcess<Map<String, String>> processor) {
+    public void process(int maxThreads, String filePath, List<String> usedFields, ILineProcess<Map<String, String>> processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);
@@ -110,7 +110,7 @@ public class FileInput {
                 .collect(Collectors.toList());
         for (int i = 0; i < sourceReaders.size(); i++) {
             int finalI = i;
-            executorPool.execute(() -> traverseByReader(finalI, sourceReaders.get(finalI), processor));
+            executorPool.execute(() -> traverseByReader(finalI, sourceReaders.get(finalI), usedFields, processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
