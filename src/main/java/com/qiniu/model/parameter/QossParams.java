@@ -1,8 +1,5 @@
 package com.qiniu.model.parameter;
 
-import com.qiniu.common.QiniuException;
-import com.qiniu.util.StringUtils;
-
 import java.io.IOException;
 
 public class QossParams extends CommonParams {
