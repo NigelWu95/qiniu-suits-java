@@ -102,7 +102,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         for (Map<String, String> line : lineList) {
             try {
                 String result = singleWithRetry(line, retryCount);
-                if (result != null && !"".equals(result)) resultList.add(result);
+                if (result != null && !"".equals(result)) resultList.add(line.get("key") + "\t" + result);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, line.get("key") + "\t" + line.get("fops"));
