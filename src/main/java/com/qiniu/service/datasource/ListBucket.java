@@ -141,35 +141,11 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private List<FileLister> getFileListerList(int unitLen, int level) throws QiniuException {
-        List<String> startPrefixList = originPrefixList.parallelStream()
-                .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                .map(prefix -> cPrefix + prefix)
-                .collect(Collectors.toList());
-        List<FileLister> fileListerList = new ArrayList<>();
-        if (level == 1) {
-            fileListerList = prefixList(startPrefixList, unitLen);
-        } else if (level == 2) {
-            fileListerList = prefixList(startPrefixList, 1);
-            List<String> validPrefixList = fileListerList.parallelStream()
-                    .map(singlePrefixFileLister -> originPrefixList.stream()
-                            .filter(originPrefix -> !antiPrefix.contains(originPrefix))
-                            .map(originPrefix -> singlePrefixFileLister.getPrefix() + originPrefix)
-                            .collect(Collectors.toList()))
-                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
-                    .orElse(startPrefixList);
-            fileListerList = prefixList(validPrefixList, unitLen);
-        }
-        FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix,
-                null, null, unitLen, version);
-        fileListerList.add(firstFileLister);
-
-        return fileListerList;
-    }
-
     private void listFromLister(FileLister fileLister, String end, int resultIndex, ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
+        ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir, fileMap,
+                new String[]{"prefix", "marker", "end"});
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
@@ -179,8 +155,6 @@ public class ListBucket {
                 writeTypeConverter = new FileInfoToString(resultFormat, separator, true, true, true, true, true, true, true);
                 fileMap.initWriter(resultFileDir, "list", resultIndex);
             }
-            ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir,
-                    fileMap, new String[]{"prefix", "marker", "end"});
             while (fileLister.hasNext()) {
                 String marker = fileLister.getMarker();
                 List<FileInfo> fileInfoList = fileLister.next();
@@ -201,19 +175,22 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finalSize = fileInfoList.size();
                 }
-                if (saveTotal) {
+                if (saveTotal && fileInfoList.size() > 0) {
                     fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
                     fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
                 }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
-                fileMap.writeKeyFile("process_error", String.join("\n", typeConverter.getErrorList()));
+                if (typeConverter.getErrorList().size() > 0) fileMap.writeKeyFile("process_error" + resultIndex,
+                        String.join("\n", typeConverter.getErrorList()));
                 recorder.record(fileLister.getPrefix(), marker, end);
                 if (finalSize < size) break;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
+            fileMap.closeWriter();
             if (fileProcessor != null) fileProcessor.closeResource();
+            recorder.close();
             fileLister.remove();
             fileLister = null;
         }

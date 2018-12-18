@@ -17,7 +17,7 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
     public FileInfoToString(String format, String separator, boolean hash, boolean fsize, boolean putTime,
                             boolean mimeType, boolean endUser, boolean type, boolean status) {
-        if ("format".equals(format)) {
+        if ("json".equals(format)) {
             stringFormatter = new FileInfoJsonFormatter();
         } else {
             stringFormatter = new FileInfoTableFormatter(separator);

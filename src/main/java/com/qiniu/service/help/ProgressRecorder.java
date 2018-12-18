@@ -39,4 +39,8 @@ public class ProgressRecorder implements Cloneable {
         }
         fileMap.writeKeyFile(processName + "_" + fileMap.getSuffix(), JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
+
+    public void close() {
+        fileMap.closeWriter();
+    }
 }
