@@ -66,20 +66,18 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         return this.processName;
     }
 
-    public String getInfo() {
-        return "";
-    }
-
     // mp4 retry
     public void processLine(List<Map<String, String>> lineList) {
 
         lineList = lineList == null ? null : lineList.parallelStream()
                 .filter(Objects::nonNull).collect(Collectors.toList());
         if (lineList == null || lineList.size() == 0) return;
-
-        processLine1(lineList);
+        try {
+            processLine1(lineList);
 //        processLine2(lineList);
-//        processLine3(lineList);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -118,7 +116,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         return toKey + "\t" + key + "\t" + fop + saveAsEntry + other;
     }
 
-    public void processLine1(List<Map<String, String>> lineList) {
+    public void processLine1(List<Map<String, String>> lineList) throws IOException {
 
         List<String> copyList = new ArrayList<>();
         List<String> mp4FopList = new ArrayList<>();
@@ -166,7 +164,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                     m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy, other));
                 }
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage() + "\t" + getInfo());
+                fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage());
             }
         }
         if (copyList.size() > 0) fileMap.writeKeyFile("tocopy" + resultFileIndex, String.join("\n", copyList));
@@ -174,23 +172,8 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
         if (m3u8FopList.size() > 0) fileMap.writeKeyFile("tom3u8" + resultFileIndex, String.join("\n", m3u8FopList));
     }
 
-    // non mp4 video process
-    public void processLine2(List<Map<String, String>> lineList) {
-
-        List<String> mp4FopList = new ArrayList<>();
-
-        for (Map<String, String> line : lineList) {
-            try {
-                String key = line.get("0");
-            } catch (Exception e) {
-                fileMap.writeErrorOrNull(e.getMessage() + "\t" + getInfo() + "\t" + line.toString());
-            }
-        }
-        if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultFileIndex, String.join("\n", mp4FopList));
-    }
-
     // mp4 retry
-    public void processLine3(List<Map<String, String>> lineList) {
+    public void processLine2(List<Map<String, String>> lineList) throws IOException {
 
         List<String> mp4FopList = new ArrayList<>();
 
@@ -207,7 +190,7 @@ public class AvinfoProcess implements ILineProcess<Map<String, String>>, Cloneab
                     mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop1080 + toSaveAs);
                 }
             } catch (Exception e) {
-                fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" +e.getMessage() + "\t" + getInfo());
+                fileMap.writeErrorOrNull(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage());
             }
         }
         if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultFileIndex, String.join("\n", mp4FopList));

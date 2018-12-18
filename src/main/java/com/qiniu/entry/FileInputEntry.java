@@ -27,6 +27,6 @@ public class FileInputEntry {
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultFileDir);
         fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         fileInput.process(maxThreads, sourceFilePath, lineProcessor);
-        lineProcessor.closeResource();
+        if (lineProcessor != null) lineProcessor.closeResource();
     }
 }

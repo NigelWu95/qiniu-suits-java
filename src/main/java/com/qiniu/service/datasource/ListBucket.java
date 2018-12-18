@@ -66,14 +66,14 @@ public class ListBucket {
                         FileLister fileLister = null;
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    null, null, unitLen, version, retryCount);
+                                    null, null, unitLen, version);
                         } catch (QiniuException e1) {
                             HttpResponseUtils.checkRetryCount(e1, retryCount);
                             while (retryCount > 0) {
                                 System.out.println("list prefix:" + prefix + "\tretrying...");
                                 try {
                                     fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                            null, null, unitLen, version, retryCount);
+                                            null, null, unitLen, version);
                                     retryCount = 0;
                                 } catch (QiniuException e2) {
                                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -105,9 +105,9 @@ public class ListBucket {
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
-        while (fileListerList.size() < maxThreads) {
-            Map<Boolean, List<FileLister>> groupedFileListerMap = fileListerList.stream()
-                    .collect(Collectors.groupingBy(
+        Map<Boolean, List<FileLister>> groupedFileListerMap;
+        while (fileListerList.size() < maxThreads - 1) {
+            groupedFileListerMap = fileListerList.stream().collect(Collectors.groupingBy(
                             fileLister -> fileLister.getMarker() != null && !"".equals(fileLister.getMarker())
                     ));
             if (groupedFileListerMap.get(true) != null) {
@@ -137,9 +137,7 @@ public class ListBucket {
             }
             if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
         }
-        FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix,
-                null, null, unitLen, version, retryCount);
-        fileListerList.add(firstFileLister);
+        fileListerList.addAll(prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen));
         return fileListerList;
     }
 
@@ -163,15 +161,13 @@ public class ListBucket {
             fileListerList = prefixList(validPrefixList, unitLen);
         }
         FileLister firstFileLister = new FileLister(new BucketManager(auth, configuration), bucket, cPrefix,
-                null, null, unitLen, version, retryCount);
+                null, null, unitLen, version);
         fileListerList.add(firstFileLister);
 
         return fileListerList;
     }
 
-    private void listFromLister(FileLister fileLister, String end, int resultIndex,
-                                ILineProcess<Map<String, String>> processor) {
-
+    private void listFromLister(FileLister fileLister, String end, int resultIndex, ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
@@ -183,14 +179,14 @@ public class ListBucket {
                 writeTypeConverter = new FileInfoToString(resultFormat, separator, true, true, true, true, true, true, true);
                 fileMap.initWriter(resultFileDir, "list", resultIndex);
             }
-            ProgressRecorder recorder = new ProgressRecorder(processor.getProcessName(), resultFileDir, fileMap, new String[]{"prefix", "marker", "end"});
+            ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir,
+                    fileMap, new String[]{"prefix", "marker", "end"});
             while (fileLister.hasNext()) {
                 String marker = fileLister.getMarker();
                 List<FileInfo> fileInfoList = fileLister.next();
                 int maxError = 20 * retryCount;
                 while (fileLister.exception != null) {
-                    System.out.println("list prefix:" + fileLister.getPrefix() + "|end:" + end + "\t" +
-                            fileLister.error() + " retrying...");
+                    System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
                     maxError--;
                     if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap,
                             fileLister.getPrefix() + "|" + marker);
@@ -207,7 +203,7 @@ public class ListBucket {
                 }
                 if (saveTotal) {
                     fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
-                    fileMap.writeKeyFile("write_error", String.join("\n", writeTypeConverter.getErrorList()));
+                    fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
                 }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
                 fileMap.writeKeyFile("process_error", String.join("\n", typeConverter.getErrorList()));
@@ -269,8 +265,7 @@ public class ListBucket {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
-        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen,
-                version, retryCount);
+        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen, version);
         listFromLister(fileLister, end, 0, processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
