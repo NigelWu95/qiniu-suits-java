@@ -2,7 +2,7 @@ package com.qiniu.util;
 
 import com.qiniu.common.QiniuException;
 
-public class ObjectUtils {
+public class FileNameUtils {
 
     public static String addSuffix(String name, String suffix) {
         return name + suffix;

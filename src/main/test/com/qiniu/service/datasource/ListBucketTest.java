@@ -28,18 +28,13 @@ public class ListBucketTest {
         int version = listBucketParams.getVersion();
         int unitLen = listBucketParams.getUnitLen();
         unitLen = (version == 1 && unitLen > 1000) ? unitLen %1000 : unitLen;
-        this.listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, customPrefix,
-                antiPrefix, 1);
+        this.listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, 20, customPrefix,
+                antiPrefix, 3, "../result");
     }
 
     @Test
     public void testConcurrentlyList() throws QiniuException {
-        listBucket.concurrentlyList(15, 1, null);
-    }
-
-    @Test
-    public void testCheckValidPrefix() throws IOException {
-        listBucket.checkValidPrefix(1);
+        listBucket.concurrentlyList(15, null);
     }
 
     @Test

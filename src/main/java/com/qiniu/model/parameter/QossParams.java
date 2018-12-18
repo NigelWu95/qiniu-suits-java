@@ -10,8 +10,8 @@ public class QossParams extends CommonParams {
     private String accessKey;
     private String secretKey;
     private String bucket;
-    private String processAk = "";
-    private String processSk = "";
+    private String processAk;
+    private String processSk;
 
     public QossParams(String[] args) throws IOException {
         super(args);

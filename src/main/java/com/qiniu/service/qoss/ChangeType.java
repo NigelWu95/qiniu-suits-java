@@ -5,15 +5,15 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ChangeType extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public class ChangeType extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private int type;
 
@@ -44,17 +44,13 @@ public class ChangeType extends OperationBase implements ILineProcess<FileInfo>,
         return changeType;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + type;
-    }
-
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
+    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
-        return bucketManager.changeType(bucket, fileInfo.key, storageType);
+        return bucketManager.changeType(bucket, fileInfo.get("key"), storageType);
     }
 
-    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList());
         return batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,
                 keyList.toArray(new String[]{}));
     }

@@ -1,6 +1,6 @@
 package com.qiniu.custom.fantx;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.PfopResult;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -54,10 +54,6 @@ public class PfopResultProcess implements ILineProcess<Map<String, String>>, Clo
         return this.processName;
     }
 
-    public String getInfo() {
-        return "";
-    }
-
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
         lineList = lineList == null ? null : lineList.parallelStream()
@@ -73,7 +69,7 @@ public class PfopResultProcess implements ILineProcess<Map<String, String>>, Clo
                 else failList.add(pfopResult.inputKey + "\t" + pfopResult.id + "\t" + pfopResult.code + "\t" +
                         pfopResult.items.get(0).desc + "\t" + pfopResult.items.get(0).error);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.get("0"));
+                HttpResponseUtils.processException(e, fileMap, line.get("0"));
             }
         }
         if (successList.size() > 0) fileMap.writeSuccess(String.join("\n", successList));
