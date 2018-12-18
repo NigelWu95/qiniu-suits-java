@@ -1,6 +1,6 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.FileMap;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -13,8 +13,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -24,8 +22,8 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     public String bucket;
     public String pipeline;
     public String processName;
-    public boolean batch = true;
-    public int retryCount = 3;
+    public boolean batch;
+    public int retryCount;
     public String resultFileDir;
     public FileMap fileMap;
 
@@ -74,21 +72,17 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return this.processName;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + pipeline;
-    }
-
     public String singleWithRetry(Map<String, String> line, int retryCount) throws QiniuException {
 
         String persistentId = null;
         try {
-            persistentId = operationManager.pfop(bucket, line.get("2"), line.get("3"),
+            persistentId = operationManager.pfop(bucket, line.get("key"), line.get("fops"),
                     new StringMap().putNotEmpty("pipeline", pipeline));
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    persistentId = operationManager.pfop(bucket, line.get("2"), line.get("3"),
+                    persistentId = operationManager.pfop(bucket, line.get("key"), line.get("fops"),
                             new StringMap().putNotEmpty("pipeline", pipeline));
                     retryCount = 0;
                 } catch (QiniuException e2) {
@@ -104,9 +98,6 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
-        lineList = lineList == null ? null : lineList.parallelStream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
-        if (lineList == null || lineList.size() == 0) return;
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
@@ -114,7 +105,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                 if (result != null && !"".equals(result)) resultList.add(result);
                 else throw new QiniuException(null, "empty pfop persistent id");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, processName, getInfo() + "\t" + line.toString());
+                HttpResponseUtils.processException(e, fileMap, line.get("key") + "\t" + line.get("fops"));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

@@ -10,9 +10,10 @@ import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class UpdateLifecycle extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private int days;
 
@@ -43,16 +44,12 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<FileI
         return updateLifecycle;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + days;
+    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
+        return bucketManager.deleteAfterDays(bucket, fileInfo.get("key"), days);
     }
 
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        return bucketManager.deleteAfterDays(bucket, fileInfo.key, days);
-    }
-
-    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList());
         return batchOperations.addDeleteAfterDaysOps(bucket, days, keyList.toArray(new String[]{}));
     }
 }

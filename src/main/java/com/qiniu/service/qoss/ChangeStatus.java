@@ -5,14 +5,14 @@ import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ChangeStatus extends OperationBase implements ILineProcess<FileInfo>, Cloneable {
+public class ChangeStatus extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private int status;
 
@@ -43,16 +43,12 @@ public class ChangeStatus extends OperationBase implements ILineProcess<FileInfo
         return changeStatus;
     }
 
-    public String getInfo() {
-        return bucket + "\t" + status;
+    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
+        return bucketManager.changeStatus(bucket, fileInfo.get("key"), status);
     }
 
-    protected Response getResponse(FileInfo fileInfo) throws QiniuException {
-        return bucketManager.changeStatus(bucket, fileInfo.key, status);
-    }
-
-    synchronized protected BatchOperations getOperations(List<FileInfo> fileInfoList){
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.key).collect(Collectors.toList());
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
+        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList());
         return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
     }
 }

@@ -6,40 +6,115 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
+import com.qiniu.service.process.FileFilter;
+import com.qiniu.service.process.FileInfoFilterProcess;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ProcessorChoice {
 
-    private List<String> unSupportBatch = new ArrayList<>();
+    private List<String> unSupportBatch = new ArrayList<String>(){{
+        add("asyncfetch");
+        add("avinfo");
+        add("pfop");
+        add("pfopresult");
+        add("qhash");
+        add("stat");
+    }};
+    private List<String> canFilterProcesses = new ArrayList<String>(){{
+        add("asyncfetch");
+        add("status");
+        add("type");
+        add("copy");
+        add("delete");
+        add("stat");
+        add("qhash");
+        add("lifecycle");
+        add("pfop");
+        add("avinfo");
+    }};
+    private boolean paramFromConfig;
+    private String[] args;
+    private String configFilePath;
+    private String process;
+    private boolean batch;
+    private int retryCount;
+    private String resultFileDir;
+    private String resultFormat;
+    private String resultSeparator;
+    private Configuration configuration = new Configuration(Zone.autoZone());
 
-    public ProcessorChoice() {
-        this.unSupportBatch.add("asyncfetch");
-        this.unSupportBatch.add("avinfo");
-        this.unSupportBatch.add("pfop");
-        this.unSupportBatch.add("pfopresult");
-        this.unSupportBatch.add("qhash");
-        this.unSupportBatch.add("stat");
-    }
-
-    public ILineProcess getFileProcessor(boolean paramFromConfig, String[] args, String configFilePath)
+    public ProcessorChoice(boolean paramFromConfig, String[] args, String configFilePath)
             throws Exception {
-
+        this.paramFromConfig = paramFromConfig;
+        this.args = args;
+        this.configFilePath = configFilePath;
         CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
-        String process = commonParams.getProcess();
-        boolean batch = commonParams.getProcessBatch();
+        process = commonParams.getProcess();
+        batch = commonParams.getProcessBatch();
         if (unSupportBatch.contains(process)) {
             System.out.println(process + " is not support batch operation, it will singly process.");
             batch = false;
         }
-        String resultFileDir = commonParams.getResultFileDir();
-        ILineProcess processor = null;
-        Configuration configuration = new Configuration(Zone.autoZone());
+        retryCount = commonParams.getRetryCount();
+        resultFileDir = commonParams.getResultFileDir();
+        resultFormat = commonParams.getResultFormat();
+        resultSeparator = commonParams.getResultSeparator();
+    }
 
+    public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
+
+        ListFilterParams listFilterParams = paramFromConfig ?
+                new ListFilterParams(configFilePath) : new ListFilterParams(args);
+        FileFilter fileFilter = new FileFilter();
+        fileFilter.setKeyConditions(listFilterParams.getKeyPrefix(), listFilterParams.getKeySuffix(),
+                listFilterParams.getKeyRegex());
+        fileFilter.setAntiKeyConditions(listFilterParams.getAntiKeyPrefix(), listFilterParams.getAntiKeySuffix(),
+                listFilterParams.getAntiKeyRegex());
+        fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
+        fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
+                listFilterParams.getType());
+        ListFieldParams fieldParams = paramFromConfig ? new ListFieldParams(configFilePath) : new ListFieldParams(args);
+
+        ILineProcess<Map<String, String>> processor;
+        ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
+        if (canFilterProcesses.contains(process)) {
+            if (fileFilter.isValid()) {
+                processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter,
+                        fieldParams.getUsedFields());
+                processor.setNextProcessor(nextProcessor);
+            } else {
+                processor = nextProcessor;
+            }
+        } else {
+            if (fileFilter.isValid()) {
+                if (process == null || "".equals(process) || "filter".equals(process)) {
+                    processor = new FileInfoFilterProcess(resultFileDir, resultFormat, resultSeparator, fileFilter,
+                            fieldParams.getUsedFields());
+                } else {
+                    System.out.println("this process dons't need filter.");
+                    processor = nextProcessor;
+                }
+            } else {
+                if ("filter".equals(process)) {
+                    throw new Exception("please set the correct filter conditions.");
+                } else {
+                    processor = nextProcessor;
+                }
+            }
+        }
+        if (processor != null) processor.setRetryCount(retryCount);
+
+        return processor;
+    }
+
+    private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
+        ILineProcess<Map<String, String>> processor = null;
         switch (process) {
             case "status": {
                 FileStatusParams fileStatusParams = paramFromConfig ?
@@ -107,6 +182,10 @@ public class ProcessorChoice {
             case "avinfo": {
                 AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
                 processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
+                String ak = avinfoParams.getProcessAk();
+                String sk = avinfoParams.getProcessSk();
+                ((QueryAvinfo) processor).setOptions(avinfoParams.getHttps(), avinfoParams.getNeedSign() ?
+                        Auth.create(ak, sk) : null);
                 break;
             }
             case "pfop": {
@@ -124,6 +203,12 @@ public class ProcessorChoice {
             case "qhash": {
                 QhashParams qhashParams = paramFromConfig ? new QhashParams(configFilePath) : new QhashParams(args);
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getResultFileDir());
+                if (qhashParams.needOptions()) {
+                    String ak = qhashParams.getProcessAk();
+                    String sk = qhashParams.getProcessSk();
+                    ((QueryHash) processor).setOptions(qhashParams.getAlgorithm(),
+                            qhashParams.getHttps(), qhashParams.getNeedSign() ? Auth.create(ak, sk) : null);
+                }
                 break;
             }
             case "stat": {
@@ -135,7 +220,10 @@ public class ProcessorChoice {
                 break;
             }
         }
-        if (processor != null) processor.setBatch(batch);
+        if (processor != null) {
+            processor.setBatch(batch);
+            processor.setRetryCount(retryCount);
+        }
 
         return processor;
     }

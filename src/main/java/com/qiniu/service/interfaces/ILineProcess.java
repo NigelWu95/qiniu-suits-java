@@ -3,20 +3,23 @@ package com.qiniu.service.interfaces;
 import com.qiniu.common.QiniuException;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ILineProcess<T> {
 
-    ILineProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
+    ILineProcess<T> getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
-    void setBatch(boolean batch);
+    default void setBatch(boolean batch) {}
 
-    void setRetryCount(int retryCount);
+    default void setRetryCount(int retryCount) {}
 
-    String getProcessName();
-
-    String getInfo();
+    default String getProcessName() {
+        return "";
+    }
 
     void processLine(List<T> list) throws QiniuException;
+
+    default void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {}
 
     void closeResource();
 }

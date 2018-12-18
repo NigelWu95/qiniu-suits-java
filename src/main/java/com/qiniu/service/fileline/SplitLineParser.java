@@ -1,76 +1,26 @@
 package com.qiniu.service.fileline;
 
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.util.JsonConvertUtils;
 
-import java.io.IOException;
 import java.util.*;
 
 public class SplitLineParser implements ILineParser {
 
     private String separator;
-    private ArrayList<String> itemList;
-    private Map<String, String> itemMap;
+    private Map<String, String> infoIndexMap;
 
-    public SplitLineParser(String separator) {
+    public SplitLineParser(String separator, Map<String, String> infoIndexMap) {
         this.separator = separator;
-    }
-
-    public void splitLine(String line) {
-        String[] items = line.split(separator);
-        this.itemList = new ArrayList<>(Arrays.asList(items));
-    }
-
-    public void checkSplit() throws IOException {
-        if (itemList == null) throw new IOException("has not split the line.");
-    }
-
-    public ArrayList<String> getItemList() throws IOException {
-        checkSplit();
-        return itemList;
-    }
-
-    public ArrayList<String> getItemList(String line) {
-        if (line != null) splitLine(line);
-        return itemList;
-    }
-
-    public void setItemMap(ArrayList<String> itemKey) throws IOException {
-        checkSplit();
-        this.itemMap = new HashMap<>();
-        for (int i = 0; i < itemKey.size(); i++) {
-            this.itemMap.put(itemKey.get(i), itemList.get(i));
-        }
-    }
-
-    public void setItemMap(ArrayList<String> itemKey, String line) {
-        if (line != null) splitLine(line);
-        this.itemMap = new HashMap<>();
-        for (int i = 0; i < itemKey.size(); i++) {
-            this.itemMap.put(itemKey.get(i), itemList.get(i));
-        }
+        this.infoIndexMap = infoIndexMap;
     }
 
     public Map<String, String> getItemMap(String line) {
-        if (line != null) splitLine(line);
-        this.itemMap = new HashMap<>();
-        for (int i = 0; i < itemList.size(); i++) {
-            this.itemMap.put(String.valueOf(i), itemList.get(i));
+        String[] items = line.split(separator);
+        Map<String, String> itemMap = new HashMap<>();
+        for (int i = 0; i < items.length; i++) {
+            String mapKey = infoIndexMap.get(String.valueOf(i));
+            if (mapKey != null) itemMap.put(mapKey, items[i]);
         }
         return itemMap;
-    }
-
-    public String toJsonString() {
-
-        if (this.itemMap == null && this.itemList == null) {
-            return "{}";
-        } else if (this.itemMap == null) {
-            this.itemMap = new HashMap<>();
-            for (int i = 0; i < itemList.size(); i++) {
-                this.itemMap.put(String.valueOf(i), itemList.get(i));
-            }
-        }
-
-        return JsonConvertUtils.toJson(itemMap);
     }
 }
