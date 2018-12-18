@@ -158,12 +158,4 @@ public class FileMap implements Cloneable {
     public void writeErrorOrNull(String item) {
         doWrite(this.prefix + "_error_null" + suffix, item);
     }
-
-    public void flushSuccess() {
-        doFlush(this.prefix + "_success" + suffix);
-    }
-
-    public void flushErrorOrNull() {
-        doFlush(this.prefix + "_error_null" + suffix);
-    }
 }

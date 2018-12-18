@@ -145,7 +145,7 @@ public class ListBucket {
                                 ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
-        ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir, fileMap,
+        ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir, resultIndex, fileMap,
                 new String[]{"prefix", "marker", "end"});
         try {
             fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
