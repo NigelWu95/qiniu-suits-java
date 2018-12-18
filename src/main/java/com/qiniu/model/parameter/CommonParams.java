@@ -9,6 +9,7 @@ public class CommonParams {
 
     private MainArgs mainArgs;
     private PropertyConfig propertyConfig;
+    private String sourceType;
     private String unitLen;
     private String retryCount;
     private String resultFileDir;
@@ -21,6 +22,7 @@ public class CommonParams {
 
     public CommonParams(MainArgs mainArgs) {
         this.mainArgs = mainArgs;
+        try { this.sourceType = getParamFromArgs("source-type"); } catch (Exception e) {}
         try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) { unitLen = ""; }
         try { this.retryCount = getParamFromArgs("retry-times"); } catch (Exception e) { retryCount = ""; }
         try { this.resultFileDir = getParamFromArgs("result-path"); } catch (Exception e) {}
@@ -34,6 +36,7 @@ public class CommonParams {
 
     public CommonParams(PropertyConfig propertyConfig) {
         this.propertyConfig = propertyConfig;
+        try { this.sourceType = getParamFromConfig("source-type"); } catch (Exception e) {}
         try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) { unitLen = ""; }
         try { this.retryCount = getParamFromConfig("retry-times"); } catch (Exception e) { retryCount = ""; }
         try { this.resultFileDir = getParamFromConfig("result-path"); } catch (Exception e) {}
@@ -65,6 +68,10 @@ public class CommonParams {
         if (mainArgs != null) return mainArgs.getParamValue(key);
         else if (propertyConfig != null) return propertyConfig.getProperty(key);
         return "";
+    }
+
+    public String getSourceType() {
+        return sourceType;
     }
 
     public int getUnitLen() {

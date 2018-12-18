@@ -46,7 +46,9 @@ qhash、stat、pfop、pfopresult、avinfo 一般对 file 输入方式进行处�
 [result 详细配置](docs/result-save.md)
 
 ### 补充
-一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
+1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要
+将所有参数设置在该配置文件中。
+2. 一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
 ```
 listV2 xxx:|:null:1:null null, last 3 times retry...
 listV2 xxx:|:null:1:null null, last 2 times retry...
