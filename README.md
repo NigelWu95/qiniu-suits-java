@@ -3,11 +3,15 @@
 基于 Java 编写，可基于 JDK（1.8 及以上）环境在命令行或 IDE 运行。  
 
 # 使用介绍
-#### (1) 程序运行过程为：读取数据源 =》[按指定过程处理数据 =》] 结果持久化  
-#### (2) 运行方式  
-可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹中，文件名为  
-`qiniu.properties` 或 .qiniu.properties，或者使用命令行参数 `-config=<config-filepath>` 指定配置文件路径。不使用配  
-置文件的情况下可以完全从命令行指定参数，形式为 `-<property-name>=<value>`。  
+#### 1. 程序运行过程为：读取数据源 =》[按指定过程处理数据 =》] 结果持久化  
+#### 2. 运行配置
+(1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径  
+(2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹中，文件名为  
+`qiniu.properties` 或 .qiniu.properties  
+(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下可以完全从命令行指定参数，形式为 `-<property-name>=<value>`  
+#### 3. 运行方式  
+(1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
+(2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
 
 ### 1 数据源
 支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
