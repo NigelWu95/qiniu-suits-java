@@ -6,8 +6,8 @@
 #### 1. 程序运行过程为：读取数据源 =》[按指定过程处理数据 =》] 结果持久化  
 #### 2. 运行配置
 (1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径  
-(2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 resources 文件夹中，文件名为  
-`qiniu.properties` 或 .qiniu.properties  
+(2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
+resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties  
 (3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下可以完全从命令行指定参数，形式为 `-<property-name>=<value>`  
 #### 3. 运行方式  
 (1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
