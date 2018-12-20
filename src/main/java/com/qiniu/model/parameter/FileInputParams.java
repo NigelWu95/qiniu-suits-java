@@ -18,6 +18,7 @@ public class FileInputParams extends CommonParams {
     private String md5Index;
     private String fopsIndex;
     private String persistentIdIndex;
+    private String targetKey;
 
     public FileInputParams(String[] args) throws Exception {
         super(args);
@@ -35,6 +36,7 @@ public class FileInputParams extends CommonParams {
         try { this.md5Index = getParamFromArgs("md5-index"); } catch (Exception e) {}
         try { this.fopsIndex = getParamFromArgs("fops-index"); } catch (Exception e) {}
         try { this.persistentIdIndex = getParamFromArgs("persistentId-index"); } catch (Exception e) {}
+        try { this.targetKey = getParamFromArgs("newKey-index"); } catch (Exception e) {}
     }
 
     public FileInputParams(String configFileName) throws Exception {
@@ -53,6 +55,7 @@ public class FileInputParams extends CommonParams {
         try { this.md5Index = getParamFromConfig("md5-index"); } catch (Exception e) {}
         try { this.fopsIndex = getParamFromConfig("fops-index"); } catch (Exception e) {}
         try { this.persistentIdIndex = getParamFromConfig("persistentId-index"); } catch (Exception e) {}
+        try { this.targetKey = getParamFromConfig("newKey-index"); } catch (Exception e) {}
     }
 
     public String getParseType() {
@@ -292,6 +295,25 @@ public class FileInputParams extends CommonParams {
                 throw new QiniuException(null, "no incorrect persistentId index, it should be a number.");
             }
             return persistentIdIndex;
+        }
+    }
+
+    public String getTargetKeyIndex() throws QiniuException {
+        if (targetKey == null || "".equals(targetKey)) {
+            if ("json".equals(parseType)) {
+                System.out.println("no incorrect newKey index, it will use \"newKey\" as default");
+                return "newKey";
+            } else {
+                System.out.println("no incorrect newKey index, it will use 1 as default");
+                return "1";
+            }
+        } else if (targetKey.matches("\\d")) {
+            return targetKey;
+        } else {
+            if (!"json".equals(getParseType())) {
+                throw new QiniuException(null, "no incorrect newKey index, it should be a number.");
+            }
+            return targetKey;
         }
     }
 }
