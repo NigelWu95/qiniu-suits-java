@@ -99,14 +99,14 @@ public class ListBucket {
                 .collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int unitLen) throws QiniuException {
+    private List<FileLister> getFileListerList(int unitLen) {
         List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> !antiPrefix.contains(originPrefix))
                 .map(prefix -> cPrefix + prefix)
                 .collect(Collectors.toList());
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
         Map<Boolean, List<FileLister>> groupedFileListerMap;
-        while (fileListerList.size() < maxThreads - 1) {
+        while (fileListerList.size() < maxThreads - 1 && fileListerList.size() > 0) {
             groupedFileListerMap = fileListerList.stream().collect(Collectors.groupingBy(
                             fileLister -> fileLister.getMarker() != null && !"".equals(fileLister.getMarker())
                     ));
@@ -196,8 +196,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, List<String> usedFields, ILineProcess<Map<String, String>> processor)
-            throws QiniuException {
+    public void concurrentlyList(int maxThreads, List<String> usedFields, ILineProcess<Map<String, String>> processor) {
         List<FileLister> fileListerList = getFileListerList(unitLen);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
