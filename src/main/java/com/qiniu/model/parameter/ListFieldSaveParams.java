@@ -3,7 +3,7 @@ package com.qiniu.model.parameter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListFieldParams extends CommonParams {
+public class ListFieldSaveParams extends CommonParams {
 
     private String keySave;
     private String hashSave;
@@ -15,7 +15,7 @@ public class ListFieldParams extends CommonParams {
     private String statusSave;
     private String md5Save;
 
-    public ListFieldParams(String[] args) throws Exception {
+    public ListFieldSaveParams(String[] args) throws Exception {
         super(args);
         try { this.keySave = getParamFromArgs("key-save"); } catch (Exception e) {}
         try { this.hashSave = getParamFromArgs("hash-save"); } catch (Exception e) {}
@@ -28,7 +28,7 @@ public class ListFieldParams extends CommonParams {
         try { this.md5Save = getParamFromArgs("md5-save"); } catch (Exception e) {}
     }
 
-    public ListFieldParams(String configFileName) throws Exception {
+    public ListFieldSaveParams(String configFileName) throws Exception {
         super(configFileName);
         try { this.keySave = getParamFromConfig("key-save"); } catch (Exception e) {}
         try { this.hashSave = getParamFromConfig("hash-save"); } catch (Exception e) {}

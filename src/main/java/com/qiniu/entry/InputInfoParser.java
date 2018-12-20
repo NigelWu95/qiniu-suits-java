@@ -15,6 +15,8 @@ public class InputInfoParser {
         add("status");
         add("type");
         add("copy");
+        add("move");
+        add("rename");
         add("delete");
         add("stat");
         add("qhash");
@@ -57,6 +59,9 @@ public class InputInfoParser {
     private List<String> needPersistentIdProcesses = new ArrayList<String>(){{
         add("pfopresult");
     }};
+    private List<String> needNewKeyProcesses = new ArrayList<String>(){{
+        add("rename");
+    }};
 
     public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams) throws QiniuException {
         Map<String, String> infoIndexMap = new HashMap<>();
@@ -72,6 +77,7 @@ public class InputInfoParser {
         if (needMd5Processes.contains(process)) infoIndexMap.put(fileInputParams.getMd5Index(), "md5");
         if (needFopsProcesses.contains(process)) infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
         if (needPersistentIdProcesses.contains(process)) infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
+        if (needNewKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getTargetKeyIndex(), "newKey");
         return infoIndexMap;
     }
 }

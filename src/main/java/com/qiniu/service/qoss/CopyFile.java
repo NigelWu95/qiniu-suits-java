@@ -38,7 +38,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
 
     public void setOptions(boolean keepKey, String keyPrefix) {
         this.keepKey = keepKey;
-        this.keyPrefix = keyPrefix;
+        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
     public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
