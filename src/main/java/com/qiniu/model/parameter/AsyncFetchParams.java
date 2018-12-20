@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import java.io.IOException;
+
 public class AsyncFetchParams extends QossParams {
 
     private String targetBucket;
@@ -121,12 +123,11 @@ public class AsyncFetchParams extends QossParams {
         return callbackHost;
     }
 
-    public int getFileType() {
+    public int getFileType() throws IOException {
         if (fileType.matches("(0|1)")) {
             return Short.valueOf(fileType);
         } else {
-            System.out.println("no incorrect file-type, please set it 0 or 1");
-            return 0;
+            throw new IOException("no incorrect file-type, please set it 0 or 1.");
         }
     }
 

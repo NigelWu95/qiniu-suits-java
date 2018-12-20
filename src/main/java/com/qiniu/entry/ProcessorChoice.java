@@ -30,6 +30,8 @@ public class ProcessorChoice {
         add("status");
         add("type");
         add("copy");
+        add("move");
+        add("rename");
         add("delete");
         add("stat");
         add("qhash");
@@ -78,7 +80,7 @@ public class ProcessorChoice {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-        ListFieldParams fieldParams = paramFromConfig ? new ListFieldParams(configFilePath) : new ListFieldParams(args);
+        ListFieldSaveParams fieldParams = paramFromConfig ? new ListFieldSaveParams(configFilePath) : new ListFieldSaveParams(args);
 
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
@@ -150,6 +152,17 @@ public class ProcessorChoice {
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
                         fileCopyParams.getTargetBucket(), resultFileDir);
                 ((CopyFile) processor).setOptions(fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix());
+                break;
+            }
+            case "move":
+            case "rename": {
+                FileMoveParams fileMoveParams = paramFromConfig ?
+                        new FileMoveParams(configFilePath) : new FileMoveParams(args);
+                String ak = fileMoveParams.getProcessAk();
+                String sk = fileMoveParams.getProcessSk();
+                processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
+                        fileMoveParams.getTargetBucket(), resultFileDir);
+                ((MoveFile) processor).setOptions(fileMoveParams.getKeyPrefix());
                 break;
             }
             case "delete": {
