@@ -20,6 +20,7 @@ status-index=
 md5-index=
 fops-index=
 persistentId-index=
+newKey-index=
 ```
 `file-path` 输入文件路径（相对路径目录或者相对路径文件名）
 `parse-type` 行格式（json/table）  
@@ -35,10 +36,11 @@ persistentId-index=
 `md5-index` 资源 md5 值索引（下标）  
 `fops-index` 转码命令索引（下标）  
 `persistentId-index` 转码操作的 persistentId 索引（下标）  
+`newKey-index` 重命名操作所需要设置的目标文件名索引（下标）  
 
 ### 命令行方式
 ```
--file-path= -parse-type= -separator= -key-index= -hash-index= -fsize-index= -putTime-index= -mimeType-index= -endUser-index= -type-index= -status-index= -md5-index= -fops-index= -persistentId-index=
+-file-path= -parse-type= -separator= -key-index= -hash-index= -fsize-index= -putTime-index= -mimeType-index= -endUser-index= -type-index= -status-index= -md5-index= -fops-index= -persistentId-index= -newKey-index=
 ```
 
 ### 关于格式和索引
