@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.io.IOException;
 
 public class QossParams extends CommonParams {
@@ -10,22 +12,13 @@ public class QossParams extends CommonParams {
     private String processAk;
     private String processSk;
 
-    public QossParams(String[] args) throws IOException {
-        super(args);
-        try { this.accessKey = getParamFromArgs("ak"); } catch (Exception e) {}
-        try { this.secretKey = getParamFromArgs("sk"); } catch (Exception e) {}
-        try { this.bucket = getParamFromArgs("bucket"); } catch (Exception e) {}
-        try { this.processAk = getParamFromArgs("process-ak"); } catch (Exception e) {}
-        try { this.processSk = getParamFromArgs("process-sk"); } catch (Exception e) {}
-    }
-
-    public QossParams(String configFileName) throws IOException {
-        super(configFileName);
-        try { this.accessKey = getParamFromConfig("ak"); } catch (Exception e) {}
-        try { this.secretKey = getParamFromConfig("sk"); } catch (Exception e) {}
-        try { this.bucket = getParamFromConfig("bucket"); } catch (Exception e) {}
-        try { this.processAk = getParamFromConfig("process-ak"); } catch (Exception e) {}
-        try { this.processSk = getParamFromConfig("process-sk"); } catch (Exception e) {}
+    public QossParams(IEntryParam entryParam) {
+        super(entryParam);
+        try { this.accessKey = entryParam.getParamValue("ak"); } catch (Exception e) {}
+        try { this.secretKey = entryParam.getParamValue("sk"); } catch (Exception e) {}
+        try { this.bucket = entryParam.getParamValue("bucket"); } catch (Exception e) {}
+        try { this.processAk = entryParam.getParamValue("process-ak"); } catch (Exception e) {}
+        try { this.processSk = entryParam.getParamValue("process-sk"); } catch (Exception e) {}
     }
 
     public String getAccessKey() throws IOException {
