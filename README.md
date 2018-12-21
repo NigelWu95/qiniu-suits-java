@@ -34,15 +34,15 @@ resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties
 `lifecycle` 表示修改空间资源的生命周期 [lifecycle 配置](docs/modify-delete.md)  
 `delete` 表示删除空间资源 [delete 配置](docs/modify-delete.md)  
 `copy` 表示复制资源到指定空间 [copy 配置](docs/copy-move-rename.md)  
-`copy` 表示移动资源到指定空间 [move 配置](docs/copy-move-rename.md)  
-`copy` 表示对指定空间的资源进行重命名 [rename 配置](docs/copy-move-rename.md)  
+`move` 表示移动资源到指定空间 [move 配置](docs/copy-move-rename.md)  
+`rename` 表示对指定空间的资源进行重命名 [rename 配置](docs/copy-move-rename.md)  
 `asyncfetch` 表示异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
 `pfop` 表示对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
 `pfopresult` 表示通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/query.md)  
 `stat` 表示查询空间资源的元信息 [stat 配置](docs/query.md)  
 `avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
-qhash、stat、pfop、pfopresult、avinfo 一般对 file 输入方式进行处理
+rename、qhash、stat、pfop、pfopresult、avinfo 一般对 file 输入方式进行处理
 
 ### 3 结果持久化
 对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：
