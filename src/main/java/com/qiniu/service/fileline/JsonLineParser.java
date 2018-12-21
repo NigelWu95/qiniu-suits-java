@@ -19,7 +19,7 @@ public class JsonLineParser implements ILineParser {
         Map<String, String> itemMap = new HashMap<>();
         for (String key : parsed.keySet()) {
             String mapKey = infoIndexMap.get(key);
-            if (mapKey != null) itemMap.put(mapKey, String.valueOf(parsed.get(key)));
+            if (mapKey != null) itemMap.put(mapKey, parsed.get(key).getAsString());
         }
         return itemMap;
     }
