@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,24 +15,14 @@ public class ListBucketParams extends QossParams {
     private String end;
     private String antiPrefix;
 
-    public ListBucketParams(String[] args) throws Exception {
-        super(args);
-        try { this.multiStatus = getParamFromArgs("multi"); } catch (Exception e) { multiStatus = ""; }
-        try { this.version = getParamFromArgs("version"); } catch (Exception e) { version = ""; }
-        try { this.customPrefix = getParamFromArgs("prefix"); } catch (Exception e) {}
-        try { this.marker = getParamFromArgs("marker"); } catch (Exception e) {}
-        try { this.end = getParamFromArgs("end"); } catch (Exception e) {}
-        try { this.antiPrefix = getParamFromArgs("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
-    }
-
-    public ListBucketParams(String configFileName) throws Exception {
-        super(configFileName);
-        try { this.multiStatus = getParamFromConfig("multi"); } catch (Exception e) { multiStatus = "";}
-        try { this.version = getParamFromConfig("version"); } catch (Exception e) { version = ""; }
-        try { this.customPrefix = getParamFromConfig("prefix"); } catch (Exception e) {}
-        try { this.marker = getParamFromConfig("marker"); } catch (Exception e) {}
-        try { this.end = getParamFromConfig("end"); } catch (Exception e) {}
-        try { this.antiPrefix = getParamFromConfig("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
+    public ListBucketParams(IEntryParam entryParam) {
+        super(entryParam);
+        try { this.multiStatus = entryParam.getParamValue("multi"); } catch (Exception e) { multiStatus = ""; }
+        try { this.version = entryParam.getParamValue("version"); } catch (Exception e) { version = ""; }
+        try { this.customPrefix = entryParam.getParamValue("prefix"); } catch (Exception e) {}
+        try { this.marker = entryParam.getParamValue("marker"); } catch (Exception e) {}
+        try { this.end = entryParam.getParamValue("end"); } catch (Exception e) {}
+        try { this.antiPrefix = entryParam.getParamValue("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
     }
 
     public boolean getMultiStatus() {

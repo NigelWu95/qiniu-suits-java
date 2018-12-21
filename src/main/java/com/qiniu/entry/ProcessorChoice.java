@@ -2,6 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.*;
+import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
@@ -39,9 +40,7 @@ public class ProcessorChoice {
         add("pfop");
         add("avinfo");
     }};
-    private boolean paramFromConfig;
-    private String[] args;
-    private String configFilePath;
+    private IEntryParam entryParam;
     private String process;
     private boolean batch;
     private int retryCount;
@@ -50,12 +49,9 @@ public class ProcessorChoice {
     private String resultSeparator;
     private Configuration configuration = new Configuration(Zone.autoZone());
 
-    public ProcessorChoice(boolean paramFromConfig, String[] args, String configFilePath)
-            throws Exception {
-        this.paramFromConfig = paramFromConfig;
-        this.args = args;
-        this.configFilePath = configFilePath;
-        CommonParams commonParams = paramFromConfig ? new CommonParams(configFilePath) : new CommonParams(args);
+    public ProcessorChoice(IEntryParam entryParam) {
+        this.entryParam = entryParam;
+        CommonParams commonParams = new CommonParams(entryParam);
         process = commonParams.getProcess();
         batch = commonParams.getProcessBatch();
         if (unSupportBatch.contains(process)) {
@@ -70,8 +66,7 @@ public class ProcessorChoice {
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
 
-        ListFilterParams listFilterParams = paramFromConfig ?
-                new ListFilterParams(configFilePath) : new ListFilterParams(args);
+        ListFilterParams listFilterParams = new ListFilterParams(entryParam);
         FileFilter fileFilter = new FileFilter();
         fileFilter.setKeyConditions(listFilterParams.getKeyPrefix(), listFilterParams.getKeySuffix(),
                 listFilterParams.getKeyRegex());
@@ -80,8 +75,7 @@ public class ProcessorChoice {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-        ListFieldSaveParams fieldParams = paramFromConfig ? new ListFieldSaveParams(configFilePath) : new ListFieldSaveParams(args);
-
+        ListFieldSaveParams fieldParams = new ListFieldSaveParams(entryParam);
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (canFilterProcesses.contains(process)) {
@@ -118,8 +112,7 @@ public class ProcessorChoice {
         ILineProcess<Map<String, String>> processor = null;
         switch (process) {
             case "status": {
-                FileStatusParams fileStatusParams = paramFromConfig ?
-                        new FileStatusParams(configFilePath) : new FileStatusParams(args);
+                FileStatusParams fileStatusParams = new FileStatusParams(entryParam);
                 String ak = fileStatusParams.getProcessAk();
                 String sk = fileStatusParams.getProcessSk();
                 processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
@@ -127,8 +120,7 @@ public class ProcessorChoice {
                 break;
             }
             case "type": {
-                FileTypeParams fileTypeParams = paramFromConfig ?
-                        new FileTypeParams(configFilePath) : new FileTypeParams(args);
+                FileTypeParams fileTypeParams = new FileTypeParams(entryParam);
                 String ak = fileTypeParams.getProcessAk();
                 String sk = fileTypeParams.getProcessSk();
                 processor = new ChangeType(Auth.create(ak, sk), configuration, fileTypeParams.getBucket(),
@@ -136,8 +128,7 @@ public class ProcessorChoice {
                 break;
             }
             case "lifecycle": {
-                LifecycleParams lifecycleParams = paramFromConfig ?
-                        new LifecycleParams(configFilePath) : new LifecycleParams(args);
+                LifecycleParams lifecycleParams = new LifecycleParams(entryParam);
                 String ak = lifecycleParams.getProcessAk();
                 String sk = lifecycleParams.getProcessSk();
                 processor = new UpdateLifecycle(Auth.create(ak, sk), configuration, lifecycleParams.getBucket(),
@@ -145,8 +136,7 @@ public class ProcessorChoice {
                 break;
             }
             case "copy": {
-                FileCopyParams fileCopyParams = paramFromConfig ?
-                        new FileCopyParams(configFilePath) : new FileCopyParams(args);
+                FileCopyParams fileCopyParams = new FileCopyParams(entryParam);
                 String ak = fileCopyParams.getProcessAk();
                 String sk = fileCopyParams.getProcessSk();
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
@@ -156,8 +146,7 @@ public class ProcessorChoice {
             }
             case "move":
             case "rename": {
-                FileMoveParams fileMoveParams = paramFromConfig ?
-                        new FileMoveParams(configFilePath) : new FileMoveParams(args);
+                FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
                 String ak = fileMoveParams.getProcessAk();
                 String sk = fileMoveParams.getProcessSk();
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
@@ -166,15 +155,14 @@ public class ProcessorChoice {
                 break;
             }
             case "delete": {
-                QossParams qossParams = paramFromConfig ? new QossParams(configFilePath) : new QossParams(args);
+                QossParams qossParams = new QossParams(entryParam);
                 String ak = qossParams.getProcessAk();
                 String sk = qossParams.getProcessSk();
                 processor = new DeleteFile(Auth.create(ak, sk), configuration, qossParams.getBucket(), resultFileDir);
                 break;
             }
             case "asyncfetch": {
-                AsyncFetchParams asyncFetchParams = paramFromConfig ?
-                        new AsyncFetchParams(configFilePath) : new AsyncFetchParams(args);
+                AsyncFetchParams asyncFetchParams = new AsyncFetchParams(entryParam);
                 String srcAk = asyncFetchParams.getAccessKey();
                 String srcSk = asyncFetchParams.getAccessKey();
                 String ak = asyncFetchParams.getProcessAk();
@@ -192,7 +180,7 @@ public class ProcessorChoice {
                 break;
             }
             case "avinfo": {
-                AvinfoParams avinfoParams = paramFromConfig ? new AvinfoParams(configFilePath) : new AvinfoParams(args);
+                AvinfoParams avinfoParams = new AvinfoParams(entryParam);
                 processor = new QueryAvinfo(avinfoParams.getDomain(), resultFileDir);
                 String ak = avinfoParams.getProcessAk();
                 String sk = avinfoParams.getProcessSk();
@@ -201,7 +189,7 @@ public class ProcessorChoice {
                 break;
             }
             case "pfop": {
-                PfopParams pfopParams = paramFromConfig ? new PfopParams(configFilePath) : new PfopParams(args);
+                PfopParams pfopParams = new PfopParams(entryParam);
                 String ak = pfopParams.getProcessAk();
                 String sk = pfopParams.getProcessSk();
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
@@ -213,7 +201,7 @@ public class ProcessorChoice {
                 break;
             }
             case "qhash": {
-                QhashParams qhashParams = paramFromConfig ? new QhashParams(configFilePath) : new QhashParams(args);
+                QhashParams qhashParams = new QhashParams(entryParam);
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getResultFileDir());
                 if (qhashParams.needOptions()) {
                     String ak = qhashParams.getProcessAk();
@@ -224,7 +212,7 @@ public class ProcessorChoice {
                 break;
             }
             case "stat": {
-                QossParams qossParams = paramFromConfig ? new QossParams(configFilePath) : new QossParams(args);
+                QossParams qossParams = new QossParams(entryParam);
                 String ak = qossParams.getProcessAk();
                 String sk = qossParams.getProcessSk();
                 processor = new FileStat(Auth.create(ak, sk), configuration, qossParams.getBucket(),

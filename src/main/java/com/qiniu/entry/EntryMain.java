@@ -1,7 +1,8 @@
 package com.qiniu.entry;
 
-import com.qiniu.config.MainArgs;
+import com.qiniu.config.CommandArgs;
 import com.qiniu.config.PropertyConfig;
+import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,16 +34,10 @@ public class EntryMain {
             else paramFromConfig = true;
         }
 
-        String sourceType;
-        if (paramFromConfig) {
-            PropertyConfig propertyConfig = new PropertyConfig(configFilePath);
-            sourceType = propertyConfig.getProperty("source-type");
-        } else {
-            MainArgs mainArgs = new MainArgs(args);
-            sourceType = mainArgs.getParamValue("source-type");
-        }
+        IEntryParam entryParam = paramFromConfig ? new PropertyConfig(configFilePath) : new CommandArgs(args);
+        String sourceType = entryParam.getParamValue("source-type");
 
-        if ("list".equals(sourceType)) ListBucketEntry.run(paramFromConfig, args, configFilePath);
-        else if ("file".equals(sourceType)) FileInputEntry.run(paramFromConfig, args, configFilePath);
+        if ("list".equals(sourceType)) ListBucketEntry.run(entryParam);
+        else if ("file".equals(sourceType)) FileInputEntry.run(entryParam);
     }
 }

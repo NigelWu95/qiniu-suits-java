@@ -1,17 +1,14 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 public class LifecycleParams extends QossParams {
 
     private String days;
 
-    public LifecycleParams(String[] args) throws Exception {
-        super(args);
-        this.days = getParamFromArgs("days");
-    }
-
-    public LifecycleParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.days = getParamFromConfig("days");
+    public LifecycleParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.days = entryParam.getParamValue("days");
     }
 
     public int getDays() throws Exception {

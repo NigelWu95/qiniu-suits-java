@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,30 +17,17 @@ public class ListFieldSaveParams extends CommonParams {
     private String statusSave;
     private String md5Save;
 
-    public ListFieldSaveParams(String[] args) throws Exception {
-        super(args);
-        try { this.keySave = getParamFromArgs("key-save"); } catch (Exception e) {}
-        try { this.hashSave = getParamFromArgs("hash-save"); } catch (Exception e) {}
-        try { this.fsizeSave = getParamFromArgs("fsize-save"); } catch (Exception e) {}
-        try { this.putTimeSave = getParamFromArgs("putTime-save"); } catch (Exception e) {}
-        try { this.mimeTypeSave = getParamFromArgs("mimeType-save"); } catch (Exception e) {}
-        try { this.endUserSave = getParamFromArgs("endUser-save"); } catch (Exception e) {}
-        try { this.typeSave = getParamFromArgs("type-save"); } catch (Exception e) {}
-        try { this.statusSave = getParamFromArgs("status-save"); } catch (Exception e) {}
-        try { this.md5Save = getParamFromArgs("md5-save"); } catch (Exception e) {}
-    }
-
-    public ListFieldSaveParams(String configFileName) throws Exception {
-        super(configFileName);
-        try { this.keySave = getParamFromConfig("key-save"); } catch (Exception e) {}
-        try { this.hashSave = getParamFromConfig("hash-save"); } catch (Exception e) {}
-        try { this.fsizeSave = getParamFromConfig("fsize-save"); } catch (Exception e) {}
-        try { this.putTimeSave = getParamFromConfig("putTime-save"); } catch (Exception e) {}
-        try { this.mimeTypeSave = getParamFromConfig("mimeType-save"); } catch (Exception e) {}
-        try { this.endUserSave = getParamFromConfig("endUser-save"); } catch (Exception e) {}
-        try { this.typeSave = getParamFromConfig("type-save"); } catch (Exception e) {}
-        try { this.statusSave = getParamFromConfig("status-save"); } catch (Exception e) {}
-        try { this.md5Save = getParamFromConfig("md5-save"); } catch (Exception e) {}
+    public ListFieldSaveParams(IEntryParam entryParam) {
+        super(entryParam);
+        try { this.keySave = entryParam.getParamValue("key-save"); } catch (Exception e) {}
+        try { this.hashSave = entryParam.getParamValue("hash-save"); } catch (Exception e) {}
+        try { this.fsizeSave = entryParam.getParamValue("fsize-save"); } catch (Exception e) {}
+        try { this.putTimeSave = entryParam.getParamValue("putTime-save"); } catch (Exception e) {}
+        try { this.mimeTypeSave = entryParam.getParamValue("mimeType-save"); } catch (Exception e) {}
+        try { this.endUserSave = entryParam.getParamValue("endUser-save"); } catch (Exception e) {}
+        try { this.typeSave = entryParam.getParamValue("type-save"); } catch (Exception e) {}
+        try { this.statusSave = entryParam.getParamValue("status-save"); } catch (Exception e) {}
+        try { this.md5Save = entryParam.getParamValue("md5-save"); } catch (Exception e) {}
     }
 
     public List<String> getUsedFields() {

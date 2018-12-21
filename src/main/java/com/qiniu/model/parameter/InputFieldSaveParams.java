@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.util.List;
 
 public class InputFieldSaveParams extends ListFieldSaveParams {
@@ -7,16 +9,10 @@ public class InputFieldSaveParams extends ListFieldSaveParams {
     private String fopsSave;
     private String persistentIdSave;
 
-    public InputFieldSaveParams(String[] args) throws Exception {
-        super(args);
-        try { this.fopsSave = getParamFromArgs("fops-save"); } catch (Exception e) {}
-        try { this.persistentIdSave = getParamFromArgs("persistentId-save"); } catch (Exception e) {}
-    }
-
-    public InputFieldSaveParams(String configFileName) throws Exception {
-        super(configFileName);
-        try { this.fopsSave = getParamFromConfig("fops-save"); } catch (Exception e) {}
-        try { this.persistentIdSave = getParamFromConfig("persistentId-save"); } catch (Exception e) {}
+    public InputFieldSaveParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        try { this.fopsSave = entryParam.getParamValue("fops-save"); } catch (Exception e) {}
+        try { this.persistentIdSave = entryParam.getParamValue("persistentId-save"); } catch (Exception e) {}
     }
 
     public List<String> getUsedFields() {
