@@ -19,7 +19,7 @@ public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
                 case "mimeType": converted.addProperty(key, fileInfo.mimeType); break;
                 case "endUser": converted.addProperty(key, fileInfo.endUser); break;
                 case "type": converted.addProperty(key, fileInfo.type); break;
-//              case "status": jsonObject.addProperty(key, fileInfo.status); break;
+                case "status": converted.addProperty(key, fileInfo.status); break;
             }
 
         });
