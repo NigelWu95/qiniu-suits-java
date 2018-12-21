@@ -25,7 +25,7 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
                 case "mimeType": converted.append(fileInfo.mimeType); break;
                 case "endUser": converted.append(fileInfo.endUser); break;
                 case "type": converted.append(fileInfo.type); break;
-//              case "status": converted.append(key, fileInfo.status); break;
+                case "status": converted.append(fileInfo.status); break;
             }
             converted.append(separator);
         });

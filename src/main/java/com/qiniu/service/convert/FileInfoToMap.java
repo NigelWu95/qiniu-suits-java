@@ -30,7 +30,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
                                 case "mimeType": converted.put(key, fileInfo.mimeType); break;
                                 case "endUser": converted.put(key, fileInfo.endUser); break;
                                 case "type": converted.put(key, String.valueOf(fileInfo.type)); break;
-//                              case "status": converted.put(key, fileInfo.status); break;
+                                case "status": converted.put(key, String.valueOf(fileInfo.status)); break;
                             }
                         });
                         return converted;
