@@ -1,17 +1,14 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 public class PfopParams extends QossParams {
 
     private String pipeline;
 
-    public PfopParams(String[] args) throws Exception {
-        super(args);
-        this.pipeline = getParamFromArgs("pipeline");
-    }
-
-    public PfopParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.pipeline = getParamFromConfig("pipeline");
+    public PfopParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.pipeline = entryParam.getParamValue("pipeline");
     }
 
     public String getPipeline() throws Exception {

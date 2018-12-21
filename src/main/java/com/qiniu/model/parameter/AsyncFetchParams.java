@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.io.IOException;
 
 public class AsyncFetchParams extends QossParams {
@@ -19,40 +21,22 @@ public class AsyncFetchParams extends QossParams {
     private String fileType;
     private String ignoreSameKey;
 
-    public AsyncFetchParams(String[] args) throws Exception {
-        super(args);
-        this.targetBucket = getParamFromArgs("to-bucket");
-        this.domain = getParamFromArgs("domain");
-        try { this.https = getParamFromArgs("use-https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = getParamFromArgs("need-sign"); } catch (Exception e) { needSign = ""; }
-        try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) { keepKey = ""; }
-        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try{ this.hashCheck = getParamFromArgs("hash-check"); } catch (Exception e) { hashCheck = ""; }
-        try{ this.host = getParamFromArgs("host"); } catch (Exception e) {}
-        try{ this.callbackUrl = getParamFromArgs("callback-url"); } catch (Exception e) {}
-        try{ this.callbackBody = getParamFromArgs("callback-body"); } catch (Exception e) {}
-        try{ this.callbackBodyType = getParamFromArgs("callback-body-type"); } catch (Exception e) {}
-        try{ this.callbackHost = getParamFromArgs("callback-host"); } catch (Exception e) {}
-        try{ this.fileType = getParamFromArgs("file-type"); } catch (Exception e) { fileType = ""; }
-        try{ this.ignoreSameKey = getParamFromArgs("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
-    }
-
-    public AsyncFetchParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.targetBucket = getParamFromConfig("to-bucket");
-        this.domain = getParamFromConfig("domain");
-        try { this.https = getParamFromConfig("use-https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = getParamFromConfig("need-sign"); } catch (Exception e) { needSign = ""; }
-        try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) { keepKey = ""; }
-        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try{ this.hashCheck = getParamFromConfig("hash-check"); } catch (Exception e) { hashCheck = ""; }
-        try{ this.host = getParamFromConfig("host"); } catch (Exception e) {}
-        try{ this.callbackUrl = getParamFromConfig("callback-url"); } catch (Exception e) {}
-        try{ this.callbackBody = getParamFromConfig("callback-body"); } catch (Exception e) {}
-        try{ this.callbackBodyType = getParamFromConfig("callback-body-type"); } catch (Exception e) {}
-        try{ this.callbackHost = getParamFromConfig("callback-host"); } catch (Exception e) {}
-        try{ this.fileType = getParamFromConfig("file-type"); } catch (Exception e) { fileType = ""; }
-        try{ this.ignoreSameKey = getParamFromConfig("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
+    public AsyncFetchParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.targetBucket = entryParam.getParamValue("to-bucket");
+        this.domain = entryParam.getParamValue("domain");
+        try { this.https = entryParam.getParamValue("use-https"); } catch (Exception e) { https = ""; }
+        try { this.needSign = entryParam.getParamValue("need-sign"); } catch (Exception e) { needSign = ""; }
+        try { this.keepKey = entryParam.getParamValue("keep-key"); } catch (Exception e) { keepKey = ""; }
+        try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
+        try{ this.hashCheck = entryParam.getParamValue("hash-check"); } catch (Exception e) { hashCheck = ""; }
+        try{ this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
+        try{ this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
+        try{ this.callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
+        try{ this.callbackBodyType = entryParam.getParamValue("callback-body-type"); } catch (Exception e) {}
+        try{ this.callbackHost = entryParam.getParamValue("callback-host"); } catch (Exception e) {}
+        try{ this.fileType = entryParam.getParamValue("file-type"); } catch (Exception e) { fileType = ""; }
+        try{ this.ignoreSameKey = entryParam.getParamValue("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
     }
 
     public String getTargetBucket() {
@@ -124,7 +108,7 @@ public class AsyncFetchParams extends QossParams {
     }
 
     public int getFileType() throws IOException {
-        if (fileType.matches("(0|1)")) {
+        if (fileType.matches("([01])")) {
             return Short.valueOf(fileType);
         } else {
             throw new IOException("no incorrect file-type, please set it 0 or 1.");

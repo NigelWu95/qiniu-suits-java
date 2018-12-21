@@ -1,9 +1,11 @@
 package com.qiniu.config;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.io.*;
 import java.util.Properties;
 
-public class PropertyConfig {
+public class PropertyConfig implements IEntryParam {
 
     private Properties properties;
 
@@ -25,9 +27,9 @@ public class PropertyConfig {
         }
     }
 
-    public String getProperty(String key) throws IOException {
-        if (this.properties.containsKey(key)) {
-            return this.properties.getProperty(key);
+    public String getParamValue(String key) throws IOException {
+        if (properties.containsKey(key)) {
+            return properties.getProperty(key);
         } else {
             throw new IOException("not set " + key + " param.");
         }

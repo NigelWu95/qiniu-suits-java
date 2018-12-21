@@ -1,6 +1,7 @@
 package com.qiniu.model.parameter;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.service.interfaces.IEntryParam;
 
 public class FileInputParams extends CommonParams {
 
@@ -20,42 +21,23 @@ public class FileInputParams extends CommonParams {
     private String persistentIdIndex;
     private String targetKey;
 
-    public FileInputParams(String[] args) throws Exception {
-        super(args);
-        this.filePath = getParamFromArgs("file-path");
-        try { this.parseType = getParamFromArgs("parse-type"); } catch (Exception e) {}
-        try { this.separator = getParamFromArgs("separator"); } catch (Exception e) {}
-        try { this.keyIndex = getParamFromArgs("key-index"); } catch (Exception e) {}
-        try { this.hashIndex = getParamFromArgs("hash-index"); } catch (Exception e) {}
-        try { this.fsizeIndex = getParamFromArgs("fsize-index"); } catch (Exception e) {}
-        try { this.putTimeIndex = getParamFromArgs("putTime-index"); } catch (Exception e) {}
-        try { this.mimeTypeIndex = getParamFromArgs("mimeType-index"); } catch (Exception e) {}
-        try { this.endUserIndex = getParamFromArgs("endUser-index"); } catch (Exception e) {}
-        try { this.typeIndex = getParamFromArgs("type-index"); } catch (Exception e) {}
-        try { this.statusIndex = getParamFromArgs("status-index"); } catch (Exception e) {}
-        try { this.md5Index = getParamFromArgs("md5-index"); } catch (Exception e) {}
-        try { this.fopsIndex = getParamFromArgs("fops-index"); } catch (Exception e) {}
-        try { this.persistentIdIndex = getParamFromArgs("persistentId-index"); } catch (Exception e) {}
-        try { this.targetKey = getParamFromArgs("newKey-index"); } catch (Exception e) {}
-    }
-
-    public FileInputParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.filePath = getParamFromConfig("file-path");
-        try { this.parseType = getParamFromConfig("parse-type"); } catch (Exception e) {}
-        try { this.separator = getParamFromConfig("separator"); } catch (Exception e) {}
-        try { this.keyIndex = getParamFromConfig("key-index"); } catch (Exception e) {}
-        try { this.hashIndex = getParamFromConfig("hash-index"); } catch (Exception e) {}
-        try { this.fsizeIndex = getParamFromConfig("fsize-index"); } catch (Exception e) {}
-        try { this.putTimeIndex = getParamFromConfig("putTime-index"); } catch (Exception e) {}
-        try { this.mimeTypeIndex = getParamFromConfig("mimeType-index"); } catch (Exception e) {}
-        try { this.endUserIndex = getParamFromConfig("endUser-index"); } catch (Exception e) {}
-        try { this.typeIndex = getParamFromConfig("type-index"); } catch (Exception e) {}
-        try { this.statusIndex = getParamFromConfig("status-index"); } catch (Exception e) {}
-        try { this.md5Index = getParamFromConfig("md5-index"); } catch (Exception e) {}
-        try { this.fopsIndex = getParamFromConfig("fops-index"); } catch (Exception e) {}
-        try { this.persistentIdIndex = getParamFromConfig("persistentId-index"); } catch (Exception e) {}
-        try { this.targetKey = getParamFromConfig("newKey-index"); } catch (Exception e) {}
+    public FileInputParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.filePath = entryParam.getParamValue("file-path");
+        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) {}
+        try { this.separator = entryParam.getParamValue("separator"); } catch (Exception e) {}
+        try { this.keyIndex = entryParam.getParamValue("key-index"); } catch (Exception e) {}
+        try { this.hashIndex = entryParam.getParamValue("hash-index"); } catch (Exception e) {}
+        try { this.fsizeIndex = entryParam.getParamValue("fsize-index"); } catch (Exception e) {}
+        try { this.putTimeIndex = entryParam.getParamValue("putTime-index"); } catch (Exception e) {}
+        try { this.mimeTypeIndex = entryParam.getParamValue("mimeType-index"); } catch (Exception e) {}
+        try { this.endUserIndex = entryParam.getParamValue("endUser-index"); } catch (Exception e) {}
+        try { this.typeIndex = entryParam.getParamValue("type-index"); } catch (Exception e) {}
+        try { this.statusIndex = entryParam.getParamValue("status-index"); } catch (Exception e) {}
+        try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) {}
+        try { this.fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) {}
+        try { this.persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) {}
+        try { this.targetKey = entryParam.getParamValue("newKey-index"); } catch (Exception e) {}
     }
 
     public String getParseType() {

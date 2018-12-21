@@ -1,5 +1,6 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.StringUtils;
 
@@ -24,40 +25,22 @@ public class ListFilterParams extends CommonParams {
     private String antiKeyRegex;
     private String antiMime;
 
-    public ListFilterParams(String[] args) throws Exception {
-        super(args);
-        try { this.keyPrefix = getParamFromArgs("f-key-prefix"); } catch (Exception e) {}
-        try { this.keySuffix = getParamFromArgs("f-key-suffix"); } catch (Exception e) {}
-        try { this.keyRegex = getParamFromArgs("f-key-regex"); } catch (Exception e) {}
-        try { this.pointDate = getParamFromArgs("f-date"); } catch (Exception e) {}
-        try { this.pointTime = getParamFromArgs("f-time"); } catch (Exception e) {}
-        try { this.direction = getParamFromArgs("f-direction"); } catch (Exception e) { direction = ""; }
-        try { this.mime = getParamFromArgs("f-mime"); } catch (Exception e) {}
-        try { this.type = getParamFromArgs("f-type"); } catch (Exception e) { type = ""; }
+    public ListFilterParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        try { this.keyPrefix = entryParam.getParamValue("f-key-prefix"); } catch (Exception e) {}
+        try { this.keySuffix = entryParam.getParamValue("f-key-suffix"); } catch (Exception e) {}
+        try { this.keyRegex = entryParam.getParamValue("f-key-regex"); } catch (Exception e) {}
+        try { this.pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) {}
+        try { this.pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) {}
+        try { this.direction = entryParam.getParamValue("f-direction"); } catch (Exception e) { direction = ""; }
+        try { this.mime = entryParam.getParamValue("f-mime"); } catch (Exception e) {}
+        try { this.type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
         this.datetime = getPointDatetime();
         this.directionFlag = getDirection();
-        try { this.antiKeyPrefix = getParamFromArgs("anti-f-key-prefix"); } catch (Exception e) {}
-        try { this.antiKeySuffix = getParamFromArgs("anti-f-key-suffix"); } catch (Exception e) {}
-        try { this.antiKeyRegex = getParamFromArgs("anti-f-key-regex"); } catch (Exception e) {}
-        try { this.antiMime = getParamFromArgs("anti-f-mime"); } catch (Exception e) {}
-    }
-
-    public ListFilterParams(String configFileName) throws Exception {
-        super(configFileName);
-        try { this.keyPrefix = getParamFromConfig("f-key-prefix"); } catch (Exception e) {}
-        try { this.keySuffix = getParamFromConfig("f-key-suffix"); } catch (Exception e) {}
-        try { this.keyRegex = getParamFromConfig("f-key-regex"); } catch (Exception e) {}
-        try { this.pointDate = getParamFromConfig("f-date"); } catch (Exception e) {}
-        try { this.pointTime = getParamFromConfig("f-time"); } catch (Exception e) {}
-        try { this.direction = getParamFromConfig("f-direction"); } catch (Exception e) { direction = ""; }
-        try { this.mime = getParamFromConfig("f-mime"); } catch (Exception e) {}
-        try { this.type = getParamFromConfig("f-type"); } catch (Exception e) { type = ""; }
-        this.datetime = getPointDatetime();
-        this.directionFlag = getDirection();
-        try { this.antiKeyPrefix = getParamFromConfig("anti-f-key-prefix"); } catch (Exception e) {}
-        try { this.antiKeySuffix = getParamFromConfig("anti-f-key-suffix"); } catch (Exception e) {}
-        try { this.antiKeyRegex = getParamFromConfig("anti-f-key-regex"); } catch (Exception e) {}
-        try { this.antiMime = getParamFromConfig("anti-f-mime"); } catch (Exception e) {}
+        try { this.antiKeyPrefix = entryParam.getParamValue("anti-f-key-prefix"); } catch (Exception e) {}
+        try { this.antiKeySuffix = entryParam.getParamValue("anti-f-key-suffix"); } catch (Exception e) {}
+        try { this.antiKeyRegex = entryParam.getParamValue("anti-f-key-regex"); } catch (Exception e) {}
+        try { this.antiMime = entryParam.getParamValue("anti-f-mime"); } catch (Exception e) {}
     }
 
     public List<String> getKeyPrefix() {

@@ -1,17 +1,14 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 public class FileTypeParams extends QossParams {
 
     private String targetType;
 
-    public FileTypeParams(String[] args) throws Exception {
-        super(args);
-        this.targetType = getParamFromArgs("type");
-    }
-
-    public FileTypeParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.targetType = getParamFromConfig("type");
+    public FileTypeParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.targetType = entryParam.getParamValue("type");
     }
 
     public int getTargetType() throws Exception {
