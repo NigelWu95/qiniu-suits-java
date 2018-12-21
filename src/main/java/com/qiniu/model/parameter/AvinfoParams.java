@@ -1,23 +1,18 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 public class AvinfoParams extends QossParams {
 
     private String domain;
     private String https;
     private String needSign;
 
-    public AvinfoParams(String[] args) throws Exception {
-        super(args);
-        this.domain = getParamFromArgs("domain");
-        try { this.https = getParamFromArgs("use-https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = getParamFromArgs("need-sign"); } catch (Exception e) { needSign = ""; }
-    }
-
-    public AvinfoParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.domain = getParamFromConfig("domain");
-        try { this.https = getParamFromConfig("use-https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = getParamFromConfig("need-sign"); } catch (Exception e) { needSign = ""; }
+    public AvinfoParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.domain = entryParam.getParamValue("domain");
+        try { this.https = entryParam.getParamValue("use-https"); } catch (Exception e) { https = ""; }
+        try { this.needSign = entryParam.getParamValue("need-sign"); } catch (Exception e) { needSign = ""; }
     }
 
     public String getDomain() {

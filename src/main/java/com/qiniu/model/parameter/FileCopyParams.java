@@ -1,23 +1,18 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 public class FileCopyParams extends QossParams {
 
     private String targetBucket;
     private String keepKey;
     private String keyPrefix;
 
-    public FileCopyParams(String[] args) throws Exception {
-        super(args);
-        this.targetBucket = getParamFromArgs("to-bucket");
-        try { this.keepKey = getParamFromArgs("keep-key"); } catch (Exception e) { keepKey = ""; }
-        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-    }
-
-    public FileCopyParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.targetBucket = getParamFromConfig("to-bucket");
-        try { this.keepKey = getParamFromConfig("keep-key"); } catch (Exception e) { keepKey = ""; }
-        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
+    public FileCopyParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.targetBucket = entryParam.getParamValue("to-bucket");
+        try { this.keepKey = entryParam.getParamValue("keep-key"); } catch (Exception e) { keepKey = ""; }
+        try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
     }
 
     public String getTargetBucket() {

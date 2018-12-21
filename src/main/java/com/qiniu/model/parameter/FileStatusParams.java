@@ -1,17 +1,14 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 public class FileStatusParams extends QossParams {
 
     private String targetStatus;
 
-    public FileStatusParams(String[] args) throws Exception {
-        super(args);
-        this.targetStatus = getParamFromArgs("status");
-    }
-
-    public FileStatusParams(String configFileName) throws Exception {
-        super(configFileName);
-        this.targetStatus = getParamFromConfig("status");
+    public FileStatusParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        this.targetStatus = entryParam.getParamValue("status");
     }
 
     public int getTargetStatus() throws Exception {

@@ -1,14 +1,14 @@
 package com.qiniu.model.parameter;
 
-import com.qiniu.config.MainArgs;
+import com.qiniu.config.CommandArgs;
 import com.qiniu.config.PropertyConfig;
+import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
 
 public class CommonParams {
 
-    private MainArgs mainArgs;
-    private PropertyConfig propertyConfig;
+    protected IEntryParam entryParam;
     private String sourceType;
     private String unitLen;
     private String retryCount;
@@ -20,54 +20,30 @@ public class CommonParams {
     private String processBatch;
     private String maxThreads;
 
-    public CommonParams(MainArgs mainArgs) {
-        this.mainArgs = mainArgs;
-        try { this.sourceType = getParamFromArgs("source-type"); } catch (Exception e) {}
-        try { this.unitLen = getParamFromArgs("unit-len"); } catch (Exception e) { unitLen = ""; }
-        try { this.retryCount = getParamFromArgs("retry-times"); } catch (Exception e) { retryCount = ""; }
-        try { this.resultFileDir = getParamFromArgs("result-path"); } catch (Exception e) {}
-        try { this.resultFormat = getParamFromArgs("result-format"); } catch (Exception e) {}
-        try { this.resultSeparator = getParamFromArgs("result-separator"); } catch (Exception e) {}
-        try { this.saveTotal = getParamFromArgs("save-total"); } catch (Exception e) { saveTotal = ""; }
-        try { this.process = getParamFromArgs("process"); } catch (Exception e) {}
-        try { this.processBatch = getParamFromArgs("process-batch"); } catch (Exception e) { processBatch = ""; }
-        try { this.maxThreads = getParamFromArgs("max-threads"); } catch (Exception e) { maxThreads = ""; }
-    }
-
-    public CommonParams(PropertyConfig propertyConfig) {
-        this.propertyConfig = propertyConfig;
-        try { this.sourceType = getParamFromConfig("source-type"); } catch (Exception e) {}
-        try { this.unitLen = getParamFromConfig("unit-len"); } catch (Exception e) { unitLen = ""; }
-        try { this.retryCount = getParamFromConfig("retry-times"); } catch (Exception e) { retryCount = ""; }
-        try { this.resultFileDir = getParamFromConfig("result-path"); } catch (Exception e) {}
-        try { this.resultFormat = getParamFromConfig("result-format"); } catch (Exception e) {}
-        try { this.resultSeparator = getParamFromConfig("result-separator"); } catch (Exception e) {}
-        try { this.saveTotal = getParamFromConfig("save-total"); } catch (Exception e) { saveTotal = ""; }
-        try { this.process = getParamFromConfig("process"); } catch (Exception e) {}
-        try { this.processBatch = getParamFromConfig("process-batch"); } catch (Exception e) { processBatch = ""; }
-        try { this.maxThreads = getParamFromConfig("max-threads"); } catch (Exception e) { maxThreads = ""; }
+    public CommonParams(IEntryParam entryParam) {
+        this.entryParam = entryParam;
+        try { this.sourceType = entryParam.getParamValue("source-type"); } catch (Exception e) {}
+        try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
+        try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
+        try { this.resultFileDir = entryParam.getParamValue("result-path"); } catch (Exception e) {}
+        try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
+        try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
+        try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
+        try { this.process = entryParam.getParamValue("process"); } catch (Exception e) {}
+        try { this.processBatch = entryParam.getParamValue("process-batch"); } catch (Exception e) { processBatch = ""; }
+        try { this.maxThreads = entryParam.getParamValue("max-threads"); } catch (Exception e) { maxThreads = ""; }
     }
 
     public CommonParams(String[] args) throws IOException {
-        this(new MainArgs(args));
+        this(new CommandArgs(args));
     }
 
     public CommonParams(String configFileName) throws IOException {
         this(new PropertyConfig(configFileName));
     }
 
-    public String getParamFromArgs(String key) throws IOException {
-        return mainArgs.getParamValue(key);
-    }
-
-    public String getParamFromConfig(String key) throws IOException {
-        return propertyConfig.getProperty(key);
-    }
-
     public String getParamByKey(String key) throws IOException {
-        if (mainArgs != null) return mainArgs.getParamValue(key);
-        else if (propertyConfig != null) return propertyConfig.getProperty(key);
-        return "";
+        return entryParam.getParamValue(key);
     }
 
     public String getSourceType() {

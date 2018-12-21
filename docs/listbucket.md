@@ -27,7 +27,7 @@ anti-prefix=|
 
 ### 命令行方式
 ```
--ak= -sk= -bucket= -multi= -max-threads= -version= -level= -unit-len= -prefix= -anti-prefix=
+-ak= -sk= -bucket= -multi= -max-threads= -version= -unit-len= -prefix= -anti-prefix=
 ```
 
 ### 关于并发列举

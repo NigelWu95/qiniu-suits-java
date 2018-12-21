@@ -1,5 +1,7 @@
 package com.qiniu.model.parameter;
 
+import com.qiniu.service.interfaces.IEntryParam;
+
 import java.io.IOException;
 
 public class FileMoveParams extends QossParams {
@@ -7,16 +9,10 @@ public class FileMoveParams extends QossParams {
     private String targetBucket;
     private String keyPrefix;
 
-    public FileMoveParams(String[] args) throws Exception {
-        super(args);
-        try { this.targetBucket = getParamFromArgs("to-bucket"); } catch (Exception e) {}
-        try { this.keyPrefix = getParamFromArgs("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-    }
-
-    public FileMoveParams(String configFileName) throws Exception {
-        super(configFileName);
-        try { this.targetBucket = getParamFromConfig("to-bucket"); } catch (Exception e) {}
-        try { this.keyPrefix = getParamFromConfig("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
+    public FileMoveParams(IEntryParam entryParam) throws Exception {
+        super(entryParam);
+        try { this.targetBucket = entryParam.getParamValue("to-bucket"); } catch (Exception e) {}
+        try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
     }
 
     public String getTargetBucket() throws IOException {

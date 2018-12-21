@@ -4,6 +4,7 @@ import com.qiniu.common.*;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.model.parameter.ListFieldSaveParams;
 import com.qiniu.service.datasource.ListBucket;
+import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -13,9 +14,9 @@ import java.util.Map;
 
 public class ListBucketEntry {
 
-    public static void run(boolean paramFromConfig, String[] args, String configFilePath) throws Exception {
+    public static void run(IEntryParam entryParam) throws Exception {
 
-        ListBucketParams listBucketParams = paramFromConfig ? new ListBucketParams(configFilePath) : new ListBucketParams(args);
+        ListBucketParams listBucketParams = new ListBucketParams(entryParam);
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
@@ -32,13 +33,11 @@ public class ListBucketEntry {
         String resultFileDir = listBucketParams.getResultFileDir();
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
-        ILineProcess<Map<String, String>> processor = new ProcessorChoice(paramFromConfig, args, configFilePath)
-                .getFileProcessor();
+        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, maxThreads, customPrefix,
                 antiPrefix, 3, resultFileDir);
         listBucket.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
-        ListFieldSaveParams fieldSaveParams = paramFromConfig ?
-                new ListFieldSaveParams(configFilePath) : new ListFieldSaveParams(args);
+        ListFieldSaveParams fieldSaveParams = new ListFieldSaveParams(entryParam);
         if (multiStatus) {
             listBucket.concurrentlyList(maxThreads, fieldSaveParams.getUsedFields(), processor);
         } else {
