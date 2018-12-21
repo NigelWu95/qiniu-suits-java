@@ -18,7 +18,7 @@ public class FileTypeParams extends QossParams {
         if (targetType.matches("(0|1)")) {
             return Integer.valueOf(targetType);
         } else {
-            throw new Exception("no incorrect type, please set it 0 or 1");
+            throw new Exception("no incorrect type, please set it 0 or 1.");
         }
     }
 }

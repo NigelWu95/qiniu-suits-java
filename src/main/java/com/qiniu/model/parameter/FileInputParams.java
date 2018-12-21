@@ -42,7 +42,7 @@ public class FileInputParams extends CommonParams {
     public FileInputParams(String configFileName) throws Exception {
         super(configFileName);
         this.filePath = getParamFromConfig("file-path");
-        try { this.parseType = getParamFromConfig("parser-type"); } catch (Exception e) {}
+        try { this.parseType = getParamFromConfig("parse-type"); } catch (Exception e) {}
         try { this.separator = getParamFromConfig("separator"); } catch (Exception e) {}
         try { this.keyIndex = getParamFromConfig("key-index"); } catch (Exception e) {}
         try { this.hashIndex = getParamFromConfig("hash-index"); } catch (Exception e) {}
