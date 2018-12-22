@@ -35,24 +35,17 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     private int fileType;
     private boolean ignoreSameKey;
 
-    private void initBaseParams(String domain) throws UnknownHostException {
-        this.processName = "asyncfetch";
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultPath,
+                      int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
         this.domain = domain;
         RequestUtils.checkHost(domain);
-    }
-
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir,
-                      int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(domain);
         this.m3u8Manager = new M3U8Manager();
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir)
             throws IOException {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(domain);
+        this(auth, configuration, bucket, domain, resultFileDir, 0);
     }
 
     public void setOptions(boolean https, Auth srcAuth, boolean keepKey, String keyPrefix, boolean hashCheck) {
@@ -75,15 +68,22 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         this.hasCustomArgs = true;
     }
 
-    public AsyncFetch getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public AsyncFetch getNewInstance(int resultIndex) throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
         asyncFetch.fileMap = new FileMap();
         asyncFetch.m3u8Manager = new M3U8Manager();
         try {
-            asyncFetch.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            asyncFetch.fileMap.initWriter(resultPath, processName, resultIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
+        return asyncFetch;
+    }
+
+    @Override
+    public AsyncFetch clone() throws CloneNotSupportedException {
+        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
+        asyncFetch.m3u8Manager = new M3U8Manager();
         return asyncFetch;
     }
 
@@ -119,6 +119,6 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
-        return null;
+        return new BatchOperations();
     }
 }

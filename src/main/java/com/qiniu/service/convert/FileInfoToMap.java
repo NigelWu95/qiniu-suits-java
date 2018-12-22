@@ -3,6 +3,7 @@ package com.qiniu.service.convert;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
                                 case "status": converted.put(key, String.valueOf(fileInfo.status)); break;
                             }
                         });
+                        if (converted.size() < usedFields.size()) throw new IOException();
                         return converted;
                     } catch (Exception e) {
                         errorList.add(String.valueOf(fileInfo));
