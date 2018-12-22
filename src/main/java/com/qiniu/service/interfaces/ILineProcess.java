@@ -9,13 +9,13 @@ public interface ILineProcess<T> {
 
     ILineProcess<T> getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
 
-    default void setBatch(boolean batch) {}
-
-    default void setRetryCount(int retryCount) {}
-
     default String getProcessName() {
         return "";
     }
+
+    default void setRetryCount(int retryCount) {}
+
+    default void setBatch(boolean batch) {}
 
     void processLine(List<T> list) throws QiniuException;
 

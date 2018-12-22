@@ -18,44 +18,53 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private MediaManager mediaManager;
     private String processName;
     private int retryCount;
-    protected String resultFileDir;
+    protected String resultPath;
+    private int resultIndex;
     private FileMap fileMap;
 
-    private void initBaseParams(String domain) {
-        this.processName = "avinfo";
+    public QueryAvinfo(String domain, String resultPath, int resultIndex) throws IOException {
         this.domain = domain;
-    }
-
-    public QueryAvinfo(String domain, String resultFileDir) {
-        initBaseParams(domain);
-        this.resultFileDir = resultFileDir;
-        this.mediaManager = new MediaManager(https, srcAuth);
+        this.processName = "avinfo";
+        this.mediaManager = new MediaManager(false, null);
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryAvinfo(String domain, String resultFileDir, int resultFileIndex) throws IOException {
-        this(domain, resultFileDir);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    public QueryAvinfo(String domain, String resultPath) throws IOException {
+        this(domain, resultPath, 0);
     }
 
     public void setOptions(boolean https, Auth srcAuth) {
         this.https = https;
         this.srcAuth = srcAuth;
+        this.mediaManager = new MediaManager(https, srcAuth);
     }
 
-    public QueryAvinfo getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public QueryAvinfo getNewInstance(int resultIndex) throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.mediaManager = new MediaManager(https, srcAuth);
         queryAvinfo.fileMap = new FileMap();
         try {
-            queryAvinfo.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            queryAvinfo.fileMap.initWriter(resultPath, processName, resultIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
         return queryAvinfo;
     }
 
-    public void setBatch(boolean batch) {}
+    public QueryAvinfo clone() throws CloneNotSupportedException {
+        QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
+        queryAvinfo.mediaManager = new MediaManager(https, srcAuth);
+        queryAvinfo.fileMap = new FileMap();
+        try {
+            queryAvinfo.fileMap.initWriter(resultPath, processName, resultIndex++);
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return queryAvinfo;
+    }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;

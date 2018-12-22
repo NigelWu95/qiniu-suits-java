@@ -15,27 +15,20 @@ import java.util.stream.Collectors;
 
 public class DeleteFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private void initBaseParams() {
-        this.processName = "delete";
+    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath,
+                      int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "delete", resultPath, resultIndex);
     }
 
-    public DeleteFile(Auth auth, Configuration configuration, String fromBucket, String resultFileDir,
-                      int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams();
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultFileDir) throws IOException {
+        this(auth, configuration, bucket, resultFileDir, 0);
     }
 
-    public DeleteFile(Auth auth, Configuration configuration, String fromBucket, String resultFileDir) {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams();
-    }
-
-    public DeleteFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public DeleteFile getNewInstance(int resultIndex) throws CloneNotSupportedException {
         DeleteFile copyFile = (DeleteFile)super.clone();
         copyFile.fileMap = new FileMap();
         try {
-            copyFile.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            copyFile.fileMap.initWriter(resultPath, processName, resultIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

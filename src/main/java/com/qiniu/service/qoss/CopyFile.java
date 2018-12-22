@@ -19,21 +19,15 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     private boolean keepKey;
     private String keyPrefix;
 
-    private void initBaseParams(String toBucket) {
-        this.processName = "copy";
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath,
+                    int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "copy", resultPath, resultIndex);
         this.toBucket = toBucket;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir,
-                    int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams(toBucket);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir) {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams(toBucket);
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath)
+            throws IOException {
+        this(auth, configuration, bucket, toBucket, resultPath, 0);
     }
 
     public void setOptions(boolean keepKey, String keyPrefix) {
@@ -41,11 +35,11 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
-    public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public CopyFile getNewInstance(int resultIndex) throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
         copyFile.fileMap = new FileMap();
         try {
-            copyFile.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            copyFile.fileMap.initWriter(resultPath, processName, resultIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

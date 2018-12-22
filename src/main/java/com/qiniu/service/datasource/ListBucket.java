@@ -141,7 +141,7 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void listFromLister(FileLister fileLister, String end, int resultIndex, List<String> usedFields,
+    private void execLister(FileLister fileLister, String end, int resultIndex, List<String> usedFields,
                                 ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
@@ -229,7 +229,7 @@ public class ListBucket {
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
-            executorPool.execute(() -> listFromLister(fileListerList.get(finalI), finalEnd, finalI + 1,
+            executorPool.execute(() -> execLister(fileListerList.get(finalI), finalEnd, finalI + 1,
                     usedFields, processor));
         }
         executorPool.shutdown();
@@ -243,7 +243,7 @@ public class ListBucket {
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
         FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen, version);
-        listFromLister(fileLister, end, 0, usedFields, processor);
+        execLister(fileLister, end, 0, usedFields, processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }

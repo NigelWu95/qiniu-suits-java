@@ -17,27 +17,21 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
 
     private int type;
 
-    private void initBaseParams(int type) {
-        this.processName = "type";
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultPath,
+                      int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "type", resultPath, resultIndex);
         this.type = type;
     }
 
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir,
-                      int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(type);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultFileDir) {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(type);
+    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultPath)
+            throws IOException {
+        this(auth, configuration, bucket, type, resultPath, 0);
     }
 
     public ChangeType getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
         try {
-            changeType.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            changeType.fileMap.initWriter(resultPath, processName, resultFileIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
