@@ -9,24 +9,24 @@ import java.io.IOException;
 public class ProgressRecorder implements Cloneable {
 
     private String processName;
-    private String resultFileDir;
+    private String resultPath;
     private int resultIndex;
     private FileMap fileMap;
     private String[] keys;
 
-    public ProgressRecorder(String processName, String resultFileDir, int resultIndex, FileMap fileMap, String[] keys) {
+    public ProgressRecorder(String processName, String resultPath, int resultIndex, FileMap fileMap, String[] keys) {
         this.processName = processName;
-        this.resultFileDir = resultFileDir;
+        this.resultPath = resultPath;
         this.resultIndex = resultIndex;
         this.fileMap = fileMap;
         this.keys = keys;
     }
 
-    public ProgressRecorder getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public ProgressRecorder clone() throws CloneNotSupportedException {
         ProgressRecorder progressRecorder = (ProgressRecorder)super.clone();
         progressRecorder.fileMap = new FileMap();
         try {
-            progressRecorder.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            progressRecorder.fileMap.initWriter(resultPath, processName, resultIndex++);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

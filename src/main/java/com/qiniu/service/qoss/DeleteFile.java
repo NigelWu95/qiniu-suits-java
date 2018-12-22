@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.BatchOperations;
@@ -15,31 +14,13 @@ import java.util.stream.Collectors;
 
 public class DeleteFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private void initBaseParams() {
-        this.processName = "delete";
+    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath,
+                      int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "delete", resultPath, resultIndex);
     }
 
-    public DeleteFile(Auth auth, Configuration configuration, String fromBucket, String resultFileDir,
-                      int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams();
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public DeleteFile(Auth auth, Configuration configuration, String fromBucket, String resultFileDir) {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams();
-    }
-
-    public DeleteFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        DeleteFile copyFile = (DeleteFile)super.clone();
-        copyFile.fileMap = new FileMap();
-        try {
-            copyFile.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return copyFile;
+    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultFileDir) throws IOException {
+        this(auth, configuration, bucket, resultFileDir, 0);
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {

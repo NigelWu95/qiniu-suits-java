@@ -20,24 +20,22 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private FileChecker fileChecker;
     private String processName;
     private int retryCount;
-    protected String resultFileDir;
+    protected String resultPath;
+    private int resultIndex;
     private FileMap fileMap;
 
-    private void initBaseParams(String domain) {
-        this.processName = "hash";
+    public QueryHash(String domain, String resultPath, int resultIndex) throws IOException {
         this.domain = domain;
-    }
-
-    public QueryHash(String domain, String resultFileDir) {
-        initBaseParams(domain);
-        this.resultFileDir = resultFileDir;
+        this.processName = "hash";
         this.fileChecker = new FileChecker(null, https, srcAuth);
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryHash(String domain, String resultFileDir, int resultFileIndex) throws IOException {
-        this(domain, resultFileDir);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    public QueryHash(String domain, String resultPath) throws IOException {
+        this(domain, resultPath, 0);
     }
 
     public void setOptions(String algorithm, boolean https, Auth srcAuth) {
@@ -47,19 +45,17 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileChecker = new FileChecker(algorithm, https, srcAuth);
     }
 
-    public QueryHash getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
         queryHash.fileChecker = new FileChecker(algorithm, https, srcAuth);
         queryHash.fileMap = new FileMap();
         try {
-            queryHash.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            queryHash.fileMap.initWriter(resultPath, processName, resultIndex++);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
         return queryHash;
     }
-
-    public void setBatch(boolean batch) {}
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;

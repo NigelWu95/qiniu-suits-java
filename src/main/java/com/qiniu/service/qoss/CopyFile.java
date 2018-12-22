@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -19,37 +18,20 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     private boolean keepKey;
     private String keyPrefix;
 
-    private void initBaseParams(String toBucket) {
-        this.processName = "copy";
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath,
+                    int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "copy", resultPath, resultIndex);
         this.toBucket = toBucket;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir,
-                    int resultFileIndex) throws IOException {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams(toBucket);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public CopyFile(Auth auth, Configuration configuration, String fromBucket, String toBucket, String resultFileDir) {
-        super(auth, configuration, fromBucket, resultFileDir);
-        initBaseParams(toBucket);
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath)
+            throws IOException {
+        this(auth, configuration, bucket, toBucket, resultPath, 0);
     }
 
     public void setOptions(boolean keepKey, String keyPrefix) {
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-    }
-
-    public CopyFile getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        CopyFile copyFile = (CopyFile)super.clone();
-        copyFile.fileMap = new FileMap();
-        try {
-            copyFile.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return copyFile;
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {

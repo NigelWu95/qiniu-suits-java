@@ -14,29 +14,13 @@ import java.util.stream.Collectors;
 
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private void initBaseParams() {
-        this.processName = "stat";
-    }
-
-    public FileStat(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams();
-    }
-
-    public FileStat(Auth auth, Configuration configuration, String bucket, String resultFileDir, int resultFileIndex)
+    public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, int resultIndex)
             throws IOException {
-        this(auth, configuration, bucket, resultFileDir);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+        super(auth, configuration, bucket, "stat", resultPath, resultIndex);
     }
 
-    public FileStat getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        FileStat fileStat = (FileStat)super.clone();
-        try {
-            fileStat.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return fileStat;
+    public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath) throws IOException {
+        this(auth, configuration, bucket, resultPath, 0);
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
