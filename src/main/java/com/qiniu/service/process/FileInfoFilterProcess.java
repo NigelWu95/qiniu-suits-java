@@ -16,27 +16,26 @@ import java.util.Map;
 public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
-    private String resultFileDir;
+    protected int retryCount;
+    private String resultPath;
     private String resultFormat;
     private String separator;
+    private int resultIndex;
     private FileMap fileMap;
-    protected int retryCount;
     private ITypeConvert<Map<String, String>, String> typeConverter;
     private ILineFilter<Map<String, String>> filter;
     private List<String> usedFields;
     private ILineProcess<Map<String, String>> nextProcessor;
 
-    private void initBaseParams() {
+    public FileInfoFilterProcess(String resultFormat, String separator, String resultPath, int resultIndex,
+                                 FileFilter filter, List<String> usedFields) throws Exception {
         this.processName = "filter";
-    }
-
-    public FileInfoFilterProcess(String resultFileDir, String resultFormat, String separator, FileFilter filter,
-                                 List<String> usedFields) throws Exception {
-        initBaseParams();
         this.resultFormat = resultFormat;
         this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
-        this.resultFileDir = resultFileDir;
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
         this.typeConverter = new InfoMapToString(resultFormat, separator, usedFields);
         this.usedFields = usedFields;
         List<String> methodNameList = new ArrayList<String>() {{
@@ -65,20 +64,19 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         };
     }
 
-    public FileInfoFilterProcess(String resultFormat, String separator, String resultFileDir, int resultFileIndex,
-                                 FileFilter filter, List<String> usedFields) throws Exception {
-        this(resultFormat, separator, resultFileDir, filter, usedFields);
-        fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    public FileInfoFilterProcess(String resultFormat, String separator, String resultPath, FileFilter filter,
+                                 List<String> usedFields) throws Exception {
+        this(resultFormat, separator, resultPath, 0, filter, usedFields);
     }
 
-    public FileInfoFilterProcess getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public FileInfoFilterProcess clone() throws CloneNotSupportedException {
         FileInfoFilterProcess fileInfoFilterProcess = (FileInfoFilterProcess)super.clone();
         fileInfoFilterProcess.fileMap = new FileMap();
         try {
-            fileInfoFilterProcess.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            fileInfoFilterProcess.fileMap.initWriter(resultPath, processName, resultIndex++);
             fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, separator, usedFields);
             if (nextProcessor != null) {
-                fileInfoFilterProcess.nextProcessor = nextProcessor.getNewInstance(resultFileIndex);
+                fileInfoFilterProcess.nextProcessor = nextProcessor.clone();
             }
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");

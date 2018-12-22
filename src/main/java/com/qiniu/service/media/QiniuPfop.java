@@ -22,46 +22,40 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     public String bucket;
     public String pipeline;
     public String processName;
-    public boolean batch;
     public int retryCount;
-    public String resultFileDir;
+    protected String resultPath;
+    private int resultIndex;
     public FileMap fileMap;
 
-    private void initBaseParams() {
-        this.processName = "pfop";
-    }
-
-    public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir) {
+    public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultPath,
+                     int resultIndex) throws IOException {
         this.auth = auth;
         this.configuration = configuration;
         this.operationManager = new OperationManager(auth, configuration);
         this.bucket = bucket;
         this.pipeline = pipeline;
-        this.resultFileDir = resultFileDir;
-        initBaseParams();
+        this.processName = "pfop";
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultFileDir,
-                     int resultFileIndex) throws IOException {
-        this(auth, configuration, bucket, pipeline, resultFileDir);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String resultPath)
+            throws IOException {
+        this(auth, configuration, bucket, pipeline, resultPath, 0);
     }
 
-    public QiniuPfop getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(auth, configuration);
         qiniuPfop.fileMap = new FileMap();
         try {
-            qiniuPfop.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            qiniuPfop.fileMap.initWriter(resultPath, processName, resultIndex++);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
         return qiniuPfop;
-    }
-
-    public void setBatch(boolean batch) {
-        this.batch = batch;
     }
 
     public void setRetryCount(int retryCount) {

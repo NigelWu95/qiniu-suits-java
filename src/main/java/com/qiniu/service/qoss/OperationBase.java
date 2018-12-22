@@ -13,6 +13,7 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringUtils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,20 +26,25 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected BucketManager bucketManager;
     protected String bucket;
     protected String processName;
+    protected int retryCount;
     protected boolean batch;
     protected volatile BatchOperations batchOperations;
-    protected int retryCount;
-    protected String resultFileDir;
+    protected String resultPath;
+    protected int resultIndex;
     protected FileMap fileMap;
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String resultFileDir) {
+    public OperationBase(Auth auth, Configuration configuration, String bucket, String processName, String resultPath,
+                         int resultIndex) throws IOException {
         this.auth = auth;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
+        this.processName = processName;
         this.batchOperations = new BatchOperations();
-        this.resultFileDir = resultFileDir;
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
@@ -46,6 +52,11 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
         operationBase.fileMap = new FileMap();
+        try {
+            operationBase.fileMap.initWriter(resultPath, processName, resultIndex++);
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
         return operationBase;
     }
 

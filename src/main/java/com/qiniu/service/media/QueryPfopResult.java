@@ -15,38 +15,34 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private MediaManager mediaManager;
     private String processName;
     private int retryCount;
-    protected String resultFileDir;
+    private String resultPath;
+    private int resultIndex;
     private FileMap fileMap;
 
-    private void initBaseParams() {
+    public QueryPfopResult(String resultPath, int resultIndex) throws IOException {
         this.processName = "pfopresult";
-    }
-
-    public QueryPfopResult(String resultFileDir) {
-        initBaseParams();
-        this.resultFileDir = resultFileDir;
         this.mediaManager = new MediaManager();
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryPfopResult(String resultFileDir, int resultFileIndex) throws IOException {
-        this(resultFileDir);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+    public QueryPfopResult(String resultPath) throws IOException {
+        this(resultPath, 0);
     }
 
-    public QueryPfopResult getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
+    public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.mediaManager = new MediaManager();
         queryPfopResult.fileMap = new FileMap();
         try {
-            queryPfopResult.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
+            queryPfopResult.fileMap.initWriter(resultPath, processName, resultIndex);
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
         return queryPfopResult;
     }
-
-    public void setBatch(boolean batch) {}
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;

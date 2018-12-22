@@ -16,31 +16,15 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
 
     private int status;
 
-    private void initBaseParams(int status) {
-        this.processName = "status";
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultPath,
+                        int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "status", resultPath, resultIndex);
         this.status = status;
     }
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir,
-                        int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(status);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultFileDir) {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(status);
-    }
-
-    public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        try {
-            changeStatus.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return changeStatus;
+    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultPath)
+            throws IOException {
+        this(auth, configuration, bucket, status, resultPath, 0);
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {

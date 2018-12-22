@@ -2,6 +2,7 @@ package com.qiniu.service.fileline;
 
 import com.qiniu.service.interfaces.ILineParser;
 
+import java.io.IOException;
 import java.util.*;
 
 public class SplitLineParser implements ILineParser {
@@ -14,13 +15,14 @@ public class SplitLineParser implements ILineParser {
         this.infoIndexMap = infoIndexMap;
     }
 
-    public Map<String, String> getItemMap(String line) {
+    public Map<String, String> getItemMap(String line) throws IOException {
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
         for (int i = 0; i < items.length; i++) {
             String mapKey = infoIndexMap.get(String.valueOf(i));
             if (mapKey != null) itemMap.put(mapKey, items[i]);
         }
+        if (itemMap.size() < infoIndexMap.size()) throw new IOException();
         return itemMap;
     }
 }

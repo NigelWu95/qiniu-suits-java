@@ -29,7 +29,7 @@ public class CommonParams {
         try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
         try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
-        try { this.process = entryParam.getParamValue("process"); } catch (Exception e) {}
+        try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
         try { this.processBatch = entryParam.getParamValue("process-batch"); } catch (Exception e) { processBatch = ""; }
         try { this.maxThreads = entryParam.getParamValue("max-threads"); } catch (Exception e) { maxThreads = ""; }
     }

@@ -17,31 +17,15 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
 
     private int days;
 
-    private void initBaseParams(int days) {
-        this.processName = "lifecycle";
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultPath,
+                           int resultIndex) throws IOException {
+        super(auth, configuration, bucket, "lifecycle", resultPath, resultIndex);
         this.days = days;
     }
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir,
-                           int resultFileIndex) throws IOException {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(days);
-        this.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-    }
-
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultFileDir) {
-        super(auth, configuration, bucket, resultFileDir);
-        initBaseParams(days);
-    }
-
-    public UpdateLifecycle getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        UpdateLifecycle updateLifecycle = (UpdateLifecycle)super.clone();
-        try {
-            updateLifecycle.fileMap.initWriter(resultFileDir, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return updateLifecycle;
+    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultPath)
+            throws IOException {
+        this(auth, configuration, bucket, days, resultPath, 0);
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
