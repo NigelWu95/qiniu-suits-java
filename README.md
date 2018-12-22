@@ -16,8 +16,8 @@ resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties
 ### 1 数据源
 支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
 **source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
-`list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md) [配置模板](templates/list.config)  
-`file` 表示从本地路径读取文件内容中的资源列表 [fileinput 配置](docs/fileinput.md) [配置模板](templates/file.config)  
+`source-type=list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md)，list 方式 [配置模板](templates/list.config)  
+`source-type=file` 表示从本地读取文件获取资源列表 [fileinput 配置](docs/fileinput.md)，file 方式 [配置模板](templates/file.config)  
 
 ###### *关于并发处理*：  
 ```
@@ -27,28 +27,28 @@ resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties
 ```
 
 ### 2 处理过程
-处理过程表示对由数据源输入的每一条记录进行一次方法调用，具体调用过程由处理类型参数指定:  
+处理过程表示对由数据源输入的每一条记录进行处理，具体处理过程由处理类型参数指定:  
 **process=type/status/lifecycle/copy** (命令行方式则指定为 **-process=xxx**) 等  
-`type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/modify-delete.md)  
-`status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/modify-delete.md)  
-`lifecycle` 表示修改空间资源的生命周期 [lifecycle 配置](docs/modify-delete.md)  
-`delete` 表示删除空间资源 [delete 配置](docs/modify-delete.md)  
-`copy` 表示复制资源到指定空间 [copy 配置](docs/copy-move-rename.md)  
-`move` 表示移动资源到指定空间 [move 配置](docs/copy-move-rename.md)  
-`rename` 表示对指定空间的资源进行重命名 [rename 配置](docs/copy-move-rename.md)  
-`asyncfetch` 表示异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
-`pfop` 表示对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
-`pfopresult` 表示通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/query.md)  
-`stat` 表示查询空间资源的元信息 [stat 配置](docs/query.md)  
-`avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
-`qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
+`process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
+`process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
+`process=lifecycle` 表示修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
+`process=delete` 表示删除空间资源 [delete 配置](docs/delete.md)  
+`process=copy` 表示复制资源到指定空间 [copy 配置](docs/copy.md)  
+`process=move` 表示移动资源到指定空间 [move 配置](docs/move.md)  
+`process=rename` 表示对指定空间的资源进行重命名 [rename 配置](docs/rename.md)  
+`process=asyncfetch` 表示异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
+`process=pfop` 表示对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
+`process=pfopresult` 表示通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
+`process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
+`process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
+`process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
 rename、qhash、stat、pfop、pfopresult、avinfo 一般对 file 输入方式进行处理
 
 ### 3 结果持久化
 对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：
-`result-path` 表示保存结果的文件路径  
-`result-format` 结果保存格式（json/table）  
-`result-separator` 结果保存分隔符  
+`result-path=` 表示保存结果的文件路径  
+`result-format=` 结果保存格式（json/table）  
+`result-separator=` 结果保存分隔符  
 [result 详细配置](docs/result-save.md)
 
 ### 补充
