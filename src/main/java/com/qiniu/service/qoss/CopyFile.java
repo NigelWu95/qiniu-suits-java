@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -33,17 +32,6 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     public void setOptions(boolean keepKey, String keyPrefix) {
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-    }
-
-    public CopyFile getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        CopyFile copyFile = (CopyFile)super.clone();
-        copyFile.fileMap = new FileMap();
-        try {
-            copyFile.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return copyFile;
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {

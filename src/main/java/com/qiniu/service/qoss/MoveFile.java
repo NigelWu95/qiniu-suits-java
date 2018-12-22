@@ -33,17 +33,6 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
-    public MoveFile getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        MoveFile copyFile = (MoveFile)super.clone();
-        copyFile.fileMap = new FileMap();
-        try {
-            copyFile.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return copyFile;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         if (toBucket == null || "".equals(toBucket)) {
             return bucketManager.move(bucket, fileInfo.get("key"), toBucket, keyPrefix + fileInfo.get("key"),

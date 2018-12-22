@@ -27,16 +27,6 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         this(auth, configuration, bucket, status, resultPath, 0);
     }
 
-    public ChangeStatus getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        try {
-            changeStatus.fileMap.initWriter(resultPath, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return changeStatus;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.changeStatus(bucket, fileInfo.get("key"), status);
     }

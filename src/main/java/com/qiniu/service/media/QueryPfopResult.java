@@ -32,18 +32,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         this(resultPath, 0);
     }
 
-    public QueryPfopResult getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
-        queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap();
-        try {
-            queryPfopResult.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryPfopResult;
-    }
-
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.mediaManager = new MediaManager();
