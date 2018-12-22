@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface ILineProcess<T> {
 
-    ILineProcess<T> getNewInstance(int resultFileIndex) throws CloneNotSupportedException;
+    ILineProcess<T> clone() throws CloneNotSupportedException;
 
     default String getProcessName() {
         return "";

@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.*;
@@ -12,7 +11,6 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,19 +66,6 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         this.hasCustomArgs = true;
     }
 
-    public AsyncFetch getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.fileMap = new FileMap();
-        asyncFetch.m3u8Manager = new M3U8Manager();
-        try {
-            asyncFetch.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return asyncFetch;
-    }
-
-    @Override
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
         asyncFetch.m3u8Manager = new M3U8Manager();

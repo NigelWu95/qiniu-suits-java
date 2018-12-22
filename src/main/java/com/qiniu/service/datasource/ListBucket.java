@@ -33,13 +33,13 @@ public class ListBucket {
     private int retryCount;
     private List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
             "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
-    private String resultFileDir;
+    private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String separator;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int version, int maxThreads,
-                      String customPrefix, List<String> antiPrefix, int retryCount, String resultFileDir) {
+                      String customPrefix, List<String> antiPrefix, int retryCount, String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -49,7 +49,7 @@ public class ListBucket {
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix;
         this.retryCount = retryCount;
-        this.resultFileDir = resultFileDir;
+        this.resultPath = resultPath;
     }
 
     public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
@@ -145,19 +145,22 @@ public class ListBucket {
                                 ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
-        ProgressRecorder recorder = new ProgressRecorder("marker", resultFileDir, resultIndex, fileMap,
+        ProgressRecorder recorder = new ProgressRecorder("marker", resultPath, resultIndex, fileMap,
                 new String[]{"prefix", "marker", "end"});
         try {
-            fileProcessor = processor != null ? processor.getNewInstance(resultIndex) : null;
+            if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
             ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(usedFields);
             if (saveTotal) {
                 writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
-                fileMap.initWriter(resultFileDir, "list", resultIndex);
+                fileMap.initWriter(resultPath, "list", resultIndex);
             }
+            String marker;
+            List<FileInfo> fileInfoList;
+            List<String> errorList;
             while (fileLister.hasNext()) {
-                String marker = fileLister.getMarker();
-                List<FileInfo> fileInfoList = fileLister.next();
+                marker = fileLister.getMarker();
+                fileInfoList = fileLister.next();
                 int maxError = 20 * retryCount;
                 while (fileLister.exception != null) {
                     System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
@@ -177,7 +180,8 @@ public class ListBucket {
                 }
                 if (saveTotal && fileInfoList.size() > 0) {
                     fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
-                    fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
+                    errorList = writeTypeConverter.getErrorList();
+                    if (errorList.size() > 0) fileMap.writeErrorOrNull(String.join("\n", errorList));
                 }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
                 if (typeConverter.getErrorList().size() > 0) fileMap.writeKeyFile("process_error" + resultIndex,
@@ -229,8 +233,7 @@ public class ListBucket {
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
-            executorPool.execute(() -> execLister(fileListerList.get(finalI), finalEnd, finalI + 1,
-                    usedFields, processor));
+            executorPool.execute(() -> execLister(fileListerList.get(finalI), finalEnd, finalI, usedFields, processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);

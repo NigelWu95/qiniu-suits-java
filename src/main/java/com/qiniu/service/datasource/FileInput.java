@@ -41,13 +41,13 @@ public class FileInput {
         this.separator = separator;
     }
 
-    public void traverseByReader(int finalI, BufferedReader bufferedReader, List<String> usedFields,
+    public void traverseByReader(int resultIndex, BufferedReader bufferedReader, List<String> usedFields,
                                  ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
-            fileMap.initWriter(resultFileDir, "fileinput", finalI + 1);
-            if (processor != null) fileProcessor = processor.getNewInstance(finalI + 1);
+            fileMap.initWriter(resultFileDir, "fileinput", resultIndex);
+            if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
             ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
             List<String> srcList = bufferedReader.lines().parallel().collect(Collectors.toList());
             List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);

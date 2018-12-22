@@ -28,16 +28,6 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
         this(auth, configuration, bucket, type, resultPath, 0);
     }
 
-    public ChangeType getNewInstance(int resultFileIndex) throws CloneNotSupportedException {
-        ChangeType changeType = (ChangeType)super.clone();
-        try {
-            changeType.fileMap.initWriter(resultPath, processName, resultFileIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return changeType;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         return bucketManager.changeType(bucket, fileInfo.get("key"), storageType);

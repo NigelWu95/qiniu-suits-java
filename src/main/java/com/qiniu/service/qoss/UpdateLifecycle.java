@@ -28,16 +28,6 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
         this(auth, configuration, bucket, days, resultPath, 0);
     }
 
-    public UpdateLifecycle getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        UpdateLifecycle updateLifecycle = (UpdateLifecycle)super.clone();
-        try {
-            updateLifecycle.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return updateLifecycle;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.deleteAfterDays(bucket, fileInfo.get("key"), days);
     }

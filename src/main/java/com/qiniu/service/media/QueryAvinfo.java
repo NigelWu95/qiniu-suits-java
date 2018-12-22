@@ -42,18 +42,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this.mediaManager = new MediaManager(https, srcAuth);
     }
 
-    public QueryAvinfo getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(https, srcAuth);
-        queryAvinfo.fileMap = new FileMap();
-        try {
-            queryAvinfo.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryAvinfo;
-    }
-
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.mediaManager = new MediaManager(https, srcAuth);

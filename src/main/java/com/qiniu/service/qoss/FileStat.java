@@ -23,16 +23,6 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         this(auth, configuration, bucket, resultPath, 0);
     }
 
-    public FileStat getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        FileStat fileStat = (FileStat)super.clone();
-        try {
-            fileStat.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return fileStat;
-    }
-
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
         return bucketManager.statResponse(bucket, fileInfo.get("key"));
     }

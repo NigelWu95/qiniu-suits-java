@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.BucketManager.BatchOperations;
@@ -22,17 +21,6 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
 
     public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultFileDir) throws IOException {
         this(auth, configuration, bucket, resultFileDir, 0);
-    }
-
-    public DeleteFile getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        DeleteFile copyFile = (DeleteFile)super.clone();
-        copyFile.fileMap = new FileMap();
-        try {
-            copyFile.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return copyFile;
     }
 
     protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {

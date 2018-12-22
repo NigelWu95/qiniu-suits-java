@@ -45,18 +45,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileChecker = new FileChecker(algorithm, https, srcAuth);
     }
 
-    public QueryHash getNewInstance(int resultIndex) throws CloneNotSupportedException {
-        QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, https, srcAuth);
-        queryHash.fileMap = new FileMap();
-        try {
-            queryHash.fileMap.initWriter(resultPath, processName, resultIndex);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryHash;
-    }
-
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
         queryHash.fileChecker = new FileChecker(algorithm, https, srcAuth);
