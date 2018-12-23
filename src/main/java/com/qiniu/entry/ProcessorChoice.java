@@ -19,13 +19,6 @@ import java.util.Map;
 
 public class ProcessorChoice {
 
-    private List<String> unSupportBatch = new ArrayList<String>(){{
-        add("asyncfetch");
-        add("avinfo");
-        add("pfop");
-        add("pfopresult");
-        add("qhash");
-    }};
     private List<String> canFilterProcesses = new ArrayList<String>(){{
         add("asyncfetch");
         add("status");
@@ -42,7 +35,6 @@ public class ProcessorChoice {
     }};
     private IEntryParam entryParam;
     private String process;
-    private boolean batch;
     private int retryCount;
     private String resultFileDir;
     private String resultFormat;
@@ -53,11 +45,6 @@ public class ProcessorChoice {
         this.entryParam = entryParam;
         CommonParams commonParams = new CommonParams(entryParam);
         process = commonParams.getProcess();
-        batch = commonParams.getProcessBatch();
-        if (unSupportBatch.contains(process)) {
-            System.out.println(process + " is not support batch operation, it will singly process.");
-            batch = false;
-        }
         retryCount = commonParams.getRetryCount();
         resultFileDir = commonParams.getResultFileDir();
         resultFormat = commonParams.getResultFormat();
@@ -220,11 +207,7 @@ public class ProcessorChoice {
                 break;
             }
         }
-        if (processor != null) {
-            processor.setBatch(batch);
-            processor.setRetryCount(retryCount);
-        }
-
+        if (processor != null) processor.setRetryCount(retryCount);
         return processor;
     }
 }

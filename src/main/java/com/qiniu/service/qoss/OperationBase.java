@@ -27,7 +27,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected String bucket;
     protected String processName;
     protected int retryCount;
-    protected boolean batch;
+    protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected String resultPath;
     protected int resultIndex;
