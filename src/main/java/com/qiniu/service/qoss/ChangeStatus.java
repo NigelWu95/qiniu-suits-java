@@ -33,7 +33,7 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList){
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
         List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
     }

@@ -16,7 +16,6 @@ import java.util.Map;
 public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
-    protected int retryCount;
     private String resultPath;
     private String resultFormat;
     private String separator;
@@ -92,32 +91,16 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         return processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
-    }
-
     public void processLine(List<Map<String, String>> list) throws QiniuException {
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> resultList = new ArrayList<>();
         try {
             for (Map<String, String> line : list) {
-                boolean result = true;
-                try {
-                    result = filter.doFilter(line);
-                } catch (ReflectiveOperationException e) {
-                    while (retryCount > 0) {
-                        try {
-                            result = filter.doFilter(line);
-                            retryCount = 0;
-                        } catch (ReflectiveOperationException e1) {
-                            retryCount--;
-                            if (retryCount <= 0) throw e1;
-                        }
-                    }
-                }
-                if (result) resultList.add(line);
+                if (filter.doFilter(line)) resultList.add(line);
             }
             fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(resultList)));
+            if (typeConverter.getErrorList().size() > 0)
+                fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
             if (nextProcessor != null) nextProcessor.processLine(resultList);
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());

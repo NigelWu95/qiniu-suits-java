@@ -19,7 +19,7 @@ import java.util.Map;
 public class AsyncFetch extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
-    private boolean https;
+    private String protocol;
     private Auth srcAuth;
     private boolean keepKey;
     private String keyPrefix;
@@ -34,25 +34,28 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     private int fileType;
     private boolean ignoreSameKey;
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultPath,
-                      int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
-        this.domain = domain;
-        RequestUtils.checkHost(domain);
-        this.m3u8Manager = new M3U8Manager();
-    }
-
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String resultFileDir)
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
+                      boolean keepKey, String keyPrefix, boolean hashCheck, String resultPath, int resultIndex)
             throws IOException {
-        this(auth, configuration, bucket, domain, resultFileDir, 0);
-    }
-
-    public void setOptions(boolean https, Auth srcAuth, boolean keepKey, String keyPrefix, boolean hashCheck) {
-        this.https = https;
+        super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
+        setBatch(false);
+        if (domain == null || "".equals(domain)) this.domain = null;
+        else {
+            RequestUtils.checkHost(domain);
+            this.domain = domain;
+        }
+        this.protocol = protocol;
         this.srcAuth = srcAuth;
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
         this.hashCheck = hashCheck;
+        this.m3u8Manager = new M3U8Manager();
+    }
+
+    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
+                      boolean keepKey, String keyPrefix, boolean hashCheck, String resultFileDir)
+            throws IOException {
+        this(auth, configuration, bucket, domain, protocol, srcAuth, keepKey, keyPrefix, hashCheck, resultFileDir, 0);
     }
 
     public void setFetchArgs(String host, String callbackUrl, String callbackBody, String callbackBodyType,
@@ -82,7 +85,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + line.get("key");
+        String url = domain == null ? line.get("url") : protocol + "://" + domain + "/" + line.get("key");
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         Response response = fetch(url, keepKey ? keyPrefix + line.get("key") : null,
                 line.get("md5"), hashCheck ? line.get("hash") : null);

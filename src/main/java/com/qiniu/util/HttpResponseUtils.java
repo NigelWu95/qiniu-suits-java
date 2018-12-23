@@ -38,7 +38,7 @@ public class HttpResponseUtils {
                     e.response.close();
                 }
             } else {
-                if (fileMap != null) fileMap.writeErrorOrNull( info+ "\t" + e.error());
+                if (fileMap != null) fileMap.writeErrorOrNull( info + "\t" + e.error());
             }
         }
     }

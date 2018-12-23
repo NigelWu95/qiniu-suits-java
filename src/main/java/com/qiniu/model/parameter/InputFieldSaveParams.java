@@ -2,6 +2,7 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
 
+import java.io.IOException;
 import java.util.List;
 
 public class InputFieldSaveParams extends ListFieldSaveParams {
@@ -9,7 +10,7 @@ public class InputFieldSaveParams extends ListFieldSaveParams {
     private String fopsSave;
     private String persistentIdSave;
 
-    public InputFieldSaveParams(IEntryParam entryParam) throws Exception {
+    public InputFieldSaveParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.fopsSave = entryParam.getParamValue("fops-save"); } catch (Exception e) {}
         try { this.persistentIdSave = entryParam.getParamValue("persistentId-save"); } catch (Exception e) {}

@@ -19,20 +19,17 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     private boolean keepKey;
     private String keyPrefix;
 
-    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath,
-                    int resultIndex) throws IOException {
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, boolean keepKey,
+                    String keyPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, "copy", resultPath, resultIndex);
         this.toBucket = toBucket;
-    }
-
-    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath)
-            throws IOException {
-        this(auth, configuration, bucket, toBucket, resultPath, 0);
-    }
-
-    public void setOptions(boolean keepKey, String keyPrefix) {
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+    }
+
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, boolean keepKey,
+                    String keyPrefix, String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, keepKey, resultPath, keyPrefix, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {

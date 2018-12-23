@@ -1,8 +1,8 @@
 package com.qiniu.entry;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.model.parameter.FileInputParams;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +11,7 @@ import java.util.Map;
 public class InputInfoParser {
 
     private List<String> needKeyProcesses = new ArrayList<String>(){{
+        add("filter");
         add("asyncfetch");
         add("status");
         add("type");
@@ -23,11 +24,11 @@ public class InputInfoParser {
         add("lifecycle");
         add("pfop");
         add("avinfo");
-        add("filter");
+        add("privateurl");
     }};
     private List<String> needHashProcesses = new ArrayList<String>(){{
-        add("asyncfetch");
         add("filter");
+        add("asyncfetch");
     }};
     private List<String> needFsizeProcesses = new ArrayList<String>(){{
         add("filter");
@@ -36,7 +37,6 @@ public class InputInfoParser {
         add("filter");
     }};
     private List<String> needMimeTypeProcesses = new ArrayList<String>(){{
-        add("asyncfetch");
         add("filter");
     }};
     private List<String> needEndUserProcesses = new ArrayList<String>(){{
@@ -49,23 +49,28 @@ public class InputInfoParser {
         add("filter");
     }};
     private List<String> needMd5Processes = new ArrayList<String>(){{
-        add("asyncfetch");
         add("filter");
+        add("asyncfetch");
     }};
     private List<String> needFopsProcesses = new ArrayList<String>(){{
-        add("pfop");
         add("filter");
+        add("pfop");
     }};
     private List<String> needPersistentIdProcesses = new ArrayList<String>(){{
+        add("filter");
         add("pfopresult");
     }};
     private List<String> needNewKeyProcesses = new ArrayList<String>(){{
+        add("filter");
         add("rename");
     }};
+    private List<String> needUrlProcesses = new ArrayList<String>(){{
+        add("filter");
+        add("privateurl");
+    }};
 
-    public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams) throws QiniuException {
+    public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams, String process) throws IOException {
         Map<String, String> infoIndexMap = new HashMap<>();
-        String process = fileInputParams.getProcess();
         if (needKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getKeyIndex(), "key");
         if (needHashProcesses.contains(process)) infoIndexMap.put(fileInputParams.getHashIndex(), "hash");
         if (needFsizeProcesses.contains(process)) infoIndexMap.put(fileInputParams.getFsizeIndex(), "fsize");
@@ -78,6 +83,7 @@ public class InputInfoParser {
         if (needFopsProcesses.contains(process)) infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
         if (needPersistentIdProcesses.contains(process)) infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
         if (needNewKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getTargetKeyIndex(), "newKey");
+        if (needUrlProcesses.contains(process)) infoIndexMap.put(fileInputParams.getUrlIndex(), "url");
         return infoIndexMap;
     }
 }

@@ -23,7 +23,6 @@ public class FileCopyParams extends QossParams {
         if (keepKey.matches("(true|false)")) {
             return Boolean.valueOf(keepKey);
         } else {
-            System.out.println("no incorrect keep-key, it will use true as default.");
             return true;
         }
     }

@@ -3,6 +3,7 @@ package com.qiniu.service.fileline;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.storage.model.FileInfo;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -14,8 +15,7 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
         this.separator = separator;
     }
 
-    public String toFormatString(FileInfo fileInfo, List<String> usedFields) {
-
+    public String toFormatString(FileInfo fileInfo, List<String> usedFields) throws IOException {
         StringBuilder converted = new StringBuilder();
         usedFields.forEach(key -> {
             switch (key) {
@@ -29,6 +29,8 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
             }
             converted.append(separator);
         });
+        if (converted.toString().split(separator).length == 0)
+            throw new IOException("there are no valid file info key in fields.");
         return converted.toString();
     }
 }

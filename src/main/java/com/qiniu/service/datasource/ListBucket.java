@@ -45,7 +45,7 @@ public class ListBucket {
         this.unitLen = unitLen;
         this.maxThreads = maxThreads;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
-        this.antiPrefix = antiPrefix;
+        this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
         this.retryCount = retryCount;
         this.resultPath = resultPath;
     }
@@ -148,14 +148,13 @@ public class ListBucket {
         try {
             if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
-            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(usedFields);
+            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
             if (saveTotal) {
                 writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
                 fileMap.initWriter(resultPath, "list", resultIndex);
             }
             String marker;
             List<FileInfo> fileInfoList;
-            List<String> errorList;
             while (fileLister.hasNext()) {
                 marker = fileLister.getMarker();
                 fileInfoList = fileLister.next();
@@ -178,12 +177,10 @@ public class ListBucket {
                 }
                 if (saveTotal && fileInfoList.size() > 0) {
                     fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
-                    errorList = writeTypeConverter.getErrorList();
-                    if (errorList.size() > 0) fileMap.writeErrorOrNull(String.join("\n", errorList));
+                    if (writeTypeConverter.getErrorList().size() > 0)
+                        fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
                 }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
-                if (typeConverter.getErrorList().size() > 0) fileMap.writeKeyFile("process_error" + resultIndex,
-                        String.join("\n", typeConverter.getErrorList()));
                 recorder.record(fileLister.getPrefix(), marker, end);
                 if (finalSize < size) break;
             }
