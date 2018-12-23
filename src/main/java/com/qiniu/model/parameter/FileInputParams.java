@@ -20,7 +20,8 @@ public class FileInputParams extends CommonParams {
     private String md5Index;
     private String fopsIndex;
     private String persistentIdIndex;
-    private String targetKey;
+    private String targetKeyIndex;
+    private String urlIndex;
 
     public FileInputParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
@@ -38,7 +39,8 @@ public class FileInputParams extends CommonParams {
         try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) {}
         try { this.fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) {}
         try { this.persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) {}
-        try { this.targetKey = entryParam.getParamValue("newKey-index"); } catch (Exception e) {}
+        try { this.targetKeyIndex = entryParam.getParamValue("newKey-index"); } catch (Exception e) {}
+        try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) {}
     }
 
     public String getFilePath() throws IOException {
@@ -259,19 +261,36 @@ public class FileInputParams extends CommonParams {
     }
 
     public String getTargetKeyIndex() throws IOException {
-        if (targetKey == null || "".equals(targetKey)) {
+        if (targetKeyIndex == null || "".equals(targetKeyIndex)) {
             if ("json".equals(parseType)) {
                 return "newKey";
             } else {
                 return "1";
             }
-        } else if (targetKey.matches("\\d")) {
-            return targetKey;
+        } else if (targetKeyIndex.matches("\\d")) {
+            return targetKeyIndex;
         } else {
             if (!"json".equals(getParseType())) {
                 throw new IOException("no incorrect newKey index, it should be a number.");
             }
-            return targetKey;
+            return targetKeyIndex;
+        }
+    }
+
+    public String getUrlIndex() throws IOException {
+        if (urlIndex == null || "".equals(urlIndex)) {
+            if ("json".equals(parseType)) {
+                return "url";
+            } else {
+                return "0";
+            }
+        } else if (urlIndex.matches("\\d")) {
+            return urlIndex;
+        } else {
+            if (!"json".equals(getParseType())) {
+                throw new IOException("no incorrect url index, it should be a number.");
+            }
+            return urlIndex;
         }
     }
 }

@@ -24,6 +24,7 @@ public class InputInfoParser {
         add("lifecycle");
         add("pfop");
         add("avinfo");
+        add("privateurl");
     }};
     private List<String> needHashProcesses = new ArrayList<String>(){{
         add("filter");
@@ -63,6 +64,10 @@ public class InputInfoParser {
         add("filter");
         add("rename");
     }};
+    private List<String> needUrlProcesses = new ArrayList<String>(){{
+        add("filter");
+        add("privateurl");
+    }};
 
     public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams, String process) throws IOException {
         Map<String, String> infoIndexMap = new HashMap<>();
@@ -78,6 +83,7 @@ public class InputInfoParser {
         if (needFopsProcesses.contains(process)) infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
         if (needPersistentIdProcesses.contains(process)) infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
         if (needNewKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getTargetKeyIndex(), "newKey");
+        if (needUrlProcesses.contains(process)) infoIndexMap.put(fileInputParams.getUrlIndex(), "url");
         return infoIndexMap;
     }
 }
