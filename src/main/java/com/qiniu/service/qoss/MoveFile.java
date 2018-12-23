@@ -33,10 +33,10 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     protected String processLine(Map<String, String> line) throws QiniuException {
         Response response;
         if (toBucket == null || "".equals(toBucket)) {
-            response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
+            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("newKey"),
                     false);
         } else {
-            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("newKey"),
+            response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
                     false);
         }
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
@@ -45,11 +45,11 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
 
         if (toBucket == null || "".equals(toBucket)) {
+            lineList.forEach(line -> batchOperations.addRenameOp(bucket, line.get("key"),
+                    keyPrefix + line.get("newKey")));
+        } else {
             lineList.forEach(line -> batchOperations.addMoveOp(bucket, line.get("key"), toBucket,
                     keyPrefix + line.get("key")));
-        } else {
-            lineList.forEach(line -> batchOperations.addRenameOp(bucket, line.get("key"),
-                            keyPrefix + line.get("newKey")));
         }
 
         return batchOperations;
