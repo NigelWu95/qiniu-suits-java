@@ -2,10 +2,11 @@ package com.qiniu.service.qoss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.sdk.BucketManager.*;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,14 +35,15 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
-    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
-        return bucketManager.copy(bucket, fileInfo.get("key"), toBucket, keepKey ? keyPrefix +
-                fileInfo.get("key") : null, false);
+    protected String processLine(Map<String, String> line) throws QiniuException {
+        Response response = bucketManager.copy(bucket, line.get("key"), toBucket, keepKey ? keyPrefix +
+                line.get("key") : null, false);
+        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList) {
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
 
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList());
+        List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         if (keepKey) {
             keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, keyPrefix + fileKey));
         } else {

@@ -2,13 +2,13 @@ package com.qiniu.service.datasource;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.sdk.BucketManager;
 import com.qiniu.service.convert.FileInfoToMap;
 import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileLister;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
