@@ -2,12 +2,13 @@ package com.qiniu.service.qoss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.sdk.BucketManager.*;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.media.M3U8Manager;
 import com.qiniu.service.media.VideoTS;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
@@ -76,16 +77,16 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
-                        callbackHost, fileType) :
+                        callbackHost, String.valueOf(fileType)) :
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
-        String url = (https ? "https://" : "http://") + domain + "/" + fileInfo.get("key");
+    protected String processLine(Map<String, String> line) throws QiniuException {
+        String url = (https ? "https://" : "http://") + domain + "/" + line.get("key");
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        Response response = fetch(url, keepKey ? keyPrefix + fileInfo.get("key") : null,
-                fileInfo.get("md5"), hashCheck ? fileInfo.get("hash") : null);
-        if ("application/x-mpegurl".equals(fileInfo.get("mimeType")) || fileInfo.get("key").endsWith(".m3u8")) {
+        Response response = fetch(url, keepKey ? keyPrefix + line.get("key") : null,
+                line.get("md5"), hashCheck ? line.get("hash") : null);
+        if ("application/x-mpegurl".equals(line.get("mimeType")) || line.get("key").endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
@@ -95,12 +96,11 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
 
             for (VideoTS videoTS : videoTSList) {
                 String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, fileInfo.get("md5"),
-                        hashCheck ? fileInfo.get("hash") : null);
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, line.get("md5"),
+                        hashCheck ? line.get("hash") : null);
             }
         }
-
-        return response;
+        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){

@@ -10,7 +10,7 @@ public interface ILineProcess<T> {
     ILineProcess<T> clone() throws CloneNotSupportedException;
 
     default String getProcessName() {
-        return "";
+        return "line_process";
     }
 
     default void setRetryCount(int retryCount) {}

@@ -24,7 +24,7 @@ persistentId-save=
 `result-path` 表示保存结果的文件路径  
 `result-format` 结果保存格式（json/table，将每一条结果记录格式化为对应格式）  
 `result-separator` 结果保存为 table 格式时使用的分隔符  
-`save-total` 用于选择是否直接保存数据源输出结果  
+`save-total` 用于选择是否直接保存数据源完整输出结果  
 `key-save` true/false 结果保留 key 字段  
 `hash-save` true/false 结果保留 hash 字段  
 `fsize-save` true/false 结果保留 fsize 字段  
