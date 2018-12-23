@@ -6,14 +6,12 @@
 ### 配置文件选项
 ```
 process=rename
-process-batch=true
 process-ak=
 process-sk=
 bucket=
 add-prefix=
 ```
 `process=rename` 表示重命名操作  
-`process-batch` 表示是否启用 batch 操作（默认开启）  
 `process-ak` 目标账号的 ak，未设置时使用 ak 参数的值  
 `process-sk` 目标账号的 sk，未设置时使用 sk 参数的值  
 `bucket` 操作的资源所在空间（数据源为 list 时无需设置）  
@@ -21,7 +19,7 @@ add-prefix=
 
 ### 命令行方式
 ```
--process=rename -process-batch=true -process-ak= -process-sk= -bucket= -add-prefix=
+-process=rename -process-ak= -process-sk= -bucket= -add-prefix=
 ```
 
 ### 备注
