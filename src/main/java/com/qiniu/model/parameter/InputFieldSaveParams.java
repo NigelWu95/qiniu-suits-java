@@ -9,7 +9,7 @@ public class InputFieldSaveParams extends ListFieldSaveParams {
     private String fopsSave;
     private String persistentIdSave;
 
-    public InputFieldSaveParams(IEntryParam entryParam) throws Exception {
+    public InputFieldSaveParams(IEntryParam entryParam) {
         super(entryParam);
         try { this.fopsSave = entryParam.getParamValue("fops-save"); } catch (Exception e) {}
         try { this.persistentIdSave = entryParam.getParamValue("persistentId-save"); } catch (Exception e) {}

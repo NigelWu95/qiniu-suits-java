@@ -25,18 +25,18 @@ public class AsyncFetchParams extends QossParams {
         super(entryParam);
         this.targetBucket = entryParam.getParamValue("to-bucket");
         this.domain = entryParam.getParamValue("domain");
-        try { this.https = entryParam.getParamValue("use-https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = entryParam.getParamValue("need-sign"); } catch (Exception e) { needSign = ""; }
+        try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
+        try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
         try { this.keepKey = entryParam.getParamValue("keep-key"); } catch (Exception e) { keepKey = ""; }
         try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try{ this.hashCheck = entryParam.getParamValue("hash-check"); } catch (Exception e) { hashCheck = ""; }
-        try{ this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
-        try{ this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
-        try{ this.callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
-        try{ this.callbackBodyType = entryParam.getParamValue("callback-body-type"); } catch (Exception e) {}
-        try{ this.callbackHost = entryParam.getParamValue("callback-host"); } catch (Exception e) {}
-        try{ this.fileType = entryParam.getParamValue("file-type"); } catch (Exception e) { fileType = ""; }
-        try{ this.ignoreSameKey = entryParam.getParamValue("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
+        try { this.hashCheck = entryParam.getParamValue("hash-check"); } catch (Exception e) { hashCheck = ""; }
+        try { this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
+        try { this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
+        try { this.callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
+        try { this.callbackBodyType = entryParam.getParamValue("callback-body-type"); } catch (Exception e) {}
+        try { this.callbackHost = entryParam.getParamValue("callback-host"); } catch (Exception e) {}
+        try { this.fileType = entryParam.getParamValue("file-type"); } catch (Exception e) { fileType = ""; }
+        try { this.ignoreSameKey = entryParam.getParamValue("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
     }
 
     public String getTargetBucket() {
@@ -51,7 +51,6 @@ public class AsyncFetchParams extends QossParams {
         if (https.matches("(true|false)")) {
             return Boolean.valueOf(https);
         } else {
-            System.out.println("no incorrect use-https, it will use false as default.");
             return false;
         }
     }
@@ -60,7 +59,6 @@ public class AsyncFetchParams extends QossParams {
         if (needSign.matches("(true|false)")) {
             return Boolean.valueOf(needSign);
         } else {
-            System.out.println("no incorrect need-sign, it will use false as default.");
             return false;
         }
     }
@@ -69,7 +67,6 @@ public class AsyncFetchParams extends QossParams {
         if (keepKey.matches("(true|false)")) {
             return Boolean.valueOf(keepKey);
         } else {
-            System.out.println("no incorrect keep-key, it will use true as default.");
             return true;
         }
     }
@@ -82,7 +79,6 @@ public class AsyncFetchParams extends QossParams {
         if (hashCheck.matches("(true|false)")) {
             return Boolean.valueOf(hashCheck);
         } else {
-            System.out.println("no incorrect hash-check, it will use false as default.");
             return false;
         }
     }
@@ -119,7 +115,6 @@ public class AsyncFetchParams extends QossParams {
         if (ignoreSameKey.matches("(true|false)")) {
             return Boolean.valueOf(ignoreSameKey);
         } else {
-            System.out.println("no incorrect ignore-same-key, it will use false as default.");
             return false;
         }
     }

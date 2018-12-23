@@ -1,8 +1,8 @@
 package com.qiniu.entry;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.model.parameter.FileInputParams;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +63,7 @@ public class InputInfoParser {
         add("rename");
     }};
 
-    public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams) throws QiniuException {
+    public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams) throws IOException {
         Map<String, String> infoIndexMap = new HashMap<>();
         String process = fileInputParams.getProcess();
         if (needKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getKeyIndex(), "key");

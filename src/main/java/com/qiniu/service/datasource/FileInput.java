@@ -22,17 +22,17 @@ public class FileInput {
     private String separator;
     private Map<String, String> infoIndexMap;
     private int unitLen;
-    private String resultFileDir;
+    private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
 
     public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
-                     String resultFileDir) {
+                     String resultPath) {
         this.parseType = parseType;
         this.separator = separator;
         this.infoIndexMap = infoIndexMap;
         this.unitLen = unitLen;
-        this.resultFileDir = resultFileDir;
+        this.resultPath = resultPath;
     }
 
     public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
@@ -46,7 +46,7 @@ public class FileInput {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
-            fileMap.initWriter(resultFileDir, "fileinput", resultIndex);
+            fileMap.initWriter(resultPath, "fileinput", resultIndex);
             if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
             ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
             List<String> srcList = bufferedReader.lines().parallel().collect(Collectors.toList());
@@ -56,7 +56,6 @@ public class FileInput {
                 ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat, separator,
                         usedFields);
                 fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
-                fileMap.writeKeyFile("write_error", String.join("\n", writeTypeConverter.getErrorList()));
             }
             int size = infoMapList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {

@@ -27,7 +27,6 @@ public class ListBucketParams extends QossParams {
         if (multiStatus.matches("(true|false)")) {
             return Boolean.valueOf(multiStatus);
         } else {
-            System.out.println("no incorrect multi status, it will use true as default.");
             return true;
         }
     }
@@ -45,15 +44,14 @@ public class ListBucketParams extends QossParams {
     }
 
     public List<String> getAntiPrefix() {
-        if (antiPrefix == null || "".equals(antiPrefix)) return new ArrayList<>();
-        return Arrays.asList(antiPrefix.split(","));
+        if (!"".equals(antiPrefix)) return Arrays.asList(antiPrefix.split(","));
+        return null;
     }
 
     public Boolean getSaveTotal() {
         if (saveTotal.matches("(true|false)")) {
             return Boolean.valueOf(saveTotal);
         } else {
-            System.out.println("not incorrectly set result save total option, it will use \"true\" as default.");
             return true;
         }
     }

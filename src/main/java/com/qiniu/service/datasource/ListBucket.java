@@ -45,7 +45,7 @@ public class ListBucket {
         this.unitLen = unitLen;
         this.maxThreads = maxThreads;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
-        this.antiPrefix = antiPrefix;
+        this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
         this.retryCount = retryCount;
         this.resultPath = resultPath;
     }
@@ -155,7 +155,6 @@ public class ListBucket {
             }
             String marker;
             List<FileInfo> fileInfoList;
-            List<String> errorList;
             while (fileLister.hasNext()) {
                 marker = fileLister.getMarker();
                 fileInfoList = fileLister.next();
@@ -176,14 +175,9 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finalSize = fileInfoList.size();
                 }
-                if (saveTotal && fileInfoList.size() > 0) {
+                if (saveTotal && fileInfoList.size() > 0)
                     fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
-                    errorList = writeTypeConverter.getErrorList();
-                    if (errorList.size() > 0) fileMap.writeErrorOrNull(String.join("\n", errorList));
-                }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
-                if (typeConverter.getErrorList().size() > 0) fileMap.writeKeyFile("process_error" + resultIndex,
-                        String.join("\n", typeConverter.getErrorList()));
                 recorder.record(fileLister.getPrefix(), marker, end);
                 if (finalSize < size) break;
             }
