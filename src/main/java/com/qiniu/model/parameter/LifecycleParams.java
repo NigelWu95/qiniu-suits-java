@@ -15,7 +15,7 @@ public class LifecycleParams extends QossParams {
         if (days.matches("[\\d]+")) {
             return Integer.valueOf(days);
         } else {
-            throw new Exception("no incorrect days, please set it 0 or other number");
+            throw new Exception("no incorrect days, please set it 0 or other number.");
         }
     }
 }

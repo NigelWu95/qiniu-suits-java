@@ -12,7 +12,7 @@ public class FileStatusParams extends QossParams {
     }
 
     public int getTargetStatus() throws Exception {
-        if (targetStatus.matches("(0|1)")) {
+        if (targetStatus.matches("([01])")) {
             return Short.valueOf(targetStatus);
         } else {
             throw new Exception("no incorrect status, please set it 0 or 1");

@@ -2,6 +2,7 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ public class ListBucketParams extends QossParams {
     private String end;
     private String antiPrefix;
 
-    public ListBucketParams(IEntryParam entryParam) {
+    public ListBucketParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.multiStatus = entryParam.getParamValue("multi"); } catch (Exception e) { multiStatus = ""; }
         try { this.customPrefix = entryParam.getParamValue("prefix"); } catch (Exception e) {}
@@ -27,7 +28,6 @@ public class ListBucketParams extends QossParams {
         if (multiStatus.matches("(true|false)")) {
             return Boolean.valueOf(multiStatus);
         } else {
-            System.out.println("no incorrect multi status, it will use true as default.");
             return true;
         }
     }
@@ -45,15 +45,14 @@ public class ListBucketParams extends QossParams {
     }
 
     public List<String> getAntiPrefix() {
-        if (antiPrefix == null || "".equals(antiPrefix)) return new ArrayList<>();
-        return Arrays.asList(antiPrefix.split(","));
+        if (!"".equals(antiPrefix)) return Arrays.asList(antiPrefix.split(","));
+        return null;
     }
 
     public Boolean getSaveTotal() {
         if (saveTotal.matches("(true|false)")) {
             return Boolean.valueOf(saveTotal);
         } else {
-            System.out.println("not incorrectly set result save total option, it will use \"true\" as default.");
             return true;
         }
     }

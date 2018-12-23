@@ -12,7 +12,7 @@ public class FileTypeParams extends QossParams {
     }
 
     public int getTargetType() throws Exception {
-        if (targetType.matches("(0|1)")) {
+        if (targetType.matches("([01])")) {
             return Integer.valueOf(targetType);
         } else {
             throw new Exception("no incorrect type, please set it 0 or 1.");

@@ -9,7 +9,7 @@ process=status
 status=0
 ```
 `process=status` 表示修改状态操作  
-`status=` 0表示文件启用，1 表示文件禁用  
+`status` 0表示文件启用，1 表示文件禁用  
 
 ### 命令行方式
 ```

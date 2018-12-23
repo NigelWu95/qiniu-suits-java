@@ -4,17 +4,17 @@ import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
 
-public class AvinfoParams extends QossParams {
+public class PrivateUrlParams extends QossParams {
 
     private String domain;
     private String https;
-    private String needSign;
+    private String expires;
 
-    public AvinfoParams(IEntryParam entryParam) throws Exception {
+    public PrivateUrlParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
         this.domain = entryParam.getParamValue("domain");
         try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
+        try { this.expires = entryParam.getParamValue("expires"); } catch (Exception e) { expires = ""; }
     }
 
     public String getDomain() {
@@ -31,11 +31,13 @@ public class AvinfoParams extends QossParams {
         }
     }
 
-    public boolean getNeedSign() {
-        if (needSign.matches("(true|false)")) {
-            return Boolean.valueOf(needSign);
+    public Long getExpires() throws IOException {
+        if ("".equals(expires)) {
+            return 3600L;
+        } else if (expires.matches("[1-9]\\d*")) {
+            return Long.valueOf(expires);
         } else {
-            return false;
+            throw new IOException("please set expires as a long number.");
         }
     }
 }

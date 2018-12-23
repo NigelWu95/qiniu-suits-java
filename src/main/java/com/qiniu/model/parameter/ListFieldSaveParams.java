@@ -2,6 +2,7 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class ListFieldSaveParams extends CommonParams {
     private String statusSave;
     private String md5Save;
 
-    public ListFieldSaveParams(IEntryParam entryParam) {
+    public ListFieldSaveParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.keySave = entryParam.getParamValue("key-save"); } catch (Exception e) {}
         try { this.hashSave = entryParam.getParamValue("hash-save"); } catch (Exception e) {}

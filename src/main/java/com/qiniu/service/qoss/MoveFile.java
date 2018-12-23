@@ -17,29 +17,26 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     private String toBucket;
     private String keyPrefix;
 
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath,
-                    int resultIndex) throws IOException {
+    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
+                    String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
         this.toBucket = toBucket;
-    }
-
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath)
-            throws IOException {
-        this(auth, configuration, bucket, toBucket, resultPath, 0);
-    }
-
-    public void setOptions(String keyPrefix) {
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+    }
+
+    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
+                    String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, keyPrefix, resultPath, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
         Response response;
         if (toBucket == null || "".equals(toBucket)) {
-            response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
+            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("newKey"),
                     false);
         } else {
-            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("newKey"),
+            response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
                     false);
         }
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
@@ -48,11 +45,11 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
 
         if (toBucket == null || "".equals(toBucket)) {
+            lineList.forEach(line -> batchOperations.addRenameOp(bucket, line.get("key"),
+                    keyPrefix + line.get("newKey")));
+        } else {
             lineList.forEach(line -> batchOperations.addMoveOp(bucket, line.get("key"), toBucket,
                     keyPrefix + line.get("key")));
-        } else {
-            lineList.forEach(line -> batchOperations.addRenameOp(bucket, line.get("key"),
-                            keyPrefix + line.get("newKey")));
         }
 
         return batchOperations;
