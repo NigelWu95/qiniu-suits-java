@@ -4,26 +4,38 @@
 列举指定的七牛 bucket 中的文件，支持初始化列举参数指定，支持并发列举和直接列举。支持自定义列举结果的信息字段，得到  
 的结果作为数据源进行下一步处理。  
 
-### 配置文件选项
+#### 必须参数
 ```
+source-type=list
 ak=
 sk=
 bucket=
+```
+
+#### 可选参数
+```
 multi=true
 threads=100
 unit-len=10000
 prefix=
 anti-prefix=
 ```
-`ak, sk` 表示账号的密钥对字符串  
-`bucket` 空间名称  
-`multi` 表示是否开启并发列举 (默认开启)  
-`threads` 表示线程数  
-`unit-len` 表示每次列举请求列举的文件个数  
-`prefix` 表示只列举某个文件名前缀的资源  
-`anti-prefix` 表示列举时排除某个文件名前缀的资源，支持以 `,` 分隔的列表  
 
-### 命令行方式
+### 参数字段说明
+|参数名|数据类型 | 含义|  
+|-----|-------|-----|  
+|source-type| 资源列举时设置为list | 表示空间资源列举操作|  
+|ak、sk|长度 40 的字符串|七牛账号的密钥对字符串，通过七牛控制台个人中心获取|  
+|bucket|字符串| 需要列举的空间名称|  
+|multi| true/false| 表示是否开启并发列举 (默认开启)|  
+|threads| 字符串| 表示并发列举时使用的线程数（默认 30）|  
+|unit-len| true/false| 表示每次列举请求列举的文件个数（列举长度，默认值 10000）|  
+|prefix| 域名字符串| 表示只列举某个文件名前缀的资源|  
+|anti-prefix| true/false| 表示列举时排除某个文件名前缀的资源，支持以 `,` 分隔的列表|  
+
+参考：[七牛资源列举](https://developer.qiniu.com/kodo/api/1284/list)  
+
+### 命令行参数方式
 ```
 -ak= -sk= -bucket= -multi= -threads= -unit-len= -prefix= -anti-prefix=
 ```
