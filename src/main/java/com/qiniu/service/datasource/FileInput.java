@@ -51,13 +51,14 @@ public class FileInput {
             ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
             List<String> srcList = bufferedReader.lines().parallel().collect(Collectors.toList());
             List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
-            fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
+            if (typeConverter.getErrorList().size() > 0) fileMap.writeErrorOrNull(String.join("\n",
+                    typeConverter.getErrorList()));
             if (saveTotal) {
                 ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat, separator,
                         usedFields);
                 fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
                 if (writeTypeConverter.getErrorList().size() > 0)
-                    fileMap.writeSuccess(String.join("\n", writeTypeConverter.getErrorList()));
+                    fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
             }
             int size = infoMapList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {

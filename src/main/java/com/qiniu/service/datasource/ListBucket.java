@@ -175,8 +175,11 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finalSize = fileInfoList.size();
                 }
-                if (saveTotal && fileInfoList.size() > 0)
+                if (saveTotal && fileInfoList.size() > 0) {
                     fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
+                    if (writeTypeConverter.getErrorList().size() > 0)
+                        fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
+                }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
                 recorder.record(fileLister.getPrefix(), marker, end);
                 if (finalSize < size) break;
