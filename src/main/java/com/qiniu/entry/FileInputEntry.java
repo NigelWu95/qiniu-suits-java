@@ -2,6 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.InputFieldSaveParams;
+import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -24,7 +25,8 @@ public class FileInputEntry {
         int unitLen = fileInputParams.getUnitLen();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(entryParam).getFileProcessor();
-        Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams);
+        String processName = lineProcessor != null ? lineProcessor.getProcessName() : "";
+        Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams, processName);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultPath);
         fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         InputFieldSaveParams fieldSaveParams = new InputFieldSaveParams(entryParam);

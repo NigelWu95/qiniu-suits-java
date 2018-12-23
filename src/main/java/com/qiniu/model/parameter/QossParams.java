@@ -12,7 +12,7 @@ public class QossParams extends CommonParams {
     private String processAk;
     private String processSk;
 
-    public QossParams(IEntryParam entryParam) {
+    public QossParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.accessKey = entryParam.getParamValue("ak"); } catch (Exception e) {}
         try { this.secretKey = entryParam.getParamValue("sk"); } catch (Exception e) {}

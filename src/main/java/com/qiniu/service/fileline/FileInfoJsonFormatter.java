@@ -9,7 +9,6 @@ import java.util.List;
 public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
 
     public String toFormatString(FileInfo fileInfo, List<String> usedFields) {
-
         JsonObject converted = new JsonObject();
         usedFields.forEach(key-> {
             switch (key) {
@@ -21,7 +20,6 @@ public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
                 case "type": converted.addProperty(key, fileInfo.type); break;
                 case "status": converted.addProperty(key, fileInfo.status); break;
             }
-
         });
         return converted.toString();
     }

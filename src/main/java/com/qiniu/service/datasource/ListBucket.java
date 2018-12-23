@@ -148,7 +148,7 @@ public class ListBucket {
         try {
             if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
-            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(usedFields);
+            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
             if (saveTotal) {
                 writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
                 fileMap.initWriter(resultPath, "list", resultIndex);

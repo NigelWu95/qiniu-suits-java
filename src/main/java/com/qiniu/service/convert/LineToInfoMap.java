@@ -14,7 +14,8 @@ public class LineToInfoMap implements ITypeConvert<String, Map<String, String>> 
     private ILineParser lineParser;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public LineToInfoMap(String parseType, String separator, Map<String, String> infoIndexMap) {
+    public LineToInfoMap(String parseType, String separator, Map<String, String> infoIndexMap) throws IOException {
+        if (infoIndexMap == null || infoIndexMap.size() == 0) throw new IOException("there are no indexes be set.");
         if ("json".equals(parseType)) {
             this.lineParser = new JsonLineParser(infoIndexMap);
         } else {

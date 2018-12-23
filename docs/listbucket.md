@@ -10,7 +10,7 @@ ak=
 sk=
 bucket=
 multi=true
-max-threads=100
+threads=100
 unit-len=10000
 prefix=
 anti-prefix=
@@ -18,14 +18,14 @@ anti-prefix=
 `ak, sk` 表示账号的密钥对字符串  
 `bucket` 空间名称  
 `multi` 表示是否开启并发列举 (默认开启)  
-`max-threads` 表示线程数  
+`threads` 表示线程数  
 `unit-len` 表示每次列举请求列举的文件个数  
 `prefix` 表示只列举某个文件名前缀的资源  
 `anti-prefix` 表示列举时排除某个文件名前缀的资源，支持以 `,` 分隔的列表  
 
 ### 命令行方式
 ```
--ak= -sk= -bucket= -multi= -max-threads= -unit-len= -prefix= -anti-prefix=
+-ak= -sk= -bucket= -multi= -threads= -unit-len= -prefix= -anti-prefix=
 ```
 
 ### 关于并发列举
@@ -46,8 +46,8 @@ anti-prefix=
 
 ### multi list suggestions
 ```
-1、大量文件时建议：multi=true（true 为默认值）, max-threads=100, unit-len=10000，unit-len 值在机器
-配置较高时可以调高，如16核32G的机器可选择 200 个以上线程，但是不建议过大，通常不超过 100000。500 万以内文件
-建议 max-threads<=100，100 万以内文件数建议不启用并发列举，选择：multi=false, max-threads=100。（文
-件数较少时若设置并发线程数偏多则会增加额外耗时）
+1、大量文件时建议：multi=true（true 为默认值）, threads=100, unit-len=10000，unit-len 值在机器配
+置较高时可以调高，如16核32G的机器可选择 200 个以上线程，但是不建议过大，通常不超过 100000。500 万以内文
+件建议 threads<=100，100 万以内文件数建议不启用并发列举，选择：multi=false, threads=100。（文件数较
+少时若设置并发线程数偏多则会增加额外耗时）
 ```

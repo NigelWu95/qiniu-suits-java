@@ -61,11 +61,12 @@ public class InputInfoParser {
     }};
     private List<String> needNewKeyProcesses = new ArrayList<String>(){{
         add("rename");
+        add("filter");
     }};
 
-    public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams) throws IOException {
+    public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams, String process) throws IOException {
+        if ("".equals(process)) throw new IOException("please choose a process type.");
         Map<String, String> infoIndexMap = new HashMap<>();
-        String process = fileInputParams.getProcess();
         if (needKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getKeyIndex(), "key");
         if (needHashProcesses.contains(process)) infoIndexMap.put(fileInputParams.getHashIndex(), "hash");
         if (needFsizeProcesses.contains(process)) infoIndexMap.put(fileInputParams.getFsizeIndex(), "fsize");

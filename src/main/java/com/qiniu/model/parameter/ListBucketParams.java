@@ -2,6 +2,7 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ public class ListBucketParams extends QossParams {
     private String end;
     private String antiPrefix;
 
-    public ListBucketParams(IEntryParam entryParam) {
+    public ListBucketParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.multiStatus = entryParam.getParamValue("multi"); } catch (Exception e) { multiStatus = ""; }
         try { this.customPrefix = entryParam.getParamValue("prefix"); } catch (Exception e) {}
