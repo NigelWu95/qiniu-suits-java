@@ -45,8 +45,9 @@ callback-host=
 |callback-url| 公网可访问的 url 字符串| 设置回调地址|  
 |callback-body| body 字符串| 设置回调 body|  
 |callback-body-type| body-type 字符串| 设置回调 body 类型|  
-|callback-host| host 字符串| 设置回调 host |  
-参考：[七牛异步第三方资源抓取](https://developer.qiniu.com/kodo/api/4097/asynch-fetch)
+|callback-host| host 字符串| 设置回调 host |   
+
+参考：[七牛异步第三方资源抓取](https://developer.qiniu.com/kodo/api/4097/asynch-fetch)  
 
 ### 命令行方式
 ```
