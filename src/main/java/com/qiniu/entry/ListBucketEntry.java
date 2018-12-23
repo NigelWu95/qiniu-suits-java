@@ -22,9 +22,7 @@ public class ListBucketEntry {
         String bucket = listBucketParams.getBucket();
         boolean multiStatus = listBucketParams.getMultiStatus();
         int maxThreads = listBucketParams.getMaxThreads();
-        int version = listBucketParams.getVersion();
         int unitLen = listBucketParams.getUnitLen();
-        unitLen = (version == 1 && unitLen > 1000) ? unitLen%1000 : unitLen;
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
         boolean saveTotal = listBucketParams.getSaveTotal();
@@ -34,7 +32,7 @@ public class ListBucketEntry {
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
-        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, version, maxThreads, customPrefix,
+        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, maxThreads, customPrefix,
                 antiPrefix, 3, resultFileDir);
         listBucket.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
         ListFieldSaveParams fieldSaveParams = new ListFieldSaveParams(entryParam);

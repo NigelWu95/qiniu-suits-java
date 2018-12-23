@@ -17,7 +17,6 @@ public class CommonParams {
     private String resultSeparator;
     protected String saveTotal;
     private String process;
-    private String processBatch;
     private String maxThreads;
 
     public CommonParams(IEntryParam entryParam) {
@@ -30,7 +29,6 @@ public class CommonParams {
         try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
         try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
         try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
-        try { this.processBatch = entryParam.getParamValue("process-batch"); } catch (Exception e) { processBatch = ""; }
         try { this.maxThreads = entryParam.getParamValue("max-threads"); } catch (Exception e) { maxThreads = ""; }
     }
 
@@ -96,15 +94,6 @@ public class CommonParams {
 
     public String getProcess() {
         return process;
-    }
-
-    public boolean getProcessBatch() {
-        if (processBatch.matches("(true|false)")) {
-            return Boolean.valueOf(processBatch);
-        } else {
-            System.out.println("no incorrect process-batch status, it will use true as default.");
-            return true;
-        }
     }
 
     public int getMaxThreads() {

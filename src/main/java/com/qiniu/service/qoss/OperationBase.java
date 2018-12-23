@@ -3,8 +3,8 @@ package com.qiniu.service.qoss;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.sdk.BucketManager;
-import com.qiniu.sdk.BucketManager.*;
+import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -27,7 +27,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected String bucket;
     protected String processName;
     protected int retryCount;
-    protected boolean batch;
+    protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected String resultPath;
     protected int resultIndex;
@@ -72,7 +72,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return this.processName;
     }
 
-    protected abstract Response getResponse(Map<String, String> fileInfo) throws QiniuException;
+    protected abstract String processLine(Map<String, String> fileInfo) throws QiniuException;
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
@@ -81,24 +81,21 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> fileInfo : fileInfoList) {
             try {
-                Response response = null;
+                String result = null;
                 try {
-                    response = getResponse(fileInfo);
+                    result = processLine(fileInfo);
                 } catch (QiniuException e) {
                     HttpResponseUtils.checkRetryCount(e, retryCount);
                     while (retryCount > 0) {
                         try {
-                            response = getResponse(fileInfo);
+                            result = processLine(fileInfo);
                             retryCount = 0;
                         } catch (QiniuException e1) {
                             retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                         }
                     }
                 }
-                String result = HttpResponseUtils.getResult(response);
-                if (!StringUtils.isNullOrEmpty(result)) {
-                    resultList.add(fileInfo.get("key") + "\t" + response.statusCode + "\t" + result);
-                }
+                if (result != null) resultList.add(fileInfo.get("key") + "\t" + result);
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
             }

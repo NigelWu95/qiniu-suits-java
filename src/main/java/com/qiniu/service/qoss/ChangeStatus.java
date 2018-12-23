@@ -2,10 +2,11 @@ package com.qiniu.service.qoss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.sdk.BucketManager.*;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,12 +28,13 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         this(auth, configuration, bucket, status, resultPath, 0);
     }
 
-    protected Response getResponse(Map<String, String> fileInfo) throws QiniuException {
-        return bucketManager.changeStatus(bucket, fileInfo.get("key"), status);
+    protected String processLine(Map<String, String> line) throws QiniuException {
+        Response response = bucketManager.changeStatus(bucket, line.get("key"), status);
+        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
-        List<String> keyList = fileInfoList.stream().map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList());
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList){
+        List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
     }
 }
