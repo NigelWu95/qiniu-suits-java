@@ -5,10 +5,31 @@
 # 使用介绍
 #### 1. 程序运行过程为：读取数据源 =》[过滤器 =》] [按指定过程处理数据 =》] 结果持久化  
 #### 2. 运行配置
-(1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径  
+(1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径，命令为：  
+```
+java -jar qsuits-x.x.jar -config=config.txt
+```
+配置文件中参数可设置形如：  
+```
+source-type=list
+ak=
+sk=
+bucket=
+```
+*source-type=list 可选择放置在命令行或者配置文件中*
+
 (2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
-resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties  
-(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下可以完全从命令行指定参数，形式为 `-<property-name>=<value>`  
+resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties，运行命令为：  
+```
+java -jar qsuits-x.x.jar [-source-type=list]
+```
+*配置参数同上述方式*  
+
+(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下可以完全从命令行指定参数，形式为 `-<property-name>=<value>`，如  
+```
+java -jar qsuits-x.x.jar -source-type=list -bucket=test -ak= -sk=
+```
+
 #### 3. 运行方式  
 (1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
 (2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
@@ -61,7 +82,8 @@ resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties
 `process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
 `process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
-rename、qhash、stat、pfop、pfopresult、avinfo 一般对 file 输入方式进行处理
+`process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
+rename、qhash、stat、pfop、pfopresult、avinfo 一般为对 file 输入方式进行处理
 
 ### 3 结果持久化
 对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：  

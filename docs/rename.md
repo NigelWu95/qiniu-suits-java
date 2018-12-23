@@ -21,7 +21,3 @@ add-prefix=
 ```
 -process=rename -process-ak= -process-sk= -bucket= -add-prefix=
 ```
-
-### 备注
-rename 操作是针对文件数据源输入的情况，需要设置每一个文件名对应的修改之后的文件名，
-下标参数为 newKey-index
