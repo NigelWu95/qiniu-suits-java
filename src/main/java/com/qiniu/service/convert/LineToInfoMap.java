@@ -38,7 +38,7 @@ public class LineToInfoMap implements ITypeConvert<String, Map<String, String>> 
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         if (errorList.size() == srcList.size()) throw new IOException("parse line by index failed, " +
-                "please check the line index setting.");
+                "please check the line indexes' setting.");
         return resultList;
     }
 
