@@ -64,7 +64,7 @@ resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties
 rename、qhash、stat、pfop、pfopresult、avinfo 一般对 file 输入方式进行处理
 
 ### 3 结果持久化
-对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：
+对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：  
 `result-path=` 表示保存结果的文件路径  
 `result-format=` 结果保存格式（json/table）  
 `result-separator=` 结果保存分隔符  
