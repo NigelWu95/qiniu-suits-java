@@ -9,7 +9,7 @@ public class PfopParams extends QossParams {
     private String pipeline;
     private String forcePublic;
 
-    public PfopParams(IEntryParam entryParam) {
+    public PfopParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.pipeline = entryParam.getParamValue("pipeline"); } catch (Exception e) { pipeline = ""; }
         try { this.forcePublic = entryParam.getParamValue("force-public"); } catch (Exception e) { forcePublic = ""; }

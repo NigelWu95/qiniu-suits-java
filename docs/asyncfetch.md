@@ -14,8 +14,8 @@ add-prefix=video/
 file-type=
 ignore-same-key=
 domain=
-use-https=
-need-sign=true
+https=
+private=false
 hash-check=
 host=
 callback-url=
@@ -31,9 +31,9 @@ callback-host=
 `add-prefix` 表示 fetch 之后的文件名添加指定前缀  
 `ignore-same-key` 表示是否忽略目标空间中的同名文件  
 `domain` 表示用于 fetch 资源的域名  
-`use-https` 是否使用 https 访问  
-`need-sign` 源链接是否需要七牛私有签名  
-`hash-check`  是否进行 hash 值校验  
+`https` 是否使用 https 访问（默认否）  
+`private` 资源域名是否为七牛私有空间域名（默认否）  
+`hash-check`  是否进行 hash 值校验（默认否）  
 `host` 访问源资源时指定 host  
 `callback-url` 设置回调地址  
 `callback-body` 设置回调 body  
@@ -42,6 +42,6 @@ callback-host=
 
 ### 命令行方式
 ```
--process= -process-batch=true -process-ak= -process-sk= -to-bucket=bucket2 -keep-key=true -add-prefix=video/ -file-type= -ignore-same-key= -domain= -use-https= -need-sign=true -hash-check= -host= -callback-url= -callback-body= -callback-body-type= -callback-host=
+-process= -process-batch=true -process-ak= -process-sk= -to-bucket=bucket2 -keep-key=true -add-prefix=video/ -file-type= -ignore-same-key= -domain= -https= -private= -hash-check= -host= -callback-url= -callback-body= -callback-body-type= -callback-host=
 ```
 

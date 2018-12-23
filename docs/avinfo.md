@@ -7,15 +7,15 @@
 ```
 process=avinfo
 domain=
-use-https=
-need-sign=true
+https=
+private=false
 ```
 `process=avinfo` 表示查询 avinfo  
-`domain=` 表示用于查询 avinfo 的域名  
-`use-https=` 是否使用 https 访问  
-`need-sign=true` 源链接是否需要七牛私有签名  
+`domain` 表示用于查询 avinfo 的域名  
+`https` 是否使用 https 访问（默认否）  
+`private` 资源域名是否为七牛私有空间域名（默认否）  
 
 ### 命令行方式
 ```
--process=avinfo -domain= -use-https= -need-sign=true 
+-process=avinfo -domain= -https= -private= 
 ```

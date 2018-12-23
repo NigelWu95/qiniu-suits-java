@@ -15,7 +15,6 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
     }
 
     public String toFormatString(FileInfo fileInfo, List<String> usedFields) {
-
         StringBuilder converted = new StringBuilder();
         usedFields.forEach(key -> {
             switch (key) {

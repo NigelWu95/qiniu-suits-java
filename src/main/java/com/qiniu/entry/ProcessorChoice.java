@@ -92,7 +92,6 @@ public class ProcessorChoice {
             }
         }
         if (processor != null) processor.setRetryCount(retryCount);
-
         return processor;
     }
 

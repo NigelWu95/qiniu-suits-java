@@ -3,17 +3,24 @@ package com.qiniu.service.convert;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
 
-    private List<String> usedFields;
+    private List<String> fields;
 
-    public FileInfoToMap(List<String> usedFields) throws IOException {
-        if (usedFields == null || usedFields.size() == 0) throw new IOException("there are no fields be set.");
-        this.usedFields = usedFields;
+    public FileInfoToMap() {
+        this.fields = new ArrayList<>();
+        fields.add(0, "key");
+        fields.add(1, "hash");
+        fields.add(2, "fsize");
+        fields.add(3, "putTime");
+        fields.add(4, "mimeType");
+        fields.add(5, "endUser");
+        fields.add(6, "type");
+        fields.add(7, "status");
+        fields.add(8, "md5");
     }
 
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
@@ -22,7 +29,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
                 .filter(Objects::nonNull)
                 .map(fileInfo -> {
                     Map<String, String> converted = new HashMap<>();
-                    usedFields.forEach(key -> {
+                    fields.forEach(key -> {
                         switch (key) {
                             case "key": converted.put(key, fileInfo.key); break;
                             case "fsize": converted.put(key, String.valueOf(fileInfo.fsize)); break;
