@@ -2,6 +2,8 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
 
+import java.io.IOException;
+
 public class AvinfoParams extends QossParams {
 
     private String domain;
@@ -19,11 +21,13 @@ public class AvinfoParams extends QossParams {
         return domain;
     }
 
-    public boolean getHttps() {
-        if (https.matches("(true|false)")) {
-            return Boolean.valueOf(https);
+    public String getProtocol() throws IOException {
+        if ("".equals(https) || https.matches("false")) {
+            return "http";
+        } else if (https.matches("true")) {
+            return "https";
         } else {
-            return false;
+            throw new IOException("please set https as true/false.");
         }
     }
 

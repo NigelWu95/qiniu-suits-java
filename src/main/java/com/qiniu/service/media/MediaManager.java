@@ -14,16 +14,16 @@ import java.net.UnknownHostException;
 public class MediaManager {
 
     private Client client;
-    private boolean https;
+    private String protocol;
     private Auth srcAuth;
 
     public MediaManager() {
         this.client = new Client();
     }
 
-    public MediaManager(boolean https, Auth srcAuth) {
+    public MediaManager(String protocol, Auth srcAuth) {
         this();
-        this.https = https;
+        this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;;
         this.srcAuth = srcAuth;
     }
 
@@ -102,7 +102,11 @@ public class MediaManager {
         } catch (UnknownHostException e) {
             throw new QiniuException(e);
         }
-        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        String url = protocol + "://" + domain + "/" + sourceKey.split("\\?")[0];
+        return getAvinfoBody(url);
+    }
+
+    public String getAvinfoBody(String url) throws QiniuException {
         url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?avinfo") : url + "?avinfo";
         Response response = client.get(url);
         String avinfo = response.bodyString();

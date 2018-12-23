@@ -15,13 +15,13 @@ public class FileChecker {
 
     private Client client;
     private String algorithm;
-    private boolean https;
+    private String protocol;
     private Auth srcAuth;
 
-    public FileChecker(String algorithm, boolean https, Auth srcAuth) {
+    public FileChecker(String algorithm, String protocol, Auth srcAuth) {
         this.client = new Client();
         this.algorithm = (algorithm == null || "".equals(algorithm)) ? "md5" : algorithm;
-        this.https = https;
+        this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
         this.srcAuth = srcAuth;
     }
 
@@ -83,7 +83,11 @@ public class FileChecker {
         } catch (UnknownHostException e) {
             throw new QiniuException(e);
         }
-        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        String url = protocol + "://" + domain + "/" + sourceKey.split("\\?")[0];
+        return getQHashBody(url);
+    }
+
+    public String getQHashBody(String url) throws QiniuException {
         url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?qhash/" + algorithm) : url + "?qhash/" + algorithm;
         Response response = client.get(url);
         String qhash = response.bodyString();
@@ -146,7 +150,7 @@ public class FileChecker {
         } catch (UnknownHostException e) {
             throw new QiniuException(e);
         }
-        String url = (https ? "https://" : "http://") + domain + "/" + sourceKey.split("\\?")[0];
+        String url = protocol + "://" + domain + "/" + sourceKey.split("\\?")[0];
         url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?stat") : url + "?stat";
         Response response = client.get(url);
         String stat = response.bodyString();

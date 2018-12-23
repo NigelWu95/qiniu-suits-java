@@ -99,8 +99,8 @@ public class ProcessorChoice {
                 String ak = fileCopyParams.getProcessAk();
                 String sk = fileCopyParams.getProcessSk();
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
-                        fileCopyParams.getTargetBucket(), resultPath);
-                ((CopyFile) processor).setOptions(fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix());
+                        fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix(),
+                        resultPath);
                 break;
             }
             case "move":
@@ -109,8 +109,7 @@ public class ProcessorChoice {
                 String ak = fileMoveParams.getProcessAk();
                 String sk = fileMoveParams.getProcessSk();
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
-                        fileMoveParams.getTargetBucket(), resultPath);
-                ((MoveFile) processor).setOptions(fileMoveParams.getKeyPrefix());
+                        fileMoveParams.getTargetBucket(), fileMoveParams.getKeyPrefix(), resultPath);
                 break;
             }
             case "delete": {
@@ -122,15 +121,12 @@ public class ProcessorChoice {
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = new AsyncFetchParams(entryParam);
-                String srcAk = asyncFetchParams.getAccessKey();
-                String srcSk = asyncFetchParams.getAccessKey();
                 String ak = asyncFetchParams.getProcessAk();
                 String sk = asyncFetchParams.getProcessSk();
+                Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
-                        asyncFetchParams.getDomain(), resultPath);
-                ((AsyncFetch) processor).setOptions(asyncFetchParams.getHttps(), asyncFetchParams.getNeedSign() ?
-                                Auth.create(srcAk, srcSk) : null, asyncFetchParams.getKeepKey(),
-                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck());
+                        asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth, asyncFetchParams.getKeepKey(),
+                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck(), resultPath);
                 if (asyncFetchParams.hasCustomArgs())
                     ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
                             asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
@@ -140,11 +136,13 @@ public class ProcessorChoice {
             }
             case "avinfo": {
                 AvinfoParams avinfoParams = new AvinfoParams(entryParam);
-                processor = new QueryAvinfo(avinfoParams.getDomain(), resultPath);
-                String ak = avinfoParams.getProcessAk();
-                String sk = avinfoParams.getProcessSk();
-                ((QueryAvinfo) processor).setOptions(avinfoParams.getHttps(), avinfoParams.getNeedSign() ?
-                        Auth.create(ak, sk) : null);
+                Auth auth = null;
+                if (avinfoParams.getNeedSign()) {
+                    String ak = avinfoParams.getProcessAk();
+                    String sk = avinfoParams.getProcessSk();
+                    auth = Auth.create(ak, sk);
+                }
+                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(), auth, resultPath);
                 break;
             }
             case "pfop": {
@@ -161,13 +159,14 @@ public class ProcessorChoice {
             }
             case "qhash": {
                 QhashParams qhashParams = new QhashParams(entryParam);
-                processor = new QueryHash(qhashParams.getDomain(), qhashParams.getResultPath());
-                if (qhashParams.needOptions()) {
+                Auth auth = null;
+                if (qhashParams.getNeedSign()) {
                     String ak = qhashParams.getProcessAk();
                     String sk = qhashParams.getProcessSk();
-                    ((QueryHash) processor).setOptions(qhashParams.getAlgorithm(),
-                            qhashParams.getHttps(), qhashParams.getNeedSign() ? Auth.create(ak, sk) : null);
+                    auth = Auth.create(ak, sk);
                 }
+                processor = new QueryHash(qhashParams.getDomain(), qhashParams.getAlgorithm(), qhashParams.getProtocol(),
+                        auth, qhashParams.getResultPath());
                 break;
             }
             case "stat": {

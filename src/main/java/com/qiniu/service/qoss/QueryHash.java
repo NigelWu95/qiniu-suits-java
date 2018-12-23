@@ -5,6 +5,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.Map;
 public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
-    private boolean https;
+    private String protocol;
     private Auth srcAuth;
     private String algorithm;
     private FileChecker fileChecker;
@@ -24,30 +25,32 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private int resultIndex;
     private FileMap fileMap;
 
-    public QueryHash(String domain, String resultPath, int resultIndex) throws IOException {
-        this.domain = domain;
+    public QueryHash(String domain, String algorithm, String protocol, Auth srcAuth, String resultPath, int resultIndex)
+            throws IOException {
         this.processName = "hash";
-        this.fileChecker = new FileChecker(null, https, srcAuth);
+        if (domain == null || "".equals(domain)) this.domain = null;
+        else {
+            RequestUtils.checkHost(domain);
+            this.domain = domain;
+        }
+        this.algorithm = algorithm;
+        this.protocol = protocol;
+        this.srcAuth = srcAuth;
+        this.fileChecker = new FileChecker(algorithm, protocol, srcAuth);
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
         this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryHash(String domain, String resultPath) throws IOException {
-        this(domain, resultPath, 0);
-    }
-
-    public void setOptions(String algorithm, boolean https, Auth srcAuth) {
-        this.algorithm = algorithm;
-        this.https = https;
-        this.srcAuth = srcAuth;
-        this.fileChecker = new FileChecker(algorithm, https, srcAuth);
+    public QueryHash(String domain, String algorithm, String protocol, Auth srcAuth, String resultPath)
+            throws IOException {
+        this(domain, algorithm, protocol, srcAuth, resultPath, 0);
     }
 
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, https, srcAuth);
+        queryHash.fileChecker = new FileChecker(algorithm, protocol, srcAuth);
         queryHash.fileMap = new FileMap();
         try {
             queryHash.fileMap.initWriter(resultPath, processName, resultIndex++);
@@ -65,16 +68,16 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return this.processName;
     }
 
-    public String singleWithRetry(String key, int retryCount) throws QiniuException {
+    public String singleWithRetry(String url, int retryCount) throws QiniuException {
 
         String qhash = null;
         try {
-            qhash = fileChecker.getQHashBody(domain, key);
+            qhash = fileChecker.getQHashBody(url);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    qhash = fileChecker.getQHashBody(domain, key);
+                    qhash = fileChecker.getQHashBody(url);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -85,15 +88,16 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
 
         List<String> resultList = new ArrayList<>();
-        for (Map<String, String> fileInfo : fileInfoList) {
+        for (Map<String, String> line : lineList) {
+            String url = domain == null ? line.get("url") : protocol + "://" + domain + "/" + line.get("key");
             try {
-                String qhash = singleWithRetry(fileInfo.get("key"), retryCount);
-                if (qhash != null) resultList.add(fileInfo.get("key") + "\t" + qhash);
+                String qhash = singleWithRetry(url, retryCount);
+                if (qhash != null) resultList.add(url + "\t" + qhash);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, url);
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
