@@ -4,11 +4,12 @@ import com.google.gson.JsonObject;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.storage.model.FileInfo;
 
+import java.io.IOException;
 import java.util.List;
 
 public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
 
-    public String toFormatString(FileInfo fileInfo, List<String> usedFields) {
+    public String toFormatString(FileInfo fileInfo, List<String> usedFields) throws IOException {
         JsonObject converted = new JsonObject();
         usedFields.forEach(key-> {
             switch (key) {
@@ -21,6 +22,7 @@ public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
                 case "status": converted.addProperty(key, fileInfo.status); break;
             }
         });
+        if (converted.size() == 0) throw new IOException("there are no valid file info key in fields.");
         return converted.toString();
     }
 }
