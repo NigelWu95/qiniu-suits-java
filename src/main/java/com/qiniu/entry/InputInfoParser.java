@@ -11,6 +11,7 @@ import java.util.Map;
 public class InputInfoParser {
 
     private List<String> needKeyProcesses = new ArrayList<String>(){{
+        add("filter");
         add("asyncfetch");
         add("status");
         add("type");
@@ -23,11 +24,10 @@ public class InputInfoParser {
         add("lifecycle");
         add("pfop");
         add("avinfo");
-        add("filter");
     }};
     private List<String> needHashProcesses = new ArrayList<String>(){{
-        add("asyncfetch");
         add("filter");
+        add("asyncfetch");
     }};
     private List<String> needFsizeProcesses = new ArrayList<String>(){{
         add("filter");
@@ -36,7 +36,6 @@ public class InputInfoParser {
         add("filter");
     }};
     private List<String> needMimeTypeProcesses = new ArrayList<String>(){{
-        add("asyncfetch");
         add("filter");
     }};
     private List<String> needEndUserProcesses = new ArrayList<String>(){{
@@ -49,23 +48,23 @@ public class InputInfoParser {
         add("filter");
     }};
     private List<String> needMd5Processes = new ArrayList<String>(){{
-        add("asyncfetch");
         add("filter");
+        add("asyncfetch");
     }};
     private List<String> needFopsProcesses = new ArrayList<String>(){{
-        add("pfop");
         add("filter");
+        add("pfop");
     }};
     private List<String> needPersistentIdProcesses = new ArrayList<String>(){{
+        add("filter");
         add("pfopresult");
     }};
     private List<String> needNewKeyProcesses = new ArrayList<String>(){{
-        add("rename");
         add("filter");
+        add("rename");
     }};
 
     public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams, String process) throws IOException {
-        if ("".equals(process)) throw new IOException("please choose a process type.");
         Map<String, String> infoIndexMap = new HashMap<>();
         if (needKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getKeyIndex(), "key");
         if (needHashProcesses.contains(process)) infoIndexMap.put(fileInputParams.getHashIndex(), "hash");
