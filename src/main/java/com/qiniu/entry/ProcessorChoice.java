@@ -178,6 +178,14 @@ public class ProcessorChoice {
                         qossParams.getResultPath());
                 break;
             }
+            case "privateurl": {
+                PrivateUrlParams privateUrlParams = new PrivateUrlParams(entryParam);
+                String ak = privateUrlParams.getProcessAk();
+                String sk = privateUrlParams.getProcessSk();
+                processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(),
+                        privateUrlParams.getProtocol(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
+                break;
+            }
         }
         if (processor != null) processor.setRetryCount(retryCount);
         return processor;
