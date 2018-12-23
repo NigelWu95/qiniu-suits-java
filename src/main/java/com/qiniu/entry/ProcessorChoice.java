@@ -14,26 +14,10 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class ProcessorChoice {
 
-    private List<String> canFilterProcesses = new ArrayList<String>(){{
-        add("asyncfetch");
-        add("status");
-        add("type");
-        add("copy");
-        add("move");
-        add("rename");
-        add("delete");
-        add("stat");
-        add("qhash");
-        add("lifecycle");
-        add("pfop");
-        add("avinfo");
-    }};
     private IEntryParam entryParam;
     private String process;
     private int retryCount;
@@ -66,29 +50,17 @@ public class ProcessorChoice {
         ListFieldSaveParams fieldParams = new ListFieldSaveParams(entryParam);
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
-        if (canFilterProcesses.contains(process)) {
-            if (fileFilter.isValid()) {
-                processor = new FileInfoFilterProcess(resultPath, resultFormat, resultSeparator, fileFilter,
-                        fieldParams.getUsedFields());
+        if (fileFilter.isValid()) {
+            processor = new FileInfoFilterProcess(resultPath, resultFormat, resultSeparator, fileFilter,
+                    fieldParams.getUsedFields());
+            if (process != null && !"".equals(process) && !"filter".equals(process)) {
                 processor.setNextProcessor(nextProcessor);
-            } else {
-                processor = nextProcessor;
             }
         } else {
-            if (fileFilter.isValid()) {
-                if (process == null || "".equals(process) || "filter".equals(process)) {
-                    processor = new FileInfoFilterProcess(resultPath, resultFormat, resultSeparator, fileFilter,
-                            fieldParams.getUsedFields());
-                } else {
-                    System.out.println("this process dons't need filter.");
-                    processor = nextProcessor;
-                }
+            if ("filter".equals(process)) {
+                throw new Exception("please set the correct filter conditions.");
             } else {
-                if ("filter".equals(process)) {
-                    throw new Exception("please set the correct filter conditions.");
-                } else {
-                    processor = nextProcessor;
-                }
+                processor = nextProcessor;
             }
         }
         if (processor != null) processor.setRetryCount(retryCount);

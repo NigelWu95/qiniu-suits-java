@@ -56,6 +56,8 @@ public class FileInput {
                 ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat, separator,
                         usedFields);
                 fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
+                if (writeTypeConverter.getErrorList().size() > 0)
+                    fileMap.writeSuccess(String.join("\n", writeTypeConverter.getErrorList()));
             }
             int size = infoMapList.size()/unitLen + 1;
             for (int j = 0; j < size; j++) {
