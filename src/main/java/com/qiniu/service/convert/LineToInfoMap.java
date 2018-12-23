@@ -5,6 +5,7 @@ import com.qiniu.service.fileline.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ITypeConvert;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,9 +22,9 @@ public class LineToInfoMap implements ITypeConvert<String, Map<String, String>> 
         }
     }
 
-    public List<Map<String, String>> convertToVList(List<String> srcList) {
+    public List<Map<String, String>> convertToVList(List<String> srcList) throws IOException {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.parallelStream()
+        List<Map<String, String>> resultList = srcList.parallelStream()
                 .filter(line -> line != null && !"".equals(line))
                 .map(line -> {
                     try {
@@ -35,6 +36,9 @@ public class LineToInfoMap implements ITypeConvert<String, Map<String, String>> 
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        if (errorList.size() == srcList.size()) throw new IOException("parse line by index failed, " +
+                "please check the line index setting.");
+        return resultList;
     }
 
     public List<String> getErrorList() {

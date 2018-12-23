@@ -1,5 +1,4 @@
 package com.qiniu.service.process;
-import com.qiniu.service.interfaces.ILineFilter;
 
 import java.util.List;
 import java.util.Map;

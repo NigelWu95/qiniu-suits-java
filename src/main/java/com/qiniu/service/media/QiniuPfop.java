@@ -16,12 +16,12 @@ import java.util.Map;
 
 public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
-    public Auth auth;
-    public Configuration configuration;
-    public OperationManager operationManager;
-    public String bucket;
-    public String pipeline;
-    public String processName;
+    private Auth auth;
+    private Configuration configuration;
+    private OperationManager operationManager;
+    private String bucket;
+    private StringMap pfopParams;
+    private String processName;
     public int retryCount;
     protected String resultPath;
     private int resultIndex;
@@ -33,7 +33,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         this.configuration = configuration;
         this.operationManager = new OperationManager(auth, configuration);
         this.bucket = bucket;
-        this.pipeline = pipeline;
+        this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         this.processName = "pfop";
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
@@ -70,14 +70,12 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
         String persistentId = null;
         try {
-            persistentId = operationManager.pfop(bucket, line.get("key"), line.get("fops"),
-                    new StringMap().putNotEmpty("pipeline", pipeline));
+            persistentId = operationManager.pfop(bucket, line.get("key"), line.get("fops"), pfopParams);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    persistentId = operationManager.pfop(bucket, line.get("key"), line.get("fops"),
-                            new StringMap().putNotEmpty("pipeline", pipeline));
+                    persistentId = operationManager.pfop(bucket, line.get("key"), line.get("fops"), pfopParams);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
