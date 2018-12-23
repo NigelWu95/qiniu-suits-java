@@ -6,6 +6,7 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.MediaManager;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +28,11 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             throws IOException {
         this.processName = "privateurl";
         this.auth = auth;
-        this.domain = domain == null || "".equals(domain) ? null : domain;
+        if (domain == null || "".equals(domain)) this.domain = null;
+        else {
+            RequestUtils.checkHost(domain);
+            this.domain = domain;
+        }
         this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
         this.expires = expires == 0L ? 3600 : expires;
         this.resultPath = resultPath;

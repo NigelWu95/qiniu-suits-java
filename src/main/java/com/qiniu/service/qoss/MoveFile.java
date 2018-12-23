@@ -17,20 +17,17 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     private String toBucket;
     private String keyPrefix;
 
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath,
-                    int resultIndex) throws IOException {
+    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
+                    String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
         this.toBucket = toBucket;
-    }
-
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String resultPath)
-            throws IOException {
-        this(auth, configuration, bucket, toBucket, resultPath, 0);
-    }
-
-    public void setOptions(String keyPrefix) {
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+    }
+
+    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
+                    String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, keyPrefix, resultPath, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {

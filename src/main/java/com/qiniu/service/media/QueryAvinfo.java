@@ -13,7 +13,7 @@ import java.util.Map;
 public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
-    private boolean https;
+    private String protocol;
     private Auth srcAuth;
     private MediaManager mediaManager;
     private String processName;
@@ -22,29 +22,29 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private int resultIndex;
     private FileMap fileMap;
 
-    public QueryAvinfo(String domain, String resultPath, int resultIndex) throws IOException {
-        this.domain = domain;
+    public QueryAvinfo(String domain, String protocol, Auth srcAuth, String resultPath, int resultIndex) throws IOException {
         this.processName = "avinfo";
-        this.mediaManager = new MediaManager(false, null);
+        if (domain == null || "".equals(domain)) this.domain = null;
+        else {
+            RequestUtils.checkHost(domain);
+            this.domain = domain;
+        }
+        this.protocol = protocol;
+        this.srcAuth = srcAuth;
+        this.mediaManager = new MediaManager(protocol, srcAuth);
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
         this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryAvinfo(String domain, String resultPath) throws IOException {
-        this(domain, resultPath, 0);
-    }
-
-    public void setOptions(boolean https, Auth srcAuth) {
-        this.https = https;
-        this.srcAuth = srcAuth;
-        this.mediaManager = new MediaManager(https, srcAuth);
+    public QueryAvinfo(String domain, String protocol, Auth srcAuth, String resultPath) throws IOException {
+        this(domain, protocol, srcAuth, resultPath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(https, srcAuth);
+        queryAvinfo.mediaManager = new MediaManager(protocol, srcAuth);
         queryAvinfo.fileMap = new FileMap();
         try {
             queryAvinfo.fileMap.initWriter(resultPath, processName, resultIndex++);
@@ -62,16 +62,16 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return this.processName;
     }
 
-    public String singleWithRetry(String key, int retryCount) throws QiniuException {
+    public String singleWithRetry(String url, int retryCount) throws QiniuException {
 
         String avinfo = null;
         try {
-            avinfo = mediaManager.getAvinfoBody(domain, key);
+            avinfo = mediaManager.getAvinfoBody(url);
         } catch (QiniuException e1) {
             HttpResponseUtils.checkRetryCount(e1, retryCount);
             while (retryCount > 0) {
                 try {
-                    avinfo = mediaManager.getAvinfoBody(domain, key);
+                    avinfo = mediaManager.getAvinfoBody(url);
                     retryCount = 0;
                 } catch (QiniuException e2) {
                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -86,12 +86,13 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
 
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
+            String url = domain == null ? line.get("url") : protocol + "://" + domain + "/" + line.get("key");
             try {
-                String avinfo = singleWithRetry(line.get("key"), retryCount);
-                if (avinfo != null) resultList.add(line.get("key") + "\t" + avinfo);
+                String avinfo = singleWithRetry(url, retryCount);
+                if (avinfo != null) resultList.add(url + "\t" + avinfo);
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, line.get("key"));
+                HttpResponseUtils.processException(e, fileMap, url);
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

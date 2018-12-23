@@ -2,6 +2,8 @@ package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
 
+import java.io.IOException;
+
 public class QhashParams extends QossParams {
 
     private String domain;
@@ -29,11 +31,13 @@ public class QhashParams extends QossParams {
         }
     }
 
-    public boolean getHttps() {
-        if (https.matches("(true|false)")) {
-            return Boolean.valueOf(https);
+    public String getProtocol() throws IOException {
+        if ("".equals(https) || https.matches("false")) {
+            return "http";
+        } else if (https.matches("true")) {
+            return "https";
         } else {
-            return false;
+            throw new IOException("please set https as true/false.");
         }
     }
 
@@ -43,9 +47,5 @@ public class QhashParams extends QossParams {
         } else {
             return false;
         }
-    }
-
-    public boolean needOptions() {
-        return !"".equals(algorithm) || !"".equals(https) || !"".equals(needSign);
     }
 }
