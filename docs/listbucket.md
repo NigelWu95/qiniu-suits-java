@@ -13,7 +13,7 @@ multi=true
 max-threads=100
 unit-len=10000
 prefix=
-anti-prefix=|
+anti-prefix=
 ```
 `ak, sk` 表示账号的密钥对字符串  
 `bucket` 空间名称  
@@ -21,7 +21,7 @@ anti-prefix=|
 `max-threads` 表示线程数  
 `unit-len` 表示每次列举请求列举的文件个数  
 `prefix` 表示只列举某个文件名前缀的资源  
-`anti-prefix` 表示不列举某个文件名前缀的资源，支持以 `,` 分隔的列表  
+`anti-prefix` 表示列举时排除某个文件名前缀的资源，支持以 `,` 分隔的列表  
 
 ### 命令行方式
 ```
