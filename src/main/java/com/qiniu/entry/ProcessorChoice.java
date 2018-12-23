@@ -14,6 +14,8 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class ProcessorChoice {
@@ -69,35 +71,49 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
         ILineProcess<Map<String, String>> processor = null;
+        String ak = "";
+        String sk = "";
+        try {
+            QossParams qossParams = new QossParams(entryParam);
+            ak = qossParams.getAccessKey();
+            sk = qossParams.getSecretKey();
+        } catch (Exception e) {
+            List<String> needAkSkProcesses = new ArrayList<String>(){{
+                add("status");
+                add("type");
+                add("lifecycle");
+                add("copy");
+                add("move");
+                add("rename");
+                add("delete");
+                add("asyncfetch");
+                add("pfop");
+                add("stat");
+                add("privateurl");
+            }};
+            if (needAkSkProcesses.contains(process)) throw e;
+        }
         switch (process) {
             case "status": {
                 FileStatusParams fileStatusParams = new FileStatusParams(entryParam);
-                String ak = fileStatusParams.getProcessAk();
-                String sk = fileStatusParams.getProcessSk();
                 processor = new ChangeStatus(Auth.create(ak, sk), configuration, fileStatusParams.getBucket(),
                         fileStatusParams.getTargetStatus(), resultPath);
                 break;
             }
             case "type": {
                 FileTypeParams fileTypeParams = new FileTypeParams(entryParam);
-                String ak = fileTypeParams.getProcessAk();
-                String sk = fileTypeParams.getProcessSk();
                 processor = new ChangeType(Auth.create(ak, sk), configuration, fileTypeParams.getBucket(),
                         fileTypeParams.getTargetType(), resultPath);
                 break;
             }
             case "lifecycle": {
                 LifecycleParams lifecycleParams = new LifecycleParams(entryParam);
-                String ak = lifecycleParams.getProcessAk();
-                String sk = lifecycleParams.getProcessSk();
                 processor = new UpdateLifecycle(Auth.create(ak, sk), configuration, lifecycleParams.getBucket(),
                         lifecycleParams.getDays(), resultPath);
                 break;
             }
             case "copy": {
                 FileCopyParams fileCopyParams = new FileCopyParams(entryParam);
-                String ak = fileCopyParams.getProcessAk();
-                String sk = fileCopyParams.getProcessSk();
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
                         fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix(),
                         resultPath);
@@ -106,23 +122,17 @@ public class ProcessorChoice {
             case "move":
             case "rename": {
                 FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
-                String ak = fileMoveParams.getProcessAk();
-                String sk = fileMoveParams.getProcessSk();
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
                         fileMoveParams.getTargetBucket(), fileMoveParams.getKeyPrefix(), resultPath);
                 break;
             }
             case "delete": {
                 QossParams qossParams = new QossParams(entryParam);
-                String ak = qossParams.getProcessAk();
-                String sk = qossParams.getProcessSk();
                 processor = new DeleteFile(Auth.create(ak, sk), configuration, qossParams.getBucket(), resultPath);
                 break;
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = new AsyncFetchParams(entryParam);
-                String ak = asyncFetchParams.getProcessAk();
-                String sk = asyncFetchParams.getProcessSk();
                 Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth, asyncFetchParams.getKeepKey(),
@@ -138,8 +148,8 @@ public class ProcessorChoice {
                 AvinfoParams avinfoParams = new AvinfoParams(entryParam);
                 Auth auth = null;
                 if (avinfoParams.getNeedSign()) {
-                    String ak = avinfoParams.getProcessAk();
-                    String sk = avinfoParams.getProcessSk();
+                    ak = avinfoParams.getAccessKey();
+                    sk = avinfoParams.getSecretKey();
                     auth = Auth.create(ak, sk);
                 }
                 processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(), auth, resultPath);
@@ -147,8 +157,6 @@ public class ProcessorChoice {
             }
             case "pfop": {
                 PfopParams pfopParams = new PfopParams(entryParam);
-                String ak = pfopParams.getProcessAk();
-                String sk = pfopParams.getProcessSk();
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
                         pfopParams.getPipeline(), resultPath);
                 break;
@@ -161,8 +169,8 @@ public class ProcessorChoice {
                 QhashParams qhashParams = new QhashParams(entryParam);
                 Auth auth = null;
                 if (qhashParams.getNeedSign()) {
-                    String ak = qhashParams.getProcessAk();
-                    String sk = qhashParams.getProcessSk();
+                    ak = qhashParams.getAccessKey();
+                    sk = qhashParams.getSecretKey();
                     auth = Auth.create(ak, sk);
                 }
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getAlgorithm(), qhashParams.getProtocol(),
@@ -171,16 +179,12 @@ public class ProcessorChoice {
             }
             case "stat": {
                 QossParams qossParams = new QossParams(entryParam);
-                String ak = qossParams.getProcessAk();
-                String sk = qossParams.getProcessSk();
                 processor = new FileStat(Auth.create(ak, sk), configuration, qossParams.getBucket(),
                         qossParams.getResultPath());
                 break;
             }
             case "privateurl": {
                 PrivateUrlParams privateUrlParams = new PrivateUrlParams(entryParam);
-                String ak = privateUrlParams.getProcessAk();
-                String sk = privateUrlParams.getProcessSk();
                 processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(),
                         privateUrlParams.getProtocol(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
                 break;
