@@ -22,19 +22,17 @@ public class FileLister implements Iterator<List<FileInfo>> {
     private String delimiter;
     private String marker;
     private int limit;
-    private int version;
     private List<FileInfo> fileInfoList;
     public QiniuException exception;
 
     public FileLister(BucketManager bucketManager, String bucket, String prefix, String delimiter, String marker,
-                      int limit, int version) throws QiniuException {
+                      int limit) throws QiniuException {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
         this.delimiter = delimiter;
         this.marker = marker;
         this.limit = limit;
-        this.version = version;
         this.fileInfoList = getListResult(prefix, delimiter, marker, limit);
     }
 
@@ -76,38 +74,27 @@ public class FileLister implements Iterator<List<FileInfo>> {
     }
 
     private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
-        List<FileInfo> resultList = new ArrayList<>();
-        Response response = version == 2 ? bucketManager.listV2(bucket, prefix, marker, limit, delimiter) :
-                        bucketManager.listV1(bucket, prefix, marker, limit, delimiter);;
-        if (version == 1) {
-            FileListing fileListing = response.jsonToObject(FileListing.class);
-            if (fileListing != null) {
-                FileInfo[] items = fileListing.items;
-                this.marker = fileListing.marker;
-                if (items.length > 0) resultList = Arrays.asList(items);
-            }
-        } else if (version == 2) {
-            InputStream inputStream = new BufferedInputStream(response.bodyStream());
-            Reader reader = new InputStreamReader(inputStream);
-            BufferedReader bufferedReader = new BufferedReader(reader);
-            List<String> lines = bufferedReader.lines()
-                        .filter(line -> !StringUtils.isNullOrEmpty(line))
-                        .collect(Collectors.toList());
-            List<ListLine> listLines = lines.parallelStream()
-                    .map(line -> new ListLine().fromLine(line))
-                    .filter(Objects::nonNull)
+        Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
+        InputStream inputStream = new BufferedInputStream(response.bodyStream());
+        Reader reader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        List<String> lines = bufferedReader.lines()
+                    .filter(line -> !StringUtils.isNullOrEmpty(line))
                     .collect(Collectors.toList());
-            if (listLines.size() < lines.size()) {
-                throw new QiniuException(new QiniuException(response), "convert line to file info error.");
-            }
-            resultList = listLines.parallelStream()
-                    .map(listLine -> listLine.fileInfo)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            Optional<ListLine> lastListLine = listLines.parallelStream()
-                    .max(ListLine::compareTo);
-            this.marker = lastListLine.map(listLine -> listLine.marker).orElse("");
+        List<ListLine> listLines = lines.parallelStream()
+                .map(line -> new ListLine().fromLine(line))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (listLines.size() < lines.size()) {
+            throw new QiniuException(new QiniuException(response), "convert line to file info error.");
         }
+        List<FileInfo> resultList = listLines.parallelStream()
+                .map(listLine -> listLine.fileInfo)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        Optional<ListLine> lastListLine = listLines.parallelStream()
+                .max(ListLine::compareTo);
+        this.marker = lastListLine.map(listLine -> listLine.marker).orElse("");
         response.close();
         return resultList;
     }

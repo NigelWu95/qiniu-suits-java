@@ -9,7 +9,6 @@ import java.util.List;
 public class ListBucketParams extends QossParams {
 
     private String multiStatus;
-    private String version;
     private String customPrefix;
     private String marker;
     private String end;
@@ -18,7 +17,6 @@ public class ListBucketParams extends QossParams {
     public ListBucketParams(IEntryParam entryParam) {
         super(entryParam);
         try { this.multiStatus = entryParam.getParamValue("multi"); } catch (Exception e) { multiStatus = ""; }
-        try { this.version = entryParam.getParamValue("version"); } catch (Exception e) { version = ""; }
         try { this.customPrefix = entryParam.getParamValue("prefix"); } catch (Exception e) {}
         try { this.marker = entryParam.getParamValue("marker"); } catch (Exception e) {}
         try { this.end = entryParam.getParamValue("end"); } catch (Exception e) {}
@@ -31,15 +29,6 @@ public class ListBucketParams extends QossParams {
         } else {
             System.out.println("no incorrect multi status, it will use true as default.");
             return true;
-        }
-    }
-
-    public int getVersion() {
-        if (version.matches("[12]")) {
-            return Integer.valueOf(version);
-        } else {
-            System.out.println("no incorrect version, it will use 2 as default.");
-            return 2;
         }
     }
 
