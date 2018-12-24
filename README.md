@@ -1,10 +1,16 @@
 # qiniu-suits (qsuits)
-七牛云接口使用套件（可以工具形式使用），主要针对七牛云存储资源的批量处理进行功能的封装，提供更为简洁的操作方式。  
+七牛云接口使用套件（可以工具形式使用），主要针对七牛云存储资源的批量处理进行功能的封装，提供更为简洁的操作方式。
 基于 Java 编写，可基于 JDK（1.8 及以上）环境在命令行或 IDE 运行。  
 
 # 使用介绍
-#### 1. 程序运行过程为：读取数据源 =》[过滤器 =》] [按指定过程处理数据 =》] 结果持久化  
-#### 2. 运行配置
+### 1 程序运行过程  
+读取数据源 =》[过滤器 =》] [按指定过程处理数据 =》] 结果持久化  
+
+### 2 运行方式  
+(1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
+(2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
+
+### 3 命令行运行配置
 (1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径，命令为：  
 ```
 java -jar qsuits-x.x.jar -config=config.txt
@@ -19,28 +25,31 @@ bucket=
 *source-type=list 可选择放置在命令行或者配置文件中*
 
 (2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
-resources 文件夹中，文件名为 `qiniu.properties` 或 .qiniu.properties，运行命令为：  
+resources 文件夹中，文件名为 `qiniu.properties` 或 `.qiniu.properties`，运行命令为：  
 ```
 java -jar qsuits-x.x.jar [-source-type=list]
 ```
 *配置参数同上述方式*  
 
-(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下可以完全从命令行指定参数，形式为 `-<property-name>=<value>`，如  
+(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下所有参数可以完全从命令行指定，形式为 `-<property-name>=<value>`，如  
 ```
 java -jar qsuits-x.x.jar -source-type=list -bucket=test -ak= -sk=
 ```
 
-#### 3. 运行方式  
-(1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
-(2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
-
-### 1 数据源
+### 4 数据源
 支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
 **source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
-`source-type=list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md)，list 方式 [配置模板](templates/list.config)  
-`source-type=file` 表示从本地读取文件获取资源列表 [fileinput 配置](docs/fileinput.md)，file 方式 [配置模板](templates/file.config)  
+`source-type=list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md)，配置文件示例可参考 [配置模板](templates/list.config)  
+`source-type=file` 表示从本地读取文件获取资源列表 [fileinput 配置](docs/fileinput.md)，配置文件示例可参考 [配置模板](templates/file.config)  
 
-##### 过滤器功能
+##### *关于并发处理*：  
+```
+(1) list 源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的列举加速，线程数在配置文件中指定，自动按照线程数并发，
+    少量文件时不建议使用并发方式，反而会增加耗时，如 100 万左右及以下的文件可使用非并发方式直接列举（设置 multi=false） 
+(2) file 源，从本地读取目录下的所有文件，一个文件进入一个线程处理，最大线程数由配置文件指定，与输入文件数之间小的值作为并发数  
+```
+
+#### 1. 过滤器功能
 从数据源输入的数据（针对七牛空间资源）通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型
 等，qsuits 支持通过配置选项设置一些过滤条件，目前支持的过滤条件包含：  
 `f-key-prefix` 表示选择**符合**该前缀的文件  
@@ -58,15 +67,15 @@ java -jar qsuits-x.x.jar -source-type=list -bucket=test -ak= -sk=
 的记录可以直接持久化保存结果，如对于 listbucket/fileinput 的结果过滤后进行保存，此时可通过 save-total 选项来选择是否将过
 滤之前的记录进行完整保存。
 
+#### 2. 输出结果持久化
+对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
+`result-path=` 表示保存结果的文件路径  
+`result-format=` 结果保存格式（json/table）  
+`result-separator=` 结果保存分隔符  
+`xxx-save=` 保留字段筛选器  
+所有持久化参数均为可选参数，未设置的情况下保留所有字段，以 json 格式保存在 ../result 路径下，详细参数见 [result 配置](docs/filesave.md)。
 
-###### *关于并发处理*：  
-```
-(1) list 源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的列举加速，线程数在配置文件中指定，自动按照线程数并发，
-    少量文件时不建议使用并发方式，反而会增加耗时，如 100 万左右及以下的文件可使用非并发方式直接列举（设置 multi=false） 
-(2) file 源，从本地读取目录下的所有文件，一个文件进入一个线程处理，最大线程数由配置文件指定，与输入文件数之间小的值作为并发数  
-```
-
-### 2 处理过程
+### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，具体处理过程由处理类型参数指定:  
 **process=type/status/lifecycle/copy** (命令行方式则指定为 **-process=xxx**) 等  
 `process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
@@ -83,18 +92,10 @@ java -jar qsuits-x.x.jar -source-type=list -bucket=test -ak= -sk=
 `process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
 `process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
-rename、qhash、stat、pfop、pfopresult、avinfo 一般为对 file 输入方式进行处理
-
-### 3 结果持久化
-对上一步输出的结果（包括数据源输出结果）进行持久化操作（目前支持写入到本地文件），持久化选项：  
-`result-path=` 表示保存结果的文件路径  
-`result-format=` 结果保存格式（json/table）  
-`result-separator=` 结果保存分隔符  
-[result 详细配置](docs/result-save.md)
+rename、qhash、stat、pfop、pfopresult、avinfo 一般为对 file 输入方式进行处理，所有处理结果保存在 result-path 下。  
 
 ### 补充
-1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需
-要将所有参数设置在该配置文件中。
+1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。
 2. 一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
 ```
 listV2 xxx:|:null:1:null null, last 3 times retry...
