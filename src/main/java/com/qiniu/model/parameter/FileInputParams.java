@@ -263,7 +263,7 @@ public class FileInputParams extends CommonParams {
     public String getTargetKeyIndex() throws IOException {
         if (targetKeyIndex == null || "".equals(targetKeyIndex)) {
             if ("json".equals(parseType)) {
-                return "newKey";
+                throw new IOException("no incorrect json key index for rename's newKey.");
             } else {
                 return "1";
             }

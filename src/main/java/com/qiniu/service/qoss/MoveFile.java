@@ -11,23 +11,26 @@ import com.qiniu.util.HttpResponseUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MoveFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String toBucket;
     private String keyPrefix;
+    private boolean forceIfOnlyPrefix;
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
-                    String resultPath, int resultIndex) throws IOException {
+                    boolean forceIfOnlyPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
         this.toBucket = toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.forceIfOnlyPrefix = forceIfOnlyPrefix;
     }
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
-                    String resultPath) throws IOException {
-        this(auth, configuration, bucket, toBucket, keyPrefix, resultPath, 0);
+                    boolean forceIfOnlyPrefix, String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, keyPrefix, forceIfOnlyPrefix, resultPath, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
@@ -42,14 +45,31 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) throws QiniuException {
+
+        List<String> keyList = lineList.stream().map(line -> line.get("key"))
+                .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
+        if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
 
         if (toBucket == null || "".equals(toBucket)) {
-            lineList.forEach(line -> batchOperations.addRenameOp(bucket, line.get("key"),
-                    keyPrefix + line.get("newKey")));
+            List<String> newKeyList = lineList.stream().map(line -> line.get("newKey"))
+                    .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
+            if (newKeyList.size() == 0) {
+                if (forceIfOnlyPrefix) {
+                    for (String aKeyList : keyList) {
+                        batchOperations.addRenameOp(bucket, aKeyList, keyPrefix + aKeyList);
+                    }
+                }
+            }
+            if (keyList.size() != newKeyList.size())
+                throw new QiniuException(null, "there are no corresponding keys in line.");
+            for (int i = 0; i < keyList.size(); i++) {
+                batchOperations.addRenameOp(bucket, keyList.get(i), keyPrefix + newKeyList.get(i));
+            }
         } else {
-            lineList.forEach(line -> batchOperations.addMoveOp(bucket, line.get("key"), toBucket,
-                    keyPrefix + line.get("key")));
+            for (String aKeyList : keyList) {
+                batchOperations.addMoveOp(bucket, aKeyList, toBucket, keyPrefix + aKeyList);
+            }
         }
 
         return batchOperations;
