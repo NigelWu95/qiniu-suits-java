@@ -74,7 +74,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract String processLine(Map<String, String> fileInfo) throws QiniuException;
 
-    protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
+    protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList) throws QiniuException;
 
     public List<String> singleRun(List<Map<String, String>> fileInfoList) throws QiniuException {
 

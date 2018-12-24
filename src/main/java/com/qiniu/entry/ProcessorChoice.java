@@ -123,7 +123,8 @@ public class ProcessorChoice {
             case "rename": {
                 FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
-                        fileMoveParams.getTargetBucket(), fileMoveParams.getKeyPrefix(), resultPath);
+                        fileMoveParams.getTargetBucket(), fileMoveParams.getKeyPrefix(),
+                        fileMoveParams.getForceIfOnlyPrefix(), resultPath);
                 break;
             }
             case "delete": {
