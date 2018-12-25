@@ -2,7 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.common.*;
 import com.qiniu.model.parameter.ListBucketParams;
-import com.qiniu.model.parameter.ListFieldSaveParams;
+import com.qiniu.model.parameter.FieldSaveParams;
 import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -34,13 +34,12 @@ public class ListBucketEntry {
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, maxThreads, customPrefix,
                 antiPrefix, 3, resultPath);
-        listBucket.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
-        ListFieldSaveParams fieldSaveParams = new ListFieldSaveParams(entryParam);
+        FieldSaveParams fieldSaveParams = new FieldSaveParams(entryParam);
+        if (saveTotal) listBucket.setResultSaveOptions(resultFormat, resultSeparator, fieldSaveParams.getUsedFields());
         if (multiStatus) {
-            listBucket.concurrentlyList(maxThreads, fieldSaveParams.getUsedFields(), processor);
+            listBucket.concurrentlyList(maxThreads, processor);
         } else {
-            listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(),
-                    fieldSaveParams.getUsedFields(), processor);
+            listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
         }
         if (processor != null) processor.closeResource();
     }

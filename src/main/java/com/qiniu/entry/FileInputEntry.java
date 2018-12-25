@@ -1,12 +1,11 @@
 package com.qiniu.entry;
 
 import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.model.parameter.InputFieldSaveParams;
-import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public class FileInputEntry {
@@ -28,9 +27,9 @@ public class FileInputEntry {
         String processName = lineProcessor != null ? lineProcessor.getProcessName() : "";
         Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams, processName);
         FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultPath);
-        fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
-        InputFieldSaveParams fieldSaveParams = new InputFieldSaveParams(entryParam);
-        fileInput.process(maxThreads, sourceFilePath, fieldSaveParams.getUsedFields(), lineProcessor);
+        // TODO
+        fileInput.setResultSaveOptions(resultFormat, resultSeparator, new ArrayList<>());
+        fileInput.process(maxThreads, sourceFilePath, lineProcessor);
         if (lineProcessor != null) lineProcessor.closeResource();
     }
 }

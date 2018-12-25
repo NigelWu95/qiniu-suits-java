@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
     private IStringFormat<FileInfo> stringFormatter;
-    private  List<String> usedFields;
+    private  List<String> fields;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public FileInfoToString(String format, String separator, List<String> usedFields) throws IOException {
-        if (usedFields == null || usedFields.size() == 0) throw new IOException("there are no fields be set.");
-        this.usedFields = usedFields;
+    public FileInfoToString(String format, String separator, List<String> fields) throws IOException {
+        if (fields == null || fields.size() == 0) throw new IOException("there are no fields be set.");
+        this.fields = fields;
         if ("json".equals(format)) {
             stringFormatter = new FileInfoJsonFormatter();
         } else {
@@ -32,7 +32,7 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
                 .filter(Objects::nonNull)
                 .map(fileInfo -> {
                     try {
-                        return stringFormatter.toFormatString(fileInfo, usedFields);
+                        return stringFormatter.toFormatString(fileInfo, fields);
                     } catch (Exception e) {
                         errorList.add(fileInfo.key + "\t" + String.valueOf(fileInfo));
                         return null;

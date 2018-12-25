@@ -35,7 +35,8 @@ public class ListBucket {
     private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
-    private String separator;
+    private String resultSeparator;
+    private List<String> resultFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int maxThreads,
                       String customPrefix, List<String> antiPrefix, int retryCount, String resultPath) {
@@ -48,12 +49,14 @@ public class ListBucket {
         this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
         this.retryCount = retryCount;
         this.resultPath = resultPath;
+        this.saveTotal = false;
     }
 
-    public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
-        this.saveTotal = saveTotal;
-        this.resultFormat = resultFormat;
-        this.separator = separator;
+    public void setResultSaveOptions(String format, String separator, List<String> fields) {
+        this.saveTotal = true;
+        this.resultFormat = format;
+        this.resultSeparator = separator;
+        this.resultFields = fields;
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
@@ -139,8 +142,7 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void execLister(FileLister fileLister, String end, int resultIndex, List<String> usedFields,
-                                ILineProcess<Map<String, String>> processor) {
+    private void execLister(FileLister fileLister, String end, int resultIndex, ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         ProgressRecorder recorder = new ProgressRecorder("marker", resultPath, resultIndex, fileMap,
@@ -150,7 +152,7 @@ public class ListBucket {
             ITypeConvert<FileInfo, String> writeTypeConverter = null;
             ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
             if (saveTotal) {
-                writeTypeConverter = new FileInfoToString(resultFormat, separator, usedFields);
+                writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, resultFields);
                 fileMap.initWriter(resultPath, "list", resultIndex);
             }
             String marker;
@@ -195,7 +197,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int maxThreads, List<String> usedFields, ILineProcess<Map<String, String>> processor) {
+    public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor) {
         List<FileLister> fileListerList = getFileListerList(unitLen);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
@@ -228,20 +230,19 @@ public class ListBucket {
         for (int i = 0; i < fileListerList.size(); i++) {
             int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
-            executorPool.execute(() -> execLister(fileListerList.get(finalI), finalEnd, finalI, usedFields, processor));
+            executorPool.execute(() -> execLister(fileListerList.get(finalI), finalEnd, finalI, processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         if (processor != null) processor.closeResource();
     }
 
-    public void straightlyList(String marker, String end, List<String> usedFields,
-                               ILineProcess<Map<String, String>> processor) throws IOException {
+    public void straightlyList(String marker, String end, ILineProcess<Map<String, String>> processor) throws IOException {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
         FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen);
-        execLister(fileLister, end, 0, usedFields, processor);
+        execLister(fileLister, end, 0, processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }
