@@ -49,11 +49,11 @@ public class ProcessorChoice {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-        ListFieldSaveParams fieldParams = new ListFieldSaveParams(entryParam);
+        FieldSaveParams fieldParams = new FieldSaveParams(entryParam);
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (fileFilter.isValid()) {
-            processor = new FileInfoFilterProcess(resultPath, resultFormat, resultSeparator, fileFilter,
+            processor = new FileInfoFilterProcess(fileFilter, resultPath, resultFormat, resultSeparator,
                     fieldParams.getUsedFields());
             if (process != null && !"".equals(process) && !"filter".equals(process)) {
                 processor.setNextProcessor(nextProcessor);

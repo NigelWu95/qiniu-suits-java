@@ -16,27 +16,19 @@ import java.util.Map;
 public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
+    private ILineFilter<Map<String, String>> filter;
+    private ILineProcess<Map<String, String>> nextProcessor;
     private String resultPath;
     private String resultFormat;
-    private String separator;
+    private String resultSeparator;
+    private List<String> resultFields;
     private int resultIndex;
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
-    private ILineFilter<Map<String, String>> filter;
-    private List<String> usedFields;
-    private ILineProcess<Map<String, String>> nextProcessor;
 
-    public FileInfoFilterProcess(String resultFormat, String separator, String resultPath, int resultIndex,
-                                 FileFilter filter, List<String> usedFields) throws Exception {
+    public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
+                                 List<String> resultFields, int resultIndex) throws Exception {
         this.processName = "filter";
-        this.resultFormat = resultFormat;
-        this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
-        this.resultPath = resultPath;
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap();
-        this.fileMap.initWriter(resultPath, processName, resultIndex);
-        this.typeConverter = new InfoMapToString(resultFormat, separator, usedFields);
-        this.usedFields = usedFields;
         List<String> methodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
             if (filter.checkKeySuffix()) add("filterKeySuffix");
@@ -61,11 +53,19 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
             }
             return result;
         };
+        this.resultPath = resultPath;
+        this.resultFormat = resultFormat;
+        this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;
+        this.resultFields = resultFields;
+        this.resultIndex = resultIndex;
+        this.fileMap = new FileMap();
+        this.fileMap.initWriter(resultPath, processName, resultIndex);
+        this.typeConverter = new InfoMapToString(resultFormat, resultSeparator, resultFields);
     }
 
-    public FileInfoFilterProcess(String resultFormat, String separator, String resultPath, FileFilter filter,
-                                 List<String> usedFields) throws Exception {
-        this(resultFormat, separator, resultPath, 0, filter, usedFields);
+    public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
+                                 List<String> resultFields) throws Exception {
+        this(filter, resultPath, resultFormat, resultSeparator, resultFields, 0);
     }
 
     public FileInfoFilterProcess clone() throws CloneNotSupportedException {
@@ -73,7 +73,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         fileInfoFilterProcess.fileMap = new FileMap();
         try {
             fileInfoFilterProcess.fileMap.initWriter(resultPath, processName, resultIndex++);
-            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, separator, usedFields);
+            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, resultFields);
             if (nextProcessor != null) {
                 fileInfoFilterProcess.nextProcessor = nextProcessor.clone();
             }

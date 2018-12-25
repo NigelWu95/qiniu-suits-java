@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListFieldSaveParams extends CommonParams {
+public class FieldSaveParams extends CommonParams {
 
     private String keySave;
     private String hashSave;
@@ -16,9 +16,8 @@ public class ListFieldSaveParams extends CommonParams {
     private String endUserSave;
     private String typeSave;
     private String statusSave;
-    private String md5Save;
 
-    public ListFieldSaveParams(IEntryParam entryParam) throws IOException {
+    public FieldSaveParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         try { this.keySave = entryParam.getParamValue("key-save"); } catch (Exception e) {}
         try { this.hashSave = entryParam.getParamValue("hash-save"); } catch (Exception e) {}
@@ -28,7 +27,6 @@ public class ListFieldSaveParams extends CommonParams {
         try { this.endUserSave = entryParam.getParamValue("endUser-save"); } catch (Exception e) {}
         try { this.typeSave = entryParam.getParamValue("type-save"); } catch (Exception e) {}
         try { this.statusSave = entryParam.getParamValue("status-save"); } catch (Exception e) {}
-        try { this.md5Save = entryParam.getParamValue("md5-save"); } catch (Exception e) {}
     }
 
     public List<String> getUsedFields() {
@@ -41,7 +39,6 @@ public class ListFieldSaveParams extends CommonParams {
         if (endUserSave == null || endUserSave.equals("true")) usedFields.add("endUser");
         if (typeSave == null || typeSave.equals("true")) usedFields.add("type");
         if (statusSave == null || statusSave.equals("true")) usedFields.add("status");
-        if (md5Save == null || md5Save.equals("true")) usedFields.add("md5");
 
         return usedFields;
     }

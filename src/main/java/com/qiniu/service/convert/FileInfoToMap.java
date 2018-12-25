@@ -12,15 +12,18 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
 
     public FileInfoToMap() {
         this.fields = new ArrayList<>();
-        fields.add(0, "key");
-        fields.add(1, "hash");
-        fields.add(2, "fsize");
-        fields.add(3, "putTime");
-        fields.add(4, "mimeType");
-        fields.add(5, "endUser");
-        fields.add(6, "type");
-        fields.add(7, "status");
-        fields.add(8, "md5");
+        fields.add("key");
+        fields.add("hash");
+        fields.add("fsize");
+        fields.add("putTime");
+        fields.add("mimeType");
+        fields.add("endUser");
+        fields.add("type");
+        fields.add("status");
+    }
+
+    public FileInfoToMap(List<String> fields) {
+        this.fields = fields == null ? new ArrayList<>() : fields;
     }
 
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
