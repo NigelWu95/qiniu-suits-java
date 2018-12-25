@@ -48,26 +48,6 @@ public class InputInfoParser {
     private List<String> needStatusProcesses = new ArrayList<String>(){{
         add("filter");
     }};
-    private List<String> needMd5Processes = new ArrayList<String>(){{
-        add("filter");
-        add("asyncfetch");
-    }};
-    private List<String> needFopsProcesses = new ArrayList<String>(){{
-        add("filter");
-        add("pfop");
-    }};
-    private List<String> needPersistentIdProcesses = new ArrayList<String>(){{
-        add("filter");
-        add("pfopresult");
-    }};
-    private List<String> needNewKeyProcesses = new ArrayList<String>(){{
-        add("filter");
-        add("rename");
-    }};
-    private List<String> needUrlProcesses = new ArrayList<String>(){{
-        add("filter");
-        add("privateurl");
-    }};
 
     public Map<String, String> getInfoIndexMap(FileInputParams fileInputParams, String process) throws IOException {
         Map<String, String> infoIndexMap = new HashMap<>();
@@ -79,11 +59,6 @@ public class InputInfoParser {
         if (needEndUserProcesses.contains(process)) infoIndexMap.put(fileInputParams.getEndUserIndex(), "endUser");
         if (needTypeProcesses.contains(process)) infoIndexMap.put(fileInputParams.getTypeIndex(), "type");
         if (needStatusProcesses.contains(process)) infoIndexMap.put(fileInputParams.getStatusIndex(), "status");
-        if (needMd5Processes.contains(process)) infoIndexMap.put(fileInputParams.getMd5Index(), "md5");
-        if (needFopsProcesses.contains(process)) infoIndexMap.put(fileInputParams.getFopsIndex(), "fops");
-        if (needPersistentIdProcesses.contains(process)) infoIndexMap.put(fileInputParams.getPersistentIdIndex(), "persistentId");
-        if (needNewKeyProcesses.contains(process)) infoIndexMap.put(fileInputParams.getTargetKeyIndex(), "newKey");
-        if (needUrlProcesses.contains(process)) infoIndexMap.put(fileInputParams.getUrlIndex(), "url");
         return infoIndexMap;
     }
 }

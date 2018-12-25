@@ -10,6 +10,7 @@ public class CommonParams {
 
     protected IEntryParam entryParam;
     private String sourceType;
+    private String parseType;
     private String unitLen;
     private String retryCount;
     private String resultPath;
@@ -22,6 +23,7 @@ public class CommonParams {
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         this.sourceType = entryParam.getParamValue("source-type");
+        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { unitLen = ""; }
         try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
         try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
         try { this.resultPath = entryParam.getParamValue("result-path"); } catch (Exception e) { resultPath = ""; }
@@ -46,6 +48,17 @@ public class CommonParams {
 
     public String getSourceType() {
         return sourceType;
+    }
+
+    public String getParseType() throws IOException {
+        if (sourceType.equals("list")) return "object";
+        else {
+            if (parseType == null || "".equals(parseType)) {
+                throw new IOException("no incorrect parse type, please set it as \"json\" or \"table\".");
+            } else {
+                return parseType;
+            }
+        }
     }
 
     public int getUnitLen() {

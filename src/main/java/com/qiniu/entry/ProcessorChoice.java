@@ -123,7 +123,7 @@ public class ProcessorChoice {
             case "rename": {
                 FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
-                        fileMoveParams.getTargetBucket(), fileMoveParams.getKeyPrefix(),
+                        fileMoveParams.getToBucket(), fileMoveParams.getNewKeyIndex(), fileMoveParams.getKeyPrefix(),
                         fileMoveParams.getForceIfOnlyPrefix(), resultPath);
                 break;
             }
@@ -137,9 +137,9 @@ public class ProcessorChoice {
                 Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth, asyncFetchParams.getKeepKey(),
-                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck(), resultPath);
+                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getUrlIndex(), resultPath);
                 if (asyncFetchParams.hasCustomArgs())
-                    ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
+                    ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getMd5Index(), asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
                             asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
                             asyncFetchParams.getCallbackHost(), asyncFetchParams.getFileType(),
                             asyncFetchParams.getIgnoreSameKey());
@@ -153,17 +153,19 @@ public class ProcessorChoice {
                     sk = avinfoParams.getSecretKey();
                     auth = Auth.create(ak, sk);
                 }
-                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(), auth, resultPath);
+                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(),
+                        avinfoParams.getUrlIndex(), auth, resultPath);
                 break;
             }
             case "pfop": {
                 PfopParams pfopParams = new PfopParams(entryParam);
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
-                        pfopParams.getPipeline(), resultPath);
+                        pfopParams.getPipeline(), pfopParams.getFopsIndex(), resultPath);
                 break;
             }
             case "pfopresult": {
-                processor = new QueryPfopResult(resultPath);
+                PfopResultParams pfopResultParams = new PfopResultParams(entryParam);
+                processor = new QueryPfopResult(pfopResultParams.getPersistentIdIndex(), resultPath);
                 break;
             }
             case "qhash": {
@@ -175,7 +177,7 @@ public class ProcessorChoice {
                     auth = Auth.create(ak, sk);
                 }
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getAlgorithm(), qhashParams.getProtocol(),
-                        auth, qhashParams.getResultPath());
+                        qhashParams.getUrlIndex(), auth, qhashParams.getResultPath());
                 break;
             }
             case "stat": {
@@ -186,8 +188,8 @@ public class ProcessorChoice {
             }
             case "privateurl": {
                 PrivateUrlParams privateUrlParams = new PrivateUrlParams(entryParam);
-                processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(),
-                        privateUrlParams.getProtocol(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
+                processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(), privateUrlParams.getProtocol(),
+                        privateUrlParams.getUrlIndex(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
                 break;
             }
         }

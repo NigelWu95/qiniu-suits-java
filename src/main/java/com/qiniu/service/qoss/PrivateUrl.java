@@ -17,6 +17,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
 
     private String domain;
     private String protocol;
+    private String urlIndex;
     private Auth auth;
     private long expires;
     private String processName;
@@ -24,8 +25,8 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     private int resultIndex;
     private FileMap fileMap;
 
-    public PrivateUrl(Auth auth, String domain, String protocol, long expires, String resultPath, int resultIndex)
-            throws IOException {
+    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String resultPath,
+                      int resultIndex) throws IOException {
         this.processName = "privateurl";
         this.auth = auth;
         if (domain == null || "".equals(domain)) this.domain = null;
@@ -34,6 +35,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             this.domain = domain;
         }
         this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
+        this.urlIndex = urlIndex;
         this.expires = expires == 0L ? 3600 : expires;
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
@@ -41,8 +43,9 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
         this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public PrivateUrl(Auth auth, String domain, String protocol, long expires, String resultPath) throws IOException {
-        this(auth, domain, protocol, expires, resultPath, 0);
+    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String resultPath)
+            throws IOException {
+        this(auth, domain, protocol, urlIndex, expires, resultPath, 0);
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {
@@ -64,7 +67,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
 
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
-            String url = domain == null ? line.get("url") : protocol + "://" + domain + "/" + line.get("key");
+            String url = domain == null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
                 String signedUrl = auth.privateDownloadUrl(url, expires);
                 if (signedUrl != null) resultList.add(signedUrl);

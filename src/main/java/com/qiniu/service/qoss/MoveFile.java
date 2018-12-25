@@ -16,27 +16,38 @@ import java.util.stream.Collectors;
 public class MoveFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String toBucket;
+    private String newKeyIndex;
     private String keyPrefix;
     private boolean forceIfOnlyPrefix;
 
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
-                    boolean forceIfOnlyPrefix, String resultPath, int resultIndex) throws IOException {
+    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
+                    String keyPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
         this.toBucket = toBucket;
+        if (newKeyIndex == null || "".equals(newKeyIndex)) {
+            if (forceIfOnlyPrefix) {
+                if (keyPrefix == null || "".equals(keyPrefix)) throw new IOException("the add-prefix is empty.");
+            } else {
+                throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
+                        "please set the \"\"prefix-force\"\" as true.");
+            }
+        } else {
+            this.newKeyIndex = newKeyIndex;
+        }
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.forceIfOnlyPrefix = forceIfOnlyPrefix;
     }
 
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
-                    boolean forceIfOnlyPrefix, String resultPath) throws IOException {
-        this(auth, configuration, bucket, toBucket, keyPrefix, forceIfOnlyPrefix, resultPath, 0);
+    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
+                    String keyPrefix, boolean forceIfOnlyPrefix, String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, resultPath, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
         Response response;
         if (toBucket == null || "".equals(toBucket)) {
-            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("newKey"),
+            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex),
                     false);
         } else {
             response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
@@ -46,19 +57,15 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) throws QiniuException {
-
         List<String> keyList = lineList.stream().map(line -> line.get("key"))
                 .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
         if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
-
         if (toBucket == null || "".equals(toBucket)) {
-            List<String> newKeyList = lineList.stream().map(line -> line.get("newKey"))
+            List<String> newKeyList = lineList.stream().map(line -> line.get(newKeyIndex))
                     .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
-            if (newKeyList.size() == 0) {
-                if (forceIfOnlyPrefix) {
-                    for (String aKeyList : keyList) {
-                        batchOperations.addRenameOp(bucket, aKeyList, keyPrefix + aKeyList);
-                    }
+            if (newKeyList.size() == 0 && forceIfOnlyPrefix) {
+                for (String key : keyList) {
+                    batchOperations.addRenameOp(bucket, key, keyPrefix + key);
                 }
             }
             if (keyList.size() != newKeyList.size())
@@ -67,8 +74,8 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 batchOperations.addRenameOp(bucket, keyList.get(i), keyPrefix + newKeyList.get(i));
             }
         } else {
-            for (String aKeyList : keyList) {
-                batchOperations.addMoveOp(bucket, aKeyList, toBucket, keyPrefix + aKeyList);
+            for (String key : keyList) {
+                batchOperations.addMoveOp(bucket, key, toBucket, keyPrefix + key);
             }
         }
 
