@@ -20,10 +20,11 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
 
     private String domain;
     private String protocol;
+    private String urlIndex;
+    private String md5Index;
     private Auth srcAuth;
     private boolean keepKey;
     private String keyPrefix;
-    private boolean hashCheck;
     private M3U8Manager m3u8Manager;
     private boolean hasCustomArgs;
     private String host;
@@ -35,7 +36,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     private boolean ignoreSameKey;
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
-                      boolean keepKey, String keyPrefix, boolean hashCheck, String resultPath, int resultIndex)
+                      boolean keepKey, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
             throws IOException {
         super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
         setBatch(false);
@@ -45,21 +46,22 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
             this.domain = domain;
         }
         this.protocol = protocol;
+        this.urlIndex = urlIndex;
         this.srcAuth = srcAuth;
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
-        this.hashCheck = hashCheck;
         this.m3u8Manager = new M3U8Manager();
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
-                      boolean keepKey, String keyPrefix, boolean hashCheck, String resultFileDir)
+                      boolean keepKey, String keyPrefix, String urlIndex, String resultFileDir)
             throws IOException {
-        this(auth, configuration, bucket, domain, protocol, srcAuth, keepKey, keyPrefix, hashCheck, resultFileDir, 0);
+        this(auth, configuration, bucket, domain, protocol, srcAuth, keepKey, keyPrefix, urlIndex, resultFileDir, 0);
     }
 
-    public void setFetchArgs(String host, String callbackUrl, String callbackBody, String callbackBodyType,
+    public void setFetchArgs(String md5Index, String host, String callbackUrl, String callbackBody, String callbackBodyType,
                              String callbackHost, int fileType, boolean ignoreSameKey) {
+        this.md5Index = md5Index == null ? "" : md5Index;
         this.host = host;
         this.callbackUrl = callbackUrl;
         this.callbackBody = callbackBody;
@@ -85,22 +87,26 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
-        String url = domain == null ? line.get("url") : protocol + "://" + domain + "/" + line.get("key");
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
-        Response response = fetch(url, keepKey ? keyPrefix + line.get("key") : null,
-                line.get("md5"), hashCheck ? line.get("hash") : null);
-        if ("application/x-mpegurl".equals(line.get("mimeType")) || line.get("key").endsWith(".m3u8")) {
+        String url;
+        String key;
+        if (domain != null) {
+            url = protocol + "://" + domain + "/" + line.get("key");
+            key = line.get("key");
+        } else {
+            url = line.get(urlIndex);
+            key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+        }
+        Response response = fetch(url, keepKey ? keyPrefix + key : null, line.get(md5Index), line.get("hash"));
+        if ("application/x-mpegurl".equals(line.get("mimeType")) || key.endsWith(".m3u8")) {
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
             } catch (IOException ioException) {
                 fileMap.writeErrorOrNull("list ts failed: " + url);
             }
-
             for (VideoTS videoTS : videoTSList) {
-                String key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, line.get("md5"),
-                        hashCheck ? line.get("hash") : null);
+                key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, line.get(md5Index), line.get("hash"));
             }
         }
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);

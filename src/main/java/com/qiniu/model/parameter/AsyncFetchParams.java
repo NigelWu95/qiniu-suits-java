@@ -12,7 +12,8 @@ public class AsyncFetchParams extends QossParams {
     private String needSign;
     private String keepKey;
     private String keyPrefix;
-    private String hashCheck;
+    private String urlIndex;
+    private String md5Index;
     private String host;
     private String callbackUrl;
     private String callbackBody;
@@ -29,7 +30,8 @@ public class AsyncFetchParams extends QossParams {
         try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
         try { this.keepKey = entryParam.getParamValue("keep-key"); } catch (Exception e) { keepKey = ""; }
         try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try { this.hashCheck = entryParam.getParamValue("hash-check"); } catch (Exception e) { hashCheck = ""; }
+        try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
+        try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) { md5Index = ""; }
         try { this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
         try { this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
         try { this.callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
@@ -77,11 +79,43 @@ public class AsyncFetchParams extends QossParams {
         return keyPrefix;
     }
 
-    public boolean getHashCheck() {
-        if (hashCheck.matches("(true|false)")) {
-            return Boolean.valueOf(hashCheck);
+    public String getUrlIndex() throws IOException {
+        if ("json".equals(getParseType())) {
+            if ("".equals(urlIndex)) {
+                throw new IOException("no incorrect json key index for avinfo's url.");
+            } else {
+                return urlIndex;
+            }
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(urlIndex)) {
+                return "0";
+            } else if (urlIndex.matches("\\d")) {
+                return urlIndex;
+            } else {
+                throw new IOException("no incorrect url index, it should be a number.");
+            }
         } else {
-            return false;
+            throw new IOException("no incorrect object key index for avinfo's url.");
+        }
+    }
+
+    public String getMd5Index() throws IOException {
+        if ("json".equals(getParseType())) {
+            if ("".equals(md5Index)) {
+                throw new IOException("no incorrect json key index for asyncfetch's md5.");
+            } else {
+                return md5Index;
+            }
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(md5Index)) {
+                return "8";
+            } else if (md5Index.matches("\\d")) {
+                return md5Index;
+            } else {
+                throw new IOException("no incorrect md5 index, it should be a number.");
+            }
+        } else {
+            throw new IOException("no incorrect object key index for asyncfetch's md5.");
         }
     }
 
