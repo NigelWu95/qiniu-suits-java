@@ -5,7 +5,6 @@ import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 public class FileInputEntry {
@@ -24,13 +23,10 @@ public class FileInputEntry {
         int unitLen = fileInputParams.getUnitLen();
         Map<String, String> indexMap = fileInputParams.getIndexMap();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        ProcessorChoice processorChoice = new ProcessorChoice(entryParam);
-        ILineProcess<Map<String, String>> lineProcessor = processorChoice.getFileProcessor();
-        // 获取 processor 之后 indexMap 可能需要更新
-        indexMap.putAll(processorChoice.getNewIndexMap());
+        ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(entryParam).getFileProcessor();
         FileInput fileInput = new FileInput(parseType, separator, indexMap, unitLen, resultPath);
         // TODO
-        fileInput.setResultSaveOptions(resultFormat, resultSeparator, new ArrayList<>());
+        if (saveTotal) fileInput.setResultSaveOptions(resultFormat, resultSeparator, fileInputParams.getRmFields());
         fileInput.process(maxThreads, sourceFilePath, lineProcessor);
         if (lineProcessor != null) lineProcessor.closeResource();
     }

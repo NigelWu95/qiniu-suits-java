@@ -10,7 +10,6 @@ public class QhashParams extends QossParams {
     private String algorithm;
     private String https;
     private String needSign;
-    private String urlIndex;
 
     public QhashParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
@@ -18,7 +17,6 @@ public class QhashParams extends QossParams {
         try { this.algorithm = entryParam.getParamValue("algorithm"); } catch (Exception e) { algorithm = ""; }
         try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
         try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
-        try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
     }
 
     public String getDomain() {
@@ -48,26 +46,6 @@ public class QhashParams extends QossParams {
             return Boolean.valueOf(needSign);
         } else {
             return false;
-        }
-    }
-
-    public String getUrlIndex() throws IOException {
-        if ("json".equals(getParseType())) {
-            if ("".equals(urlIndex)) {
-                throw new IOException("no incorrect json key index for avinfo's url.");
-            } else {
-                return urlIndex;
-            }
-        } else if ("table".equals(getParseType())) {
-            if ("".equals(urlIndex)) {
-                return "0";
-            } else if (urlIndex.matches("\\d")) {
-                return urlIndex;
-            } else {
-                throw new IOException("no incorrect url index, it should be a number.");
-            }
-        } else {
-            throw new IOException("no incorrect object key index for avinfo's url.");
         }
     }
 }

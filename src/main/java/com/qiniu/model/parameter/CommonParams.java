@@ -5,6 +5,8 @@ import com.qiniu.config.PropertyConfig;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 public class CommonParams {
 
@@ -17,6 +19,7 @@ public class CommonParams {
     private String resultFormat;
     private String resultSeparator;
     protected String saveTotal;
+    private String rmFields;
     private String process;
     private String maxThreads;
 
@@ -30,6 +33,7 @@ public class CommonParams {
         try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
         try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
+        try { this.rmFields = entryParam.getParamValue("remove-fields"); } catch (Exception e) { rmFields = ""; }
         try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
         try { this.maxThreads = entryParam.getParamValue("threads"); } catch (Exception e) { maxThreads = ""; }
     }
@@ -111,5 +115,9 @@ public class CommonParams {
         } else {
             return 30;
         }
+    }
+
+    public List<String> getRmFields() {
+        return Arrays.asList(rmFields.split(","));
     }
 }

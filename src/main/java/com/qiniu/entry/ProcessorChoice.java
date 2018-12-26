@@ -15,15 +15,14 @@ import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ProcessorChoice {
 
     private IEntryParam entryParam;
+    private FileInputParams fileInputParams;
     private String process;
-    private Map<String, String> newIndexMap;
     private int retryCount;
     private String resultPath;
     private String resultFormat;
@@ -32,17 +31,12 @@ public class ProcessorChoice {
 
     public ProcessorChoice(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
-        CommonParams commonParams = new CommonParams(entryParam);
-        process = commonParams.getProcess();
-        newIndexMap = new HashMap<>();
-        retryCount = commonParams.getRetryCount();
-        resultPath = commonParams.getResultPath();
-        resultFormat = commonParams.getResultFormat();
-        resultSeparator = commonParams.getResultSeparator();
-    }
-
-    public Map<String, String> getNewIndexMap() {
-        return newIndexMap;
+        fileInputParams = new FileInputParams(entryParam);
+        process = fileInputParams.getProcess();
+        retryCount = fileInputParams.getRetryCount();
+        resultPath = fileInputParams.getResultPath();
+        resultFormat = fileInputParams.getResultFormat();
+        resultSeparator = fileInputParams.getResultSeparator();
     }
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
@@ -56,12 +50,11 @@ public class ProcessorChoice {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-        FieldSaveParams fieldParams = new FieldSaveParams(entryParam);
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (fileFilter.isValid()) {
             processor = new FileInfoFilterProcess(fileFilter, resultPath, resultFormat, resultSeparator,
-                    fieldParams.getUsedFields());
+                    listFilterParams.getRmFields());
             if (process != null && !"".equals(process) && !"filter".equals(process)) {
                 processor.setNextProcessor(nextProcessor);
             }
@@ -130,7 +123,7 @@ public class ProcessorChoice {
             case "rename": {
                 FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
-                        fileMoveParams.getToBucket(), fileMoveParams.getNewKeyIndex(), fileMoveParams.getKeyPrefix(),
+                        fileMoveParams.getToBucket(), fileInputParams.getNewKeyIndex(), fileMoveParams.getKeyPrefix(),
                         fileMoveParams.getForceIfOnlyPrefix(), resultPath);
                 break;
             }
@@ -141,16 +134,12 @@ public class ProcessorChoice {
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = new AsyncFetchParams(entryParam);
-                String urlIndex = asyncFetchParams.getUrlIndex();
-                String md5Index = asyncFetchParams.getMd5Index();
-                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
-                if (md5Index != null && !"".equals(md5Index)) newIndexMap.put(md5Index, md5Index);
                 Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth, asyncFetchParams.getKeepKey(),
-                        asyncFetchParams.getKeyPrefix(), urlIndex, resultPath);
+                        asyncFetchParams.getKeyPrefix(), fileInputParams.getUrlIndex(), resultPath);
                 if (asyncFetchParams.hasCustomArgs())
-                    ((AsyncFetch) processor).setFetchArgs(md5Index, asyncFetchParams.getHost(),
+                    ((AsyncFetch) processor).setFetchArgs(fileInputParams.getMd5Index(), asyncFetchParams.getHost(),
                             asyncFetchParams.getCallbackUrl(), asyncFetchParams.getCallbackBody(),
                             asyncFetchParams.getCallbackBodyType(), asyncFetchParams.getCallbackHost(),
                             asyncFetchParams.getFileType(), asyncFetchParams.getIgnoreSameKey());
@@ -158,36 +147,28 @@ public class ProcessorChoice {
             }
             case "avinfo": {
                 AvinfoParams avinfoParams = new AvinfoParams(entryParam);
-                String urlIndex = avinfoParams.getUrlIndex();
-                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
                 Auth auth = null;
                 if (avinfoParams.getNeedSign()) {
                     ak = avinfoParams.getAccessKey();
                     sk = avinfoParams.getSecretKey();
                     auth = Auth.create(ak, sk);
                 }
-                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(), urlIndex, auth, resultPath);
+                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(),
+                        fileInputParams.getUrlIndex(), auth, resultPath);
                 break;
             }
             case "pfop": {
                 PfopParams pfopParams = new PfopParams(entryParam);
-                String fopsIndex = pfopParams.getFopsIndex();
-                if (fopsIndex != null && !"".equals(fopsIndex)) newIndexMap.put(fopsIndex, fopsIndex);
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
-                        pfopParams.getPipeline(), fopsIndex, resultPath);
+                        pfopParams.getPipeline(), fileInputParams.getFopsIndex(), resultPath);
                 break;
             }
             case "pfopresult": {
-                PfopResultParams pfopResultParams = new PfopResultParams(entryParam);
-                String pIdIndex = pfopResultParams.getPersistentIdIndex();
-                if (pIdIndex != null && !"".equals(pIdIndex)) newIndexMap.put(pIdIndex, pIdIndex);
-                processor = new QueryPfopResult(pIdIndex, resultPath);
+                processor = new QueryPfopResult(fileInputParams.getPersistentIdIndex(), resultPath);
                 break;
             }
             case "qhash": {
                 QhashParams qhashParams = new QhashParams(entryParam);
-                String urlIndex = qhashParams.getUrlIndex();
-                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
                 Auth auth = null;
                 if (qhashParams.getNeedSign()) {
                     ak = qhashParams.getAccessKey();
@@ -195,7 +176,7 @@ public class ProcessorChoice {
                     auth = Auth.create(ak, sk);
                 }
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getAlgorithm(), qhashParams.getProtocol(),
-                        urlIndex, auth, qhashParams.getResultPath());
+                        fileInputParams.getUrlIndex(), auth, qhashParams.getResultPath());
                 break;
             }
             case "stat": {
@@ -206,10 +187,8 @@ public class ProcessorChoice {
             }
             case "privateurl": {
                 PrivateUrlParams privateUrlParams = new PrivateUrlParams(entryParam);
-                String urlIndex = privateUrlParams.getUrlIndex();
-                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
                 processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(), privateUrlParams.getProtocol(),
-                        urlIndex, privateUrlParams.getExpires(), privateUrlParams.getResultPath());
+                        fileInputParams.getUrlIndex(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
                 break;
             }
         }
