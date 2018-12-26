@@ -15,6 +15,7 @@ import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ public class ProcessorChoice {
 
     private IEntryParam entryParam;
     private String process;
+    private Map<String, String> newIndexMap;
     private int retryCount;
     private String resultPath;
     private String resultFormat;
@@ -32,10 +34,15 @@ public class ProcessorChoice {
         this.entryParam = entryParam;
         CommonParams commonParams = new CommonParams(entryParam);
         process = commonParams.getProcess();
+        newIndexMap = new HashMap<>();
         retryCount = commonParams.getRetryCount();
         resultPath = commonParams.getResultPath();
         resultFormat = commonParams.getResultFormat();
         resultSeparator = commonParams.getResultSeparator();
+    }
+
+    public Map<String, String> getNewIndexMap() {
+        return newIndexMap;
     }
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
@@ -134,42 +141,53 @@ public class ProcessorChoice {
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = new AsyncFetchParams(entryParam);
+                String urlIndex = asyncFetchParams.getUrlIndex();
+                String md5Index = asyncFetchParams.getMd5Index();
+                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
+                if (md5Index != null && !"".equals(md5Index)) newIndexMap.put(md5Index, md5Index);
                 Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth, asyncFetchParams.getKeepKey(),
-                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getUrlIndex(), resultPath);
+                        asyncFetchParams.getKeyPrefix(), urlIndex, resultPath);
                 if (asyncFetchParams.hasCustomArgs())
-                    ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getMd5Index(), asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
-                            asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
-                            asyncFetchParams.getCallbackHost(), asyncFetchParams.getFileType(),
-                            asyncFetchParams.getIgnoreSameKey());
+                    ((AsyncFetch) processor).setFetchArgs(md5Index, asyncFetchParams.getHost(),
+                            asyncFetchParams.getCallbackUrl(), asyncFetchParams.getCallbackBody(),
+                            asyncFetchParams.getCallbackBodyType(), asyncFetchParams.getCallbackHost(),
+                            asyncFetchParams.getFileType(), asyncFetchParams.getIgnoreSameKey());
                 break;
             }
             case "avinfo": {
                 AvinfoParams avinfoParams = new AvinfoParams(entryParam);
+                String urlIndex = avinfoParams.getUrlIndex();
+                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
                 Auth auth = null;
                 if (avinfoParams.getNeedSign()) {
                     ak = avinfoParams.getAccessKey();
                     sk = avinfoParams.getSecretKey();
                     auth = Auth.create(ak, sk);
                 }
-                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(),
-                        avinfoParams.getUrlIndex(), auth, resultPath);
+                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(), urlIndex, auth, resultPath);
                 break;
             }
             case "pfop": {
                 PfopParams pfopParams = new PfopParams(entryParam);
+                String fopsIndex = pfopParams.getFopsIndex();
+                if (fopsIndex != null && !"".equals(fopsIndex)) newIndexMap.put(fopsIndex, fopsIndex);
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
-                        pfopParams.getPipeline(), pfopParams.getFopsIndex(), resultPath);
+                        pfopParams.getPipeline(), fopsIndex, resultPath);
                 break;
             }
             case "pfopresult": {
                 PfopResultParams pfopResultParams = new PfopResultParams(entryParam);
-                processor = new QueryPfopResult(pfopResultParams.getPersistentIdIndex(), resultPath);
+                String pIdIndex = pfopResultParams.getPersistentIdIndex();
+                if (pIdIndex != null && !"".equals(pIdIndex)) newIndexMap.put(pIdIndex, pIdIndex);
+                processor = new QueryPfopResult(pIdIndex, resultPath);
                 break;
             }
             case "qhash": {
                 QhashParams qhashParams = new QhashParams(entryParam);
+                String urlIndex = qhashParams.getUrlIndex();
+                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
                 Auth auth = null;
                 if (qhashParams.getNeedSign()) {
                     ak = qhashParams.getAccessKey();
@@ -177,7 +195,7 @@ public class ProcessorChoice {
                     auth = Auth.create(ak, sk);
                 }
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getAlgorithm(), qhashParams.getProtocol(),
-                        qhashParams.getUrlIndex(), auth, qhashParams.getResultPath());
+                        urlIndex, auth, qhashParams.getResultPath());
                 break;
             }
             case "stat": {
@@ -188,8 +206,10 @@ public class ProcessorChoice {
             }
             case "privateurl": {
                 PrivateUrlParams privateUrlParams = new PrivateUrlParams(entryParam);
+                String urlIndex = privateUrlParams.getUrlIndex();
+                if (urlIndex != null && !"".equals(urlIndex)) newIndexMap.put(urlIndex, urlIndex);
                 processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(), privateUrlParams.getProtocol(),
-                        privateUrlParams.getUrlIndex(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
+                        urlIndex, privateUrlParams.getExpires(), privateUrlParams.getResultPath());
                 break;
             }
         }

@@ -22,11 +22,13 @@ public class FileInputEntry {
         String resultPath = fileInputParams.getResultPath();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
+        Map<String, String> indexMap = fileInputParams.getIndexMap();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(entryParam).getFileProcessor();
-        String processName = lineProcessor != null ? lineProcessor.getProcessName() : "";
-        Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams, processName);
-        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultPath);
+        ProcessorChoice processorChoice = new ProcessorChoice(entryParam);
+        ILineProcess<Map<String, String>> lineProcessor = processorChoice.getFileProcessor();
+        // 获取 processor 之后 indexMap 可能需要更新
+        indexMap.putAll(processorChoice.getNewIndexMap());
+        FileInput fileInput = new FileInput(parseType, separator, indexMap, unitLen, resultPath);
         // TODO
         fileInput.setResultSaveOptions(resultFormat, resultSeparator, new ArrayList<>());
         fileInput.process(maxThreads, sourceFilePath, lineProcessor);

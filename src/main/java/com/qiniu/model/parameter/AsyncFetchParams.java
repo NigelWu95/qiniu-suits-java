@@ -108,7 +108,7 @@ public class AsyncFetchParams extends QossParams {
             }
         } else if ("table".equals(getParseType())) {
             if ("".equals(md5Index)) {
-                return "8";
+                return "2";
             } else if (md5Index.matches("\\d")) {
                 return md5Index;
             } else {
