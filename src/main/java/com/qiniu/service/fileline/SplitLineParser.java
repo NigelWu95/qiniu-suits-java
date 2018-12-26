@@ -22,7 +22,7 @@ public class SplitLineParser implements ILineParser {
             String mapKey = infoIndexMap.get(String.valueOf(i));
             if (mapKey != null) itemMap.put(mapKey, items[i]);
         }
-        if (itemMap.size() == 0) throw new IOException();
+        if (itemMap.size() < infoIndexMap.size()) throw new IOException();
         return itemMap;
     }
 }
