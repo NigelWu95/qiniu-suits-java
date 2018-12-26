@@ -30,7 +30,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     public QueryHash(String domain, String algorithm, String protocol, String urlIndex, Auth auth, String resultPath,
                      int resultIndex)
             throws IOException {
-        this.processName = "hash";
+        this.processName = "qhash";
         if (domain == null || "".equals(domain)) this.domain = null;
         else {
             RequestUtils.checkHost(domain);

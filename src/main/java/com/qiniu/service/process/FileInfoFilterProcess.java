@@ -21,13 +21,13 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     private String resultPath;
     private String resultFormat;
     private String resultSeparator;
-    private List<String> resultFields;
+    private List<String> rmFields;
     private int resultIndex;
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
     public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
-                                 List<String> resultFields, int resultIndex) throws Exception {
+                                 List<String> rmFields, int resultIndex) throws Exception {
         this.processName = "filter";
         List<String> methodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
@@ -56,11 +56,11 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;
         this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;
-        this.resultFields = resultFields;
+        this.rmFields = rmFields;
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
         this.fileMap.initWriter(resultPath, processName, resultIndex);
-        this.typeConverter = new InfoMapToString(resultFormat, resultSeparator, resultFields);
+        this.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
     }
 
     public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
@@ -73,7 +73,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         fileInfoFilterProcess.fileMap = new FileMap();
         try {
             fileInfoFilterProcess.fileMap.initWriter(resultPath, processName, resultIndex++);
-            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, resultFields);
+            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
             if (nextProcessor != null) {
                 fileInfoFilterProcess.nextProcessor = nextProcessor.clone();
             }

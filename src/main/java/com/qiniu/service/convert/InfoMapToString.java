@@ -6,33 +6,34 @@ import com.qiniu.service.interfaces.ITypeConvert;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.*;
 import java.util.stream.Collectors;
 
 public class InfoMapToString implements ITypeConvert<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
-    private List<String> usedFields;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public InfoMapToString(String format, String separator, List<String> usedFields) throws IOException {
-        if (usedFields == null || usedFields.size() == 0) throw new IOException("there are no fields be set.");
-        this.usedFields = usedFields;
+    public InfoMapToString(String format, String separator, List<String> rmFields) {
+        List<String> rFields = rmFields == null ? new ArrayList<>() : rmFields;
         if ("format".equals(format)) {
-            stringFormatter = (infoMap, fields) -> {
+            stringFormatter = (infoMap) -> {
                 JsonObject converted = new JsonObject();
-                fields.forEach(key -> converted.addProperty(key, infoMap.get(key)));
-                if (converted.size() == 0) throw new IOException("there are no valid info map key in fields.");
+                for (Entry<String, String> set : infoMap.entrySet()) {
+                    if (!rFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
+                }
+                if (converted.size() < infoMap.size() - rFields.size())
+                    throw new IOException("there are no enough valid info map key in fields.");
                 return converted.getAsString();
             };
         } else {
-            stringFormatter = (infoMap, fields) -> {
+            stringFormatter = (infoMap) -> {
                 StringBuilder converted = new StringBuilder();
-                fields.forEach(key -> {
-                        converted.append(infoMap.get(key));
-                        converted.append(separator);
-                });
-                if (converted.toString().split(separator).length == 0)
-                    throw new IOException("there are no valid info map key in fields.");
+                for (Entry<String, String> set : infoMap.entrySet()) {
+                    if (!rFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
+                }
+                if (converted.toString().split(separator).length < infoMap.size() - rFields.size())
+                    throw new IOException("there are no enough valid info map key in fields.");
                 return converted.toString();
             };
         }
@@ -44,7 +45,7 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                 .filter(Objects::nonNull)
                 .map(infoMap -> {
                     try {
-                        return stringFormatter.toFormatString(infoMap, usedFields);
+                        return stringFormatter.toFormatString(infoMap);
                     } catch (Exception e) {
                         errorList.add(infoMap.toString());
                         return null;
