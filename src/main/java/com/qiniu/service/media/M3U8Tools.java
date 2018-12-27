@@ -27,7 +27,7 @@ public class M3U8Tools {
                 IOUtils.copyLarge(inputStream, fileOutputStream);
                 fileMap.writeSuccess(ts.getUrl());
             } catch (IOException e) {
-                fileMap.writeErrorOrNull(ts.getUrl() + "\t" + e.toString());
+                fileMap.writeError(ts.getUrl() + "\t" + e.toString());
             }
         }
 
@@ -64,7 +64,7 @@ public class M3U8Tools {
                 IOUtils.copyLarge(inputStream, fileOutputStream);
                 fileMap.writeSuccess(ts.toString());
             } catch (IOException e) {
-                fileMap.writeErrorOrNull(ts + "\t" + e.toString());
+                fileMap.writeError(ts + "\t" + e.toString());
             }
         }
 

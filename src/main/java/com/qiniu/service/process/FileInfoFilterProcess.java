@@ -102,7 +102,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
             writeList = typeConverter.convertToVList(resultList);
             if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
+                fileMap.writeError(String.join("\n", typeConverter.getErrorList()));
             if (nextProcessor != null) nextProcessor.processLine(resultList);
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());

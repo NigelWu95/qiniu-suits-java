@@ -104,7 +104,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
             } catch (IOException ioException) {
-                fileMap.writeErrorOrNull("list ts failed: " + url);
+                fileMap.writeError("list ts failed: " + url);
             }
             for (VideoTS videoTS : videoTSList) {
                 key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
