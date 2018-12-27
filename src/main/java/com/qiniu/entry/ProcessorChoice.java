@@ -55,9 +55,7 @@ public class ProcessorChoice {
         if (fileFilter.isValid()) {
             processor = new FileInfoFilterProcess(fileFilter, resultPath, resultFormat, resultSeparator,
                     listFilterParams.getRmFields());
-            if (process != null && !"".equals(process) && !"filter".equals(process)) {
-                processor.setNextProcessor(nextProcessor);
-            }
+            processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
                 throw new Exception("please set the correct filter conditions.");

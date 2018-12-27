@@ -1,5 +1,6 @@
 package com.qiniu.service.process;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,20 +19,20 @@ public class FileFilter {
     private List<String> antiMime;
 
     public void setKeyConditions(List<String> keyPrefix, List<String> keySuffix, List<String> keyRegex) {
-        this.keyPrefix = keyPrefix;
-        this.keySuffix = keySuffix;
-        this.keyRegex = keyRegex;
+        this.keyPrefix = keyPrefix == null ? new ArrayList<>() : keyPrefix;
+        this.keySuffix = keySuffix == null ? new ArrayList<>() : keySuffix;
+        this.keyRegex = keyRegex == null ? new ArrayList<>() : keyRegex;
     }
 
     public void setAntiKeyConditions(List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyRegex) {
-        this.antiKeyPrefix = antiKeyPrefix;
-        this.antiKeySuffix = antiKeySuffix;
-        this.antiKeyRegex = antiKeyRegex;
+        this.antiKeyPrefix = antiKeyPrefix == null ? new ArrayList<>() : antiKeyPrefix;
+        this.antiKeySuffix = antiKeySuffix == null ? new ArrayList<>() : antiKeySuffix;
+        this.antiKeyRegex = antiKeyRegex == null ? new ArrayList<>() : antiKeyRegex;
     }
 
     public void setMimeConditions(List<String> mime, List<String> antiMime) {
-        this.mime = mime;
-        this.antiMime = antiMime;
+        this.mime = mime == null ? new ArrayList<>() : mime;
+        this.antiMime = antiMime == null ? new ArrayList<>() : antiMime;
     }
 
     public void setOtherConditions(long putTimeMax, long putTimeMin, int type) {

@@ -17,7 +17,7 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
         this.rmFields = rmFields;
     }
 
-    public String toFormatString(FileInfo fileInfo) throws IOException {
+    public String toFormatString(FileInfo fileInfo) {
         StringBuilder converted = new StringBuilder();
         if (!rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
         if (!rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
@@ -27,8 +27,6 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
         if (!rmFields.contains("endUser")) converted.append(fileInfo.endUser).append(separator);
         if (!rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (!rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
-        if (converted.toString().split(separator).length < 9 - rmFields.size())
-            throw new IOException("there are no enough valid file info key in fields.");
         return converted.toString();
     }
 }
