@@ -78,7 +78,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return pfopResult;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
@@ -86,7 +86,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 if (pfopResult != null)resultList.add(pfopResult);
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, line.toString());
+                HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

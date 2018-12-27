@@ -72,11 +72,11 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return this.processName;
     }
 
-    protected abstract String processLine(Map<String, String> fileInfo) throws QiniuException;
+    protected abstract String processLine(Map<String, String> fileInfo) throws IOException;
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    public List<String> singleRun(List<Map<String, String>> fileInfoList) throws QiniuException {
+    public List<String> singleRun(List<Map<String, String>> fileInfoList) throws IOException {
 
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> fileInfo : fileInfoList) {
@@ -96,15 +96,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                 }
                 if (result != null) resultList.add(fileInfo.get("key") + "\t" + result);
+                else throw new QiniuException(null, "empty " + processName + " result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, fileInfo.get("key"));
+                HttpResponseUtils.processException(e, fileMap, String.valueOf(fileInfo));
             }
         }
 
         return resultList;
     }
 
-    public List<String> batchRun(List<Map<String, String>> fileInfoList) throws QiniuException {
+    public List<String> batchRun(List<Map<String, String>> fileInfoList) throws IOException {
         String result;
         List<String> resultList = new ArrayList<>();
         int times = fileInfoList.size()/1000 + 1;
@@ -135,17 +136,17 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         for (int j = 0; j < processList.size(); j++) {
                             resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
                         }
-                    }
+                    } else throw new QiniuException(null, "empty " + processName + " result");
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, String.join("\n", processList.stream()
-                                    .map(fileInfo -> fileInfo.get("key")).collect(Collectors.toList())));
+                                    .map(String::valueOf).collect(Collectors.toList())));
                 }
             }
         }
         return resultList;
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
         List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }

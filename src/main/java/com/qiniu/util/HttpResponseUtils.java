@@ -4,6 +4,8 @@ import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 
+import java.io.IOException;
+
 public class HttpResponseUtils {
 
     public static int getNextRetryCount(QiniuException e, int retryCount) throws QiniuException {
@@ -27,8 +29,7 @@ public class HttpResponseUtils {
         }
     }
 
-    public static void processException(QiniuException e, FileMap fileMap, String info)
-            throws QiniuException {
+    public static void processException(QiniuException e, FileMap fileMap, String info) throws IOException {
         if (e != null) {
             if (e.response != null) {
                 if (fileMap != null) fileMap.writeError(e.response.reqId + "\t" + info + "\t" + e.error());
