@@ -16,7 +16,7 @@ public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
         this.rmFields = rmFields == null ? new ArrayList<>() : rmFields;
     }
 
-    public String toFormatString(FileInfo fileInfo) throws IOException {
+    public String toFormatString(FileInfo fileInfo) {
         JsonObject converted = new JsonObject();
         if (!rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
         if (!rmFields.contains("hash")) converted.addProperty("hash", fileInfo.hash);
@@ -26,8 +26,6 @@ public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
         if (!rmFields.contains("endUser")) converted.addProperty("endUser", fileInfo.endUser);
         if (!rmFields.contains("type")) converted.addProperty("type", fileInfo.type);
         if (!rmFields.contains("status")) converted.addProperty("status", fileInfo.status);
-        if (converted.size() < 8 - rmFields.size())
-            throw new IOException("there are no enough valid file info key in fields.");
         return converted.toString();
     }
 }

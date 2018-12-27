@@ -94,11 +94,13 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     public void processLine(List<Map<String, String>> list) throws QiniuException {
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> resultList = new ArrayList<>();
+        List<String> writeList;
         try {
             for (Map<String, String> line : list) {
                 if (filter.doFilter(line)) resultList.add(line);
             }
-            fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(resultList)));
+            writeList = typeConverter.convertToVList(resultList);
+            if (writeList != null && writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
             if (nextProcessor != null) nextProcessor.processLine(resultList);
