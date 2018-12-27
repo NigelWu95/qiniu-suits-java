@@ -21,7 +21,7 @@ public class FileChecker {
     public FileChecker(String algorithm, String protocol, Auth srcAuth) {
         this.client = new Client();
         this.algorithm = (algorithm == null || "".equals(algorithm)) ? "md5" : algorithm;
-        this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
+        this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
         this.srcAuth = srcAuth;
     }
 

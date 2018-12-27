@@ -56,9 +56,9 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
-                      boolean keepKey, String keyPrefix, String urlIndex, String resultFileDir)
+                      boolean keepKey, String keyPrefix, String urlIndex, String resultPath)
             throws IOException {
-        this(auth, configuration, bucket, domain, protocol, srcAuth, keepKey, keyPrefix, urlIndex, resultFileDir, 0);
+        this(auth, configuration, bucket, domain, protocol, srcAuth, keepKey, keyPrefix, urlIndex, resultPath, 0);
     }
 
     public void setFetchArgs(String md5Index, String host, String callbackUrl, String callbackBody, String callbackBodyType,
