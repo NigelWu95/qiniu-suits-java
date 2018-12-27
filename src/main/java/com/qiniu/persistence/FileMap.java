@@ -128,14 +128,9 @@ public class FileMap implements Cloneable {
         }
     }
 
-    private void doWrite(String key, String item) {
-        try {
-            getWriter(key).write(item);
-            getWriter(key).newLine();
-        } catch (IOException ioException) {
-            System.out.println("Writer " + key + " write " + item + " failed");
-            ioException.printStackTrace();
-        }
+    private void doWrite(String key, String item) throws IOException {
+        getWriter(key).write(item);
+        getWriter(key).newLine();
     }
 
     public void writeKeyFile(String key, String item) throws IOException {
@@ -143,7 +138,7 @@ public class FileMap implements Cloneable {
         doWrite(prefix + key + suffix, item);
     }
 
-    public void writeSuccess(String item) {
+    public void writeSuccess(String item) throws IOException {
         doWrite(this.prefix + "_success" + suffix, item);
     }
 
