@@ -3,58 +3,53 @@ package com.qiniu.model.parameter;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
+import java.util.*;
 
 public class FileInputParams extends CommonParams {
 
     private String filePath;
-    private String parseType;
     private String separator;
-    private String keyIndex;
-    private String hashIndex;
-    private String fsizeIndex;
-    private String putTimeIndex;
-    private String mimeTypeIndex;
-    private String endUserIndex;
-    private String typeIndex;
-    private String statusIndex;
+    private String indexes;
+    private String urlIndex;
     private String md5Index;
+    private String newKeyIndex;
     private String fopsIndex;
     private String persistentIdIndex;
-    private String targetKeyIndex;
-    private String urlIndex;
+    private List<String> needUrlIndex = new ArrayList<String>(){{
+        add("asyncfetch");
+        add("privateurl");
+        add("qhash");
+        add("avinfo");
+    }};
+    private List<String> needMd5Index = new ArrayList<String>(){{
+        add("asyncfetch");
+    }};
+    private List<String> needNewKeyIndex = new ArrayList<String>(){{
+        add("rename");
+    }};
+    private List<String> needFopsIndex = new ArrayList<String>(){{
+        add("pfop");
+    }};
+    private List<String> needPersistentIdIndex = new ArrayList<String>(){{
+        add("pfopresult");
+    }};
 
-    public FileInputParams(IEntryParam entryParam) throws Exception {
+    public FileInputParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
-        this.filePath = entryParam.getParamValue("file-path");
-        this.parseType = entryParam.getParamValue("parse-type");
-        try { this.separator = entryParam.getParamValue("separator"); } catch (Exception e) {}
-        try { this.keyIndex = entryParam.getParamValue("key-index"); } catch (Exception e) {}
-        try { this.hashIndex = entryParam.getParamValue("hash-index"); } catch (Exception e) {}
-        try { this.fsizeIndex = entryParam.getParamValue("fsize-index"); } catch (Exception e) {}
-        try { this.putTimeIndex = entryParam.getParamValue("putTime-index"); } catch (Exception e) {}
-        try { this.mimeTypeIndex = entryParam.getParamValue("mimeType-index"); } catch (Exception e) {}
-        try { this.endUserIndex = entryParam.getParamValue("endUser-index"); } catch (Exception e) {}
-        try { this.typeIndex = entryParam.getParamValue("type-index"); } catch (Exception e) {}
-        try { this.statusIndex = entryParam.getParamValue("status-index"); } catch (Exception e) {}
-        try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) {}
-        try { this.fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) {}
-        try { this.persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) {}
-        try { this.targetKeyIndex = entryParam.getParamValue("newKey-index"); } catch (Exception e) {}
-        try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) {}
+        try { this.filePath = entryParam.getParamValue("file-path");} catch (Exception e) {}
+        try { this.separator = entryParam.getParamValue("in-separator"); } catch (Exception e) {}
+        try { this.indexes = entryParam.getParamValue("indexes"); } catch (Exception e) { indexes = ""; }
+        try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
+        try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) { md5Index = ""; }
+        try { this.newKeyIndex = entryParam.getParamValue("newKey-index"); } catch (Exception e) { newKeyIndex = ""; }
+        try { this.fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) { fopsIndex = ""; }
+        try { this.persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) { persistentIdIndex = ""; }
     }
 
     public String getFilePath() throws IOException {
         if (filePath == null || "".equals(filePath)) throw new IOException("please set the file path.");
         else if (filePath.startsWith("/")) throw new IOException("the file path only support relative path.");
         return filePath;
-    }
-
-    public String getParseType() throws IOException {
-        if (parseType == null || "".equals(parseType)) {
-            throw new IOException("no incorrect parse type, please set it as \"json\" or \"table\".");
-        } else {
-            return parseType;
-        }
     }
 
     public String getSeparator() {
@@ -73,224 +68,141 @@ public class FileInputParams extends CommonParams {
         }
     }
 
-    public String getKeyIndex() throws IOException {
-        if (keyIndex == null || "".equals(keyIndex)) {
-            if ("json".equals(parseType)) {
-                return "key";
-            } else {
-                return "0";
-            }
-        } else if (keyIndex.matches("\\d")) {
-            return keyIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("not incorrectly set key index, it should be a number.");
-            }
-            return keyIndex;
+    public Map<String, String> getIndexMap() throws IOException {
+        Map<String, String> indexMap = new HashMap<>();
+        if (needMd5Index.contains(getProcess())) {
+            String md5Index = getMd5Index();
+            if (!"".equals(md5Index)) indexMap.put(md5Index, md5Index);
         }
+        if (needUrlIndex.contains(getProcess())) {
+            String urlIndex = getUrlIndex();
+            if (!"".equals(urlIndex)) {
+                indexMap.put(urlIndex, urlIndex);
+                return indexMap;
+            }
+        }
+        if (needPersistentIdIndex.contains(getProcess())) {
+            String persistentIdIndex = getPersistentIdIndex();
+            if (!"".equals(persistentIdIndex)) {
+                indexMap.put(persistentIdIndex, persistentIdIndex);
+                return indexMap;
+            }
+        }
+        List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "endUser", "type", "status");
+        if ("table".equals(getParseType())) {
+            if ("".equals(indexes) || indexes.matches("(\\d+,)*\\d")) {
+                List<String> indexList = Arrays.asList(indexes.split(","));
+                if (indexList.size() == 0) {
+                    indexMap.put("0", keys.get(0));
+                } else if (indexList.size() > 8) {
+                    throw new IOException("the file info's index length is too long.");
+                } else {
+                    for (int i = 0; i < indexList.size(); i++) { indexMap.put(indexList.get(i), keys.get(i)); }
+                }
+            } else {
+                throw new IOException("the index pattern is not supported.");
+            }
+        } else {
+            List<String> indexList = Arrays.asList(indexes.split(","));
+            if (indexList.size() == 0) {
+                indexMap.put("key", keys.get(0));
+            } else if (indexList.size() > 8) {
+                throw new IOException("the file info's index length is too long.");
+            } else {
+                for (int i = 0; i < indexList.size(); i++) { indexMap.put(indexList.get(i), keys.get(i)); }
+            }
+        }
+        if (needNewKeyIndex.contains(getProcess())) {
+            String newKeyIndex = getNewKeyIndex();
+            if (!"".equals(newKeyIndex)) {
+                indexMap.put(newKeyIndex, newKeyIndex);
+                if (indexMap.size() < 2) throw new IOException("please check the key and newKey index, two index can" +
+                        "not be same with each other.");
+            }
+        }
+        if (needFopsIndex.contains(getProcess())) {
+            String fopsIndex = getFopsIndex();
+            if (!"".equals(fopsIndex)) {
+                indexMap.put(fopsIndex, fopsIndex);
+                if (indexMap.size() < 2) throw new IOException("please check the key and fops index, two index can" +
+                        "not be same with each other.");
+            }
+        }
+        return indexMap;
     }
 
-    public String getHashIndex() throws IOException {
-        if (hashIndex == null || "".equals(hashIndex)) {
-            if ("json".equals(parseType)) {
-                return "hash";
+    public String getUrlIndex() throws IOException {
+        if ("json".equals(getParseType())) {
+            return urlIndex;
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(urlIndex) || urlIndex.matches("\\d")) {
+                return urlIndex;
             } else {
-                return "1";
+                throw new IOException("no incorrect url index, it should be a number.");
             }
-        } else if (hashIndex.matches("\\d")) {
-            return hashIndex;
         } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect hash index, it should be a number.");
-            }
-            return hashIndex;
-        }
-    }
-
-    public String getFsizeIndex() throws IOException {
-        if (fsizeIndex == null || "".equals(fsizeIndex)) {
-            if ("json".equals(parseType)) {
-                return "fsize";
-            } else {
-                return "2";
-            }
-        } else if (fsizeIndex.matches("\\d")) {
-            return fsizeIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect fsize index, it should be a number.");
-            }
-            return fsizeIndex;
-        }
-    }
-
-    public String getPutTimeIndex() throws IOException {
-        if (putTimeIndex == null || "".equals(putTimeIndex)) {
-            if ("json".equals(parseType)) {
-                return "putTime";
-            } else {
-                return "2";
-            }
-        } else if (putTimeIndex.matches("\\d")) {
-            return putTimeIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect putTime index, it should be a number.");
-            }
-            return putTimeIndex;
-        }
-    }
-
-    public String getMimeTypeIndex() throws IOException {
-        if (mimeTypeIndex == null || "".equals(mimeTypeIndex)) {
-            if ("json".equals(parseType)) {
-                return "mimeType";
-            } else {
-                return "4";
-            }
-        } else if (mimeTypeIndex.matches("\\d")) {
-            return mimeTypeIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect mimeType index, it should be a number.");
-            }
-            return mimeTypeIndex;
-        }
-    }
-
-    public String getEndUserIndex() throws IOException {
-        if (endUserIndex == null || "".equals(endUserIndex)) {
-            if ("json".equals(parseType)) {
-                return "endUser";
-            } else {
-                return "5";
-            }
-        } else if (endUserIndex.matches("\\d")) {
-            return endUserIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect endUser index, it should be a number.");
-            }
-            return endUserIndex;
-        }
-    }
-
-    public String getTypeIndex() throws IOException {
-        if (typeIndex == null || "".equals(typeIndex)) {
-            if ("json".equals(parseType)) {
-                return "type";
-            } else {
-                return "6";
-            }
-        } else if (typeIndex.matches("\\d")) {
-            return typeIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect type index, it should be a number.");
-            }
-            return typeIndex;
-        }
-    }
-
-    public String getStatusIndex() throws IOException {
-        if (statusIndex == null || "".equals(statusIndex)) {
-            if ("json".equals(parseType)) {
-                return "status";
-            } else {
-                return "7";
-            }
-        } else if (statusIndex.matches("\\d")) {
-            return statusIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect status index, it should be a number.");
-            }
-            return statusIndex;
+            // 其他情况忽略该索引
+            return "";
         }
     }
 
     public String getMd5Index() throws IOException {
-        if (md5Index == null || "".equals(md5Index)) {
-            if ("json".equals(parseType)) {
-                return "md5";
-            } else {
-                return "8";
-            }
-        } else if (md5Index.matches("\\d")) {
+        if ("json".equals(getParseType())) {
             return md5Index;
-        } else {
-            if (!"json".equals(getParseType())) {
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(md5Index) || md5Index.matches("\\d")) {
+                return md5Index;
+            } else {
                 throw new IOException("no incorrect md5 index, it should be a number.");
             }
-            return md5Index;
+        } else {
+            // 其他情况忽略该索引
+            return "";
+        }
+    }
+
+    public String getNewKeyIndex() throws IOException {
+        if ("json".equals(getParseType())) {
+            return newKeyIndex;
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(newKeyIndex) || newKeyIndex.matches("\\d")) {
+                return newKeyIndex;
+            } else {
+                throw new IOException("no incorrect newKey index, it should be a number.");
+            }
+        } else {
+            // 其他情况忽略该索引
+            return "";
         }
     }
 
     public String getFopsIndex() throws IOException {
-        if (fopsIndex == null || "".equals(fopsIndex)) {
-            if ("json".equals(parseType)) {
-                return "fops";
-            } else {
-                return "1";
-            }
-        } else if (fopsIndex.matches("\\d")) {
+        if ("json".equals(getParseType())) {
             return fopsIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(fopsIndex) || fopsIndex.matches("\\d")) {
+                return fopsIndex;
+            } else {
                 throw new IOException("no incorrect fops index, it should be a number.");
             }
-            return fopsIndex;
+        } else {
+            // 其他情况忽略该索引
+            return "";
         }
     }
 
     public String getPersistentIdIndex() throws IOException {
-        if (persistentIdIndex == null || "".equals(persistentIdIndex)) {
-            if ("json".equals(parseType)) {
-                return "persistentId";
-            } else {
-                return "0";
-            }
-        } else if (persistentIdIndex.matches("\\d")) {
+        if ("json".equals(getParseType())) {
             return persistentIdIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
+        } else if ("table".equals(getParseType())) {
+            if ("".equals(persistentIdIndex) || persistentIdIndex.matches("\\d")) {
+                return persistentIdIndex;
+            } else {
                 throw new IOException("no incorrect persistentId index, it should be a number.");
             }
-            return persistentIdIndex;
-        }
-    }
-
-    public String getTargetKeyIndex() throws IOException {
-        if (targetKeyIndex == null || "".equals(targetKeyIndex)) {
-            if ("json".equals(parseType)) {
-                return "newKey";
-            } else {
-                return "1";
-            }
-        } else if (targetKeyIndex.matches("\\d")) {
-            return targetKeyIndex;
         } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect newKey index, it should be a number.");
-            }
-            return targetKeyIndex;
-        }
-    }
-
-    public String getUrlIndex() throws IOException {
-        if (urlIndex == null || "".equals(urlIndex)) {
-            if ("json".equals(parseType)) {
-                return "url";
-            } else {
-                return "0";
-            }
-        } else if (urlIndex.matches("\\d")) {
-            return urlIndex;
-        } else {
-            if (!"json".equals(getParseType())) {
-                throw new IOException("no incorrect url index, it should be a number.");
-            }
-            return urlIndex;
+            // 其他情况忽略该索引
+            return "";
         }
     }
 }

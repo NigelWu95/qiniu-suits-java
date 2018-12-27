@@ -44,17 +44,17 @@ public class ListFilterParams extends CommonParams {
     }
 
     public List<String> getKeyPrefix() {
-        if (keyPrefix != null) return Arrays.asList(keyPrefix.split(","));
+        if (keyPrefix != null && !"".equals(keyPrefix)) return Arrays.asList(keyPrefix.split(","));
         else return null;
     }
 
     public List<String> getKeySuffix() {
-        if (keySuffix != null) return Arrays.asList(keySuffix.split(","));
+        if (keySuffix != null && !"".equals(keySuffix)) return Arrays.asList(keySuffix.split(","));
         else return null;
     }
 
     public List<String> getKeyRegex() {
-        if (keyRegex != null) return Arrays.asList(keyRegex.split(","));
+        if (keyRegex != null && !"".equals(keyRegex)) return Arrays.asList(keyRegex.split(","));
         else return null;
     }
 
@@ -92,7 +92,7 @@ public class ListFilterParams extends CommonParams {
     }
 
     public List<String> getMime() {
-        if (mime != null) return Arrays.asList(mime.split(","));
+        if (mime != null && !"".equals(mime)) return Arrays.asList(mime.split(","));
         else return null;
     }
 
@@ -105,22 +105,22 @@ public class ListFilterParams extends CommonParams {
     }
 
     public List<String> getAntiKeyPrefix() {
-        if (antiKeyPrefix != null) return Arrays.asList(antiKeyPrefix.split(","));
+        if (antiKeyPrefix != null && !"".equals(antiKeyPrefix)) return Arrays.asList(antiKeyPrefix.split(","));
         else return null;
     }
 
     public List<String> getAntiKeySuffix() {
-        if (antiKeySuffix != null) return Arrays.asList(antiKeySuffix.split(","));
+        if (antiKeySuffix != null && !"".equals(antiKeySuffix)) return Arrays.asList(antiKeySuffix.split(","));
         else return null;
     }
 
     public List<String> getAntiKeyRegex() {
-        if (antiKeyRegex != null) return Arrays.asList(antiKeyRegex.split(","));
+        if (antiKeyRegex != null && !"".equals(antiKeyRegex)) return Arrays.asList(antiKeyRegex.split(","));
         else return null;
     }
 
     public List<String> getAntiMime() {
-        if (antiMime != null) return Arrays.asList(antiMime.split(","));
+        if (antiMime != null && !"".equals(antiMime)) return Arrays.asList(antiMime.split(","));
         else return null;
     }
 }

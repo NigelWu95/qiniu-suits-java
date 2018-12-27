@@ -20,8 +20,8 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
         super(auth, configuration, bucket, "delete", resultPath, resultIndex);
     }
 
-    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultFileDir) throws IOException {
-        this(auth, configuration, bucket, resultFileDir, 0);
+    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath) throws IOException {
+        this(auth, configuration, bucket, resultPath, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {

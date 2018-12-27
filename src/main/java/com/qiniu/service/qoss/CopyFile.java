@@ -29,7 +29,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
 
     public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, boolean keepKey,
                     String keyPrefix, String resultPath) throws IOException {
-        this(auth, configuration, bucket, toBucket, keepKey, resultPath, keyPrefix, 0);
+        this(auth, configuration, bucket, toBucket, keepKey, keyPrefix, resultPath, 0);
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
@@ -39,7 +39,6 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-
         List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         if (keepKey) {
             keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, keyPrefix + fileKey));

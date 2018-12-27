@@ -12,6 +12,7 @@ import com.qiniu.util.HttpResponseUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ChangeType extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
@@ -35,7 +36,7 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList){
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
         List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         return batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,
                 keyList.toArray(new String[]{}));

@@ -25,6 +25,8 @@ public class FileInput {
     private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
+    private String resultSeparator;
+    private List<String> resultFields;
 
     public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
                      String resultPath) {
@@ -33,16 +35,17 @@ public class FileInput {
         this.infoIndexMap = infoIndexMap;
         this.unitLen = unitLen;
         this.resultPath = resultPath;
+        this.saveTotal = false;
     }
 
-    public void setSaveTotalOptions(boolean saveTotal, String resultFormat, String separator) {
-        this.saveTotal = saveTotal;
-        this.resultFormat = resultFormat;
-        this.separator = separator;
+    public void setResultSaveOptions(String format, String separator, List<String> fields) {
+        this.saveTotal = true;
+        this.resultFormat = format;
+        this.resultSeparator = separator;
+        this.resultFields = fields;
     }
 
-    public void traverseByReader(int resultIndex, BufferedReader bufferedReader, List<String> usedFields,
-                                 ILineProcess<Map<String, String>> processor) {
+    public void traverseByReader(int resultIndex, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
         FileMap fileMap = new FileMap();
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
@@ -54,8 +57,8 @@ public class FileInput {
             if (typeConverter.getErrorList().size() > 0) fileMap.writeErrorOrNull(String.join("\n",
                     typeConverter.getErrorList()));
             if (saveTotal) {
-                ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat, separator,
-                        usedFields);
+                ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
+                        resultSeparator, resultFields);
                 fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
                 if (writeTypeConverter.getErrorList().size() > 0)
                     fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
@@ -74,7 +77,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, List<String> usedFields, ILineProcess<Map<String, String>> processor) {
+    public void process(int maxThreads, String filePath, ILineProcess<Map<String, String>> processor) {
         List<String> sourceKeys = new ArrayList<>();
         FileMap fileMap = new FileMap();
         File sourceFile = new File(filePath);
@@ -111,7 +114,7 @@ public class FileInput {
                 .collect(Collectors.toList());
         for (int i = 0; i < sourceReaders.size(); i++) {
             int finalI = i;
-            executorPool.execute(() -> traverseByReader(finalI, sourceReaders.get(finalI), usedFields, processor));
+            executorPool.execute(() -> traverseByReader(finalI, sourceReaders.get(finalI), processor));
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);

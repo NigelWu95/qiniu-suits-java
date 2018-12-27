@@ -21,6 +21,7 @@ import java.util.Map;
 public class ProcessorChoice {
 
     private IEntryParam entryParam;
+    private FileInputParams fileInputParams;
     private String process;
     private int retryCount;
     private String resultPath;
@@ -30,12 +31,12 @@ public class ProcessorChoice {
 
     public ProcessorChoice(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
-        CommonParams commonParams = new CommonParams(entryParam);
-        process = commonParams.getProcess();
-        retryCount = commonParams.getRetryCount();
-        resultPath = commonParams.getResultPath();
-        resultFormat = commonParams.getResultFormat();
-        resultSeparator = commonParams.getResultSeparator();
+        fileInputParams = new FileInputParams(entryParam);
+        process = fileInputParams.getProcess();
+        retryCount = fileInputParams.getRetryCount();
+        resultPath = fileInputParams.getResultPath();
+        resultFormat = fileInputParams.getResultFormat();
+        resultSeparator = fileInputParams.getResultSeparator();
     }
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
@@ -49,12 +50,11 @@ public class ProcessorChoice {
         fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
         fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
                 listFilterParams.getType());
-        ListFieldSaveParams fieldParams = new ListFieldSaveParams(entryParam);
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (fileFilter.isValid()) {
-            processor = new FileInfoFilterProcess(resultPath, resultFormat, resultSeparator, fileFilter,
-                    fieldParams.getUsedFields());
+            processor = new FileInfoFilterProcess(fileFilter, resultPath, resultFormat, resultSeparator,
+                    listFilterParams.getRmFields());
             if (process != null && !"".equals(process) && !"filter".equals(process)) {
                 processor.setNextProcessor(nextProcessor);
             }
@@ -123,7 +123,8 @@ public class ProcessorChoice {
             case "rename": {
                 FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
-                        fileMoveParams.getTargetBucket(), fileMoveParams.getKeyPrefix(), resultPath);
+                        fileMoveParams.getToBucket(), fileInputParams.getNewKeyIndex(), fileMoveParams.getKeyPrefix(),
+                        fileMoveParams.getForceIfOnlyPrefix(), resultPath);
                 break;
             }
             case "delete": {
@@ -136,12 +137,12 @@ public class ProcessorChoice {
                 Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
                         asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth, asyncFetchParams.getKeepKey(),
-                        asyncFetchParams.getKeyPrefix(), asyncFetchParams.getHashCheck(), resultPath);
+                        asyncFetchParams.getKeyPrefix(), fileInputParams.getUrlIndex(), resultPath);
                 if (asyncFetchParams.hasCustomArgs())
-                    ((AsyncFetch) processor).setFetchArgs(asyncFetchParams.getHost(), asyncFetchParams.getCallbackUrl(),
-                            asyncFetchParams.getCallbackBody(), asyncFetchParams.getCallbackBodyType(),
-                            asyncFetchParams.getCallbackHost(), asyncFetchParams.getFileType(),
-                            asyncFetchParams.getIgnoreSameKey());
+                    ((AsyncFetch) processor).setFetchArgs(fileInputParams.getMd5Index(), asyncFetchParams.getHost(),
+                            asyncFetchParams.getCallbackUrl(), asyncFetchParams.getCallbackBody(),
+                            asyncFetchParams.getCallbackBodyType(), asyncFetchParams.getCallbackHost(),
+                            asyncFetchParams.getFileType(), asyncFetchParams.getIgnoreSameKey());
                 break;
             }
             case "avinfo": {
@@ -152,17 +153,18 @@ public class ProcessorChoice {
                     sk = avinfoParams.getSecretKey();
                     auth = Auth.create(ak, sk);
                 }
-                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(), auth, resultPath);
+                processor = new QueryAvinfo(avinfoParams.getDomain(), avinfoParams.getProtocol(),
+                        fileInputParams.getUrlIndex(), auth, resultPath);
                 break;
             }
             case "pfop": {
                 PfopParams pfopParams = new PfopParams(entryParam);
                 processor = new QiniuPfop(Auth.create(ak, sk), configuration, pfopParams.getBucket(),
-                        pfopParams.getPipeline(), resultPath);
+                        pfopParams.getPipeline(), fileInputParams.getFopsIndex(), resultPath);
                 break;
             }
             case "pfopresult": {
-                processor = new QueryPfopResult(resultPath);
+                processor = new QueryPfopResult(fileInputParams.getPersistentIdIndex(), resultPath);
                 break;
             }
             case "qhash": {
@@ -174,7 +176,7 @@ public class ProcessorChoice {
                     auth = Auth.create(ak, sk);
                 }
                 processor = new QueryHash(qhashParams.getDomain(), qhashParams.getAlgorithm(), qhashParams.getProtocol(),
-                        auth, qhashParams.getResultPath());
+                        fileInputParams.getUrlIndex(), auth, qhashParams.getResultPath());
                 break;
             }
             case "stat": {
@@ -185,8 +187,8 @@ public class ProcessorChoice {
             }
             case "privateurl": {
                 PrivateUrlParams privateUrlParams = new PrivateUrlParams(entryParam);
-                processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(),
-                        privateUrlParams.getProtocol(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
+                processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(), privateUrlParams.getProtocol(),
+                        fileInputParams.getUrlIndex(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
                 break;
             }
         }
