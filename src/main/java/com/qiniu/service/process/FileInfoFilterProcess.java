@@ -100,7 +100,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
                 if (filter.doFilter(line)) resultList.add(line);
             }
             writeList = typeConverter.convertToVList(resultList);
-            if (writeList != null && writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
+            if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
             if (nextProcessor != null) nextProcessor.processLine(resultList);

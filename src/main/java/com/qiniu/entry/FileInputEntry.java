@@ -23,10 +23,10 @@ public class FileInputEntry {
         int unitLen = fileInputParams.getUnitLen();
         Map<String, String> indexMap = fileInputParams.getIndexMap();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-        ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(entryParam).getFileProcessor();
+        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
         FileInput fileInput = new FileInput(parseType, separator, indexMap, unitLen, resultPath);
         if (saveTotal) fileInput.setResultSaveOptions(resultFormat, resultSeparator, fileInputParams.getRmFields());
-        fileInput.process(maxThreads, sourceFilePath, lineProcessor);
-        if (lineProcessor != null) lineProcessor.closeResource();
+        fileInput.process(maxThreads, sourceFilePath, processor);
+        if (processor != null) processor.closeResource();
     }
 }
