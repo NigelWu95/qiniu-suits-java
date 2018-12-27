@@ -33,10 +33,8 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) throws QiniuException {
-        List<String> keyList = lineList.stream().map(line -> line.get("key"))
-                .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
-        if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+        List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         return batchOperations.addDeleteAfterDaysOps(bucket, days, keyList.toArray(new String[]{}));
     }
 }

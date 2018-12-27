@@ -27,15 +27,15 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath, int resultIndex)
             throws IOException {
         this.processName = "avinfo";
-        if (domain == null || "".equals(domain)) {
-            this.domain = null;
-            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
-            else this.urlIndex = urlIndex;
-        } else {
-            RequestUtils.checkHost(domain);
-            this.domain = domain;
-            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
-        }
+        if (urlIndex== null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
+            else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else this.urlIndex = urlIndex;
         this.auth = auth;
         this.mediaManager = new MediaManager(protocol, auth);
         this.resultPath = resultPath;
@@ -89,23 +89,16 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
-        List<String> urlList;
-        if (domain != null) {
-            List<String> keyList = lineList.stream().map(line -> line.get("key"))
-                    .filter(pid -> pid != null && !"".equals(pid)).collect(Collectors.toList());
-            if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
-            urlList = keyList.stream().map(key -> protocol + "://" + domain + "/" + key).collect(Collectors.toList());
-        } else {
-            urlList = lineList.stream().map(line -> line.get(urlIndex)).collect(Collectors.toList());
-        }
         List<String> resultList = new ArrayList<>();
-        for (String url : urlList) {
+        String url;
+        for (Map<String, String> line : lineList) {
             try {
+                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String avinfo = singleWithRetry(url, retryCount);
                 if (avinfo != null) resultList.add(url + "\t" + avinfo);
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, url);
+                HttpResponseUtils.processException(e, fileMap, line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

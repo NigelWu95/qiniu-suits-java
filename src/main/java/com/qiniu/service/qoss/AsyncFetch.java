@@ -40,15 +40,15 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
             throws IOException {
         super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
         setBatch(false);
-        if (domain == null || "".equals(domain)) {
-            this.domain = null;
-            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
-            else this.urlIndex = urlIndex;
-        } else {
-            RequestUtils.checkHost(domain);
-            this.domain = domain;
-            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
-        }
+        if (urlIndex== null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
+            else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else this.urlIndex = urlIndex;
         this.srcAuth = srcAuth;
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
@@ -91,12 +91,12 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     protected String processLine(Map<String, String> line) throws QiniuException {
         String url;
         String key;
-        if (domain != null) {
-            url = protocol + "://" + domain + "/" + line.get("key");
-            key = line.get("key");
-        } else {
+        if (urlIndex != null) {
             url = line.get(urlIndex);
             key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+        } else  {
+            url = protocol + "://" + domain + "/" + line.get("key");
+            key = line.get("key");
         }
         Response response = fetch(url, keepKey ? keyPrefix + key : null, line.get(md5Index), line.get("hash"));
         if ("application/x-mpegurl".equals(line.get("mimeType")) || key.endsWith(".m3u8")) {

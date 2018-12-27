@@ -11,7 +11,6 @@ import com.qiniu.util.HttpResponseUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class MoveFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -24,22 +23,19 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                     String keyPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
-        if (toBucket == null || "".equals(toBucket)) {
-            if (newKeyIndex == null || "".equals(newKeyIndex)) {
-                this.forceIfOnlyPrefix = forceIfOnlyPrefix;
+        if (newKeyIndex == null || "".equals(newKeyIndex)) {
+            this.newKeyIndex = null;
+            if (toBucket == null || "".equals(toBucket)) {
                 if (forceIfOnlyPrefix) {
                     if (keyPrefix == null || "".equals(keyPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
+                    else this.forceIfOnlyPrefix = true;
                 } else {
                     throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
                             "please set the \"prefix-force\" as true.");
                 }
-            } else {
-                this.newKeyIndex = newKeyIndex;
-            }
-        } else {
-            this.toBucket = toBucket;
-        }
+            } else this.toBucket = toBucket;
+        } else this.newKeyIndex = newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
@@ -50,36 +46,34 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
 
     protected String processLine(Map<String, String> line) throws QiniuException {
         Response response;
-        if (toBucket == null || "".equals(toBucket)) {
+        if (newKeyIndex != null) {
             response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex),
                     false);
         } else {
-            response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
+            if (forceIfOnlyPrefix)
+                response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("key"),
+                        false);
+            else
+                response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
                     false);
         }
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) throws QiniuException {
-        List<String> keyList = lineList.stream().map(line -> line.get("key"))
-                .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
-        if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
-        if (toBucket == null || "".equals(toBucket)) {
-            List<String> newKeyList = lineList.stream().map(line -> line.get(newKeyIndex))
-                    .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
-            if (newKeyList.size() == 0 && forceIfOnlyPrefix) {
-                for (String key : keyList) {
-                    batchOperations.addRenameOp(bucket, key, keyPrefix + key);
-                }
-            }
-            if (keyList.size() != newKeyList.size())
-                throw new QiniuException(null, "there are no corresponding keys in line.");
-            for (int i = 0; i < keyList.size(); i++) {
-                batchOperations.addRenameOp(bucket, keyList.get(i), keyPrefix + newKeyList.get(i));
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+        if (newKeyIndex != null) {
+            for (Map<String, String> line : lineList) {
+                batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
             }
         } else {
-            for (String key : keyList) {
-                batchOperations.addMoveOp(bucket, key, toBucket, keyPrefix + key);
+            if (forceIfOnlyPrefix) {
+                for (Map<String, String> line : lineList) {
+                    batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get("key"));
+                }
+            } else {
+                for (Map<String, String> line : lineList) {
+                    batchOperations.addMoveOp(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"));
+                }
             }
         }
 
