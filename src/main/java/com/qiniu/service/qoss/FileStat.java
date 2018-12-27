@@ -33,8 +33,4 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         return batchOperations.addStatOps(bucket, keyList.toArray(new String[]{}));
     }
-
-    public void closeResource() {
-        fileMap.closeWriter();
-    }
 }
