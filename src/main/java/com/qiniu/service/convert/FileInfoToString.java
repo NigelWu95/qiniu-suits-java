@@ -25,7 +25,7 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
 
     public List<String> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return  srcList.parallelStream()
+        return srcList.parallelStream()
                 .filter(fileInfo -> {
                     if (fileInfo == null) {
                         errorList.add("empty fileInfo.");

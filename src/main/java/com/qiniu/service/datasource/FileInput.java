@@ -54,12 +54,14 @@ public class FileInput {
             ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
             List<String> srcList = bufferedReader.lines().parallel().collect(Collectors.toList());
             List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
+            List<String> writeList;
             if (typeConverter.getErrorList().size() > 0) fileMap.writeErrorOrNull(String.join("\n",
                     typeConverter.getErrorList()));
             if (saveTotal) {
                 ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
                         resultSeparator, resultFields);
-                fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(infoMapList)));
+                writeList = writeTypeConverter.convertToVList(infoMapList);
+                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                 if (writeTypeConverter.getErrorList().size() > 0)
                     fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
             }
