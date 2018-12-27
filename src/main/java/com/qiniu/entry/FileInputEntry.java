@@ -1,8 +1,6 @@
 package com.qiniu.entry;
 
 import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.model.parameter.InputFieldSaveParams;
-import com.qiniu.model.parameter.ListFilterParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -23,14 +21,12 @@ public class FileInputEntry {
         String resultPath = fileInputParams.getResultPath();
         int maxThreads = fileInputParams.getMaxThreads();
         int unitLen = fileInputParams.getUnitLen();
+        Map<String, String> indexMap = fileInputParams.getIndexMap();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         ILineProcess<Map<String, String>> lineProcessor = new ProcessorChoice(entryParam).getFileProcessor();
-        String processName = lineProcessor != null ? lineProcessor.getProcessName() : "";
-        Map<String, String> infoIndexMap = new InputInfoParser().getInfoIndexMap(fileInputParams, processName);
-        FileInput fileInput = new FileInput(parseType, separator, infoIndexMap, unitLen, resultPath);
-        fileInput.setSaveTotalOptions(saveTotal, resultFormat, resultSeparator);
-        InputFieldSaveParams fieldSaveParams = new InputFieldSaveParams(entryParam);
-        fileInput.process(maxThreads, sourceFilePath, fieldSaveParams.getUsedFields(), lineProcessor);
+        FileInput fileInput = new FileInput(parseType, separator, indexMap, unitLen, resultPath);
+        if (saveTotal) fileInput.setResultSaveOptions(resultFormat, resultSeparator, fileInputParams.getRmFields());
+        fileInput.process(maxThreads, sourceFilePath, lineProcessor);
         if (lineProcessor != null) lineProcessor.closeResource();
     }
 }

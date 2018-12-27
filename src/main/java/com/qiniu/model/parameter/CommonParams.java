@@ -5,29 +5,35 @@ import com.qiniu.config.PropertyConfig;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 public class CommonParams {
 
     protected IEntryParam entryParam;
     private String sourceType;
+    private String parseType;
     private String unitLen;
     private String retryCount;
     private String resultPath;
     private String resultFormat;
     private String resultSeparator;
     protected String saveTotal;
+    private String rmFields;
     private String process;
     private String maxThreads;
 
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         this.sourceType = entryParam.getParamValue("source-type");
+        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { unitLen = ""; }
         try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
         try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
         try { this.resultPath = entryParam.getParamValue("result-path"); } catch (Exception e) { resultPath = ""; }
         try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
         try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
+        try { this.rmFields = entryParam.getParamValue("remove-fields"); } catch (Exception e) { rmFields = ""; }
         try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
         try { this.maxThreads = entryParam.getParamValue("threads"); } catch (Exception e) { maxThreads = ""; }
     }
@@ -46,6 +52,17 @@ public class CommonParams {
 
     public String getSourceType() {
         return sourceType;
+    }
+
+    public String getParseType() throws IOException {
+        if (sourceType.equals("list")) return "object";
+        else {
+            if (parseType == null || "".equals(parseType)) {
+                throw new IOException("no incorrect parse type, please set it as \"json\" or \"table\".");
+            } else {
+                return parseType;
+            }
+        }
     }
 
     public int getUnitLen() {
@@ -98,5 +115,9 @@ public class CommonParams {
         } else {
             return 30;
         }
+    }
+
+    public List<String> getRmFields() {
+        return Arrays.asList(rmFields.split(","));
     }
 }

@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
+    private String persistentIdIndex;
     private MediaManager mediaManager;
     private String processName;
     private int retryCount;
@@ -19,8 +22,11 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private int resultIndex;
     private FileMap fileMap;
 
-    public QueryPfopResult(String resultPath, int resultIndex) throws IOException {
+    public QueryPfopResult(String persistentIdIndex, String resultPath, int resultIndex) throws IOException {
         this.processName = "pfopresult";
+        if (persistentIdIndex == null || "".equals(persistentIdIndex))
+            throw new IOException("please set the persistentIdIndex.");
+        else this.persistentIdIndex = persistentIdIndex;
         this.mediaManager = new MediaManager();
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
@@ -28,8 +34,8 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryPfopResult(String resultPath) throws IOException {
-        this(resultPath, 0);
+    public QueryPfopResult(String persistentIdIndex, String resultPath) throws IOException {
+        this(persistentIdIndex, resultPath, 0);
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
@@ -73,15 +79,14 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
-
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                String pfopResult = singleWithRetry(line.get("persistentId"), retryCount);
+                String pfopResult = singleWithRetry(line.get(persistentIdIndex), retryCount);
                 if (pfopResult != null)resultList.add(pfopResult);
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, line.get("persistentId"));
+                HttpResponseUtils.processException(e, fileMap, line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

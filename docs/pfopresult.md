@@ -8,7 +8,7 @@
 #### 必须参数
 |数据源方式|参数及赋值|  
 |--------|-----|  
-|source-type=file（文件资源列表）|[file 数据源参数](fileinput.md) <br> process=pfopresult |  
+|source-type=file（文件资源列表）|[file 数据源参数](fileinput.md) <br> process=pfopresult <br> persistentId-index=0|  
 
 #### 可选参数
 ```
@@ -19,6 +19,7 @@
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=pfopresult| 查询 pfop 转码结果时设置为pfopresult| 表示查询 pfop 转码结果操作|  
+|persistentId-index| 字符串| 转码结果查询 persistentId 索引（下标），pfopresult 操作时必须指定 |  
 
 ### 命令行方式
 ```

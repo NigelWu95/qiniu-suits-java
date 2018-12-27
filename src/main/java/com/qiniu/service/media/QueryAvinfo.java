@@ -9,12 +9,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private String protocol;
-    private Auth srcAuth;
+    private String urlIndex;
+    private Auth auth;
     private MediaManager mediaManager;
     private String processName;
     private int retryCount;
@@ -22,29 +24,33 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private int resultIndex;
     private FileMap fileMap;
 
-    public QueryAvinfo(String domain, String protocol, Auth srcAuth, String resultPath, int resultIndex) throws IOException {
+    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath, int resultIndex)
+            throws IOException {
         this.processName = "avinfo";
-        if (domain == null || "".equals(domain)) this.domain = null;
-        else {
-            RequestUtils.checkHost(domain);
-            this.domain = domain;
-        }
-        this.protocol = protocol;
-        this.srcAuth = srcAuth;
-        this.mediaManager = new MediaManager(protocol, srcAuth);
+        if (urlIndex== null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
+            else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else this.urlIndex = urlIndex;
+        this.auth = auth;
+        this.mediaManager = new MediaManager(protocol, auth);
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap();
         this.fileMap.initWriter(resultPath, processName, resultIndex);
     }
 
-    public QueryAvinfo(String domain, String protocol, Auth srcAuth, String resultPath) throws IOException {
-        this(domain, protocol, srcAuth, resultPath, 0);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath) throws IOException {
+        this(domain, protocol, urlIndex, auth, resultPath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(protocol, srcAuth);
+        queryAvinfo.mediaManager = new MediaManager(protocol, auth);
         queryAvinfo.fileMap = new FileMap();
         try {
             queryAvinfo.fileMap.initWriter(resultPath, processName, resultIndex++);
@@ -83,16 +89,16 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
-
         List<String> resultList = new ArrayList<>();
+        String url;
         for (Map<String, String> line : lineList) {
-            String url = domain == null ? line.get("url") : protocol + "://" + domain + "/" + line.get("key");
             try {
+                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String avinfo = singleWithRetry(url, retryCount);
                 if (avinfo != null) resultList.add(url + "\t" + avinfo);
                 else throw new QiniuException(null, "empty avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, url);
+                HttpResponseUtils.processException(e, fileMap, line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

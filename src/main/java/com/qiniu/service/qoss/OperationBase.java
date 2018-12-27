@@ -105,16 +105,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public List<String> batchRun(List<Map<String, String>> fileInfoList) throws QiniuException {
-
+        String result;
         List<String> resultList = new ArrayList<>();
         int times = fileInfoList.size()/1000 + 1;
+        List<Map<String, String>> processList;
+        Response response = null;
         for (int i = 0; i < times; i++) {
-            List<Map<String, String>> processList = fileInfoList.subList(1000 * i, i == times - 1 ?
-                    fileInfoList.size() : 1000 * (i + 1));
+            processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    Response response = null;
-                    batchOperations = getOperations(fileInfoList);
+                    batchOperations = getOperations(processList);
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
@@ -129,11 +129,11 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         }
                     }
                     batchOperations.clearOps();
-                    String result = HttpResponseUtils.getResult(response);
+                    result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) {
                         JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
-                        for (int j = 0; j < fileInfoList.size(); j++) {
-                            resultList.add(fileInfoList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        for (int j = 0; j < processList.size(); j++) {
+                            resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
                         }
                     }
                 } catch (QiniuException e) {
@@ -146,7 +146,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
-
         List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }

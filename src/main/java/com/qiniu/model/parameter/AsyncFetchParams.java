@@ -12,7 +12,6 @@ public class AsyncFetchParams extends QossParams {
     private String needSign;
     private String keepKey;
     private String keyPrefix;
-    private String hashCheck;
     private String host;
     private String callbackUrl;
     private String callbackBody;
@@ -29,7 +28,6 @@ public class AsyncFetchParams extends QossParams {
         try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
         try { this.keepKey = entryParam.getParamValue("keep-key"); } catch (Exception e) { keepKey = ""; }
         try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try { this.hashCheck = entryParam.getParamValue("hash-check"); } catch (Exception e) { hashCheck = ""; }
         try { this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
         try { this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
         try { this.callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
@@ -75,14 +73,6 @@ public class AsyncFetchParams extends QossParams {
 
     public String getKeyPrefix() {
         return keyPrefix;
-    }
-
-    public boolean getHashCheck() {
-        if (hashCheck.matches("(true|false)")) {
-            return Boolean.valueOf(hashCheck);
-        } else {
-            return false;
-        }
     }
 
     public String getHost() {

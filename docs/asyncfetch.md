@@ -17,6 +17,8 @@ keep-key=true
 add-prefix=video/
 file-type=
 ignore-same-key=
+url-index=0
+md5-index=2
 domain=
 https=
 private=false
@@ -37,7 +39,9 @@ callback-host=
 |keep-key| true/false| 表示是否使用原文件名来保存抓取的资源，默认为 true|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |ignore-same-key| true/false| 暂未启用|  
-|domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当数据源方式为 list 且输入文件为 url 列表时无需设置|  
+|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
+|md5-index| 字符串| 资源 md5 值索引（下标），需要手动指定才会进行解析|  
+|domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当数据源方式为 file 且指定 url-index 时无需设置|  
 |https| true/false| 是否使用 https 抓取资源（默认否）|  
 |private| true/false| 资源域名是否是七牛私有空间的域名（默认否）|  
 |hash-check| true/false| 抓取结果是否进行 hash 值校验（默认否）|  
@@ -46,6 +50,10 @@ callback-host=
 |callback-body| body 字符串| 设置回调 body|  
 |callback-body-type| body-type 字符串| 设置回调 body 类型|  
 |callback-host| host 字符串| 设置回调 host |  
+
+#### 关于 url-index 和 md5-index
+当 parse-type=table 时下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段加上 domain 的方式访
+问源文件地址，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
 
 ### 命令行参数方式
 ```
