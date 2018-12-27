@@ -182,7 +182,7 @@ public class ListBucket {
                     writeList = writeTypeConverter.convertToVList(fileInfoList);
                     if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                     if (writeTypeConverter.getErrorList().size() > 0)
-                        fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
+                        fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
                 }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
                 if (typeConverter.getErrorList().size() > 0)

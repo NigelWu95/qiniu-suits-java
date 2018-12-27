@@ -31,14 +31,14 @@ public class HttpResponseUtils {
             throws QiniuException {
         if (e != null) {
             if (e.response != null) {
-                if (fileMap != null) fileMap.writeErrorOrNull(e.response.reqId + "\t" + info + "\t" + e.error());
+                if (fileMap != null) fileMap.writeError(e.response.reqId + "\t" + info + "\t" + e.error());
                 if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                     throw e;
                 } else {
                     e.response.close();
                 }
             } else {
-                if (fileMap != null) fileMap.writeErrorOrNull( info + "\t" + e.error());
+                if (fileMap != null) fileMap.writeError( info + "\t" + e.error());
             }
         }
     }

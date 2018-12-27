@@ -3,10 +3,7 @@ package com.qiniu.persistence;
 import com.qiniu.util.StringUtils;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class FileMap implements Cloneable {
 
@@ -17,10 +14,14 @@ public class FileMap implements Cloneable {
     private String prefix;
     private String suffix;
 
-    public FileMap() {
-        this.targetWriters = Arrays.asList("_success", "_error_null");
+    public FileMap(List<String> targetWriters) {
+        this.targetWriters = targetWriters == null ? new ArrayList<>() : targetWriters;
         this.writerMap = new HashMap<>();
         this.readerMap = new HashMap<>();
+    }
+
+    public FileMap() {
+        this(Collections.singletonList("_success"));
     }
 
     public String getPrefix() {
@@ -35,8 +36,8 @@ public class FileMap implements Cloneable {
         this.targetFileDir = targetFileDir;
         this.prefix = prefix;
         this.suffix = StringUtils.isNullOrEmpty(suffix) ? "_0" : "_" + suffix;
-        for (int i = 0; i < targetWriters.size(); i++) {
-            addWriter(targetFileDir, prefix + targetWriters.get(i) + this.suffix);
+        for (String targetWriter : targetWriters) {
+            addWriter(targetFileDir, prefix + targetWriter + this.suffix);
         }
     }
 
@@ -51,7 +52,7 @@ public class FileMap implements Cloneable {
         this.writerMap.put(key, writer);
     }
 
-    synchronized public void mkDirAndFile(File filePath) throws IOException {
+    private synchronized void mkDirAndFile(File filePath) throws IOException {
 
         int count = 3;
         while (!filePath.getParentFile().exists()) {
@@ -137,25 +138,18 @@ public class FileMap implements Cloneable {
         }
     }
 
-    private void doFlush(String key) {
-        try {
-            getWriter(key).flush();
-        } catch (IOException ioException) {
-            System.out.println("Writer " + key + " flush failed");
-            ioException.printStackTrace();
-        }
-    }
-
     public void writeKeyFile(String key, String item) throws IOException {
-        if (!writerMap.keySet().contains(key)) addWriter(targetFileDir, key);
-        doWrite(key, item);
+        if (!writerMap.keySet().contains(prefix + key + suffix)) addWriter(targetFileDir, prefix + key + suffix);
+        doWrite(prefix + key + suffix, item);
     }
 
     public void writeSuccess(String item) {
         doWrite(this.prefix + "_success" + suffix, item);
     }
 
-    public void writeErrorOrNull(String item) {
-        doWrite(this.prefix + "_error_null" + suffix, item);
+    public void writeError(String item) throws IOException {
+        if (!writerMap.keySet().contains(prefix + "_error" + suffix))
+            addWriter(targetFileDir, prefix + "_error" + suffix);
+        doWrite(this.prefix + "_error" + suffix, item);
     }
 }
