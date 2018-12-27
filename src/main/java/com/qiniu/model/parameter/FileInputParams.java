@@ -70,6 +70,24 @@ public class FileInputParams extends CommonParams {
 
     public Map<String, String> getIndexMap() throws IOException {
         Map<String, String> indexMap = new HashMap<>();
+        if (needMd5Index.contains(getProcess())) {
+            String md5Index = getMd5Index();
+            if (!"".equals(md5Index)) indexMap.put(md5Index, md5Index);
+        }
+        if (needUrlIndex.contains(getProcess())) {
+            String urlIndex = getUrlIndex();
+            if (!"".equals(urlIndex)) {
+                indexMap.put(urlIndex, urlIndex);
+                return indexMap;
+            }
+        }
+        if (needPersistentIdIndex.contains(getProcess())) {
+            String persistentIdIndex = getPersistentIdIndex();
+            if (!"".equals(persistentIdIndex)) {
+                indexMap.put(persistentIdIndex, persistentIdIndex);
+                return indexMap;
+            }
+        }
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "endUser", "type", "status");
         if ("table".equals(getParseType())) {
             if ("".equals(indexes) || indexes.matches("(\\d+,)*\\d")) {
@@ -94,25 +112,21 @@ public class FileInputParams extends CommonParams {
                 for (int i = 0; i < indexList.size(); i++) { indexMap.put(indexList.get(i), keys.get(i)); }
             }
         }
-        if (needUrlIndex.contains(getProcess())) {
-            String urlIndex = getUrlIndex();
-            if (!"".equals(urlIndex)) indexMap.put(urlIndex, urlIndex);
-        }
-        if (needMd5Index.contains(getProcess())) {
-            String md5Index = getMd5Index();
-            if (!"".equals(md5Index)) indexMap.put(md5Index, md5Index);
-        }
         if (needNewKeyIndex.contains(getProcess())) {
             String newKeyIndex = getNewKeyIndex();
-            if (!"".equals(newKeyIndex)) indexMap.put(newKeyIndex, newKeyIndex);
+            if (!"".equals(newKeyIndex)) {
+                indexMap.put(newKeyIndex, newKeyIndex);
+                if (indexMap.size() < 2) throw new IOException("please check the key and newKey index, two index can" +
+                        "not be same with each other.");
+            }
         }
         if (needFopsIndex.contains(getProcess())) {
             String fopsIndex = getFopsIndex();
-            if (!"".equals(fopsIndex)) indexMap.put(fopsIndex, fopsIndex);
-        }
-        if (needPersistentIdIndex.contains(getProcess())) {
-            String persistentIdIndex = getPersistentIdIndex();
-            if (!"".equals(persistentIdIndex)) indexMap.put(persistentIdIndex, persistentIdIndex);
+            if (!"".equals(fopsIndex)) {
+                indexMap.put(fopsIndex, fopsIndex);
+                if (indexMap.size() < 2) throw new IOException("please check the key and fops index, two index can" +
+                        "not be same with each other.");
+            }
         }
         return indexMap;
     }
