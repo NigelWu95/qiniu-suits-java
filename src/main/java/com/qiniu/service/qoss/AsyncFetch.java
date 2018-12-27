@@ -40,13 +40,15 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
             throws IOException {
         super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
         setBatch(false);
-        if (domain == null || "".equals(domain)) this.domain = null;
-        else {
+        if (domain == null || "".equals(domain)) {
+            this.domain = null;
+            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
+            else this.urlIndex = urlIndex;
+        } else {
             RequestUtils.checkHost(domain);
             this.domain = domain;
+            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
         }
-        this.protocol = protocol;
-        this.urlIndex = urlIndex;
         this.srcAuth = srcAuth;
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;

@@ -31,13 +31,15 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                      int resultIndex)
             throws IOException {
         this.processName = "qhash";
-        if (domain == null || "".equals(domain)) this.domain = null;
-        else {
+        if (domain == null || "".equals(domain)) {
+            this.domain = null;
+            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
+            else this.urlIndex = urlIndex;
+        } else {
             RequestUtils.checkHost(domain);
             this.domain = domain;
+            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
         }
-        this.protocol = protocol;
-        this.urlIndex = urlIndex;
         this.algorithm = algorithm;
         this.auth = auth;
         this.fileChecker = new FileChecker(algorithm, protocol, auth);
