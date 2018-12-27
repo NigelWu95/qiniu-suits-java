@@ -88,7 +88,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    protected String processLine(Map<String, String> line) throws IOException {
         String url;
         String key;
         if (urlIndex != null) {
@@ -103,8 +103,8 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
             List<VideoTS> videoTSList = new ArrayList<>();
             try {
                 videoTSList = m3u8Manager.getVideoTSListByUrl(url);
-            } catch (IOException ioException) {
-                fileMap.writeError("list ts failed: " + url);
+            } catch (IOException e) {
+                fileMap.writeError("list ts failed: " + url + "\t" + e.getMessage());
             }
             for (VideoTS videoTS : videoTSList) {
                 key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
