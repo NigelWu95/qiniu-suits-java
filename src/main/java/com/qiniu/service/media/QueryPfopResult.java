@@ -24,7 +24,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     public QueryPfopResult(String persistentIdIndex, String resultPath, int resultIndex) throws IOException {
         this.processName = "pfopresult";
-        this.persistentIdIndex = persistentIdIndex == null ? "" : persistentIdIndex;
+        if (persistentIdIndex == null || "".equals(persistentIdIndex))
+            throw new IOException("please set the persistentIdIndex.");
+        else this.persistentIdIndex = persistentIdIndex;
         this.mediaManager = new MediaManager();
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;

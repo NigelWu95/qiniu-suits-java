@@ -27,13 +27,15 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath, int resultIndex)
             throws IOException {
         this.processName = "avinfo";
-        if (domain == null || "".equals(domain)) this.domain = null;
-        else {
+        if (domain == null || "".equals(domain)) {
+            this.domain = null;
+            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
+            else this.urlIndex = urlIndex;
+        } else {
             RequestUtils.checkHost(domain);
             this.domain = domain;
+            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
         }
-        this.protocol = protocol;
-        this.urlIndex = urlIndex;
         this.auth = auth;
         this.mediaManager = new MediaManager(protocol, auth);
         this.resultPath = resultPath;

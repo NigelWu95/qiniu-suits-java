@@ -35,7 +35,8 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         this.configuration = configuration;
         this.operationManager = new OperationManager(auth, configuration);
         this.bucket = bucket;
-        this.fopsIndex = fopsIndex;
+        if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
+        else this.fopsIndex = fopsIndex;
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;

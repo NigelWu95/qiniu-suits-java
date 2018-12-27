@@ -17,26 +17,30 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
 
     private String toBucket;
     private String newKeyIndex;
-    private String keyPrefix;
     private boolean forceIfOnlyPrefix;
+    private String keyPrefix;
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
                     String keyPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
-        this.toBucket = toBucket;
-        if (newKeyIndex == null || "".equals(newKeyIndex)) {
-            if (forceIfOnlyPrefix) {
-                if (keyPrefix == null || "".equals(keyPrefix)) throw new IOException("the add-prefix is empty.");
+        if (toBucket == null || "".equals(toBucket)) {
+            if (newKeyIndex == null || "".equals(newKeyIndex)) {
+                this.forceIfOnlyPrefix = forceIfOnlyPrefix;
+                if (forceIfOnlyPrefix) {
+                    if (keyPrefix == null || "".equals(keyPrefix))
+                        throw new IOException("although prefix-force is true, but the add-prefix is empty.");
+                } else {
+                    throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
+                            "please set the \"prefix-force\" as true.");
+                }
             } else {
-                throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
-                        "please set the \"\"prefix-force\"\" as true.");
+                this.newKeyIndex = newKeyIndex;
             }
         } else {
-            this.newKeyIndex = newKeyIndex;
+            this.toBucket = toBucket;
         }
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.forceIfOnlyPrefix = forceIfOnlyPrefix;
     }
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,

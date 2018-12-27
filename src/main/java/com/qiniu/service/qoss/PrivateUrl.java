@@ -29,13 +29,15 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                       int resultIndex) throws IOException {
         this.processName = "privateurl";
         this.auth = auth;
-        if (domain == null || "".equals(domain)) this.domain = null;
-        else {
+        if (domain == null || "".equals(domain)) {
+            this.domain = null;
+            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
+            else this.urlIndex = urlIndex;
+        } else {
             RequestUtils.checkHost(domain);
             this.domain = domain;
+            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
         }
-        this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
-        this.urlIndex = urlIndex;
         this.expires = expires == 0L ? 3600 : expires;
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
