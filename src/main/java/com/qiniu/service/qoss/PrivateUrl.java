@@ -29,15 +29,15 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                       int resultIndex) throws IOException {
         this.processName = "privateurl";
         this.auth = auth;
-        if (domain == null || "".equals(domain)) {
-            this.domain = null;
-            if (urlIndex== null || "".equals(urlIndex)) throw new IOException("please set one of domain and urlIndex.");
-            else this.urlIndex = urlIndex;
-        } else {
-            RequestUtils.checkHost(domain);
-            this.domain = domain;
-            this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;
-        }
+        if (urlIndex== null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
+            else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else this.urlIndex = urlIndex;
         this.expires = expires == 0L ? 3600 : expires;
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
@@ -66,16 +66,16 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
-
         List<String> resultList = new ArrayList<>();
+        String url;
         for (Map<String, String> line : lineList) {
-            String url = domain == null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
+                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String signedUrl = auth.privateDownloadUrl(url, expires);
                 if (signedUrl != null) resultList.add(signedUrl);
-                else throw new QiniuException(null, "empty url");
+                else throw new QiniuException(null, "empty signed url");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, url);
+                HttpResponseUtils.processException(e, fileMap, line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

@@ -11,7 +11,6 @@ import com.qiniu.util.HttpResponseUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ChangeStatus extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
@@ -34,10 +33,8 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) throws QiniuException {
-        List<String> keyList = lineList.stream().map(line -> line.get("key"))
-                .filter(key -> key != null && !"".equals(key)).collect(Collectors.toList());
-        if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
+    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+        List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         return batchOperations.addChangeStatusOps(bucket, status, keyList.toArray(new String[]{}));
     }
 }

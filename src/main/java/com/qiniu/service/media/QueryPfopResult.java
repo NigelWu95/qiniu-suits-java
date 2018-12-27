@@ -79,17 +79,14 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void processLine(List<Map<String, String>> lineList) throws QiniuException {
-        List<String> persistentIdList = lineList.stream().map(line -> line.get(persistentIdIndex))
-                .filter(pid -> pid != null && !"".equals(pid)).collect(Collectors.toList());
-        if (persistentIdList.size() == 0) throw new QiniuException(null, "there is no persistentId in line.");
         List<String> resultList = new ArrayList<>();
-        for (String pid : persistentIdList) {
+        for (Map<String, String> line : lineList) {
             try {
-                String pfopResult = singleWithRetry(pid, retryCount);
+                String pfopResult = singleWithRetry(line.get(persistentIdIndex), retryCount);
                 if (pfopResult != null)resultList.add(pfopResult);
                 else throw new QiniuException(null, "empty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, pid);
+                HttpResponseUtils.processException(e, fileMap, line.toString());
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
