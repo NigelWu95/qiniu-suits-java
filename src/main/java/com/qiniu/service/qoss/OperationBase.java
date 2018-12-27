@@ -114,7 +114,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 try {
-                    batchOperations = getOperations(fileInfoList);
+                    batchOperations = getOperations(processList);
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
@@ -132,8 +132,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     result = HttpResponseUtils.getResult(response);
                     if (!StringUtils.isNullOrEmpty(result)) {
                         JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
-                        for (int j = 0; j < fileInfoList.size(); j++) {
-                            resultList.add(fileInfoList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        for (int j = 0; j < processList.size(); j++) {
+                            resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
                         }
                     }
                 } catch (QiniuException e) {

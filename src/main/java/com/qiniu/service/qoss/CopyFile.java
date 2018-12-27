@@ -39,7 +39,6 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-
         List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
         if (keepKey) {
             keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, keyPrefix + fileKey));
