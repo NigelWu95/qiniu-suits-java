@@ -1,6 +1,5 @@
 package com.qiniu.service.process;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.InfoMapToString;
 import com.qiniu.service.interfaces.ILineFilter;
@@ -91,19 +90,21 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         return processName;
     }
 
-    public void processLine(List<Map<String, String>> list) throws QiniuException {
+    public void processLine(List<Map<String, String>> list) throws IOException {
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> resultList = new ArrayList<>();
+        List<String> writeList;
         try {
             for (Map<String, String> line : list) {
                 if (filter.doFilter(line)) resultList.add(line);
             }
-            fileMap.writeSuccess(String.join("\n", typeConverter.convertToVList(resultList)));
+            writeList = typeConverter.convertToVList(resultList);
+            if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeErrorOrNull(String.join("\n", typeConverter.getErrorList()));
+                fileMap.writeError(String.join("\n", typeConverter.getErrorList()));
             if (nextProcessor != null) nextProcessor.processLine(resultList);
         } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+            throw new IOException(e.getMessage());
         }
     }
 

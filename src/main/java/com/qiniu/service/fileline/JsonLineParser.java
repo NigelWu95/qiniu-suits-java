@@ -22,7 +22,7 @@ public class JsonLineParser implements ILineParser {
             String mapKey = infoIndexMap.get(key);
             if (mapKey != null) itemMap.put(mapKey, parsed.get(key).getAsString());
         }
-        if (itemMap.size() < infoIndexMap.size()) throw new IOException();
+        if (itemMap.size() < infoIndexMap.size()) throw new IOException("no enough indexes in line.");
         return itemMap;
     }
 }

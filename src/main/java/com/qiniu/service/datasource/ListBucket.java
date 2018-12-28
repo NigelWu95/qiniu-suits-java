@@ -157,6 +157,7 @@ public class ListBucket {
             }
             String marker;
             List<FileInfo> fileInfoList;
+            List<String> writeList;
             while (fileLister.hasNext()) {
                 marker = fileLister.getMarker();
                 fileInfoList = fileLister.next();
@@ -177,12 +178,15 @@ public class ListBucket {
                             .collect(Collectors.toList());
                     finalSize = fileInfoList.size();
                 }
-                if (saveTotal && fileInfoList.size() > 0) {
-                    fileMap.writeSuccess(String.join("\n", writeTypeConverter.convertToVList(fileInfoList)));
+                if (saveTotal && finalSize > 0) {
+                    writeList = writeTypeConverter.convertToVList(fileInfoList);
+                    if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                     if (writeTypeConverter.getErrorList().size() > 0)
-                        fileMap.writeErrorOrNull(String.join("\n", writeTypeConverter.getErrorList()));
+                        fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
                 }
                 if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
+                if (typeConverter.getErrorList().size() > 0)
+                    fileMap.writeKeyFile("to_map", String.join("\n", typeConverter.getErrorList()));
                 recorder.record(fileLister.getPrefix(), marker, end);
                 if (finalSize < size) break;
             }

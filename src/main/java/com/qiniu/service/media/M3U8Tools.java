@@ -15,7 +15,7 @@ public class M3U8Tools {
         this.fileMap = fileMap;
     }
 
-    public void merge(List<VideoTS> tsList, String url, String targetFileDir) throws FileNotFoundException {
+    public void merge(List<VideoTS> tsList, String url, String targetFileDir) throws IOException {
         File fileDir = new File(targetFileDir);
         InputStream inputStream = null;
         File file = new File(fileDir, url.substring(url.indexOf("/", 8) + 1, url.lastIndexOf(".")));
@@ -27,7 +27,7 @@ public class M3U8Tools {
                 IOUtils.copyLarge(inputStream, fileOutputStream);
                 fileMap.writeSuccess(ts.getUrl());
             } catch (IOException e) {
-                fileMap.writeErrorOrNull(ts.getUrl() + "\t" + e.toString());
+                fileMap.writeError(ts.getUrl() + "\t" + e.getMessage());
             }
         }
 
@@ -43,7 +43,7 @@ public class M3U8Tools {
         }
     }
 
-    public void download(List<VideoTS> tsList, final String targetFileDir) {
+    public void download(List<VideoTS> tsList, final String targetFileDir) throws IOException {
         File dir = new File(targetFileDir).getParentFile();
         String url;
         File file;
@@ -64,7 +64,7 @@ public class M3U8Tools {
                 IOUtils.copyLarge(inputStream, fileOutputStream);
                 fileMap.writeSuccess(ts.toString());
             } catch (IOException e) {
-                fileMap.writeErrorOrNull(ts + "\t" + e.toString());
+                fileMap.writeError(ts + "\t" + e.getMessage());
             }
         }
 
