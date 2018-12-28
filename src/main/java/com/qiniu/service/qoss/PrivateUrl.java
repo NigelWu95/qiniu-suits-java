@@ -73,7 +73,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String signedUrl = auth.privateDownloadUrl(url, expires);
                 if (signedUrl != null) resultList.add(signedUrl);
-                else throw new QiniuException(null, "empty signed url");
+                else fileMap.writeError( String.valueOf(line) + "\t" + "empty signed url");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
             }
