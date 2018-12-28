@@ -131,15 +131,25 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                     batchOperations.clearOps();
                     result = HttpResponseUtils.getResult(response);
-                    if (!StringUtils.isNullOrEmpty(result)) {
+                    if (result != null && !"".equals(result)) {
                         JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
                         for (int j = 0; j < processList.size(); j++) {
                             resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
                         }
-                    } else throw new QiniuException(null, "empty " + processName + " result");
+                    } else {
+                        fileMap.writeError( String.join("\n", processList.stream()
+                                .map(line -> line.get("key") + "\tempty " + processName + " result")
+                                .collect(Collectors.toList())));
+                    }
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, String.join("\n", processList.stream()
-                                    .map(String::valueOf).collect(Collectors.toList())));
+                    fileMap.writeError( String.join("\n", processList.stream()
+                            .map(line -> line.get("key") + e.response.reqId + "\t" + e.error())
+                            .collect(Collectors.toList())));
+                    if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
+                        throw e;
+                    } else {
+                        e.response.close();
+                    }
                 }
             }
         }

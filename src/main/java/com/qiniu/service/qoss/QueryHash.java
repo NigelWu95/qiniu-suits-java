@@ -102,7 +102,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String qhash = singleWithRetry(url, retryCount);
                 if (qhash != null) resultList.add(url + "\t" + qhash);
-                else fileMap.writeError( String.valueOf(line) + "\t" + "empty qhash");
+                else fileMap.writeError( String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
             }
