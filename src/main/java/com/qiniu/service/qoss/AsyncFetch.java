@@ -10,7 +10,6 @@ import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
