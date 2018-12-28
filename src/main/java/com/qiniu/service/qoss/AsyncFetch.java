@@ -3,8 +3,6 @@ package com.qiniu.service.qoss;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager.*;
-import com.qiniu.service.media.M3U8Manager;
-import com.qiniu.service.media.VideoTS;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -25,7 +23,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     private Auth srcAuth;
     private boolean keepKey;
     private String keyPrefix;
-    private M3U8Manager m3u8Manager;
+//    private M3U8Manager m3u8Manager;
     private boolean hasCustomArgs;
     private String host;
     private String callbackUrl;
@@ -52,7 +50,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         this.srcAuth = srcAuth;
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
-        this.m3u8Manager = new M3U8Manager();
+//        this.m3u8Manager = new M3U8Manager();
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
@@ -74,12 +72,6 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         this.hasCustomArgs = true;
     }
 
-    public AsyncFetch clone() throws CloneNotSupportedException {
-        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.m3u8Manager = new M3U8Manager();
-        return asyncFetch;
-    }
-
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
@@ -88,7 +80,7 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    protected String processLine(Map<String, String> line) throws IOException {
+    protected String processLine(Map<String, String> line) throws QiniuException {
         String url;
         String key;
         if (urlIndex != null) {
@@ -99,18 +91,6 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
             key = line.get("key");
         }
         Response response = fetch(url, keepKey ? keyPrefix + key : null, line.get(md5Index), line.get("hash"));
-        if ("application/x-mpegurl".equals(line.get("mimeType")) || key.endsWith(".m3u8")) {
-            List<VideoTS> videoTSList = new ArrayList<>();
-            try {
-                videoTSList = m3u8Manager.getVideoTSListByUrl(url);
-            } catch (IOException e) {
-                fileMap.writeError("list ts failed: " + url + "\t" + e.getMessage());
-            }
-            for (VideoTS videoTS : videoTSList) {
-                key = videoTS.getUrl().split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-                fetch(videoTS.getUrl(), keepKey ? keyPrefix + key : null, line.get(md5Index), line.get("hash"));
-            }
-        }
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
