@@ -96,7 +96,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String avinfo = singleWithRetry(url, retryCount);
                 if (avinfo != null) resultList.add(url + "\t" + avinfo);
-                else fileMap.writeError( String.valueOf(line) + "\t" + "pfop avinfo");
+                else fileMap.writeError( String.valueOf(line) + "\tpfop avinfo");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
             }
