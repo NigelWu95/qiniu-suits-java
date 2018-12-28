@@ -40,8 +40,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this.mediaManager = new MediaManager(protocol, auth);
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
-        this.fileMap = new FileMap();
-        this.fileMap.initWriter(resultPath, processName, resultIndex);
+        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.fileMap.initDefaultWriters();
     }
 
     public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath) throws IOException {
@@ -51,9 +51,9 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.mediaManager = new MediaManager(protocol, auth);
-        queryAvinfo.fileMap = new FileMap();
+        queryAvinfo.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
         try {
-            queryAvinfo.fileMap.initWriter(resultPath, processName, resultIndex++);
+            queryAvinfo.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

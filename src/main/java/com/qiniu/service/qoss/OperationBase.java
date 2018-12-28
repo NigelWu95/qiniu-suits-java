@@ -43,17 +43,17 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.batchOperations = new BatchOperations();
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
-        this.fileMap = new FileMap();
-        this.fileMap.initWriter(resultPath, processName, resultIndex);
+        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.fileMap.initDefaultWriters();
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
-        operationBase.fileMap = new FileMap();
+        operationBase.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
         try {
-            operationBase.fileMap.initWriter(resultPath, processName, resultIndex++);
+            operationBase.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

@@ -1,7 +1,5 @@
 package com.qiniu.persistence;
 
-import com.qiniu.util.StringUtils;
-
 import java.io.*;
 import java.util.*;
 
@@ -9,19 +7,22 @@ public class FileMap implements Cloneable {
 
     private HashMap<String, BufferedWriter> writerMap;
     private HashMap<String, BufferedReader> readerMap;
-    private List<String> targetWriters;
-    private String targetFileDir;
-    private String prefix;
-    private String suffix;
+    private List<String> defaultWriters;
+    private String targetFileDir = null;
+    private String prefix = null;
+    private String suffix = null;
 
-    public FileMap(List<String> targetWriters) {
-        this.targetWriters = targetWriters == null ? new ArrayList<>() : targetWriters;
+    public FileMap() {
+        this.defaultWriters = Collections.singletonList("success");
         this.writerMap = new HashMap<>();
         this.readerMap = new HashMap<>();
     }
 
-    public FileMap() {
-        this(Collections.singletonList("_success"));
+    public FileMap(String targetFileDir, String prefix, String suffix) {
+        this();
+        this.targetFileDir = targetFileDir;
+        this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
+        this.suffix = (suffix == null || "".equals(suffix)) ? "_0" : "_" + suffix;
     }
 
     public String getPrefix() {
@@ -32,20 +33,30 @@ public class FileMap implements Cloneable {
         return suffix;
     }
 
-    public void initWriter(String targetFileDir, String prefix, String suffix) throws IOException {
-        this.targetFileDir = targetFileDir;
-        this.prefix = prefix;
-        this.suffix = StringUtils.isNullOrEmpty(suffix) ? "_0" : "_" + suffix;
-        for (String targetWriter : targetWriters) {
-            addWriter(targetFileDir, prefix + targetWriter + this.suffix);
+    public void addDefaultWriters(String writer) throws IOException {
+        if (writer == null || "".equals(writer)) throw new IOException("not valid writer.");
+        this.defaultWriters.add(writer);
+    }
+
+    public void initDefaultWriters() throws IOException {
+        if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no targetFileDir.");
+        if (prefix == null) throw new IOException("no prefix.");
+        if (suffix == null || "".equals(suffix)) throw new IOException("no suffix.");
+        for (String targetWriter : defaultWriters) {
+            addWriter(prefix + targetWriter + this.suffix);
         }
     }
 
-    public void initWriter(String targetFileDir, String prefix, int index) throws IOException {
-        initWriter(targetFileDir, prefix, String.valueOf(index));
+    public void initDefaultWriters(String targetFileDir, String prefix, String suffix) throws IOException {
+        if (targetFileDir != null && !"".equals(targetFileDir)) this.targetFileDir = targetFileDir;
+        if (prefix != null && !"".equals(prefix)) this.prefix = prefix + "_";
+        else if (this.prefix == null) this.prefix = "";
+        if (suffix != null && !"".equals(suffix)) this.suffix = "_" + suffix;
+        else if (this.suffix == null) this.suffix = "_0";
+        initDefaultWriters();
     }
 
-    public void addWriter(String targetFileDir, String key) throws IOException {
+    private void addWriter(String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
         mkDirAndFile(resultFile);
         BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
@@ -90,7 +101,7 @@ public class FileMap implements Cloneable {
         }
     }
 
-    public void initReader(String fileDir) throws IOException {
+    public void initReaders(String fileDir) throws IOException {
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
         String fileKey;
@@ -134,17 +145,17 @@ public class FileMap implements Cloneable {
     }
 
     public void writeKeyFile(String key, String item) throws IOException {
-        if (!writerMap.keySet().contains(prefix + key + suffix)) addWriter(targetFileDir, prefix + key + suffix);
+        if (!writerMap.keySet().contains(prefix + key + suffix)) addWriter(prefix + key + suffix);
         doWrite(prefix + key + suffix, item);
     }
 
     public void writeSuccess(String item) throws IOException {
-        doWrite(this.prefix + "_success" + suffix, item);
+        doWrite(this.prefix + "success" + suffix, item);
     }
 
     public void writeError(String item) throws IOException {
-        if (!writerMap.keySet().contains(prefix + "_error" + suffix))
-            addWriter(targetFileDir, prefix + "_error" + suffix);
-        doWrite(this.prefix + "_error" + suffix, item);
+        if (!writerMap.keySet().contains(prefix + "error" + suffix))
+            addWriter(prefix + "error" + suffix);
+        doWrite(this.prefix + "error" + suffix, item);
     }
 }
