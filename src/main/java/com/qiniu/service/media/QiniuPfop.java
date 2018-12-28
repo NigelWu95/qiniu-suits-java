@@ -40,8 +40,8 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
-        this.fileMap = new FileMap();
-        this.fileMap.initWriter(resultPath, processName, resultIndex);
+        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.fileMap.initDefaultWriters();
     }
 
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String fopsIndex,
@@ -52,9 +52,9 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(auth, configuration);
-        qiniuPfop.fileMap = new FileMap();
+        qiniuPfop.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
         try {
-            qiniuPfop.fileMap.initWriter(resultPath, processName, resultIndex++);
+            qiniuPfop.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

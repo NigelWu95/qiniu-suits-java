@@ -30,8 +30,8 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         this.mediaManager = new MediaManager();
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
-        this.fileMap = new FileMap();
-        this.fileMap.initWriter(resultPath, processName, resultIndex);
+        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.fileMap.initDefaultWriters();
     }
 
     public QueryPfopResult(String persistentIdIndex, String resultPath) throws IOException {
@@ -41,9 +41,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap();
+        queryPfopResult.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
         try {
-            queryPfopResult.fileMap.initWriter(resultPath, processName, resultIndex);
+            queryPfopResult.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }

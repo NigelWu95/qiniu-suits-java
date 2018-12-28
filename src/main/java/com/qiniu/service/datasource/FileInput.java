@@ -46,12 +46,16 @@ public class FileInput {
     }
 
     public void traverseByReader(int resultIndex, BufferedReader bufferedReader, ILineProcess<Map<String, String>> processor) {
-        FileMap fileMap = new FileMap();
+        FileMap fileMap = new FileMap(resultPath, "fileinput", String.valueOf(resultIndex));
         ILineProcess<Map<String, String>> fileProcessor = null;
         try {
-            fileMap.initWriter(resultPath, "fileinput", resultIndex);
             if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
             ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
+            ITypeConvert<Map<String, String>, String> writeTypeConverter = null;
+            if (saveTotal) {
+                writeTypeConverter = new InfoMapToString(resultFormat, resultSeparator, resultFields);
+                fileMap.initDefaultWriters();
+            }
             List<String> srcList = new ArrayList<>();
             String line;
             boolean goon = true;
@@ -66,8 +70,6 @@ public class FileInput {
                     if (typeConverter.getErrorList().size() > 0) fileMap.writeError(String.join("\n",
                             typeConverter.getErrorList()));
                     if (saveTotal) {
-                        ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
-                                resultSeparator, resultFields);
                         writeList = writeTypeConverter.convertToVList(infoMapList);
                         if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                         if (writeTypeConverter.getErrorList().size() > 0)
@@ -132,6 +134,5 @@ public class FileInput {
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         fileMap.closeReader();
-        fileMap.closeWriter();
     }
 }

@@ -14,19 +14,21 @@ public class ProgressRecorder implements Cloneable {
     private FileMap fileMap;
     private String[] keys;
 
-    public ProgressRecorder(String processName, String resultPath, int resultIndex, FileMap fileMap, String[] keys) {
+    public ProgressRecorder(String processName, String resultPath, int resultIndex, FileMap fileMap, String[] keys)
+            throws IOException {
         this.processName = processName;
         this.resultPath = resultPath;
         this.resultIndex = resultIndex;
-        this.fileMap = fileMap;
+        this.fileMap = fileMap == null ? new FileMap() : fileMap;
+        this.fileMap.initDefaultWriters(resultPath, processName, String.valueOf(resultIndex));
         this.keys = keys;
     }
 
     public ProgressRecorder clone() throws CloneNotSupportedException {
         ProgressRecorder progressRecorder = (ProgressRecorder)super.clone();
-        progressRecorder.fileMap = new FileMap();
+        progressRecorder.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
         try {
-            progressRecorder.fileMap.initWriter(resultPath, processName, resultIndex++);
+            progressRecorder.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
@@ -39,7 +41,7 @@ public class ProgressRecorder implements Cloneable {
             if (progress.length < i) break;
             jsonObject.addProperty(keys[i], progress[i]);
         }
-        fileMap.writeKeyFile(processName + "_" + resultIndex, JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
+        fileMap.writeKeyFile("", JsonConvertUtils.toJsonWithoutUrlEscape(jsonObject));
     }
 
     public void close() {

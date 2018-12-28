@@ -57,8 +57,8 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;
         this.rmFields = rmFields;
         this.resultIndex = resultIndex;
-        this.fileMap = new FileMap();
-        this.fileMap.initWriter(resultPath, processName, resultIndex);
+        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.fileMap.initDefaultWriters();
         this.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
     }
 
@@ -69,9 +69,9 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
 
     public FileInfoFilterProcess clone() throws CloneNotSupportedException {
         FileInfoFilterProcess fileInfoFilterProcess = (FileInfoFilterProcess)super.clone();
-        fileInfoFilterProcess.fileMap = new FileMap();
+        fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
         try {
-            fileInfoFilterProcess.fileMap.initWriter(resultPath, processName, resultIndex++);
+            fileInfoFilterProcess.fileMap.initDefaultWriters();
             fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
             if (nextProcessor != null) {
                 fileInfoFilterProcess.nextProcessor = nextProcessor.clone();
