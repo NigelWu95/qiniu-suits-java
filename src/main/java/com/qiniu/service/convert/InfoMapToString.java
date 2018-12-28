@@ -16,15 +16,13 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
 
     public InfoMapToString(String format, String separator, List<String> rmFields) {
         List<String> rFields = rmFields == null ? new ArrayList<>() : rmFields;
-        if ("format".equals(format)) {
+        if ("json".equals(format)) {
             stringFormatter = (infoMap) -> {
                 JsonObject converted = new JsonObject();
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
                 }
-                if (converted.size() < infoMap.size() - rFields.size())
-                    throw new IOException("there are no enough valid info map key in fields.");
-                return converted.getAsString();
+                return converted.toString();
             };
         } else {
             stringFormatter = (infoMap) -> {
@@ -32,30 +30,22 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
                 }
-                if (converted.toString().split(separator).length < infoMap.size() - rFields.size())
-                    throw new IOException("there are no enough valid info map key in fields.");
                 return converted.toString();
             };
         }
     }
 
-    public List<String> convertToVList(List<Map<String, String>> srcList) throws IOException {
+    public List<String> convertToVList(List<Map<String, String>> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<String> resultList = srcList.parallelStream()
-                .filter(Objects::nonNull)
-                .map(infoMap -> {
-                    try {
-                        return stringFormatter.toFormatString(infoMap);
-                    } catch (Exception e) {
-                        errorList.add(infoMap.toString());
-                        return null;
-                    }
+        return  srcList.parallelStream()
+                .filter(infoMap -> {
+                    if (infoMap == null || infoMap.size() == 0) {
+                        errorList.add("empty map");
+                        return false;
+                    } else return true;
                 })
-                .filter(Objects::nonNull)
+                .map(stringFormatter::toFormatString)
                 .collect(Collectors.toList());
-        if (errorList.size() == srcList.size()) throw new IOException("covert map by fields failed, " +
-                "please check the save fields' setting.");
-        return resultList;
     }
 
     public List<String> getErrorList() {

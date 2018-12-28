@@ -23,23 +23,19 @@ public class LineToInfoMap implements ITypeConvert<String, Map<String, String>> 
         }
     }
 
-    public List<Map<String, String>> convertToVList(List<String> srcList) throws IOException {
+    public List<Map<String, String>> convertToVList(List<String> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<Map<String, String>> resultList = srcList.parallelStream()
-                .filter(line -> line != null && !"".equals(line))
+        return srcList.parallelStream()
                 .map(line -> {
                     try {
                         return lineParser.getItemMap(line);
                     } catch (Exception e) {
-                        errorList.add(line);
+                        errorList.add(line + "\t" + e.getMessage());
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        if (errorList.size() == srcList.size()) throw new IOException("parse line by index failed, " +
-                "please check the line indexes' setting.");
-        return resultList;
     }
 
     public List<String> getErrorList() {

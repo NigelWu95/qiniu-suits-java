@@ -94,23 +94,17 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
-        List<String> urlList;
-        if (domain != null) {
-            List<String> keyList = lineList.stream().map(line -> line.get("key"))
-                    .filter(pid -> pid != null && !"".equals(pid)).collect(Collectors.toList());
-            if (keyList.size() == 0) throw new QiniuException(null, "there is no key in line.");
-            urlList = keyList.stream().map(key -> protocol + "://" + domain + "/" + key).collect(Collectors.toList());
-        } else {
-            urlList = lineList.stream().map(line -> line.get(urlIndex)).collect(Collectors.toList());
-        }
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
-        for (String url : urlList) {
+        String url;
+        for (Map<String, String> line : lineList) {
             try {
+                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String qhash = singleWithRetry(url, retryCount);
                 if (qhash != null) resultList.add(url + "\t" + qhash);
+                else fileMap.writeError( String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, url);
+                HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

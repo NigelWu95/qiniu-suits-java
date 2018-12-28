@@ -23,23 +23,17 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
         }
     }
 
-    public List<String> convertToVList(List<FileInfo> srcList) throws IOException {
+    public List<String> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        List<String> resultList = srcList.parallelStream()
-                .filter(Objects::nonNull)
-                .map(fileInfo -> {
-                    try {
-                        return stringFormatter.toFormatString(fileInfo);
-                    } catch (Exception e) {
-                        errorList.add(fileInfo.key + "\t" + String.valueOf(fileInfo));
-                        return null;
-                    }
+        return srcList.parallelStream()
+                .filter(fileInfo -> {
+                    if (fileInfo == null) {
+                        errorList.add("empty fileInfo.");
+                        return false;
+                    } else return true;
                 })
-                .filter(Objects::nonNull)
+                .map(stringFormatter::toFormatString)
                 .collect(Collectors.toList());
-        if (errorList.size() == srcList.size()) throw new IOException("covert map by fields failed, " +
-                "please check the save fields' setting.");
-        return resultList;
     }
 
     public List<String> getErrorList() {

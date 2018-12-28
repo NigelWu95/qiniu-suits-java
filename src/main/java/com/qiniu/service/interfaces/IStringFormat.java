@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface IStringFormat<T> {
 
-    String toFormatString(T t) throws IOException;
+    String toFormatString(T t);
 }

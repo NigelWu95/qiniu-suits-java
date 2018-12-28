@@ -88,7 +88,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return avinfo;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
         String url;
         for (Map<String, String> line : lineList) {
@@ -96,9 +96,9 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String avinfo = singleWithRetry(url, retryCount);
                 if (avinfo != null) resultList.add(url + "\t" + avinfo);
-                else throw new QiniuException(null, "empty avinfo");
+                else fileMap.writeError( String.valueOf(line) + "\tpfop avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, line.toString());
+                HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
