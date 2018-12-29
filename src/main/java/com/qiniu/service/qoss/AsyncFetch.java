@@ -2,7 +2,8 @@ package com.qiniu.service.qoss;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.storage.BucketManager.*;
+import com.qiniu.persistence.FileMap;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -10,11 +11,18 @@ import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class AsyncFetch extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
+public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
+    private Auth auth;
+    private Configuration configuration;
+    private BucketManager bucketManager;
+    private String bucket;
+    private String processName;
+    private int retryCount;
     private String domain;
     private String protocol;
     private String urlIndex;
@@ -31,11 +39,18 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
+    private String resultPath;
+    private int resultIndex;
+    private FileMap fileMap;
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
                       boolean keepKey, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
             throws IOException {
-        super(auth, configuration, bucket, "asyncfetch", resultPath, resultIndex);
+        this.auth = auth;
+        this.configuration = configuration;
+        this.bucketManager = new BucketManager(auth, configuration);
+        this.bucket = bucket;
+        this.processName = "asyncfetch";
         setBatch(false);
         if (urlIndex== null || "".equals(urlIndex)) {
             this.urlIndex = null;
@@ -50,6 +65,10 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         this.keepKey = keepKey;
         this.keyPrefix = keyPrefix;
 //        this.m3u8Manager = new M3U8Manager();
+        this.resultPath = resultPath;
+        this.resultIndex = resultIndex;
+        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.fileMap.initDefaultWriters();
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol, Auth srcAuth,
@@ -71,6 +90,26 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
         this.hasCustomArgs = true;
     }
 
+    public AsyncFetch clone() throws CloneNotSupportedException {
+        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
+        asyncFetch.bucketManager = new BucketManager(auth, configuration);
+        asyncFetch.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
+        try {
+            asyncFetch.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return asyncFetch;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    public String getProcessName() {
+        return this.processName;
+    }
+
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
         if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
         return hasCustomArgs ?
@@ -79,21 +118,50 @@ public class AsyncFetch extends OperationBase implements ILineProcess<Map<String
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
-        String url;
-        String key;
-        if (urlIndex != null) {
-            url = line.get(urlIndex);
-            key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-        } else  {
-            url = protocol + "://" + domain + "/" + line.get("key");
-            key = line.get("key");
+    public String singleWithRetry(String url, String key, String md5, String etag, int retryCount) throws QiniuException {
+        Response response = null;
+        try {
+            response = fetch(url, key, md5, etag);
+        } catch (QiniuException e1) {
+            HttpResponseUtils.checkRetryCount(e1, retryCount);
+            while (retryCount > 0) {
+                try {
+                    response = fetch(url, key, md5, etag);
+                    retryCount = 0;
+                } catch (QiniuException e2) {
+                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                }
+            }
         }
-        Response response = fetch(url, keepKey ? keyPrefix + key : null, line.get(md5Index), line.get("hash"));
-        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
+        assert response != null;
+        return response.statusCode + "\t" + response.reqId + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> fileInfoList){
-        return new BatchOperations();
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        List<String> resultList = new ArrayList<>();
+        String url;
+        String key;
+        for (Map<String, String> line : lineList) {
+            if (urlIndex != null) {
+                url = line.get(urlIndex);
+                key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+            } else  {
+                url = protocol + "://" + domain + "/" + line.get("key");
+                key = line.get("key");
+            }
+            try {
+                String fetchResult = singleWithRetry(url, keepKey ? keyPrefix + key : null, line.get(md5Index),
+                        line.get("hash"), retryCount);
+                if (fetchResult != null) resultList.add(fetchResult);
+                else fileMap.writeError( String.valueOf(line) + "\tempty fetchResult");
+            } catch (QiniuException e) {
+                HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
+            }
+        }
+        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
+    }
+
+    public void closeResource() {
+        fileMap.closeWriter();
     }
 }
