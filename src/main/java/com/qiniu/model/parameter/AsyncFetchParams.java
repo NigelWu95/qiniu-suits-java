@@ -99,7 +99,7 @@ public class AsyncFetchParams extends QossParams {
         if (fileType.matches("([01])")) {
             return Short.valueOf(fileType);
         } else {
-            throw new IOException("no incorrect file-type, please set it 0 or 1.");
+            return 0;
         }
     }
 
@@ -112,7 +112,10 @@ public class AsyncFetchParams extends QossParams {
     }
 
     public boolean hasCustomArgs() {
-        return (host != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
-                || callbackHost != null || "1".equals(fileType) || "true".equals(ignoreSameKey));
+        return ((host != null && !"".equals(host)) || (callbackUrl != null && !"".equals(callbackUrl)) ||
+                (callbackBody != null && !"".equals(callbackBody)) ||
+                (callbackBodyType != null && !"".equals(callbackBodyType)) ||
+                (callbackHost != null && !"".equals(callbackHost)) ||
+                "1".equals(fileType) || "true".equals(ignoreSameKey));
     }
 }
