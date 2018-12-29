@@ -143,17 +143,18 @@ public class ListBucket {
     }
 
     private void execLister(FileLister fileLister, String end, int resultIndex, ILineProcess<Map<String, String>> processor) {
-        FileMap fileMap = new FileMap();
+        FileMap fileMap = new FileMap(resultPath, "list", String.valueOf(resultIndex));
         ILineProcess<Map<String, String>> fileProcessor = null;
-        ProgressRecorder recorder = new ProgressRecorder("marker", resultPath, resultIndex, fileMap,
-                new String[]{"prefix", "marker", "end"});
+        ProgressRecorder recorder = null;
         try {
+            recorder = new ProgressRecorder("marker", resultPath, resultIndex, fileMap,
+                    new String[]{"prefix", "marker", "end"});
             if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
-            ITypeConvert<FileInfo, String> writeTypeConverter = null;
             ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
+            ITypeConvert<FileInfo, String> writeTypeConverter = null;
             if (saveTotal) {
                 writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, resultFields);
-                fileMap.initWriter(resultPath, "list", resultIndex);
+                fileMap.initDefaultWriters();
             }
             String marker;
             List<FileInfo> fileInfoList;
@@ -195,9 +196,8 @@ public class ListBucket {
         } finally {
             fileMap.closeWriter();
             if (fileProcessor != null) fileProcessor.closeResource();
-            recorder.close();
-            fileLister.remove();
-            fileLister = null;
+            if (recorder != null) recorder.close();
+            if (fileLister != null) fileLister.remove(); fileLister = null;
         }
     }
 

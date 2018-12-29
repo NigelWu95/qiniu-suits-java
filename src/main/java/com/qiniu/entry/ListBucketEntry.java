@@ -20,7 +20,7 @@ public class ListBucketEntry {
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
         boolean multiStatus = listBucketParams.getMultiStatus();
-        int maxThreads = listBucketParams.getMaxThreads();
+        int threads = listBucketParams.getMaxThreads();
         int unitLen = listBucketParams.getUnitLen();
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
@@ -31,11 +31,11 @@ public class ListBucketEntry {
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
-        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, maxThreads, customPrefix,
+        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, threads, customPrefix,
                 antiPrefix, 3, resultPath);
         if (saveTotal) listBucket.setResultSaveOptions(resultFormat, resultSeparator, listBucketParams.getRmFields());
         if (multiStatus) {
-            listBucket.concurrentlyList(maxThreads, processor);
+            listBucket.concurrentlyList(threads, processor);
         } else {
             listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
         }
