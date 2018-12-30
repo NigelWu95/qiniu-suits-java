@@ -104,28 +104,34 @@ public class FileMap implements Cloneable {
     public void initReaders(String fileDir) throws IOException {
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
-        String fileKey;
+        String fileName;
         BufferedReader reader;
         assert fs != null;
         for(File f : fs) {
             if (!f.isDirectory()) {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
                 reader = new BufferedReader(fileReader);
-                fileKey = f.getName();
-                this.readerMap.put(fileKey, reader);
+                fileName = f.getName();
+                if (fileName.endsWith(".txt")) this.readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
             }
         }
     }
 
-    public void initReader(String fileDir, String key) throws IOException {
-        File sourceFile = new File(fileDir, key);
-        FileReader fileReader = new FileReader(sourceFile);
-        BufferedReader reader = new BufferedReader(fileReader);
-        this.readerMap.put(key, reader);
+    public void initReader(String fileDir, String fileName) throws IOException {
+        if (fileName.endsWith(".txt")) {
+            File sourceFile = new File(fileDir, fileName);
+            FileReader fileReader = new FileReader(sourceFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            this.readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
+        } else throw new IOException("please provide the .txt file.");
     }
 
     public BufferedReader getReader(String key) {
         return this.readerMap.get(key);
+    }
+
+    public HashMap<String, BufferedReader> getReaderMap() {
+        return readerMap;
     }
 
     public void closeReader() {
