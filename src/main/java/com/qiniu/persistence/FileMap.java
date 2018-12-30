@@ -164,4 +164,10 @@ public class FileMap implements Cloneable {
             addWriter(prefix + "error" + suffix);
         doWrite(this.prefix + "error" + suffix, item);
     }
+
+    public boolean changeResultName(String newName) {
+        File resultFile = new File(targetFileDir, prefix + "success" + suffix + ".txt");
+        File newResultFile = new File(targetFileDir, prefix + newName + suffix + ".txt");
+        return resultFile.renameTo(newResultFile);
+    }
 }
