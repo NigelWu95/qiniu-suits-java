@@ -4,7 +4,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.FileInfoToMap;
 import com.qiniu.service.convert.FileInfoToString;
-import com.qiniu.service.help.ProgressRecorder;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileLister;
@@ -142,23 +141,18 @@ public class ListBucket {
         return fileListerList;
     }
 
-    private void execLister(FileLister fileLister, String end, int resultIndex, ILineProcess<Map<String, String>> processor) {
-        FileMap fileMap = new FileMap(resultPath, "list", String.valueOf(resultIndex));
-        ILineProcess<Map<String, String>> fileProcessor = null;
-        ProgressRecorder recorder = null;
+    private void execLister(FileLister fileLister, String end, String resultFlag, ILineProcess processor) throws Exception {
+        FileMap fileMap = new FileMap(resultPath, "listbucket", resultFlag);
+        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
+        ITypeConvert<FileInfo, String> writeTypeConverter = null;
+        if (saveTotal) {
+            writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, resultFields);
+            fileMap.initDefaultWriters();
+        }
+        String marker = null;
+        List<FileInfo> fileInfoList;
+        List<String> writeList;
         try {
-            recorder = new ProgressRecorder("marker", resultPath, resultIndex, fileMap,
-                    new String[]{"prefix", "marker", "end"});
-            if (processor != null) fileProcessor = resultIndex == 0 ? processor : processor.clone();
-            ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-            ITypeConvert<FileInfo, String> writeTypeConverter = null;
-            if (saveTotal) {
-                writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, resultFields);
-                fileMap.initDefaultWriters();
-            }
-            String marker;
-            List<FileInfo> fileInfoList;
-            List<String> writeList;
             while (fileLister.hasNext()) {
                 marker = fileLister.getMarker();
                 fileInfoList = fileLister.next();
@@ -185,23 +179,23 @@ public class ListBucket {
                     if (writeTypeConverter.getErrorList().size() > 0)
                         fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
                 }
-                if (fileProcessor != null) fileProcessor.processLine(typeConverter.convertToVList(fileInfoList));
+                if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
                 if (typeConverter.getErrorList().size() > 0)
                     fileMap.writeKeyFile("to_map", String.join("\n", typeConverter.getErrorList()));
-                recorder.record(fileLister.getPrefix(), marker, end);
                 if (finalSize < size) break;
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
-            fileMap.closeWriter();
-            if (fileProcessor != null) fileProcessor.closeResource();
-            if (recorder != null) recorder.close();
+            if (fileMap != null) {
+                if (marker != null && !"".equals(marker))
+                    fileMap.changeResultName(marker + "-" + end);
+                fileMap.closeWriter();
+            }
+            if (processor != null) processor.closeResource();
             if (fileLister != null) fileLister.remove(); fileLister = null;
         }
     }
 
-    public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor) {
+    public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(unitLen);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
         String firstEnd = "";
@@ -232,21 +226,28 @@ public class ListBucket {
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         for (int i = 0; i < fileListerList.size(); i++) {
-            int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
-            executorPool.execute(() -> execLister(fileListerList.get(finalI), finalEnd, finalI, processor));
+            FileLister fileLister = fileListerList.get(i);
+            ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
+            executorPool.execute(() -> {
+                try {
+                    execLister(fileLister, finalEnd, fileLister.getPrefix(), lineProcessor);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         if (processor != null) processor.closeResource();
     }
 
-    public void straightlyList(String marker, String end, ILineProcess<Map<String, String>> processor) throws IOException {
+    public void straightlyList(String marker, String end, ILineProcess<Map<String, String>> processor) throws Exception {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
         FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen);
-        execLister(fileLister, end, 0, processor);
+        execLister(fileLister, end, "all", processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }
