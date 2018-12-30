@@ -25,6 +25,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     private StringMap pfopParams;
     public int retryCount;
     protected String resultPath;
+    private String resultTag;
     private int resultIndex;
     public FileMap fileMap;
 
@@ -39,6 +40,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         else this.fopsIndex = fopsIndex;
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -49,24 +51,28 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         this(auth, configuration, bucket, pipeline, fopsIndex, resultPath, 0);
     }
 
-    public QiniuPfop clone() throws CloneNotSupportedException {
-        QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
-        qiniuPfop.operationManager = new OperationManager(auth, configuration);
-        qiniuPfop.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
-        try {
-            qiniuPfop.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return qiniuPfop;
+    public String getProcessName() {
+        return this.processName;
     }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
+    public QiniuPfop clone() throws CloneNotSupportedException {
+        QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
+        qiniuPfop.operationManager = new OperationManager(auth, configuration);
+        qiniuPfop.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        try {
+            qiniuPfop.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return qiniuPfop;
     }
 
     public String singleWithRetry(String key, String fops, int retryCount) throws QiniuException {
