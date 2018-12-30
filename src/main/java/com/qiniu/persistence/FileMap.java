@@ -2,6 +2,7 @@ package com.qiniu.persistence;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.*;
 
 public class FileMap implements Cloneable {
 
@@ -135,7 +136,7 @@ public class FileMap implements Cloneable {
     }
 
     public void closeReader() {
-        for (Map.Entry<String, BufferedReader> entry : this.readerMap.entrySet()) {
+        for (Entry<String, BufferedReader> entry : this.readerMap.entrySet()) {
             try {
                 this.readerMap.get(entry.getKey()).close();
             } catch (IOException ioException) {
