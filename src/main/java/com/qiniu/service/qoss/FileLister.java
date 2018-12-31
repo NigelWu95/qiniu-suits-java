@@ -18,19 +18,21 @@ public class FileLister implements Iterator<List<FileInfo>> {
     private BucketManager bucketManager;
     private String bucket;
     private String prefix;
-    private String delimiter;
     private String marker;
+    private String endKeyPrefix;
+    private String delimiter;
     private int limit;
     private List<FileInfo> fileInfoList;
     public QiniuException exception;
 
-    public FileLister(BucketManager bucketManager, String bucket, String prefix, String delimiter, String marker,
-                      int limit) throws QiniuException {
+    public FileLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endKeyPrefix,
+                      String delimiter, int limit) throws QiniuException {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
-        this.delimiter = delimiter;
         this.marker = marker;
+        this.endKeyPrefix = endKeyPrefix == null ? "" : endKeyPrefix;
+        this.delimiter = delimiter;
         this.limit = limit;
         this.fileInfoList = getListResult(prefix, delimiter, marker, limit);
     }
@@ -52,16 +54,24 @@ public class FileLister implements Iterator<List<FileInfo>> {
         this.prefix = prefix;
     }
 
-    public String getDelimiter() {
-        return delimiter;
-    }
-
     public String getMarker() {
         return marker;
     }
 
     public void setMarker(String marker) {
         this.marker = marker;
+    }
+
+    public String getEndKeyPrefix() {
+        return endKeyPrefix;
+    }
+
+    public void setEndKeyPrefix(String endKeyPrefix) {
+        this.endKeyPrefix = endKeyPrefix == null ? "" : endKeyPrefix;;
+    }
+
+    public String getDelimiter() {
+        return delimiter;
     }
 
     public int getLimit() {
@@ -114,6 +124,14 @@ public class FileLister implements Iterator<List<FileInfo>> {
     @Override
     public List<FileInfo> next() {
         List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
+        if (endKeyPrefix != null && !"".equals(endKeyPrefix)) {
+            int size = current.size();
+            current = current.parallelStream()
+                    .filter(fileInfo -> fileInfo.key.compareTo(endKeyPrefix) < 0)
+                    .collect(Collectors.toList());
+            int finalSize = current.size();
+            if (finalSize < size) marker = null;
+        }
         try {
             if (!checkMarkerValid()) fileInfoList = null;
             else {

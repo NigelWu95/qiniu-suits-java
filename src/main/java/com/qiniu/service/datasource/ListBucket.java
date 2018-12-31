@@ -65,14 +65,14 @@ public class ListBucket {
                         FileLister fileLister = null;
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    null, null, unitLen);
+                                    null, "", null, unitLen);
                         } catch (QiniuException e1) {
                             HttpResponseUtils.checkRetryCount(e1, retryCount);
                             while (retryCount > 0) {
                                 System.out.println("list prefix:" + prefix + "\tretrying...");
                                 try {
                                     fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                            null, null, unitLen);
+                                            null, "", null, unitLen);
                                     retryCount = 0;
                                 } catch (QiniuException e2) {
                                     retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
@@ -162,15 +162,7 @@ public class ListBucket {
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
-            int size = fileInfoList.size();
-            int finalSize = size;
-            if (!StringUtils.isNullOrEmpty(end)) {
-                fileInfoList = fileInfoList.parallelStream()
-                        .filter(fileInfo -> fileInfo.key.compareTo(end) < 0)
-                        .collect(Collectors.toList());
-                finalSize = fileInfoList.size();
-            }
-            if (saveTotal && finalSize > 0) {
+            if (saveTotal) {
                 writeList = writeTypeConverter.convertToVList(fileInfoList);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                 if (writeTypeConverter.getErrorList().size() > 0)
@@ -179,9 +171,10 @@ public class ListBucket {
             if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeKeyFile("to_map", String.join("\n", typeConverter.getErrorList()));
-            if (finalSize < size) break;
         }
     }
+
+//    public
 
     public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(unitLen);
@@ -245,7 +238,7 @@ public class ListBucket {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
-        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, unitLen);
+        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, "", unitLen);
         FileMap fileMap = new FileMap(resultPath, "listbucket", fileLister.getPrefix());
         execLister(fileLister, end, fileMap, processor);
         System.out.println(info + " finished.");
