@@ -24,7 +24,6 @@ public class ListBucket {
     private Configuration configuration;
     private String bucket;
     private int unitLen;
-    private int threads;
     private String cPrefix;
     private List<String> antiPrefix;
     private int retryCount;
@@ -97,7 +96,7 @@ public class ListBucket {
                 .collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int unitLen, int threads) {
+    private List<FileLister> getFileListerList(int threads) {
         List<String> validPrefixList = originPrefixList.parallelStream().filter(originPrefix ->
                 !antiPrefix.contains(originPrefix)).map(prefix -> cPrefix + prefix).collect(Collectors.toList());
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
@@ -131,6 +130,18 @@ public class ListBucket {
         }
         // 加入第一段 FileLister，第一段 Lister 使用的 prefix 为 cPrefix（空或者传入的参数）
         fileListerList.addAll(prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen));
+        if (fileListerList.size() > 1) {
+            fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
+            fileListerList.get(0).setEndKeyPrefix(fileListerList.get(1).getPrefix());
+            FileLister fileLister = fileListerList.get(fileListerList.size() -1);
+            fileLister.setPrefix(cPrefix);
+            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
+                FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream().filter(Objects::nonNull)
+                        .max(Comparator.comparing(fileInfo -> fileInfo.key)).orElse(null);
+                fileLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
+            }
+        }
+
         return fileListerList;
     }
 
@@ -168,25 +179,8 @@ public class ListBucket {
         }
     }
 
-//    public
-
     public void concurrentlyList(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
-        List<FileLister> fileListerList = getFileListerList(unitLen, threads);
-        fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-        int listSize = fileListerList.size();
-        String firstEnd = "";
-        if (fileListerList.size() > 1) {
-            firstEnd = fileListerList.get(1).getPrefix();
-            FileLister fileLister = fileListerList.get(fileListerList.size() -1);
-            if (StringUtils.isNullOrEmpty(fileLister.getMarker())) {
-                FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
-                        .filter(Objects::nonNull)
-                        .max(Comparator.comparing(fileInfo -> fileInfo.key))
-                        .orElse(null);
-                String marker = ListBucketUtils.calcMarker(lastFileInfo);
-                fileLister.setMarker(marker);
-            }
-        }
+        List<FileLister> fileListerList = getFileListerList(threads);
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + threads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
@@ -200,11 +194,9 @@ public class ListBucket {
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
         for (int i = 0; i < fileListerList.size(); i++) {
             final int finalI = i;
-            String finalEnd = i == 0 ? firstEnd : "";
             ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
             executorPool.execute(() -> {
                 FileLister fileLister = fileListerList.get(finalI);
-                fileLister.setEndKeyPrefix(finalEnd);
                 FileMap fileMap = new FileMap(resultPath, "listbucket", fileLister.getPrefix());
                 if (lineProcessor != null) lineProcessor.setResultTag(fileLister.getPrefix());
                 try {
@@ -214,7 +206,7 @@ public class ListBucket {
                 } finally {
                     String marker = fileLister.getMarker();
                     if (marker != null && !"".equals(marker))
-                        fileMap.changeResultName(marker + "-" + finalEnd);
+                        fileMap.changeResultName(marker + "-" + fileLister.getEndKeyPrefix());
                     fileMap.closeWriter();
                     if (processor != null) processor.closeResource();
                     fileLister.remove();
