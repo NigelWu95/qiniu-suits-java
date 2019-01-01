@@ -68,8 +68,7 @@ public class EntryMain {
             Auth auth = Auth.create(accessKey, secretKey);
             Configuration configuration = new Configuration(Zone.autoZone());
             dataSource = new ListBucket(auth, configuration, bucket, unitLen, customPrefix, antiPrefix, 3, resultPath);
-        }
-        else if ("file".equals(sourceType)) {
+        } else if ("file".equals(sourceType)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
             String filePath = fileInputParams.getFilePath();
             String parseType = fileInputParams.getParseType();
