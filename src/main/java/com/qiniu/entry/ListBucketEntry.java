@@ -20,7 +20,6 @@ public class ListBucketEntry {
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
         boolean multiStatus = listBucketParams.getMultiStatus();
-        int threads = listBucketParams.getMaxThreads();
         int unitLen = listBucketParams.getUnitLen();
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
@@ -35,7 +34,7 @@ public class ListBucketEntry {
                 3, resultPath);
         if (saveTotal) listBucket.setResultSaveOptions(resultFormat, resultSeparator, listBucketParams.getRmFields());
         if (multiStatus) {
-            listBucket.concurrentlyList(threads, processor);
+            listBucket.concurrentlyList(listBucketParams.getMaxThreads(), processor);
         } else {
             listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
         }
