@@ -14,13 +14,13 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
     private IStringFormat<Map<String, String>> stringFormatter;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public InfoMapToString(String format, String separator, List<String> rmFields) {
-        List<String> rFields = rmFields == null ? new ArrayList<>() : rmFields;
+    public InfoMapToString(String format, String separator, List<String> removeFields) {
+        List<String> rmFields = removeFields == null ? new ArrayList<>() : removeFields;
         if ("json".equals(format)) {
             stringFormatter = (infoMap) -> {
                 JsonObject converted = new JsonObject();
                 for (Entry<String, String> set : infoMap.entrySet()) {
-                    if (!rFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
+                    if (!rmFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
                 }
                 return converted.toString();
             };
@@ -28,7 +28,7 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
             stringFormatter = (infoMap) -> {
                 StringBuilder converted = new StringBuilder();
                 for (Entry<String, String> set : infoMap.entrySet()) {
-                    if (!rFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
+                    if (!rmFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
                 }
                 return converted.toString();
             };

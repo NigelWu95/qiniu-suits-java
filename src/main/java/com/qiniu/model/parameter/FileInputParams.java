@@ -60,14 +60,6 @@ public class FileInputParams extends CommonParams {
         }
     }
 
-    public Boolean getSaveTotal() {
-        if (saveTotal.matches("(true|false)")) {
-            return Boolean.valueOf(saveTotal);
-        } else {
-            return false;
-        }
-    }
-
     public Map<String, String> getIndexMap() throws IOException {
         Map<String, String> indexMap = new HashMap<>();
         if (needMd5Index.contains(getProcess())) {

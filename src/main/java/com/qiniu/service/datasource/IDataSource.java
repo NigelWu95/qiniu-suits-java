@@ -2,9 +2,12 @@ package com.qiniu.service.datasource;
 
 import com.qiniu.service.interfaces.ILineProcess;
 
+import java.util.List;
 import java.util.Map;
 
 public interface IDataSource {
 
-    void exportData(ILineProcess<Map<String, String>> processor);
+    void setResultSaveOptions(String format, String separator, List<String> removeFields);
+
+    void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception;
 }

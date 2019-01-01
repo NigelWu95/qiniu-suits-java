@@ -38,12 +38,4 @@ public class ListBucketParams extends QossParams {
         if (!"".equals(antiPrefix)) return Arrays.asList(antiPrefix.split(","));
         return null;
     }
-
-    public Boolean getSaveTotal() {
-        if (saveTotal.matches("(true|false)")) {
-            return Boolean.valueOf(saveTotal);
-        } else {
-            return true;
-        }
-    }
 }
