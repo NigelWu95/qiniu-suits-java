@@ -97,6 +97,7 @@ public class ListBucket {
     }
 
     private List<FileLister> getFileListerList(int threads) {
+        if (threads <= 1) return prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen);
         List<String> validPrefixList = originPrefixList.parallelStream().filter(originPrefix ->
                 !antiPrefix.contains(originPrefix)).map(prefix -> cPrefix + prefix).collect(Collectors.toList());
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
@@ -219,17 +220,6 @@ public class ListBucket {
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("list_prefix", String.join("\n", prefixList));
-        if (processor != null) processor.closeResource();
-    }
-
-    public void straightlyList(String marker, String end, ILineProcess<Map<String, String>> processor) throws Exception {
-        String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " start...");
-        BucketManager bucketManager = new BucketManager(auth, configuration);
-        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, marker, end, "", unitLen);
-        FileMap fileMap = new FileMap(resultPath, "listbucket", fileLister.getPrefix());
-        execLister(fileLister, fileMap, processor);
-        System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }
 }

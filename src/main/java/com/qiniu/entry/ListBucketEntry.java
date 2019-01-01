@@ -19,7 +19,6 @@ public class ListBucketEntry {
         String accessKey = listBucketParams.getAccessKey();
         String secretKey = listBucketParams.getSecretKey();
         String bucket = listBucketParams.getBucket();
-        boolean multiStatus = listBucketParams.getMultiStatus();
         int unitLen = listBucketParams.getUnitLen();
         String customPrefix = listBucketParams.getCustomPrefix();
         List<String> antiPrefix = listBucketParams.getAntiPrefix();
@@ -33,11 +32,7 @@ public class ListBucketEntry {
         ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, customPrefix, antiPrefix,
                 3, resultPath);
         if (saveTotal) listBucket.setResultSaveOptions(resultFormat, resultSeparator, listBucketParams.getRmFields());
-        if (multiStatus) {
-            listBucket.concurrentlyList(listBucketParams.getMaxThreads(), processor);
-        } else {
-            listBucket.straightlyList(listBucketParams.getMarker(), listBucketParams.getEnd(), processor);
-        }
+        listBucket.concurrentlyList(listBucketParams.getMaxThreads(), processor);
         if (processor != null) processor.closeResource();
     }
 }
