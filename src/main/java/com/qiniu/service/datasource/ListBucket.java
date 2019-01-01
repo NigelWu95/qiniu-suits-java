@@ -24,7 +24,7 @@ public class ListBucket {
     private Configuration configuration;
     private String bucket;
     private int unitLen;
-    private int maxThreads;
+    private int threads;
     private String cPrefix;
     private List<String> antiPrefix;
     private int retryCount;
@@ -36,13 +36,12 @@ public class ListBucket {
     private String resultSeparator;
     private List<String> resultFields;
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, int maxThreads,
-                      String customPrefix, List<String> antiPrefix, int retryCount, String resultPath) {
+    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, String customPrefix,
+                      List<String> antiPrefix, int retryCount, String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
-        this.maxThreads = maxThreads;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
         this.retryCount = retryCount;
@@ -98,12 +97,12 @@ public class ListBucket {
                 .collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int unitLen) {
+    private List<FileLister> getFileListerList(int unitLen, int threads) {
         List<String> validPrefixList = originPrefixList.parallelStream().filter(originPrefix ->
                 !antiPrefix.contains(originPrefix)).map(prefix -> cPrefix + prefix).collect(Collectors.toList());
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
         Map<Boolean, List<FileLister>> groupedFileListerMap;
-        while (fileListerList.size() < maxThreads - 1 && fileListerList.size() > 0) {
+        while (fileListerList.size() < threads - 1 && fileListerList.size() > 0) {
             groupedFileListerMap = fileListerList.stream().collect(Collectors.groupingBy(fileLister ->
                     fileLister.getMarker() != null && !"".equals(fileLister.getMarker())));
             if (groupedFileListerMap.get(true) != null) {
@@ -171,9 +170,10 @@ public class ListBucket {
 
 //    public
 
-    public void concurrentlyList(int maxThreads, ILineProcess<Map<String, String>> processor) throws Exception {
-        List<FileLister> fileListerList = getFileListerList(unitLen);
+    public void concurrentlyList(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+        List<FileLister> fileListerList = getFileListerList(unitLen, threads);
         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
+        int listSize = fileListerList.size();
         String firstEnd = "";
         if (fileListerList.size() > 1) {
             firstEnd = fileListerList.get(1).getPrefix();
@@ -187,10 +187,8 @@ public class ListBucket {
                 fileLister.setMarker(marker);
             }
         }
-        int listSize = fileListerList.size();
-        int runningThreads = listSize < maxThreads ? listSize : maxThreads;
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
+        System.out.println(info + " concurrently running with " + threads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
@@ -199,7 +197,7 @@ public class ListBucket {
             });
             return thread;
         };
-        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
+        ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
         for (int i = 0; i < fileListerList.size(); i++) {
             final int finalI = i;
             String finalEnd = i == 0 ? firstEnd : "";
