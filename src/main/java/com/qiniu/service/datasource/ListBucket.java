@@ -136,11 +136,12 @@ public class ListBucket {
             }
             if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
         }
+        // 加入第一段 FileLister，第一段 Lister 使用的 prefix 为 cPrefix（空或者传入的参数）
         fileListerList.addAll(prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen));
         return fileListerList;
     }
 
-    private void execLister(FileLister fileLister, String end, FileMap fileMap, ILineProcess processor) throws Exception {
+    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess processor) throws Exception {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
         ITypeConvert<FileInfo, String> writeTypeConverter = null;
         if (saveTotal) {
@@ -212,10 +213,11 @@ public class ListBucket {
             ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
             executorPool.execute(() -> {
                 FileLister fileLister = fileListerList.get(finalI);
+                fileLister.setEndKeyPrefix(finalEnd);
                 FileMap fileMap = new FileMap(resultPath, "listbucket", fileLister.getPrefix());
                 if (lineProcessor != null) lineProcessor.setResultTag(fileLister.getPrefix());
                 try {
-                    execLister(fileLister, finalEnd, fileMap, lineProcessor);
+                    execLister(fileLister, fileMap, lineProcessor);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 } finally {
@@ -238,9 +240,9 @@ public class ListBucket {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " start...");
         BucketManager bucketManager = new BucketManager(auth, configuration);
-        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, "", marker, "", unitLen);
+        FileLister fileLister = new FileLister(bucketManager, bucket, cPrefix, marker, end, "", unitLen);
         FileMap fileMap = new FileMap(resultPath, "listbucket", fileLister.getPrefix());
-        execLister(fileLister, end, fileMap, processor);
+        execLister(fileLister, fileMap, processor);
         System.out.println(info + " finished.");
         if (processor != null) processor.closeResource();
     }
