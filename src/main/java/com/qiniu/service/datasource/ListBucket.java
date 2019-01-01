@@ -192,12 +192,13 @@ public class ListBucket {
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
+        List<String> prefixList = new ArrayList<>();
         for (int i = 0; i < fileListerList.size(); i++) {
             final int finalI = i;
             ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
             executorPool.execute(() -> {
                 FileLister fileLister = fileListerList.get(finalI);
-                FileMap fileMap = new FileMap(resultPath, "listbucket", fileLister.getPrefix());
+                FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(finalI));
                 if (lineProcessor != null) lineProcessor.setResultTag(fileLister.getPrefix());
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
@@ -206,7 +207,9 @@ public class ListBucket {
                 } finally {
                     String marker = fileLister.getMarker();
                     if (marker != null && !"".equals(marker))
-                        fileMap.changeResultName(marker + "-" + fileLister.getEndKeyPrefix());
+                        prefixList.add(fileLister.getPrefix() + "\tsuccessfully finished.");
+                    else
+                        prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                     fileMap.closeWriter();
                     if (processor != null) processor.closeResource();
                     fileLister.remove();
@@ -216,6 +219,8 @@ public class ListBucket {
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
+        FileMap fileMap = new FileMap(resultPath);
+        fileMap.writeKeyFile("prefix", String.join("\n", prefixList));
         if (processor != null) processor.closeResource();
     }
 

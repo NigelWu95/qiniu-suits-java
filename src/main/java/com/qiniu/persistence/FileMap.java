@@ -19,11 +19,17 @@ public class FileMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
-    public FileMap(String targetFileDir, String prefix, String suffix) {
+    public FileMap(String targetFileDir) {
         this();
         this.targetFileDir = targetFileDir;
+        this.prefix = "";
+        this.suffix = "";
+    }
+
+    public FileMap(String targetFileDir, String prefix, String suffix) {
+        this(targetFileDir);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
-        this.suffix = (suffix == null || "".equals(suffix)) ? "_0" : "_" + suffix;
+        this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
     }
 
     public String getPrefix() {
@@ -41,8 +47,6 @@ public class FileMap implements Cloneable {
 
     public void initDefaultWriters() throws IOException {
         if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no targetFileDir.");
-        if (prefix == null) throw new IOException("no prefix.");
-        if (suffix == null || "".equals(suffix)) throw new IOException("no suffix.");
         for (String targetWriter : defaultWriters) {
             addWriter(prefix + targetWriter + this.suffix);
         }
@@ -53,7 +57,7 @@ public class FileMap implements Cloneable {
         if (prefix != null && !"".equals(prefix)) this.prefix = prefix + "_";
         else if (this.prefix == null) this.prefix = "";
         if (suffix != null && !"".equals(suffix)) this.suffix = "_" + suffix;
-        else if (this.suffix == null) this.suffix = "_0";
+        else if (this.suffix == null) this.suffix = "";
         initDefaultWriters();
     }
 
