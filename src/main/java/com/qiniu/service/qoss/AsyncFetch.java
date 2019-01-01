@@ -40,6 +40,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private int fileType;
     private boolean ignoreSameKey;
     private String resultPath;
+    private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
 
@@ -66,6 +67,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.keyPrefix = keyPrefix;
 //        this.m3u8Manager = new M3U8Manager();
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -90,24 +92,28 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.hasCustomArgs = true;
     }
 
-    public AsyncFetch clone() throws CloneNotSupportedException {
-        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(auth, configuration);
-        asyncFetch.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
-        try {
-            asyncFetch.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return asyncFetch;
+    public String getProcessName() {
+        return this.processName;
     }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
+    public AsyncFetch clone() throws CloneNotSupportedException {
+        AsyncFetch asyncFetch = (AsyncFetch)super.clone();
+        asyncFetch.bucketManager = new BucketManager(auth, configuration);
+        asyncFetch.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        try {
+            asyncFetch.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return asyncFetch;
     }
 
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {

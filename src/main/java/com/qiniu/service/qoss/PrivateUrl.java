@@ -22,6 +22,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     private long expires;
     private String processName;
     protected String resultPath;
+    private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
 
@@ -40,6 +41,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
         } else this.urlIndex = urlIndex;
         this.expires = expires == 0L ? 3600 : expires;
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -50,19 +52,23 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
         this(auth, domain, protocol, urlIndex, expires, resultPath, 0);
     }
 
+    public String getProcessName() {
+        return this.processName;
+    }
+
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl queryAvinfo = (PrivateUrl)super.clone();
-        queryAvinfo.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
+        queryAvinfo.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
         try {
             queryAvinfo.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
         return queryAvinfo;
-    }
-
-    public String getProcessName() {
-        return this.processName;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {

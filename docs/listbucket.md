@@ -14,7 +14,6 @@ bucket=
 
 #### 可选参数
 ```
-multi=true
 threads=100
 unit-len=10000
 prefix=
@@ -27,7 +26,6 @@ anti-prefix=
 |source-type| 资源列举时设置为list | 表示从目标空间中列举出资源|  
 |ak、sk|长度 40 的字符串|七牛账号的密钥对字符串，通过七牛控制台个人中心获取|  
 |bucket|字符串| 需要列举的空间名称|  
-|multi| true/false| 表示是否开启并发列举 (默认开启)|  
 |threads| 整型数字| 表示并发列举时使用的线程数（默认 30）|  
 |unit-len| 整型数字| 表示每次列举请求列举的文件个数（列举长度，默认值 10000）|  
 |prefix| 域名字符串| 表示只列举某个文件名前缀的资源|  
@@ -35,7 +33,7 @@ anti-prefix=
 
 ### 命令行参数方式
 ```
--ak= -sk= -bucket= -multi= -threads= -unit-len= -prefix= -anti-prefix=
+-ak= -sk= -bucket= -threads= -unit-len= -prefix= -anti-prefix=
 ```
 
 ### 关于并发列举
@@ -56,9 +54,8 @@ anti-prefix=
 
 ### multi list suggestions
 ```
-1、大量文件时建议：multi=true（true 为默认值）, threads=100, unit-len=10000，unit-len 值在机器配
-置较高时可以调高，如16核32G的机器可选择 200 个以上线程，但是不建议过大，通常不超过 100000。500 万以内文
-件建议 threads<=100，文件数目较少时不建议使用较多线程，如 100 万左右及以下的文件建议线程数少于 50，甚至
-更少文件时可使用非并发方式直接列举，选择：multi=false, threads=100。（文件数较少时若设置并发线程数偏多
-则会增加额外耗时）
+1、大量文件时建议：threads=100, unit-len=10000，unit-len 值在机器配置较高时可以调高，如16核32G的机
+器可选择 200 个以上线程，但是不建议过大，通常不超过 100000。500 万以内文件建议 threads<=100，文件数目
+较少时不建议使用较多线程，如 100 万左右及以下的文件建议线程数少于 50，甚至更少文件时可使用单线程直接列举：
+threads=1。（文件数较少时若设置并发线程数偏多则会增加额外耗时）
 ```
