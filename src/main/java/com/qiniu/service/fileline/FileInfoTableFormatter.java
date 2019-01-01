@@ -4,6 +4,7 @@ import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,9 +13,9 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
     private String separator;
     private List<String> rmFields;
 
-    public FileInfoTableFormatter(String separator, List<String> rmFields) {
+    public FileInfoTableFormatter(String separator, List<String> removeFields) {
         this.separator = separator;
-        this.rmFields = rmFields;
+        this.rmFields = removeFields == null ? new ArrayList<>() : removeFields;
     }
 
     public String toFormatString(FileInfo fileInfo) {

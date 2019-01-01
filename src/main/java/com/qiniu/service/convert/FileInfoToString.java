@@ -15,11 +15,11 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
     private IStringFormat<FileInfo> stringFormatter;
     volatile private List<String> errorList = new ArrayList<>();
 
-    public FileInfoToString(String format, String separator, List<String> rmFields) {
+    public FileInfoToString(String format, String separator, List<String> removeFields) {
         if ("json".equals(format)) {
-            stringFormatter = new FileInfoJsonFormatter(rmFields);
+            stringFormatter = new FileInfoJsonFormatter(removeFields);
         } else {
-            stringFormatter = new FileInfoTableFormatter(separator, rmFields);
+            stringFormatter = new FileInfoTableFormatter(separator, removeFields);
         }
     }
 

@@ -12,8 +12,8 @@ public class FileInfoJsonFormatter implements IStringFormat<FileInfo> {
 
     private List<String> rmFields;
 
-    public FileInfoJsonFormatter(List<String> rmFields) {
-        this.rmFields = rmFields == null ? new ArrayList<>() : rmFields;
+    public FileInfoJsonFormatter(List<String> removeFields) {
+        this.rmFields = removeFields == null ? new ArrayList<>() : removeFields;
     }
 
     public String toFormatString(FileInfo fileInfo) {

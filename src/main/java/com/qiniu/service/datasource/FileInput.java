@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-public class FileInput {
+public class FileInput implements IDataSource {
 
     private String filePath;
     private String parseType;
@@ -27,7 +27,7 @@ public class FileInput {
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
-    private List<String> resultFields;
+    private List<String> removeFields;
 
     public FileInput(String filePath, String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
                      String resultPath) {
@@ -40,18 +40,18 @@ public class FileInput {
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(String format, String separator, List<String> fields) {
+    public void setResultSaveOptions(String format, String separator, List<String> removeFields) {
         this.saveTotal = true;
         this.resultFormat = format;
         this.resultSeparator = separator;
-        this.resultFields = fields;
+        this.removeFields = removeFields;
     }
 
     private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor) throws Exception {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = null;
         if (saveTotal) {
-            writeTypeConverter = new InfoMapToString(resultFormat, resultSeparator, resultFields);
+            writeTypeConverter = new InfoMapToString(resultFormat, resultSeparator, removeFields);
             fileMap.initDefaultWriters();
         }
         List<String> srcList = new ArrayList<>();
@@ -84,7 +84,7 @@ public class FileInput {
         }
     }
 
-    public void process(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap inputFileMap = new FileMap();
         File sourceFile = new File(filePath);
         try {

@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
-public class ListBucket {
+public class ListBucket implements IDataSource {
 
     private Auth auth;
     private Configuration configuration;
@@ -33,7 +33,7 @@ public class ListBucket {
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
-    private List<String> resultFields;
+    private List<String> removeFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, String customPrefix,
                       List<String> antiPrefix, int retryCount, String resultPath) {
@@ -48,11 +48,11 @@ public class ListBucket {
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(String format, String separator, List<String> fields) {
+    public void setResultSaveOptions(String format, String separator, List<String> removeFields) {
         this.saveTotal = true;
         this.resultFormat = format;
         this.resultSeparator = separator;
-        this.resultFields = fields;
+        this.removeFields = removeFields;
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
@@ -150,7 +150,7 @@ public class ListBucket {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
         ITypeConvert<FileInfo, String> writeTypeConverter = null;
         if (saveTotal) {
-            writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, resultFields);
+            writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, removeFields);
             fileMap.initDefaultWriters();
         }
         String marker;
@@ -180,7 +180,7 @@ public class ListBucket {
         }
     }
 
-    public void concurrentlyList(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + threads + " threads ...");
