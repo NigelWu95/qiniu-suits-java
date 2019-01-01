@@ -135,6 +135,17 @@ public class ListBucket {
                 break;
             }
             if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
+            String firstEnd = fileListerList.get(0).getPrefix();
+            fileListerList.get(0).setEndKeyPrefix(firstEnd);
+                FileLister fileLister = fileListerList.get(fileListerList.size() -1);
+                if (StringUtils.isNullOrEmpty(fileLister.getMarker())) {
+                    FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
+                            .filter(Objects::nonNull)
+                            .max(Comparator.comparing(fileInfo -> fileInfo.key))
+                            .orElse(null);
+                    String marker = ListBucketUtils.calcMarker(lastFileInfo);
+                    fileLister.setMarker(marker);
+            }
         }
         // 加入第一段 FileLister，第一段 Lister 使用的 prefix 为 cPrefix（空或者传入的参数）
         fileListerList.addAll(prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen));
@@ -184,7 +195,6 @@ public class ListBucket {
         if (fileListerList.size() > 1) {
             firstEnd = fileListerList.get(1).getPrefix();
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
-            fileLister.setPrefix(cPrefix);
             if (StringUtils.isNullOrEmpty(fileLister.getMarker())) {
                 FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream()
                         .filter(Objects::nonNull)
