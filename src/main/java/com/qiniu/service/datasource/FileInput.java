@@ -105,6 +105,7 @@ public class FileInput {
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
+        List<String> linePositionList = new ArrayList<>();
         int i = 0;
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
@@ -119,8 +120,8 @@ public class FileInput {
                 } finally {
                     String nextLine;
                     try { nextLine = bufferedReader.readLine(); } catch (IOException e) { nextLine ="exception"; }
-                    if (nextLine != null && !"".equals(nextLine))
-                        fileMap.changeResultName(nextLine);
+                    if (nextLine != null && !"".equals(nextLine)) linePositionList.add(readerEntry.getKey() + "\tdone.");
+                    else linePositionList.add(readerEntry.getKey() + "\t" + nextLine);
                     fileMap.closeWriter();
                     if (lineProcessor != null) lineProcessor.closeResource();
                 }
@@ -129,6 +130,8 @@ public class FileInput {
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
+        FileMap fileMap = new FileMap(resultPath);
+        fileMap.writeKeyFile("input_file", String.join("\n", linePositionList));
         inputFileMap.closeReader();
     }
 }

@@ -206,10 +206,8 @@ public class ListBucket {
                     throw new RuntimeException(e);
                 } finally {
                     String marker = fileLister.getMarker();
-                    if (marker != null && !"".equals(marker))
-                        prefixList.add(fileLister.getPrefix() + "\tsuccessfully finished.");
-                    else
-                        prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
+                    if (marker != null && !"".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
+                    else prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                     fileMap.closeWriter();
                     if (processor != null) processor.closeResource();
                     fileLister.remove();
@@ -220,7 +218,7 @@ public class ListBucket {
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
-        fileMap.writeKeyFile("prefix", String.join("\n", prefixList));
+        fileMap.writeKeyFile("list_prefix", String.join("\n", prefixList));
         if (processor != null) processor.closeResource();
     }
 
