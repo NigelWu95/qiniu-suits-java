@@ -24,6 +24,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private String processName;
     private int retryCount;
     protected String resultPath;
+    private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
 
@@ -44,6 +45,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.auth = auth;
         this.fileChecker = new FileChecker(algorithm, protocol, auth);
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -54,24 +56,28 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this(domain, algorithm, protocol, urlIndex, auth, resultPath, 0);
     }
 
-    public QueryHash clone() throws CloneNotSupportedException {
-        QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, protocol, auth);
-        queryHash.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
-        try {
-            queryHash.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryHash;
+    public String getProcessName() {
+        return this.processName;
     }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
+    public QueryHash clone() throws CloneNotSupportedException {
+        QueryHash queryHash = (QueryHash)super.clone();
+        queryHash.fileChecker = new FileChecker(algorithm, protocol, auth);
+        queryHash.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        try {
+            queryHash.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return queryHash;
     }
 
     public String singleWithRetry(String url, int retryCount) throws QiniuException {

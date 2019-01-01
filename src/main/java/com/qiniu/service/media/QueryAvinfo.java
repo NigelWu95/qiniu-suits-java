@@ -21,6 +21,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private String processName;
     private int retryCount;
     protected String resultPath;
+    private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
 
@@ -39,6 +40,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this.auth = auth;
         this.mediaManager = new MediaManager(protocol, auth);
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -48,24 +50,28 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this(domain, protocol, urlIndex, auth, resultPath, 0);
     }
 
-    public QueryAvinfo clone() throws CloneNotSupportedException {
-        QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(protocol, auth);
-        queryAvinfo.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
-        try {
-            queryAvinfo.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryAvinfo;
+    public String getProcessName() {
+        return this.processName;
     }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
+    public QueryAvinfo clone() throws CloneNotSupportedException {
+        QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
+        queryAvinfo.mediaManager = new MediaManager(protocol, auth);
+        queryAvinfo.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        try {
+            queryAvinfo.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return queryAvinfo;
     }
 
     public String singleWithRetry(String url, int retryCount) throws QiniuException {

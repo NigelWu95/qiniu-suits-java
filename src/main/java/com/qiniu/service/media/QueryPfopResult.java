@@ -19,6 +19,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private String processName;
     private int retryCount;
     private String resultPath;
+    private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
 
@@ -29,6 +30,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         else this.persistentIdIndex = persistentIdIndex;
         this.mediaManager = new MediaManager();
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -38,24 +40,28 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         this(persistentIdIndex, resultPath, 0);
     }
 
-    public QueryPfopResult clone() throws CloneNotSupportedException {
-        QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
-        queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
-        try {
-            queryPfopResult.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryPfopResult;
+    public String getProcessName() {
+        return this.processName;
     }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
+    public QueryPfopResult clone() throws CloneNotSupportedException {
+        QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
+        queryPfopResult.mediaManager = new MediaManager();
+        queryPfopResult.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        try {
+            queryPfopResult.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return queryPfopResult;
     }
 
     public String singleWithRetry(String id, int retryCount) throws QiniuException {

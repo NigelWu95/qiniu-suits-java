@@ -21,6 +21,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     private String resultFormat;
     private String resultSeparator;
     private List<String> rmFields;
+    private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
@@ -56,6 +57,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.resultFormat = resultFormat;
         this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;
         this.rmFields = rmFields;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
@@ -67,9 +69,17 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this(filter, resultPath, resultFormat, resultSeparator, resultFields, 0);
     }
 
+    public String getProcessName() {
+        return this.processName;
+    }
+
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
     public FileInfoFilterProcess clone() throws CloneNotSupportedException {
         FileInfoFilterProcess fileInfoFilterProcess = (FileInfoFilterProcess)super.clone();
-        fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
+        fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
         try {
             fileInfoFilterProcess.fileMap.initDefaultWriters();
             fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
@@ -84,10 +94,6 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
-    }
-
-    public String getProcessName() {
-        return processName;
     }
 
     public void processLine(List<Map<String, String>> list) throws IOException {

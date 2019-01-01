@@ -30,6 +30,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected String resultPath;
+    private String resultTag;
     protected int resultIndex;
     protected FileMap fileMap;
 
@@ -42,34 +43,39 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.processName = processName;
         this.batchOperations = new BatchOperations();
         this.resultPath = resultPath;
+        this.resultTag = "";
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
     }
 
-    public OperationBase clone() throws CloneNotSupportedException {
-        OperationBase operationBase = (OperationBase)super.clone();
-        operationBase.bucketManager = new BucketManager(auth, configuration);
-        operationBase.batchOperations = new BatchOperations();
-        operationBase.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
-        try {
-            operationBase.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return operationBase;
-    }
-
-    public void setBatch(boolean batch) {
-        this.batch = batch;
+    public String getProcessName() {
+        return this.processName;
     }
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
-    public String getProcessName() {
-        return this.processName;
+    public void setBatch(boolean batch) {
+        this.batch = batch;
+    }
+
+    public void setResultTag(String resultTag) {
+        this.resultTag = resultTag == null ? "" : resultTag;
+    }
+
+    public OperationBase clone() throws CloneNotSupportedException {
+        OperationBase operationBase = (OperationBase)super.clone();
+        operationBase.bucketManager = new BucketManager(auth, configuration);
+        operationBase.batchOperations = new BatchOperations();
+        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        try {
+            operationBase.fileMap.initDefaultWriters();
+        } catch (IOException e) {
+            throw new CloneNotSupportedException("init writer failed.");
+        }
+        return operationBase;
     }
 
     protected abstract String processLine(Map<String, String> fileInfo) throws IOException;

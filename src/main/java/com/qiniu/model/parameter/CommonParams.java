@@ -14,28 +14,28 @@ public class CommonParams {
     private String sourceType;
     private String parseType;
     private String unitLen;
+    private String threads;
     private String retryCount;
+    private String saveTotal;
     private String resultPath;
     private String resultFormat;
     private String resultSeparator;
-    protected String saveTotal;
     private String rmFields;
     private String process;
-    private String maxThreads;
 
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         this.sourceType = entryParam.getParamValue("source-type");
         try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { unitLen = ""; }
         try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
+        try { this.threads = entryParam.getParamValue("threads"); } catch (Exception e) { threads = ""; }
         try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
+        try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
         try { this.resultPath = entryParam.getParamValue("result-path"); } catch (Exception e) { resultPath = ""; }
         try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
-        try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
         try { this.rmFields = entryParam.getParamValue("remove-fields"); } catch (Exception e) { rmFields = ""; }
         try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
-        try { this.maxThreads = entryParam.getParamValue("threads"); } catch (Exception e) { maxThreads = ""; }
     }
 
     public CommonParams(String[] args) throws IOException {
@@ -73,11 +73,27 @@ public class CommonParams {
         }
     }
 
+    public int getThreads() {
+        if (threads.matches("[1-9]\\d*")) {
+            return Integer.valueOf(threads);
+        } else {
+            return 30;
+        }
+    }
+
     public int getRetryCount() {
         if (retryCount.matches("\\d+")) {
             return Integer.valueOf(retryCount);
         } else {
             return 3;
+        }
+    }
+
+    public Boolean getSaveTotal() {
+        if (saveTotal.matches("(true|false)")) {
+            return Boolean.valueOf(saveTotal);
+        } else {
+            return false;
         }
     }
 
@@ -105,19 +121,11 @@ public class CommonParams {
         }
     }
 
-    public String getProcess() {
-        return process;
-    }
-
-    public int getMaxThreads() {
-        if (maxThreads.matches("[1-9]\\d*")) {
-            return Integer.valueOf(maxThreads);
-        } else {
-            return 30;
-        }
-    }
-
     public List<String> getRmFields() {
         return Arrays.asList(rmFields.split(","));
+    }
+
+    public String getProcess() {
+        return process;
     }
 }

@@ -16,6 +16,8 @@ public interface ILineProcess<T> {
 
     default void setBatch(boolean batch) {}
 
+    default void setResultTag(String resultTag) {}
+
     void processLine(List<T> list) throws IOException;
 
     default void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {}

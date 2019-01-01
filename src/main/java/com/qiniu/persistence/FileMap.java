@@ -2,6 +2,7 @@ package com.qiniu.persistence;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.*;
 
 public class FileMap implements Cloneable {
 
@@ -18,11 +19,17 @@ public class FileMap implements Cloneable {
         this.readerMap = new HashMap<>();
     }
 
-    public FileMap(String targetFileDir, String prefix, String suffix) {
+    public FileMap(String targetFileDir) {
         this();
         this.targetFileDir = targetFileDir;
+        this.prefix = "";
+        this.suffix = "";
+    }
+
+    public FileMap(String targetFileDir, String prefix, String suffix) {
+        this(targetFileDir);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
-        this.suffix = (suffix == null || "".equals(suffix)) ? "_0" : "_" + suffix;
+        this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
     }
 
     public String getPrefix() {
@@ -40,8 +47,6 @@ public class FileMap implements Cloneable {
 
     public void initDefaultWriters() throws IOException {
         if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no targetFileDir.");
-        if (prefix == null) throw new IOException("no prefix.");
-        if (suffix == null || "".equals(suffix)) throw new IOException("no suffix.");
         for (String targetWriter : defaultWriters) {
             addWriter(prefix + targetWriter + this.suffix);
         }
@@ -52,7 +57,7 @@ public class FileMap implements Cloneable {
         if (prefix != null && !"".equals(prefix)) this.prefix = prefix + "_";
         else if (this.prefix == null) this.prefix = "";
         if (suffix != null && !"".equals(suffix)) this.suffix = "_" + suffix;
-        else if (this.suffix == null) this.suffix = "_0";
+        else if (this.suffix == null) this.suffix = "";
         initDefaultWriters();
     }
 
@@ -104,32 +109,38 @@ public class FileMap implements Cloneable {
     public void initReaders(String fileDir) throws IOException {
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
-        String fileKey;
+        String fileName;
         BufferedReader reader;
         assert fs != null;
         for(File f : fs) {
             if (!f.isDirectory()) {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
                 reader = new BufferedReader(fileReader);
-                fileKey = f.getName();
-                this.readerMap.put(fileKey, reader);
+                fileName = f.getName();
+                if (fileName.endsWith(".txt")) this.readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
             }
         }
     }
 
-    public void initReader(String fileDir, String key) throws IOException {
-        File sourceFile = new File(fileDir, key);
-        FileReader fileReader = new FileReader(sourceFile);
-        BufferedReader reader = new BufferedReader(fileReader);
-        this.readerMap.put(key, reader);
+    public void initReader(String fileDir, String fileName) throws IOException {
+        if (fileName.endsWith(".txt")) {
+            File sourceFile = new File(fileDir, fileName);
+            FileReader fileReader = new FileReader(sourceFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            this.readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
+        } else throw new IOException("please provide the .txt file.");
     }
 
     public BufferedReader getReader(String key) {
         return this.readerMap.get(key);
     }
 
+    public HashMap<String, BufferedReader> getReaderMap() {
+        return readerMap;
+    }
+
     public void closeReader() {
-        for (Map.Entry<String, BufferedReader> entry : this.readerMap.entrySet()) {
+        for (Entry<String, BufferedReader> entry : this.readerMap.entrySet()) {
             try {
                 this.readerMap.get(entry.getKey()).close();
             } catch (IOException ioException) {
