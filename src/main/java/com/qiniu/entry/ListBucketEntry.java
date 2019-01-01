@@ -31,8 +31,8 @@ public class ListBucketEntry {
         Auth auth = Auth.create(accessKey, secretKey);
         Configuration configuration = new Configuration(Zone.autoZone());
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
-        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, threads, customPrefix,
-                antiPrefix, 3, resultPath);
+        ListBucket listBucket = new ListBucket(auth, configuration, bucket, unitLen, customPrefix, antiPrefix,
+                3, resultPath);
         if (saveTotal) listBucket.setResultSaveOptions(resultFormat, resultSeparator, listBucketParams.getRmFields());
         if (multiStatus) {
             listBucket.concurrentlyList(threads, processor);
