@@ -18,6 +18,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class FileInput {
 
+    private String filePath;
     private String parseType;
     private String separator;
     private Map<String, String> infoIndexMap;
@@ -28,8 +29,9 @@ public class FileInput {
     private String resultSeparator;
     private List<String> resultFields;
 
-    public FileInput(String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
+    public FileInput(String filePath, String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
                      String resultPath) {
+        this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
         this.infoIndexMap = infoIndexMap;
@@ -82,7 +84,7 @@ public class FileInput {
         }
     }
 
-    public void process(int maxThreads, String filePath, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void process(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap inputFileMap = new FileMap();
         File sourceFile = new File(filePath);
         try {
@@ -96,7 +98,7 @@ public class FileInput {
         }
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
         int listSize = readerEntrySet.size();
-        int runningThreads = listSize < maxThreads ? listSize : maxThreads;
+        int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
