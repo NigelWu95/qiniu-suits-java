@@ -149,7 +149,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                 } catch (QiniuException e) {
                     fileMap.writeError( String.join("\n", processList.stream()
-                            .map(line -> line.get("key") + e.response.reqId + "\t" + e.error())
+                            .map(line -> line.get("key") + "\t" + e.response.reqId + "\t" + e.error())
                             .collect(Collectors.toList())));
                     if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                         throw e;
