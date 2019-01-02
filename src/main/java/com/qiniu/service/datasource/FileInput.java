@@ -134,6 +134,7 @@ public class FileInput implements IDataSource {
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("input_file", String.join("\n", linePositionList));
+        fileMap.closeWriter();
         inputFileMap.closeReader();
     }
 }

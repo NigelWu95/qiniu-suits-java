@@ -220,6 +220,7 @@ public class ListBucket implements IDataSource {
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("list_prefix", String.join("\n", prefixList));
+        fileMap.closeWriter();
         if (processor != null) processor.closeResource();
     }
 }
