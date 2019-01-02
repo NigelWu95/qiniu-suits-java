@@ -93,7 +93,7 @@ public class CommonParams {
         if (saveTotal.matches("(true|false)")) {
             return Boolean.valueOf(saveTotal);
         } else {
-            return false;
+            return "list".equals(sourceType);
         }
     }
 
