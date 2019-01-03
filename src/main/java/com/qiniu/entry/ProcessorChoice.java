@@ -113,7 +113,7 @@ public class ProcessorChoice {
             case "copy": {
                 FileCopyParams fileCopyParams = new FileCopyParams(entryParam);
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
-                        fileCopyParams.getTargetBucket(), fileCopyParams.getKeepKey(), fileCopyParams.getKeyPrefix(),
+                        fileCopyParams.getTargetBucket(), fileCopyParams.getKeyPrefix(), fileCopyParams.getRmPrefix(),
                         resultPath);
                 break;
             }
@@ -122,7 +122,7 @@ public class ProcessorChoice {
                 FileMoveParams fileMoveParams = new FileMoveParams(entryParam);
                 processor = new MoveFile(Auth.create(ak, sk), configuration, fileMoveParams.getBucket(),
                         fileMoveParams.getToBucket(), fileInputParams.getNewKeyIndex(), fileMoveParams.getKeyPrefix(),
-                        fileMoveParams.getForceIfOnlyPrefix(), resultPath);
+                        fileMoveParams.getRmPrefix(), fileMoveParams.getForceIfOnlyPrefix(), resultPath);
                 break;
             }
             case "delete": {
