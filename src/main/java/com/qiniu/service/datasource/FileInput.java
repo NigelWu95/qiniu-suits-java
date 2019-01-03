@@ -122,7 +122,7 @@ public class FileInput implements IDataSource {
                 } finally {
                     String nextLine;
                     try { nextLine = bufferedReader.readLine(); } catch (IOException e) { nextLine ="exception"; }
-                    if (nextLine != null && !"".equals(nextLine)) linePositionList.add(readerEntry.getKey() + "\tdone.");
+                    if (nextLine == null || "".equals(nextLine)) linePositionList.add(readerEntry.getKey() + "\tdone.");
                     else linePositionList.add(readerEntry.getKey() + "\t" + nextLine);
                     fileMap.closeWriter();
                     if (lineProcessor != null) lineProcessor.closeResource();
