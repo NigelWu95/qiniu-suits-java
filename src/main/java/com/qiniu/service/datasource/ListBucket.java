@@ -106,7 +106,6 @@ public class ListBucket implements IDataSource {
             groupedFileListerMap = fileListerList.stream().collect(Collectors.groupingBy(fileLister ->
                     fileLister.getMarker() != null && !"".equals(fileLister.getMarker())));
             if (groupedFileListerMap.get(true) != null) {
-                List<String> finalValidPrefixList = validPrefixList;
                 Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream().map(fileLister ->
                 {
                     List<FileInfo> list = fileLister.getFileInfoList();
@@ -116,8 +115,8 @@ public class ListBucket implements IDataSource {
                         point = list.get(0).key.substring(prefixLen, prefixLen + 1);
                     }
                     String finalPoint = point;
-                    return finalValidPrefixList.stream()
-                            .filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                    return originPrefixList.stream()
+                            .filter(prefix -> prefix.compareTo(finalPoint) >= 0 && !antiPrefix.contains(prefix))
                             .map(originPrefix -> fileLister.getPrefix() + originPrefix).collect(Collectors.toList());
                 }).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent()) {
