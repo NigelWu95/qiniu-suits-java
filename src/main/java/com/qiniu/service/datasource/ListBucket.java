@@ -106,6 +106,7 @@ public class ListBucket implements IDataSource {
             groupedFileListerMap = fileListerList.stream().collect(Collectors.groupingBy(fileLister ->
                     fileLister.getMarker() != null && !"".equals(fileLister.getMarker())));
             if (groupedFileListerMap.get(true) != null) {
+                List<String> finalValidPrefixList = validPrefixList;
                 Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream().map(fileLister ->
                 {
                     List<FileInfo> list = fileLister.getFileInfoList();
@@ -115,7 +116,7 @@ public class ListBucket implements IDataSource {
                         point = list.get(0).key.substring(prefixLen, prefixLen + 1);
                     }
                     String finalPoint = point;
-                    return originPrefixList.stream()
+                    return finalValidPrefixList.stream()
                             .filter(prefix -> prefix.compareTo(finalPoint) >= 0)
                             .map(originPrefix -> fileLister.getPrefix() + originPrefix).collect(Collectors.toList());
                 }).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
@@ -159,12 +160,9 @@ public class ListBucket implements IDataSource {
         while (fileLister.hasNext()) {
             marker = fileLister.getMarker();
             fileInfoList = fileLister.next();
-            int maxError = 20 * retryCount;
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                maxError--;
-                if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap,
-                        fileLister.getPrefix() + "|" + marker);
+                HttpResponseUtils.processException(fileLister.exception, fileMap, fileLister.getPrefix() + "|" + marker);
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
@@ -207,7 +205,7 @@ public class ListBucket implements IDataSource {
                     throw new RuntimeException(e);
                 } finally {
                     String marker = fileLister.getMarker();
-                    if (marker != null && !"".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
+                    if (marker == null || "".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
                     else prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                     fileMap.closeWriter();
                     if (processor != null) processor.closeResource();
