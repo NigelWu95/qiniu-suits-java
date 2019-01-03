@@ -9,12 +9,14 @@ public class FileMoveParams extends QossParams {
     private String toBucket;
     private String keyPrefix;
     private String forceIfOnlyPrefix;
+    private String rmPrefix;
 
     public FileMoveParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
         try { this.toBucket = entryParam.getParamValue("to-bucket"); } catch (Exception e) {}
         try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
         try { this.forceIfOnlyPrefix = entryParam.getParamValue("prefix-force"); } catch (Exception e) { forceIfOnlyPrefix = ""; }
+        try { this.rmPrefix = entryParam.getParamValue("rm-prefix"); } catch (Exception e) { rmPrefix = ""; }
     }
 
     public String getToBucket() throws IOException {
@@ -37,5 +39,9 @@ public class FileMoveParams extends QossParams {
         } else {
             throw new IOException("prefix-force should be true/force.");
         }
+    }
+
+    public String getRmPrefix() {
+        return rmPrefix;
     }
 }
