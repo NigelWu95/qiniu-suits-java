@@ -144,12 +144,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         }
                     } else {
                         fileMap.writeError( String.join("\n", processList.stream()
-                                .map(line -> line.get("key") + "\tempty " + processName + " result")
+                                .map(line -> String.valueOf(line) + "\tempty " + processName + " result")
                                 .collect(Collectors.toList())));
                     }
                 } catch (QiniuException e) {
                     fileMap.writeError( String.join("\n", processList.stream()
-                            .map(line -> line.get("key") + "\t" + e.response.reqId + "\t" + e.error())
+                            .map(line -> String.valueOf(line) + "\t" + e.response.reqId + "\t" + e.error())
                             .collect(Collectors.toList())));
                     if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
                         throw e;
