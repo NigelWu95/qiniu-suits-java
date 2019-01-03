@@ -18,6 +18,7 @@ sk=
 newKey-index=1
 bucket= 
 add-prefix=
+rm-prefix=
 ```
 
 ### 参数字段说明
@@ -28,6 +29,7 @@ add-prefix=
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源方式为 list 时无需再设置|  
 |bucket| 字符串| 操作的资源原空间，当数据源为 list 时无需再设置|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
+|rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 move 之后的文件名|  
 
 #### 关于 newKey-index
 指定输入行中对应修改之后的文件名字段下标，不设置为则无法进行解析，但当 add-prefix 存在且不为空时需要强制指定 prefix-force=true，表明该次重命名

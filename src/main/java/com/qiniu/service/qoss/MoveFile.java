@@ -11,6 +11,7 @@ import com.qiniu.util.HttpResponseUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MoveFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -18,9 +19,11 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     private String newKeyIndex;
     private boolean forceIfOnlyPrefix;
     private String keyPrefix;
+    private String rmPrefix;
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
-                    String keyPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex) throws IOException {
+                    String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex)
+            throws IOException {
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
@@ -37,11 +40,18 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
             } else this.toBucket = toBucket;
         } else this.newKeyIndex = newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
-                    String keyPrefix, boolean forceIfOnlyPrefix, String resultPath) throws IOException {
-        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, resultPath, 0);
+                    String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, forceIfOnlyPrefix,
+                resultPath, 0);
+    }
+
+    private String formatKey(String key) {
+        return keyPrefix + key.substring(0, rmPrefix.length()).replace(rmPrefix, "")
+                + key.substring(rmPrefix.length());
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
@@ -51,11 +61,9 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                     false);
         } else {
             if (forceIfOnlyPrefix)
-                response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get("key"),
-                        false);
+                response = bucketManager.rename(bucket, line.get("key"), formatKey(line.get("key")), false);
             else
-                response = bucketManager.move(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"),
-                    false);
+                response = bucketManager.move(bucket, line.get("key"), toBucket, formatKey(line.get("key")), false);
         }
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
@@ -66,14 +74,12 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
             }
         } else {
+            List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
+            keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, formatKey(fileKey)));
             if (forceIfOnlyPrefix) {
-                for (Map<String, String> line : lineList) {
-                    batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get("key"));
-                }
+                keyList.forEach(fileKey -> batchOperations.addRenameOp(bucket, fileKey, formatKey(fileKey)));
             } else {
-                for (Map<String, String> line : lineList) {
-                    batchOperations.addMoveOp(bucket, line.get("key"), toBucket, keyPrefix + line.get("key"));
-                }
+                keyList.forEach(fileKey -> batchOperations.addMoveOp(bucket, fileKey, toBucket, formatKey(fileKey)));
             }
         }
 
