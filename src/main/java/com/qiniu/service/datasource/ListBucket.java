@@ -159,12 +159,9 @@ public class ListBucket implements IDataSource {
         while (fileLister.hasNext()) {
             marker = fileLister.getMarker();
             fileInfoList = fileLister.next();
-            int maxError = 20 * retryCount;
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                maxError--;
-                if (maxError <= 0) HttpResponseUtils.processException(fileLister.exception, fileMap,
-                        fileLister.getPrefix() + "|" + marker);
+                HttpResponseUtils.processException(fileLister.exception, fileMap, fileLister.getPrefix() + "|" + marker);
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
@@ -207,7 +204,7 @@ public class ListBucket implements IDataSource {
                     throw new RuntimeException(e);
                 } finally {
                     String marker = fileLister.getMarker();
-                    if (marker != null && !"".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
+                    if (marker == null || "".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
                     else prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                     fileMap.closeWriter();
                     if (processor != null) processor.closeResource();
