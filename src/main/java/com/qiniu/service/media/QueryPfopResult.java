@@ -1,5 +1,6 @@
 package com.qiniu.service.media;
 
+import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -80,16 +81,16 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 }
             }
         }
-
         return pfopResult;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
+        JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             try {
                 String pfopResult = singleWithRetry(line.get(persistentIdIndex), retryCount);
-                if (pfopResult != null)resultList.add(pfopResult);
+                if (pfopResult != null)resultList.add(jsonParser.parse(pfopResult).getAsString());
                 else fileMap.writeError( String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
