@@ -1,5 +1,7 @@
 package com.qiniu.service.media;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -90,18 +92,18 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 }
             }
         }
-
         return avinfo;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
         String url;
+        JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             try {
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String avinfo = singleWithRetry(url, retryCount);
-                if (avinfo != null) resultList.add(line.get("key") + "\t" + avinfo);
+                if (avinfo != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(avinfo).getAsString());
                 else fileMap.writeError( String.valueOf(line) + "\tpfop avinfo");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});

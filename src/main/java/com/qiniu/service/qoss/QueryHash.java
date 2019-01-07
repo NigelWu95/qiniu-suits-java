@@ -1,5 +1,6 @@
 package com.qiniu.service.qoss;
 
+import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -96,18 +97,18 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 }
             }
         }
-
         return qhash;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
         String url;
+        JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             try {
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String qhash = singleWithRetry(url, retryCount);
-                if (qhash != null) resultList.add(line.get("key") + "\t" + qhash);
+                if (qhash != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(qhash).getAsString());
                 else fileMap.writeError( String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
