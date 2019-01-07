@@ -25,9 +25,9 @@ public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
         if (!rmFields.contains("fsize")) converted.append(fileInfo.fsize).append(separator);
         if (!rmFields.contains("putTime")) converted.append(fileInfo.putTime).append(separator);
         if (!rmFields.contains("mimeType")) converted.append(fileInfo.mimeType).append(separator);
-        if (!rmFields.contains("endUser")) converted.append(fileInfo.endUser).append(separator);
         if (!rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (!rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
+        if (!rmFields.contains("endUser")) converted.append(fileInfo.endUser);
         return converted.toString();
     }
 }
