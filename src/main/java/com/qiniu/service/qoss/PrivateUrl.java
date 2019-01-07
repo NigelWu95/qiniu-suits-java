@@ -62,7 +62,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl queryAvinfo = (PrivateUrl)super.clone();
-        queryAvinfo.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        queryAvinfo.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             queryAvinfo.fileMap.initDefaultWriters();
         } catch (IOException e) {

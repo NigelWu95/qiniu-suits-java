@@ -72,7 +72,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
         queryHash.fileChecker = new FileChecker(algorithm, protocol, auth);
-        queryHash.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        queryHash.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             queryHash.fileMap.initDefaultWriters();
         } catch (IOException e) {

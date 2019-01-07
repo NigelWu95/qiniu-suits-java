@@ -56,7 +56,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        queryPfopResult.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             queryPfopResult.fileMap.initDefaultWriters();
         } catch (IOException e) {
