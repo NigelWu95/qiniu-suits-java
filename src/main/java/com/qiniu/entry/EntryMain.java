@@ -52,7 +52,7 @@ public class EntryMain {
         CommonParams commonParams = new CommonParams(entryParam);
         boolean saveTotal = commonParams.getSaveTotal();
         String resultFormat = commonParams.getResultFormat();
-        String resultSeparator = commonParams.getResultFormat();
+        String resultSeparator = commonParams.getResultSeparator();
         String resultPath = commonParams.getResultPath();
         int unitLen = commonParams.getUnitLen();
         int threads = commonParams.getThreads();
