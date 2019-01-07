@@ -102,7 +102,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                 }
                 if (result != null) resultList.add(fileInfo.get("key") + "\t" + result);
-                else throw new QiniuException(null, "empty " + processName + " result");
+                else fileMap.writeError( String.valueOf(fileInfo) + "\tempty " + processName + " result");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(fileInfo));}});
             }
@@ -138,10 +138,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     batchOperations.clearOps();
                     result = HttpResponseUtils.getResult(response);
                     JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
-                    if (jsonArray.size() < processList.size())
-                        throw new QiniuException(null, "the process result length is not match the input.");
                     for (int j = 0; j < processList.size(); j++) {
-                        resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        if (j < jsonArray.size()) resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        else resultList.add(processList.get(j).get("key") + "\tempty " + processName + " result.");
                     }
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processList.stream().map(String::valueOf)
