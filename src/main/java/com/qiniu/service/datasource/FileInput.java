@@ -110,11 +110,11 @@ public class FileInput implements IDataSource {
         List<String> linePositionList = new ArrayList<>();
         int i = 0;
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
+            if (processor != null) processor.setResultTag(readerEntry.getKey());
             ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = readerEntry.getValue();
                 FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
-                if (lineProcessor != null) lineProcessor.setResultTag(readerEntry.getKey());
                 try {
                     traverseByReader(bufferedReader, fileMap, lineProcessor);
                 } catch (Exception e) {
