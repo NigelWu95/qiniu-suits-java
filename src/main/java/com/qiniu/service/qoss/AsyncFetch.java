@@ -107,7 +107,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
         asyncFetch.bucketManager = new BucketManager(auth, configuration);
-        asyncFetch.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        asyncFetch.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             asyncFetch.fileMap.initDefaultWriters();
         } catch (IOException e) {
