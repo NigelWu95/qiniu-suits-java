@@ -92,7 +92,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 if (pfopResult != null)resultList.add(pfopResult);
                 else fileMap.writeError( String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
