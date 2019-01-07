@@ -200,7 +200,6 @@ public class ListBucket implements IDataSource {
             executorPool.execute(() -> {
                 FileLister fileLister = fileListerList.get(finalI);
                 FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(finalI));
-                if (lineProcessor != null) lineProcessor.setResultTag(fileLister.getPrefix());
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
                 } catch (Exception e) {
