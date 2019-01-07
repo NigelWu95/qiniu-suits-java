@@ -11,7 +11,6 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
