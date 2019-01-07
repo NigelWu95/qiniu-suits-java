@@ -161,7 +161,10 @@ public class ListBucket implements IDataSource {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                HttpResponseUtils.processException(fileLister.exception, fileMap, fileLister.getPrefix() + "|" + marker);
+                String finalMarker = marker;
+                HttpResponseUtils.processException(fileLister.exception, fileMap, new ArrayList<String>(){{
+                    add(fileLister.getPrefix() + "|" + finalMarker);
+                }});
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
