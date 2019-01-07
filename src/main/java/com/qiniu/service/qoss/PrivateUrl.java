@@ -81,7 +81,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                 if (signedUrl != null) resultList.add(signedUrl);
                 else fileMap.writeError( String.valueOf(line) + "\tempty signed url");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, String.valueOf(line));
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

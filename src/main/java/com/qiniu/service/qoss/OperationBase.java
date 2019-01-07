@@ -102,9 +102,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                 }
                 if (result != null) resultList.add(fileInfo.get("key") + "\t" + result);
-                else throw new QiniuException(null, "empty " + processName + " result");
+                else fileMap.writeError( String.valueOf(fileInfo) + "\tempty " + processName + " result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, String.valueOf(fileInfo));
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(fileInfo));}});
             }
         }
 
@@ -112,16 +112,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public List<String> batchRun(List<Map<String, String>> fileInfoList) throws IOException {
-        String result;
-        List<String> resultList = new ArrayList<>();
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
+        String result;
+        List<String> resultList = new ArrayList<>();
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
+                batchOperations = getOperations(processList);
                 try {
-                    batchOperations = getOperations(processList);
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
@@ -137,25 +137,14 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                     batchOperations.clearOps();
                     result = HttpResponseUtils.getResult(response);
-                    if (result != null && !"".equals(result)) {
-                        JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
-                        for (int j = 0; j < processList.size(); j++) {
-                            resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
-                        }
-                    } else {
-                        fileMap.writeError( String.join("\n", processList.stream()
-                                .map(line -> String.valueOf(line) + "\tempty " + processName + " result")
-                                .collect(Collectors.toList())));
+                    JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
+                    for (int j = 0; j < processList.size(); j++) {
+                        if (j < jsonArray.size()) resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        else resultList.add(processList.get(j).get("key") + "\tempty " + processName + " result.");
                     }
                 } catch (QiniuException e) {
-                    fileMap.writeError( String.join("\n", processList.stream()
-                            .map(line -> String.valueOf(line) + "\t" + e.response.reqId + "\t" + e.error())
-                            .collect(Collectors.toList())));
-                    if (e.response.needSwitchServer() || e.response.statusCode == 631 || e.response.statusCode == 640) {
-                        throw e;
-                    } else {
-                        e.response.close();
-                    }
+                    HttpResponseUtils.processException(e, fileMap, processList.stream().map(String::valueOf)
+                            .collect(Collectors.toList()));
                 }
             }
         }
