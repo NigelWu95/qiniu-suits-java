@@ -8,6 +8,7 @@ public class FileFilter {
 
     private List<String> keyPrefix;
     private List<String> keySuffix;
+    private List<String> keyInner;
     private List<String> keyRegex;
     private long putTimeMin;
     private long putTimeMax;
@@ -15,18 +16,23 @@ public class FileFilter {
     private int type;
     private List<String> antiKeyPrefix;
     private List<String> antiKeySuffix;
+    private List<String> antiKeyInner;
     private List<String> antiKeyRegex;
     private List<String> antiMime;
 
-    public void setKeyConditions(List<String> keyPrefix, List<String> keySuffix, List<String> keyRegex) {
+    public void setKeyConditions(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner,
+                                 List<String> keyRegex) {
         this.keyPrefix = keyPrefix == null ? new ArrayList<>() : keyPrefix;
         this.keySuffix = keySuffix == null ? new ArrayList<>() : keySuffix;
+        this.keyInner = keyInner == null ? new ArrayList<>() : keyInner;
         this.keyRegex = keyRegex == null ? new ArrayList<>() : keyRegex;
     }
 
-    public void setAntiKeyConditions(List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyRegex) {
+    public void setAntiKeyConditions(List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
+                                     List<String> antiKeyRegex) {
         this.antiKeyPrefix = antiKeyPrefix == null ? new ArrayList<>() : antiKeyPrefix;
         this.antiKeySuffix = antiKeySuffix == null ? new ArrayList<>() : antiKeySuffix;
+        this.antiKeyInner = antiKeyInner == null ? new ArrayList<>() : antiKeyInner;
         this.antiKeyRegex = antiKeyRegex == null ? new ArrayList<>() : antiKeyRegex;
     }
 
@@ -47,6 +53,10 @@ public class FileFilter {
 
     public boolean checkKeySuffix() {
         return checkList(keySuffix);
+    }
+
+    public boolean checkKeyInner() {
+        return checkList(keyInner);
     }
 
     public boolean checkKeyRegex() {
@@ -73,6 +83,10 @@ public class FileFilter {
         return checkList(antiKeySuffix);
     }
 
+    public boolean checkAntiKeyInner() {
+        return checkList(antiKeyInner);
+    }
+
     public boolean checkAntiKeyRegex() {
         return checkList(antiKeyRegex);
     }
@@ -89,6 +103,11 @@ public class FileFilter {
     public boolean filterKeySuffix(Map<String, String> item) {
         if (checkItem(item, "key")) return true;
         else return keySuffix.stream().anyMatch(suffix -> item.get("key").endsWith(suffix));
+    }
+
+    public boolean filterKeyInner(Map<String, String> item) {
+        if (checkItem(item, "key")) return true;
+        else return keyInner.stream().anyMatch(inner -> item.get("key").contains(inner));
     }
 
     public boolean filterKeyRegex(Map<String, String> item) {
@@ -122,6 +141,11 @@ public class FileFilter {
         else return antiKeySuffix.stream().noneMatch(suffix -> item.get("key").endsWith(suffix));
     }
 
+    public boolean filterAntiKeyInner(Map<String, String> item) {
+        if (checkItem(item, "key")) return true;
+        else return antiKeyInner.stream().noneMatch(inner -> item.get("key").contains(inner));
+    }
+
     public boolean filterAntiKeyRegex(Map<String, String> item) {
         if (checkItem(item, "key")) return true;
         else return antiKeyRegex.stream().noneMatch(regex -> item.get("key").matches(regex));
@@ -141,8 +165,8 @@ public class FileFilter {
     }
 
     public boolean isValid() {
-        return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyRegex) || checkList(mime) ||
-                putTimeMin > 0 || putTimeMax > 0 || type > -1 || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
-                checkList(antiKeyRegex) || checkList(antiMime));
+        return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
+                checkList(mime) || putTimeMin > 0 || putTimeMax > 0 || type > -1 || checkList(antiKeyPrefix) ||
+                checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMime));
     }
 }
