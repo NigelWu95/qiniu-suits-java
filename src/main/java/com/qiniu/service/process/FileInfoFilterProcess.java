@@ -100,18 +100,18 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> resultList = new ArrayList<>();
         List<String> writeList;
-        try {
-            for (Map<String, String> line : list) {
+        for (Map<String, String> line : list) {
+            try {
                 if (filter.doFilter(line)) resultList.add(line);
+            } catch (Exception e) {
+                throw new IOException(e.getCause());
             }
-            writeList = typeConverter.convertToVList(resultList);
-            if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
-            if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeError(String.join("\n", typeConverter.getErrorList()));
-            if (nextProcessor != null) nextProcessor.processLine(resultList);
-        } catch (Exception e) {
-            throw new IOException(e.getMessage());
         }
+        writeList = typeConverter.convertToVList(resultList);
+        if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
+        if (typeConverter.getErrorList().size() > 0)
+            fileMap.writeError(String.join("\n", typeConverter.getErrorList()));
+        if (nextProcessor != null) nextProcessor.processLine(resultList);
     }
 
     public void closeResource() {
