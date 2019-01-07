@@ -28,7 +28,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath, int resultIndex)
             throws IOException {
         this.processName = "avinfo";
-        if (urlIndex== null || "".equals(urlIndex)) {
+        if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
             else {
