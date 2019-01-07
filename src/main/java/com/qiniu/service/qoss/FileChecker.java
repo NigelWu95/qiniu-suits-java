@@ -5,11 +5,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.qoss.Qhash;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.RequestUtils;
-
-import java.net.UnknownHostException;
 
 public class FileChecker {
 
@@ -29,16 +25,8 @@ public class FileChecker {
         return algorithm;
     }
 
-    public Qhash getQHash(String url) throws QiniuException, UnknownHostException {
-        String[] addr = url.split("/");
-        if (addr.length < 3) throw new QiniuException(null, "not valid url.");
-        String domain = addr[2];
-        RequestUtils.checkHost(domain);
-        StringBuilder key = new StringBuilder();
-        for (int i = 3; i < addr.length; i++) {
-            key.append(addr[i]).append("/");
-        }
-        return getQHash(domain, key.toString().substring(0, key.length() - 1));
+    public Qhash getQHash(String url) throws QiniuException {
+        return getQHashByJson(getQHashBody(url));
     }
 
     public Qhash getQHash(String domain, String sourceKey) throws QiniuException {
