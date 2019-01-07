@@ -32,7 +32,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                      int resultIndex)
             throws IOException {
         this.processName = "qhash";
-        if (urlIndex== null || "".equals(urlIndex)) {
+        if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
             else {
