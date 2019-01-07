@@ -68,7 +68,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         OperationBase operationBase = (OperationBase)super.clone();
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
-        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             operationBase.fileMap.initDefaultWriters();
         } catch (IOException e) {
