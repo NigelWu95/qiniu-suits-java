@@ -41,20 +41,20 @@ public class ProcessorChoice {
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
 
-        ListFilterParams listFilterParams = new ListFilterParams(entryParam);
+        FileFilterParams fileFilterParams = new FileFilterParams(entryParam);
         FileFilter fileFilter = new FileFilter();
-        fileFilter.setKeyConditions(listFilterParams.getKeyPrefix(), listFilterParams.getKeySuffix(),
-                listFilterParams.getKeyRegex());
-        fileFilter.setAntiKeyConditions(listFilterParams.getAntiKeyPrefix(), listFilterParams.getAntiKeySuffix(),
-                listFilterParams.getAntiKeyRegex());
-        fileFilter.setMimeConditions(listFilterParams.getMime(), listFilterParams.getAntiMime());
-        fileFilter.setOtherConditions(listFilterParams.getPutTimeMax(), listFilterParams.getPutTimeMin(),
-                listFilterParams.getType());
+        fileFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
+                fileFilterParams.getKeyInner(), fileFilterParams.getKeyRegex());
+        fileFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
+                fileFilterParams.getAntiKeyInner(), fileFilterParams.getAntiKeyRegex());
+        fileFilter.setMimeConditions(fileFilterParams.getMime(), fileFilterParams.getAntiMime());
+        fileFilter.setOtherConditions(fileFilterParams.getPutTimeMax(), fileFilterParams.getPutTimeMin(),
+                fileFilterParams.getType());
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (fileFilter.isValid()) {
             processor = new FileInfoFilterProcess(fileFilter, resultPath, resultFormat, resultSeparator,
-                    listFilterParams.getRmFields());
+                    fileFilterParams.getRmFields());
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
