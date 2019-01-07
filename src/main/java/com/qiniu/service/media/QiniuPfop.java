@@ -66,7 +66,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(auth, configuration);
-        qiniuPfop.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        qiniuPfop.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             qiniuPfop.fileMap.initDefaultWriters();
         } catch (IOException e) {

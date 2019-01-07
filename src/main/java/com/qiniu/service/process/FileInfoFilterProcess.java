@@ -81,7 +81,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
 
     public FileInfoFilterProcess clone() throws CloneNotSupportedException {
         FileInfoFilterProcess fileInfoFilterProcess = (FileInfoFilterProcess)super.clone();
-        fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             fileInfoFilterProcess.fileMap.initDefaultWriters();
             fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
