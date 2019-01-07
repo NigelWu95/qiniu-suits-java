@@ -8,10 +8,11 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
-public class ListFilterParams extends CommonParams {
+public class FileFilterParams extends CommonParams {
 
     private String keyPrefix;
     private String keySuffix;
+    private String keyInner;
     private String keyRegex;
     private String pointDate;
     private String pointTime;
@@ -22,13 +23,15 @@ public class ListFilterParams extends CommonParams {
     private boolean directionFlag;
     private String antiKeyPrefix;
     private String antiKeySuffix;
+    private String antiKeyInner;
     private String antiKeyRegex;
     private String antiMime;
 
-    public ListFilterParams(IEntryParam entryParam) throws Exception {
+    public FileFilterParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
         try { this.keyPrefix = entryParam.getParamValue("f-key-prefix"); } catch (Exception e) {}
         try { this.keySuffix = entryParam.getParamValue("f-key-suffix"); } catch (Exception e) {}
+        try { this.keyInner = entryParam.getParamValue("f-key-inner"); } catch (Exception e) {}
         try { this.keyRegex = entryParam.getParamValue("f-key-regex"); } catch (Exception e) {}
         try { this.pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) { pointDate = ""; }
         try { this.pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) { pointTime = ""; }
@@ -39,6 +42,7 @@ public class ListFilterParams extends CommonParams {
         if (!"".equals(pointDate)) this.directionFlag = getDirection();
         try { this.antiKeyPrefix = entryParam.getParamValue("anti-f-key-prefix"); } catch (Exception e) {}
         try { this.antiKeySuffix = entryParam.getParamValue("anti-f-key-suffix"); } catch (Exception e) {}
+        try { this.antiKeyInner = entryParam.getParamValue("anti-f-key-inner"); } catch (Exception e) {}
         try { this.antiKeyRegex = entryParam.getParamValue("anti-f-key-regex"); } catch (Exception e) {}
         try { this.antiMime = entryParam.getParamValue("anti-f-mime"); } catch (Exception e) {}
     }
@@ -50,6 +54,11 @@ public class ListFilterParams extends CommonParams {
 
     public List<String> getKeySuffix() {
         if (keySuffix != null && !"".equals(keySuffix)) return Arrays.asList(keySuffix.split(","));
+        else return null;
+    }
+
+    public List<String>  getKeyInner() {
+        if (keyInner != null && !"".equals(keyInner)) return Arrays.asList(keyInner.split(","));
         else return null;
     }
 
@@ -111,6 +120,11 @@ public class ListFilterParams extends CommonParams {
 
     public List<String> getAntiKeySuffix() {
         if (antiKeySuffix != null && !"".equals(antiKeySuffix)) return Arrays.asList(antiKeySuffix.split(","));
+        else return null;
+    }
+
+    public List<String>  getAntiKeyInner() {
+        if (antiKeyInner != null && !"".equals(antiKeyInner)) return Arrays.asList(antiKeyInner.split(","));
         else return null;
     }
 

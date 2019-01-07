@@ -32,12 +32,14 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         List<String> methodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
             if (filter.checkKeySuffix()) add("filterKeySuffix");
+            if (filter.checkKeyInner()) add("filterKeyInner");
             if (filter.checkKeyRegex()) add("filterKeyRegex");
             if (filter.checkPutTime()) add("filterPutTime");
             if (filter.checkMime()) add("filterMime");
             if (filter.checkType()) add("filterType");
             if (filter.checkAntiKeyPrefix()) add("filterAntiKeyPrefix");
             if (filter.checkAntiKeySuffix()) add("filterAntiKeySuffix");
+            if (filter.checkAntiKeyInner()) add("filterAntiKeyInner");
             if (filter.checkAntiKeyRegex()) add("filterAntiKeyRegex");
             if (filter.checkAntiMime()) add("filterAntiMime");
         }};

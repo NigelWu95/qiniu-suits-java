@@ -8,6 +8,7 @@
 ```
 f-key-prefix=
 f-key-suffix=
+f-key-inner=
 f-key-regex=
 f-mime=
 f-type=
@@ -16,20 +17,23 @@ f-time=00:00:00
 f-direction=
 cf-key-prefix=
 anti-f-key-suffix=
+anti-f-key-inner=
 anti-f-key-regex=
 anti-f-mime=
 ```
-`f-key-prefix` 表示选择**符合**该前缀的文件  
-`f-key-suffix` 表示选择**符合**该后缀的文件  
-`f-key-regex` 表示选择**符合**该正则表达式的文件  
-`f-mime` 表示选择**符合**该 mime 类型的文件  
-`f-type` 表示选择**符合**该存储类型的文件, 为 0 或 1  
+`f-key-prefix` 表示**选择**文件名符合该前缀的文件  
+`f-key-suffix` 表示**选择**文件名符合该后缀的文件  
+`f-key-inner` 表示**选择**文件名包含该部分字符的文件  
+`f-key-regex` 表示**选择**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
+`f-mime` 表示**选择**符合该 mime 类型的文件  
+`f-type` 表示**选择**符合该存储类型的文件, 为 0 或 1  
 `date, time` 设置过滤的时间节点  
 `direction` 表示时间节点过滤方向，0 表示选择**时间点以前**更新的文件，1 表示选择**时间点以后**更新的文件  
-`anti-f-key-prefix` 表示**排除**符合该前缀的文件  
-`anti-f-key-suffix` 表示**排除**符合该后缀的文件  
-`anti-f-key-regex` 表示选择**排除**该正则表达式的文件  
-`anti-f-mime` 表示选择**排除**该 mime 类型的文件  
+`anti-f-key-prefix` 表示**排除**文件名符合该前缀的文件  
+`anti-f-key-suffix` 表示**排除**文件名符合该后缀的文件  
+`anti-f-key-inner` 表示**排除**文件名包含该部分字符的文件  
+`anti-f-key-regex` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
+`anti-f-mime` 表示**排除**该 mime 类型的文件  
 
 **备注：**  
 过滤条件中，prefix,suffix,regex,mime 可以为列表形式，如 param1,param2,param3。prefix,suffix,regex 三者为针对文件名 key  
