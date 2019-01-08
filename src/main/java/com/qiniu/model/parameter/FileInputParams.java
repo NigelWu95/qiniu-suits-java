@@ -26,6 +26,7 @@ public class FileInputParams extends CommonParams {
     }};
     private List<String> needNewKeyIndex = new ArrayList<String>(){{
         add("rename");
+        add("copy");
     }};
     private List<String> needFopsIndex = new ArrayList<String>(){{
         add("pfop");
