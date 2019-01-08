@@ -184,7 +184,7 @@ public class ListBucket implements IDataSource {
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + e.getMessage());
+                System.out.println(t.getName() + "\t" + t.toString());
                 e.printStackTrace();
             });
             return thread;
