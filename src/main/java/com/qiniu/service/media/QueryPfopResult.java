@@ -84,20 +84,24 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        List<String> resultList = new ArrayList<>();
+        String pid;
+        String pfopResult;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
+            pid = line.get(persistentIdIndex);
             try {
-                String pfopResult = singleWithRetry(line.get(persistentIdIndex), retryCount);
-                if (pfopResult != null)resultList.add(jsonParser.parse(pfopResult).toString());
-                else fileMap.writeError( String.valueOf(line) + "\tempty pfop result");
+                pfopResult = singleWithRetry(pid, retryCount);
+                if (pfopResult != null && !"".equals(pfopResult))
+                    fileMap.writeSuccess(pid + "\t" + jsonParser.parse(pfopResult).toString());
+                else
+                    fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
+                String finalPid = pid;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(line.get(persistentIdIndex) + "\t" + String.valueOf(line));
+                    add(finalPid + "\t" + String.valueOf(line));
                 }});
             }
         }
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {

@@ -99,15 +99,17 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        List<String> resultList = new ArrayList<>();
         String url;
+        String qhash;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
-                String qhash = singleWithRetry(url, retryCount);
-                if (qhash != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(qhash).toString());
-                else fileMap.writeError( String.valueOf(line) + "\tempty qhash");
+                qhash = singleWithRetry(url, retryCount);
+                if (qhash != null && !"".equals(qhash))
+                    fileMap.writeSuccess(url + "\t" + jsonParser.parse(qhash).toString());
+                else
+                    fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
                 String finalUrl = url;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
@@ -115,7 +117,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 }});
             }
         }
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
