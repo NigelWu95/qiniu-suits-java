@@ -88,6 +88,6 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }

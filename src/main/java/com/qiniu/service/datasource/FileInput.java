@@ -123,7 +123,7 @@ public class FileInput implements IDataSource {
                     try { nextLine = bufferedReader.readLine(); } catch (IOException e) { nextLine ="exception"; }
                     if (nextLine == null || "".equals(nextLine)) linePositionList.add(readerEntry.getKey() + "\tdone.");
                     else linePositionList.add(readerEntry.getKey() + "\t" + nextLine);
-                    fileMap.closeWriter();
+                    fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                 }
             });
@@ -132,7 +132,7 @@ public class FileInput implements IDataSource {
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("input_file", String.join("\n", linePositionList));
-        fileMap.closeWriter();
-        inputFileMap.closeReader();
+        fileMap.closeWriters();
+        inputFileMap.closeReaders();
     }
 }

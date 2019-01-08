@@ -45,6 +45,6 @@ public class ProgressRecorder implements Cloneable {
     }
 
     public void close() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }
