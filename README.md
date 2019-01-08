@@ -75,7 +75,6 @@ java -jar qsuits-x.x.jar -source-type=list -bucket=test -ak= -sk=
 `result-path=` 表示保存结果的文件路径  
 `result-format=` 结果保存格式（json/table）  
 `result-separator=` 结果保存分隔符  
-`xxx-save=` 保留字段筛选器  
 所有持久化参数均为可选参数，未设置的情况下保留所有字段，以 json 格式保存在 ../result 路径下，详细参数见 [result 配置](docs/filesave.md)。
 
 ### 5 处理过程
