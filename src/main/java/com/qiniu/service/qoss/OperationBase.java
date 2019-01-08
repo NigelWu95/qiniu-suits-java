@@ -83,11 +83,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    public List<String> singleRun(List<Map<String, String>> fileInfoList) throws IOException {
-        List<String> resultList = new ArrayList<>();
+    public void singleRun(List<Map<String, String>> fileInfoList) throws IOException {
+        String key;
+        String result = null;
         for (Map<String, String> fileInfo : fileInfoList) {
+            key = fileInfo.get("key");
             try {
-                String result = null;
                 try {
                     result = processLine(fileInfo);
                 } catch (QiniuException e) {
@@ -101,25 +102,22 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         }
                     }
                 }
-                if (result != null) resultList.add(fileInfo.get("key") + "\t" + result);
-                else fileMap.writeError(fileInfo.get("key") + "\t" +  String.valueOf(fileInfo) + "\tempty " +
-                        processName + " result");
+                if (result != null && !"".equals(result)) fileMap.writeSuccess(key + "\t" + result);
+                else fileMap.writeError(key + "\t" +  String.valueOf(fileInfo) + "\tempty result");
             } catch (QiniuException e) {
+                String finalKey = key;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(fileInfo.get("key") + "\t" + String.valueOf(fileInfo));
+                    add(finalKey + "\t" + String.valueOf(fileInfo));
                 }});
             }
         }
-
-        return resultList;
     }
 
-    public List<String> batchRun(List<Map<String, String>> fileInfoList) throws IOException {
+    public void batchRun(List<Map<String, String>> fileInfoList) throws IOException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
         String result;
-        List<String> resultList = new ArrayList<>();
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
@@ -142,8 +140,10 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     result = HttpResponseUtils.getResult(response);
                     JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
                     for (int j = 0; j < processList.size(); j++) {
-                        if (j < jsonArray.size()) resultList.add(processList.get(j).get("key") + "\t" + jsonArray.get(j));
-                        else resultList.add(processList.get(j).get("key") + "\tempty " + processName + " result.");
+                        if (j < jsonArray.size())
+                            fileMap.writeSuccess(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        else
+                            fileMap.writeError(processList.get(j).get("key") + "\tempty result");
                     }
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processList.stream()
@@ -152,12 +152,11 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                 }
             }
         }
-        return resultList;
     }
 
     public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
+        if (batch) batchRun(fileInfoList);
+        else singleRun(fileInfoList);
         if (errorLineList.size() > 0) {
             fileMap.writeError(String.join("\n", errorLineList));
             errorLineList.clear();

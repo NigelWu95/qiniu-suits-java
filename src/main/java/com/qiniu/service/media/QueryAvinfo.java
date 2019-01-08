@@ -93,15 +93,17 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        List<String> resultList = new ArrayList<>();
         String url;
+        String avinfo;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
-                String avinfo = singleWithRetry(url, retryCount);
-                if (avinfo != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(avinfo).toString());
-                else fileMap.writeError( String.valueOf(line) + "\tpfop avinfo");
+                avinfo = singleWithRetry(url, retryCount);
+                if (avinfo != null && !"".equals(avinfo))
+                    fileMap.writeSuccess(url + "\t" + jsonParser.parse(avinfo).toString());
+                else
+                    fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty avinfo");
             } catch (QiniuException e) {
                 String finalUrl = url;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
@@ -109,7 +111,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 }});
             }
         }
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
