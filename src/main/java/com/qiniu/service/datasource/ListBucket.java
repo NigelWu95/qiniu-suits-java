@@ -153,17 +153,14 @@ public class ListBucket implements IDataSource {
             writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, removeFields);
             fileMap.initDefaultWriters();
         }
-        String marker;
         List<FileInfo> fileInfoList;
         List<String> writeList;
         while (fileLister.hasNext()) {
-            marker = fileLister.getMarker();
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                String finalMarker = marker;
                 HttpResponseUtils.processException(fileLister.exception, fileMap, new ArrayList<String>(){{
-                    add(fileLister.getPrefix() + "|" + finalMarker);
+                    add(fileLister.getPrefix() + "|" + fileLister.getMarker());
                 }});
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
@@ -206,8 +203,14 @@ public class ListBucket implements IDataSource {
                     throw new RuntimeException(e);
                 } finally {
                     String marker = fileLister.getMarker();
-                    if (marker == null || "".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
-                    else prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
+                    String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
+                    if (marker == null || "".equals(marker)) {
+                        prefixList.add(record + "\tdone");
+                        System.out.println(record + "\tdone");
+                    } else {
+                        prefixList.add(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
+                        System.out.println(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
+                    }
                     fileMap.closeWriters();
                     if (processor != null) processor.closeResource();
                     fileLister.remove();
@@ -218,7 +221,7 @@ public class ListBucket implements IDataSource {
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
-        fileMap.writeKeyFile("list_prefix", String.join("\n", prefixList));
+        fileMap.writeKeyFile("result" + new Date().getTime(), String.join("\n", prefixList));
         fileMap.closeWriters();
     }
 }
