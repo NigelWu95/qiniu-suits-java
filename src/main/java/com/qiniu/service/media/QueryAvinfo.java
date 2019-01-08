@@ -113,6 +113,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }

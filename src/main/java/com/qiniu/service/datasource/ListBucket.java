@@ -208,7 +208,7 @@ public class ListBucket implements IDataSource {
                     String marker = fileLister.getMarker();
                     if (marker == null || "".equals(marker)) prefixList.add(fileLister.getPrefix() + "\tdone.");
                     else prefixList.add(fileLister.getPrefix() + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
-                    fileMap.closeWriter();
+                    fileMap.closeWriters();
                     if (processor != null) processor.closeResource();
                     fileLister.remove();
                     fileLister = null;
@@ -219,6 +219,6 @@ public class ListBucket implements IDataSource {
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("list_prefix", String.join("\n", prefixList));
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }

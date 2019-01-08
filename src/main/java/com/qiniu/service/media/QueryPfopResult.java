@@ -100,6 +100,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }
