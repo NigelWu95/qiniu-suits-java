@@ -24,7 +24,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
                     String keyPrefix, String rmPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, "copy", resultPath, resultIndex);
         this.toBucket = toBucket;
-        this.newKeyIndex = "".equals(newKeyIndex) ? null : newKeyIndex;
+        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
@@ -34,24 +34,20 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, resultPath, 0);
     }
 
-    private String formatKey(Map<String, String> line) {
-        String tempKey = line.get(newKeyIndex);
-        if (tempKey == null || "".equals(tempKey)) {
-            return keyPrefix + line.get("key").substring(0, rmPrefix.length())
-                    .replace(rmPrefix, "") + line.get("key").substring(rmPrefix.length());
-        } else {
-            return keyPrefix + tempKey.substring(0, rmPrefix.length()).replace(rmPrefix, "")
-                    + tempKey.substring(rmPrefix.length());
-        }
+    private String formatKey(String key) {
+        return keyPrefix + key.substring(0, rmPrefix.length()).replace(rmPrefix, "")
+                + key.substring(rmPrefix.length());
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
-        Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line), false);
+        Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)),
+                false);
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket, formatKey(line)));
+        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
+                formatKey(line.get(newKeyIndex))));
         return batchOperations;
     }
 }
