@@ -13,7 +13,6 @@
 
 #### 可选参数
 ```
-keep-key=true
 add-prefix=video/
 file-type=
 ignore-same-key=
@@ -36,7 +35,6 @@ callback-host=
 |process| 异步抓取时设置为asyncfetch | 表示异步 fetch 操作|  
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源方式为 list 时无需再设置|  
 |to-bucket|字符串| 保存抓取结果的空间名|  
-|keep-key| true/false| 表示是否使用原文件名来保存抓取的资源，默认为 true|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |ignore-same-key| true/false| 暂未启用|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
@@ -57,6 +55,6 @@ callback-host=
 
 ### 命令行参数方式
 ```
--process=asyncfetch -process-batch=true -ak= -sk= -to-bucket=bucket2 -keep-key=true -add-prefix=video/ -file-type= -ignore-same-key= -domain= -https= -private= -hash-check= -host= -callback-url= -callback-body= -callback-body-type= -callback-host=
+-process=asyncfetch -process-batch=true -ak= -sk= -to-bucket=bucket2 -add-prefix=video/ -file-type= -ignore-same-key= -domain= -https= -private= -hash-check= -host= -callback-url= -callback-body= -callback-body-type= -callback-host=
 ```
 

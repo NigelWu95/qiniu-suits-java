@@ -95,10 +95,16 @@ public class FileMap implements Cloneable {
         return this.writerMap.get(key);
     }
 
-    public void closeWriter() {
+    public void closeWriters() {
         for (Map.Entry<String, BufferedWriter> entry : this.writerMap.entrySet()) {
             try {
                 this.writerMap.get(entry.getKey()).close();
+                File file = new File(targetFileDir, entry.getKey() + ".txt");
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                if (reader.readLine() == null) {
+                    reader.close();
+                    file.delete();
+                }
             } catch (IOException ioException) {
                 System.out.println("Writer " + entry.getKey() + " close failed.");
                 ioException.printStackTrace();
@@ -139,7 +145,7 @@ public class FileMap implements Cloneable {
         return readerMap;
     }
 
-    public void closeReader() {
+    public void closeReaders() {
         for (Entry<String, BufferedReader> entry : this.readerMap.entrySet()) {
             try {
                 this.readerMap.get(entry.getKey()).close();

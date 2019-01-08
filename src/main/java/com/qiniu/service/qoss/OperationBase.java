@@ -11,7 +11,6 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected String resultPath;
-    private String resultTag;
+    protected String resultTag;
     protected int resultIndex;
     protected FileMap fileMap;
 
@@ -69,7 +68,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         OperationBase operationBase = (OperationBase)super.clone();
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
-        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             operationBase.fileMap.initDefaultWriters();
         } catch (IOException e) {
@@ -157,6 +156,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }

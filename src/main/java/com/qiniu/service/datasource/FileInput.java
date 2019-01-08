@@ -108,10 +108,9 @@ public class FileInput implements IDataSource {
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         List<String> linePositionList = new ArrayList<>();
-        int i = 0;
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             if (processor != null) processor.setResultTag(readerEntry.getKey());
-            ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
+            ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = readerEntry.getValue();
                 FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
@@ -124,17 +123,16 @@ public class FileInput implements IDataSource {
                     try { nextLine = bufferedReader.readLine(); } catch (IOException e) { nextLine ="exception"; }
                     if (nextLine == null || "".equals(nextLine)) linePositionList.add(readerEntry.getKey() + "\tdone.");
                     else linePositionList.add(readerEntry.getKey() + "\t" + nextLine);
-                    fileMap.closeWriter();
+                    fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                 }
             });
-            i++;
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("input_file", String.join("\n", linePositionList));
-        fileMap.closeWriter();
-        inputFileMap.closeReader();
+        fileMap.closeWriters();
+        inputFileMap.closeReaders();
     }
 }

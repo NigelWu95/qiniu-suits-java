@@ -26,7 +26,7 @@ public class ProgressRecorder implements Cloneable {
 
     public ProgressRecorder clone() throws CloneNotSupportedException {
         ProgressRecorder progressRecorder = (ProgressRecorder)super.clone();
-        progressRecorder.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex++));
+        progressRecorder.fileMap = new FileMap(resultPath, processName, String.valueOf(++resultIndex));
         try {
             progressRecorder.fileMap.initDefaultWriters();
         } catch (IOException e) {
@@ -45,6 +45,6 @@ public class ProgressRecorder implements Cloneable {
     }
 
     public void close() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }

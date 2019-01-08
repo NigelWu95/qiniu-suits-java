@@ -15,8 +15,8 @@
 ```
 ak=
 sk=
-newKey-index=1
 bucket= 
+newKey-index=1
 add-prefix=
 rm-prefix=
 ```
@@ -25,11 +25,11 @@ rm-prefix=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=rename| 资源重命名时设置为rename| 表示重命名操作|  
-|newKey-index| 字符串| rename 操作所需要设置的目标文件名索引（下标），需要手动指定才会进行解析|  
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源方式为 list 时无需再设置|  
 |bucket| 字符串| 操作的资源原空间，当数据源为 list 时无需再设置|  
+|newKey-index| 字符串| rename 操作所需要设置的目标文件名索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
-|rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 move 之后的文件名|  
+|rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 rename 之后的文件名|  
 
 #### 关于 newKey-index
 指定输入行中对应修改之后的文件名字段下标，不设置为则无法进行解析，但当 add-prefix 存在且不为空时需要强制指定 prefix-force=true，表明该次重命名

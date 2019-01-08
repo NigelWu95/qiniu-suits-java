@@ -26,6 +26,7 @@ public class FileInputParams extends CommonParams {
     }};
     private List<String> needNewKeyIndex = new ArrayList<String>(){{
         add("rename");
+        add("copy");
     }};
     private List<String> needFopsIndex = new ArrayList<String>(){{
         add("pfop");
@@ -82,11 +83,11 @@ public class FileInputParams extends CommonParams {
         }
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "endUser", "type", "status");
         if ("table".equals(getParseType())) {
-            if ("".equals(indexes) || indexes.matches("(\\d+,)*\\d")) {
+            if ("".equals(indexes)) {
+                indexMap.put("0", keys.get(0));
+            } else if (indexes.matches("(\\d+,)*\\d")) {
                 List<String> indexList = Arrays.asList(indexes.split(","));
-                if (indexList.size() == 0) {
-                    indexMap.put("0", keys.get(0));
-                } else if (indexList.size() > 8) {
+                if (indexList.size() > 8) {
                     throw new IOException("the file info's index length is too long.");
                 } else {
                     for (int i = 0; i < indexList.size(); i++) { indexMap.put(indexList.get(i), keys.get(i)); }

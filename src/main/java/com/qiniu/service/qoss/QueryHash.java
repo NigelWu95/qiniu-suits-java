@@ -1,5 +1,6 @@
 package com.qiniu.service.qoss;
 
+import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -32,7 +33,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                      int resultIndex)
             throws IOException {
         this.processName = "qhash";
-        if (urlIndex== null || "".equals(urlIndex)) {
+        if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
             else {
@@ -71,7 +72,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
         queryHash.fileChecker = new FileChecker(algorithm, protocol, auth);
-        queryHash.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        queryHash.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             queryHash.fileMap.initDefaultWriters();
         } catch (IOException e) {
@@ -96,18 +97,18 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 }
             }
         }
-
         return qhash;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
         String url;
+        JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             try {
                 url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String qhash = singleWithRetry(url, retryCount);
-                if (qhash != null) resultList.add(url + "\t" + qhash);
+                if (qhash != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(qhash).toString());
                 else fileMap.writeError( String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
@@ -117,6 +118,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }
