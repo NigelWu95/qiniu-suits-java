@@ -99,12 +99,17 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         List<String> copyList = new ArrayList<>();
         List<String> mp4FopList = new ArrayList<>();
         List<String> m3u8FopList = new ArrayList<>();
+        String key;
+        String info;
 
         for (Map<String, String> line : lineList) {
-            String key = line.get("key");
+            key = line.get("key");
+            info = line.get("avinfo");
+            if (key == null || "".equals(key) || info == null || "".equals(info))
+                throw new IOException("target value is empty.");
             try {
 //                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("avinfo"), Avinfo.class);
-                Avinfo avinfo = mediaManager.getAvinfoByJson(line.get("avinfo"));
+                Avinfo avinfo = mediaManager.getAvinfoByJson(info);
                 double duration = Double.valueOf(avinfo.getFormat().duration);
                 long size = Long.valueOf(avinfo.getFormat().size);
                 String other = "\t" + duration + "\t" + size;
@@ -156,11 +161,16 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
     // mp4 retry
     public void processLine2(List<Map<String, String>> lineList) throws IOException {
         List<String> mp4FopList = new ArrayList<>();
+        String toKey;
+        String toSaveAs;
+        String srcKey;
         for (Map<String, String> line : lineList) {
             try {
-                String toKey = line.get("key");
-                String toSaveAs = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
-                String srcKey = line.get("avinfo");
+                srcKey = line.get("key");
+                toKey = line.get("newKey");
+                if (srcKey == null || "".equals(srcKey) || toKey == null || "".equals(toKey))
+                    throw new IOException("target value is empty.");
+                toSaveAs = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
                 if (toKey.contains("F480")) {
                     mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + toSaveAs);
                 } else if (toKey.contains("F720")) {
