@@ -28,6 +28,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected int retryCount;
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
+    protected volatile List<String> errorLineList;
     protected String resultPath;
     protected String resultTag;
     protected int resultIndex;
@@ -82,7 +83,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
     public List<String> singleRun(List<Map<String, String>> fileInfoList) throws IOException {
-
         List<String> resultList = new ArrayList<>();
         for (Map<String, String> fileInfo : fileInfoList) {
             try {
@@ -101,9 +101,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                 }
                 if (result != null) resultList.add(fileInfo.get("key") + "\t" + result);
-                else fileMap.writeError( String.valueOf(fileInfo) + "\tempty " + processName + " result");
+                else fileMap.writeError(fileInfo.get("key") + "\t" +  String.valueOf(fileInfo) + "\tempty " +
+                        processName + " result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(fileInfo));}});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
+                    add(fileInfo.get("key") + "\t" + String.valueOf(fileInfo));
+                }});
             }
         }
 
@@ -142,7 +145,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         else resultList.add(processList.get(j).get("key") + "\tempty " + processName + " result.");
                     }
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processList.stream().map(String::valueOf)
+                    HttpResponseUtils.processException(e, fileMap, processList.stream()
+                            .map(line -> line.get("key") + "\t" + String.valueOf(line))
                             .collect(Collectors.toList()));
                 }
             }

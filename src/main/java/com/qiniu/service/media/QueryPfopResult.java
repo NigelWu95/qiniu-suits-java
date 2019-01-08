@@ -66,7 +66,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public String singleWithRetry(String id, int retryCount) throws QiniuException {
-
         String pfopResult = null;
         try {
             pfopResult = mediaManager.getPfopResultBodyById(id);
@@ -93,7 +92,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 if (pfopResult != null)resultList.add(jsonParser.parse(pfopResult).toString());
                 else fileMap.writeError( String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
+                    add(line.get(persistentIdIndex) + "\t" + String.valueOf(line));
+                }});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
