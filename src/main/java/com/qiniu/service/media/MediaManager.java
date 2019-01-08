@@ -16,11 +16,13 @@ public class MediaManager {
 
     public MediaManager() {
         this.client = new Client();
+        this.protocol = "http";
+        this.srcAuth = null;
     }
 
     public MediaManager(String protocol, Auth srcAuth) {
-        this();
-        this.protocol = protocol == null || "".equals(protocol) || !protocol.matches("(http|https)") ? "http" : protocol;;
+        this.client = new Client();
+        this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
         this.srcAuth = srcAuth;
     }
 
