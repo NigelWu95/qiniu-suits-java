@@ -29,6 +29,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = null;
             if (toBucket == null || "".equals(toBucket)) {
+                // rename 操作时未设置 new-key 的条件判断
                 if (forceIfOnlyPrefix) {
                     if (keyPrefix == null || "".equals(keyPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
@@ -57,8 +58,9 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     protected String processLine(Map<String, String> line) throws QiniuException {
         Response response;
         if (newKeyIndex != null) {
-            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex),
-                    false);
+            String tempKey = line.get(newKeyIndex);
+            if (tempKey == null || "".equals(tempKey)) throw new QiniuException(null, "empty new key.");
+            response = bucketManager.rename(bucket, line.get("key"), keyPrefix + tempKey, false);
         } else {
             if (forceIfOnlyPrefix)
                 response = bucketManager.rename(bucket, line.get("key"), formatKey(line.get("key")), false);
