@@ -55,7 +55,7 @@ public class FileInput implements IDataSource {
             fileMap.initDefaultWriters();
         }
         List<String> srcList = new ArrayList<>();
-        String line = null;
+        String line;
         boolean goon = true;
         while (goon) {
             // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
@@ -108,7 +108,10 @@ public class FileInput implements IDataSource {
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler((t, e) -> System.out.println(t.getName() + "\t" + e.getMessage()));
+            thread.setUncaughtExceptionHandler((t, e) -> {
+                System.out.println(t.getName() + "\t" + t.toString());
+                e.printStackTrace();
+            });
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
@@ -123,7 +126,7 @@ public class FileInput implements IDataSource {
                 } catch (Exception e) {
                     throw new RuntimeException(e.getCause());
                 } finally {
-                    String nextLine = null;
+                    String nextLine;
                     try {
                         nextLine = readerEntry.getValue().readLine();
                     } catch (IOException e) {
