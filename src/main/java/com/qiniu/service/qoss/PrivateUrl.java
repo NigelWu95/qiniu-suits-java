@@ -72,14 +72,14 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        List<String> resultList = new ArrayList<>();
         String url;
+        String signedUrl;
         for (Map<String, String> line : lineList) {
             url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
-                String signedUrl = auth.privateDownloadUrl(url, expires);
-                if (signedUrl != null) resultList.add(signedUrl);
-                else fileMap.writeError( String.valueOf(line) + "\tempty signed url");
+                signedUrl = auth.privateDownloadUrl(url, expires);
+                if (signedUrl != null && !"".equals(signedUrl)) fileMap.writeSuccess(signedUrl);
+                else fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty signed url");
             } catch (QiniuException e) {
                 String finalUrl = url;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
@@ -87,7 +87,6 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                 }});
             }
         }
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
