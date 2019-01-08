@@ -5,8 +5,10 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.qoss.FileChecker;
 import com.qiniu.util.*;
 
+import javax.smartcardio.ATR;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +17,8 @@ import java.util.Map;
 public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
-    protected String resultPath;
+    private FileChecker fileChecker;
+    private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -27,6 +30,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
 
     public CAvinfoProcess(String bucket, String resultPath, int resultIndex) throws IOException {
         this.processName = "fop";
+        this.fileChecker = new FileChecker(null, null, null);
         this.bucket = bucket;
         this.resultPath = resultPath;
         this.resultTag = "";
@@ -37,6 +41,10 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
 
     public CAvinfoProcess(String bucket, String resultPath) throws IOException {
         this(bucket, resultPath, 0);
+    }
+
+    public void setChecker(String algorithm, String protocol, Auth auth) {
+        this.fileChecker = new FileChecker(algorithm, protocol, auth);
     }
 
     public String getProcessName() {
