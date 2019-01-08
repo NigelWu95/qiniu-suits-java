@@ -29,7 +29,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected String resultPath;
-    private String resultTag;
+    protected String resultTag;
     protected int resultIndex;
     protected FileMap fileMap;
 
