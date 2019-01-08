@@ -196,10 +196,10 @@ public class ListBucket implements IDataSource {
         List<String> prefixList = new ArrayList<>();
         for (int i = 0; i < fileListerList.size(); i++) {
             final int finalI = i;
-            ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
+            ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
                 FileLister fileLister = fileListerList.get(finalI);
-                FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(finalI));
+                FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(finalI + 1));
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
                 } catch (Exception e) {
@@ -220,6 +220,5 @@ public class ListBucket implements IDataSource {
         FileMap fileMap = new FileMap(resultPath);
         fileMap.writeKeyFile("list_prefix", String.join("\n", prefixList));
         fileMap.closeWriter();
-        if (processor != null) processor.closeResource();
     }
 }

@@ -108,10 +108,9 @@ public class FileInput implements IDataSource {
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         List<String> linePositionList = new ArrayList<>();
-        int i = 0;
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             if (processor != null) processor.setResultTag(readerEntry.getKey());
-            ILineProcess lineProcessor = processor == null ? null : i == 0 ? processor : processor.clone();
+            ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
                 BufferedReader bufferedReader = readerEntry.getValue();
                 FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
@@ -128,7 +127,6 @@ public class FileInput implements IDataSource {
                     if (lineProcessor != null) lineProcessor.closeResource();
                 }
             });
-            i++;
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
