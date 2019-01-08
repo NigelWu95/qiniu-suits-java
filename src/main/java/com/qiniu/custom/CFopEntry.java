@@ -29,13 +29,13 @@ public class CFopEntry {
         String parseType = fileInputParams.getParseType();
         String separator = fileInputParams.getSeparator();
         Map<String, String> indexMap = fileInputParams.getIndexMap();
-        indexMap.put("1", "avinfo");
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         IDataSource dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
         ILineProcess<Map<String, String>> processor;
-//        processor = new ProcessorChoice(entryParam).getFileProcessor();
+        processor = new ProcessorChoice(entryParam).getFileProcessor();
         // parse avinfo from files.
-        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
+//        indexMap.put("1", "avinfo");
+//        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
         // filter pfop result
 //        processor = new PfopResultProcess(resultFileDir);
         if (saveTotal) dataSource.setResultSaveOptions(resultFormat, resultSeparator, removeFields);
