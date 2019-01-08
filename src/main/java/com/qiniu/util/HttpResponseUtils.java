@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 public class HttpResponseUtils {
 
     public static int getNextRetryCount(QiniuException e, int retryCount) throws QiniuException {
-
-        if (e.response == null || e.response.needRetry()) {
+        if (e.response != null && e.response.needRetry()) {
             retryCount--;
             if (retryCount <= 0) throw e;
         } else {
@@ -23,8 +22,7 @@ public class HttpResponseUtils {
     }
 
     public static void checkRetryCount(QiniuException e, int retryCount) throws QiniuException {
-
-        if (e.response == null || e.response.needRetry()) {
+        if (e.response != null && e.response.needRetry()) {
             if (retryCount <= 0) throw e;
         } else {
             throw e;
