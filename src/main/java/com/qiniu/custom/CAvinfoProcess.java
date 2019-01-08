@@ -5,10 +5,9 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.qoss.FileChecker;
+import com.qiniu.service.media.MediaManager;
 import com.qiniu.util.*;
 
-import javax.smartcardio.ATR;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +16,7 @@ import java.util.Map;
 public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
-    private FileChecker fileChecker;
+    private MediaManager mediaManager;
     private String resultPath;
     private String resultTag;
     private int resultIndex;
@@ -30,7 +29,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
 
     public CAvinfoProcess(String bucket, String resultPath, int resultIndex) throws IOException {
         this.processName = "fop";
-        this.fileChecker = new FileChecker(null, null, null);
+        this.mediaManager = new MediaManager();
         this.bucket = bucket;
         this.resultPath = resultPath;
         this.resultTag = "";
@@ -41,10 +40,6 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
 
     public CAvinfoProcess(String bucket, String resultPath) throws IOException {
         this(bucket, resultPath, 0);
-    }
-
-    public void setChecker(String algorithm, String protocol, Auth auth) {
-        this.fileChecker = new FileChecker(algorithm, protocol, auth);
     }
 
     public String getProcessName() {
@@ -71,10 +66,11 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         if (width > 1280) keySuffix = "F1080";
         else if (width > 1000) keySuffix = "F720";
         else keySuffix = "F480";
-        String srcCopy = "/copy/" + UrlSafeBase64.encodeToString(bucket + ":" + key) + "/";
         String copyKey = FileNameUtils.addSuffixKeepExt(key, keySuffix);
-        String copySaveAs = UrlSafeBase64.encodeToString(bucket + ":" + copyKey);
-        return copyKey + "\t" + key + "\t" + srcCopy + copySaveAs;
+        return key + "\t" + copyKey;
+//        String srcCopy = "/copy/" + UrlSafeBase64.encodeToString(bucket + ":" + key) + "/";
+//        String copySaveAs = UrlSafeBase64.encodeToString(bucket + ":" + copyKey);
+//        return copyKey + "\t" + key + "\t" + srcCopy + copySaveAs;
     }
 
     private String generateMp4FopLine(String key, int width, String other) throws QiniuException {
@@ -107,7 +103,8 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         for (Map<String, String> line : lineList) {
             String key = line.get("0");
             try {
-                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("1"), Avinfo.class);
+//                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("1"), Avinfo.class);
+                Avinfo avinfo = mediaManager.getAvinfoByJson(line.get("1"));
                 double duration = Double.valueOf(avinfo.getFormat().duration);
                 long size = Long.valueOf(avinfo.getFormat().size);
                 String other = "\t" + duration + "\t" + size;
