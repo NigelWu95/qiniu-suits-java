@@ -29,6 +29,7 @@ public class CFopEntry {
         String parseType = fileInputParams.getParseType();
         String separator = fileInputParams.getSeparator();
         Map<String, String> indexMap = fileInputParams.getIndexMap();
+        indexMap.put("1", "avinfo");
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         IDataSource dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
         ILineProcess<Map<String, String>> processor;
