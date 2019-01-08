@@ -117,7 +117,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
         if (nextProcessor != null) nextProcessor.closeResource();
     }
 }

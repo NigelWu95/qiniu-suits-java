@@ -156,6 +156,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }
