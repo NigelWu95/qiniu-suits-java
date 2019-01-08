@@ -10,7 +10,6 @@ public class AsyncFetchParams extends QossParams {
     private String domain;
     private String https;
     private String needSign;
-    private String keepKey;
     private String keyPrefix;
     private String host;
     private String callbackUrl;
@@ -26,7 +25,6 @@ public class AsyncFetchParams extends QossParams {
         this.domain = entryParam.getParamValue("domain");
         try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
         try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
-        try { this.keepKey = entryParam.getParamValue("keep-key"); } catch (Exception e) { keepKey = ""; }
         try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
         try { this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
         try { this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
@@ -60,14 +58,6 @@ public class AsyncFetchParams extends QossParams {
             return Boolean.valueOf(needSign);
         } else {
             return false;
-        }
-    }
-
-    public boolean getKeepKey() {
-        if (keepKey.matches("(true|false)")) {
-            return Boolean.valueOf(keepKey);
-        } else {
-            return true;
         }
     }
 
