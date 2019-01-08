@@ -99,6 +99,12 @@ public class FileMap implements Cloneable {
         for (Map.Entry<String, BufferedWriter> entry : this.writerMap.entrySet()) {
             try {
                 this.writerMap.get(entry.getKey()).close();
+                File file = new File(targetFileDir, entry.getKey() + ".txt");
+                FileReader fileReader = new FileReader(file);
+                if (fileReader.read() == -1) {
+                    fileReader.close();
+                    file.delete();
+                }
             } catch (IOException ioException) {
                 System.out.println("Writer " + entry.getKey() + " close failed.");
                 ioException.printStackTrace();
