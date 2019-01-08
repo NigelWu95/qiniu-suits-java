@@ -1,6 +1,5 @@
 package com.qiniu.service.media;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
@@ -11,7 +10,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -77,7 +75,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public String singleWithRetry(String url, int retryCount) throws QiniuException {
-
         String avinfo = null;
         try {
             avinfo = mediaManager.getAvinfoBody(url);
@@ -100,13 +97,16 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         String url;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
+            url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
-                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String avinfo = singleWithRetry(url, retryCount);
                 if (avinfo != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(avinfo).toString());
                 else fileMap.writeError( String.valueOf(line) + "\tpfop avinfo");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
+                String finalUrl = url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
+                    add(finalUrl + "\t" + String.valueOf(line));
+                }});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

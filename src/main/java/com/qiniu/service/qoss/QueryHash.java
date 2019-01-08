@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -82,7 +81,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public String singleWithRetry(String url, int retryCount) throws QiniuException {
-
         String qhash = null;
         try {
             qhash = fileChecker.getQHashBody(url);
@@ -105,13 +103,16 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         String url;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
+            url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
-                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String qhash = singleWithRetry(url, retryCount);
                 if (qhash != null) resultList.add(line.get("key") + "\t" + jsonParser.parse(qhash).toString());
                 else fileMap.writeError( String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
+                String finalUrl = url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
+                    add(finalUrl + "\t" + String.valueOf(line));
+                }});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

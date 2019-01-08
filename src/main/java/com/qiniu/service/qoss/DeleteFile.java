@@ -7,11 +7,11 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class DeleteFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -30,9 +30,12 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-
-        List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
-        batchOperations.addDeleteOp(bucket, keyList.toArray(new String[]{}));
+        lineList.forEach(line -> {
+            if (StringUtils.isNullOrEmpty(line.get("key")))
+                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
+            else
+                batchOperations.addDeleteOp(bucket, line.get("key"));
+        });
         return batchOperations;
     }
 }
