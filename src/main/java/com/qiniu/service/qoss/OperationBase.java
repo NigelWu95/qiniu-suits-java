@@ -42,6 +42,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.bucket = bucket;
         this.processName = processName;
         this.batchOperations = new BatchOperations();
+        this.errorLineList = new ArrayList<>();
         this.resultPath = resultPath;
         this.resultTag = "";
         this.resultIndex = resultIndex;
@@ -157,6 +158,10 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
         List<String> resultList = batch ? batchRun(fileInfoList) : singleRun(fileInfoList);
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
+        if (errorLineList.size() > 0) {
+            fileMap.writeError(String.join("\n", errorLineList));
+            errorLineList.clear();
+        }
     }
 
     public void closeResource() {
