@@ -16,20 +16,22 @@ import java.util.stream.Collectors;
 public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String toBucket;
+    private String newKeyIndex;
     private String keyPrefix;
     private String rmPrefix;
 
-    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
-                    String rmPrefix, String resultPath, int resultIndex) throws IOException {
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
+                    String keyPrefix, String rmPrefix, String resultPath, int resultIndex) throws IOException {
         super(auth, configuration, bucket, "copy", resultPath, resultIndex);
         this.toBucket = toBucket;
+        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
-    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String keyPrefix,
-                    String rmPrefix, String resultPath) throws IOException {
-        this(auth, configuration, bucket, toBucket, keyPrefix, rmPrefix, resultPath, 0);
+    public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
+                    String keyPrefix, String rmPrefix, String resultPath) throws IOException {
+        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, resultPath, 0);
     }
 
     private String formatKey(String key) {
@@ -38,13 +40,14 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
-        Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get("key")), false);
+        Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)),
+                false);
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-        List<String> keyList = lineList.stream().map(line -> line.get("key")).collect(Collectors.toList());
-        keyList.forEach(fileKey -> batchOperations.addCopyOp(bucket, fileKey, toBucket, formatKey(fileKey)));
+        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
+                formatKey(line.get(newKeyIndex))));
         return batchOperations;
     }
 }

@@ -1,5 +1,6 @@
 package com.qiniu.service.media;
 
+import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -55,7 +56,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        queryPfopResult.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             queryPfopResult.fileMap.initDefaultWriters();
         } catch (IOException e) {
@@ -80,16 +81,16 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 }
             }
         }
-
         return pfopResult;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> resultList = new ArrayList<>();
+        JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             try {
                 String pfopResult = singleWithRetry(line.get(persistentIdIndex), retryCount);
-                if (pfopResult != null)resultList.add(pfopResult);
+                if (pfopResult != null)resultList.add(jsonParser.parse(pfopResult).toString());
                 else fileMap.writeError( String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
@@ -99,6 +100,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }
