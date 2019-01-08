@@ -33,7 +33,7 @@ public class CFopEntry {
         IDataSource dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam).getFileProcessor();
         // parse avinfo from files.
-//        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
+        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
         // filter pfop result
 //        processor = new PfopResultProcess(resultFileDir);
         if (saveTotal) dataSource.setResultSaveOptions(resultFormat, resultSeparator, removeFields);
