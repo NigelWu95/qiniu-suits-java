@@ -184,7 +184,7 @@ public class ListBucket implements IDataSource {
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + e.getMessage());
+                System.out.println(t.getName() + "\t" + t.toString());
                 e.printStackTrace();
             });
             return thread;
@@ -200,7 +200,7 @@ public class ListBucket implements IDataSource {
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException(e.getCause());
                 } finally {
                     String marker = fileLister.getMarker();
                     String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
