@@ -7,23 +7,23 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class MoveFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String toBucket;
     private String newKeyIndex;
-    private boolean forceIfOnlyPrefix;
     private String keyPrefix;
     private String rmPrefix;
 
     public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
                     String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex)
             throws IOException {
+        // 目标 bucket 为空时规定为 rename 操作
         super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
                 resultPath, resultIndex);
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
@@ -33,7 +33,6 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 if (forceIfOnlyPrefix) {
                     if (keyPrefix == null || "".equals(keyPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
-                    else this.forceIfOnlyPrefix = true;
                 } else {
                     throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
                             "please set the \"prefix-force\" as true.");
@@ -59,6 +58,10 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
+        if (StringUtils.isNullOrEmpty(line.get(newKeyIndex))) {
+            errorLineList.add(String.valueOf(line) + "\tno target " + newKeyIndex + " in the line map.");
+            throw new QiniuException(null, "\tno target " + newKeyIndex + " in the line map.");
+        }
         Response response;
         if (toBucket == null || "".equals(toBucket))
             response = bucketManager.rename(bucket, line.get("key"), formatKey(line.get(newKeyIndex)), false);
@@ -68,13 +71,16 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-        if (toBucket == null || "".equals(toBucket)) {
-            lineList.forEach(line -> batchOperations.addRenameOp(bucket, line.get("key"),
-                    formatKey(line.get(newKeyIndex))));
-        } else {
-            lineList.forEach(line -> batchOperations.addMoveOp(bucket, line.get("key"), toBucket,
-                    formatKey(line.get(newKeyIndex))));
-        }
+        lineList.forEach(line -> {
+            if (StringUtils.isNullOrEmpty(line.get("key")) || StringUtils.isNullOrEmpty(line.get(newKeyIndex)))
+                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
+            else {
+                if (toBucket == null || "".equals(toBucket))
+                    batchOperations.addRenameOp(bucket, line.get("key"), formatKey(line.get(newKeyIndex)));
+                else
+                    batchOperations.addMoveOp(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)));
+            }
+        });
         return batchOperations;
     }
 }

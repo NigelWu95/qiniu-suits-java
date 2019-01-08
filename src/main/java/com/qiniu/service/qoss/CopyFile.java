@@ -7,11 +7,11 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -40,14 +40,22 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     protected String processLine(Map<String, String> line) throws QiniuException {
+        if (StringUtils.isNullOrEmpty(line.get(newKeyIndex))) {
+            errorLineList.add(String.valueOf(line) + "\tno target " + newKeyIndex + " in the line map.");
+            throw new QiniuException(null, "\tno target " + newKeyIndex + " in the line map.");
+        }
         Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)),
                 false);
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
     synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
-        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
-                formatKey(line.get(newKeyIndex))));
+        lineList.forEach(line -> {
+            if (StringUtils.isNullOrEmpty(line.get("key")) || StringUtils.isNullOrEmpty(line.get(newKeyIndex)))
+                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
+            else
+                batchOperations.addCopyOp(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)));
+        });
         return batchOperations;
     }
 }

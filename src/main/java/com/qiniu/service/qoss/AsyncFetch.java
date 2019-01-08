@@ -158,7 +158,10 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 if (fetchResult != null) resultList.add(fetchResult);
                 else fileMap.writeError( String.valueOf(line) + "\tempty fetchResult");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
+                String finalUrl = url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
+                    add(finalUrl + "\t" + String.valueOf(line));
+                }});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));

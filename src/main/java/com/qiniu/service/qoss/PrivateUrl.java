@@ -75,13 +75,16 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
         List<String> resultList = new ArrayList<>();
         String url;
         for (Map<String, String> line : lineList) {
+            url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
             try {
-                url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
                 String signedUrl = auth.privateDownloadUrl(url, expires);
                 if (signedUrl != null) resultList.add(signedUrl);
                 else fileMap.writeError( String.valueOf(line) + "\tempty signed url");
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(String.valueOf(line));}});
+                String finalUrl = url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
+                    add(finalUrl + "\t" + String.valueOf(line));
+                }});
             }
         }
         if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
