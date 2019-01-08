@@ -55,36 +55,41 @@ public class FileInput implements IDataSource {
             fileMap.initDefaultWriters();
         }
         List<String> srcList = new ArrayList<>();
-        String line;
+        String line = null;
         boolean goon = true;
-        while (goon) {
-            // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
-            line = reader.readLine();
-            if (line == null) goon = false;
-            else srcList.add(line);
-            if (srcList.size() >= unitLen || line == null) {
-                List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
-                List<String> writeList;
-                if (typeConverter.getErrorList().size() > 0) fileMap.writeError(String.join("\n",
-                        typeConverter.getErrorList()));
-                if (saveTotal) {
-                    writeList = writeTypeConverter.convertToVList(infoMapList);
-                    if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
-                    if (writeTypeConverter.getErrorList().size() > 0)
-                        fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
+        try {
+            while (goon) {
+                // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
+                line = reader.readLine();
+                if (line == null) goon = false;
+                else srcList.add(line);
+                if (srcList.size() >= unitLen || line == null) {
+                    List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
+                    List<String> writeList;
+                    if (typeConverter.getErrorList().size() > 0) fileMap.writeError(String.join("\n",
+                            typeConverter.getErrorList()));
+                    if (saveTotal) {
+                        writeList = writeTypeConverter.convertToVList(infoMapList);
+                        if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
+                        if (writeTypeConverter.getErrorList().size() > 0)
+                            fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
+                    }
+                    int size = infoMapList.size() / unitLen + 1;
+                    for (int j = 0; j < size; j++) {
+                        List<Map<String, String>> processList = infoMapList.subList(unitLen * j,
+                                j == size - 1 ? infoMapList.size() : unitLen * (j + 1));
+                        if (processor != null) processor.processLine(processList);
+                    }
+                    srcList = new ArrayList<>();
                 }
-                int size = infoMapList.size() / unitLen + 1;
-                for (int j = 0; j < size; j++) {
-                    List<Map<String, String>> processList = infoMapList.subList(unitLen * j,
-                            j == size - 1 ? infoMapList.size() : unitLen * (j + 1));
-                    if (processor != null) processor.processLine(processList);
-                }
-                srcList = new ArrayList<>();
             }
+        } catch (Exception e) {
+            // 把异常时读取到的行位置包含进去
+            throw new Exception(line + "" + e.getMessage());
         }
     }
 
-    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    private FileMap getSourceFileMap() {
         FileMap inputFileMap = new FileMap();
         File sourceFile = new File(filePath);
         try {
@@ -96,6 +101,11 @@ public class FileInput implements IDataSource {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return inputFileMap;
+    }
+
+    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+        FileMap inputFileMap = getSourceFileMap();
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
         int listSize = readerEntrySet.size();
         int runningThreads = listSize < threads ? listSize : threads;
@@ -112,27 +122,32 @@ public class FileInput implements IDataSource {
             if (processor != null) processor.setResultTag(readerEntry.getKey());
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
-                BufferedReader bufferedReader = readerEntry.getValue();
+                String endInfo = null;
                 FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
                 try {
-                    traverseByReader(bufferedReader, fileMap, lineProcessor);
+                    traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
                 } catch (Exception e) {
+                    endInfo = e.getMessage();
                     throw new RuntimeException(e);
                 } finally {
-                    String nextLine;
-                    try { nextLine = bufferedReader.readLine(); } catch (IOException e) { nextLine ="exception"; }
-                    if (nextLine == null || "".equals(nextLine)) linePositionList.add(readerEntry.getKey() + "\tdone.");
-                    else linePositionList.add(readerEntry.getKey() + "\t" + nextLine);
+                    String record = "order " + fileMap.getSuffix() + ": " + readerEntry.getKey();
+                    if (endInfo == null || "".equals(endInfo)) {
+                        linePositionList.add(record + "\tdone");
+                        System.out.println(record + "\tdone");
+                    } else {
+                        linePositionList.add(record + "\t" + endInfo);
+                        System.out.println(record + "\t" + endInfo);
+                    }
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
+                    inputFileMap.closeReader(readerEntry.getKey());
                 }
             });
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
         FileMap fileMap = new FileMap(resultPath);
-        fileMap.writeKeyFile("input_file", String.join("\n", linePositionList));
+        fileMap.writeKeyFile("result" + new Date().getTime(), String.join("\n", linePositionList));
         fileMap.closeWriters();
-        inputFileMap.closeReaders();
     }
 }
