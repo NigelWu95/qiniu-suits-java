@@ -94,19 +94,21 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        List<String> resultList = new ArrayList<>();
+        String key = null;
+        String pfopId;
         for (Map<String, String> line : lineList) {
             try {
-                String result = singleWithRetry(line.get("key"), line.get(fopsIndex), retryCount);
-                if (result != null && !"".equals(result)) resultList.add(line.get("key") + "\t" + result);
-                else fileMap.writeError( String.valueOf(line) + "\tempty pfop persistent id");
+                key = line.get("key");
+                pfopId = singleWithRetry(line.get("key"), line.get(fopsIndex), retryCount);
+                if (pfopId != null && !"".equals(pfopId)) fileMap.writeSuccess(key + "\t" + pfopId);
+                else fileMap.writeError( key + "\t" + String.valueOf(line) + "\tempty pfop persistent id");
             } catch (QiniuException e) {
+                String finalKey = key;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(line.get("key") + "\t" + line.get(fopsIndex) + "\t" + String.valueOf(line));
+                    add(finalKey + "\t" + line.get(fopsIndex) + "\t" + String.valueOf(line));
                 }});
             }
         }
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {

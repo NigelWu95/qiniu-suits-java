@@ -141,9 +141,9 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        List<String> resultList = new ArrayList<>();
         String url;
         String key;
+        String fetchResult;
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
                 url = line.get(urlIndex);
@@ -153,10 +153,9 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 key = line.get("key");
             }
             try {
-                String fetchResult = singleWithRetry(url, keyPrefix + key, line.get(md5Index),
-                        line.get("hash"), retryCount);
-                if (fetchResult != null) resultList.add(fetchResult);
-                else fileMap.writeError( String.valueOf(line) + "\tempty fetchResult");
+                fetchResult = singleWithRetry(url, keyPrefix + key, line.get(md5Index), line.get("hash"), retryCount);
+                if (fetchResult != null && !"".equals(fetchResult)) fileMap.writeSuccess(url + "\t" + fetchResult);
+                else fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty fetch result");
             } catch (QiniuException e) {
                 String finalUrl = url;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
@@ -164,7 +163,6 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 }});
             }
         }
-        if (resultList.size() > 0) fileMap.writeSuccess(String.join("\n", resultList));
     }
 
     public void closeResource() {
