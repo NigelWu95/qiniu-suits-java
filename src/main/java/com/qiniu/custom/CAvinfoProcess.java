@@ -101,10 +101,10 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         List<String> m3u8FopList = new ArrayList<>();
 
         for (Map<String, String> line : lineList) {
-            String key = line.get("0");
+            String key = line.get("key");
             try {
-//                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("1"), Avinfo.class);
-                Avinfo avinfo = mediaManager.getAvinfoByJson(line.get("1"));
+//                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("avinfo"), Avinfo.class);
+                Avinfo avinfo = mediaManager.getAvinfoByJson(line.get("avinfo"));
                 double duration = Double.valueOf(avinfo.getFormat().duration);
                 long size = Long.valueOf(avinfo.getFormat().size);
                 String other = "\t" + duration + "\t" + size;
@@ -145,7 +145,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
                     m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy) + other);
                 }
             } catch (Exception e) {
-                fileMap.writeError(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage());
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage());
             }
         }
         if (copyList.size() > 0) fileMap.writeKeyFile("tocopy" + resultIndex, String.join("\n", copyList));
@@ -158,9 +158,9 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         List<String> mp4FopList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             try {
-                String toKey = line.get("0");
+                String toKey = line.get("key");
                 String toSaveAs = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
-                String srcKey = line.get("1");
+                String srcKey = line.get("avinfo");
                 if (toKey.contains("F480")) {
                     mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + toSaveAs);
                 } else if (toKey.contains("F720")) {
@@ -169,7 +169,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
                     mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop1080 + toSaveAs);
                 }
             } catch (Exception e) {
-                fileMap.writeError(line.get("0") + "\t" + line.get("1") + "\t" + e.getMessage());
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage());
             }
         }
         if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultIndex, String.join("\n", mp4FopList));
@@ -181,6 +181,6 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
     }
 
     public void closeResource() {
-        fileMap.closeWriter();
+        fileMap.closeWriters();
     }
 }
