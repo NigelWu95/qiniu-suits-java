@@ -113,8 +113,8 @@ public class ProcessorChoice {
             case "copy": {
                 FileCopyParams fileCopyParams = new FileCopyParams(entryParam);
                 processor = new CopyFile(Auth.create(ak, sk), configuration, fileCopyParams.getBucket(),
-                        fileCopyParams.getTargetBucket(), fileCopyParams.getKeyPrefix(), fileCopyParams.getRmPrefix(),
-                        resultPath);
+                        fileCopyParams.getToBucket(), fileInputParams.getNewKeyIndex(), fileCopyParams.getKeyPrefix(),
+                        fileCopyParams.getRmPrefix(), resultPath);
                 break;
             }
             case "move":
