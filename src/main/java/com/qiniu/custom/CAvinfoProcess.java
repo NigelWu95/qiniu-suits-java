@@ -52,7 +52,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
 
     public CAvinfoProcess clone() throws CloneNotSupportedException {
         CAvinfoProcess avinfoProcess = (CAvinfoProcess)super.clone();
-        avinfoProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(resultIndex++));
+        avinfoProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             avinfoProcess.fileMap.initDefaultWriters();
         } catch (IOException e) {
