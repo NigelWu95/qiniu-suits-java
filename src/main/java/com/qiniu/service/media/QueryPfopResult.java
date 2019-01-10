@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private String persistentIdIndex;
+    final private String processName;
+    final private String persistentIdIndex;
     private MediaManager mediaManager;
-    private String processName;
     private int retryCount;
-    private String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -86,7 +86,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return pfopResult;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String pid;
         String result;
         PfopResult pfopResult;
@@ -107,6 +107,10 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 }});
             }
         }
+    }
+
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {

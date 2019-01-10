@@ -15,10 +15,10 @@ import java.util.Map;
 
 public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private String toBucket;
-    private String newKeyIndex;
-    private String keyPrefix;
-    private String rmPrefix;
+    final private String toBucket;
+    final private String newKeyIndex;
+    final private String keyPrefix;
+    final private String rmPrefix;
 
     public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
                     String keyPrefix, String rmPrefix, String resultPath, int resultIndex) throws IOException {

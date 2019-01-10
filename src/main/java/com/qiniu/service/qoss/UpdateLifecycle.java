@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private int days;
+    final private int days;
 
     public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultPath,
                            int resultIndex) throws IOException {

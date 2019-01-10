@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class ChangeType extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private int type;
+    final private int type;
 
     public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultPath,
                       int resultIndex) throws IOException {

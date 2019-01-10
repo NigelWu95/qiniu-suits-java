@@ -20,16 +20,16 @@ import java.util.stream.Collectors;
 
 public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    protected Auth auth;
-    protected Configuration configuration;
+    final protected Auth auth;
+    final protected Configuration configuration;
     protected BucketManager bucketManager;
-    protected String bucket;
-    protected String processName;
+    final protected String bucket;
+    final protected String processName;
     protected int retryCount;
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
-    protected String resultPath;
+    final protected String resultPath;
     protected String resultTag;
     protected int resultIndex;
     protected FileMap fileMap;
@@ -83,7 +83,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    public void singleRun(List<Map<String, String>> fileInfoList) throws IOException {
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         String key;
         String result = null;
         for (Map<String, String> fileInfo : fileInfoList) {
@@ -113,7 +113,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList) throws IOException {
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
@@ -155,8 +155,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        if (batch) batchRun(fileInfoList);
-        else singleRun(fileInfoList);
+        if (batch) batchRun(fileInfoList, retryCount);
+        else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {
             fileMap.writeError(String.join("\n", errorLineList));
             errorLineList.clear();

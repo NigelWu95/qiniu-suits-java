@@ -16,15 +16,15 @@ import java.util.Map;
 
 public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private String processName;
-    private Auth auth;
-    private Configuration configuration;
+    final private String processName;
+    final private Auth auth;
+    final private Configuration configuration;
     private OperationManager operationManager;
-    private String bucket;
-    private String fopsIndex;
-    private StringMap pfopParams;
+    final private String bucket;
+    final private String fopsIndex;
+    final private StringMap pfopParams;
     public int retryCount;
-    protected String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     public FileMap fileMap;
@@ -93,7 +93,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return persistentId;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String key = null;
         String pfopId;
         for (Map<String, String> line : lineList) {
@@ -109,6 +109,10 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                 }});
             }
         }
+    }
+
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {
