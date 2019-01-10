@@ -136,7 +136,7 @@ public class FileInput implements IDataSource {
                     }
                     nextLine += exception;
                     String record = "order " + fileMap.getSuffix() + ": " + readerEntry.getKey();
-                    if ("".equals(nextLine)) {
+                    if ("".equals(nextLine) || "null".equals(nextLine)) {
                         linePositionList.add(record + "\tsuccessfully done");
                         System.out.println(record + "\tsuccessfully done");
                     } else {
