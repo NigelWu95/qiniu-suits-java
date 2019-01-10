@@ -207,7 +207,7 @@ public class ListBucket implements IDataSource {
                 } finally {
                     String marker = fileLister.getMarker() + exception;
                     String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
-                    if ("".equals(marker)) {
+                    if ("".equals(marker) || "null".equals(marker)) {
                         prefixList.add(record + "\tsuccessfully done");
                         System.out.println(record + "\tsuccessfully done");
                     } else {
