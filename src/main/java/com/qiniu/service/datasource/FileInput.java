@@ -65,13 +65,13 @@ public class FileInput implements IDataSource {
             if (srcList.size() >= unitLen || line == null) {
                 List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
                 List<String> writeList;
-                if (typeConverter.getErrorList().size() > 0) fileMap.writeError(String.join("\n",
-                        typeConverter.getErrorList()));
+                if (typeConverter.getErrorList().size() > 0)
+                    fileMap.writeKeyFile("map_error", String.join("\n", typeConverter.consumeErrorList()));
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
                     if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                     if (writeTypeConverter.getErrorList().size() > 0)
-                        fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
+                        fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()));
                 }
                 int size = infoMapList.size() / unitLen + 1;
                 for (int j = 0; j < size; j++) {
