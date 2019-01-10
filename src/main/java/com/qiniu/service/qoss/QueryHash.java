@@ -100,20 +100,27 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
+        String key;
         String qhash;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
-            url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
+            if (urlIndex != null) {
+                url = line.get(urlIndex);
+                key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+            } else  {
+                url = protocol + "://" + domain + "/" + line.get("key");
+                key = line.get("key");
+            }
             try {
                 qhash = singleWithRetry(url, retryCount);
                 if (qhash != null && !"".equals(qhash))
-                    fileMap.writeSuccess(url + "\t" + jsonParser.parse(qhash).toString());
+                    fileMap.writeSuccess(key + "\t" + jsonParser.parse(qhash).toString());
                 else
-                    fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty qhash");
+                    fileMap.writeError( key + "\t" + String.valueOf(line) + "\tempty qhash");
             } catch (QiniuException e) {
-                String finalUrl = url;
+                String finalKey = key;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalUrl + "\t" + String.valueOf(line));
+                    add(finalKey + "\t" + String.valueOf(line));
                 }});
             }
         }

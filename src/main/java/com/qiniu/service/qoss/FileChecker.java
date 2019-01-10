@@ -9,10 +9,10 @@ import com.qiniu.util.Auth;
 
 public class FileChecker {
 
-    private Client client;
-    private String algorithm;
-    private String protocol;
-    private Auth srcAuth;
+    final private Client client;
+    final private String algorithm;
+    final private String protocol;
+    final private Auth srcAuth;
 
     public FileChecker() {
         this.client = new Client();
