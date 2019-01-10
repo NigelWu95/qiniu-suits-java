@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public class InfoMapToString implements ITypeConvert<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
-    volatile private List<String> errorList = new ArrayList<>();
+    private volatile List<String> errorList = new ArrayList<>();
 
     public InfoMapToString(String format, String separator, List<String> removeFields) {
         List<String> rmFields = removeFields == null ? new ArrayList<>() : removeFields;
@@ -69,18 +69,33 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
 
     public List<String> convertToVList(List<Map<String, String>> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return  srcList.parallelStream()
-                .filter(infoMap -> {
-                    if (infoMap == null || infoMap.size() == 0) {
-                        errorList.add("empty map");
-                        return false;
-                    } else return true;
+        // 使用 parallelStream 时，添加错误行至 errorList 需要同步代码块，stream 时可以直接 errorList.add();
+        return srcList.stream()
+                .map(info -> {
+                    try {
+                        return stringFormatter.toFormatString(info);
+                    } catch (Exception e) {
+                        addError(String.valueOf(info) + "\t" + e.getMessage());
+                        return null;
+                    }
                 })
-                .map(stringFormatter::toFormatString)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    synchronized private void addError(String errorLine) {
+        errorList.add(errorLine);
     }
 
     public List<String> getErrorList() {
         return errorList;
+    }
+
+    public List<String> consumeErrorList() {
+        List<String> errors = new ArrayList<>();
+        Collections.addAll(errors, new String[errorList.size()]);
+        Collections.copy(errors, errorList);
+        errorList.clear();
+        return errors;
     }
 }
