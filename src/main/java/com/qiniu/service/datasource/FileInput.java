@@ -124,7 +124,7 @@ public class FileInput implements IDataSource {
                 try {
                     traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
                 } catch (Exception e) {
-                    throw new RuntimeException(e.getCause());
+                    throw new RuntimeException(e);
                 } finally {
                     String nextLine;
                     try {
