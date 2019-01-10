@@ -13,14 +13,14 @@ import java.util.Map;
 
 public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
+    final private String processName;
     private String domain;
     private String protocol;
-    private String urlIndex;
-    private Auth auth;
+    final private String urlIndex;
+    final private Auth auth;
     private MediaManager mediaManager;
-    private String processName;
     private int retryCount;
-    protected String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -92,7 +92,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return avinfo;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String avinfo;
         JsonParser jsonParser = new JsonParser();
@@ -111,6 +111,10 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 }});
             }
         }
+    }
+
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {
