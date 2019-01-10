@@ -20,16 +20,14 @@ import java.util.stream.Collectors;
 
 public class ListBucket implements IDataSource {
 
-    private Auth auth;
-    private Configuration configuration;
-    private String bucket;
-    private int unitLen;
-    private String cPrefix;
-    private List<String> antiPrefix;
-    private int retryCount;
-    private List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
-            "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
-    private String resultPath;
+    final private Auth auth;
+    final private Configuration configuration;
+    final private String bucket;
+    final private int unitLen;
+    final private String cPrefix;
+    final private List<String> antiPrefix;
+    final private int retryCount;
+    final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
@@ -61,19 +59,20 @@ public class ListBucket implements IDataSource {
                 .map(prefix -> {
                     try {
                         FileLister fileLister = null;
+                        int retry = retryCount;
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
                                     null, "", null, unitLen);
                         } catch (QiniuException e1) {
-                            HttpResponseUtils.checkRetryCount(e1, retryCount);
-                            while (retryCount > 0) {
-                                System.out.println("list prefix:" + prefix + "\tretrying...");
+                            HttpResponseUtils.checkRetryCount(e1, retry);
+                            while (retry > 0) {
+                                System.out.println("list prefix:" + prefix + "\tlast " + retry + " times retrying...");
                                 try {
                                     fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
                                             null, "", null, unitLen);
-                                    retryCount = 0;
+                                    retry = 0;
                                 } catch (QiniuException e2) {
-                                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+                                    retry = HttpResponseUtils.getNextRetryCount(e2, retry);
                                 }
                             }
                         }
@@ -97,6 +96,8 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> getFileListerList(int threads) {
+        List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
+                "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
         if (threads <= 1) return prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen);
         List<String> validPrefixList = originPrefixList.parallelStream().filter(originPrefix ->
                 !antiPrefix.contains(originPrefix)).map(prefix -> cPrefix + prefix).collect(Collectors.toList());
