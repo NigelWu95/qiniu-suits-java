@@ -17,13 +17,13 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private String protocol;
-    private String urlIndex;
-    private Auth auth;
-    private String algorithm;
+    final private String urlIndex;
+    final private Auth auth;
+    final private String algorithm;
     private FileChecker fileChecker;
-    private String processName;
+    final private String processName;
     private int retryCount;
-    protected String resultPath;
+    final protected String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -98,7 +98,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String qhash;
         JsonParser jsonParser = new JsonParser();
@@ -117,6 +117,10 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 }});
             }
         }
+    }
+
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {
