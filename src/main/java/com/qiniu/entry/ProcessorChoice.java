@@ -132,9 +132,8 @@ public class ProcessorChoice {
             }
             case "asyncfetch": {
                 AsyncFetchParams asyncFetchParams = new AsyncFetchParams(entryParam);
-                Auth auth = (asyncFetchParams.getNeedSign()) ? Auth.create(ak, sk) : null;
                 processor = new AsyncFetch(Auth.create(ak, sk), configuration, asyncFetchParams.getTargetBucket(),
-                        asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), auth,
+                        asyncFetchParams.getDomain(), asyncFetchParams.getProtocol(), asyncFetchParams.getNeedSign(),
                         asyncFetchParams.getKeyPrefix(), fileInputParams.getUrlIndex(), resultPath);
                 if (asyncFetchParams.hasCustomArgs())
                     ((AsyncFetch) processor).setFetchArgs(fileInputParams.getMd5Index(), asyncFetchParams.getHost(),
