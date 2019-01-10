@@ -32,7 +32,7 @@ public class CFopEntry {
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
         IDataSource dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
         ILineProcess<Map<String, String>> processor;
-        processor = new ProcessorChoice(entryParam).getFileProcessor();
+//        processor = new ProcessorChoice(entryParam).getFileProcessor();
         // parse avinfo from files.
         indexMap.put("2", "avinfo");
         processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
