@@ -17,11 +17,11 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
 
     private String domain;
     private String protocol;
-    private String urlIndex;
-    private Auth auth;
-    private long expires;
-    private String processName;
-    protected String resultPath;
+    final private String urlIndex;
+    final private Auth auth;
+    final private long expires;
+    final private String processName;
+    final protected String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
