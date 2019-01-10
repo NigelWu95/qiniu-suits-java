@@ -1,6 +1,9 @@
 package com.qiniu.service.media;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.qiniu.model.media.PfopResult;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -85,16 +88,18 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         String pid;
-        String pfopResult;
-        JsonParser jsonParser = new JsonParser();
+        String result;
+        PfopResult pfopResult;
+        Gson gson = new Gson();
         for (Map<String, String> line : lineList) {
             pid = line.get(persistentIdIndex);
             try {
-                pfopResult = singleWithRetry(pid, retryCount);
-                if (pfopResult != null && !"".equals(pfopResult))
-                    fileMap.writeSuccess(pid + "\t" + jsonParser.parse(pfopResult).toString());
-                else
-                    fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
+                result = singleWithRetry(pid, retryCount);
+                if (result != null && !"".equals(result)) {
+                    pfopResult = gson.fromJson(result, PfopResult.class);
+                    fileMap.writeKeyFile(processName + "_code-" + pfopResult.code, pid + "\t" +
+                            pfopResult.items.get(0).key + "\t" + result);
+                } else fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
                 String finalPid = pid;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
