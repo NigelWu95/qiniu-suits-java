@@ -99,7 +99,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         for (Map<String, String> line : lineList) {
             key = line.get("key");
             try {
-                pfopId = singleWithRetry(line.get("key"), line.get(fopsIndex), retryCount);
+                pfopId = singleWithRetry(key, line.get(fopsIndex), retryCount);
                 if (pfopId != null && !"".equals(pfopId)) fileMap.writeSuccess(key + "\t" + pfopId);
                 else fileMap.writeError( key + "\t" + String.valueOf(line) + "\tempty pfop persistent id");
             } catch (QiniuException e) {
