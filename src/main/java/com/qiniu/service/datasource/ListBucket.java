@@ -198,16 +198,18 @@ public class ListBucket implements IDataSource {
             executorPool.execute(() -> {
                 FileLister fileLister = fileListerList.get(finalI);
                 FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(finalI + 1));
+                String exception = "";
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
                 } catch (Exception e) {
+                    exception = "\t" + e.getMessage();
                     throw new RuntimeException(e);
                 } finally {
-                    String marker = fileLister.getMarker();
+                    String marker = fileLister.getMarker() + exception;
                     String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
-                    if (marker == null || "".equals(marker)) {
-                        prefixList.add(record + "\tdone");
-                        System.out.println(record + "\tdone");
+                    if ("".equals(marker)) {
+                        prefixList.add(record + "\tsuccessfully done");
+                        System.out.println(record + "\tsuccessfully done");
                     } else {
                         prefixList.add(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                         System.out.println(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
