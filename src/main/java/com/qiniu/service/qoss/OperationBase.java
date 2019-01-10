@@ -20,16 +20,16 @@ import java.util.stream.Collectors;
 
 public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    protected Auth auth;
-    protected Configuration configuration;
+    final protected Auth auth;
+    final protected Configuration configuration;
     protected BucketManager bucketManager;
-    protected String bucket;
-    protected String processName;
+    final protected String bucket;
+    final protected String processName;
     protected int retryCount;
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
-    protected String resultPath;
+    final protected String resultPath;
     protected String resultTag;
     protected int resultIndex;
     protected FileMap fileMap;
@@ -89,16 +89,17 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         for (Map<String, String> fileInfo : fileInfoList) {
             key = fileInfo.get("key");
             try {
+                int retry = retryCount;
                 try {
                     result = processLine(fileInfo);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, retryCount);
-                    while (retryCount > 0) {
+                    HttpResponseUtils.checkRetryCount(e, retry);
+                    while (retry > 0) {
                         try {
                             result = processLine(fileInfo);
-                            retryCount = 0;
+                            retry = 0;
                         } catch (QiniuException e1) {
-                            retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                            retry = HttpResponseUtils.getNextRetryCount(e1, retry);
                         }
                     }
                 }
@@ -123,16 +124,17 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
                 try {
+                    int retry = retryCount;
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, retryCount);
-                        while (retryCount > 0) {
+                        HttpResponseUtils.checkRetryCount(e, retry);
+                        while (retry > 0) {
                             try {
                                 response = bucketManager.batch(batchOperations);
-                                retryCount = 0;
+                                retry = 0;
                             } catch (QiniuException e1) {
-                                retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                                retry = HttpResponseUtils.getNextRetryCount(e1, retry);
                             }
                         }
                     }

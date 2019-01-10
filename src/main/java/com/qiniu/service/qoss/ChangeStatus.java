@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class ChangeStatus extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private int status;
+    final private int status;
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultPath,
                         int resultIndex) throws IOException {

@@ -17,18 +17,18 @@ import java.util.Map;
 
 public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private Auth auth;
-    private Configuration configuration;
+    final private Auth auth;
+    final private Configuration configuration;
     private BucketManager bucketManager;
-    private String bucket;
-    private String processName;
+    final private String bucket;
+    final private String processName;
     private int retryCount;
     private String domain;
     private String protocol;
-    private String urlIndex;
+    final private String urlIndex;
     private String md5Index;
-    private Auth srcAuth;
-    private String keyPrefix;
+    final private Auth srcAuth;
+    final private String keyPrefix;
 //    private M3U8Manager m3u8Manager;
     private boolean hasCustomArgs;
     private String host;
@@ -38,7 +38,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
-    private String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
