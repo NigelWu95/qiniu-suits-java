@@ -23,7 +23,7 @@ public class FileInput implements IDataSource {
     final private String separator;
     final private Map<String, String> infoIndexMap;
     final private int unitLen;
-    private String resultPath;
+    final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;

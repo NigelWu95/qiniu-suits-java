@@ -27,9 +27,7 @@ public class ListBucket implements IDataSource {
     final private String cPrefix;
     final private List<String> antiPrefix;
     final private int retryCount;
-    private List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
-            "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
-    private String resultPath;
+    final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
@@ -98,6 +96,8 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> getFileListerList(int threads) {
+        List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
+                "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
         if (threads <= 1) return prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen);
         List<String> validPrefixList = originPrefixList.parallelStream().filter(originPrefix ->
                 !antiPrefix.contains(originPrefix)).map(prefix -> cPrefix + prefix).collect(Collectors.toList());
