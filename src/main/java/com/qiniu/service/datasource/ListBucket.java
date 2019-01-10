@@ -169,11 +169,11 @@ public class ListBucket implements IDataSource {
                 writeList = writeTypeConverter.convertToVList(fileInfoList);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
                 if (writeTypeConverter.getErrorList().size() > 0)
-                    fileMap.writeError(String.join("\n", writeTypeConverter.getErrorList()));
+                    fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()));
             }
             if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeKeyFile("to_map", String.join("\n", typeConverter.getErrorList()));
+                fileMap.writeKeyFile("map_error", String.join("\n", typeConverter.consumeErrorList()));
         }
     }
 
