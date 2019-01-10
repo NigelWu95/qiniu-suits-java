@@ -10,9 +10,9 @@ import com.qiniu.util.JsonConvertUtils;
 
 public class MediaManager {
 
-    private Client client;
-    private String protocol;
-    private Auth srcAuth;
+    final private Client client;
+    final private String protocol;
+    final private Auth srcAuth;
 
     public MediaManager() {
         this.client = new Client();

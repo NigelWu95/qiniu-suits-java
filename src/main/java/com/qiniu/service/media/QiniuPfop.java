@@ -94,11 +94,11 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
-        String key = null;
+        String key;
         String pfopId;
         for (Map<String, String> line : lineList) {
+            key = line.get("key");
             try {
-                key = line.get("key");
                 pfopId = singleWithRetry(line.get("key"), line.get(fopsIndex), retryCount);
                 if (pfopId != null && !"".equals(pfopId)) fileMap.writeSuccess(key + "\t" + pfopId);
                 else fileMap.writeError( key + "\t" + String.valueOf(line) + "\tempty pfop persistent id");
