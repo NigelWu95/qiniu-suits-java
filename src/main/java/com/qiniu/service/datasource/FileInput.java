@@ -121,9 +121,11 @@ public class FileInput implements IDataSource {
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
                 FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+                String exception = "";
                 try {
                     traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
                 } catch (Exception e) {
+                    exception = "\t" + e.getMessage();
                     throw new RuntimeException(e);
                 } finally {
                     String nextLine;
@@ -132,10 +134,11 @@ public class FileInput implements IDataSource {
                     } catch (IOException e) {
                         nextLine = e.getMessage();
                     }
+                    nextLine += exception;
                     String record = "order " + fileMap.getSuffix() + ": " + readerEntry.getKey();
-                    if (nextLine == null || "".equals(nextLine)) {
-                        linePositionList.add(record + "\tdone");
-                        System.out.println(record + "\tdone");
+                    if ("".equals(nextLine)) {
+                        linePositionList.add(record + "\tsuccessfully done");
+                        System.out.println(record + "\tsuccessfully done");
                     } else {
                         linePositionList.add(record + "\t" + nextLine);
                         System.out.println(record + "\t" + nextLine);
