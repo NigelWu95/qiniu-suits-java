@@ -34,8 +34,8 @@ public class CFopEntry {
         ILineProcess<Map<String, String>> processor;
         processor = new ProcessorChoice(entryParam).getFileProcessor();
         // parse avinfo from files.
-//        indexMap.put("1", "avinfo");
-//        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
+        indexMap.put("2", "avinfo");
+        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
         // filter pfop result
 //        processor = new PfopResultProcess(resultFileDir);
         if (saveTotal) dataSource.setResultSaveOptions(resultFormat, resultSeparator, removeFields);
