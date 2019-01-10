@@ -27,7 +27,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private String protocol;
     final private String urlIndex;
     private String md5Index;
-    final private Auth srcAuth;
+    final private boolean srcPrivate;
     final private String keyPrefix;
 //    private M3U8Manager m3u8Manager;
     private boolean hasCustomArgs;
@@ -44,7 +44,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private FileMap fileMap;
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      Auth srcAuth, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
+                      boolean srcPrivate, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
             throws IOException {
         this.auth = auth;
         this.configuration = configuration;
@@ -61,7 +61,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else this.urlIndex = urlIndex;
-        this.srcAuth = srcAuth;
+        this.srcPrivate = srcPrivate;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
 //        this.m3u8Manager = new M3U8Manager();
         this.resultPath = resultPath;
@@ -72,8 +72,8 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      Auth srcAuth, String keyPrefix, String urlIndex, String resultPath) throws IOException {
-        this(auth, configuration, bucket, domain, protocol, srcAuth, keyPrefix, urlIndex, resultPath, 0);
+                      boolean srcPrivate, String keyPrefix, String urlIndex, String resultPath) throws IOException {
+        this(auth, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, resultPath, 0);
     }
 
     public void setFetchArgs(String md5Index, String host, String callbackUrl, String callbackBody, String callbackBodyType,
@@ -114,7 +114,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
+        if (srcPrivate) url = auth.privateDownloadUrl(url);
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
                         callbackHost, String.valueOf(fileType)) :

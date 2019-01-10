@@ -83,23 +83,22 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    public void singleRun(List<Map<String, String>> fileInfoList) throws IOException {
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         String key;
         String result = null;
         for (Map<String, String> fileInfo : fileInfoList) {
             key = fileInfo.get("key");
             try {
-                int retry = retryCount;
                 try {
                     result = processLine(fileInfo);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, retry);
-                    while (retry > 0) {
+                    HttpResponseUtils.checkRetryCount(e, retryCount);
+                    while (retryCount > 0) {
                         try {
                             result = processLine(fileInfo);
-                            retry = 0;
+                            retryCount = 0;
                         } catch (QiniuException e1) {
-                            retry = HttpResponseUtils.getNextRetryCount(e1, retry);
+                            retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                         }
                     }
                 }
@@ -114,7 +113,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList) throws IOException {
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
@@ -124,17 +123,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
                 try {
-                    int retry = retryCount;
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, retry);
-                        while (retry > 0) {
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
+                        while (retryCount > 0) {
                             try {
                                 response = bucketManager.batch(batchOperations);
-                                retry = 0;
+                                retryCount = 0;
                             } catch (QiniuException e1) {
-                                retry = HttpResponseUtils.getNextRetryCount(e1, retry);
+                                retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                             }
                         }
                     }
@@ -157,8 +155,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        if (batch) batchRun(fileInfoList);
-        else singleRun(fileInfoList);
+        if (batch) batchRun(fileInfoList, retryCount);
+        else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {
             fileMap.writeError(String.join("\n", errorLineList));
             errorLineList.clear();
