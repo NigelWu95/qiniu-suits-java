@@ -200,7 +200,7 @@ public class ListBucket implements IDataSource {
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
                 } catch (Exception e) {
-                    throw new RuntimeException(e.getCause());
+                    throw new RuntimeException(e);
                 } finally {
                     String marker = fileLister.getMarker();
                     String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
