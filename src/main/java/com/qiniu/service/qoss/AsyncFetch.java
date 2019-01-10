@@ -154,12 +154,14 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             }
             try {
                 fetchResult = singleWithRetry(url, keyPrefix + key, line.get(md5Index), line.get("hash"), retryCount);
-                if (fetchResult != null && !"".equals(fetchResult)) fileMap.writeSuccess(url + "\t" + fetchResult);
-                else fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty fetch result");
+                if (fetchResult != null && !"".equals(fetchResult))
+                    fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult);
+                else
+                    fileMap.writeError( key + "\t" + url + "\t" + String.valueOf(line) + "\tempty fetch result");
             } catch (QiniuException e) {
-                String finalUrl = url;
+                String finalKey = key + "\t" + url;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalUrl + "\t" + String.valueOf(line));
+                    add(finalKey + "\t" + String.valueOf(line));
                 }});
             }
         }
