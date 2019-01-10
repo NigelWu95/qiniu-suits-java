@@ -18,8 +18,9 @@ public class SplitLineParser implements ILineParser {
     public Map<String, String> getItemMap(String line) throws IOException {
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
+        String mapKey;
         for (int i = 0; i < items.length; i++) {
-            String mapKey = infoIndexMap.get(String.valueOf(i));
+            mapKey = infoIndexMap.get(String.valueOf(i));
             if (mapKey != null) itemMap.put(mapKey, items[i]);
         }
         if (itemMap.size() < infoIndexMap.size()) throw new IOException("no enough indexes in line.");

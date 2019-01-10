@@ -90,18 +90,15 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         String pid;
         String result;
         PfopResult pfopResult;
-        JsonElement jsonElement;
-        JsonParser jsonParser = new JsonParser();
         Gson gson = new Gson();
         for (Map<String, String> line : lineList) {
             pid = line.get(persistentIdIndex);
             try {
                 result = singleWithRetry(pid, retryCount);
                 if (result != null && !"".equals(result)) {
-                    jsonElement = jsonParser.parse(result);
-                    pfopResult = gson.fromJson(jsonElement, PfopResult.class);
+                    pfopResult = gson.fromJson(result, PfopResult.class);
                     fileMap.writeKeyFile(processName + "_code-" + pfopResult.code, pid + "\t" +
-                            pfopResult.items.get(0).key + "\t" + jsonElement.getAsString());
+                            pfopResult.items.get(0).key + "\t" + result);
                 } else fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {
                 String finalPid = pid;
