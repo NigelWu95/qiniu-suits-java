@@ -18,11 +18,11 @@ import java.util.concurrent.ThreadFactory;
 
 public class FileInput implements IDataSource {
 
-    private String filePath;
-    private String parseType;
-    private String separator;
-    private Map<String, String> infoIndexMap;
-    private int unitLen;
+    final private String filePath;
+    final private String parseType;
+    final private String separator;
+    final private Map<String, String> infoIndexMap;
+    final private int unitLen;
     private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
