@@ -30,7 +30,7 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
 
     public String processLine(Map<String, String> line) throws QiniuException {
         Response response = bucketManager.changeStatus(bucket, line.get("key"), status);
-        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
+        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

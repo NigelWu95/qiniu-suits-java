@@ -67,7 +67,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
             response = bucketManager.rename(bucket, line.get("key"), formatKey(line.get(newKeyIndex)), false);
         else
             response = bucketManager.move(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)), false);
-        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
+        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

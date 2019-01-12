@@ -87,31 +87,26 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected abstract String getInputParams(Map<String, String> line);
 
     public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
-        String key;
         String result = null;
-        for (Map<String, String> fileInfo : fileInfoList) {
-            key = fileInfo.get("key");
+        for (Map<String, String> line : fileInfoList) {
             try {
                 try {
-                    result = processLine(fileInfo);
+                    result = processLine(line);
                 } catch (QiniuException e) {
                     HttpResponseUtils.checkRetryCount(e, retryCount);
                     while (retryCount > 0) {
                         try {
-                            result = processLine(fileInfo);
+                            result = processLine(line);
                             retryCount = 0;
                         } catch (QiniuException e1) {
                             retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                         }
                     }
                 }
-                if (result != null && !"".equals(result)) fileMap.writeSuccess(key + "\t" + result);
-                else fileMap.writeError(key + "\t" +  String.valueOf(fileInfo) + "\tempty result");
+                if (result != null && !"".equals(result)) fileMap.writeSuccess(getInputParams(line) + "\t" + result);
+                else fileMap.writeError(getInputParams(line) + "\tempty result");
             } catch (QiniuException e) {
-                String finalKey = key;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + String.valueOf(fileInfo));
-                }});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(getInputParams(line));}});
             }
         }
     }
