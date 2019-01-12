@@ -121,6 +121,7 @@ public class MediaManager {
         String url = "http://api.qiniu.com/status/get/prefop?id=" + persistentId;
         Response response = client.get(url);
         String pfopResult = response.bodyString();
+        if (response.statusCode != 200) throw new QiniuException(response);
         response.close();
         return pfopResult;
     }

@@ -76,6 +76,7 @@ public class FileChecker {
         url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?qhash/" + algorithm) : url + "?qhash/" + algorithm;
         Response response = client.get(url);
         String qhash = response.bodyString();
+        if (response.statusCode != 200) throw new QiniuException(response);
         response.close();
         return qhash;
     }
