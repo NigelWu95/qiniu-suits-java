@@ -40,7 +40,6 @@ public class ProcessorChoice {
     }
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
-
         FileFilterParams fileFilterParams = new FileFilterParams(entryParam);
         FileFilter fileFilter = new FileFilter();
         fileFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
@@ -69,28 +68,9 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
         ILineProcess<Map<String, String>> processor = null;
-        String ak = "";
-        String sk = "";
-        try {
-            QossParams qossParams = new QossParams(entryParam);
-            ak = qossParams.getAccessKey();
-            sk = qossParams.getSecretKey();
-        } catch (Exception e) {
-            List<String> needAkSkProcesses = new ArrayList<String>(){{
-                add("status");
-                add("type");
-                add("lifecycle");
-                add("copy");
-                add("move");
-                add("rename");
-                add("delete");
-                add("asyncfetch");
-                add("pfop");
-                add("stat");
-                add("privateurl");
-            }};
-            if (needAkSkProcesses.contains(process)) throw e;
-        }
+        QossParams qossParams = new QossParams(entryParam);
+        String ak = qossParams.getAccessKey();
+        String sk = qossParams.getSecretKey();
         switch (process) {
             case "status": {
                 FileStatusParams fileStatusParams = new FileStatusParams(entryParam);
@@ -126,7 +106,6 @@ public class ProcessorChoice {
                 break;
             }
             case "delete": {
-                QossParams qossParams = new QossParams(entryParam);
                 processor = new DeleteFile(Auth.create(ak, sk), configuration, qossParams.getBucket(), resultPath);
                 break;
             }
@@ -177,7 +156,6 @@ public class ProcessorChoice {
                 break;
             }
             case "stat": {
-                QossParams qossParams = new QossParams(entryParam);
                 processor = new FileStat(Auth.create(ak, sk), configuration, qossParams.getBucket(),
                         qossParams.getResultPath());
                 break;

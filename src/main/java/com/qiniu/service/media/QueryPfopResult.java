@@ -97,7 +97,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 result = singleWithRetry(pid, retryCount);
                 if (result != null && !"".equals(result)) {
                     pfopResult = gson.fromJson(result, PfopResult.class);
-                    fileMap.writeKeyFile(processName + "_code-" + pfopResult.code, pid + "\t" +
+                    fileMap.writeKeyFile("code-" + pfopResult.code, pid + "\t" +
                             pfopResult.items.get(0).key + "\t" + result);
                 } else fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
             } catch (QiniuException e) {

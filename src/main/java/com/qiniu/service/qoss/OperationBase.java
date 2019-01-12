@@ -118,6 +118,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         List<Map<String, String>> processList;
         Response response = null;
         String result;
+        JsonArray jsonArray;
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
@@ -138,12 +139,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                     batchOperations.clearOps();
                     result = HttpResponseUtils.getResult(response);
-                    JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
+                    jsonArray = new Gson().fromJson(result, JsonArray.class);
                     for (int j = 0; j < processList.size(); j++) {
-                        if (j < jsonArray.size())
-                            fileMap.writeSuccess(processList.get(j).get("key") + "\t" + jsonArray.get(j));
-                        else
+                        if (j < jsonArray.size()) {
+                            if ("{\"code\":200}".equals(jsonArray.get(j).toString()))
+                                fileMap.writeSuccess(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                            else
+                                fileMap.writeError(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                        } else {
                             fileMap.writeError(processList.get(j).get("key") + "\tempty result");
+                        }
                     }
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processList.stream()

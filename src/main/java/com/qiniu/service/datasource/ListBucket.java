@@ -215,7 +215,7 @@ public class ListBucket implements IDataSource {
                         System.out.println(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                     }
                     fileMap.closeWriters();
-                    if (processor != null) processor.closeResource();
+                    if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
                     fileLister = null;
                 }
