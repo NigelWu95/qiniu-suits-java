@@ -83,6 +83,7 @@ public class MediaManager {
     public String getAvinfoBody(String url) throws QiniuException {
         url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?avinfo") : url + "?avinfo";
         Response response = client.get(url);
+        if (response.statusCode != 200) throw new QiniuException(response);
         String avinfo = response.bodyString();
         response.close();
         return avinfo;

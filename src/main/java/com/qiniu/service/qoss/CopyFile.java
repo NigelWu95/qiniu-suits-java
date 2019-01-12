@@ -47,7 +47,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         }
         Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)),
                 false);
-        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
+        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

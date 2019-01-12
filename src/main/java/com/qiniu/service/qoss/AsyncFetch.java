@@ -137,7 +137,8 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             }
         }
         assert response != null;
-        return response.statusCode + "\t" + response.reqId + "\t" + HttpResponseUtils.getResult(response);
+        return response.reqId + "\t{\"code\":" + response.statusCode + ",\"message\":\"" +
+                HttpResponseUtils.getResult(response) + "\"}";
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
