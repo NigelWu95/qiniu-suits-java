@@ -98,23 +98,21 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 result = singleWithRetry(pid, retryCount);
                 if (result != null && !"".equals(result)) {
                     pfopResult = gson.fromJson(result, PfopResult.class);
-                    // code == 3 时表示转码失败，记录下转码参数和错误方便进行重试
-                    if (pfopResult.code == 3) {
-                        // 可能有多条转码指令
-                        for (Item item : pfopResult.items) {
-                            fileMap.writeKeyFile( "failed", pfopResult.inputKey + "\t" +
-                                    item.key + "\t" + item.cmd + "\t" + item.error);
+                    // 可能有多条转码指令
+                    for (Item item : pfopResult.items) {
+                        // code == 3 时表示转码失败，记录下转码参数和错误方便进行重试
+                        if (pfopResult.code == 3) {
+                            fileMap.writeKeyFile( "failed", pfopResult.inputKey + "\t" + item.cmd + "\t" +
+                                    item.key + "\t" + pid + "\t" + item.error);
+                        } else {
+                            fileMap.writeKeyFile("code-" + pfopResult.code, pfopResult.inputKey + "\t" +
+                                    item.key + "\t" + pid + "\t" + result);
                         }
-                    } else {
-                        fileMap.writeKeyFile("code-" + pfopResult.code, pid + "\t" +
-                                pfopResult.items.get(0).key + "\t" + result);
                     }
-                } else fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
+                } else fileMap.writeError( pid + "\tempty pfop result");
             } catch (QiniuException e) {
                 String finalPid = pid;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalPid + "\t" + String.valueOf(line));
-                }});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalPid);}});
             }
         }
     }
