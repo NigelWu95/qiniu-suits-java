@@ -28,12 +28,12 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
         this(auth, configuration, bucket, days, resultPath, 0);
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    public String processLine(Map<String, String> line) throws QiniuException {
         Response response = bucketManager.deleteAfterDays(bucket, line.get("key"), days);
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
             if (StringUtils.isNullOrEmpty(line.get("key")))
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
@@ -41,5 +41,9 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
                 batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key"));
         });
         return batchOperations;
+    }
+
+    public String getInputParams(Map<String, String> line) {
+        return line.get("key");
     }
 }

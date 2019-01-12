@@ -23,7 +23,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private FileChecker fileChecker;
     final private String processName;
     private int retryCount;
-    final protected String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
