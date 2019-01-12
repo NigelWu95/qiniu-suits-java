@@ -88,12 +88,10 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                 if (signedUrl != null && !"".equals(signedUrl))
                     fileMap.writeSuccess(key + "\t" + url + "\t" + signedUrl);
                 else
-                    fileMap.writeError( key + "\t" + url + "\t" + String.valueOf(line) + "\tempty signed url");
+                    fileMap.writeError( key + "\t" + url + "\tempty signed url");
             } catch (QiniuException e) {
                 String finalKey = key + "\t" + url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + String.valueOf(line));
-                }});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
             }
         }
     }

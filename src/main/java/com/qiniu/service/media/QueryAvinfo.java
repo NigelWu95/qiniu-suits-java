@@ -110,12 +110,10 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 if (avinfo != null && !"".equals(avinfo))
                     fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(avinfo).toString());
                 else
-                    fileMap.writeError( key + "\t" + url + "\t" + String.valueOf(line) + "\tempty avinfo");
+                    fileMap.writeError( key + "\t" + url + "\tempty avinfo");
             } catch (QiniuException e) {
                 String finalKey = key + "\t" + url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + String.valueOf(line));
-                }});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
             }
         }
     }
