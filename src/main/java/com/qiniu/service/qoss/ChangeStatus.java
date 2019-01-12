@@ -28,12 +28,12 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         this(auth, configuration, bucket, status, resultPath, 0);
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    public String processLine(Map<String, String> line) throws QiniuException {
         Response response = bucketManager.changeStatus(bucket, line.get("key"), status);
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
             if (StringUtils.isNullOrEmpty(line.get("key")))
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
@@ -41,5 +41,9 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
                 batchOperations.addChangeStatusOps(bucket, status, line.get("key"));
         });
         return batchOperations;
+    }
+
+    public String getInputParams(Map<String, String> line) {
+        return line.get("key");
     }
 }

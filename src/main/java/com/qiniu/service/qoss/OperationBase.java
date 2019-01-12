@@ -83,6 +83,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
+    // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
+    protected abstract String getInputParams(Map<String, String> line);
+
     public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         String key;
         String result = null;
@@ -143,16 +146,15 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     for (int j = 0; j < processList.size(); j++) {
                         if (j < jsonArray.size()) {
                             if ("{\"code\":200}".equals(jsonArray.get(j).toString()))
-                                fileMap.writeSuccess(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                                fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonArray.get(j));
                             else
-                                fileMap.writeError(processList.get(j).get("key") + "\t" + jsonArray.get(j));
+                                fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonArray.get(j));
                         } else {
-                            fileMap.writeError(processList.get(j).get("key") + "\tempty result");
+                            fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
                         }
                     }
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processList.stream()
-                            .map(line -> line.get("key") + "\t" + String.valueOf(line))
+                    HttpResponseUtils.processException(e, fileMap, processList.stream().map(this::getInputParams)
                             .collect(Collectors.toList()));
                 }
             }

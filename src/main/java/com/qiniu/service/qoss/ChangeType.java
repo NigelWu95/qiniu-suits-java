@@ -29,13 +29,13 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
         this(auth, configuration, bucket, type, resultPath, 0);
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    public String processLine(Map<String, String> line) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         Response response = bucketManager.changeType(bucket, line.get("key"), storageType);
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
             if (StringUtils.isNullOrEmpty(line.get("key")))
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
@@ -44,5 +44,9 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
                         line.get("key"));
         });
         return batchOperations;
+    }
+
+    public String getInputParams(Map<String, String> line) {
+        return line.get("key");
     }
 }

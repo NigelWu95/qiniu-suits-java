@@ -57,7 +57,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 + key.substring(rmPrefix.length());
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    public String processLine(Map<String, String> line) throws QiniuException {
         if (StringUtils.isNullOrEmpty(line.get(newKeyIndex))) {
             errorLineList.add(String.valueOf(line) + "\tno target " + newKeyIndex + " in the line map.");
             throw new QiniuException(null, "\tno target " + newKeyIndex + " in the line map.");
@@ -70,7 +70,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
             if (StringUtils.isNullOrEmpty(line.get("key")) || StringUtils.isNullOrEmpty(line.get(newKeyIndex)))
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
@@ -82,5 +82,9 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
             }
         });
         return batchOperations;
+    }
+
+    public String getInputParams(Map<String, String> line) {
+        return line.get("key") + "\t" + line.get(newKeyIndex);
     }
 }
