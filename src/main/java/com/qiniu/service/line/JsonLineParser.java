@@ -23,7 +23,7 @@ public class JsonLineParser implements ILineParser {
         for (String key : parsed.keySet()) {
             mapKey = infoIndexMap.get(key);
             if (mapKey != null) {
-                if (!(parsed.get(key) instanceof JsonNull)) itemMap.put(mapKey, parsed.get(key).toString());
+                if (!(parsed.get(key) instanceof JsonNull)) itemMap.put(mapKey, parsed.get(key).getAsString());
             }
         }
         if (itemMap.size() < infoIndexMap.size()) throw new IOException("no enough indexes in line.");

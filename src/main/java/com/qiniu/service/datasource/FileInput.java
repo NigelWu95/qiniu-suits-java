@@ -119,8 +119,8 @@ public class FileInput implements IDataSource {
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             if (processor != null) processor.setResultTag(readerEntry.getKey());
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            executorPool.execute(() -> {
-                FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+            FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+            Thread thread = new Thread(() -> {
                 String exception = "";
                 try {
                     traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
@@ -148,6 +148,8 @@ public class FileInput implements IDataSource {
                     inputFileMap.closeReader(readerEntry.getKey());
                 }
             });
+            thread.setName(readerEntry.getKey());
+            executorPool.execute(thread);
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
