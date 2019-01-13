@@ -30,32 +30,21 @@ public class HttpResponseUtils {
     }
 
     public static void processException(QiniuException e, FileMap fileMap, List<String> infoList) throws IOException {
-        // 取 error 信息从 exception 的 message 中取，避免 e.error() 抛出非预期异常
+        // 取 error 信息从 exception 的 message 中取，避免 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
+            if (fileMap != null) {
+                if (infoList == null || infoList.size() == 0)
+                    fileMap.writeKeyFile("exception", e.getMessage().replaceAll("\\s", "\t"));
+                else
+                    fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
+                            .map(line -> line + "\t" + e.getMessage().replaceAll("\\s", "\t"))
+                            .collect(Collectors.toList())));
+            }
             if (e.response != null) {
-                if (fileMap != null) {
-                    if (infoList == null || infoList.size() == 0)
-                        fileMap.writeKeyFile("exception", e.response.reqId + "\t" +
-                                e.getMessage().replaceAll("\\s", "\t"));
-                    else
-                        fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> line + "\t" + e.response.reqId + "\t" +
-                                        e.getMessage().replaceAll("\\s", "\t"))
-                                .collect(Collectors.toList())));
-                }
                 if (e.response.needSwitchServer() || e.response.statusCode >= 630) {
                     throw e;
                 } else {
                     e.response.close();
-                }
-            } else {
-                if (fileMap != null) {
-                    if (infoList == null || infoList.size() == 0)
-                        fileMap.writeKeyFile("exception", e.getMessage().replaceAll("\\s", "\t"));
-                    else
-                        fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> line + "\t" + e.getMessage().replaceAll("\\s", "\t"))
-                                .collect(Collectors.toList())));
                 }
             }
         }
