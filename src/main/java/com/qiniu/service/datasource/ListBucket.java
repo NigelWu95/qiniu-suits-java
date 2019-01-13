@@ -85,13 +85,7 @@ public class ListBucket implements IDataSource {
                 })
 //                .filter(Objects::nonNull)
 //                .filter(FileLister::hasNext)
-                .filter(fileLister -> {
-                    if (fileLister != null && fileLister.hasNext()) return true;
-                    else {
-                        fileLister = null;
-                        return false;
-                    }
-                })
+                .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
     }
 
@@ -217,7 +211,6 @@ public class ListBucket implements IDataSource {
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
-                    fileLister = null;
                 }
             });
         }
