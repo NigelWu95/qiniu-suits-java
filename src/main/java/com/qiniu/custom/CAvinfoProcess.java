@@ -92,7 +92,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
 
     private String generateFopLine(String key, String toKey, String fop) {
         String saveAsEntry = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
-        return toKey + "\t" + key + "\t" + fop + saveAsEntry;
+        return key + "\t" + fop + saveAsEntry + "\t" + toKey;
     }
 
     public void processLine1(List<Map<String, String>> lineList) throws IOException {
@@ -172,11 +172,11 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
                     throw new IOException("target value is empty.");
                 toSaveAs = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
                 if (toKey.contains("F480")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop720 + toSaveAs);
+                    mp4FopList.add(srcKey + "\t" + mp4Fop720 + toSaveAs + "\t" + toKey);
                 } else if (toKey.contains("F720")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop480 + toSaveAs);
+                    mp4FopList.add(srcKey + "\t" + mp4Fop480 + toSaveAs + "\t" + toKey);
                 } else if (toKey.contains("F1080")) {
-                    mp4FopList.add(toKey + "\t" + srcKey + "\t" + mp4Fop1080 + toSaveAs);
+                    mp4FopList.add(srcKey + "\t" + mp4Fop1080 + toSaveAs + "\t" + toKey);
                 }
             } catch (Exception e) {
                 fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage());
