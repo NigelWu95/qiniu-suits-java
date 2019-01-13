@@ -4,9 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.service.convert.FileInfoToString;
 import com.qiniu.service.interfaces.IStringFormat;
-import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.line.FileInfoTableFormatter;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -96,8 +94,10 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public String processLine(Map<String, String> line) throws QiniuException {
-        FileInfo result = bucketManager.stat(bucket, line.get("key"));
-        return JsonConvertUtils.toJsonWithoutUrlEscape(result);
+        FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
+        fileInfo.key = line.get("key");
+        if ("table".equals(format)) return stringFormatter.toFormatString(fileInfo);
+        else return JsonConvertUtils.toJsonWithoutUrlEscape(fileInfo);
     }
 
     synchronized private BatchOperations getOperations(List<Map<String, String>> lineList) {
@@ -129,6 +129,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
                     }
                 }
                 if (fileInfo != null) {
+                    fileInfo.key = line.get("key");
                     if ("table".equals(format)) fileMap.writeSuccess(stringFormatter.toFormatString(fileInfo));
                     else fileMap.writeSuccess(gson.toJson(fileInfo).replace("\\\\", "\\"));
                 }
@@ -171,6 +172,8 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
                     for (int j = 0; j < processList.size(); j++) {
                         if (j < jsonArray.size()) {
                             jsonObject = jsonArray.get(j).getAsJsonObject();
+                            jsonObject.get("data").getAsJsonObject()
+                                    .addProperty("key", processList.get(i).get("key"));
                             if (jsonObject.get("code").getAsInt() == 200)
                                 if ("table".equals(format))
                                     fileMap.writeSuccess(stringFormatter.toFormatString(
