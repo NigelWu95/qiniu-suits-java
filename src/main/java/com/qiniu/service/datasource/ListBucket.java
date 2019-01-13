@@ -12,6 +12,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -175,37 +176,45 @@ public class ListBucket implements IDataSource {
     public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
+        FileMap recordFileMap = new FileMap(resultPath);
         System.out.println(info + " concurrently running with " + threads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
                 System.out.println(t.getName() + "\t" + t.toString());
-                e.printStackTrace();
+                recordFileMap.closeWriters();
+                System.exit(-1);
             });
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
-        List<String> prefixList = new ArrayList<>();
         for (int i = 0; i < fileListerList.size(); i++) {
             FileLister fileLister = fileListerList.get(i);
             FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(i + 1));
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            String record = "order " + String.valueOf(i + 1) + ": " + fileLister.getPrefix();
+            int finalI = i;
             executorPool.execute(() -> {
+                String record = "order " + String.valueOf(finalI + 1) + ": " + fileLister.getPrefix();
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
-                    if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
-                        prefixList.add(record + "\tsuccessfully done");
-                        System.out.println(record + "\tsuccessfully done");
-                    } else {
-                        throw new Exception("datasource had not list to end.");
-                    }
+                    if (fileLister.getMarker() == null || "".equals(fileLister.getMarker()))
+                        record += "\tsuccessfully done";
+                    else
+                        record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
+                    System.out.println(record);
                 } catch (Exception e) {
-                    String exception = fileLister.getMarker() + "\t" + e.getMessage();
-                    prefixList.add(record + "\t" + exception + "\t" + fileLister.getEndKeyPrefix());
-                    System.out.println(record + "\t" + exception + "\t" + fileLister.getEndKeyPrefix());
+                    System.out.println(record + "\tmarker:" + fileLister.getMarker());
+                    record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
+                            "\t" + e.getMessage();
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 } finally {
+                    try {
+                        recordFileMap.writeKeyFile("result" + new Date().getTime(),
+                                record.replaceAll("\\s", " "));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
@@ -214,8 +223,6 @@ public class ListBucket implements IDataSource {
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
-        FileMap fileMap = new FileMap(resultPath);
-        fileMap.writeKeyFile("result" + new Date().getTime(), String.join("\n", prefixList));
-        fileMap.closeWriters();
+        recordFileMap.closeWriters();
     }
 }
