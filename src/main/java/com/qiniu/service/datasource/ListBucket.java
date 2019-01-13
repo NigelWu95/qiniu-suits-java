@@ -187,33 +187,30 @@ public class ListBucket implements IDataSource {
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
         List<String> prefixList = new ArrayList<>();
         for (int i = 0; i < fileListerList.size(); i++) {
-            ILineProcess lineProcessor = processor == null ? null : processor.clone();
             FileLister fileLister = fileListerList.get(i);
             FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(i + 1));
-            Thread thread = new Thread(() -> {
-                String exception = "";
+            ILineProcess lineProcessor = processor == null ? null : processor.clone();
+            String record = "order " + String.valueOf(i + 1) + ": " + fileLister.getPrefix();
+            executorPool.execute(() -> {
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
-                } catch (Exception e) {
-                    exception = "\t" + e.getMessage();
-                    throw new RuntimeException(e);
-                } finally {
-                    String marker = fileLister.getMarker() + exception;
-                    String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
-                    if ("".equals(marker) || "null".equals(marker)) {
+                    if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
                         prefixList.add(record + "\tsuccessfully done");
                         System.out.println(record + "\tsuccessfully done");
                     } else {
-                        prefixList.add(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
-                        System.out.println(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
+                        throw new Exception("datasource had not list to end.");
                     }
+                } catch (Exception e) {
+                    String exception = fileLister.getMarker() + "\t" + e.getMessage();
+                    prefixList.add(record + "\t" + exception + "\t" + fileLister.getEndKeyPrefix());
+                    System.out.println(record + "\t" + exception + "\t" + fileLister.getEndKeyPrefix());
+                    throw new RuntimeException(e);
+                } finally {
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
                 }
             });
-            thread.setName(fileLister.getPrefix() + String.valueOf(i + 1));
-            executorPool.execute(thread);
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
