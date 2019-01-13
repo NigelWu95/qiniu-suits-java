@@ -34,10 +34,10 @@ public class HttpResponseUtils {
             if (e.response != null) {
                 if (fileMap != null) {
                     if (infoList == null || infoList.size() == 0)
-                        fileMap.writeError(e.response.reqId + "\t" + e.error());
+                        fileMap.writeKeyFile("exception", e.response.reqId + "\t" + e.error());
                     else
-                        fileMap.writeError(String.join("\n", infoList.stream()
-                                .map(line -> e.response.reqId + "\t" + line + "\t" + e.error())
+                        fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
+                                .map(line -> line + "\t" + e.response.reqId + "\t" + e.error())
                                 .collect(Collectors.toList())));
                 }
                 if (e.response.needSwitchServer() || e.response.statusCode >= 630) {
@@ -48,9 +48,9 @@ public class HttpResponseUtils {
             } else {
                 if (fileMap != null) {
                     if (infoList == null || infoList.size() == 0)
-                        fileMap.writeError(e.error());
+                        fileMap.writeKeyFile("exception", e.error());
                     else
-                        fileMap.writeError(String.join("\n", infoList.stream()
+                        fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
                                 .map(line -> line + "\t" + e.error())
                                 .collect(Collectors.toList())));
                 }
@@ -61,8 +61,7 @@ public class HttpResponseUtils {
     public static String getResult(Response response) throws QiniuException {
         if (response == null) return null;
         String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        if (statusCode != 200 && statusCode != 298) throw new QiniuException(response);
+        if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         response.close();
         return responseBody;
     }

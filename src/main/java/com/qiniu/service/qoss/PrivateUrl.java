@@ -17,11 +17,11 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
 
     private String domain;
     private String protocol;
-    private String urlIndex;
-    private Auth auth;
-    private long expires;
-    private String processName;
-    protected String resultPath;
+    final private String urlIndex;
+    final private Auth auth;
+    final private long expires;
+    final private String processName;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -73,18 +73,25 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         String url;
+        String key;
         String signedUrl;
         for (Map<String, String> line : lineList) {
-            url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
+            if (urlIndex != null) {
+                url = line.get(urlIndex);
+                key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+            } else  {
+                url = protocol + "://" + domain + "/" + line.get("key");
+                key = line.get("key");
+            }
             try {
                 signedUrl = auth.privateDownloadUrl(url, expires);
-                if (signedUrl != null && !"".equals(signedUrl)) fileMap.writeSuccess(signedUrl);
-                else fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty signed url");
+                if (signedUrl != null && !"".equals(signedUrl))
+                    fileMap.writeSuccess(key + "\t" + url + "\t" + signedUrl);
+                else
+                    fileMap.writeError( key + "\t" + url + "\tempty signed url");
             } catch (QiniuException e) {
-                String finalUrl = url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalUrl + "\t" + String.valueOf(line));
-                }});
+                String finalKey = key + "\t" + url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
             }
         }
     }

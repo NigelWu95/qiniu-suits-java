@@ -1,4 +1,4 @@
-package com.qiniu.service.fileline;
+package com.qiniu.service.line;
 
 import com.qiniu.service.interfaces.ILineParser;
 

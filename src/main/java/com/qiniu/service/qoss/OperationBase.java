@@ -2,6 +2,7 @@ package com.qiniu.service.qoss;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -20,27 +21,27 @@ import java.util.stream.Collectors;
 
 public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    protected Auth auth;
-    protected Configuration configuration;
+    final protected Auth auth;
+    final protected Configuration configuration;
     protected BucketManager bucketManager;
-    protected String bucket;
-    protected String processName;
+    final protected String bucket;
+    final protected String processName;
     protected int retryCount;
     protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
-    protected String resultPath;
+    final protected String resultPath;
     protected String resultTag;
     protected int resultIndex;
     protected FileMap fileMap;
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String processName, String resultPath,
+    public OperationBase(String processName, Auth auth, Configuration configuration, String bucket, String resultPath,
                          int resultIndex) throws IOException {
+        this.processName = processName;
         this.auth = auth;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
-        this.processName = processName;
         this.batchOperations = new BatchOperations();
         this.errorLineList = new ArrayList<>();
         this.resultPath = resultPath;
@@ -83,41 +84,41 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
-    public void singleRun(List<Map<String, String>> fileInfoList) throws IOException {
-        String key;
+    // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
+    protected abstract String getInputParams(Map<String, String> line);
+
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         String result = null;
-        for (Map<String, String> fileInfo : fileInfoList) {
-            key = fileInfo.get("key");
+        for (Map<String, String> line : fileInfoList) {
             try {
                 try {
-                    result = processLine(fileInfo);
+                    result = processLine(line);
                 } catch (QiniuException e) {
                     HttpResponseUtils.checkRetryCount(e, retryCount);
                     while (retryCount > 0) {
                         try {
-                            result = processLine(fileInfo);
+                            result = processLine(line);
                             retryCount = 0;
                         } catch (QiniuException e1) {
                             retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
                         }
                     }
                 }
-                if (result != null && !"".equals(result)) fileMap.writeSuccess(key + "\t" + result);
-                else fileMap.writeError(key + "\t" +  String.valueOf(fileInfo) + "\tempty result");
+                if (result != null && !"".equals(result)) fileMap.writeSuccess(getInputParams(line) + "\t" + result);
+                else fileMap.writeError(getInputParams(line) + "\tempty result");
             } catch (QiniuException e) {
-                String finalKey = key;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + String.valueOf(fileInfo));
-                }});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(getInputParams(line));}});
             }
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList) throws IOException {
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
         String result;
+        JsonArray jsonArray;
+        JsonObject jsonObject;
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
@@ -138,16 +139,20 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     }
                     batchOperations.clearOps();
                     result = HttpResponseUtils.getResult(response);
-                    JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
+                    jsonArray = new Gson().fromJson(result, JsonArray.class);
                     for (int j = 0; j < processList.size(); j++) {
-                        if (j < jsonArray.size())
-                            fileMap.writeSuccess(processList.get(j).get("key") + "\t" + jsonArray.get(j));
-                        else
-                            fileMap.writeError(processList.get(j).get("key") + "\tempty result");
+                        jsonObject = jsonArray.get(j).getAsJsonObject();
+                        if (j < jsonArray.size()) {
+                            if (jsonObject.get("code").getAsInt() == 200)
+                                fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
+                            else
+                                fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
+                        } else {
+                            fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
+                        }
                     }
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, fileMap, processList.stream()
-                            .map(line -> line.get("key") + "\t" + String.valueOf(line))
+                    HttpResponseUtils.processException(e, fileMap, processList.stream().map(this::getInputParams)
                             .collect(Collectors.toList()));
                 }
             }
@@ -155,8 +160,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        if (batch) batchRun(fileInfoList);
-        else singleRun(fileInfoList);
+        if (batch) batchRun(fileInfoList, retryCount);
+        else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {
             fileMap.writeError(String.join("\n", errorLineList));
             errorLineList.clear();

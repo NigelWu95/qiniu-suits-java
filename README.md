@@ -100,8 +100,7 @@ rename、qhash、stat、pfop、pfopresult、avinfo 一般为对 file 输入方�
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。
 2. 一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
 ```
-listV2 xxx:|:null:1:null null, last 3 times retry...
-listV2 xxx:|:null:1:null null, last 2 times retry...
+list prefix:<prefix>\tlast 3/2/1 times retrying...
 java.net.SocketTimeoutException: timeout
 ```
 超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 

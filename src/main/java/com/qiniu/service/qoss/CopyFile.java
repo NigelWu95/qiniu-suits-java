@@ -15,15 +15,16 @@ import java.util.Map;
 
 public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private String toBucket;
-    private String newKeyIndex;
-    private String keyPrefix;
-    private String rmPrefix;
+    final private String toBucket;
+    final private String newKeyIndex;
+    final private String keyPrefix;
+    final private String rmPrefix;
 
     public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
                     String keyPrefix, String rmPrefix, String resultPath, int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "copy", resultPath, resultIndex);
+        super("copy", auth, configuration, bucket, resultPath, resultIndex);
         this.toBucket = toBucket;
+        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
@@ -39,17 +40,17 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
                 + key.substring(rmPrefix.length());
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    public String processLine(Map<String, String> line) throws QiniuException {
         if (StringUtils.isNullOrEmpty(line.get(newKeyIndex))) {
             errorLineList.add(String.valueOf(line) + "\tno target " + newKeyIndex + " in the line map.");
             throw new QiniuException(null, "\tno target " + newKeyIndex + " in the line map.");
         }
         Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)),
                 false);
-        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
+        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
             if (StringUtils.isNullOrEmpty(line.get("key")) || StringUtils.isNullOrEmpty(line.get(newKeyIndex)))
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
@@ -57,5 +58,9 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
                 batchOperations.addCopyOp(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)));
         });
         return batchOperations;
+    }
+
+    public String getInputParams(Map<String, String> line) {
+        return line.get("key") + "\t" + line.get(newKeyIndex);
     }
 }
