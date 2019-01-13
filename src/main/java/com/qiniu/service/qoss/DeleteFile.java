@@ -17,7 +17,7 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
 
     public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath,
                       int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "delete", resultPath, resultIndex);
+        super("delete", auth, configuration, bucket, resultPath, resultIndex);
     }
 
     public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath) throws IOException {

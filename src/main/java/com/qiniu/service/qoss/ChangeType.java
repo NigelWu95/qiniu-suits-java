@@ -20,7 +20,7 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
 
     public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultPath,
                       int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "type", resultPath, resultIndex);
+        super("type", auth, configuration, bucket, resultPath, resultIndex);
         this.type = type;
     }
 

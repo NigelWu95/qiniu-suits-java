@@ -22,7 +22,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
 
     public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
                     String keyPrefix, String rmPrefix, String resultPath, int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "copy", resultPath, resultIndex);
+        super("copy", auth, configuration, bucket, resultPath, resultIndex);
         this.toBucket = toBucket;
         // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;

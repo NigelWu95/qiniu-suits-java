@@ -24,7 +24,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                     String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex)
             throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", auth, configuration, bucket,
                 resultPath, resultIndex);
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
