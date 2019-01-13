@@ -7,7 +7,6 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,7 +30,7 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
-            if (StringUtils.isNullOrEmpty(line.get("key")))
+            if (line.get("key") == null)
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
             else
                 batchOperations.addDeleteOp(bucket, line.get("key"));
