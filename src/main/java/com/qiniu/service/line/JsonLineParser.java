@@ -1,4 +1,4 @@
-package com.qiniu.service.fileline;
+package com.qiniu.service.line;
 
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
