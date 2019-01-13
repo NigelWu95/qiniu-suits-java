@@ -173,16 +173,16 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
                         if (j < jsonArray.size()) {
                             jsonObject = jsonArray.get(j).getAsJsonObject();
                             jsonObject.get("data").getAsJsonObject()
-                                    .addProperty("key", processList.get(i).get("key"));
+                                    .addProperty("key", processList.get(j).get("key"));
                             if (jsonObject.get("code").getAsInt() == 200)
                                 if ("table".equals(format))
                                     fileMap.writeSuccess(stringFormatter.toFormatString(
                                             gson.fromJson(jsonObject.get("data"), FileInfo.class)));
                                 else fileMap.writeSuccess(jsonObject.get("data").toString());
                             else
-                                fileMap.writeError(processList.get(i).get("key") + "\t" + jsonObject.toString());
+                                fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString());
                         } else {
-                            fileMap.writeError(processList.get(i).get("key") + "\tempty stat result");
+                            fileMap.writeError(processList.get(j).get("key") + "\tempty stat result");
                         }
                     }
                 } catch (QiniuException e) {
