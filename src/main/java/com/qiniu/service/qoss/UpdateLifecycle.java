@@ -19,7 +19,7 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
 
     public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultPath,
                            int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "lifecycle", resultPath, resultIndex);
+        super("lifecycle", auth, configuration, bucket, resultPath, resultIndex);
         this.days = days;
     }
 

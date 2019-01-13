@@ -19,7 +19,7 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
 
     public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String resultPath,
                         int resultIndex) throws IOException {
-        super(auth, configuration, bucket, "status", resultPath, resultIndex);
+        super("status", auth, configuration, bucket, resultPath, resultIndex);
         this.status = status;
     }
 

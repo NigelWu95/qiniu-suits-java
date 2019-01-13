@@ -34,13 +34,13 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected int resultIndex;
     protected FileMap fileMap;
 
-    public OperationBase(Auth auth, Configuration configuration, String bucket, String processName, String resultPath,
+    public OperationBase(String processName, Auth auth, Configuration configuration, String bucket, String resultPath,
                          int resultIndex) throws IOException {
+        this.processName = processName;
         this.auth = auth;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
-        this.processName = processName;
         this.batchOperations = new BatchOperations();
         this.errorLineList = new ArrayList<>();
         this.resultPath = resultPath;
