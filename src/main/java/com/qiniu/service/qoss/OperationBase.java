@@ -91,16 +91,17 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         String result = null;
         for (Map<String, String> line : fileInfoList) {
             try {
+                int count = retryCount;
                 try {
                     result = processLine(line);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, retryCount);
-                    while (retryCount > 0) {
+                    HttpResponseUtils.checkRetryCount(e, count);
+                    while (count > 0) {
                         try {
                             result = processLine(line);
-                            retryCount = 0;
+                            count = 0;
                         } catch (QiniuException e1) {
-                            retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                            count = HttpResponseUtils.getNextRetryCount(e1, count);
                         }
                     }
                 }
@@ -123,17 +124,18 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
+                int count = retryCount;
                 try {
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, retryCount);
-                        while (retryCount > 0) {
+                        HttpResponseUtils.checkRetryCount(e, count);
+                        while (count > 0) {
                             try {
                                 response = bucketManager.batch(batchOperations);
-                                retryCount = 0;
+                                count = 0;
                             } catch (QiniuException e1) {
-                                retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                                count = HttpResponseUtils.getNextRetryCount(e1, count);
                             }
                         }
                     }
