@@ -187,11 +187,10 @@ public class ListBucket implements IDataSource {
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
         List<String> prefixList = new ArrayList<>();
         for (int i = 0; i < fileListerList.size(); i++) {
-            final int finalI = i;
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            executorPool.execute(() -> {
-                FileLister fileLister = fileListerList.get(finalI);
-                FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(finalI + 1));
+            FileLister fileLister = fileListerList.get(i);
+            FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(i + 1));
+            Thread thread = new Thread(() -> {
                 String exception = "";
                 try {
                     execLister(fileLister, fileMap, lineProcessor);
@@ -213,6 +212,8 @@ public class ListBucket implements IDataSource {
                     fileLister.remove();
                 }
             });
+            thread.setName(fileLister.getPrefix() + String.valueOf(i + 1));
+            executorPool.execute(thread);
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
