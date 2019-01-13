@@ -9,10 +9,10 @@ import com.qiniu.util.Auth;
 
 public class FileChecker {
 
-    private Client client;
-    private String algorithm;
-    private String protocol;
-    private Auth srcAuth;
+    final private Client client;
+    final private String algorithm;
+    final private String protocol;
+    final private Auth srcAuth;
 
     public FileChecker() {
         this.client = new Client();
@@ -76,6 +76,7 @@ public class FileChecker {
         url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?qhash/" + algorithm) : url + "?qhash/" + algorithm;
         Response response = client.get(url);
         String qhash = response.bodyString();
+        if (response.statusCode != 200) throw new QiniuException(response);
         response.close();
         return qhash;
     }

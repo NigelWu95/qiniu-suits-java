@@ -1,7 +1,7 @@
 package com.qiniu.service.convert;
 
-import com.qiniu.service.fileline.JsonLineParser;
-import com.qiniu.service.fileline.SplitLineParser;
+import com.qiniu.service.line.JsonLineParser;
+import com.qiniu.service.line.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ITypeConvert;
 

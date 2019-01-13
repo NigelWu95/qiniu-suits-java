@@ -17,13 +17,13 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String domain;
     private String protocol;
-    private String urlIndex;
-    private Auth auth;
-    private String algorithm;
+    final private String urlIndex;
+    final private Auth auth;
+    final private String algorithm;
     private FileChecker fileChecker;
-    private String processName;
+    final private String processName;
     private int retryCount;
-    protected String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -98,25 +98,34 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
+        String key;
         String qhash;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
-            url = urlIndex != null ? line.get(urlIndex) : protocol + "://" + domain + "/" + line.get("key");
+            if (urlIndex != null) {
+                url = line.get(urlIndex);
+                key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
+            } else  {
+                url = protocol + "://" + domain + "/" + line.get("key");
+                key = line.get("key");
+            }
             try {
                 qhash = singleWithRetry(url, retryCount);
                 if (qhash != null && !"".equals(qhash))
-                    fileMap.writeSuccess(url + "\t" + jsonParser.parse(qhash).toString());
+                    fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(qhash).toString());
                 else
-                    fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty qhash");
+                    fileMap.writeError( key + "\t" + url + "\tempty qhash");
             } catch (QiniuException e) {
-                String finalUrl = url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalUrl + "\t" + String.valueOf(line));
-                }});
+                String finalKey = key + "\t" + url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
             }
         }
+    }
+
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {

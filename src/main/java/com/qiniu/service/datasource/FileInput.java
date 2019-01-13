@@ -18,12 +18,12 @@ import java.util.concurrent.ThreadFactory;
 
 public class FileInput implements IDataSource {
 
-    private String filePath;
-    private String parseType;
-    private String separator;
-    private Map<String, String> infoIndexMap;
-    private int unitLen;
-    private String resultPath;
+    final private String filePath;
+    final private String parseType;
+    final private String separator;
+    final private Map<String, String> infoIndexMap;
+    final private int unitLen;
+    final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
@@ -121,9 +121,11 @@ public class FileInput implements IDataSource {
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
                 FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+                String exception = "";
                 try {
                     traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
                 } catch (Exception e) {
+                    exception = "\t" + e.getMessage();
                     throw new RuntimeException(e);
                 } finally {
                     String nextLine;
@@ -132,10 +134,11 @@ public class FileInput implements IDataSource {
                     } catch (IOException e) {
                         nextLine = e.getMessage();
                     }
+                    nextLine += exception;
                     String record = "order " + fileMap.getSuffix() + ": " + readerEntry.getKey();
-                    if (nextLine == null || "".equals(nextLine)) {
-                        linePositionList.add(record + "\tdone");
-                        System.out.println(record + "\tdone");
+                    if ("".equals(nextLine) || "null".equals(nextLine)) {
+                        linePositionList.add(record + "\tsuccessfully done");
+                        System.out.println(record + "\tsuccessfully done");
                     } else {
                         linePositionList.add(record + "\t" + nextLine);
                         System.out.println(record + "\t" + nextLine);

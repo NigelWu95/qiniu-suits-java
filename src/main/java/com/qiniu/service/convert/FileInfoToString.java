@@ -1,12 +1,11 @@
 package com.qiniu.service.convert;
 
-import com.qiniu.service.fileline.FileInfoJsonFormatter;
-import com.qiniu.service.fileline.FileInfoTableFormatter;
+import com.qiniu.service.line.FileInfoJsonFormatter;
+import com.qiniu.service.line.FileInfoTableFormatter;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 

@@ -17,18 +17,18 @@ import java.util.Map;
 
 public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private Auth auth;
-    private Configuration configuration;
+    final private Auth auth;
+    final private Configuration configuration;
     private BucketManager bucketManager;
-    private String bucket;
-    private String processName;
+    final private String bucket;
+    final private String processName;
     private int retryCount;
     private String domain;
     private String protocol;
-    private String urlIndex;
+    final private String urlIndex;
     private String md5Index;
-    private Auth srcAuth;
-    private String keyPrefix;
+    final private boolean srcPrivate;
+    final private String keyPrefix;
 //    private M3U8Manager m3u8Manager;
     private boolean hasCustomArgs;
     private String host;
@@ -38,13 +38,13 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
-    private String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      Auth srcAuth, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
+                      boolean srcPrivate, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
             throws IOException {
         this.auth = auth;
         this.configuration = configuration;
@@ -61,7 +61,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else this.urlIndex = urlIndex;
-        this.srcAuth = srcAuth;
+        this.srcPrivate = srcPrivate;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
 //        this.m3u8Manager = new M3U8Manager();
         this.resultPath = resultPath;
@@ -72,8 +72,8 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      Auth srcAuth, String keyPrefix, String urlIndex, String resultPath) throws IOException {
-        this(auth, configuration, bucket, domain, protocol, srcAuth, keyPrefix, urlIndex, resultPath, 0);
+                      boolean srcPrivate, String keyPrefix, String urlIndex, String resultPath) throws IOException {
+        this(auth, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, resultPath, 0);
     }
 
     public void setFetchArgs(String md5Index, String host, String callbackUrl, String callbackBody, String callbackBodyType,
@@ -114,7 +114,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
-        if (srcAuth != null) url = srcAuth.privateDownloadUrl(url);
+        if (srcPrivate) url = auth.privateDownloadUrl(url);
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
                         callbackHost, String.valueOf(fileType)) :
@@ -137,10 +137,11 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             }
         }
         assert response != null;
-        return response.statusCode + "\t" + response.reqId + "\t" + HttpResponseUtils.getResult(response);
+        return response.reqId + "\t{\"code\":" + response.statusCode + ",\"message\":\"" +
+                HttpResponseUtils.getResult(response) + "\"}";
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String key;
         String fetchResult;
@@ -154,15 +155,22 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             }
             try {
                 fetchResult = singleWithRetry(url, keyPrefix + key, line.get(md5Index), line.get("hash"), retryCount);
-                if (fetchResult != null && !"".equals(fetchResult)) fileMap.writeSuccess(url + "\t" + fetchResult);
-                else fileMap.writeError( url + "\t" + String.valueOf(line) + "\tempty fetch result");
+                if (fetchResult != null && !"".equals(fetchResult))
+                    fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult);
+                else
+                    fileMap.writeError( key + "\t" + url + "\t" + line.get(md5Index) +  "\t" + line.get("hash") +
+                            "\tempty fetch result");
             } catch (QiniuException e) {
-                String finalUrl = url;
+                String finalKey = key + "\t" + url;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalUrl + "\t" + String.valueOf(line));
+                    add(finalKey + "\t" + line.get(md5Index) +  "\t" + line.get("hash"));
                 }});
             }
         }
+    }
+
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {
