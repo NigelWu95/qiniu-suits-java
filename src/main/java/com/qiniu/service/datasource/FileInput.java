@@ -133,7 +133,7 @@ public class FileInput implements IDataSource {
                     throw new RuntimeException(e);
                 } finally {
                     try {
-                        recordFileMap.writeKeyFile("result" + new Date().getTime(),
+                        recordFileMap.writeKeyFile("result_" + readerEntry.getKey(),
                                 record.replaceAll("\\s", "\t"));
                     } catch (IOException e) {
                         e.printStackTrace();
