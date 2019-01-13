@@ -3,7 +3,6 @@ package com.qiniu.service.qoss;
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.media.MediaManager;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.RequestUtils;
