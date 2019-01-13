@@ -117,39 +117,32 @@ public class FileInput implements IDataSource {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         List<String> linePositionList = new ArrayList<>();
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
+            FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
             if (processor != null) processor.setResultTag(readerEntry.getKey());
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
-            Thread thread = new Thread(() -> {
-                String exception = "";
+            String record = "order: " + readerEntry.getKey();
+            executorPool.execute(() -> {
+                String nextLine = null;
                 try {
                     traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
-                } catch (Exception e) {
-                    exception = "\t" + e.getMessage();
-                    throw new RuntimeException(e);
-                } finally {
-                    String nextLine;
-                    try {
-                        nextLine = readerEntry.getValue().readLine();
-                    } catch (IOException e) {
-                        nextLine = e.getMessage();
-                    }
-                    nextLine += exception;
-                    String record = "order " + fileMap.getSuffix() + ": " + readerEntry.getKey();
-                    if ("".equals(nextLine) || "null".equals(nextLine)) {
+                    nextLine = readerEntry.getValue().readLine();
+                    if (nextLine == null || "".equals(nextLine)) {
                         linePositionList.add(record + "\tsuccessfully done");
                         System.out.println(record + "\tsuccessfully done");
                     } else {
-                        linePositionList.add(record + "\t" + nextLine);
-                        System.out.println(record + "\t" + nextLine);
+                        throw new Exception("datasource had not read to end.");
                     }
+                } catch (Exception e) {
+                    String exception = nextLine + "\t" + e.getMessage();
+                    linePositionList.add(record + "\t" + exception);
+                    System.out.println(record + "\t" + exception);
+                    throw new RuntimeException(e);
+                } finally {
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     inputFileMap.closeReader(readerEntry.getKey());
                 }
             });
-            thread.setName(readerEntry.getKey());
-            executorPool.execute(thread);
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);

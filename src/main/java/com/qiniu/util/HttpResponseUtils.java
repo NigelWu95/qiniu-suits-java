@@ -30,14 +30,15 @@ public class HttpResponseUtils {
     }
 
     public static void processException(QiniuException e, FileMap fileMap, List<String> infoList) throws IOException {
+        // 取 error 信息从 exception 的 message 中取，避免 e.error() 抛出非预期异常
         if (e != null) {
             if (e.response != null) {
                 if (fileMap != null) {
                     if (infoList == null || infoList.size() == 0)
-                        fileMap.writeKeyFile("exception", e.response.reqId + "\t" + e.error());
+                        fileMap.writeKeyFile("exception", e.response.reqId + "\t" + e.getMessage());
                     else
                         fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> line + "\t" + e.response.reqId + "\t" + e.error())
+                                .map(line -> line + "\t" + e.response.reqId + "\t" + e.getMessage())
                                 .collect(Collectors.toList())));
                 }
                 if (e.response.needSwitchServer() || e.response.statusCode >= 630) {
@@ -48,10 +49,10 @@ public class HttpResponseUtils {
             } else {
                 if (fileMap != null) {
                     if (infoList == null || infoList.size() == 0)
-                        fileMap.writeKeyFile("exception", e.error());
+                        fileMap.writeKeyFile("exception", e.getMessage());
                     else
                         fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> line + "\t" + e.error())
+                                .map(line -> line + "\t" + e.getMessage())
                                 .collect(Collectors.toList())));
                 }
             }
