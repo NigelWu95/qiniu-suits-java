@@ -23,7 +23,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private FileChecker fileChecker;
     final private String processName;
     private int retryCount;
-    final protected String resultPath;
+    final private String resultPath;
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
@@ -114,14 +114,12 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
             try {
                 qhash = singleWithRetry(url, retryCount);
                 if (qhash != null && !"".equals(qhash))
-                    fileMap.writeSuccess(key + "\t" + jsonParser.parse(qhash).toString());
+                    fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(qhash).toString());
                 else
-                    fileMap.writeError( key + "\t" + String.valueOf(line) + "\tempty qhash");
+                    fileMap.writeError( key + "\t" + url + "\tempty qhash");
             } catch (QiniuException e) {
-                String finalKey = key;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + String.valueOf(line));
-                }});
+                String finalKey = key + "\t" + url;
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
             }
         }
     }

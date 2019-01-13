@@ -3,6 +3,7 @@ package com.qiniu.service.media;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.qiniu.model.media.Item;
 import com.qiniu.model.media.PfopResult;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
@@ -97,14 +98,21 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 result = singleWithRetry(pid, retryCount);
                 if (result != null && !"".equals(result)) {
                     pfopResult = gson.fromJson(result, PfopResult.class);
-                    fileMap.writeKeyFile(processName + "_code-" + pfopResult.code, pid + "\t" +
-                            pfopResult.items.get(0).key + "\t" + result);
-                } else fileMap.writeError( pid + "\t" + String.valueOf(line) + "\tempty pfop result");
+                    // 可能有多条转码指令
+                    for (Item item : pfopResult.items) {
+                        // code == 3 时表示转码失败，记录下转码参数和错误方便进行重试
+                        if (pfopResult.code == 3) {
+                            fileMap.writeKeyFile( "failed", pfopResult.inputKey + "\t" + item.cmd + "\t" +
+                                    item.key + "\t" + pid + "\t" + item.error);
+                        } else {
+                            fileMap.writeKeyFile("code-" + pfopResult.code, pfopResult.inputKey + "\t" +
+                                    item.key + "\t" + pid + "\t" + result);
+                        }
+                    }
+                } else fileMap.writeError( pid + "\tempty pfop result");
             } catch (QiniuException e) {
                 String finalPid = pid;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalPid + "\t" + String.valueOf(line));
-                }});
+                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalPid);}});
             }
         }
     }

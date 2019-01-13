@@ -46,7 +46,7 @@ public class FileMap implements Cloneable {
     }
 
     public void initDefaultWriters() throws IOException {
-        if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no targetFileDir.");
+        if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no target file directory.");
         for (String targetWriter : defaultWriters) {
             addWriter(prefix + targetWriter + suffix);
         }

@@ -100,12 +100,12 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
             key = line.get("key");
             try {
                 pfopId = singleWithRetry(key, line.get(fopsIndex), retryCount);
-                if (pfopId != null && !"".equals(pfopId)) fileMap.writeSuccess(key + "\t" + pfopId);
-                else fileMap.writeError( key + "\t" + String.valueOf(line) + "\tempty pfop persistent id");
+                if (pfopId != null && !"".equals(pfopId)) fileMap.writeSuccess(pfopId + "\t" + key);
+                else fileMap.writeError( key + "\t" + line.get(fopsIndex) + "\tempty persistent id");
             } catch (QiniuException e) {
                 String finalKey = key;
                 HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + line.get(fopsIndex) + "\t" + String.valueOf(line));
+                    add(finalKey + "\t" + line.get(fopsIndex));
                 }});
             }
         }

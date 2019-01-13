@@ -1,10 +1,9 @@
-package com.qiniu.service.fileline;
+package com.qiniu.service.line;
 
 import com.google.gson.JsonObject;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.storage.model.FileInfo;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -24,7 +24,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                     String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String resultPath, int resultIndex)
             throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(auth, configuration, bucket, toBucket == null || "".equals(toBucket) ? "rename" : "move",
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", auth, configuration, bucket,
                 resultPath, resultIndex);
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
@@ -57,7 +57,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 + key.substring(rmPrefix.length());
     }
 
-    protected String processLine(Map<String, String> line) throws QiniuException {
+    public String processLine(Map<String, String> line) throws QiniuException {
         if (StringUtils.isNullOrEmpty(line.get(newKeyIndex))) {
             errorLineList.add(String.valueOf(line) + "\tno target " + newKeyIndex + " in the line map.");
             throw new QiniuException(null, "\tno target " + newKeyIndex + " in the line map.");
@@ -67,10 +67,10 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
             response = bucketManager.rename(bucket, line.get("key"), formatKey(line.get(newKeyIndex)), false);
         else
             response = bucketManager.move(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)), false);
-        return response.statusCode + "\t" + HttpResponseUtils.getResult(response);
+        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
     }
 
-    synchronized protected BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
             if (StringUtils.isNullOrEmpty(line.get("key")) || StringUtils.isNullOrEmpty(line.get(newKeyIndex)))
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
@@ -82,5 +82,9 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
             }
         });
         return batchOperations;
+    }
+
+    public String getInputParams(Map<String, String> line) {
+        return line.get("key") + "\t" + line.get(newKeyIndex);
     }
 }

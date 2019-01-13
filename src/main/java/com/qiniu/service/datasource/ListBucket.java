@@ -85,13 +85,7 @@ public class ListBucket implements IDataSource {
                 })
 //                .filter(Objects::nonNull)
 //                .filter(FileLister::hasNext)
-                .filter(fileLister -> {
-                    if (fileLister != null && fileLister.hasNext()) return true;
-                    else {
-                        fileLister = null;
-                        return false;
-                    }
-                })
+                .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
     }
 
@@ -215,9 +209,8 @@ public class ListBucket implements IDataSource {
                         System.out.println(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
                     }
                     fileMap.closeWriters();
-                    if (processor != null) processor.closeResource();
+                    if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
-                    fileLister = null;
                 }
             });
         }
