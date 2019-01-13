@@ -37,7 +37,7 @@ public class HttpResponseUtils {
                         fileMap.writeKeyFile("exception", e.response.reqId + "\t" + e.error());
                     else
                         fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> e.response.reqId + "\t" + line + "\t" + e.error())
+                                .map(line -> line + "\t" + e.response.reqId + "\t" + e.error())
                                 .collect(Collectors.toList())));
                 }
                 if (e.response.needSwitchServer() || e.response.statusCode >= 630) {
@@ -61,8 +61,7 @@ public class HttpResponseUtils {
     public static String getResult(Response response) throws QiniuException {
         if (response == null) return null;
         String responseBody = response.bodyString();
-        int statusCode = response.statusCode;
-        if (statusCode != 200 && statusCode != 298) throw new QiniuException(response);
+        if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         response.close();
         return responseBody;
     }
