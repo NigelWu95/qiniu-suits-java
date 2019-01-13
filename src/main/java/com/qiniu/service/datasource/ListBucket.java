@@ -211,7 +211,7 @@ public class ListBucket implements IDataSource {
                 } finally {
                     try {
                         recordFileMap.writeKeyFile("result" + new Date().getTime(),
-                                record.replaceAll("\\s", " "));
+                                record.replaceAll("\\s", "\t"));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
