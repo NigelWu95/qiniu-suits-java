@@ -2,6 +2,7 @@ package com.qiniu.service.qoss;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -117,6 +118,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         Response response = null;
         String result;
         JsonArray jsonArray;
+        JsonObject jsonObject;
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
@@ -139,11 +141,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     result = HttpResponseUtils.getResult(response);
                     jsonArray = new Gson().fromJson(result, JsonArray.class);
                     for (int j = 0; j < processList.size(); j++) {
+                        jsonObject = jsonArray.get(j).getAsJsonObject();
                         if (j < jsonArray.size()) {
-                            if ("{\"code\":200}".equals(jsonArray.get(j).toString()))
-                                fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonArray.get(j));
+                            if (jsonObject.get("code").getAsInt() == 200)
+                                fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
                             else
-                                fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonArray.get(j));
+                                fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
                         } else {
                             fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
                         }

@@ -157,7 +157,7 @@ public class ProcessorChoice {
             }
             case "stat": {
                 processor = new FileStat(Auth.create(ak, sk), configuration, qossParams.getBucket(),
-                        qossParams.getResultPath());
+                        qossParams.getResultPath(), resultFormat);
                 break;
             }
             case "privateurl": {
