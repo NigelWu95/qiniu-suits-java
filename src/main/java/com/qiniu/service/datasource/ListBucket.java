@@ -55,7 +55,7 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
-
+        FileMap fileMap = new FileMap(resultPath);
         return prefixList.parallelStream()
                 .map(prefix -> {
                     try {
@@ -80,12 +80,15 @@ public class ListBucket implements IDataSource {
                         return fileLister;
                     } catch (QiniuException e) {
                         System.out.println("list prefix:" + prefix + "\t" + e.error());
+                        try {
+                            fileMap.writeKeyFile("prefix_error", prefix + " to init fileLister" +
+                                    "\t" + e.error());
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        }
                         return null;
-//                        throw new RuntimeException("list prefix:" + prefix + "\t" + e.error(), e.fillInStackTrace());
                     }
                 })
-//                .filter(Objects::nonNull)
-//                .filter(FileLister::hasNext)
                 .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
     }

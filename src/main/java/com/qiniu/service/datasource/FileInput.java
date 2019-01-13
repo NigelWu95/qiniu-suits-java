@@ -84,17 +84,13 @@ public class FileInput implements IDataSource {
         }
     }
 
-    private FileMap getSourceFileMap() {
+    private FileMap getSourceFileMap() throws IOException {
         FileMap inputFileMap = new FileMap();
         File sourceFile = new File(filePath);
-        try {
-            if (sourceFile.isDirectory()) {
-                inputFileMap.initReaders(filePath);
-            } else {
-                inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (sourceFile.isDirectory()) {
+            inputFileMap.initReaders(filePath);
+        } else {
+            inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
         }
         return inputFileMap;
     }
