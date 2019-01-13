@@ -14,7 +14,6 @@ import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -102,7 +101,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
 
     synchronized private BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
-            if (StringUtils.isNullOrEmpty(line.get("key")))
+            if (line.get("key") == null)
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
             else
                 batchOperations.addStatOps(bucket, line.get("key"));

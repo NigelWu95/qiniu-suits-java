@@ -30,30 +30,29 @@ public class HttpResponseUtils {
     }
 
     public static void processException(QiniuException e, FileMap fileMap, List<String> infoList) throws IOException {
-        // 取 error 信息从 exception 的 message 中取，避免 e.error() 抛出非预期异常
+        // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
-            if (e.response != null) {
-                if (fileMap != null) {
-                    if (infoList == null || infoList.size() == 0)
-                        fileMap.writeKeyFile("exception", e.response.reqId + "\t" + e.getMessage());
-                    else
-                        fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> line + "\t" + e.response.reqId + "\t" + e.getMessage())
-                                .collect(Collectors.toList())));
+            String message = e.getMessage() == null ? "" : e.getMessage();
+            if ("".equals(message)) {
+                try {
+                    message = (e.response != null ? e.response.reqId + "\t" : "") + (e.error() == null ? "" : e.error());
+                } catch (Exception e1) {}
+            }
+            if (fileMap != null) {
+                if (infoList == null || infoList.size() == 0)
+                    fileMap.writeKeyFile("exception", message.replaceAll("\n", "\t"));
+                else {
+                    String finalMessage = message;
+                    fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
+                            .map(line -> line + "\t" + finalMessage.replaceAll("\n", "\t"))
+                            .collect(Collectors.toList())));
                 }
+            }
+            if (e.response != null) {
                 if (e.response.needSwitchServer() || e.response.statusCode >= 630) {
                     throw e;
                 } else {
                     e.response.close();
-                }
-            } else {
-                if (fileMap != null) {
-                    if (infoList == null || infoList.size() == 0)
-                        fileMap.writeKeyFile("exception", e.getMessage());
-                    else
-                        fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
-                                .map(line -> line + "\t" + e.getMessage())
-                                .collect(Collectors.toList())));
                 }
             }
         }

@@ -84,17 +84,13 @@ public class FileInput implements IDataSource {
         }
     }
 
-    private FileMap getSourceFileMap() {
+    private FileMap getSourceFileMap() throws IOException {
         FileMap inputFileMap = new FileMap();
         File sourceFile = new File(filePath);
-        try {
-            if (sourceFile.isDirectory()) {
-                inputFileMap.initReaders(filePath);
-            } else {
-                inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (sourceFile.isDirectory()) {
+            inputFileMap.initReaders(filePath);
+        } else {
+            inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
         }
         return inputFileMap;
     }
@@ -106,38 +102,41 @@ public class FileInput implements IDataSource {
         int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
+        FileMap recordFileMap = new FileMap(resultPath);
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
                 System.out.println(t.getName() + "\t" + t.toString());
-                e.printStackTrace();
+                recordFileMap.closeWriters();
+                System.exit(-1);
             });
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
-        List<String> linePositionList = new ArrayList<>();
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
             if (processor != null) processor.setResultTag(readerEntry.getKey());
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            String record = "order: " + readerEntry.getKey();
             executorPool.execute(() -> {
+                String record = "order: " + readerEntry.getKey();
                 String nextLine = null;
                 try {
                     traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
                     nextLine = readerEntry.getValue().readLine();
-                    if (nextLine == null || "".equals(nextLine)) {
-                        linePositionList.add(record + "\tsuccessfully done");
-                        System.out.println(record + "\tsuccessfully done");
-                    } else {
-                        throw new Exception("datasource had not read to end.");
-                    }
+                    if (nextLine == null || "".equals(nextLine)) record += "\tsuccessfully done";
+                    else record += "\tnextLine:" + nextLine;
+                    System.out.println(record);
                 } catch (Exception e) {
-                    String exception = nextLine + "\t" + e.getMessage();
-                    linePositionList.add(record + "\t" + exception);
-                    System.out.println(record + "\t" + exception);
+                    System.out.println(record + "\tnextLine:" + nextLine);
+                    record += "\tnextLine:" + nextLine + "\t" + e.getMessage();
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 } finally {
+                    try {
+                        recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     inputFileMap.closeReader(readerEntry.getKey());
@@ -146,8 +145,6 @@ public class FileInput implements IDataSource {
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
-        FileMap fileMap = new FileMap(resultPath);
-        fileMap.writeKeyFile("result" + new Date().getTime(), String.join("\n", linePositionList));
-        fileMap.closeWriters();
+        recordFileMap.closeWriters();
     }
 }
