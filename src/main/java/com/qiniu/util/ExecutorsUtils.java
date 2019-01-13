@@ -9,6 +9,7 @@ public class ExecutorsUtils {
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             System.out.println(info + " finished");
         } catch (InterruptedException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
