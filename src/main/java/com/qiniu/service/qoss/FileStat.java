@@ -113,17 +113,18 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
         FileInfo fileInfo = null;
         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         for (Map<String, String> line : fileInfoList) {
+            int count = retryCount;
             try {
                 try {
                     fileInfo = bucketManager.stat(bucket, line.get("key"));
                 } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, retryCount);
-                    while (retryCount > 0) {
+                    HttpResponseUtils.checkRetryCount(e, count);
+                    while (count > 0) {
                         try {
                             fileInfo = bucketManager.stat(bucket, line.get("key"));
-                            retryCount = 0;
+                            count = 0;
                         } catch (QiniuException e1) {
-                            retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                            count = HttpResponseUtils.getNextRetryCount(e1, count);
                         }
                     }
                 }
@@ -151,17 +152,18 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
+                int count = retryCount;
                 try {
                     try {
                         response = bucketManager.batch(batchOperations);
                     } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, retryCount);
-                        while (retryCount > 0) {
+                        HttpResponseUtils.checkRetryCount(e, count);
+                        while (count > 0) {
                             try {
                                 response = bucketManager.batch(batchOperations);
-                                retryCount = 0;
+                                count = 0;
                             } catch (QiniuException e1) {
-                                retryCount = HttpResponseUtils.getNextRetryCount(e1, retryCount);
+                                count = HttpResponseUtils.getNextRetryCount(e1, count);
                             }
                         }
                     }
