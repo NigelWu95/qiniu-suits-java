@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.*;
 
-public class FileMap implements Cloneable {
+public class FileMap {
 
     private HashMap<String, BufferedWriter> writerMap;
     private HashMap<String, BufferedReader> readerMap;
@@ -12,6 +12,7 @@ public class FileMap implements Cloneable {
     private String targetFileDir = null;
     private String prefix = null;
     private String suffix = null;
+    private int retryCount = 3;
 
     public FileMap() {
         this.defaultWriters = Arrays.asList("success", "error");
@@ -30,6 +31,10 @@ public class FileMap implements Cloneable {
         this(targetFileDir);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public String getPrefix() {
@@ -63,21 +68,32 @@ public class FileMap implements Cloneable {
 
     private void addWriter(String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
-        mkDirAndFile(resultFile);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
-        writerMap.put(key, writer);
+        int retry = retryCount;
+        while (retry > 0) {
+            try {
+                if (!mkDirAndFile(resultFile)) throw new IOException("create file failed.");
+                BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
+                writerMap.put(key, writer);
+                retry = 0;
+            } catch (IOException e) {
+                retry--;
+                if (retry <= 0) throw e;
+            }
+
+        }
     }
 
-    private void mkDirAndFile(File filePath) throws IOException {
-        if (!filePath.getParentFile().exists()) {
-            if (!filePath.getParentFile().mkdirs()) {
-                throw new IOException("can not make directory.");
-            }
+    private boolean mkDirAndFile(File filePath) throws IOException {
+        boolean success = filePath.getParentFile().exists();
+        if (!success) {
+            success = filePath.getParentFile().mkdirs();
+            if (!success) return false;
         }
-        if (!filePath.exists()) {
-            if (!filePath.createNewFile()) {
-                throw new IOException("can not make file.");
-            }
+        success = filePath.exists();
+        if (!success) {
+            return filePath.createNewFile();
+        } else {
+            return true;
         }
     }
 
@@ -87,17 +103,25 @@ public class FileMap implements Cloneable {
 
     public void closeWriters() {
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
-            try {
-                if (writerMap.get(entry.getKey()) != null) writerMap.get(entry.getKey()).close();
-                File file = new File(targetFileDir, entry.getKey() + ".txt");
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                if (reader.readLine() == null) {
-                    reader.close();
-                    file.delete();
+            int retry = retryCount;
+            File file = new File(targetFileDir, entry.getKey() + ".txt");
+            BufferedReader reader;
+            while (retry > 0) {
+                try {
+                    if (writerMap.get(entry.getKey()) != null) {
+                        writerMap.get(entry.getKey()).close();
+                        reader = new BufferedReader(new FileReader(file));
+                        if (reader.readLine() == null) {
+                            reader.close();
+                            if (file.delete()) retry = 0;
+                        } else {
+                            retry = 0;
+                        }
+                    }
+                } catch (IOException e) {
+                    retry--;
+                    if (retry <= 0) e.printStackTrace();
                 }
-            } catch (IOException ioException) {
-                System.out.println("Writer " + entry.getKey() + " close failed.");
-                ioException.printStackTrace();
             }
         }
     }
@@ -116,6 +140,7 @@ public class FileMap implements Cloneable {
                 if (fileName.endsWith(".txt")) readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
             }
         }
+        if (readerMap.size() == 0) throw new IOException("please provide the .txt file int the directory.");
     }
 
     public void initReader(String fileDir, String fileName) throws IOException {
@@ -124,7 +149,9 @@ public class FileMap implements Cloneable {
             FileReader fileReader = new FileReader(sourceFile);
             BufferedReader reader = new BufferedReader(fileReader);
             readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
-        } else throw new IOException("please provide the .txt file.");
+        } else {
+            throw new IOException("please provide the .txt file.");
+        }
     }
 
     public BufferedReader getReader(String key) {
@@ -139,9 +166,8 @@ public class FileMap implements Cloneable {
         for (Entry<String, BufferedReader> entry : readerMap.entrySet()) {
             try {
                 if (readerMap.get(entry.getKey()) != null) readerMap.get(entry.getKey()).close();
-            } catch (IOException ioException) {
-                System.out.println("Reader " + entry.getKey() + " close failed.");
-                ioException.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -149,9 +175,8 @@ public class FileMap implements Cloneable {
     public void closeReader(String key) {
         try {
             if (readerMap.get(key) != null) readerMap.get(key).close();
-        } catch (IOException ioException) {
-            System.out.println("Reader " + key + " close failed.");
-            ioException.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -161,7 +186,7 @@ public class FileMap implements Cloneable {
     }
 
     private void doWrite(String key, String item) {
-        int count = 3;
+        int count = retryCount;
         while (count > 0) {
             try {
                 writeLine(key, item);
