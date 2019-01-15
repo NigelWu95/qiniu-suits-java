@@ -75,8 +75,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
             try {
                 pfopResult = mediaManager.getPfopResultBodyById(id);
                 retryCount = 0;
-            } catch (QiniuException e2) {
-                retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+            } catch (QiniuException e) {
+                retryCount--;
+                HttpResponseUtils.checkRetryCount(e, retryCount);
             }
         }
         return pfopResult;

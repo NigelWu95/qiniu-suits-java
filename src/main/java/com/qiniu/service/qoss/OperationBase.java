@@ -97,8 +97,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     try {
                         result = processLine(line);
                         count = 0;
-                    } catch (QiniuException e1) {
-                        count = HttpResponseUtils.getNextRetryCount(e1, count);
+                    } catch (QiniuException e) {
+                        retryCount--;
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
                     }
                 }
                 if (result != null && !"".equals(result)) fileMap.writeSuccess(getInputParams(line) + "\t" + result);
@@ -142,8 +143,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                     try {
                         response = bucketManager.batch(batchOperations);
                         count = 0;
-                    } catch (QiniuException e1) {
-                        count = HttpResponseUtils.getNextRetryCount(e1, count);
+                    } catch (QiniuException e) {
+                        retryCount--;
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
                     }
                 }
                 batchOperations.clearOps();
