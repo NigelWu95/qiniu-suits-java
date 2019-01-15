@@ -14,6 +14,7 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -160,6 +161,38 @@ public class ListBucket implements IDataSource {
         }
     }
 
+    public void export(Entry<String, FileLister> fileListerMap, ILineProcess<Map<String, String>> processor)
+            throws Exception {
+        FileMap recordFileMap = new FileMap(resultPath);
+        FileLister fileLister = fileListerMap.getValue();
+        FileMap fileMap = new FileMap(resultPath, "listbucket", fileListerMap.getKey());
+        fileMap.initDefaultWriters();
+        ILineProcess lineProcessor = processor == null ? null : processor.clone();
+        String record = "order " + fileListerMap.getValue() + ": " + fileLister.getPrefix();
+        String exception = "";
+        try {
+            execLister(fileLister, fileMap, lineProcessor);
+        } catch (QiniuException e) {
+            exception = e.getMessage();
+            e.printStackTrace();
+            throw e;
+        } finally {
+            try {
+                String next = fileLister.getMarker();
+                if (next == null || "".equals(next)) record += "\tsuccessfully done";
+                else record += "\tmarker:" + next + "\tend:" + fileLister.getEndKeyPrefix() + "\t" + exception;
+                System.out.println(record);
+                recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            fileMap.closeWriters();
+            recordFileMap.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+            fileLister.remove();
+        }
+    }
+
     public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
@@ -176,36 +209,7 @@ public class ListBucket implements IDataSource {
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
         for (int i = 0; i < fileListerList.size(); i++) {
-            FileLister fileLister = fileListerList.get(i);
-            FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(i + 1));
-            fileMap.initDefaultWriters();
-            ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            int finalI = i;
             executorPool.execute(() -> {
-                String record = "order " + String.valueOf(finalI + 1) + ": " + fileLister.getPrefix();
-                try {
-                    execLister(fileLister, fileMap, lineProcessor);
-                    if (fileLister.getMarker() == null || "".equals(fileLister.getMarker()))
-                        record += "\tsuccessfully done";
-                    else
-                        record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
-                    System.out.println(record);
-                } catch (QiniuException e) {
-                    System.out.println(record + "\tmarker:" + fileLister.getMarker());
-                    record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
-                            "\t" + e.getMessage();
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                } finally {
-                    try {
-                        recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    fileMap.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    fileLister.remove();
-                }
             });
         }
         executorPool.shutdown();
