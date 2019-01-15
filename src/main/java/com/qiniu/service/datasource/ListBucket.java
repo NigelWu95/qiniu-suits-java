@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class ListBucket implements IDataSource {
@@ -178,16 +178,16 @@ public class ListBucket implements IDataSource {
         String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
         try {
             execLister(fileListerMap.getValue(), fileMap, lineProcessor);
-            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
-            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
+            throw new QiniuException(null, "");
+//            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
+//            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
+//            System.out.println(record);
         } catch (QiniuException e) {
             record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
                     "\t" + e.getMessage().replaceAll("\n", "\t");
-            e.printStackTrace();
             throw e;
         } finally {
             try {
-                System.out.println(record);
                 recordFileMap.writeKeyFile("result", record);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -199,6 +199,12 @@ public class ListBucket implements IDataSource {
         }
     }
 
+    synchronized private void exit(AtomicBoolean exit, Exception e) {
+        if (!exit.get()) e.printStackTrace();
+        exit.set(true);
+        System.exit(-1);
+    }
+
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
         Map<String, FileLister> fileListerMap = new HashMap<String, FileLister>(){{
@@ -208,25 +214,19 @@ public class ListBucket implements IDataSource {
         }};
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + threads + " threads ...");
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + t.toString());
-                System.exit(-1);
-            });
-            return thread;
-        };
-        ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
+        ExecutorService executorPool = Executors.newFixedThreadPool(threads);
+        AtomicBoolean exit = new AtomicBoolean(false);
         for (Entry<String, FileLister> fileListerEntry : fileListerMap.entrySet()) {
             executorPool.execute(() -> {
                 try {
                     export(fileListerEntry, processor);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    exit(exit, e);
                 }
             });
         }
         executorPool.shutdown();
-        ExecutorsUtils.waitForShutdown(executorPool, info);
+        while (!executorPool.isTerminated()) Thread.sleep(1000);
+        System.out.println(info + " finished");
     }
 }
