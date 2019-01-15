@@ -54,7 +54,7 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
-        FileMap fileMap = new FileMap(resultPath, "prefix_error", "");
+        FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
         fileMap.initDefaultWriters();
         return prefixList.parallelStream()
                 .map(prefix -> {
