@@ -10,17 +10,6 @@ import java.util.stream.Collectors;
 
 public class HttpResponseUtils {
 
-    public static int getNextRetryCount(QiniuException e, int retryCount) throws QiniuException {
-        if (e.response != null && e.response.needRetry()) {
-            retryCount--;
-            if (retryCount <= 0) throw e;
-        } else {
-            throw e;
-        }
-
-        return retryCount;
-    }
-
     public static void checkRetryCount(QiniuException e, int retryCount) throws QiniuException {
         if (e.response != null && e.response.needRetry()) {
             if (retryCount <= 0) throw e;
@@ -29,7 +18,7 @@ public class HttpResponseUtils {
         }
     }
 
-    public static void processException(QiniuException e, FileMap fileMap, List<String> infoList) throws IOException {
+    public static void processException(QiniuException e, FileMap fileMap, List<String> infoList) throws QiniuException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
             String message = e.getMessage() == null ? "" : e.getMessage();
@@ -40,10 +29,10 @@ public class HttpResponseUtils {
             }
             if (fileMap != null) {
                 if (infoList == null || infoList.size() == 0)
-                    fileMap.writeKeyFile("exception", message.replaceAll("\n", "\t"));
+                    fileMap.writeError(message.replaceAll("\n", "\t"));
                 else {
                     String finalMessage = message;
-                    fileMap.writeKeyFile("exception", String.join("\n", infoList.stream()
+                    fileMap.writeError(String.join("\n", infoList.stream()
                             .map(line -> line + "\t" + finalMessage.replaceAll("\n", "\t"))
                             .collect(Collectors.toList())));
                 }

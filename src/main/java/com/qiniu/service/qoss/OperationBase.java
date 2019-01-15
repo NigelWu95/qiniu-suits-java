@@ -3,6 +3,7 @@ package com.qiniu.service.qoss;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -56,7 +57,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setBatch(boolean batch) {
@@ -80,29 +81,25 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return operationBase;
     }
 
-    protected abstract String processLine(Map<String, String> fileInfo) throws IOException;
+    protected abstract String processLine(Map<String, String> fileInfo) throws QiniuException;
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
 
-    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         String result = null;
         for (Map<String, String> line : fileInfoList) {
             try {
                 int count = retryCount;
-                try {
-                    result = processLine(line);
-                } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, count);
-                    while (count > 0) {
-                        try {
-                            result = processLine(line);
-                            count = 0;
-                        } catch (QiniuException e1) {
-                            count = HttpResponseUtils.getNextRetryCount(e1, count);
-                        }
+                while (count > 0) {
+                    try {
+                        result = processLine(line);
+                        count = 0;
+                    } catch (QiniuException e) {
+                        retryCount--;
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
                     }
                 }
                 if (result != null && !"".equals(result)) fileMap.writeSuccess(getInputParams(line) + "\t" + result);
@@ -113,46 +110,48 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void parseBatchResult(List<Map<String, String>> processList, String result) throws QiniuException {
+        if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
+        JsonArray jsonArray;
+        try {
+            jsonArray = new Gson().fromJson(result, JsonArray.class);
+        } catch (JsonParseException e) { throw new QiniuException(null, "parse to json array error.");}
+        for (int j = 0; j < processList.size(); j++) {
+            JsonObject jsonObject = jsonArray.get(j).getAsJsonObject();
+            if (j < jsonArray.size()) {
+                if (jsonObject.get("code").getAsInt() == 200)
+                    fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
+                else
+                    fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
+            } else {
+                fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
+            }
+        }
+    }
+
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
         String result;
-        JsonArray jsonArray;
-        JsonObject jsonObject;
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
                 int count = retryCount;
-                try {
+                while (count > 0) {
                     try {
                         response = bucketManager.batch(batchOperations);
+                        count = 0;
                     } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, count);
-                        while (count > 0) {
-                            try {
-                                response = bucketManager.batch(batchOperations);
-                                count = 0;
-                            } catch (QiniuException e1) {
-                                count = HttpResponseUtils.getNextRetryCount(e1, count);
-                            }
-                        }
+                        retryCount--;
+                        HttpResponseUtils.checkRetryCount(e, retryCount);
                     }
-                    batchOperations.clearOps();
+                }
+                batchOperations.clearOps();
+                try {
                     result = HttpResponseUtils.getResult(response);
-                    jsonArray = new Gson().fromJson(result, JsonArray.class);
-                    for (int j = 0; j < processList.size(); j++) {
-                        jsonObject = jsonArray.get(j).getAsJsonObject();
-                        if (j < jsonArray.size()) {
-                            if (jsonObject.get("code").getAsInt() == 200)
-                                fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
-                            else
-                                fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
-                        } else {
-                            fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
-                        }
-                    }
+                    parseBatchResult(processList, result);
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processList.stream().map(this::getInputParams)
                             .collect(Collectors.toList()));
@@ -161,7 +160,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
         if (batch) batchRun(fileInfoList, retryCount);
         else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {

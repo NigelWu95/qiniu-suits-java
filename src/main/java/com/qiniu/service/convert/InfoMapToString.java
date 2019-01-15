@@ -12,13 +12,44 @@ import java.util.stream.Collectors;
 public class InfoMapToString implements ITypeConvert<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
-    private volatile List<String> errorList = new ArrayList<>();
 
     public InfoMapToString(String format, String separator, List<String> removeFields) {
         List<String> rmFields = removeFields == null ? new ArrayList<>() : removeFields;
         if ("json".equals(format)) {
             stringFormatter = (infoMap) -> {
                 JsonObject converted = new JsonObject();
+                if (!rmFields.contains("key") && infoMap.containsKey("key")) {
+                    converted.addProperty("key", infoMap.get("key"));
+                    infoMap.remove("key");
+                }
+                if (!rmFields.contains("hash") && infoMap.containsKey("hash")) {
+                    converted.addProperty("hash", infoMap.get("hash"));
+                    infoMap.remove("hash");
+                }
+                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
+                    converted.addProperty("fsize", infoMap.get("fsize"));
+                    infoMap.remove("fsize");
+                }
+                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
+                    converted.addProperty("putTime", infoMap.get("putTime"));
+                    infoMap.remove("putTime");
+                }
+                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
+                    converted.addProperty("mimeType", infoMap.get("mimeType"));
+                    infoMap.remove("mimeType");
+                }
+                if (!rmFields.contains("type") && infoMap.containsKey("type")) {
+                    converted.addProperty("type", infoMap.get("type"));
+                    infoMap.remove("type");
+                }
+                if (!rmFields.contains("status") && infoMap.containsKey("status")) {
+                    converted.addProperty("status", infoMap.get("status"));
+                    infoMap.remove("status");
+                }
+                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
+                    converted.addProperty("endUser", infoMap.get("endUser"));
+                    infoMap.remove("endUser");
+                }
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rmFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
                 }
@@ -71,31 +102,8 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
         // 使用 parallelStream 时，添加错误行至 errorList 需要同步代码块，stream 时可以直接 errorList.add();
         return srcList.stream()
-                .map(info -> {
-                    try {
-                        return stringFormatter.toFormatString(info);
-                    } catch (Exception e) {
-                        addError(String.valueOf(info) + "\t" + e.getMessage());
-                        return null;
-                    }
-                })
+                .map(stringFormatter::toFormatString)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
-
-    synchronized private void addError(String errorLine) {
-        errorList.add(errorLine);
-    }
-
-    public List<String> getErrorList() {
-        return errorList;
-    }
-
-    public List<String> consumeErrorList() {
-        List<String> errors = new ArrayList<>();
-        Collections.addAll(errors, new String[errorList.size()]);
-        Collections.copy(errors, errorList);
-        errorList.clear();
-        return errors;
     }
 }
