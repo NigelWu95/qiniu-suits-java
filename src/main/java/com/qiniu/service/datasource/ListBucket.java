@@ -155,7 +155,12 @@ public class ListBucket implements IDataSource {
                 if (writeTypeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()));
             }
-            if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
+            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+            try {
+                if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
+            } catch (QiniuException e) {
+                HttpResponseUtils.checkRetryCount(e, 1);
+            }
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
         }
@@ -174,7 +179,6 @@ public class ListBucket implements IDataSource {
             execLister(fileLister, fileMap, lineProcessor);
         } catch (QiniuException e) {
             exception = e.getMessage();
-            e.printStackTrace();
             throw e;
         } finally {
             try {
@@ -193,7 +197,7 @@ public class ListBucket implements IDataSource {
         }
     }
 
-    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
         Map<String, FileLister> fileListerMap = new HashMap<String, FileLister>(){{
             for (int i = 0; i < fileListerList.size(); i++) {
@@ -211,10 +215,20 @@ public class ListBucket implements IDataSource {
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
-        for (Entry<String, FileLister> fileLister : fileListerMap.entrySet()) {
-            executorPool.execute(() -> {
-
-            });
+        int order = 0;
+        for (Entry<String, FileLister> fileListerEntry : fileListerMap.entrySet()) {
+            // 第一个入口运行时不放入线程中，方便对一些参数错误的情况抛出的异常直接终止程序
+            if (order == 0) export(fileListerEntry, processor);
+            else {
+                executorPool.execute(() -> {
+                    try {
+                        export(fileListerEntry, processor);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+            order++;
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
