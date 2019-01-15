@@ -122,11 +122,7 @@ public class FileInput implements IDataSource {
             e.printStackTrace();
             throw e;
         } finally {
-            try {
-                recordFileMap.writeKeyFile("result", record);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            try { recordFileMap.writeKeyFile("result", record); } catch (IOException e) { e.printStackTrace(); }
             fileMap.closeWriters();
             recordFileMap.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();

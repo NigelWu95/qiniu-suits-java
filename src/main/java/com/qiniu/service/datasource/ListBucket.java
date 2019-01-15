@@ -186,11 +186,7 @@ public class ListBucket implements IDataSource {
                     "\t" + e.getMessage().replaceAll("\n", "\t");
             throw e;
         } finally {
-            try {
-                recordFileMap.writeKeyFile("result", record);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            try { recordFileMap.writeKeyFile("result", record); } catch (IOException e) { e.printStackTrace(); }
             fileMap.closeWriters();
             recordFileMap.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
