@@ -28,7 +28,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
     private BucketManager bucketManager;
     final private String bucket;
     final private String processName;
-    private int retryCount;
+    private int retryCount = 3;
     private boolean batch = true;
     private volatile BatchOperations batchOperations;
     private volatile List<String> errorLineList;
@@ -67,7 +67,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setBatch(boolean batch) {
@@ -115,17 +115,12 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
         for (Map<String, String> line : fileInfoList) {
             int count = retryCount;
             try {
-                try {
-                    fileInfo = bucketManager.stat(bucket, line.get("key"));
-                } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, count);
-                    while (count > 0) {
-                        try {
-                            fileInfo = bucketManager.stat(bucket, line.get("key"));
-                            count = 0;
-                        } catch (QiniuException e1) {
-                            count = HttpResponseUtils.getNextRetryCount(e1, count);
-                        }
+                while (count > 0) {
+                    try {
+                        fileInfo = bucketManager.stat(bucket, line.get("key"));
+                        count = 0;
+                    } catch (QiniuException e) {
+                        count = HttpResponseUtils.getNextRetryCount(e, count);
                     }
                 }
                 if (fileInfo != null) {

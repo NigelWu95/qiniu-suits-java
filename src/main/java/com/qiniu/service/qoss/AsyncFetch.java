@@ -94,7 +94,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -123,17 +123,12 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
 
     public String singleWithRetry(String url, String key, String md5, String etag, int retryCount) throws QiniuException {
         Response response = null;
-        try {
-            response = fetch(url, key, md5, etag);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = fetch(url, key, md5, etag);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
+        while (retryCount > 0) {
+            try {
+                response = fetch(url, key, md5, etag);
+                retryCount = 0;
+            } catch (QiniuException e2) {
+                retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
             }
         }
         assert response != null;

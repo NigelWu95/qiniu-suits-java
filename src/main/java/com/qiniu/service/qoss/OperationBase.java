@@ -56,7 +56,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setBatch(boolean batch) {
@@ -92,17 +92,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         for (Map<String, String> line : fileInfoList) {
             try {
                 int count = retryCount;
-                try {
-                    result = processLine(line);
-                } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, count);
-                    while (count > 0) {
-                        try {
-                            result = processLine(line);
-                            count = 0;
-                        } catch (QiniuException e1) {
-                            count = HttpResponseUtils.getNextRetryCount(e1, count);
-                        }
+                while (count > 0) {
+                    try {
+                        result = processLine(line);
+                        count = 0;
+                    } catch (QiniuException e1) {
+                        count = HttpResponseUtils.getNextRetryCount(e1, count);
                     }
                 }
                 if (result != null && !"".equals(result)) fileMap.writeSuccess(getInputParams(line) + "\t" + result);
