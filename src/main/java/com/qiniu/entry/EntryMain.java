@@ -67,7 +67,7 @@ public class EntryMain {
             List<String> antiPrefix = listBucketParams.getAntiPrefix();
             Auth auth = Auth.create(accessKey, secretKey);
             Configuration configuration = new Configuration(Zone.autoZone());
-            dataSource = new ListBucket(auth, configuration, bucket, unitLen, customPrefix, antiPrefix, 3, resultPath);
+            dataSource = new ListBucket(auth, configuration, bucket, unitLen, customPrefix, antiPrefix, resultPath);
         } else if ("file".equals(sourceType)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
             String filePath = fileInputParams.getFilePath();

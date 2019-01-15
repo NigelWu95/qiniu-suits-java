@@ -23,7 +23,6 @@ public class FileInput implements IDataSource {
     final private String separator;
     final private Map<String, String> infoIndexMap;
     final private int unitLen;
-    private int retryCount;
     final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
@@ -37,7 +36,6 @@ public class FileInput implements IDataSource {
         this.separator = separator;
         this.infoIndexMap = infoIndexMap;
         this.unitLen = unitLen;
-        this.retryCount = 3;
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
@@ -49,10 +47,6 @@ public class FileInput implements IDataSource {
         this.rmFields = removeFields;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
-    }
-
     private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor) throws IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
@@ -62,16 +56,7 @@ public class FileInput implements IDataSource {
         boolean goon = true;
         while (goon) {
             // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
-            int retry = retryCount;
-            while (retry > 0) {
-                try {
-                    line = reader.readLine();
-                    retry = 0;
-                } catch (IOException e2) {
-                    retry--;
-                    if (retry <= 0) throw e2;
-                }
-            }
+            line = reader.readLine();
             if (line == null) goon = false;
             else srcList.add(line);
             if (srcList.size() >= unitLen || line == null) {
