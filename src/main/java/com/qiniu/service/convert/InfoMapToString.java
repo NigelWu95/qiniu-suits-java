@@ -26,6 +26,30 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                     converted.addProperty("hash", infoMap.get("hash"));
                     infoMap.remove("hash");
                 }
+                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
+                    converted.addProperty("fsize", infoMap.get("fsize"));
+                    infoMap.remove("fsize");
+                }
+                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
+                    converted.addProperty("putTime", infoMap.get("putTime"));
+                    infoMap.remove("putTime");
+                }
+                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
+                    converted.addProperty("mimeType", infoMap.get("mimeType"));
+                    infoMap.remove("mimeType");
+                }
+                if (!rmFields.contains("type") && infoMap.containsKey("type")) {
+                    converted.addProperty("type", infoMap.get("type"));
+                    infoMap.remove("type");
+                }
+                if (!rmFields.contains("status") && infoMap.containsKey("status")) {
+                    converted.addProperty("status", infoMap.get("status"));
+                    infoMap.remove("status");
+                }
+                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
+                    converted.addProperty("endUser", infoMap.get("endUser"));
+                    infoMap.remove("endUser");
+                }
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rmFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
                 }
@@ -41,6 +65,30 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                 if (!rmFields.contains("hash") && infoMap.containsKey("hash")) {
                     converted.append(infoMap.get("hash")).append(separator);
                     infoMap.remove("hash");
+                }
+                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
+                    converted.append(infoMap.get("fsize")).append(separator);
+                    infoMap.remove("fsize");
+                }
+                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
+                    converted.append(infoMap.get("putTime")).append(separator);
+                    infoMap.remove("putTime");
+                }
+                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
+                    converted.append(infoMap.get("mimeType")).append(separator);
+                    infoMap.remove("mimeType");
+                }
+                if (!rmFields.contains("type") && infoMap.containsKey("type")) {
+                    converted.append(infoMap.get("type")).append(separator);
+                    infoMap.remove("type");
+                }
+                if (!rmFields.contains("status") && infoMap.containsKey("status")) {
+                    converted.append(infoMap.get("status")).append(separator);
+                    infoMap.remove("status");
+                }
+                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
+                    converted.append(infoMap.get("endUser"));
+                    infoMap.remove("endUser");
                 }
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rmFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
