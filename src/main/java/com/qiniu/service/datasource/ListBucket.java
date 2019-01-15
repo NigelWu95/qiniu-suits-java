@@ -56,7 +56,7 @@ public class ListBucket implements IDataSource {
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
         FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
         fileMap.initDefaultWriters();
-        return prefixList.parallelStream()
+        List<FileLister> listerList = prefixList.parallelStream()
                 .map(prefix -> {
                     try {
                         FileLister fileLister = null;
@@ -80,6 +80,8 @@ public class ListBucket implements IDataSource {
                 })
                 .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
+        fileMap.closeWriters();
+        return listerList;
     }
 
     private List<FileLister> getFileListerList(int threads) throws IOException {
@@ -210,7 +212,7 @@ public class ListBucket implements IDataSource {
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
-//                System.out.println(t.getName() + "\t" + t.toString());
+                System.out.println(t.getName() + "\t" + t.toString());
                 System.exit(-1);
             });
             return thread;
