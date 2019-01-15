@@ -108,20 +108,21 @@ public class FileInput implements IDataSource {
         if (processor != null) processor.setResultTag(readerEntry.getKey());
         ILineProcess lineProcessor = processor == null ? null : processor.clone();
         String record = "order: " + readerEntry.getKey();
-        String exception = "";
+        String next = null;
         try {
             traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
+            next = readerEntry.getValue().readLine();
+            if (next == null) record += "\tsuccessfully done";
+            else record += "\tnextLine:" + next;
         } catch (IOException e) {
-            exception = e.getMessage();
+            try { next = readerEntry.getValue().readLine(); } catch (IOException ex) { next = ex.getMessage(); }
+            record += "\tnextLine:" + next + "\t" + e.getMessage().replaceAll("\n", "\t");
             e.printStackTrace();
             throw e;
         } finally {
             try {
-                String nextLine = readerEntry.getValue().readLine();
-                if (nextLine == null || "".equals(nextLine)) record += "\tsuccessfully done";
-                else record += "\tnextLine:" + nextLine + "\t" + exception;
                 System.out.println(record);
-                recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
+                recordFileMap.writeKeyFile("result", record);
             } catch (IOException e) {
                 e.printStackTrace();
             }
