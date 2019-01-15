@@ -27,22 +27,22 @@ public class ListBucket implements IDataSource {
     final private int unitLen;
     final private String cPrefix;
     final private List<String> antiPrefix;
-    final private int retryCount;
+    private int retryCount;
     final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
-    private List<String> removeFields;
+    private List<String> rmFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, String customPrefix,
-                      List<String> antiPrefix, int retryCount, String resultPath) {
+                      List<String> antiPrefix, String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
-        this.retryCount = retryCount;
+        this.retryCount = 3;
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
@@ -51,7 +51,11 @@ public class ListBucket implements IDataSource {
         this.saveTotal = true;
         this.resultFormat = format;
         this.resultSeparator = separator;
-        this.removeFields = removeFields;
+        this.rmFields = removeFields;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
@@ -145,13 +149,9 @@ public class ListBucket implements IDataSource {
         return fileListerList;
     }
 
-    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess processor) throws Exception {
+    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess processor) throws QiniuException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<FileInfo, String> writeTypeConverter = null;
-        if (saveTotal) {
-            writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, removeFields);
-            fileMap.initDefaultWriters();
-        }
+        ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, rmFields);
         List<FileInfo> fileInfoList;
         List<String> writeList;
         while (fileLister.hasNext()) {
@@ -172,7 +172,7 @@ public class ListBucket implements IDataSource {
             }
             if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeKeyFile("map_error", String.join("\n", typeConverter.consumeErrorList()));
+                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
         }
     }
 
@@ -194,6 +194,7 @@ public class ListBucket implements IDataSource {
         for (int i = 0; i < fileListerList.size(); i++) {
             FileLister fileLister = fileListerList.get(i);
             FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(i + 1));
+            fileMap.initDefaultWriters();
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
             int finalI = i;
             executorPool.execute(() -> {
@@ -205,7 +206,7 @@ public class ListBucket implements IDataSource {
                     else
                         record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
                     System.out.println(record);
-                } catch (Exception e) {
+                } catch (QiniuException e) {
                     System.out.println(record + "\tmarker:" + fileLister.getMarker());
                     record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
                             "\t" + e.getMessage();

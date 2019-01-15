@@ -23,11 +23,12 @@ public class FileInput implements IDataSource {
     final private String separator;
     final private Map<String, String> infoIndexMap;
     final private int unitLen;
+    private int retryCount;
     final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
-    private List<String> removeFields;
+    private List<String> rmFields;
 
     public FileInput(String filePath, String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
                      String resultPath) {
@@ -36,6 +37,7 @@ public class FileInput implements IDataSource {
         this.separator = separator;
         this.infoIndexMap = infoIndexMap;
         this.unitLen = unitLen;
+        this.retryCount = 3;
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
@@ -44,30 +46,39 @@ public class FileInput implements IDataSource {
         this.saveTotal = true;
         this.resultFormat = format;
         this.resultSeparator = separator;
-        this.removeFields = removeFields;
+        this.rmFields = removeFields;
     }
 
-    private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor) throws
-            IOException {
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    }
+
+    private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor) throws IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = null;
-        if (saveTotal) {
-            writeTypeConverter = new InfoMapToString(resultFormat, resultSeparator, removeFields);
-            fileMap.initDefaultWriters();
-        }
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
+                resultSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
-        String line;
+        String line = null;
         boolean goon = true;
         while (goon) {
             // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
-            line = reader.readLine();
+            int retry = retryCount;
+            while (retry > 0) {
+                try {
+                    line = reader.readLine();
+                    retry = 0;
+                } catch (IOException e2) {
+                    retry--;
+                    if (retry <= 0) throw e2;
+                }
+            }
             if (line == null) goon = false;
             else srcList.add(line);
             if (srcList.size() >= unitLen || line == null) {
                 List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
                 List<String> writeList;
                 if (typeConverter.getErrorList().size() > 0)
-                    fileMap.writeKeyFile("map_error", String.join("\n", typeConverter.consumeErrorList()));
+                    fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
                     if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
@@ -116,6 +127,7 @@ public class FileInput implements IDataSource {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+            fileMap.initDefaultWriters();
             if (processor != null) processor.setResultTag(readerEntry.getKey());
             ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
@@ -127,7 +139,12 @@ public class FileInput implements IDataSource {
                     if (nextLine == null || "".equals(nextLine)) record += "\tsuccessfully done";
                     else record += "\tnextLine:" + nextLine;
                     System.out.println(record);
-                } catch (Exception e) {
+                } catch (IOException e) {
+                    try {
+                        nextLine = readerEntry.getValue().readLine();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                     System.out.println(record + "\tnextLine:" + nextLine);
                     record += "\tnextLine:" + nextLine + "\t" + e.getMessage();
                     e.printStackTrace();
