@@ -148,7 +148,11 @@ public class FileInput implements IDataSource {
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             executorPool.execute(() -> {
-
+                try {
+                    export(readerEntry, processor);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             });
         }
         executorPool.shutdown();

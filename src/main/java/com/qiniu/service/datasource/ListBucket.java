@@ -173,12 +173,13 @@ public class ListBucket implements IDataSource {
         FileMap fileMap = new FileMap(resultPath, "listbucket", fileListerMap.getKey());
         fileMap.initDefaultWriters();
         ILineProcess lineProcessor = processor == null ? null : processor.clone();
-        String record = "order " + fileListerMap.getValue() + ": " + fileLister.getPrefix();
+        String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
         String exception = "";
         try {
-            execLister(fileLister, fileMap, lineProcessor);
+            execLister(fileListerMap.getValue(), fileMap, lineProcessor);
         } catch (QiniuException e) {
             exception = e.getMessage();
+            e.printStackTrace();
             throw e;
         } finally {
             try {
@@ -224,7 +225,7 @@ public class ListBucket implements IDataSource {
                     try {
                         export(fileListerEntry, processor);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 });
             }
