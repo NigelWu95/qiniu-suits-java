@@ -80,14 +80,14 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return operationBase;
     }
 
-    protected abstract String processLine(Map<String, String> fileInfo) throws IOException;
+    protected abstract String processLine(Map<String, String> fileInfo) throws QiniuException;
 
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
 
-    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         String result = null;
         for (Map<String, String> line : fileInfoList) {
             try {
@@ -113,7 +113,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
@@ -161,7 +161,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
         if (batch) batchRun(fileInfoList, retryCount);
         else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {

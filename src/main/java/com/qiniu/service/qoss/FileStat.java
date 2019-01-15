@@ -109,7 +109,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
         return batchOperations;
     }
 
-    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         FileInfo fileInfo = null;
         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         for (Map<String, String> line : fileInfoList) {
@@ -140,7 +140,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
@@ -194,7 +194,7 @@ public class FileStat implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
         if (batch) batchRun(fileInfoList, retryCount);
         else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {
