@@ -15,9 +15,7 @@ import java.util.*;
 import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class FileInput implements IDataSource {
 
@@ -50,12 +48,14 @@ public class FileInput implements IDataSource {
         this.rmFields = removeFields;
     }
 
-    private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor)
+    private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws QiniuException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
                 resultSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
+        List<Map<String, String>> infoMapList;
+        List<String> writeList;
         String line = null;
         boolean goon = true;
         while (goon) {
@@ -64,26 +64,18 @@ public class FileInput implements IDataSource {
             if (line == null) goon = false;
             else srcList.add(line);
             if (srcList.size() >= unitLen || line == null) {
-                List<Map<String, String>> infoMapList = typeConverter.convertToVList(srcList);
-                List<String> writeList;
+                infoMapList = typeConverter.convertToVList(srcList);
                 if (typeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
                     if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
-                    if (writeTypeConverter.getErrorList().size() > 0)
-                        fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()));
                 }
-                int size = infoMapList.size() / unitLen + 1;
-                for (int j = 0; j < size; j++) {
-                    List<Map<String, String>> processList = infoMapList.subList(unitLen * j,
-                            j == size - 1 ? infoMapList.size() : unitLen * (j + 1));
-                    // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-                    try {
-                        if (processor != null) processor.processLine(processList);
-                    } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, 1);
-                    }
+                // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+                try {
+                    if (processor != null) processor.processLine(infoMapList);
+                } catch (QiniuException e) {
+                    HttpResponseUtils.checkRetryCount(e, 1);
                 }
                 srcList = new ArrayList<>();
             }
@@ -107,7 +99,7 @@ public class FileInput implements IDataSource {
         FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
         fileMap.initDefaultWriters();
         if (processor != null) processor.setResultTag(readerEntry.getKey());
-        ILineProcess lineProcessor = processor == null ? null : processor.clone();
+        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order: " + readerEntry.getKey();
         String next;
         try {
