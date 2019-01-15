@@ -15,40 +15,41 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
 
     public InfoMapToString(String format, String separator, List<String> removeFields) {
         List<String> rmFields = removeFields == null ? new ArrayList<>() : removeFields;
+        // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
         if ("json".equals(format)) {
             stringFormatter = (infoMap) -> {
                 JsonObject converted = new JsonObject();
                 if (!rmFields.contains("key") && infoMap.containsKey("key")) {
                     converted.addProperty("key", infoMap.get("key"));
-                    infoMap.remove("key");
+                    rmFields.add("key");
                 }
                 if (!rmFields.contains("hash") && infoMap.containsKey("hash")) {
                     converted.addProperty("hash", infoMap.get("hash"));
-                    infoMap.remove("hash");
+                    rmFields.add("hash");
                 }
                 if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
                     converted.addProperty("fsize", infoMap.get("fsize"));
-                    infoMap.remove("fsize");
+                    rmFields.add("fsize");
                 }
                 if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
                     converted.addProperty("putTime", infoMap.get("putTime"));
-                    infoMap.remove("putTime");
+                    rmFields.add("putTime");
                 }
                 if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
                     converted.addProperty("mimeType", infoMap.get("mimeType"));
-                    infoMap.remove("mimeType");
+                    rmFields.add("mimeType");
                 }
                 if (!rmFields.contains("type") && infoMap.containsKey("type")) {
                     converted.addProperty("type", infoMap.get("type"));
-                    infoMap.remove("type");
+                    rmFields.add("type");
                 }
                 if (!rmFields.contains("status") && infoMap.containsKey("status")) {
                     converted.addProperty("status", infoMap.get("status"));
-                    infoMap.remove("status");
+                    rmFields.add("status");
                 }
                 if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
                     converted.addProperty("endUser", infoMap.get("endUser"));
-                    infoMap.remove("endUser");
+                    rmFields.add("endUser");
                 }
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rmFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
@@ -60,15 +61,15 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                 StringBuilder converted = new StringBuilder();
                 if (!rmFields.contains("key") && infoMap.containsKey("key")) {
                     converted.append(infoMap.get("key")).append(separator);
-                    infoMap.remove("key");
+                    rmFields.add("key");
                 }
                 if (!rmFields.contains("hash") && infoMap.containsKey("hash")) {
                     converted.append(infoMap.get("hash")).append(separator);
-                    infoMap.remove("hash");
+                    rmFields.add("hash");
                 }
                 if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
                     converted.append(infoMap.get("fsize")).append(separator);
-                    infoMap.remove("fsize");
+                    rmFields.add("fsize");
                 }
                 if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
                     converted.append(infoMap.get("putTime")).append(separator);
@@ -76,19 +77,19 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
                 }
                 if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
                     converted.append(infoMap.get("mimeType")).append(separator);
-                    infoMap.remove("mimeType");
+                    rmFields.add("mimeType");
                 }
                 if (!rmFields.contains("type") && infoMap.containsKey("type")) {
                     converted.append(infoMap.get("type")).append(separator);
-                    infoMap.remove("type");
+                    rmFields.add("type");
                 }
                 if (!rmFields.contains("status") && infoMap.containsKey("status")) {
                     converted.append(infoMap.get("status")).append(separator);
-                    infoMap.remove("status");
+                    rmFields.add("status");
                 }
                 if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
                     converted.append(infoMap.get("endUser"));
-                    infoMap.remove("endUser");
+                    rmFields.add("endUser");
                 }
                 for (Entry<String, String> set : infoMap.entrySet()) {
                     if (!rmFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
