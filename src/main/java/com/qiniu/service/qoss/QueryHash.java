@@ -61,7 +61,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -82,23 +82,19 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     public String singleWithRetry(String url, int retryCount) throws QiniuException {
         String qhash = null;
-        try {
-            qhash = fileChecker.getQHashBody(url);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    qhash = fileChecker.getQHashBody(url);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
+        while (retryCount > 0) {
+            try {
+                qhash = fileChecker.getQHashBody(url);
+                retryCount = 0;
+            } catch (QiniuException e) {
+                retryCount--;
+                HttpResponseUtils.checkRetryCount(e, retryCount);
             }
         }
         return qhash;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;
         String qhash;
@@ -124,7 +120,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
         processLine(lineList, retryCount);
     }
 

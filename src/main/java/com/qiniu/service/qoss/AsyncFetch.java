@@ -94,7 +94,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -123,17 +123,13 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
 
     public String singleWithRetry(String url, String key, String md5, String etag, int retryCount) throws QiniuException {
         Response response = null;
-        try {
-            response = fetch(url, key, md5, etag);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = fetch(url, key, md5, etag);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
+        while (retryCount > 0) {
+            try {
+                response = fetch(url, key, md5, etag);
+                retryCount = 0;
+            } catch (QiniuException e) {
+                retryCount--;
+                HttpResponseUtils.checkRetryCount(e, retryCount);
             }
         }
         assert response != null;
@@ -141,7 +137,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 HttpResponseUtils.getResult(response) + "\"}";
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;
         String fetchResult;
@@ -169,7 +165,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
         processLine(lineList, retryCount);
     }
 

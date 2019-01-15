@@ -56,7 +56,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -77,23 +77,19 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public String singleWithRetry(String key, String fops, int retryCount) throws QiniuException {
         String persistentId = null;
-        try {
-            persistentId = operationManager.pfop(bucket, key, fops, pfopParams);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    persistentId = operationManager.pfop(bucket, key, fops, pfopParams);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
+        while (retryCount > 0) {
+            try {
+                persistentId = operationManager.pfop(bucket, key, fops, pfopParams);
+                retryCount = 0;
+            } catch (QiniuException e) {
+                retryCount--;
+                HttpResponseUtils.checkRetryCount(e, retryCount);
             }
         }
         return persistentId;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String key;
         String pfopId;
         for (Map<String, String> line : lineList) {
@@ -111,7 +107,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
         processLine(lineList, retryCount);
     }
 
