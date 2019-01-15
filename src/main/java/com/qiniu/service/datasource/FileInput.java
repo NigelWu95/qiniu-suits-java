@@ -47,7 +47,8 @@ public class FileInput implements IDataSource {
         this.removeFields = removeFields;
     }
 
-    private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor) throws Exception {
+    private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess processor) throws
+            IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = null;
         if (saveTotal) {
