@@ -195,25 +195,28 @@ public class ListBucket implements IDataSource {
 
     public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
+        Map<String, FileLister> fileListerMap = new HashMap<String, FileLister>(){{
+            for (int i = 0; i < fileListerList.size(); i++) {
+                put(String.valueOf(i + 1), fileListerList.get(i));
+            }
+        }};
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
-        FileMap recordFileMap = new FileMap(resultPath);
         System.out.println(info + " concurrently running with " + threads + " threads ...");
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
                 System.out.println(t.getName() + "\t" + t.toString());
-                recordFileMap.closeWriters();
                 System.exit(-1);
             });
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
-        for (int i = 0; i < fileListerList.size(); i++) {
+        for (Entry<String, FileLister> fileLister : fileListerMap.entrySet()) {
             executorPool.execute(() -> {
+
             });
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
-        recordFileMap.closeWriters();
     }
 }
