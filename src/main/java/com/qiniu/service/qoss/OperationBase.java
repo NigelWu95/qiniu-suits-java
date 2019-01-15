@@ -3,6 +3,7 @@ package com.qiniu.service.qoss;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -108,46 +109,47 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
+    public void parseBatchResult(List<Map<String, String>> processList, String result) throws QiniuException {
+        if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
+        JsonArray jsonArray;
+        try {
+            jsonArray = new Gson().fromJson(result, JsonArray.class);
+        } catch (JsonParseException e) { throw new QiniuException(null, "parse to json array error.");}
+        for (int j = 0; j < processList.size(); j++) {
+            JsonObject jsonObject = jsonArray.get(j).getAsJsonObject();
+            if (j < jsonArray.size()) {
+                if (jsonObject.get("code").getAsInt() == 200)
+                    fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
+                else
+                    fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
+            } else {
+                fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
+            }
+        }
+    }
+
     public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response = null;
         String result;
-        JsonArray jsonArray;
-        JsonObject jsonObject;
         for (int i = 0; i < times; i++) {
             processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
                 int count = retryCount;
-                try {
+                while (count > 0) {
                     try {
                         response = bucketManager.batch(batchOperations);
-                    } catch (QiniuException e) {
-                        HttpResponseUtils.checkRetryCount(e, count);
-                        while (count > 0) {
-                            try {
-                                response = bucketManager.batch(batchOperations);
-                                count = 0;
-                            } catch (QiniuException e1) {
-                                count = HttpResponseUtils.getNextRetryCount(e1, count);
-                            }
-                        }
+                        count = 0;
+                    } catch (QiniuException e1) {
+                        count = HttpResponseUtils.getNextRetryCount(e1, count);
                     }
-                    batchOperations.clearOps();
+                }
+                batchOperations.clearOps();
+                try {
                     result = HttpResponseUtils.getResult(response);
-                    jsonArray = new Gson().fromJson(result, JsonArray.class);
-                    for (int j = 0; j < processList.size(); j++) {
-                        jsonObject = jsonArray.get(j).getAsJsonObject();
-                        if (j < jsonArray.size()) {
-                            if (jsonObject.get("code").getAsInt() == 200)
-                                fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
-                            else
-                                fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
-                        } else {
-                            fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
-                        }
-                    }
+                    parseBatchResult(processList, result);
                 } catch (QiniuException e) {
                     HttpResponseUtils.processException(e, fileMap, processList.stream().map(this::getInputParams)
                             .collect(Collectors.toList()));
