@@ -80,8 +80,9 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
             try {
                 avinfo = mediaManager.getAvinfoBody(url);
                 retryCount = 0;
-            } catch (QiniuException e2) {
-                retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+            } catch (QiniuException e) {
+                retryCount--;
+                HttpResponseUtils.checkRetryCount(e, retryCount);
             }
         }
         return avinfo;

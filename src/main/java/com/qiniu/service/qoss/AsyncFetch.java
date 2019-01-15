@@ -127,8 +127,9 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             try {
                 response = fetch(url, key, md5, etag);
                 retryCount = 0;
-            } catch (QiniuException e2) {
-                retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
+            } catch (QiniuException e) {
+                retryCount--;
+                HttpResponseUtils.checkRetryCount(e, retryCount);
             }
         }
         assert response != null;
