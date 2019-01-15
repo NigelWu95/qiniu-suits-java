@@ -104,19 +104,20 @@ public class FileMap {
     public void closeWriters() {
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
             int retry = retryCount;
-            File file = new File(targetFileDir, entry.getKey() + ".txt");
-            BufferedReader reader;
             while (retry > 0) {
                 try {
-                    if (writerMap.get(entry.getKey()) != null) {
-                        writerMap.get(entry.getKey()).close();
-                        reader = new BufferedReader(new FileReader(file));
+                    if (writerMap.get(entry.getKey()) != null) writerMap.get(entry.getKey()).close();
+                    File file = new File(targetFileDir, entry.getKey() + ".txt");
+                    if (file.exists()) {
+                        BufferedReader reader = new BufferedReader(new FileReader(file));
                         if (reader.readLine() == null) {
                             reader.close();
                             if (file.delete()) retry = 0;
                         } else {
                             retry = 0;
                         }
+                    } else {
+                        retry = 0;
                     }
                 } catch (IOException e) {
                     retry--;
