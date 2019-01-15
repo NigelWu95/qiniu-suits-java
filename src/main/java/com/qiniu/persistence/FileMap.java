@@ -14,7 +14,7 @@ public class FileMap implements Cloneable {
     private String suffix = null;
 
     public FileMap() {
-        this.defaultWriters = Collections.singletonList("success");
+        this.defaultWriters = Arrays.asList("success", "error");
         this.writerMap = new HashMap<>();
         this.readerMap = new HashMap<>();
     }
@@ -68,26 +68,16 @@ public class FileMap implements Cloneable {
         writerMap.put(key, writer);
     }
 
-    private synchronized void mkDirAndFile(File filePath) throws IOException {
-
-        int count = 3;
-        while (!filePath.getParentFile().exists()) {
-            if (count == 0) {
+    private void mkDirAndFile(File filePath) throws IOException {
+        if (!filePath.getParentFile().exists()) {
+            if (!filePath.getParentFile().mkdirs()) {
                 throw new IOException("can not make directory.");
             }
-            filePath.getParentFile().mkdirs();
-            count--;
         }
-
-        if (count < 3) System.out.println(filePath.getParentFile());
-
-        count = 3;
-        while (!filePath.exists()) {
-            if (count == 0) {
-                throw new IOException("can not make directory.");
+        if (!filePath.exists()) {
+            if (!filePath.createNewFile()) {
+                throw new IOException("can not make file.");
             }
-            filePath.createNewFile();
-            count--;
         }
     }
 
@@ -165,9 +155,22 @@ public class FileMap implements Cloneable {
         }
     }
 
-    private void doWrite(String key, String item) throws IOException {
+    private void writeLine(String key, String item) throws IOException {
         getWriter(key).write(item);
         getWriter(key).newLine();
+    }
+
+    private void doWrite(String key, String item) {
+        int count = 3;
+        while (count > 0) {
+            try {
+                writeLine(key, item);
+                count = 0;
+            } catch (IOException e) {
+                count--;
+                if (count <= 0) e.printStackTrace();
+            }
+        }
     }
 
     public void writeKeyFile(String key, String item) throws IOException {
@@ -175,13 +178,11 @@ public class FileMap implements Cloneable {
         doWrite(prefix + key + suffix, item);
     }
 
-    public void writeSuccess(String item) throws IOException {
+    public void writeSuccess(String item) {
         doWrite(prefix + "success" + suffix, item);
     }
 
-    public void writeError(String item) throws IOException {
-        if (!writerMap.keySet().contains(prefix + "error" + suffix))
-            addWriter(prefix + "error" + suffix);
+    public void writeError(String item) {
         doWrite(prefix + "error" + suffix, item);
     }
 }
