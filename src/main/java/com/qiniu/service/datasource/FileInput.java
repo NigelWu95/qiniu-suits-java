@@ -1,11 +1,13 @@
 package com.qiniu.service.datasource;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.InfoMapToString;
 import com.qiniu.service.convert.LineToInfoMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.ExecutorsUtils;
+import com.qiniu.util.HttpResponseUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -74,7 +76,12 @@ public class FileInput implements IDataSource {
                 for (int j = 0; j < size; j++) {
                     List<Map<String, String>> processList = infoMapList.subList(unitLen * j,
                             j == size - 1 ? infoMapList.size() : unitLen * (j + 1));
-                    if (processor != null) processor.processLine(processList);
+                    // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+                    try {
+                        if (processor != null) processor.processLine(processList);
+                    } catch (QiniuException e) {
+                        HttpResponseUtils.checkRetryCount(e, 1);
+                    }
                 }
                 srcList = new ArrayList<>();
             }
@@ -123,7 +130,7 @@ public class FileInput implements IDataSource {
         }
     }
 
-    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap inputFileMap = getSourceFileMap();
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
         int listSize = readerEntrySet.size();
