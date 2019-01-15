@@ -98,7 +98,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return qhash;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;
         String qhash;
@@ -124,7 +124,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
         processLine(lineList, retryCount);
     }
 

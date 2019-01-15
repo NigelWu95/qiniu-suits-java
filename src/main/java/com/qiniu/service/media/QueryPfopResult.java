@@ -87,7 +87,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return pfopResult;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String pid;
         String result;
         PfopResult pfopResult;
@@ -100,13 +100,12 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                     pfopResult = gson.fromJson(result, PfopResult.class);
                     // 可能有多条转码指令
                     for (Item item : pfopResult.items) {
-                        // code == 3 时表示转码失败，记录下转码参数和错误方便进行重试
-                        if (pfopResult.code == 3) {
-                            fileMap.writeKeyFile( "failed", pfopResult.inputKey + "\t" + item.cmd + "\t" +
-                                    item.key + "\t" + pid + "\t" + item.error);
+                        // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
+                        if (item.code == 0) {
+                            fileMap.writeSuccess(pid + "\t" + pfopResult.inputKey + "\t" + item.key + "\t" + result);
                         } else {
-                            fileMap.writeKeyFile("code-" + pfopResult.code, pfopResult.inputKey + "\t" +
-                                    item.key + "\t" + pid + "\t" + result);
+                            fileMap.writeError( pid + "\t" + pfopResult.inputKey + "\t" + item.key + "\t" +
+                                    item.cmd + "\t" + item.code + "\t" + item.desc + "\t" + item.error);
                         }
                     }
                 } else fileMap.writeError( pid + "\tempty pfop result");
@@ -117,7 +116,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
         processLine(lineList, retryCount);
     }
 
