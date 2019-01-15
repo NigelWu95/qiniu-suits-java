@@ -159,6 +159,7 @@ public class FileInput implements IDataSource {
         }
         executorPool.shutdown();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
+        inputFileMap.closeReaders();
         System.out.println(info + " finished");
     }
 }

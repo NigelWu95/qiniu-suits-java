@@ -178,10 +178,9 @@ public class ListBucket implements IDataSource {
         String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
         try {
             execLister(fileListerMap.getValue(), fileMap, lineProcessor);
-            throw new QiniuException(null, "");
-//            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
-//            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
-//            System.out.println(record);
+            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
+            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
+            System.out.println(record);
         } catch (QiniuException e) {
             record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
                     "\t" + e.getMessage().replaceAll("\n", "\t");
@@ -227,6 +226,7 @@ public class ListBucket implements IDataSource {
         }
         executorPool.shutdown();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
+        for (FileLister fileLister : fileListerList) fileLister.remove();
         System.out.println(info + " finished");
     }
 }
