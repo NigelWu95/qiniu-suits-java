@@ -27,7 +27,6 @@ public class ListBucket implements IDataSource {
     final private int unitLen;
     final private String cPrefix;
     final private List<String> antiPrefix;
-    private int retryCount;
     final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
@@ -42,7 +41,6 @@ public class ListBucket implements IDataSource {
         this.unitLen = unitLen;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
-        this.retryCount = 3;
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
@@ -54,42 +52,28 @@ public class ListBucket implements IDataSource {
         this.rmFields = removeFields;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
-    }
-
-    private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
-        FileMap fileMap = new FileMap(resultPath);
+    private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
+        FileMap fileMap = new FileMap(resultPath, "prefix_error", "");
+        fileMap.initDefaultWriters();
         return prefixList.parallelStream()
                 .map(prefix -> {
                     try {
                         FileLister fileLister = null;
-                        int retry = retryCount;
-                        try {
-                            fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    null, "", null, unitLen);
-                        } catch (QiniuException e1) {
-                            HttpResponseUtils.checkRetryCount(e1, retry);
-                            while (retry > 0) {
-                                System.out.println("list prefix:" + prefix + "\tlast " + retry + " times retrying...");
-                                try {
-                                    fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                            null, "", null, unitLen);
-                                    retry = 0;
-                                } catch (QiniuException e2) {
-                                    retry = HttpResponseUtils.getNextRetryCount(e2, retry);
-                                }
+                        boolean retry = true;
+                        while (retry) {
+                            try {
+                                fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
+                                        null, "", null, unitLen);
+                                retry = false;
+                            } catch (QiniuException e) {
+                                System.out.println("list prefix:" + prefix + "\tretrying...");
+                                HttpResponseUtils.checkRetryCount(e, 1);
                             }
                         }
                         return fileLister;
                     } catch (QiniuException e) {
                         System.out.println("list prefix:" + prefix + "\t" + e.error());
-                        try {
-                            fileMap.writeKeyFile("prefix_error", prefix + " to init fileLister" +
-                                    "\t" + e.error());
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
-                        }
+                        fileMap.writeSuccess(prefix + " to init fileLister" + "\t" + e.error());
                         return null;
                     }
                 })
@@ -97,7 +81,7 @@ public class ListBucket implements IDataSource {
                 .collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int threads) {
+    private List<FileLister> getFileListerList(int threads) throws IOException {
         List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
                 "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
         if (threads <= 1) return prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen);
