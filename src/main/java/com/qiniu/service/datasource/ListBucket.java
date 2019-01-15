@@ -176,20 +176,19 @@ public class ListBucket implements IDataSource {
         fileMap.initDefaultWriters();
         ILineProcess lineProcessor = processor == null ? null : processor.clone();
         String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
-        String exception = "";
         try {
             execLister(fileListerMap.getValue(), fileMap, lineProcessor);
+            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
+            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
         } catch (QiniuException e) {
-            exception = e.getMessage();
+            record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
+                    "\t" + e.getMessage().replaceAll("\n", "\t");
             e.printStackTrace();
             throw e;
         } finally {
             try {
-                String next = fileLister.getMarker();
-                if (next == null || "".equals(next)) record += "\tsuccessfully done";
-                else record += "\tmarker:" + next + "\tend:" + fileLister.getEndKeyPrefix() + "\t" + exception;
                 System.out.println(record);
-                recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
+                recordFileMap.writeKeyFile("result", record);
             } catch (IOException e) {
                 e.printStackTrace();
             }

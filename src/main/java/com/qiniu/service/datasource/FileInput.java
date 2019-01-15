@@ -142,7 +142,7 @@ public class FileInput implements IDataSource {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
                 System.out.println(t.getName() + "\t" + t.toString());
-                System.exit(-1);
+//                System.exit(-1);
             });
             return thread;
         };
