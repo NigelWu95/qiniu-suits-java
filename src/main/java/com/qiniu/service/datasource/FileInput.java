@@ -52,7 +52,7 @@ public class FileInput implements IDataSource {
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
                 resultSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
-        String line = null;
+        String line;
         boolean goon = true;
         while (goon) {
             // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式

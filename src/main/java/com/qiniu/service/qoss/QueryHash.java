@@ -61,7 +61,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -82,17 +82,12 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     public String singleWithRetry(String url, int retryCount) throws QiniuException {
         String qhash = null;
-        try {
-            qhash = fileChecker.getQHashBody(url);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    qhash = fileChecker.getQHashBody(url);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
+        while (retryCount > 0) {
+            try {
+                qhash = fileChecker.getQHashBody(url);
+                retryCount = 0;
+            } catch (QiniuException e2) {
+                retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
             }
         }
         return qhash;

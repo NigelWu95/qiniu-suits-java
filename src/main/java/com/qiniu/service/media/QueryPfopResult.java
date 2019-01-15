@@ -50,7 +50,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -71,17 +71,12 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     public String singleWithRetry(String id, int retryCount) throws QiniuException {
         String pfopResult = null;
-        try {
-            pfopResult = mediaManager.getPfopResultBodyById(id);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    pfopResult = mediaManager.getPfopResultBodyById(id);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
+        while (retryCount > 0) {
+            try {
+                pfopResult = mediaManager.getPfopResultBodyById(id);
+                retryCount = 0;
+            } catch (QiniuException e2) {
+                retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
             }
         }
         return pfopResult;
