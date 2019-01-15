@@ -3,7 +3,7 @@ package com.qiniu.service.datasource;
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.FileInfoToMap;
-import com.qiniu.service.convert.FileInfoToString;
+import com.qiniu.service.convert.InfoMapToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileLister;
@@ -136,10 +136,13 @@ public class ListBucket implements IDataSource {
         return fileListerList;
     }
 
-    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess processor) throws QiniuException {
+    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
+            throws QiniuException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, rmFields);
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
+                resultSeparator, rmFields);
         List<FileInfo> fileInfoList;
+        List<Map<String, String>> infoMapList;
         List<String> writeList;
         while (fileLister.hasNext()) {
             fileInfoList = fileLister.next();
@@ -151,20 +154,19 @@ public class ListBucket implements IDataSource {
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
+            infoMapList = typeConverter.convertToVList(fileInfoList);
+            if (typeConverter.getErrorList().size() > 0)
+                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
             if (saveTotal) {
-                writeList = writeTypeConverter.convertToVList(fileInfoList);
+                writeList = writeTypeConverter.convertToVList(infoMapList);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
-                if (writeTypeConverter.getErrorList().size() > 0)
-                    fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()));
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
-                if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
+                if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
                 HttpResponseUtils.checkRetryCount(e, 1);
             }
-            if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
         }
     }
 
@@ -174,7 +176,7 @@ public class ListBucket implements IDataSource {
         FileLister fileLister = fileListerMap.getValue();
         FileMap fileMap = new FileMap(resultPath, "listbucket", fileListerMap.getKey());
         fileMap.initDefaultWriters();
-        ILineProcess lineProcessor = processor == null ? null : processor.clone();
+        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
         try {
             execLister(fileListerMap.getValue(), fileMap, lineProcessor);
