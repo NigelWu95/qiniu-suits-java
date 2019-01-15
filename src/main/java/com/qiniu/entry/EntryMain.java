@@ -80,7 +80,7 @@ public class EntryMain {
 
         if (dataSource != null) {
             if (saveTotal) dataSource.setResultSaveOptions(resultFormat, resultSeparator, removeFields);
-            dataSource.exportData(threads, processor);
+            dataSource.export(threads, processor);
         }
         if (processor != null) processor.closeResource();
     }
