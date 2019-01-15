@@ -92,6 +92,37 @@ public class FileInput implements IDataSource {
         return inputFileMap;
     }
 
+    public void export(Entry<String, BufferedReader> readerEntry, ILineProcess<Map<String, String>> processor)
+            throws Exception {
+        FileMap recordFileMap = new FileMap(resultPath);
+        FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+        fileMap.initDefaultWriters();
+        if (processor != null) processor.setResultTag(readerEntry.getKey());
+        ILineProcess lineProcessor = processor == null ? null : processor.clone();
+        String record = "order: " + readerEntry.getKey();
+        String exception = "";
+        try {
+            traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
+        } catch (IOException e) {
+            exception = e.getMessage();
+            e.printStackTrace();
+            throw e;
+        } finally {
+            try {
+                String nextLine = readerEntry.getValue().readLine();
+                if (nextLine == null || "".equals(nextLine)) record += "\tsuccessfully done";
+                else record += "\tnextLine:" + nextLine + "\t" + exception;
+                System.out.println(record);
+                recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            fileMap.closeWriters();
+            recordFileMap.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+        }
+    }
+
     public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap inputFileMap = getSourceFileMap();
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
@@ -111,39 +142,8 @@ public class FileInput implements IDataSource {
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
-            FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
-            fileMap.initDefaultWriters();
-            if (processor != null) processor.setResultTag(readerEntry.getKey());
-            ILineProcess lineProcessor = processor == null ? null : processor.clone();
             executorPool.execute(() -> {
-                String record = "order: " + readerEntry.getKey();
-                String nextLine = null;
-                try {
-                    traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
-                    nextLine = readerEntry.getValue().readLine();
-                    if (nextLine == null || "".equals(nextLine)) record += "\tsuccessfully done";
-                    else record += "\tnextLine:" + nextLine;
-                    System.out.println(record);
-                } catch (IOException e) {
-                    try {
-                        nextLine = readerEntry.getValue().readLine();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    System.out.println(record + "\tnextLine:" + nextLine);
-                    record += "\tnextLine:" + nextLine + "\t" + e.getMessage();
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                } finally {
-                    try {
-                        recordFileMap.writeKeyFile("result", record.replaceAll("\n", "\t"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    fileMap.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    inputFileMap.closeReader(readerEntry.getKey());
-                }
+
             });
         }
         executorPool.shutdown();
