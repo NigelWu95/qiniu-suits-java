@@ -138,15 +138,7 @@ public class FileInput implements IDataSource {
         int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + t.toString());
-                System.exit(-1);
-            });
-            return thread;
-        };
-        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
+        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             executorPool.execute(() -> {
                 try {

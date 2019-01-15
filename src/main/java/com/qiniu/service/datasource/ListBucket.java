@@ -210,26 +210,20 @@ public class ListBucket implements IDataSource {
         ThreadFactory threadFactory = runnable -> {
             Thread thread = new Thread(runnable);
             thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + t.toString());
+//                System.out.println(t.getName() + "\t" + t.toString());
                 System.exit(-1);
             });
             return thread;
         };
         ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
-        int order = 0;
         for (Entry<String, FileLister> fileListerEntry : fileListerMap.entrySet()) {
-            // 第一个入口运行时不放入线程中，方便对一些参数错误的情况抛出的异常直接终止程序
-            if (order == 0) export(fileListerEntry, processor);
-            else {
-                executorPool.execute(() -> {
-                    try {
-                        export(fileListerEntry, processor);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-            order++;
+            executorPool.execute(() -> {
+                try {
+                    export(fileListerEntry, processor);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }
         executorPool.shutdown();
         ExecutorsUtils.waitForShutdown(executorPool, info);
