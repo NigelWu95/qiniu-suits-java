@@ -6,7 +6,6 @@ import com.qiniu.service.convert.InfoMapToString;
 import com.qiniu.service.convert.LineToInfoMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
-import com.qiniu.util.ExecutorsUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.BufferedReader;
@@ -17,6 +16,8 @@ import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FileInput implements IDataSource {
 
@@ -108,12 +109,13 @@ public class FileInput implements IDataSource {
         if (processor != null) processor.setResultTag(readerEntry.getKey());
         ILineProcess lineProcessor = processor == null ? null : processor.clone();
         String record = "order: " + readerEntry.getKey();
-        String next = null;
+        String next;
         try {
             traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
             next = readerEntry.getValue().readLine();
             if (next == null) record += "\tsuccessfully done";
             else record += "\tnextLine:" + next;
+            System.out.println(record);
         } catch (IOException e) {
             try { next = readerEntry.getValue().readLine(); } catch (IOException ex) { next = ex.getMessage(); }
             record += "\tnextLine:" + next + "\t" + e.getMessage().replaceAll("\n", "\t");
@@ -121,7 +123,6 @@ public class FileInput implements IDataSource {
             throw e;
         } finally {
             try {
-                System.out.println(record);
                 recordFileMap.writeKeyFile("result", record);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -132,6 +133,12 @@ public class FileInput implements IDataSource {
         }
     }
 
+    synchronized private void exit(AtomicBoolean exit, Exception e) {
+        if (!exit.get()) e.printStackTrace();
+        exit.set(true);
+        System.exit(-1);
+    }
+
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap inputFileMap = getSourceFileMap();
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
@@ -139,25 +146,19 @@ public class FileInput implements IDataSource {
         int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + t.toString());
-//                System.exit(-1);
-            });
-            return thread;
-        };
-        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads, threadFactory);
+        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
+        AtomicBoolean exit = new AtomicBoolean(false);
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             executorPool.execute(() -> {
                 try {
                     export(readerEntry, processor);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    exit(exit, e);
                 }
             });
         }
         executorPool.shutdown();
-        ExecutorsUtils.waitForShutdown(executorPool, info);
+        while (!executorPool.isTerminated()) Thread.sleep(1000);
+        System.out.println(info + " finished");
     }
 }
