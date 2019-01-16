@@ -38,20 +38,23 @@ public class HttpResponseUtils {
             throws QiniuException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
-            // 没有重试机会时将错误信息记录下来
-            if (retry <= 0 && fileMap != null) {
-                writeLog(e, fileMap, infoList);
-            }
             if (e.response != null) {
+                // 需要抛出异常时将错误信息记录下来
                 if (retry <= 0 || e.response.statusCode >= 630 || !e.response.needRetry()) {
+                    writeLog(e, fileMap, infoList);
                     throw e;
                 } else {
                     e.printStackTrace();
                     e.response.close();
                 }
             } else {
-                e.printStackTrace();
-                throw e;
+                // 没有重试机会时将错误信息记录下来
+                if (retry <= 0) {
+                    writeLog(e, fileMap, infoList);
+                    throw e;
+                } else {
+                    e.printStackTrace();
+                }
             }
         }
     }
