@@ -1,12 +1,9 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager.BatchOperations;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,11 +18,6 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
 
     public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath) throws IOException {
         this(auth, configuration, bucket, resultPath, 0);
-    }
-
-    public String processLine(Map<String, String> line) throws QiniuException {
-        Response response = bucketManager.delete(bucket, line.get("key"));
-        return HttpResponseUtils.responseJson(response);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

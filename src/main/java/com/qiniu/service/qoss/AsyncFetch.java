@@ -12,7 +12,6 @@ import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +51,6 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
         this.processName = "asyncfetch";
-        setBatch(false);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
@@ -122,7 +120,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String key;
         Response response;
@@ -156,7 +154,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         processLine(lineList, retryCount);
     }
 
