@@ -84,30 +84,36 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
-        String pid;
-        String result;
+        String result = null;
         PfopResult pfopResult;
         Gson gson = new Gson();
         for (Map<String, String> line : lineList) {
-            pid = line.get(persistentIdIndex);
-            try {
-                result = singleWithRetry(pid, retryCount);
-                if (result != null && !"".equals(result)) {
-                    pfopResult = gson.fromJson(result, PfopResult.class);
-                    // 可能有多条转码指令
-                    for (Item item : pfopResult.items) {
-                        // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
-                        if (item.code == 0) {
-                            fileMap.writeSuccess(pid + "\t" + pfopResult.inputKey + "\t" + item.key + "\t" + result);
-                        } else {
-                            fileMap.writeError( pid + "\t" + pfopResult.inputKey + "\t" + item.key + "\t" +
-                                    item.cmd + "\t" + item.code + "\t" + item.desc + "\t" + item.error);
-                        }
+            int retry = retryCount;
+            while (retry > 0) {
+                try {
+                    result = mediaManager.getPfopResultBodyById(line.get(persistentIdIndex));
+                    retry = 0;
+                } catch (QiniuException e) {
+                    retry--;
+                    HttpResponseUtils.processException(e, retry, fileMap,
+                            new ArrayList<String>(){{add(line.get(persistentIdIndex));}});
+                }
+            }
+            if (result != null && !"".equals(result)) {
+                pfopResult = gson.fromJson(result, PfopResult.class);
+                // 可能有多条转码指令
+                for (Item item : pfopResult.items) {
+                    // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
+                    if (item.code == 0) {
+                        fileMap.writeSuccess(line.get(persistentIdIndex) + "\t" + pfopResult.inputKey + "\t" +
+                                item.key + "\t" + result);
+                    } else {
+                        fileMap.writeError( line.get(persistentIdIndex) + "\t" + pfopResult.inputKey + "\t" +
+                                item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" + item.error);
                     }
-                } else fileMap.writeError( pid + "\tempty pfop result");
-            } catch (QiniuException e) {
-                String finalPid = pid;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalPid);}});
+                }
+            } else {
+                fileMap.writeError( line.get(persistentIdIndex) + "\tempty pfop result");
             }
         }
     }

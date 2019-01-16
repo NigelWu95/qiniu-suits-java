@@ -10,27 +10,27 @@ import java.util.stream.Collectors;
 
 public class HttpResponseUtils {
 
-    public static void checkRetryCount(QiniuException e, int retryCount) throws QiniuException {
-        if (e.response != null && e.response.needRetry()) {
-            if (retryCount <= 0) throw e;
-        } else {
-            throw e;
-        }
+    public static void checkRetryCount(QiniuException e, int retry) throws QiniuException {
+        if (retry <= 0 || e.response.statusCode >= 630 || !e.response.needRetry()) throw e;
     }
 
-    public static void processException(QiniuException e, FileMap fileMap, List<String> infoList) throws QiniuException {
+    public static void processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
+            throws QiniuException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
-            String message = e.getMessage() == null ? "" : e.getMessage();
-            if ("".equals(message)) {
-                try {
-                    message = (e.response != null ? e.response.reqId + "\t" : "") + (e.error() == null ? "" : e.error());
-                } catch (Exception e1) {}
-            }
-            if (fileMap != null) {
-                if (infoList == null || infoList.size() == 0)
+            // 没有重试机会时将错误信息记录下来
+            if (retry <= 0 && fileMap != null) {
+                String message = e.getMessage() == null ? "" : e.getMessage();
+                if ("".equals(message)) {
+                    try {
+                        message = (e.response != null ? e.response.reqId + "\t" : "") + (e.error() == null ? "" : e.error());
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                if (infoList == null || infoList.size() == 0) {
                     fileMap.writeError(message.replaceAll("\n", "\t"));
-                else {
+                } else {
                     String finalMessage = message;
                     fileMap.writeError(String.join("\n", infoList.stream()
                             .map(line -> line + "\t" + finalMessage.replaceAll("\n", "\t"))
@@ -38,11 +38,15 @@ public class HttpResponseUtils {
                 }
             }
             if (e.response != null) {
-                if (e.response.needSwitchServer() || e.response.statusCode >= 630) {
+                if (retry <= 0 || e.response.statusCode >= 630 || !e.response.needRetry()) {
                     throw e;
                 } else {
+                    e.printStackTrace();
                     e.response.close();
                 }
+            } else {
+                e.printStackTrace();
+                throw e;
             }
         }
     }

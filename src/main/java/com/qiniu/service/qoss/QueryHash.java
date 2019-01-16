@@ -97,7 +97,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;
-        String qhash;
+        String qhash = null;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
@@ -107,15 +107,21 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
-            try {
-                qhash = singleWithRetry(url, retryCount);
-                if (qhash != null && !"".equals(qhash))
-                    fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(qhash).toString());
-                else
-                    fileMap.writeError( key + "\t" + url + "\tempty qhash");
-            } catch (QiniuException e) {
-                String finalKey = key + "\t" + url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
+            int retry = retryCount;
+            while (retry > 0) {
+                try {
+                    qhash = fileChecker.getQHashBody(url);
+                    retry = 0;
+                } catch (QiniuException e) {
+                    retry--;
+                    String finalKey = key + "\t" + url;
+                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{ add(finalKey); }});
+                }
+            }
+            if (qhash != null && !"".equals(qhash)) {
+                fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(qhash).toString());
+            } else {
+                fileMap.writeError( key + "\t" + url + "\tempty qhash");
             }
         }
     }
