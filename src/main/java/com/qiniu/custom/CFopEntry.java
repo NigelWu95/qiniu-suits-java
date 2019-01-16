@@ -37,8 +37,6 @@ public class CFopEntry {
         // parse avinfo from files.
         indexMap.put("2", "avinfo");
         processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
-        // filter pfop result
-//        processor = new PfopResultProcess(resultFileDir);
 
         int unitLen = qossParams.getUnitLen();
         int threads = qossParams.getThreads();
