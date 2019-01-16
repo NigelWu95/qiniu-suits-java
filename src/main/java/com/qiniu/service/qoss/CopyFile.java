@@ -1,12 +1,9 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,16 +34,6 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     private String formatKey(String key) {
         return keyPrefix + key.substring(0, rmPrefix.length()).replace(rmPrefix, "")
                 + key.substring(rmPrefix.length());
-    }
-
-    public String processLine(Map<String, String> line) throws QiniuException {
-        if (line.get(newKeyIndex) == null) {
-            errorLineList.add(String.valueOf(line) + "\tno target " + newKeyIndex + " in the line map.");
-            throw new QiniuException(null, "\tno target " + newKeyIndex + " in the line map.");
-        }
-        Response response = bucketManager.copy(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)),
-                false);
-        return HttpResponseUtils.responseJson(response);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

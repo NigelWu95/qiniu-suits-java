@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class LineToMap implements ITypeConvert<String, Map<String, String>> {
 
-    private ILineParser lineParser;
+    private ILineParser<String> lineParser;
     private List<String> errorList = new ArrayList<>();
 
     public LineToMap(String parseType, String separator, Map<String, String> indexMap) throws QiniuException {
