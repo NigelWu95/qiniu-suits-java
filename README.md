@@ -1,3 +1,5 @@
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
+
 # qiniu-suits (qsuits)
 七牛云接口使用套件（可以工具形式使用），主要针对七牛云存储资源的批量处理进行功能的封装，提供更为简洁的操作方式。
 基于 Java 编写，可基于 JDK（1.8 及以上）环境在命令行或 IDE 运行。  
