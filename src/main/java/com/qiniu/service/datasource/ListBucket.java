@@ -55,7 +55,8 @@ public class ListBucket implements IDataSource {
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
         FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
-        fileMap.initDefaultWriters();
+        fileMap.addErrorWriter();
+        List<String> errorList = new ArrayList<>();
         List<FileLister> listerList = prefixList.parallelStream()
                 .map(prefix -> {
                     FileLister fileLister = null;
@@ -69,9 +70,9 @@ public class ListBucket implements IDataSource {
                             try {
                                 HttpResponseUtils.processException(e, 1, null, null);
                                 System.out.println("list prefix:" + prefix + "\tretrying...");
-                            } catch (QiniuException ex) {
+                            } catch (IOException ex) {
                                 System.out.println("list prefix:" + prefix + "\t" + e.error());
-                                fileMap.writeError(prefix + " to init fileLister" + "\t" + e.error());
+                                errorList.add(prefix + " to init fileLister" + "\t" + e.error());
                                 retry = false;
                             }
                         }
@@ -80,6 +81,7 @@ public class ListBucket implements IDataSource {
                 })
                 .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
+        if (errorList.size() > 0) fileMap.writeError(String.join("\n", errorList));
         fileMap.closeWriters();
         return listerList;
     }
@@ -137,7 +139,7 @@ public class ListBucket implements IDataSource {
     }
 
     private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
-            throws QiniuException {
+            throws IOException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
                 resultSeparator, rmFields);

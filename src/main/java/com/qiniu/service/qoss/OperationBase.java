@@ -89,7 +89,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
 
-    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
+    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         String result = null;
         for (Map<String, String> line : fileInfoList) {
             int retry = retryCount;
@@ -108,7 +108,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void parseBatchResult(List<Map<String, String>> processList, String result) throws QiniuException {
+    public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
         JsonArray jsonArray;
         try {
@@ -127,7 +127,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws QiniuException {
+    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response;
@@ -154,7 +154,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws QiniuException {
+    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
         if (batch) batchRun(fileInfoList, retryCount);
         else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {

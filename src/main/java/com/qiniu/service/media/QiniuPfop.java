@@ -75,7 +75,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return qiniuPfop;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String key;
         String persistentId = null;
         for (Map<String, String> line : lineList) {
@@ -96,7 +96,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         processLine(lineList, retryCount);
     }
 

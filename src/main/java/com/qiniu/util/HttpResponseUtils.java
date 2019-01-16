@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class HttpResponseUtils {
 
-    public static void writeLog(QiniuException e, FileMap fileMap, List<String> infoList) {
+    public static void writeLog(QiniuException e, FileMap fileMap, List<String> infoList) throws IOException {
         if (fileMap == null) return;
         String message = "";
         if (e != null) {
@@ -35,7 +35,7 @@ public class HttpResponseUtils {
     }
 
     public static void processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
-            throws QiniuException {
+            throws IOException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
             if (e.response != null) {

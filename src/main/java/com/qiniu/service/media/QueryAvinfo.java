@@ -74,7 +74,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return queryAvinfo;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String key;
         String avinfo = null;
@@ -105,7 +105,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         processLine(lineList, retryCount);
     }
 
