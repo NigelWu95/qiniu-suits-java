@@ -75,7 +75,7 @@ public class FileInput implements IDataSource {
                 try {
                     if (processor != null) processor.processLine(infoMapList);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.checkRetryCount(e, 1);
+                    HttpResponseUtils.processException(e, 1, null, null);
                 }
                 srcList = new ArrayList<>();
             }
