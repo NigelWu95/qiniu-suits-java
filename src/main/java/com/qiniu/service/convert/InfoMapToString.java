@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.interfaces.ITypeConvert;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.Map.*;
 import java.util.stream.Collectors;
