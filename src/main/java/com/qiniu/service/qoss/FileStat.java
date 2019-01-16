@@ -3,7 +3,7 @@ package com.qiniu.service.qoss;
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.IStringFormat;
-import com.qiniu.service.line.FileInfoTableFormatter;
+import com.qiniu.service.line.FileInfoFormatter;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
@@ -24,7 +24,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                     int resultIndex) throws IOException {
         super("stat", auth, configuration, bucket, resultPath, resultIndex);
         this.format = format;
-        this.stringFormatter = new FileInfoTableFormatter("\t", null);
+        this.stringFormatter = new FileInfoFormatter("\t", null);
     }
 
     public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format)
@@ -35,7 +35,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     @Override
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
-        fileStat.stringFormatter = new FileInfoTableFormatter("\t", null);
+        fileStat.stringFormatter = new FileInfoFormatter("\t", null);
         return fileStat;
     }
 

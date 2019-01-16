@@ -23,10 +23,6 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         fields.add("status");
     }
 
-    public FileInfoToMap(List<String> fields) {
-        this.fields = fields == null ? new ArrayList<>() : fields;
-    }
-
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
         // 使用 parallelStream 时，添加错误行至 errorList 需要同步代码块，stream 时可以直接 errorList.add();
