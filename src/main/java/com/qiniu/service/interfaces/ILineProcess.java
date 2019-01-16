@@ -1,5 +1,6 @@
 package com.qiniu.service.interfaces;
 
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +14,6 @@ public interface ILineProcess<T> {
     }
 
     default void setRetryCount(int retryCount) {}
-
-    default void setBatch(boolean batch) {}
 
     default void setResultTag(String resultTag) {}
 

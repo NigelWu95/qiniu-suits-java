@@ -55,7 +55,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -74,28 +74,10 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return queryAvinfo;
     }
 
-    public String singleWithRetry(String url, int retryCount) throws QiniuException {
-        String avinfo = null;
-        try {
-            avinfo = mediaManager.getAvinfoBody(url);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    avinfo = mediaManager.getAvinfoBody(url);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-        return avinfo;
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String key;
-        String avinfo;
+        String avinfo = null;
         JsonParser jsonParser = new JsonParser();
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
@@ -105,16 +87,21 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
-            try {
-                avinfo = singleWithRetry(url, retryCount);
-                if (avinfo != null && !"".equals(avinfo))
-                    fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(avinfo).toString());
-                else
-                    fileMap.writeError( key + "\t" + url + "\tempty avinfo");
-            } catch (QiniuException e) {
-                String finalKey = key + "\t" + url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
+            int retry = retryCount;
+            while (retry > 0) {
+                try {
+                    avinfo = mediaManager.getAvinfoBody(url);
+                    retry = 0;
+                } catch (QiniuException e) {
+                    retry--;
+                    String finalKey = key + "\t" + url;
+                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{ add(finalKey); }});
+                }
             }
+            if (avinfo != null && !"".equals(avinfo))
+                fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(avinfo).toString());
+            else
+                fileMap.writeError( key + "\t" + url + "\tempty avinfo");
         }
     }
 

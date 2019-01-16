@@ -1,15 +1,11 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.media.MediaManager;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -83,16 +79,11 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
-            try {
-                signedUrl = auth.privateDownloadUrl(url, expires);
-                if (signedUrl != null && !"".equals(signedUrl))
-                    fileMap.writeSuccess(key + "\t" + url + "\t" + signedUrl);
-                else
-                    fileMap.writeError( key + "\t" + url + "\tempty signed url");
-            } catch (QiniuException e) {
-                String finalKey = key + "\t" + url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{add(finalKey);}});
-            }
+            signedUrl = auth.privateDownloadUrl(url, expires);
+            if (signedUrl != null && !"".equals(signedUrl))
+                fileMap.writeSuccess(key + "\t" + url + "\t" + signedUrl);
+            else
+                fileMap.writeError( key + "\t" + url + "\tempty signed url");
         }
     }
 

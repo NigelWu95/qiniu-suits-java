@@ -1,6 +1,5 @@
 package com.qiniu.entry;
 
-import com.qiniu.common.Zone;
 import com.qiniu.model.parameter.*;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -14,8 +13,6 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class ProcessorChoice {
@@ -27,16 +24,17 @@ public class ProcessorChoice {
     private String resultPath;
     private String resultFormat;
     private String resultSeparator;
-    private Configuration configuration = new Configuration(Zone.autoZone());
+    private Configuration configuration;
 
-    public ProcessorChoice(IEntryParam entryParam) throws IOException {
+    public ProcessorChoice(IEntryParam entryParam, Configuration configuration) throws IOException {
         this.entryParam = entryParam;
-        fileInputParams = new FileInputParams(entryParam);
-        process = fileInputParams.getProcess();
-        retryCount = fileInputParams.getRetryCount();
-        resultPath = fileInputParams.getResultPath();
-        resultFormat = fileInputParams.getResultFormat();
-        resultSeparator = fileInputParams.getResultSeparator();
+        this.fileInputParams = new FileInputParams(entryParam);
+        this.process = fileInputParams.getProcess();
+        this.retryCount = fileInputParams.getRetryCount();
+        this.resultPath = fileInputParams.getResultPath();
+        this.resultFormat = fileInputParams.getResultFormat();
+        this.resultSeparator = fileInputParams.getResultSeparator();
+        this.configuration = configuration;
     }
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
