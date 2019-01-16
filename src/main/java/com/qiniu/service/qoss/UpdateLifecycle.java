@@ -29,7 +29,7 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
 
     public String processLine(Map<String, String> line) throws QiniuException {
         Response response = bucketManager.deleteAfterDays(bucket, line.get("key"), days);
-        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
+        return HttpResponseUtils.responseJson(response);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

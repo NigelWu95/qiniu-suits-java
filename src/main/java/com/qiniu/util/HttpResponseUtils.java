@@ -60,10 +60,15 @@ public class HttpResponseUtils {
     }
 
     public static String getResult(Response response) throws QiniuException {
-        if (response == null) return null;
+        if (response == null) throw new QiniuException(new Exception("empty response"));
         String responseBody = response.bodyString();
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         response.close();
         return responseBody;
+    }
+
+    public static String responseJson(Response response) throws QiniuException {
+        String result = getResult(response);
+        return "{\"code\":" + response.statusCode + ",\"message\":\"" + result + "\"}";
     }
 }

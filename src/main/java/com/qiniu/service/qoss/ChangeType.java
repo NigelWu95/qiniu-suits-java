@@ -31,7 +31,7 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
     public String processLine(Map<String, String> line) throws QiniuException {
         StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         Response response = bucketManager.changeType(bucket, line.get("key"), storageType);
-        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
+        return HttpResponseUtils.responseJson(response);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

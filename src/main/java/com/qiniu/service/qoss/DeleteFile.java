@@ -25,7 +25,7 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
 
     public String processLine(Map<String, String> line) throws QiniuException {
         Response response = bucketManager.delete(bucket, line.get("key"));
-        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
+        return HttpResponseUtils.responseJson(response);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
