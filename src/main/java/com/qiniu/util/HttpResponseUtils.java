@@ -61,8 +61,8 @@ public class HttpResponseUtils {
 
     public static String getResult(Response response) throws QiniuException {
         if (response == null) throw new QiniuException(new Exception("empty response"));
-        String responseBody = response.bodyString();
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
+        String responseBody = response.bodyString();
         response.close();
         return responseBody;
     }
