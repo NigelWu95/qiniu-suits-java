@@ -12,7 +12,7 @@ public class JsonStrParser implements ILineParser<String> {
     private JsonObjParser jsonObjParser;
 
     public JsonStrParser(Map<String, String> indexMap) {
-        this.jsonObjParser = new JsonObjParser(indexMap);
+        this.jsonObjParser = new JsonObjParser(indexMap, false);
     }
 
     public Map<String, String> getItemMap(String line) throws IOException {
