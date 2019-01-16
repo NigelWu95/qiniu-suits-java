@@ -41,8 +41,8 @@ public class FileInput implements IDataSource {
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(String format, String separator, List<String> removeFields) {
-        this.saveTotal = true;
+    public void setResultSaveOptions(boolean saveTotal, String format, String separator, List<String> removeFields) {
+        this.saveTotal = saveTotal;
         this.resultFormat = format;
         this.resultSeparator = separator;
         this.rmFields = removeFields;

@@ -26,7 +26,7 @@ public class CommonParams {
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         this.sourceType = entryParam.getParamValue("source-type");
-        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { unitLen = ""; }
+        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { parseType = ""; }
         try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
         try { this.threads = entryParam.getParamValue("threads"); } catch (Exception e) { threads = ""; }
         try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
