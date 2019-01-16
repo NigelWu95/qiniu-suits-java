@@ -58,25 +58,25 @@ public class ListBucket implements IDataSource {
         fileMap.initDefaultWriters();
         List<FileLister> listerList = prefixList.parallelStream()
                 .map(prefix -> {
-                    try {
-                        FileLister fileLister = null;
-                        boolean retry = true;
-                        while (retry) {
+                    FileLister fileLister = null;
+                    boolean retry = true;
+                    while (retry) {
+                        try {
+                            fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
+                                    null, "", null, unitLen);
+                            retry = false;
+                        } catch (QiniuException e) {
                             try {
-                                fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                        null, "", null, unitLen);
-                                retry = false;
-                            } catch (QiniuException e) {
+                                HttpResponseUtils.processException(e, 1, null, null);
                                 System.out.println("list prefix:" + prefix + "\tretrying...");
-                                HttpResponseUtils.checkRetryCount(e, 1);
+                            } catch (QiniuException ex) {
+                                System.out.println("list prefix:" + prefix + "\t" + e.error());
+                                fileMap.writeError(prefix + " to init fileLister" + "\t" + e.error());
+                                retry = false;
                             }
                         }
-                        return fileLister;
-                    } catch (QiniuException e) {
-                        System.out.println("list prefix:" + prefix + "\t" + e.error());
-                        fileMap.writeSuccess(prefix + " to init fileLister" + "\t" + e.error());
-                        return null;
                     }
+                    return fileLister;
                 })
                 .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
@@ -148,7 +148,7 @@ public class ListBucket implements IDataSource {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                HttpResponseUtils.processException(fileLister.exception, fileMap, new ArrayList<String>(){{
+                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
                     add(fileLister.getPrefix() + "|" + fileLister.getMarker());
                 }});
                 fileLister.exception = null;
@@ -165,7 +165,7 @@ public class ListBucket implements IDataSource {
             try {
                 if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
-                HttpResponseUtils.checkRetryCount(e, 1);
+                HttpResponseUtils.processException(e, 1, null, null);
             }
         }
     }
