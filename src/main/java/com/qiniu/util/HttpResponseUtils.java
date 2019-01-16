@@ -40,7 +40,7 @@ public class HttpResponseUtils {
         if (e != null) {
             if (e.response != null) {
                 // 需要抛出异常时将错误信息记录下来
-                if (retry <= 0 || e.response.statusCode >= 630 || !e.response.needRetry()) {
+                if (retry <= 0 || e.response.statusCode == 631 || !e.response.needRetry()) {
                     writeLog(e, fileMap, infoList);
                     throw e;
                 } else {
