@@ -12,9 +12,11 @@ import java.util.Map;
 public class JsonObjParser implements ILineParser<JsonObject> {
 
     private Map<String, String> indexMap;
+    private boolean forceParse;
 
-    public JsonObjParser(Map<String, String> indexMap) {
+    public JsonObjParser(Map<String, String> indexMap, boolean forceParse) {
         this.indexMap = indexMap;
+        this.forceParse = forceParse;
     }
 
     public Map<String, String> getItemMap(JsonObject json) throws IOException {
@@ -26,7 +28,7 @@ public class JsonObjParser implements ILineParser<JsonObject> {
                 if (!(json.get(key) instanceof JsonNull)) itemMap.put(mapKey, json.get(key).getAsString());
             }
         }
-        if (itemMap.size() < indexMap.size()) throw new IOException("no enough indexes in line.");
+        if (!forceParse && itemMap.size() < indexMap.size()) throw new IOException("no enough indexes in line.");
         return itemMap;
     }
 }

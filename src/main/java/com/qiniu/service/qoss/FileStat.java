@@ -26,7 +26,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         super("stat", auth, configuration, bucket, resultPath, resultIndex);
         this.format = format;
         if ("table".equals(format)) {
-            Map indexMap = new HashMap<String, String>(){{
+            Map<String, String> indexMap = new HashMap<String, String>(){{
                 put("key", "key");
                 put("hash", "hash");
                 put("fsize", "fsize");
@@ -37,7 +37,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 put("endUser", "endUser");
                 put("md5", "md5");
             }};
-            this.jsonObjParser = new JsonObjParser(indexMap);
+            this.jsonObjParser = new JsonObjParser(indexMap, true);
         }
         this.stringFormatter = new MapToTableFormatter("\t", null);
     }
