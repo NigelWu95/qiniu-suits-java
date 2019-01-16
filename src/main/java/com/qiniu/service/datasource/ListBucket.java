@@ -3,7 +3,7 @@ package com.qiniu.service.datasource;
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.convert.FileInfoToMap;
-import com.qiniu.service.convert.FileInfoToString;
+import com.qiniu.service.convert.MapToString;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.service.qoss.FileLister;
@@ -12,10 +12,12 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class ListBucket implements IDataSource {
@@ -26,70 +28,65 @@ public class ListBucket implements IDataSource {
     final private int unitLen;
     final private String cPrefix;
     final private List<String> antiPrefix;
-    final private int retryCount;
     final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
     private String resultSeparator;
-    private List<String> removeFields;
+    private List<String> rmFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, String customPrefix,
-                      List<String> antiPrefix, int retryCount, String resultPath) {
+                      List<String> antiPrefix, String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
         this.cPrefix = customPrefix == null ? "" : customPrefix;
         this.antiPrefix = antiPrefix == null ? new ArrayList<>() : antiPrefix;
-        this.retryCount = retryCount;
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(String format, String separator, List<String> removeFields) {
-        this.saveTotal = true;
+    public void setResultSaveOptions(boolean saveTotal, String format, String separator, List<String> removeFields) {
+        this.saveTotal = saveTotal;
         this.resultFormat = format;
         this.resultSeparator = separator;
-        this.removeFields = removeFields;
+        this.rmFields = removeFields;
     }
 
-    private List<FileLister> prefixList(List<String> prefixList, int unitLen) {
-
-        return prefixList.parallelStream()
+    private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
+        FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
+        fileMap.addErrorWriter();
+        List<String> errorList = new ArrayList<>();
+        List<FileLister> listerList = prefixList.parallelStream()
                 .map(prefix -> {
-                    try {
-                        FileLister fileLister = null;
-                        int retry = retryCount;
+                    FileLister fileLister = null;
+                    boolean retry = true;
+                    while (retry) {
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
                                     null, "", null, unitLen);
-                        } catch (QiniuException e1) {
-                            HttpResponseUtils.checkRetryCount(e1, retry);
-                            while (retry > 0) {
-                                System.out.println("list prefix:" + prefix + "\tlast " + retry + " times retrying...");
-                                try {
-                                    fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                            null, "", null, unitLen);
-                                    retry = 0;
-                                } catch (QiniuException e2) {
-                                    retry = HttpResponseUtils.getNextRetryCount(e2, retry);
-                                }
+                            retry = false;
+                        } catch (QiniuException e) {
+                            try {
+                                HttpResponseUtils.processException(e, 1, null, null);
+                                System.out.println("list prefix:" + prefix + "\tretrying...");
+                            } catch (IOException ex) {
+                                System.out.println("list prefix:" + prefix + "\t" + e.error());
+                                errorList.add(prefix + " to init fileLister" + "\t" + e.error());
+                                retry = false;
                             }
                         }
-                        return fileLister;
-                    } catch (QiniuException e) {
-                        System.out.println("list prefix:" + prefix + "\t" + e.error());
-                        return null;
-//                        throw new RuntimeException("list prefix:" + prefix + "\t" + e.error(), e.fillInStackTrace());
                     }
+                    return fileLister;
                 })
-//                .filter(Objects::nonNull)
-//                .filter(FileLister::hasNext)
                 .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
+        if (errorList.size() > 0) fileMap.writeError(String.join("\n", errorList));
+        fileMap.closeWriters();
+        return listerList;
     }
 
-    private List<FileLister> getFileListerList(int threads) {
+    private List<FileLister> getFileListerList(int threads) throws IOException {
         List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
                 "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
         if (threads <= 1) return prefixList(new ArrayList<String>(){{add(cPrefix);}}, unitLen);
@@ -141,84 +138,95 @@ public class ListBucket implements IDataSource {
         return fileListerList;
     }
 
-    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess processor) throws Exception {
+    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
+            throws IOException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<FileInfo, String> writeTypeConverter = null;
-        if (saveTotal) {
-            writeTypeConverter = new FileInfoToString(resultFormat, resultSeparator, removeFields);
-            fileMap.initDefaultWriters();
-        }
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(resultFormat,
+                resultSeparator, rmFields);
         List<FileInfo> fileInfoList;
+        List<Map<String, String>> infoMapList;
         List<String> writeList;
         while (fileLister.hasNext()) {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                HttpResponseUtils.processException(fileLister.exception, fileMap, new ArrayList<String>(){{
+                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
                     add(fileLister.getPrefix() + "|" + fileLister.getMarker());
                 }});
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
-            if (saveTotal) {
-                writeList = writeTypeConverter.convertToVList(fileInfoList);
-                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
-                if (writeTypeConverter.getErrorList().size() > 0)
-                    fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()));
-            }
-            if (processor != null) processor.processLine(typeConverter.convertToVList(fileInfoList));
+            infoMapList = typeConverter.convertToVList(fileInfoList);
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeKeyFile("map_error", String.join("\n", typeConverter.consumeErrorList()));
+                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
+            if (saveTotal) {
+                writeList = writeTypeConverter.convertToVList(infoMapList);
+                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
+            }
+            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+            try {
+                if (processor != null) processor.processLine(infoMapList);
+            } catch (QiniuException e) {
+                HttpResponseUtils.processException(e, 1, null, null);
+            }
         }
     }
 
-    public void exportData(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void export(Entry<String, FileLister> fileListerMap, ILineProcess<Map<String, String>> processor)
+            throws Exception {
+        FileMap recordFileMap = new FileMap(resultPath);
+        FileLister fileLister = fileListerMap.getValue();
+        FileMap fileMap = new FileMap(resultPath, "listbucket", fileListerMap.getKey());
+        fileMap.initDefaultWriters();
+        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
+        try {
+            execLister(fileListerMap.getValue(), fileMap, lineProcessor);
+            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
+            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
+            System.out.println(record);
+        } catch (QiniuException e) {
+            record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
+                    "\t" + e.getMessage().replaceAll("\n", "\t");
+            throw e;
+        } finally {
+            try { recordFileMap.writeKeyFile("result", record); } catch (IOException e) { e.printStackTrace(); }
+            fileMap.closeWriters();
+            recordFileMap.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+            fileLister.remove();
+        }
+    }
+
+    synchronized private void exit(AtomicBoolean exit, Exception e) {
+        if (!exit.get()) e.printStackTrace();
+        exit.set(true);
+        System.exit(-1);
+    }
+
+    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         List<FileLister> fileListerList = getFileListerList(threads);
+        Map<String, FileLister> fileListerMap = new HashMap<String, FileLister>(){{
+            for (int i = 0; i < fileListerList.size(); i++) {
+                put(String.valueOf(i + 1), fileListerList.get(i));
+            }
+        }};
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " concurrently running with " + threads + " threads ...");
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler((t, e) -> {
-                System.out.println(t.getName() + "\t" + t.toString());
-                e.printStackTrace();
-            });
-            return thread;
-        };
-        ExecutorService executorPool = Executors.newFixedThreadPool(threads, threadFactory);
-        List<String> prefixList = new ArrayList<>();
-        for (int i = 0; i < fileListerList.size(); i++) {
-            ILineProcess lineProcessor = processor == null ? null : processor.clone();
-            FileLister fileLister = fileListerList.get(i);
-            FileMap fileMap = new FileMap(resultPath, "listbucket", String.valueOf(i + 1));
-            Thread thread = new Thread(() -> {
-                String exception = "";
+        ExecutorService executorPool = Executors.newFixedThreadPool(threads);
+        AtomicBoolean exit = new AtomicBoolean(false);
+        for (Entry<String, FileLister> fileListerEntry : fileListerMap.entrySet()) {
+            executorPool.execute(() -> {
                 try {
-                    execLister(fileLister, fileMap, lineProcessor);
+                    export(fileListerEntry, processor);
                 } catch (Exception e) {
-                    exception = "\t" + e.getMessage();
-                    throw new RuntimeException(e);
-                } finally {
-                    String marker = fileLister.getMarker() + exception;
-                    String record = "order " + fileMap.getSuffix() + ": " + fileLister.getPrefix();
-                    if ("".equals(marker) || "null".equals(marker)) {
-                        prefixList.add(record + "\tsuccessfully done");
-                        System.out.println(record + "\tsuccessfully done");
-                    } else {
-                        prefixList.add(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
-                        System.out.println(record + "\t" + marker + "\t" + fileLister.getEndKeyPrefix());
-                    }
-                    fileMap.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    fileLister.remove();
+                    exit(exit, e);
                 }
             });
-            thread.setName(fileLister.getPrefix() + String.valueOf(i + 1));
-            executorPool.execute(thread);
         }
         executorPool.shutdown();
-        ExecutorsUtils.waitForShutdown(executorPool, info);
-        FileMap fileMap = new FileMap(resultPath);
-        fileMap.writeKeyFile("result" + new Date().getTime(), String.join("\n", prefixList));
-        fileMap.closeWriters();
+        while (!executorPool.isTerminated()) Thread.sleep(1000);
+        for (FileLister fileLister : fileListerList) fileLister.remove();
+        System.out.println(info + " finished");
     }
 }

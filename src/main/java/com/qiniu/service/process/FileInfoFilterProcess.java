@@ -1,7 +1,8 @@
 package com.qiniu.service.process;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.service.convert.InfoMapToString;
+import com.qiniu.service.convert.MapToString;
 import com.qiniu.service.interfaces.ILineFilter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
@@ -63,7 +64,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.resultIndex = resultIndex;
         this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
         this.fileMap.initDefaultWriters();
-        this.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
+        this.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
     }
 
     public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
@@ -84,7 +85,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
             fileInfoFilterProcess.fileMap.initDefaultWriters();
-            fileInfoFilterProcess.typeConverter = new InfoMapToString(resultFormat, resultSeparator, rmFields);
+            fileInfoFilterProcess.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
             if (nextProcessor != null) {
                 fileInfoFilterProcess.nextProcessor = nextProcessor.clone();
             }
@@ -106,7 +107,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
             try {
                 if (filter.doFilter(line)) resultList.add(line);
             } catch (Exception e) {
-                throw new IOException(e.getCause());
+                throw new QiniuException(e);
             }
         }
         writeList = typeConverter.convertToVList(resultList);

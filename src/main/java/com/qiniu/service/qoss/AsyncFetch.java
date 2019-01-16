@@ -51,7 +51,6 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
         this.processName = "asyncfetch";
-        setBatch(false);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
@@ -94,7 +93,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -121,30 +120,11 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public String singleWithRetry(String url, String key, String md5, String etag, int retryCount) throws QiniuException {
-        Response response = null;
-        try {
-            response = fetch(url, key, md5, etag);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    response = fetch(url, key, md5, etag);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-        assert response != null;
-        return response.reqId + "\t{\"code\":" + response.statusCode + ",\"message\":\"" +
-                HttpResponseUtils.getResult(response) + "\"}";
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String key;
-        String fetchResult;
+        Response response;
+        String fetchResult = null;
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
                 url = line.get(urlIndex);
@@ -153,18 +133,23 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
-            try {
-                fetchResult = singleWithRetry(url, keyPrefix + key, line.get(md5Index), line.get("hash"), retryCount);
-                if (fetchResult != null && !"".equals(fetchResult))
-                    fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult);
-                else
-                    fileMap.writeError( key + "\t" + url + "\t" + line.get(md5Index) +  "\t" + line.get("hash") +
-                            "\tempty fetch result");
-            } catch (QiniuException e) {
-                String finalKey = key + "\t" + url;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + line.get(md5Index) +  "\t" + line.get("hash"));
-                }});
+            int retry = retryCount;
+            while (retry > 0) {
+                try {
+                    response = fetch(url, key, line.get(md5Index), line.get("hash"));
+                    fetchResult = HttpResponseUtils.responseJson(response) + "\t" + response.reqId;
+                    retry = 0;
+                } catch (QiniuException e) {
+                    retry--;
+                    String finalKey = key + "\t" + url;
+                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{ add(finalKey); }});
+                }
+            }
+            if (fetchResult != null && !"".equals(fetchResult)) {
+                fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult);
+            } else {
+                fileMap.writeError( key + "\t" + url + "\t" + line.get(md5Index) +  "\t" + line.get("hash") +
+                        "\tempty fetch result");
             }
         }
     }

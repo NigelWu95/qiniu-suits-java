@@ -1,14 +1,10 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,15 +25,9 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
         this(auth, configuration, bucket, type, resultPath, 0);
     }
 
-    public String processLine(Map<String, String> line) throws QiniuException {
-        StorageType storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
-        Response response = bucketManager.changeType(bucket, line.get("key"), storageType);
-        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
-    }
-
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
-            if (StringUtils.isNullOrEmpty(line.get("key")))
+            if (line.get("key") == null)
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
             else
                 batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY,

@@ -56,7 +56,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
     public void setResultTag(String resultTag) {
@@ -75,39 +75,24 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return qiniuPfop;
     }
 
-    public String singleWithRetry(String key, String fops, int retryCount) throws QiniuException {
-        String persistentId = null;
-        try {
-            persistentId = operationManager.pfop(bucket, key, fops, pfopParams);
-        } catch (QiniuException e1) {
-            HttpResponseUtils.checkRetryCount(e1, retryCount);
-            while (retryCount > 0) {
-                try {
-                    persistentId = operationManager.pfop(bucket, key, fops, pfopParams);
-                    retryCount = 0;
-                } catch (QiniuException e2) {
-                    retryCount = HttpResponseUtils.getNextRetryCount(e2, retryCount);
-                }
-            }
-        }
-        return persistentId;
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String key;
-        String pfopId;
+        String persistentId = null;
         for (Map<String, String> line : lineList) {
             key = line.get("key");
-            try {
-                pfopId = singleWithRetry(key, line.get(fopsIndex), retryCount);
-                if (pfopId != null && !"".equals(pfopId)) fileMap.writeSuccess(pfopId + "\t" + key);
-                else fileMap.writeError( key + "\t" + line.get(fopsIndex) + "\tempty persistent id");
-            } catch (QiniuException e) {
-                String finalKey = key;
-                HttpResponseUtils.processException(e, fileMap, new ArrayList<String>(){{
-                    add(finalKey + "\t" + line.get(fopsIndex));
-                }});
+            int retry = retryCount;
+            while (retry > 0) {
+                try {
+                    persistentId = operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);
+                    retry = 0;
+                } catch (QiniuException e) {
+                    retry--;
+                    HttpResponseUtils.processException(e, retry, fileMap,
+                            new ArrayList<String>(){{ add(line.get("key") + "\t" + line.get(fopsIndex)); }});
+                }
             }
+            if (persistentId != null && !"".equals(persistentId)) fileMap.writeSuccess(persistentId + "\t" + key);
+            else fileMap.writeError( key + "\t" + line.get(fopsIndex) + "\tempty persistent id");
         }
     }
 

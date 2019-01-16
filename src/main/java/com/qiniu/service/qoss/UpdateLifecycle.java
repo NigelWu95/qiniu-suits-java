@@ -1,13 +1,9 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,14 +24,9 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
         this(auth, configuration, bucket, days, resultPath, 0);
     }
 
-    public String processLine(Map<String, String> line) throws QiniuException {
-        Response response = bucketManager.deleteAfterDays(bucket, line.get("key"), days);
-        return "{\"code\":" + response.statusCode + ",\"message\":\"" + HttpResponseUtils.getResult(response) + "\"}";
-    }
-
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         lineList.forEach(line -> {
-            if (StringUtils.isNullOrEmpty(line.get("key")))
+            if (line.get("key") == null)
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
             else
                 batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key"));

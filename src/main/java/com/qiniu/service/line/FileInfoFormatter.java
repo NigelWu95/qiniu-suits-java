@@ -6,12 +6,12 @@ import com.qiniu.storage.model.FileInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileInfoTableFormatter implements IStringFormat<FileInfo> {
+public class FileInfoFormatter implements IStringFormat<FileInfo> {
 
     private String separator;
     private List<String> rmFields;
 
-    public FileInfoTableFormatter(String separator, List<String> removeFields) {
+    public FileInfoFormatter(String separator, List<String> removeFields) {
         this.separator = separator;
         this.rmFields = removeFields == null ? new ArrayList<>() : removeFields;
     }
