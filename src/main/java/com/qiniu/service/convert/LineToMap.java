@@ -1,26 +1,25 @@
 package com.qiniu.service.convert;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.service.line.JsonLineParser;
+import com.qiniu.service.line.JsonStrParser;
 import com.qiniu.service.line.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ITypeConvert;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class LineToInfoMap implements ITypeConvert<String, Map<String, String>> {
+public class LineToMap implements ITypeConvert<String, Map<String, String>> {
 
     private ILineParser lineParser;
     private List<String> errorList = new ArrayList<>();
 
-    public LineToInfoMap(String parseType, String separator, Map<String, String> infoIndexMap) throws QiniuException {
-        if (infoIndexMap == null || infoIndexMap.size() == 0) throw new QiniuException(null, "there are no indexes be set.");
+    public LineToMap(String parseType, String separator, Map<String, String> indexMap) throws QiniuException {
+        if (indexMap == null || indexMap.size() == 0) throw new QiniuException(null, "there are no indexes be set.");
         if ("json".equals(parseType)) {
-            this.lineParser = new JsonLineParser(infoIndexMap);
+            this.lineParser = new JsonStrParser(indexMap);
         } else {
-            this.lineParser = new SplitLineParser(separator, infoIndexMap);
+            this.lineParser = new SplitLineParser(separator, indexMap);
         }
     }
 

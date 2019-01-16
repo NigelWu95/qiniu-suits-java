@@ -28,7 +28,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     final protected String bucket;
     final protected String processName;
     protected int retryCount;
-    protected boolean batch = true;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
     final protected String resultPath;
@@ -60,10 +59,6 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setBatch(boolean batch) {
-        this.batch = batch;
-    }
-
     public void setResultTag(String resultTag) {
         this.resultTag = resultTag == null ? "" : resultTag;
     }
@@ -82,31 +77,10 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return operationBase;
     }
 
-    protected abstract String processLine(Map<String, String> fileInfo) throws QiniuException;
-
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
-
-    public void singleRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
-        String result = null;
-        for (Map<String, String> line : fileInfoList) {
-            int retry = retryCount;
-            while (retry > 0) {
-                try {
-                    result = processLine(line);
-                    retry = 0;
-                } catch (QiniuException e) {
-                    retryCount--;
-                    HttpResponseUtils.processException(e, retry, fileMap,
-                            new ArrayList<String>(){{add(getInputParams(line));}});
-                }
-            }
-            if (result != null && !"".equals(result)) fileMap.writeSuccess(getInputParams(line) + "\t" + result);
-            else fileMap.writeError(getInputParams(line) + "\tempty result");
-        }
-    }
 
     public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
@@ -127,7 +101,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void batchRun(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
         int times = fileInfoList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response;
@@ -152,15 +126,14 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                 batchOperations.clearOps();
             }
         }
-    }
-
-    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        if (batch) batchRun(fileInfoList, retryCount);
-        else singleRun(fileInfoList, retryCount);
         if (errorLineList.size() > 0) {
             fileMap.writeError(String.join("\n", errorLineList));
             errorLineList.clear();
         }
+    }
+
+    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
+        processLine(fileInfoList, retryCount);
     }
 
     public void closeResource() {

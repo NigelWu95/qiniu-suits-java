@@ -5,7 +5,7 @@ import com.qiniu.service.interfaces.ILineParser;
 import java.io.IOException;
 import java.util.*;
 
-public class SplitLineParser implements ILineParser {
+public class SplitLineParser implements ILineParser<String> {
 
     private String separator;
     private Map<String, String> infoIndexMap;

@@ -2,8 +2,8 @@ package com.qiniu.service.datasource;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.service.convert.InfoMapToString;
-import com.qiniu.service.convert.LineToInfoMap;
+import com.qiniu.service.convert.MapToString;
+import com.qiniu.service.convert.LineToMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.HttpResponseUtils;
@@ -22,7 +22,7 @@ public class FileInput implements IDataSource {
     final private String filePath;
     final private String parseType;
     final private String separator;
-    final private Map<String, String> infoIndexMap;
+    final private Map<String, String> indexMap;
     final private int unitLen;
     final private String resultPath;
     private boolean saveTotal;
@@ -30,12 +30,12 @@ public class FileInput implements IDataSource {
     private String resultSeparator;
     private List<String> rmFields;
 
-    public FileInput(String filePath, String parseType, String separator, Map<String, String> infoIndexMap, int unitLen,
+    public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int unitLen,
                      String resultPath) {
         this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
-        this.infoIndexMap = infoIndexMap;
+        this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.resultPath = resultPath;
         this.saveTotal = false;
@@ -50,8 +50,8 @@ public class FileInput implements IDataSource {
 
     private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
+        ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, indexMap);
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(resultFormat,
                 resultSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;
