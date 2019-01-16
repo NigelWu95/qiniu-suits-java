@@ -8,14 +8,14 @@ public class FileMap {
 
     private HashMap<String, BufferedWriter> writerMap;
     private HashMap<String, BufferedReader> readerMap;
-    private List<String> defaultWriters;
+    private Set<String> defaultWriters;
     private String targetFileDir = null;
     private String prefix = null;
     private String suffix = null;
     private int retryCount = 3;
 
     public FileMap() {
-        this.defaultWriters = Collections.singletonList("success");
+        this.defaultWriters = Collections.singleton("success");
         this.writerMap = new HashMap<>();
         this.readerMap = new HashMap<>();
     }
@@ -50,7 +50,7 @@ public class FileMap {
         defaultWriters.add(writer);
     }
 
-    public void initDefaultWriters() throws IOException {
+    synchronized public void initDefaultWriters() throws IOException {
         if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no target file directory.");
         for (String targetWriter : defaultWriters) {
             addWriter(prefix + targetWriter + suffix);
@@ -101,7 +101,7 @@ public class FileMap {
         return writerMap.get(key);
     }
 
-    public void closeWriters() {
+    synchronized public void closeWriters() {
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
             int retry = retryCount;
             while (retry > 0) {
@@ -163,7 +163,7 @@ public class FileMap {
         return readerMap;
     }
 
-    public void closeReaders() {
+    synchronized public void closeReaders() {
         for (Entry<String, BufferedReader> entry : readerMap.entrySet()) {
             try {
                 if (readerMap.get(entry.getKey()) != null) readerMap.get(entry.getKey()).close();
@@ -173,7 +173,7 @@ public class FileMap {
         }
     }
 
-    public void closeReader(String key) {
+    synchronized public void closeReader(String key) {
         try {
             if (readerMap.get(key) != null) readerMap.get(key).close();
         } catch (IOException e) {
@@ -199,12 +199,16 @@ public class FileMap {
         }
     }
 
+    synchronized private boolean notHasWriter(String key) {
+        return !writerMap.containsKey(prefix + key + suffix);
+    }
+
     public void writeKeyFile(String key, String item) throws IOException {
-        if (!writerMap.keySet().contains(prefix + key + suffix)) addWriter(prefix + key + suffix);
+        if (notHasWriter(key)) addWriter(prefix + key + suffix);
         doWrite(prefix + key + suffix, item);
     }
 
-    public void writeSuccess(String item) {
+    synchronized public void writeSuccess(String item) {
         doWrite(prefix + "success" + suffix, item);
     }
 
@@ -212,8 +216,8 @@ public class FileMap {
         addWriter(prefix + "error" + suffix);
     }
 
-    public void writeError(String item) throws IOException {
-        if (!writerMap.keySet().contains(prefix + "error" + suffix)) addErrorWriter();
+    synchronized public void writeError(String item) throws IOException {
+        if (notHasWriter("error")) addErrorWriter();
         doWrite(prefix + "error" + suffix, item);
     }
 }
