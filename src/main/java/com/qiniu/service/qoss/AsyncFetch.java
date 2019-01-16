@@ -122,22 +122,6 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public String singleWithRetry(String url, String key, String md5, String etag, int retryCount) throws QiniuException {
-        Response response = null;
-        while (retryCount > 0) {
-            try {
-                response = fetch(url, key, md5, etag);
-                retryCount = 0;
-            } catch (QiniuException e) {
-                retryCount--;
-                HttpResponseUtils.checkRetryCount(e, retryCount);
-            }
-        }
-        assert response != null;
-        return response.reqId + "\t{\"code\":" + response.statusCode + ",\"message\":\"" +
-                HttpResponseUtils.getResult(response) + "\"}";
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;

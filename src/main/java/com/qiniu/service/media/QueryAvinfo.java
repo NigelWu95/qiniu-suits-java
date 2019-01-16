@@ -74,20 +74,6 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return queryAvinfo;
     }
 
-    public String singleWithRetry(String url, int retryCount) throws QiniuException {
-        String avinfo = null;
-        while (retryCount > 0) {
-            try {
-                avinfo = mediaManager.getAvinfoBody(url);
-                retryCount = 0;
-            } catch (QiniuException e) {
-                retryCount--;
-                HttpResponseUtils.checkRetryCount(e, retryCount);
-            }
-        }
-        return avinfo;
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;
