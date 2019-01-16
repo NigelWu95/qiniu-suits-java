@@ -3,28 +3,43 @@ package com.qiniu.service.qoss;
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.IStringFormat;
-import com.qiniu.service.line.FileInfoFormatter;
+import com.qiniu.service.line.JsonObjParser;
+import com.qiniu.service.line.MapToTableFormatter;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String format;
-    private IStringFormat<FileInfo> stringFormatter;
+    private JsonObjParser jsonObjParser;
+    private IStringFormat<Map<String, String>> stringFormatter;
 
     public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format,
                     int resultIndex) throws IOException {
         super("stat", auth, configuration, bucket, resultPath, resultIndex);
         this.format = format;
-        this.stringFormatter = new FileInfoFormatter("\t", null);
+        if ("table".equals(format)) {
+            Map indexMap = new HashMap<String, String>(){{
+                put("key", "key");
+                put("hash", "hash");
+                put("fsize", "fsize");
+                put("putTime", "putTime");
+                put("mimeType", "mimeType");
+                put("type", "type");
+                put("status", "status");
+                put("endUser", "endUser");
+                put("md5", "md5");
+            }};
+            this.jsonObjParser = new JsonObjParser(indexMap);
+        }
+        this.stringFormatter = new MapToTableFormatter("\t", null);
     }
 
     public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format)
@@ -35,19 +50,12 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     @Override
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
-        fileStat.stringFormatter = new FileInfoFormatter("\t", null);
+        fileStat.stringFormatter = new MapToTableFormatter("\t", null);
         return fileStat;
     }
 
     public String getInputParams(Map<String, String> line) {
         return line.get("key");
-    }
-
-    public String processLine(Map<String, String> line) throws QiniuException {
-        FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
-        fileInfo.key = line.get("key");
-        if ("table".equals(format)) return stringFormatter.toFormatString(fileInfo);
-        else return JsonConvertUtils.toJsonWithoutUrlEscape(fileInfo);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
@@ -74,8 +82,8 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                         .addProperty("key", processList.get(j).get("key"));
                 if (jsonObject.get("code").getAsInt() == 200)
                     if ("table".equals(format))
-                        fileMap.writeSuccess(stringFormatter.toFormatString(
-                                new Gson().fromJson(jsonObject.get("data"), FileInfo.class)));
+                        fileMap.writeSuccess( stringFormatter.toFormatString(
+                                jsonObjParser.getItemMap(jsonObject.get("data").getAsJsonObject())));
                     else fileMap.writeSuccess(jsonObject.get("data").toString());
                 else
                     fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString());

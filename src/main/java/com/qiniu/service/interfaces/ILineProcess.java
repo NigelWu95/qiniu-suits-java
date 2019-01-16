@@ -15,8 +15,6 @@ public interface ILineProcess<T> {
 
     default void setRetryCount(int retryCount) {}
 
-    default void setBatch(boolean batch) {}
-
     default void setResultTag(String resultTag) {}
 
     void processLine(List<T> list) throws IOException;

@@ -52,7 +52,6 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
         this.processName = "asyncfetch";
-        setBatch(false);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
