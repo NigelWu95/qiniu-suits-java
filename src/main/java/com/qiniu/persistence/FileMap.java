@@ -15,7 +15,7 @@ public class FileMap {
     private int retryCount = 3;
 
     public FileMap() {
-        this.defaultWriters = Arrays.asList("success", "error");
+        this.defaultWriters = Collections.singletonList("success");
         this.writerMap = new HashMap<>();
         this.readerMap = new HashMap<>();
     }
@@ -208,7 +208,12 @@ public class FileMap {
         doWrite(prefix + "success" + suffix, item);
     }
 
-    public void writeError(String item) {
+    public void addErrorWriter() throws IOException {
+        addWriter(prefix + "error" + suffix);
+    }
+
+    public void writeError(String item) throws IOException {
+        if (!writerMap.keySet().contains(prefix + "error" + suffix)) addErrorWriter();
         doWrite(prefix + "error" + suffix, item);
     }
 }

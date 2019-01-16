@@ -49,7 +49,7 @@ public class FileInput implements IDataSource {
     }
 
     private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
-            throws QiniuException {
+            throws IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToInfoMap(parseType, separator, infoIndexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new InfoMapToString(resultFormat,
                 resultSeparator, rmFields);

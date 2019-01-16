@@ -69,7 +69,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return queryPfopResult;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String result = null;
         PfopResult pfopResult;
         Gson gson = new Gson();
@@ -104,7 +104,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         processLine(lineList, retryCount);
     }
 

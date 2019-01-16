@@ -99,7 +99,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.nextProcessor = nextProcessor;
     }
 
-    public void processLine(List<Map<String, String>> list) throws QiniuException {
+    public void processLine(List<Map<String, String>> list) throws IOException {
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> resultList = new ArrayList<>();
         List<String> writeList;

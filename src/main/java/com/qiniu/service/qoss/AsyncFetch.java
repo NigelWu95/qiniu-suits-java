@@ -122,7 +122,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String url;
         String key;
         Response response;
@@ -156,7 +156,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         }
     }
 
-    public void processLine(List<Map<String, String>> lineList) throws QiniuException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         processLine(lineList, retryCount);
     }
 

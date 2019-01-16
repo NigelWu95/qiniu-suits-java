@@ -67,7 +67,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
         return queryAvinfo;
     }
 
-    public void processLine(List<Map<String, String>> lineList) {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         String url;
         String key;
         String signedUrl;

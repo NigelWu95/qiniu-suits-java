@@ -61,7 +61,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     }
 
     @Override
-    public void parseBatchResult(List<Map<String, String>> processList, String result) throws QiniuException {
+    public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
         JsonArray jsonArray;
         try {
