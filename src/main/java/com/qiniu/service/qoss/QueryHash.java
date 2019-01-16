@@ -80,20 +80,6 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return queryHash;
     }
 
-    public String singleWithRetry(String url, int retryCount) throws QiniuException {
-        String qhash = null;
-        while (retryCount > 0) {
-            try {
-                qhash = fileChecker.getQHashBody(url);
-                retryCount = 0;
-            } catch (QiniuException e) {
-                retryCount--;
-                HttpResponseUtils.checkRetryCount(e, retryCount);
-            }
-        }
-        return qhash;
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String url;
         String key;

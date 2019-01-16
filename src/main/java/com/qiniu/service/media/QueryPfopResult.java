@@ -69,20 +69,6 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return queryPfopResult;
     }
 
-    public String singleWithRetry(String id, int retryCount) throws QiniuException {
-        String pfopResult = null;
-        while (retryCount > 0) {
-            try {
-                pfopResult = mediaManager.getPfopResultBodyById(id);
-                retryCount = 0;
-            } catch (QiniuException e) {
-                retryCount--;
-                HttpResponseUtils.checkRetryCount(e, retryCount);
-            }
-        }
-        return pfopResult;
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String result = null;
         PfopResult pfopResult;

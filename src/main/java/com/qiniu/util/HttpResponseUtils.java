@@ -10,10 +10,6 @@ import java.util.stream.Collectors;
 
 public class HttpResponseUtils {
 
-    public static void checkRetryCount(QiniuException e, int retry) throws QiniuException {
-        if (retry <= 0 || e.response.statusCode >= 630 || !e.response.needRetry()) throw e;
-    }
-
     public static void processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
             throws QiniuException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息

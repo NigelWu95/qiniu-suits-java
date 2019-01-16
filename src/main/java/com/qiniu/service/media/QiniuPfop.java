@@ -75,20 +75,6 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return qiniuPfop;
     }
 
-    public String singleWithRetry(String key, String fops, int retryCount) throws QiniuException {
-        String persistentId = null;
-        while (retryCount > 0) {
-            try {
-                persistentId = operationManager.pfop(bucket, key, fops, pfopParams);
-                retryCount = 0;
-            } catch (QiniuException e) {
-                retryCount--;
-                HttpResponseUtils.checkRetryCount(e, retryCount);
-            }
-        }
-        return persistentId;
-    }
-
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws QiniuException {
         String key;
         String persistentId = null;
