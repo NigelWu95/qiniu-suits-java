@@ -12,6 +12,16 @@ import java.util.stream.Collectors;
 public class InfoMapToString implements ITypeConvert<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
+    final private List<String> fileInfoFields = new ArrayList<String>(){{
+        add("key");
+        add("hash");
+        add("fsize");
+        add("putTime");
+        add("mimeType");
+        add("type");
+        add("status");
+        add("endUser");
+    }};
 
     public InfoMapToString(String format, String separator, List<String> removeFields) {
         List<String> rmFields = removeFields == null ? new ArrayList<>() : removeFields;
@@ -19,80 +29,50 @@ public class InfoMapToString implements ITypeConvert<Map<String, String>, String
         if ("json".equals(format)) {
             stringFormatter = (infoMap) -> {
                 JsonObject converted = new JsonObject();
-                if (!rmFields.contains("key") && infoMap.containsKey("key")) {
+                if (!rmFields.contains("key") && infoMap.containsKey("key"))
                     converted.addProperty("key", infoMap.get("key"));
-                    rmFields.add("key");
-                }
-                if (!rmFields.contains("hash") && infoMap.containsKey("hash")) {
+                if (!rmFields.contains("hash") && infoMap.containsKey("hash"))
                     converted.addProperty("hash", infoMap.get("hash"));
-                    rmFields.add("hash");
-                }
-                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
+                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize"))
                     converted.addProperty("fsize", infoMap.get("fsize"));
-                    rmFields.add("fsize");
-                }
-                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
+                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime"))
                     converted.addProperty("putTime", infoMap.get("putTime"));
-                    rmFields.add("putTime");
-                }
-                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
+                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType"))
                     converted.addProperty("mimeType", infoMap.get("mimeType"));
-                    rmFields.add("mimeType");
-                }
-                if (!rmFields.contains("type") && infoMap.containsKey("type")) {
+                if (!rmFields.contains("type") && infoMap.containsKey("type"))
                     converted.addProperty("type", infoMap.get("type"));
-                    rmFields.add("type");
-                }
-                if (!rmFields.contains("status") && infoMap.containsKey("status")) {
+                if (!rmFields.contains("status") && infoMap.containsKey("status"))
                     converted.addProperty("status", infoMap.get("status"));
-                    rmFields.add("status");
-                }
-                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
+                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser"))
                     converted.addProperty("endUser", infoMap.get("endUser"));
-                    rmFields.add("endUser");
-                }
                 for (Entry<String, String> set : infoMap.entrySet()) {
-                    if (!rmFields.contains(set.getKey())) converted.addProperty(set.getKey(), set.getValue());
+                    if (!rmFields.contains(set.getKey()) && !fileInfoFields.contains(set.getKey()))
+                        converted.addProperty(set.getKey(), set.getValue());
                 }
                 return converted.toString();
             };
         } else {
             stringFormatter = (infoMap) -> {
                 StringBuilder converted = new StringBuilder();
-                if (!rmFields.contains("key") && infoMap.containsKey("key")) {
+                if (!rmFields.contains("key") && infoMap.containsKey("key"))
                     converted.append(infoMap.get("key")).append(separator);
-                    rmFields.add("key");
-                }
-                if (!rmFields.contains("hash") && infoMap.containsKey("hash")) {
+                if (!rmFields.contains("hash") && infoMap.containsKey("hash"))
                     converted.append(infoMap.get("hash")).append(separator);
-                    rmFields.add("hash");
-                }
-                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize")) {
+                if (!rmFields.contains("fsize") && infoMap.containsKey("fsize"))
                     converted.append(infoMap.get("fsize")).append(separator);
-                    rmFields.add("fsize");
-                }
-                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime")) {
+                if (!rmFields.contains("putTime") && infoMap.containsKey("putTime"))
                     converted.append(infoMap.get("putTime")).append(separator);
-                    infoMap.remove("putTime");
-                }
-                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType")) {
+                if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType"))
                     converted.append(infoMap.get("mimeType")).append(separator);
-                    rmFields.add("mimeType");
-                }
-                if (!rmFields.contains("type") && infoMap.containsKey("type")) {
+                if (!rmFields.contains("type") && infoMap.containsKey("type"))
                     converted.append(infoMap.get("type")).append(separator);
-                    rmFields.add("type");
-                }
-                if (!rmFields.contains("status") && infoMap.containsKey("status")) {
+                if (!rmFields.contains("status") && infoMap.containsKey("status"))
                     converted.append(infoMap.get("status")).append(separator);
-                    rmFields.add("status");
-                }
-                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser")) {
+                if (!rmFields.contains("endUser") && infoMap.containsKey("endUser"))
                     converted.append(infoMap.get("endUser"));
-                    rmFields.add("endUser");
-                }
                 for (Entry<String, String> set : infoMap.entrySet()) {
-                    if (!rmFields.contains(set.getKey())) converted.append(set.getValue()).append(separator);
+                    if (!rmFields.contains(set.getKey()) && !fileInfoFields.contains(set.getKey()))
+                        converted.append(set.getValue()).append(separator);
                 }
                 return converted.toString();
             };
