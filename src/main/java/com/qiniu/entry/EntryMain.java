@@ -29,6 +29,7 @@ public class EntryMain {
         IEntryParam entryParam = getEntryParam(args);
         HttpParams httpParams = new HttpParams(entryParam);
         configuration = new Configuration(Zone.autoZone());
+        // 自定义超时时间
         configuration.connectTimeout = httpParams.getConnectTimeout();
         configuration.readTimeout = httpParams.getReadTimeout();
         configuration.writeTimeout = httpParams.getWriteTimeout();
