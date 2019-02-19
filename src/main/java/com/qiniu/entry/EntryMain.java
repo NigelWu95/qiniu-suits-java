@@ -57,10 +57,10 @@ public class EntryMain {
             String accessKey = listBucketParams.getAccessKey();
             String secretKey = listBucketParams.getSecretKey();
             String bucket = listBucketParams.getBucket();
-            String customPrefix = listBucketParams.getCustomPrefix();
-            List<String> antiPrefix = listBucketParams.getAntiPrefix();
+            List<String> prefixes = listBucketParams.getPrefixes();
+            List<String> antiPrefixes = listBucketParams.getAntiPrefixes();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, unitLen, customPrefix, antiPrefix, resultPath);
+            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixes, antiPrefixes, resultPath);
             dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
         } else if ("file".equals(sourceType)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
