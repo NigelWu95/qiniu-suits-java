@@ -112,16 +112,17 @@ public class ListBucket implements IDataSource {
 
         while (fileListerList.size() < threads - 1 && fileListerList.size() > 0) {
             Map<Boolean, List<FileLister>> groupedFileListerMap = fileListerList.stream()
-                    .collect(Collectors.groupingBy(fileLister ->
-                            fileLister.getMarker() != null && !"".equals(fileLister.getMarker())));
+                    .collect(Collectors.groupingBy(FileLister::checkMarkerValid));
             if (groupedFileListerMap.get(true) != null) {
                 Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream().map(fileLister ->
                 {
                     List<FileInfo> list = fileLister.getFileInfoList();
                     String point = "";
+                    int prefixLen = fileLister.getPrefix().length();
                     if (list != null && list.size() > 0) {
-                        int prefixLen = fileLister.getPrefix().length();
-                        point = list.get(0).key.substring(prefixLen, prefixLen + 1);
+                        String key0 = list.get(0).key;
+                        if (key0.length() > prefixLen + 1) point = key0.substring(prefixLen, prefixLen + 1);
+                        else if (key0.length() > prefixLen) point = key0.substring(prefixLen);
                     }
                     String finalPoint = point;
                     return originPrefixList.stream()
@@ -146,7 +147,7 @@ public class ListBucket implements IDataSource {
             fileListerList.get(0).setEndKeyPrefix(fileListerList.get(1).getPrefix());
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
             if (prefixes.size() <= 1) fileLister.setPrefix(prefix);
-            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
+            if (!fileLister.checkMarkerValid()) {
                 FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream().filter(Objects::nonNull)
                         .max(Comparator.comparing(fileInfo -> fileInfo.key)).orElse(null);
                 fileLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
