@@ -138,14 +138,14 @@ public class ListBucket implements IDataSource {
             }
         }
 
-        // 加入第一段 FileLister，第一段 Lister 使用的前缀是初始的 prefix 参数
-        fileListerList.addAll(prefixList(new ArrayList<String>(){{add(prefix);}}, unitLen));
+        // prefixes 未设置或只有一个前缀的时候需要跟据其加入第一段 FileLister，第一段 Lister 使用的前缀即是初始的 prefix 参数
+        if (prefixes.size() <= 1) fileListerList.addAll(prefixList(new ArrayList<String>(){{add(prefix);}}, unitLen));
         // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
         if (fileListerList.size() > 1) {
             fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
             fileListerList.get(0).setEndKeyPrefix(fileListerList.get(1).getPrefix());
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
-            fileLister.setPrefix(prefix);
+            if (prefixes.size() <= 1) fileLister.setPrefix(prefix);
             if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
                 FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream().filter(Objects::nonNull)
                         .max(Comparator.comparing(fileInfo -> fileInfo.key)).orElse(null);
