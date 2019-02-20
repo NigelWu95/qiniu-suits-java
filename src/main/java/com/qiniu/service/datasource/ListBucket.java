@@ -40,8 +40,9 @@ public class ListBucket implements IDataSource {
         this.configuration = configuration;
         this.bucket = bucket;
         this.unitLen = unitLen;
-        this.prefixes = prefixes == null ? new ArrayList<>() : prefixes;
+        // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
+        this.prefixes = prefixes == null ? new ArrayList<>() : removeAntiPrefixes(prefixes);
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
@@ -86,21 +87,29 @@ public class ListBucket implements IDataSource {
         return listerList;
     }
 
+    private List<String> removeAntiPrefixes(List<String> validPrefixList) {
+        return validPrefixList.stream().filter(validPrefix -> {
+            for (String antiPrefix : antiPrefixes) {
+                if (validPrefix.startsWith(antiPrefix)) return false;
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
+
     private List<FileLister> getFileListerList(int threads) throws IOException {
-        prefixes.removeAll(antiPrefixes);
         // 如果线程数小于等于 prefixes 的元素个数，则直接使用该自定义前缀列表进行列举，不再分割下一级前缀
         if (threads <= prefixes.size()) return prefixList(prefixes, unitLen);
         List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
                 "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split(""));
-        originPrefixList.removeAll(antiPrefixes);
         List<String> validPrefixList;
         String prefix = prefixes.size() == 1 ? prefixes.get(0) : "";
         if (prefixes.size() < 1) validPrefixList = originPrefixList;
-        else if (prefixes.size() == 1) validPrefixList = originPrefixList.stream().map(originPrefix -> prefix + originPrefix)
-                .filter(validPrefix -> !antiPrefixes.contains(validPrefix)).collect(Collectors.toList());
+        else if (prefixes.size() == 1) validPrefixList = originPrefixList.stream()
+                .map(originPrefix -> prefix + originPrefix).collect(Collectors.toList());
         else validPrefixList = prefixes;
-
+        validPrefixList = removeAntiPrefixes(validPrefixList);
         List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
+
         while (fileListerList.size() < threads - 1 && fileListerList.size() > 0) {
             Map<Boolean, List<FileLister>> groupedFileListerMap = fileListerList.stream()
                     .collect(Collectors.groupingBy(fileLister ->
@@ -116,12 +125,11 @@ public class ListBucket implements IDataSource {
                     }
                     String finalPoint = point;
                     return originPrefixList.stream()
-                            .filter(originPrefix -> prefix.compareTo(finalPoint) >= 0)
+                            .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
                             .map(originPrefix -> fileLister.getPrefix() + originPrefix).collect(Collectors.toList());
                 }).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent()) {
-                    validPrefixList = listOptional.get();
-                    validPrefixList.removeAll(antiPrefixes);
+                    validPrefixList = removeAntiPrefixes(listOptional.get());
                     fileListerList = prefixList(validPrefixList, unitLen);
                     if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
                 }
@@ -144,7 +152,6 @@ public class ListBucket implements IDataSource {
                 fileLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
             }
         }
-
         return fileListerList;
     }
 

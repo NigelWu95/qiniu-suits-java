@@ -3,9 +3,7 @@ package com.qiniu.model.parameter;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ListBucketParams extends QossParams {
 
@@ -23,7 +21,10 @@ public class ListBucketParams extends QossParams {
     }
 
     public List<String> getPrefixes() {
-        if (!"".equals(prefixes)) return Arrays.asList(prefixes.split(","));
+        if (!"".equals(prefixes)) {
+            Set<String> set = new HashSet<>(Arrays.asList(prefixes.split(",")));
+            return new ArrayList<>(set);
+        }
         return null;
     }
 
@@ -36,7 +37,10 @@ public class ListBucketParams extends QossParams {
     }
 
     public List<String> getAntiPrefixes() {
-        if (!"".equals(antiPrefixes)) return Arrays.asList(antiPrefixes.split(","));
+        if (!"".equals(antiPrefixes)) {
+            Set<String> set = new HashSet<>(Arrays.asList(antiPrefixes.split(",")));
+            return new ArrayList<>(set);
+        }
         return null;
     }
 }

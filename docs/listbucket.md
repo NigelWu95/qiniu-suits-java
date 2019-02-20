@@ -16,8 +16,8 @@ bucket=
 ```
 threads=100
 unit-len=10000
-prefix=
-anti-prefix=
+prefixes=
+anti-prefixes=
 ```
 
 ### 参数字段说明
@@ -28,20 +28,20 @@ anti-prefix=
 |bucket|字符串| 需要列举的空间名称|  
 |threads| 整型数字| 表示并发列举时使用的线程数（默认 30）|  
 |unit-len| 整型数字| 表示每次列举请求列举的文件个数（列举长度，默认值 10000）|  
-|prefix| 域名字符串| 表示只列举某个文件名前缀的资源|  
-|anti-prefix| true/false| 表示列举时排除某个文件名前缀的资源，支持以 `,` 分隔的列表|  
+|prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表|  
+|anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表|  
 
 ### 命令行参数方式
 ```
--ak= -sk= -bucket= -threads= -unit-len= -prefix= -anti-prefix=
+-ak= -sk= -bucket= -threads= -unit-len= -prefixes= -anti-prefixes=
 ```
 
 ### 关于并发列举
 1、算法描述：使用前缀索引为每一个前缀 (第一级默认为 94 个连贯的 ASCII 常见字符) 创建一个列举对象，每个列
 举对象可以列举直到结束，在获取多个有效的列举对象之后，分别加入起始（无前缀，但到第一个前缀结束）列举对象和修
 改终止对象的前缀，随即开始并发执行列举，分别对输出结果进行后续处理。前缀索引个数和起始与终止列举对象的前缀会
-随自定义参数 prefix 和 anti-prefix 而改变，prefix 为指定列举的公共前缀，anti-prefix 表示从前缀索索
-引中去除对应的索引字符，通常 prefix 和 anti-prefix 不同时设置。  
+随自定义参数 prefixes 和 anti-prefixes 而改变，prefixes 为指定列举的公共前缀，anti-prefixes 表示
+从前缀索引中去除的索引字符，通常 prefixes 和 anti-prefixes 不同时进行设置。  
 
 2、大量文件时建议：threads=100, unit-len=10000，unit-len 值在机器配置较高时可以调高，如16核32G的机
 器可选择 200 个以上线程，但是不建议过大，通常不超过 100000。500 万以内文件建议 threads<=100，文件数目
