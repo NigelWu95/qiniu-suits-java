@@ -3,27 +3,29 @@ package com.qiniu.model.parameter;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ListBucketParams extends QossParams {
 
-    private String customPrefix;
+    private String prefixes;
+    private String antiPrefixes;
     private String marker;
     private String end;
-    private String antiPrefix;
 
     public ListBucketParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
-        try { this.customPrefix = entryParam.getParamValue("prefix"); } catch (Exception e) {}
+        try { this.prefixes = entryParam.getParamValue("prefixes"); } catch (Exception e) { this.prefixes = ""; }
+        try { this.antiPrefixes = entryParam.getParamValue("anti-prefixes"); } catch (Exception e) { this.antiPrefixes = ""; }
         try { this.marker = entryParam.getParamValue("marker"); } catch (Exception e) {}
         try { this.end = entryParam.getParamValue("end"); } catch (Exception e) {}
-        try { this.antiPrefix = entryParam.getParamValue("anti-prefix"); } catch (Exception e) { this.antiPrefix = ""; }
     }
 
-    public String getCustomPrefix() {
-        return customPrefix;
+    public List<String> getPrefixes() {
+        if (!"".equals(prefixes)) {
+            Set<String> set = new HashSet<>(Arrays.asList(prefixes.split(",")));
+            return new ArrayList<>(set);
+        }
+        return null;
     }
 
     public String getMarker() {
@@ -34,8 +36,11 @@ public class ListBucketParams extends QossParams {
         return end;
     }
 
-    public List<String> getAntiPrefix() {
-        if (!"".equals(antiPrefix)) return Arrays.asList(antiPrefix.split(","));
+    public List<String> getAntiPrefixes() {
+        if (!"".equals(antiPrefixes)) {
+            Set<String> set = new HashSet<>(Arrays.asList(antiPrefixes.split(",")));
+            return new ArrayList<>(set);
+        }
         return null;
     }
 }

@@ -100,7 +100,7 @@ public class CommonParams {
     public String getResultPath() throws IOException {
         if (resultPath.startsWith("/")) throw new IOException("the file path only support relative path.");
         else if ("".equals(resultPath)) {
-            return "../result";
+            return "result";
         }
         return System.getProperty("user.dir") + System.getProperty("file.separator") + resultPath;
     }
