@@ -108,11 +108,11 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return resultList;
     }
 
-    private boolean checkMarkerValid() {
+    public boolean checkMarkerValid() {
         return marker != null && !"".equals(marker);
     }
 
-    private boolean checkListValid() {
+    public boolean checkListValid() {
         return fileInfoList != null && fileInfoList.size() > 0;
     }
 
