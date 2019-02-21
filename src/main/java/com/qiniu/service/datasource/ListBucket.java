@@ -111,10 +111,13 @@ public class ListBucket implements IDataSource {
         else validPrefixList = prefixes;
         validPrefixList = removeAntiPrefixes(validPrefixList);
         List<FileLister> progressiveList = prefixList(validPrefixList, unitLen);
+        int size = progressiveList.size();
         List<FileLister> fileListerList = new ArrayList<>();
+        // prefixes 未设置或只有一个前缀的时候需要跟据其加入第一段 FileLister，第一段 Lister 使用的前缀即是初始的 prefix 参数
+        if (prefixes.size() <= 1) fileListerList.addAll(prefixList(new ArrayList<String>(){{add(prefix);}}, unitLen));
 
         Map<Boolean, List<FileLister>> groupedListerMap;
-        while (progressiveList.size() > 0 && progressiveList.size() < threads - 1) {
+        while (size > 0 && size < threads - 1) {
             groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
             if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
             if (groupedListerMap.get(true) != null) {
@@ -133,17 +136,20 @@ public class ListBucket implements IDataSource {
                             .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
                             .map(originPrefix -> fileLister.getPrefix() + originPrefix).collect(Collectors.toList());
                 }).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                if (listOptional.isPresent()) {
+                if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     validPrefixList = removeAntiPrefixes(listOptional.get());
                     progressiveList = prefixList(validPrefixList, unitLen);
+                    size = fileListerList.size() + progressiveList.size();
+                } else {
+                    progressiveList = groupedListerMap.get(true);
+                    break;
                 }
             } else {
                 break;
             }
         }
+        fileListerList.addAll(progressiveList);
 
-        // prefixes 未设置或只有一个前缀的时候需要跟据其加入第一段 FileLister，第一段 Lister 使用的前缀即是初始的 prefix 参数
-        if (prefixes.size() <= 1) fileListerList.addAll(prefixList(new ArrayList<String>(){{add(prefix);}}, unitLen));
         // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
         if (fileListerList.size() > 1) {
             fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
