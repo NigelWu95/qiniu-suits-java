@@ -101,9 +101,7 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> getFileListerList(int threads) throws IOException {
-        // 如果线程数小于等于 prefixes 的元素个数，则直接使用该自定义前缀列表进行列举，不再分割下一级前缀
         Collections.sort(prefixes);
-        if (threads <= prefixes.size()) return prefixList(prefixes, unitLen);
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之后的字符去掉（共 |}~ 三个，对整体影响不大），这样可以
         // 优化列举的超时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
@@ -116,7 +114,6 @@ public class ListBucket implements IDataSource {
         else validPrefixList = prefixes;
         validPrefixList = removeAntiPrefixes(validPrefixList);
         List<FileLister> progressiveList = prefixList(validPrefixList, unitLen);
-        int size = progressiveList.size();
         List<FileLister> fileListerList = new ArrayList<>();
         // prefixes 未设置或只有一个前缀的时候需要跟据其加入第一段 FileLister，第一段 Lister 使用的前缀即是初始的 prefix 参数
         if (prefixes.size() <= 1 || prefixLeft)
@@ -124,7 +121,8 @@ public class ListBucket implements IDataSource {
 
         // 避免重复生成新对象，将 groupedListerMap 放在循环外部
         Map<Boolean, List<FileLister>> groupedListerMap;
-        while (size > 0 && size < threads - 1) {
+        int size = fileListerList.size() + progressiveList.size();
+        while (size > 0 && size < threads) {
             groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
             if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
             if (groupedListerMap.get(true) != null) {
