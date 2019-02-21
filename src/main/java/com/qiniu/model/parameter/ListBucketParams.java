@@ -26,7 +26,16 @@ public class ListBucketParams extends QossParams {
 
     public List<String> getPrefixes() {
         if (!"".equals(prefixes)) {
-            Set<String> set = new HashSet<>(Arrays.asList(prefixes.split(",")));
+            Set<String> set;
+            if (prefixes.contains("\\,")) {
+                String[] elements = prefixes.split("\\\\,");
+                set = new HashSet<>(Arrays.asList(elements[0].split(",")));
+                set.add(",");
+                if (elements.length > 1)set.addAll(Arrays.asList(elements[1].split(",")));
+            } else {
+                set = new HashSet<>(Arrays.asList(prefixes.split(",")));
+            }
+            set.remove("");
             return new ArrayList<>(set);
         }
         return null;
