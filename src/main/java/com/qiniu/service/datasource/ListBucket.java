@@ -110,13 +110,15 @@ public class ListBucket implements IDataSource {
                 .map(originPrefix -> prefix + originPrefix).collect(Collectors.toList());
         else validPrefixList = prefixes;
         validPrefixList = removeAntiPrefixes(validPrefixList);
-        List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
+        List<FileLister> progressiveList = prefixList(validPrefixList, unitLen);
+        List<FileLister> fileListerList = new ArrayList<>();
 
-        while (fileListerList.size() < threads - 1 && fileListerList.size() > 0) {
-            Map<Boolean, List<FileLister>> groupedFileListerMap = fileListerList.stream()
-                    .collect(Collectors.groupingBy(FileLister::checkMarkerValid));
-            if (groupedFileListerMap.get(true) != null) {
-                Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream().map(fileLister ->
+        Map<Boolean, List<FileLister>> groupedListerMap;
+        while (progressiveList.size() > 0 && progressiveList.size() < threads - 1) {
+            groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
+            if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
+            if (groupedListerMap.get(true) != null) {
+                Optional<List<String>> listOptional = groupedListerMap.get(true).parallelStream().map(fileLister ->
                 {
                     List<FileInfo> list = fileLister.getFileInfoList();
                     String point = "";
@@ -133,8 +135,7 @@ public class ListBucket implements IDataSource {
                 }).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent()) {
                     validPrefixList = removeAntiPrefixes(listOptional.get());
-                    fileListerList = prefixList(validPrefixList, unitLen);
-                    if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
+                    progressiveList = prefixList(validPrefixList, unitLen);
                 }
             } else {
                 break;
