@@ -14,7 +14,6 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,25 +99,6 @@ public class ListBucket implements IDataSource {
         }).collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int threads) throws IOException {
-        Collections.sort(prefixes);
-        List<FileLister> fileListerList = new ArrayList<>();
-        if (prefixes.size() == 0) {
-            fileListerList = nextLevelListBySinglePrefix(threads, "");
-        } else {
-            for (String prefix : prefixes) {
-                fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefix));
-            }
-            if (prefixLeft) fileListerList.addAll(prefixList(new ArrayList<String>(){{add("");}}, unitLen));
-            // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
-            if (fileListerList.size() > 1) {
-                fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-                if (prefixRight) fileListerList.get(fileListerList.size() -1).setPrefix("");
-            }
-        }
-        return fileListerList;
-    }
-
     private List<FileLister> nextLevelListBySinglePrefix(int threads, String customPrefix) throws IOException {
         List<String> originPrefixList = new ArrayList<>();
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
@@ -160,6 +140,7 @@ public class ListBucket implements IDataSource {
                     break;
                 }
             } else {
+                progressiveList = new ArrayList<>();
                 break;
             }
         }
@@ -214,16 +195,15 @@ public class ListBucket implements IDataSource {
         }
     }
 
-    public void export(Entry<String, FileLister> fileListerMap, ILineProcess<Map<String, String>> processor)
+    private void export(String identifier, FileLister fileLister, ILineProcess<Map<String, String>> processor)
             throws Exception {
         FileMap recordFileMap = new FileMap(resultPath);
-        FileLister fileLister = fileListerMap.getValue();
-        FileMap fileMap = new FileMap(resultPath, "listbucket", fileListerMap.getKey());
+        FileMap fileMap = new FileMap(resultPath, "listbucket", identifier);
         fileMap.initDefaultWriters();
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        String record = "order " + fileListerMap.getKey() + ": " + fileLister.getPrefix();
+        String record = "order " + identifier + ": " + fileLister.getPrefix();
         try {
-            execLister(fileListerMap.getValue(), fileMap, lineProcessor);
+            execLister(fileLister, fileMap, lineProcessor);
             if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
             else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
             System.out.println(record);
@@ -246,29 +226,58 @@ public class ListBucket implements IDataSource {
         System.exit(-1);
     }
 
-    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
-        List<FileLister> fileListerList = getFileListerList(threads);
-        Map<String, FileLister> fileListerMap = new HashMap<String, FileLister>(){{
-            for (int i = 0; i < fileListerList.size(); i++) {
-                put(String.valueOf(i + 1), fileListerList.get(i));
-            }
-        }};
-        String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " concurrently running with " + threads + " threads ...");
-        ExecutorService executorPool = Executors.newFixedThreadPool(threads);
-        AtomicBoolean exit = new AtomicBoolean(false);
-        for (Entry<String, FileLister> fileListerEntry : fileListerMap.entrySet()) {
+    private void execInThreads(ExecutorService executorPool, AtomicBoolean exit, List<FileLister> fileListerList,
+                               int alreadyOrder, ILineProcess<Map<String, String>> processor) {
+        for (int j = 0; j < fileListerList.size(); j++) {
+            int finalJ = j;
+            FileLister lister = fileListerList.get(finalJ);
             executorPool.execute(() -> {
                 try {
-                    export(fileListerEntry, processor);
+                    export(String.valueOf(finalJ + 1 + alreadyOrder), lister, processor);
                 } catch (Exception e) {
                     exit(exit, e);
                 }
             });
         }
+    }
+
+    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+        String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
+        System.out.println(info + " concurrently running with " + threads + " threads ...");
+        ExecutorService executorPool = Executors.newFixedThreadPool(threads);
+        AtomicBoolean exit = new AtomicBoolean(false);
+        Collections.sort(prefixes);
+        if (prefixes.size() == 0) {
+            List<FileLister> fileListerList = nextLevelListBySinglePrefix(threads, "");
+            execInThreads(executorPool, exit, fileListerList, 0, processor);
+        } else {
+            int alreadyOrder = 0;
+            List<FileLister> fileListerList = new ArrayList<>();
+            for (int i = 0; i < prefixes.size(); i++) {
+                fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefixes.get(i)));
+                if (i == 0) {
+                    if (prefixLeft) {
+                        List<FileLister> firstLister = prefixList(new ArrayList<String>(){{add("");}}, unitLen);
+                        firstLister.get(0).setEndKeyPrefix(prefixes.get(0));
+                        fileListerList.addAll(firstLister);
+                    }
+                } else if (i == prefixes.size() - 1) {
+                    // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
+                    if (fileListerList.size() > 1) {
+                        fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
+                        if (prefixRight) fileListerList.get(fileListerList.size() -1).setPrefix("");
+                    }
+                }
+                if (fileListerList.size() >= threads) {
+                    execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
+                    alreadyOrder += fileListerList.size();
+                    fileListerList = new ArrayList<>();
+                }
+            }
+            execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
+        }
         executorPool.shutdown();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
-        for (FileLister fileLister : fileListerList) fileLister.remove();
         System.out.println(info + " finished");
     }
 }
