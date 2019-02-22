@@ -14,7 +14,6 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
