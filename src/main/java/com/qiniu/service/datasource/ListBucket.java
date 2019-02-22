@@ -112,11 +112,6 @@ public class ListBucket implements IDataSource {
         if (prefixes.size() < 1) {
             validPrefixList.add("");
             validPrefixList.addAll(originPrefixList);
-        } else if (prefixes.size() == 1) {
-            if (prefixLeft) validPrefixList.add("");
-            else validPrefixList.add(prefix);
-            validPrefixList.addAll(originPrefixList.stream()
-                    .map(originPrefix -> prefix + originPrefix).collect(Collectors.toList()));
         } else {
             if (prefixLeft) validPrefixList.add("");
             validPrefixList.addAll(prefixes);
@@ -127,7 +122,7 @@ public class ListBucket implements IDataSource {
 
         // 避免重复生成新对象，将 groupedListerMap 放在循环外部
         Map<Boolean, List<FileLister>> groupedListerMap;
-        int size = fileListerList.size() + progressiveList.size();
+        int size = progressiveList.size();
         while (size > 0 && size < threads) {
             groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
             if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
