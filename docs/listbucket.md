@@ -18,6 +18,8 @@ threads=100
 unit-len=10000
 prefixes=
 anti-prefixes=
+prefix-left=
+prefix-right=
 ```
 
 ### 参数字段说明
@@ -30,10 +32,12 @@ anti-prefixes=
 |unit-len| 整型数字| 表示每次列举请求列举的文件个数（列举长度，默认值 10000）|  
 |prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表|  
 |anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表|  
+|prefix-left| true/false| 当设置 prefixes 时，可选择是否在prefixes ASCII顺序之前的所有未知前缀的文件是否进行列举|  
+|prefix-right| true/false| 当设置 prefixes 时，可选择是否在prefixes ASCII顺序之后的所有未知前缀的文件是否进行列举|  
 
 ### 命令行参数方式
 ```
--ak= -sk= -bucket= -threads= -unit-len= -prefixes= -anti-prefixes=
+-ak= -sk= -bucket= -threads= -unit-len= -prefixes= -anti-prefixes= -prefix-left= -prefix-right=
 ```
 
 ### 关于并发列举
