@@ -99,25 +99,6 @@ public class ListBucket implements IDataSource {
         }).collect(Collectors.toList());
     }
 
-    private List<FileLister> getFileListerList(int threads) throws IOException {
-        Collections.sort(prefixes);
-        List<FileLister> fileListerList = new ArrayList<>();
-        if (prefixes.size() == 0) {
-            fileListerList = nextLevelListBySinglePrefix(threads, "");
-        } else {
-            for (String prefix : prefixes) {
-                fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefix));
-            }
-            if (prefixLeft) fileListerList.addAll(prefixList(new ArrayList<String>(){{add("");}}, unitLen));
-            // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
-            if (fileListerList.size() > 1) {
-                fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-                if (prefixRight) fileListerList.get(fileListerList.size() -1).setPrefix("");
-            }
-        }
-        return fileListerList;
-    }
-
     private List<FileLister> nextLevelListBySinglePrefix(int threads, String customPrefix) throws IOException {
         List<String> originPrefixList = new ArrayList<>();
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
@@ -159,6 +140,7 @@ public class ListBucket implements IDataSource {
                     break;
                 }
             } else {
+                progressiveList = new ArrayList<>();
                 break;
             }
         }
