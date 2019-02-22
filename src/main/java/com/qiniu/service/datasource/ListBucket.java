@@ -28,6 +28,8 @@ public class ListBucket implements IDataSource {
     final private int unitLen;
     final private List<String> prefixes;
     final private List<String> antiPrefixes;
+    final private boolean prefixLeft;
+    final private boolean prefixRight;
     final private String resultPath;
     private boolean saveTotal;
     private String resultFormat;
@@ -35,7 +37,7 @@ public class ListBucket implements IDataSource {
     private List<String> rmFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, List<String> prefixes,
-                      List<String> antiPrefixes, String resultPath) {
+                      List<String> antiPrefixes, boolean prefixLeft, boolean prefixRight, String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -43,6 +45,8 @@ public class ListBucket implements IDataSource {
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
         this.prefixes = prefixes == null ? new ArrayList<>() : removeAntiPrefixes(prefixes);
+        this.prefixLeft = prefixLeft;
+        this.prefixRight = prefixRight;
         this.resultPath = resultPath;
         this.saveTotal = false;
     }
@@ -97,26 +101,33 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> getFileListerList(int threads) throws IOException {
-        // 如果线程数小于等于 prefixes 的元素个数，则直接使用该自定义前缀列表进行列举，不再分割下一级前缀
-        if (threads <= prefixes.size()) return prefixList(prefixes, unitLen);
-        // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之后的字符去掉（共 |}~ 三个，对整体影响不大），这样可以
+        Collections.sort(prefixes);
+        // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
         // 优化列举的超时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
-        List<String> originPrefixList = Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
-                "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{").split(""));
-        List<String> validPrefixList;
+        // 去除前数个非常见作为文件名的 ASCII 字符（" !"#$%&'()*+,-"）优化前缀列举
+        List<String> originPrefixList = Arrays.asList(("./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST" +
+                "UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split(""));
+        List<String> validPrefixList = new ArrayList<>();
         String prefix = prefixes.size() == 1 ? prefixes.get(0) : "";
-        if (prefixes.size() < 1) validPrefixList = originPrefixList;
-        else if (prefixes.size() == 1) validPrefixList = originPrefixList.stream()
-                .map(originPrefix -> prefix + originPrefix).collect(Collectors.toList());
-        else validPrefixList = prefixes;
+        if (prefixes.size() < 1) {
+            validPrefixList.add("");
+            validPrefixList.addAll(originPrefixList);
+        } else {
+            if (prefixLeft) validPrefixList.add("");
+            validPrefixList.addAll(prefixes);
+        }
         validPrefixList = removeAntiPrefixes(validPrefixList);
-        List<FileLister> fileListerList = prefixList(validPrefixList, unitLen);
+        List<FileLister> progressiveList = prefixList(validPrefixList, unitLen);
+        List<FileLister> fileListerList = new ArrayList<>();
 
-        while (fileListerList.size() < threads - 1 && fileListerList.size() > 0) {
-            Map<Boolean, List<FileLister>> groupedFileListerMap = fileListerList.stream()
-                    .collect(Collectors.groupingBy(FileLister::checkMarkerValid));
-            if (groupedFileListerMap.get(true) != null) {
-                Optional<List<String>> listOptional = groupedFileListerMap.get(true).parallelStream().map(fileLister ->
+        // 避免重复生成新对象，将 groupedListerMap 放在循环外部
+        Map<Boolean, List<FileLister>> groupedListerMap;
+        int size = progressiveList.size();
+        while (size > 0 && size < threads) {
+            groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
+            if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
+            if (groupedListerMap.get(true) != null) {
+                Optional<List<String>> listOptional = groupedListerMap.get(true).parallelStream().map(fileLister ->
                 {
                     List<FileInfo> list = fileLister.getFileInfoList();
                     String point = "";
@@ -131,24 +142,30 @@ public class ListBucket implements IDataSource {
                             .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
                             .map(originPrefix -> fileLister.getPrefix() + originPrefix).collect(Collectors.toList());
                 }).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                if (listOptional.isPresent()) {
+                if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     validPrefixList = removeAntiPrefixes(listOptional.get());
-                    fileListerList = prefixList(validPrefixList, unitLen);
-                    if (groupedFileListerMap.get(false) != null) fileListerList.addAll(groupedFileListerMap.get(false));
+                    progressiveList = prefixList(validPrefixList, unitLen);
+                    size = fileListerList.size() + progressiveList.size();
+                } else {
+                    progressiveList = groupedListerMap.get(true);
+                    break;
                 }
             } else {
                 break;
             }
         }
+        fileListerList.addAll(progressiveList);
 
-        // prefixes 未设置或只有一个前缀的时候需要跟据其加入第一段 FileLister，第一段 Lister 使用的前缀即是初始的 prefix 参数
-        if (prefixes.size() <= 1) fileListerList.addAll(prefixList(new ArrayList<String>(){{add(prefix);}}, unitLen));
         // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
         if (fileListerList.size() > 1) {
             fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
             fileListerList.get(0).setEndKeyPrefix(fileListerList.get(1).getPrefix());
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
-            if (prefixes.size() <= 1) fileLister.setPrefix(prefix);
+            if (prefixRight) fileLister.setPrefix("");
+            else {
+                if (prefixes.size() == 1) fileLister.setPrefix(prefix);
+                else fileLister.setPrefix("");
+            }
             if (!fileLister.checkMarkerValid()) {
                 FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream().filter(Objects::nonNull)
                         .max(Comparator.comparing(fileInfo -> fileInfo.key)).orElse(null);
