@@ -59,8 +59,11 @@ public class EntryMain {
             String bucket = listBucketParams.getBucket();
             List<String> prefixes = listBucketParams.getPrefixes();
             List<String> antiPrefixes = listBucketParams.getAntiPrefixes();
+            boolean prefixLeft = listBucketParams.getPrefixLeft();
+            boolean prefixRight = listBucketParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixes, antiPrefixes, resultPath);
+            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixes, antiPrefixes, prefixLeft,
+                    prefixRight, resultPath);
             dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
         } else if ("file".equals(sourceType)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
