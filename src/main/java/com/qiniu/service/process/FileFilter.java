@@ -12,13 +12,13 @@ public class FileFilter {
     private List<String> keyRegex;
     private long putTimeMin;
     private long putTimeMax;
-    private List<String> mime;
+    private List<String> mimeType;
     private int type;
     private List<String> antiKeyPrefix;
     private List<String> antiKeySuffix;
     private List<String> antiKeyInner;
     private List<String> antiKeyRegex;
-    private List<String> antiMime;
+    private List<String> antiMimeType;
 
     public void setKeyConditions(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner,
                                  List<String> keyRegex) {
@@ -36,9 +36,9 @@ public class FileFilter {
         this.antiKeyRegex = antiKeyRegex == null ? new ArrayList<>() : antiKeyRegex;
     }
 
-    public void setMimeConditions(List<String> mime, List<String> antiMime) {
-        this.mime = mime == null ? new ArrayList<>() : mime;
-        this.antiMime = antiMime == null ? new ArrayList<>() : antiMime;
+    public void setMimeConditions(List<String> mimeType, List<String> antiMimeType) {
+        this.mimeType = mimeType == null ? new ArrayList<>() : mimeType;
+        this.antiMimeType = antiMimeType == null ? new ArrayList<>() : antiMimeType;
     }
 
     public void setOtherConditions(long putTimeMax, long putTimeMin, int type) {
@@ -68,7 +68,7 @@ public class FileFilter {
     }
 
     public boolean checkMime() {
-        return checkList(mime);
+        return checkList(mimeType);
     }
 
     public boolean checkType() {
@@ -92,42 +92,42 @@ public class FileFilter {
     }
 
     public boolean checkAntiMime() {
-        return checkList(antiMime);
+        return checkList(antiMimeType);
     }
 
     public boolean filterKeyPrefix(Map<String, String> item) {
-        if (checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return false;
         else return keyPrefix.stream().anyMatch(prefix -> item.get("key").startsWith(prefix));
     }
 
     public boolean filterKeySuffix(Map<String, String> item) {
-        if (checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return false;
         else return keySuffix.stream().anyMatch(suffix -> item.get("key").endsWith(suffix));
     }
 
     public boolean filterKeyInner(Map<String, String> item) {
-        if (checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return false;
         else return keyInner.stream().anyMatch(inner -> item.get("key").contains(inner));
     }
 
     public boolean filterKeyRegex(Map<String, String> item) {
-        if (checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return false;
         else return keyRegex.stream().anyMatch(regex -> item.get("key").matches(regex));
     }
 
     public boolean filterPutTime(Map<String, String> item) {
-        if (checkItem(item, "putTime")) return true;
+        if (checkItem(item, "putTime")) return false;
         else if (putTimeMax > 0) return Long.valueOf(item.get("putTime")) <= putTimeMax;
         else return putTimeMin <= Long.valueOf(item.get("putTime"));
     }
 
-    public boolean filterMime(Map<String, String> item) {
-        if (checkItem(item, "mime")) return true;
-        else return mime.stream().anyMatch(mime -> item.get("mime").contains(mime));
+    public boolean filterMimeType(Map<String, String> item) {
+        if (checkItem(item, "mimeType")) return false;
+        else return mimeType.stream().anyMatch(mimeType -> item.get("mimeType").contains(mimeType));
     }
 
     public boolean filterType(Map<String, String> item) {
-        if (checkItem(item, "type")) return true;
+        if (checkItem(item, "type")) return false;
         else return (Integer.valueOf(item.get("type")) == type);
     }
 
@@ -151,9 +151,9 @@ public class FileFilter {
         else return antiKeyRegex.stream().noneMatch(regex -> item.get("key").matches(regex));
     }
 
-    public boolean filterAntiMime(Map<String, String> item) {
-        if (checkItem(item, "mime")) return true;
-        else return antiMime.stream().noneMatch(mime -> item.get("mime").contains(mime));
+    public boolean filterAntiMimeType(Map<String, String> item) {
+        if (checkItem(item, "mimeType")) return true;
+        else return antiMimeType.stream().noneMatch(mimeType -> item.get("mimeType").contains(mimeType));
     }
 
     private boolean checkItem(Map<String, String> item, String key) {
@@ -166,7 +166,7 @@ public class FileFilter {
 
     public boolean isValid() {
         return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mime) || putTimeMin > 0 || putTimeMax > 0 || type > -1 || checkList(antiKeyPrefix) ||
-                checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMime));
+                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || type > -1 || checkList(antiKeyPrefix) ||
+                checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
     }
 }

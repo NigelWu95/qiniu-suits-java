@@ -46,7 +46,7 @@ public class MapToTableFormatter implements IStringFormat<Map<String, String>> {
             converted.append(infoMap.get("endUser"));
         for (Map.Entry<String, String> set : infoMap.entrySet()) {
             if (!rmFields.contains(set.getKey()) && !fileInfoFields.contains(set.getKey()))
-                converted.append(set.getValue()).append(separator);
+                converted.append(separator).append(set.getValue());
         }
         return converted.toString();
     }

@@ -32,15 +32,15 @@ public class MapToJsonFormatter implements IStringFormat<Map<String, String>> {
         if (!rmFields.contains("hash") && infoMap.containsKey("hash"))
             converted.addProperty("hash", infoMap.get("hash"));
         if (!rmFields.contains("fsize") && infoMap.containsKey("fsize"))
-            converted.addProperty("fsize", infoMap.get("fsize"));
+            converted.addProperty("fsize", Long.valueOf(infoMap.get("fsize")));
         if (!rmFields.contains("putTime") && infoMap.containsKey("putTime"))
-            converted.addProperty("putTime", infoMap.get("putTime"));
+            converted.addProperty("putTime", Long.valueOf(infoMap.get("putTime")));
         if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType"))
             converted.addProperty("mimeType", infoMap.get("mimeType"));
         if (!rmFields.contains("type") && infoMap.containsKey("type"))
-            converted.addProperty("type", infoMap.get("type"));
+            converted.addProperty("type", Integer.valueOf(infoMap.get("type")));
         if (!rmFields.contains("status") && infoMap.containsKey("status"))
-            converted.addProperty("status", infoMap.get("status"));
+            converted.addProperty("status", Integer.valueOf(infoMap.get("status")));
         if (!rmFields.contains("endUser") && infoMap.containsKey("endUser"))
             converted.addProperty("endUser", infoMap.get("endUser"));
         for (Map.Entry<String, String> set : infoMap.entrySet()) {
