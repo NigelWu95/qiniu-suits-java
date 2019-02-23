@@ -14,6 +14,7 @@ public class FileFilter {
     private long putTimeMax;
     private List<String> mimeType;
     private int type;
+    private int status;
     private List<String> antiKeyPrefix;
     private List<String> antiKeySuffix;
     private List<String> antiKeyInner;
@@ -36,15 +37,16 @@ public class FileFilter {
         this.antiKeyRegex = antiKeyRegex == null ? new ArrayList<>() : antiKeyRegex;
     }
 
-    public void setMimeConditions(List<String> mimeType, List<String> antiMimeType) {
+    public void setMimeTypeConditions(List<String> mimeType, List<String> antiMimeType) {
         this.mimeType = mimeType == null ? new ArrayList<>() : mimeType;
         this.antiMimeType = antiMimeType == null ? new ArrayList<>() : antiMimeType;
     }
 
-    public void setOtherConditions(long putTimeMax, long putTimeMin, int type) {
+    public void setOtherConditions(long putTimeMax, long putTimeMin, int type, int status) {
         this.putTimeMax = putTimeMax;
         this.putTimeMin = putTimeMin;
         this.type = type;
+        this.status = status;
     }
 
     public boolean checkKeyPrefix() {
@@ -72,7 +74,11 @@ public class FileFilter {
     }
 
     public boolean checkType() {
-        return type > -1;
+        return type == 0 || type == 1;
+    }
+
+    public boolean checkStatus() {
+        return status == 0 || status == 1;
     }
 
     public boolean checkAntiKeyPrefix() {
@@ -131,6 +137,11 @@ public class FileFilter {
         else return (Integer.valueOf(item.get("type")) == type);
     }
 
+    public boolean filterStatus(Map<String, String> item) {
+        if (checkItem(item, "status")) return false;
+        else return (Integer.valueOf(item.get("status")) == status);
+    }
+
     public boolean filterAntiKeyPrefix(Map<String, String> item) {
         if (checkItem(item, "key")) return true;
         else return antiKeyPrefix.stream().noneMatch(prefix -> item.get("key").startsWith(prefix));
@@ -166,7 +177,8 @@ public class FileFilter {
 
     public boolean isValid() {
         return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || type > -1 || checkList(antiKeyPrefix) ||
-                checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
+                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || (type == 0 || type == 1) ||
+                (status == 0 || status == 1) || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
+                checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
     }
 }

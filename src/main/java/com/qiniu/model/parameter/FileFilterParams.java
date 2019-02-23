@@ -17,34 +17,36 @@ public class FileFilterParams extends CommonParams {
     private String pointDate;
     private String pointTime;
     private String direction;
-    private String mime;
+    private String mimeType;
     private String type;
+    private String status;
     private long datetime;
     private boolean directionFlag;
     private String antiKeyPrefix;
     private String antiKeySuffix;
     private String antiKeyInner;
     private String antiKeyRegex;
-    private String antiMime;
+    private String antiMimeType;
 
     public FileFilterParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        try { this.keyPrefix = entryParam.getParamValue("f-key-prefix"); } catch (Exception e) {}
-        try { this.keySuffix = entryParam.getParamValue("f-key-suffix"); } catch (Exception e) {}
-        try { this.keyInner = entryParam.getParamValue("f-key-inner"); } catch (Exception e) {}
-        try { this.keyRegex = entryParam.getParamValue("f-key-regex"); } catch (Exception e) {}
+        try { this.keyPrefix = entryParam.getParamValue("f-prefix"); } catch (Exception e) {}
+        try { this.keySuffix = entryParam.getParamValue("f-suffix"); } catch (Exception e) {}
+        try { this.keyInner = entryParam.getParamValue("f-inner"); } catch (Exception e) {}
+        try { this.keyRegex = entryParam.getParamValue("f-regex"); } catch (Exception e) {}
         try { this.pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) { pointDate = ""; }
         try { this.pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) { pointTime = ""; }
         try { this.direction = entryParam.getParamValue("f-direction"); } catch (Exception e) { direction = ""; }
-        try { this.mime = entryParam.getParamValue("f-mime"); } catch (Exception e) {}
+        try { this.mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) {}
         try { this.type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
+        try { this.status = entryParam.getParamValue("f-status"); } catch (Exception e) { status = ""; }
         this.datetime = getPointDatetime();
         if (!"".equals(pointDate)) this.directionFlag = getDirection();
-        try { this.antiKeyPrefix = entryParam.getParamValue("anti-f-key-prefix"); } catch (Exception e) {}
-        try { this.antiKeySuffix = entryParam.getParamValue("anti-f-key-suffix"); } catch (Exception e) {}
-        try { this.antiKeyInner = entryParam.getParamValue("anti-f-key-inner"); } catch (Exception e) {}
-        try { this.antiKeyRegex = entryParam.getParamValue("anti-f-key-regex"); } catch (Exception e) {}
-        try { this.antiMime = entryParam.getParamValue("anti-f-mime"); } catch (Exception e) {}
+        try { this.antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) {}
+        try { this.antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) {}
+        try { this.antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) {}
+        try { this.antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) {}
+        try { this.antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) {}
     }
 
     public List<String> getKeyPrefix() {
@@ -100,16 +102,24 @@ public class FileFilterParams extends CommonParams {
         return 0;
     }
 
-    public List<String> getMime() {
-        if (mime != null && !"".equals(mime)) return Arrays.asList(mime.split(","));
+    public List<String> getMimeType() {
+        if (mimeType != null && !"".equals(mimeType)) return Arrays.asList(mimeType.split(","));
         else return null;
     }
 
-    public int getType() {
+    public int getType() throws IOException {
         if (type.matches("([01])")) {
             return Integer.valueOf(type);
         } else {
-            return -1;
+            throw new IOException("no incorrect type, please set it 0/1.");
+        }
+    }
+
+    public int getStatus() throws IOException {
+        if (status.matches("([01])")) {
+            return Integer.valueOf(status);
+        } else {
+            throw new IOException("no incorrect status, please set it 0/1.");
         }
     }
 
@@ -133,8 +143,8 @@ public class FileFilterParams extends CommonParams {
         else return null;
     }
 
-    public List<String> getAntiMime() {
-        if (antiMime != null && !"".equals(antiMime)) return Arrays.asList(antiMime.split(","));
+    public List<String> getAntiMimeType() {
+        if (antiMimeType != null && !"".equals(antiMimeType)) return Arrays.asList(antiMimeType.split(","));
         else return null;
     }
 }
