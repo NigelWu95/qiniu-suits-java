@@ -81,7 +81,7 @@ public class FileInputParams extends CommonParams {
                 return indexMap;
             }
         }
-        List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "endUser", "type", "status");
+        List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
         if ("table".equals(getParseType())) {
             if ("".equals(indexes)) {
                 indexMap.put("0", keys.get(0));
