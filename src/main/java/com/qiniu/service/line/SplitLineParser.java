@@ -21,7 +21,10 @@ public class SplitLineParser implements ILineParser<String> {
         String mapKey;
         for (int i = 0; i < items.length; i++) {
             mapKey = infoIndexMap.get(String.valueOf(i));
-            if (mapKey != null) itemMap.put(mapKey, items[i]);
+            if (mapKey != null) {
+                if (items[i] == null) itemMap.put(mapKey, "null");
+                else itemMap.put(mapKey, items[i]);
+            }
         }
         if (itemMap.size() < infoIndexMap.size()) throw new IOException("no enough indexes in line." +
                 " The parameter indexes may have incorrect order or name.");

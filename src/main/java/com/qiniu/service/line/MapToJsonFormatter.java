@@ -29,11 +29,11 @@ public class MapToJsonFormatter implements IStringFormat<Map<String, String>> {
             set.remove("hash");
         }
         if (set.contains("fsize")) {
-            converted.addProperty("fsize", infoMap.get("fsize"));
+            converted.addProperty("fsize", Long.valueOf(infoMap.get("fsize")));
             set.remove("fsize");
         }
         if (set.contains("putTime")) {
-            converted.addProperty("putTime", infoMap.get("putTime"));
+            converted.addProperty("putTime", Long.valueOf(infoMap.get("putTime")));
             set.remove("putTime");
         }
         if (set.contains("mimeType")) {
@@ -41,11 +41,11 @@ public class MapToJsonFormatter implements IStringFormat<Map<String, String>> {
             set.remove("mimeType");
         }
         if (set.contains("type")) {
-            converted.addProperty("type", infoMap.get("type"));
+            converted.addProperty("type", Integer.valueOf(infoMap.get("type")));
             set.remove("type");
         }
         if (set.contains("status")) {
-            converted.addProperty("status", infoMap.get("status"));
+            converted.addProperty("status", Integer.valueOf(infoMap.get("status")));
             set.remove("status");
         }
         if (set.contains("endUser")) {
