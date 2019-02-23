@@ -108,7 +108,9 @@ public class FileFilterParams extends CommonParams {
     }
 
     public int getType() throws IOException {
-        if (type.matches("([01])")) {
+        if ("".equals(type)) {
+            return -1;
+        } else if (type.matches("([01])")) {
             return Integer.valueOf(type);
         } else {
             throw new IOException("no incorrect type, please set it 0/1.");
@@ -116,7 +118,9 @@ public class FileFilterParams extends CommonParams {
     }
 
     public int getStatus() throws IOException {
-        if (status.matches("([01])")) {
+        if ("".equals(status)) {
+            return -1;
+        } else if (status.matches("([01])")) {
             return Integer.valueOf(status);
         } else {
             throw new IOException("no incorrect status, please set it 0/1.");
