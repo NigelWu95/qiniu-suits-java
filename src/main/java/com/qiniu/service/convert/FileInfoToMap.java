@@ -8,20 +8,17 @@ import java.util.stream.Collectors;
 
 public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
 
-    private List<String> fields;
+    final private List<String> fileInfoFields = new ArrayList<String>(){{
+        add("key");
+        add("hash");
+        add("fsize");
+        add("putTime");
+        add("mimeType");
+        add("type");
+        add("status");
+        add("endUser");
+    }};
     private List<String> errorList = new ArrayList<>();
-
-    public FileInfoToMap() {
-        this.fields = new ArrayList<>();
-        fields.add("key");
-        fields.add("hash");
-        fields.add("fsize");
-        fields.add("putTime");
-        fields.add("mimeType");
-        fields.add("endUser");
-        fields.add("type");
-        fields.add("status");
-    }
 
     public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
@@ -30,16 +27,16 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
                 .map(fileInfo -> {
                     try {
                         Map<String, String> converted = new HashMap<>();
-                        fields.forEach(key -> {
+                        fileInfoFields.forEach(key -> {
                             switch (key) {
                                 case "key": converted.put(key, fileInfo.key); break;
                                 case "hash": converted.put(key, fileInfo.hash); break;
                                 case "fsize": converted.put(key, String.valueOf(fileInfo.fsize)); break;
                                 case "putTime": converted.put(key, String.valueOf(fileInfo.putTime)); break;
                                 case "mimeType": converted.put(key, fileInfo.mimeType); break;
-                                case "endUser": converted.put(key, fileInfo.endUser); break;
                                 case "type": converted.put(key, String.valueOf(fileInfo.type)); break;
                                 case "status": converted.put(key, String.valueOf(fileInfo.status)); break;
+                                case "endUser": converted.put(key, fileInfo.endUser); break;
                             }
                         });
                         return converted;
