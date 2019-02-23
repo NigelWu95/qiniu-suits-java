@@ -38,6 +38,7 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
             if (filter.checkPutTime()) add("filterPutTime");
             if (filter.checkMime()) add("filterMimeType");
             if (filter.checkType()) add("filterType");
+            if (filter.checkStatus()) add("filterStatus");
             if (filter.checkAntiKeyPrefix()) add("filterAntiKeyPrefix");
             if (filter.checkAntiKeySuffix()) add("filterAntiKeySuffix");
             if (filter.checkAntiKeyInner()) add("filterAntiKeyInner");
