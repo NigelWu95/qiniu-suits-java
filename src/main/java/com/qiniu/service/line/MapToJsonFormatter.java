@@ -11,16 +11,6 @@ import java.util.Set;
 public class MapToJsonFormatter implements IStringFormat<Map<String, String>> {
 
     private List<String> rmFields;
-    final private List<String> fileInfoFields = new ArrayList<String>(){{
-        add("key");
-        add("hash");
-        add("fsize");
-        add("putTime");
-        add("mimeType");
-        add("type");
-        add("status");
-        add("endUser");
-    }};
 
     public MapToJsonFormatter(List<String> removeFields) {
         this.rmFields = removeFields == null ? new ArrayList<>() : removeFields;
