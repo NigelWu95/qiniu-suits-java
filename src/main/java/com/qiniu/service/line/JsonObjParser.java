@@ -25,7 +25,7 @@ public class JsonObjParser implements ILineParser<JsonObject> {
         for (String key : json.keySet()) {
             mapKey = indexMap.get(key);
             if (mapKey != null) {
-                if (json.get(key) instanceof JsonNull) itemMap.put(mapKey, "null");
+                if (json.get(key) instanceof JsonNull) itemMap.put(mapKey, null);
                 else itemMap.put(mapKey, json.get(key).getAsString());
             }
         }
