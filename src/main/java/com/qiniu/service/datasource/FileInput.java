@@ -93,23 +93,23 @@ public class FileInput implements IDataSource {
         return inputFileMap;
     }
 
-    public void export(Entry<String, BufferedReader> readerEntry, ILineProcess<Map<String, String>> processor)
+    private void export(String identifier, BufferedReader reader, ILineProcess<Map<String, String>> processor)
             throws Exception {
         FileMap recordFileMap = new FileMap(resultPath);
-        FileMap fileMap = new FileMap(resultPath, "fileinput", readerEntry.getKey());
+        FileMap fileMap = new FileMap(resultPath, "fileinput", identifier);
         fileMap.initDefaultWriters();
-        if (processor != null) processor.setResultTag(readerEntry.getKey());
+        if (processor != null) processor.setResultTag(identifier);
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        String record = "order: " + readerEntry.getKey();
+        String record = "order: " + identifier;
         String next;
         try {
-            traverseByReader(readerEntry.getValue(), fileMap, lineProcessor);
-            next = readerEntry.getValue().readLine();
+            traverseByReader(reader, fileMap, lineProcessor);
+            next = reader.readLine();
             if (next == null) record += "\tsuccessfully done";
             else record += "\tnextLine:" + next;
             System.out.println(record);
         } catch (IOException e) {
-            try { next = readerEntry.getValue().readLine(); } catch (IOException ex) { next = ex.getMessage(); }
+            try { next = reader.readLine(); } catch (IOException ex) { next = ex.getMessage(); }
             record += "\tnextLine:" + next + "\t" + e.getMessage().replaceAll("\n", "\t");
             e.printStackTrace();
             throw e;
@@ -139,7 +139,7 @@ public class FileInput implements IDataSource {
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             executorPool.execute(() -> {
                 try {
-                    export(readerEntry, processor);
+                    export(readerEntry.getKey(), readerEntry.getValue(), processor);
                 } catch (Exception e) {
                     exit(exit, e);
                 }
