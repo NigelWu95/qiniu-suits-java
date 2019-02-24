@@ -6,13 +6,13 @@ import com.qiniu.entry.ProcessorChoice;
 import com.qiniu.model.parameter.*;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
-import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +25,24 @@ public class CustomEntry {
 
     public static void main(String[] args) throws Exception {
 
-        IEntryParam entryParam = new PropertyConfig("resources/.qiniu.properties");
+        List<String> configFiles = new ArrayList<String>(){{
+            add("resources/qiniu.properties");
+            add("resources/.qiniu.properties");
+        }};
+        if (args != null && args.length > 0 && args[0].startsWith("-config="))
+            configFiles.add(args[0].split("=")[1]);
+        String configFilePath = null;
+        for (int i = configFiles.size() - 1; i >= 0; i--) {
+            File file = new File(configFiles.get(i));
+            if (file.exists()) {
+                configFilePath = configFiles.get(i);
+                break;
+            }
+        }
+        if (configFilePath == null) throw new IOException("there is no config file detected, please provide the config" +
+                " file path with -config=<config-file-path>.");
+
+        IEntryParam entryParam = new PropertyConfig(configFilePath);
 
         HttpParams httpParams = new HttpParams(entryParam);
         Configuration configuration = new Configuration(Zone.autoZone());
