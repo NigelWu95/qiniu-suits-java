@@ -6,9 +6,11 @@ import com.qiniu.entry.ProcessorChoice;
 import com.qiniu.model.parameter.*;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
+import com.qiniu.service.datasource.ListBucket;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +26,13 @@ public class CustomEntry {
     public static void main(String[] args) throws Exception {
 
         IEntryParam entryParam = new PropertyConfig("resources/.qiniu.properties");
+
+        HttpParams httpParams = new HttpParams(entryParam);
+        Configuration configuration = new Configuration(Zone.autoZone());
+        configuration.connectTimeout = httpParams.getConnectTimeout();
+        configuration.readTimeout = httpParams.getReadTimeout();
+        configuration.writeTimeout = httpParams.getWriteTimeout();
+
         FileInputParams fileInputParams = new FileInputParams(entryParam);
         int unitLen = fileInputParams.getUnitLen();
         int threads = fileInputParams.getThreads();
@@ -40,7 +49,7 @@ public class CustomEntry {
 
 //        // parse avinfo from files.
 //        indexMap.put("2", "avinfo");
-//        ILineProcess<Map<String, String>>  processor = setFopProcessor(entryParam);
+//        ILineProcess<Map<String, String>>  processor = setFopProcessor(entryParam, configuration);
 
         ILineProcess<Map<String, String>>  processor = setCheckMimeProcessor();
 
@@ -50,13 +59,8 @@ public class CustomEntry {
         processor.closeResource();
     }
 
-    static private ILineProcess<Map<String, String>> setFopProcessor(IEntryParam entryParam) throws Exception {
-
-        HttpParams httpParams = new HttpParams(entryParam);
-        Configuration configuration = new Configuration(Zone.autoZone());
-        configuration.connectTimeout = httpParams.getConnectTimeout();
-        configuration.readTimeout = httpParams.getReadTimeout();
-        configuration.writeTimeout = httpParams.getWriteTimeout();
+    static private ILineProcess<Map<String, String>> setFopProcessor(IEntryParam entryParam, Configuration configuration)
+            throws Exception {
         return new ProcessorChoice(entryParam, configuration).getFileProcessor();
 //        QossParams qossParams = new QossParams(entryParam);
 //        return new CAvinfoProcess(qossParams.getBucket(), resultPath);
