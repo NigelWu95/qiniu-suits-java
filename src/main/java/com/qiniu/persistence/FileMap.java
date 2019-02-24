@@ -51,7 +51,7 @@ public class FileMap {
     }
 
     synchronized public void initDefaultWriters() throws IOException {
-        if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no target file directory.");
+        if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no result file directory.");
         for (String targetWriter : defaultWriters) {
             addWriter(prefix + targetWriter + suffix);
         }
@@ -71,7 +71,7 @@ public class FileMap {
         int retry = retryCount;
         while (retry > 0) {
             try {
-                if (!mkDirAndFile(resultFile)) throw new IOException("create file failed.");
+                if (!mkDirAndFile(resultFile)) throw new IOException("create result file " + resultFile + " failed.");
                 BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
                 writerMap.put(key, writer);
                 retry = 0;
@@ -132,7 +132,7 @@ public class FileMap {
         File[] fs = sourceDir.listFiles();
         String fileName;
         BufferedReader reader;
-        assert fs != null;
+        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + fileDir);
         for(File f : fs) {
             if (!f.isDirectory()) {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
@@ -141,17 +141,24 @@ public class FileMap {
                 if (fileName.endsWith(".txt")) readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
             }
         }
-        if (readerMap.size() == 0) throw new IOException("please provide the .txt file int the directory.");
+        if (readerMap.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
+                " path you gave is: " + fileDir);
     }
 
     public void initReader(String fileDir, String fileName) throws IOException {
         if (fileName.endsWith(".txt")) {
             File sourceFile = new File(fileDir, fileName);
-            FileReader fileReader = new FileReader(sourceFile);
+            FileReader fileReader;
+            try {
+                fileReader = new FileReader(sourceFile);
+            } catch (IOException e) {
+                throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
+            }
             BufferedReader reader = new BufferedReader(fileReader);
             readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
         } else {
-            throw new IOException("please provide the .txt file.");
+            throw new IOException("please provide the .txt file. The current path you gave is: "
+                    + fileDir + System.getProperty("file.separator") + fileName);
         }
     }
 

@@ -5,21 +5,12 @@ import com.qiniu.service.interfaces.IStringFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MapToTableFormatter implements IStringFormat<Map<String, String>> {
 
     private String separator;
     private List<String> rmFields;
-    final private List<String> fileInfoFields = new ArrayList<String>(){{
-        add("key");
-        add("hash");
-        add("fsize");
-        add("putTime");
-        add("mimeType");
-        add("type");
-        add("status");
-        add("endUser");
-    }};
 
     public MapToTableFormatter(String separator, List<String> removeFields) {
         this.separator = separator;
@@ -28,25 +19,42 @@ public class MapToTableFormatter implements IStringFormat<Map<String, String>> {
 
     public String toFormatString(Map<String, String> infoMap) {
         StringBuilder converted = new StringBuilder();
-        if (!rmFields.contains("key") && infoMap.containsKey("key"))
+        Set<String> set = infoMap.keySet();
+        set.removeAll(rmFields);
+        if (set.contains("key")) {
             converted.append(infoMap.get("key")).append(separator);
-        if (!rmFields.contains("hash") && infoMap.containsKey("hash"))
+            set.remove("key");
+        }
+        if (set.contains("hash")) {
             converted.append(infoMap.get("hash")).append(separator);
-        if (!rmFields.contains("fsize") && infoMap.containsKey("fsize"))
+            set.remove("hash");
+        }
+        if (set.contains("fsize")) {
             converted.append(infoMap.get("fsize")).append(separator);
-        if (!rmFields.contains("putTime") && infoMap.containsKey("putTime"))
+            set.remove("fsize");
+        }
+        if (set.contains("putTime")) {
             converted.append(infoMap.get("putTime")).append(separator);
-        if (!rmFields.contains("mimeType") && infoMap.containsKey("mimeType"))
+            set.remove("putTime");
+        }
+        if (set.contains("mimeType")) {
             converted.append(infoMap.get("mimeType")).append(separator);
-        if (!rmFields.contains("type") && infoMap.containsKey("type"))
+            set.remove("mimeType");
+        }
+        if (set.contains("type")) {
             converted.append(infoMap.get("type")).append(separator);
-        if (!rmFields.contains("status") && infoMap.containsKey("status"))
+            set.remove("type");
+        }
+        if (set.contains("status")) {
             converted.append(infoMap.get("status")).append(separator);
-        if (!rmFields.contains("endUser") && infoMap.containsKey("endUser"))
+            set.remove("status");
+        }
+        if (set.contains("endUser")) {
             converted.append(infoMap.get("endUser"));
-        for (Map.Entry<String, String> set : infoMap.entrySet()) {
-            if (!rmFields.contains(set.getKey()) && !fileInfoFields.contains(set.getKey()))
-                converted.append(set.getValue()).append(separator);
+            set.remove("endUser");
+        }
+        for (String key : set) {
+            converted.append(separator).append(infoMap.get(key));
         }
         return converted.toString();
     }

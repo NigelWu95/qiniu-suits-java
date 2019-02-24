@@ -34,7 +34,7 @@ public class CommonParams {
         try { this.resultPath = entryParam.getParamValue("result-path"); } catch (Exception e) { resultPath = ""; }
         try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
         try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
-        try { this.rmFields = entryParam.getParamValue("remove-fields"); } catch (Exception e) { rmFields = ""; }
+        try { this.rmFields = entryParam.getParamValue("rm-fields"); } catch (Exception e) { rmFields = ""; }
         try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
     }
 
