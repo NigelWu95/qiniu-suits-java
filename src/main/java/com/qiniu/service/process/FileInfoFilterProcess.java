@@ -69,8 +69,8 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     }
 
     public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
-                                 List<String> resultFields) throws Exception {
-        this(filter, resultPath, resultFormat, resultSeparator, resultFields, 0);
+                                 List<String> removeFields) throws Exception {
+        this(filter, resultPath, resultFormat, resultSeparator, removeFields, 0);
     }
 
     public String getProcessName() {
