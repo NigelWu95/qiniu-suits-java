@@ -44,9 +44,9 @@ public class ProcessorChoice {
                 fileFilterParams.getKeyInner(), fileFilterParams.getKeyRegex());
         fileFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
                 fileFilterParams.getAntiKeyInner(), fileFilterParams.getAntiKeyRegex());
-        fileFilter.setMimeConditions(fileFilterParams.getMime(), fileFilterParams.getAntiMime());
+        fileFilter.setMimeTypeConditions(fileFilterParams.getMimeType(), fileFilterParams.getAntiMimeType());
         fileFilter.setOtherConditions(fileFilterParams.getPutTimeMax(), fileFilterParams.getPutTimeMin(),
-                fileFilterParams.getType());
+                fileFilterParams.getType(), fileFilterParams.getStatus());
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (fileFilter.isValid()) {
