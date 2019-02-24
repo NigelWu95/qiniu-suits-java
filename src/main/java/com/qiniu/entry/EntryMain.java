@@ -64,7 +64,6 @@ public class EntryMain {
             Auth auth = Auth.create(accessKey, secretKey);
             dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixes, antiPrefixes, prefixLeft,
                     prefixRight, resultPath);
-            dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
         } else if ("file".equals(sourceType)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
             String filePath = fileInputParams.getFilePath();
@@ -73,8 +72,8 @@ public class EntryMain {
             Map<String, String> indexMap = fileInputParams.getIndexMap();
             String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
             dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
-            dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
         }
+        if (dataSource != null) dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
 
         return dataSource;
     }
