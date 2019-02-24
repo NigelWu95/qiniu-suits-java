@@ -16,50 +16,53 @@ import java.util.Map;
 
 public class CustomEntry {
 
-    static private boolean saveTotal;
+    static private String resultPath;
     static private String resultFormat;
     static private String resultSeparator;
-    static private String resultPath;
-    static private List<String> removeFields;
-    static private ILineProcess<Map<String, String>> processor;
+    static private List<String> rmFields;
 
     public static void main(String[] args) throws Exception {
 
-        IEntryParam entryParam = new PropertyConfig("resources/.qiniu-fantx.properties");
-
+        IEntryParam entryParam = new PropertyConfig("resources/.qiniu.properties");
         FileInputParams fileInputParams = new FileInputParams(entryParam);
-        Map<String, String> indexMap = fileInputParams.getIndexMap();
-        // parse avinfo from files.
-        indexMap.put("2", "avinfo");
-        setFopProcessor(entryParam);
-
         int unitLen = fileInputParams.getUnitLen();
         int threads = fileInputParams.getThreads();
         String filePath = fileInputParams.getFilePath();
         String parseType = fileInputParams.getParseType();
         String separator = fileInputParams.getSeparator();
+        boolean saveTotal = fileInputParams.getSaveTotal();
+        resultFormat = fileInputParams.getResultFormat();
+        resultSeparator = fileInputParams.getResultSeparator();
+        resultPath = fileInputParams.getResultPath();
+        rmFields = fileInputParams.getRmFields();
         String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
+        Map<String, String> indexMap = fileInputParams.getIndexMap();
+
+//        // parse avinfo from files.
+//        indexMap.put("2", "avinfo");
+//        ILineProcess<Map<String, String>>  processor = setFopProcessor(entryParam);
+
+        ILineProcess<Map<String, String>>  processor = setCheckMimeProcessor();
+
         IDataSource dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
-        dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
+        dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, rmFields);
         dataSource.export(threads, processor);
         processor.closeResource();
     }
 
-    static private void setFopProcessor(IEntryParam entryParam) throws Exception {
+    static private ILineProcess<Map<String, String>> setFopProcessor(IEntryParam entryParam) throws Exception {
 
         HttpParams httpParams = new HttpParams(entryParam);
         Configuration configuration = new Configuration(Zone.autoZone());
         configuration.connectTimeout = httpParams.getConnectTimeout();
         configuration.readTimeout = httpParams.getReadTimeout();
         configuration.writeTimeout = httpParams.getWriteTimeout();
+        return new ProcessorChoice(entryParam, configuration).getFileProcessor();
+//        QossParams qossParams = new QossParams(entryParam);
+//        return new CAvinfoProcess(qossParams.getBucket(), resultPath);
+    }
 
-        QossParams qossParams = new QossParams(entryParam);
-        saveTotal = qossParams.getSaveTotal();
-        resultFormat = qossParams.getResultFormat();
-        resultSeparator = qossParams.getResultSeparator();
-        resultPath = qossParams.getResultPath();
-        removeFields = qossParams.getRmFields();
-        processor = new ProcessorChoice(entryParam, configuration).getFileProcessor();
-        processor = new CAvinfoProcess(qossParams.getBucket(), resultPath);
+    static private ILineProcess<Map<String, String>> setCheckMimeProcessor() throws Exception {
+        return new CCheckMime(resultPath, resultFormat, resultSeparator, rmFields);
     }
 }
