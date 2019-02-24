@@ -240,9 +240,10 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         List<Map<String, String>> filteredList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             key = line.get("key");
-            if (key != null && key.contains("."))
+            if (key != null && key.contains(".")) {
                 keyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + line.get("mimeType");
-            if (!extMimeList.contains(keyMimePair)) filteredList.add(line);
+                if (!extMimeList.contains(keyMimePair)) filteredList.add(line);
+            }
         }
         writeList = typeConverter.convertToVList(filteredList);
         if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
