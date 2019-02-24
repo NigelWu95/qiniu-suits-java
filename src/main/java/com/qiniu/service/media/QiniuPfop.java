@@ -27,7 +27,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     final private String resultPath;
     private String resultTag;
     private int resultIndex;
-    public FileMap fileMap;
+    private FileMap fileMap;
 
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String fopsIndex,
                      String resultPath, int resultIndex) throws IOException {
