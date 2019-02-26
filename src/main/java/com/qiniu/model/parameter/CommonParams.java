@@ -11,8 +11,7 @@ import java.util.List;
 public class CommonParams {
 
     protected IEntryParam entryParam;
-    private String sourceType;
-    private String parseType;
+    private String filePath;
     private String unitLen;
     private String threads;
     private String retryCount;
@@ -23,10 +22,9 @@ public class CommonParams {
     private String rmFields;
     private String process;
 
-    public CommonParams(IEntryParam entryParam) throws IOException {
+    public CommonParams(IEntryParam entryParam) {
         this.entryParam = entryParam;
-        this.sourceType = entryParam.getParamValue("source-type");
-        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { parseType = ""; }
+        try { this.filePath = entryParam.getParamValue("file-path");} catch (Exception e) { filePath = ""; }
         try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
         try { this.threads = entryParam.getParamValue("threads"); } catch (Exception e) { threads = ""; }
         try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
@@ -51,18 +49,25 @@ public class CommonParams {
     }
 
     public String getSourceType() {
+        String sourceType;
+        try {
+            sourceType = entryParam.getParamValue("source-type");
+        } catch (IOException e1) {
+            try {
+                sourceType = entryParam.getParamValue("source");
+            } catch (IOException e2) {
+                if ("".equals(filePath)) sourceType = "file";
+                else sourceType = "list";
+            }
+        }
+
         return sourceType;
     }
 
-    public String getParseType() throws IOException {
-        if (sourceType.equals("list")) return "object";
-        else {
-            if (parseType == null || "".equals(parseType)) {
-                throw new IOException("no incorrect parse type, please set it as \"json\" or \"table\".");
-            } else {
-                return parseType;
-            }
-        }
+    public String getFilePath() throws IOException {
+        if ("".equals(filePath)) throw new IOException("not set file path.");
+        else if (filePath.startsWith("/")) throw new IOException("the file path only support relative path.");
+        return filePath;
     }
 
     public int getUnitLen() {
@@ -93,7 +98,7 @@ public class CommonParams {
         if (saveTotal.matches("(true|false)")) {
             return Boolean.valueOf(saveTotal);
         } else {
-            return "list".equals(sourceType);
+            return "list".equals(getSourceType());
         }
     }
 

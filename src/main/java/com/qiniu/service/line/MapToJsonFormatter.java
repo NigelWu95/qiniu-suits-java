@@ -19,40 +19,43 @@ public class MapToJsonFormatter implements IStringFormat<Map<String, String>> {
     public String toFormatString(Map<String, String> infoMap) {
         JsonObject converted = new JsonObject();
         Set<String> set = infoMap.keySet();
-        set.removeAll(rmFields);
-        if (set.contains("key")) {
+        List<String> keys = new ArrayList<String>(){{
+            this.addAll(set);
+        }};
+        keys.removeAll(rmFields);
+        if (keys.contains("key")) {
             converted.addProperty("key", infoMap.get("key"));
-            set.remove("key");
+            keys.remove("key");
         }
-        if (set.contains("hash")) {
+        if (keys.contains("hash")) {
             converted.addProperty("hash", infoMap.get("hash"));
-            set.remove("hash");
+            keys.remove("hash");
         }
-        if (set.contains("fsize")) {
+        if (keys.contains("fsize")) {
             converted.addProperty("fsize", Long.valueOf(infoMap.get("fsize")));
-            set.remove("fsize");
+            keys.remove("fsize");
         }
-        if (set.contains("putTime")) {
+        if (keys.contains("putTime")) {
             converted.addProperty("putTime", Long.valueOf(infoMap.get("putTime")));
-            set.remove("putTime");
+            keys.remove("putTime");
         }
-        if (set.contains("mimeType")) {
+        if (keys.contains("mimeType")) {
             converted.addProperty("mimeType", infoMap.get("mimeType"));
-            set.remove("mimeType");
+            keys.remove("mimeType");
         }
-        if (set.contains("type")) {
+        if (keys.contains("type")) {
             converted.addProperty("type", Integer.valueOf(infoMap.get("type")));
-            set.remove("type");
+            keys.remove("type");
         }
-        if (set.contains("status")) {
+        if (keys.contains("status")) {
             converted.addProperty("status", Integer.valueOf(infoMap.get("status")));
-            set.remove("status");
+            keys.remove("status");
         }
-        if (set.contains("endUser")) {
+        if (keys.contains("endUser")) {
             converted.addProperty("endUser", infoMap.get("endUser"));
-            set.remove("endUser");
+            keys.remove("endUser");
         }
-        for (String key : set) {
+        for (String key : keys) {
             converted.addProperty(key, infoMap.get(key));
         }
         return converted.toString();
