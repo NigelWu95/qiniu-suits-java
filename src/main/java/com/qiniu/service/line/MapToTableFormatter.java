@@ -20,40 +20,43 @@ public class MapToTableFormatter implements IStringFormat<Map<String, String>> {
     public String toFormatString(Map<String, String> infoMap) {
         StringBuilder converted = new StringBuilder();
         Set<String> set = infoMap.keySet();
-        set.removeAll(rmFields);
-        if (set.contains("key")) {
+        List<String> keys = new ArrayList<String>(){{
+            this.addAll(set);
+        }};
+        keys.removeAll(rmFields);
+        if (keys.contains("key")) {
             converted.append(infoMap.get("key")).append(separator);
-            set.remove("key");
+            keys.remove("key");
         }
-        if (set.contains("hash")) {
+        if (keys.contains("hash")) {
             converted.append(infoMap.get("hash")).append(separator);
-            set.remove("hash");
+            keys.remove("hash");
         }
-        if (set.contains("fsize")) {
+        if (keys.contains("fsize")) {
             converted.append(infoMap.get("fsize")).append(separator);
-            set.remove("fsize");
+            keys.remove("fsize");
         }
-        if (set.contains("putTime")) {
+        if (keys.contains("putTime")) {
             converted.append(infoMap.get("putTime")).append(separator);
-            set.remove("putTime");
+            keys.remove("putTime");
         }
-        if (set.contains("mimeType")) {
+        if (keys.contains("mimeType")) {
             converted.append(infoMap.get("mimeType")).append(separator);
-            set.remove("mimeType");
+            keys.remove("mimeType");
         }
-        if (set.contains("type")) {
+        if (keys.contains("type")) {
             converted.append(infoMap.get("type")).append(separator);
-            set.remove("type");
+            keys.remove("type");
         }
-        if (set.contains("status")) {
+        if (keys.contains("status")) {
             converted.append(infoMap.get("status")).append(separator);
-            set.remove("status");
+            keys.remove("status");
         }
-        if (set.contains("endUser")) {
+        if (keys.contains("endUser")) {
             converted.append(infoMap.get("endUser"));
-            set.remove("endUser");
+            keys.remove("endUser");
         }
-        for (String key : set) {
+        for (String key : keys) {
             converted.append(separator).append(infoMap.get(key));
         }
         return converted.toString();
