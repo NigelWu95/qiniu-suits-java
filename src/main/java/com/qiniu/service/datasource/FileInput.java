@@ -133,7 +133,7 @@ public class FileInput implements IDataSource {
         int listSize = readerEntrySet.size();
         int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " concurrently running with " + runningThreads + " threads ...");
+        System.out.println(info + " running...");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         AtomicBoolean exit = new AtomicBoolean(false);
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
