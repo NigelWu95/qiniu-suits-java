@@ -7,7 +7,7 @@ import java.util.*;
 
 public class FileInputParams extends CommonParams {
 
-    private String filePath;
+    private String parseType;
     private String separator;
     private String indexes;
     private String urlIndex;
@@ -35,10 +35,10 @@ public class FileInputParams extends CommonParams {
         add("pfopresult");
     }};
 
-    public FileInputParams(IEntryParam entryParam) throws IOException {
+    public FileInputParams(IEntryParam entryParam) {
         super(entryParam);
-        try { this.filePath = entryParam.getParamValue("file-path");} catch (Exception e) {}
-        try { this.separator = entryParam.getParamValue("in-separator"); } catch (Exception e) {}
+        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { parseType = ""; }
+        try { this.separator = entryParam.getParamValue("in-separator"); } catch (Exception e) { separator = ""; }
         try { this.indexes = entryParam.getParamValue("indexes"); } catch (Exception e) { indexes = ""; }
         try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
         try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) { md5Index = ""; }
@@ -47,14 +47,19 @@ public class FileInputParams extends CommonParams {
         try { this.persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) { persistentIdIndex = ""; }
     }
 
-    public String getFilePath() throws IOException {
-        if (filePath == null || "".equals(filePath)) throw new IOException("please set the file path.");
-        else if (filePath.startsWith("/")) throw new IOException("the file path only support relative path.");
-        return filePath;
+    public String getParseType() throws IOException {
+        if (getSourceType().equals("list")) return "object";
+        else {
+            if ("json".equals(parseType) || "table".equals(parseType) ) {
+                return parseType;
+            } else {
+                throw new IOException("no incorrect parse type, please set it as \"json\" or \"table\".");
+            }
+        }
     }
 
     public String getSeparator() {
-        if (separator == null || "".equals(separator)) {
+        if ("".equals(separator)) {
             return "\t";
         } else {
             return separator;

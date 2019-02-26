@@ -25,7 +25,7 @@ public class QossParams extends CommonParams {
         add("privateurl");
     }};
 
-    public QossParams(IEntryParam entryParam) throws IOException {
+    public QossParams(IEntryParam entryParam) {
         super(entryParam);
         try { this.accessKey = entryParam.getParamValue("ak"); } catch (Exception e) {}
         try { this.secretKey = entryParam.getParamValue("sk"); } catch (Exception e) {}
