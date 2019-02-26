@@ -11,7 +11,7 @@
 ### 2 运行方式  
 (1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
 (2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
-*所有参数设置，无论命令行或胖配置文件方式均无需加引号*
+**所有参数设置，无论命令行或胖配置文件方式均无需加引号**  
 
 ### 3 命令行运行配置
 (1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径，命令为：  
@@ -25,7 +25,7 @@ ak=
 sk=
 bucket=
 ```
-*source-type=list 可选择放置在命令行或者配置文件中*
+*source-type=list 可选择放置在命令行或者配置文件中*  
 
 (2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
 resources 文件夹中，文件名为 `qiniu.properties` 或 `.qiniu.properties`，运行命令为：  
@@ -41,7 +41,7 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 *在 v2.11 及以上版本，source 效果与 source-type 相同，也可以不设置该输入参数，由程序自动判断*  
 
 ### 4 数据源
-**在 v2.11 及以上版本，取消了设置该参数的强制性，可以进行指定，或者使用简化参数名 source=<source>**
+【说明】**在 v2.11 及以上版本，取消了设置该参数的强制性，可以进行指定，或者使用简化参数名 source=<source>**  
 支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
 **source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
 `source-type=list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md)，配置文件示例可参考 [配置模板](templates/list.config)  
