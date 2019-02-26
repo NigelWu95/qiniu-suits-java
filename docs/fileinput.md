@@ -8,7 +8,7 @@
 
 #### 必须参数
 ```
-source-type=file
+source-type=file (v.2.11 及以上版本也可以使用 source=file，或者不设置该参数)
 file-path=
 parse-type=
 ```
@@ -23,7 +23,7 @@ indexes=0,1,2
 ### 参数字段说明
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
-|source-type| 本地文件输入时设置为file | 表示从本地路径文件中读取资源列表|  
+|source-type/source| 本地文件输入时设置为file | 表示从本地路径文件中读取资源列表|  
 |file-path| localfile路径字符串| 资源列表文件路径（相对路径目录或者相对路径文件名）|  
 |parse-type| 字符串json/table| 数据行格式，json 表示使用 json 方式来解析，table 表示使用分隔符方式来解析|  
 |in-separator| 字符串| 当 parse-type=table 时，指定格式分隔符来分析字段（默认使用 tab 键 \t 分割）|  
