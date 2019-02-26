@@ -243,7 +243,7 @@ public class ListBucket implements IDataSource {
 
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " concurrently running with " + threads + " threads ...");
+        System.out.println(info + " running...");
         ExecutorService executorPool = Executors.newFixedThreadPool(threads);
         AtomicBoolean exit = new AtomicBoolean(false);
         Collections.sort(prefixes);
