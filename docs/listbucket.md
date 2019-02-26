@@ -6,7 +6,7 @@
 
 #### 必须参数
 ```
-source-type=list
+source-type=list (v.2.11 及以上版本也可以使用 source=file，或者不设置该参数)
 ak=
 sk=
 bucket=
@@ -25,7 +25,7 @@ prefix-right=
 ### 参数字段说明
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
-|source-type| 资源列举时设置为list | 表示从目标空间中列举出资源|  
+|source-type/source| 资源列举时设置为list | 表示从目标空间中列举出资源|  
 |ak、sk|长度 40 的字符串|七牛账号的密钥对字符串，通过七牛控制台个人中心获取|  
 |bucket|字符串| 需要列举的空间名称|  
 |threads| 整型数字| 表示并发列举时使用的线程数（默认 30）|  
