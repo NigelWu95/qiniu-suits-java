@@ -43,9 +43,8 @@ public class EntryMain {
     }
 
     private static IDataSource getDataSource(IEntryParam entryParam, CommonParams commonParams) throws IOException {
-        String sourceType = entryParam.getParamValue("source-type");
         IDataSource dataSource = null;
-
+        String sourceType = commonParams.getSourceType();
         boolean saveTotal = commonParams.getSaveTotal();
         String resultFormat = commonParams.getResultFormat();
         String resultSeparator = commonParams.getResultSeparator();
