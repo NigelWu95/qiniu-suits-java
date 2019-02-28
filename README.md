@@ -79,9 +79,10 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 #### 2. 输出结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
 `result-path=` 表示保存结果的文件路径  
-`result-format=` 结果保存格式（json/table）  
-`result-separator=` 结果保存分隔符  
-所有持久化参数均为可选参数，未设置的情况下保留所有字段，以 json 格式保存在 ../result 路径下，详细参数见 [result 配置](docs/filesave.md)。
+`result-format=` 结果保存格式（json/table），默认为 table  
+`result-separator=` 结果保存分隔符，默认为 "\t" 分隔  
+所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段（详
+见具体配置参数），每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下，详细参数见 [result 配置](docs/filesave.md)。
 
 ### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，具体处理过程由处理类型参数指定:  

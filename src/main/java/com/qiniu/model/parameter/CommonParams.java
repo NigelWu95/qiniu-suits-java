@@ -56,8 +56,8 @@ public class CommonParams {
             try {
                 sourceType = entryParam.getParamValue("source");
             } catch (IOException e2) {
-                if ("".equals(filePath)) sourceType = "file";
-                else sourceType = "list";
+                if ("".equals(filePath)) sourceType = "list";
+                else sourceType = "file";
             }
         }
 
@@ -112,7 +112,7 @@ public class CommonParams {
 
     public String getResultFormat() {
         if (resultFormat == null || "".equals(resultFormat)) {
-            return "json";
+            return "table";
         } else {
             return resultFormat;
         }
