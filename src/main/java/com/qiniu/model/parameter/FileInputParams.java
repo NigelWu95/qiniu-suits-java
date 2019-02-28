@@ -95,7 +95,10 @@ public class FileInputParams extends CommonParams {
                 if (indexList.size() > 8) {
                     throw new IOException("the file info's index length is too long.");
                 } else {
-                    for (int i = 0; i < indexList.size(); i++) { indexMap.put(indexList.get(i), keys.get(i)); }
+                    for (int i = 0; i < indexList.size(); i++) {
+                        if (indexList.get(i).matches("\\d+") && Integer.valueOf(indexList.get(i)) > -1)
+                            indexMap.put(indexList.get(i), keys.get(i));
+                    }
                 }
             } else {
                 throw new IOException("the index pattern is not supported.");
