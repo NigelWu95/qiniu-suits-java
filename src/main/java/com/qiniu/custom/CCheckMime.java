@@ -110,6 +110,9 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("3gpp:video");
     }};
     final private List<String> extMimeTypeList = new ArrayList<String>(){{
+        add("map:application/x-navimap");
+        add("ttf:application/x-font-ttf");
+        add("woff:application/font-woff");
         add("apk:application/vnd.android.package-archive");
         add("ai:application/postscript");
         add("asc:text/plain");
