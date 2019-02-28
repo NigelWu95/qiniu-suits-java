@@ -28,12 +28,14 @@ indexes=0,1,2
 |parse-type| 字符串json/table| 数据行格式，json 表示使用 json 方式来解析，table 表示使用分隔符方式来解析|  
 |in-separator| 字符串| 当 parse-type=table 时，指定格式分隔符来分析字段（默认使用 tab 键 \t 分割）|  
 |threads| 整型数字| 表示预期最大线程数，当输入文件个数大于该值时其作为线程数，否则文件个数作为线程数|  
-|indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标，默认只有 key 的下标，parse-type=table 时为 0，parse-type=json 时默认为 "key"|  
+|indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标，默认只有 key 的下标，parse-type=table 时为 0，
+parse-type=json 时默认为 "key"|  
 
 #### 关于 indexes 索引
 indexes 指输入行中包含的资源元信息字段的映射关系，指定索引的顺序为 key,hash,fsize,putTime,mimeType,type,status,endUser，默认情况下，程
-序只从输入行中读取 key 字段数据，parse-type=table 时索引为 0，parse-type=json 时索引为 "key"，需要指定更多字段时可设置为：0,1,2,3,5 等，
-长度不超过 8，长度表明取对应顺序的前几个字段。当 parse-type=table 时下标必须为整数。  
+序只从输入行中读取 key 字段数据，parse-type=table 时索引为 0，parse-type=json 时索引为 "key"，需要指定更多字段时可设置为数字：0,1,2,3,5 
+等或者 json 的 key 名称列表，长度不超过 8，长度表明取对应顺序的前几个字段。当 parse-type=table 时索引必须均为整数，如果输入行中本身只包含部分
+字段，则可以在缺少字段的顺序位置用 -1 索引表示，例如原输入行中不包含 mimeType 和 type 字段，则可以设置 indexes =0,1,2,3,-1,-1,4,5
 
 ### 命令行方式
 ```
