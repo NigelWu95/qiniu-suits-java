@@ -54,13 +54,18 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("cgm:image");
         add("djv:image");
         add("djvu:image");
+        add("dng:image");
 
         add("aif:audio");
+        add("awb:audio");
+        add("wma:audio");
+        add("kgtmp:audio");
         add("aifc:audio");
         add("aiff:audio");
         add("au:audio");
         add("m3u:audio");
         add("m4p:audio");
+        add("mp4:audio");
         add("kar:audio");
         add("mid:audio");
         add("midi:audio");
@@ -76,6 +81,7 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("ram:audio");
         add("wav:audio");
         add("snd:audio");
+        add("3gpp:audio");
 
         add("m4u:video");
         add("m4v:video");
@@ -101,6 +107,7 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("mp4:video");
         add("mp3:video");
         add("aac:video");
+        add("3gpp:video");
     }};
     final private List<String> extMimeTypeList = new ArrayList<String>(){{
         add("apk:application/vnd.android.package-archive");
