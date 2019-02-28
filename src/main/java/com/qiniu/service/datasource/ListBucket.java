@@ -24,6 +24,8 @@ public class ListBucket implements IDataSource {
     final private Auth auth;
     final private Configuration configuration;
     final private String bucket;
+    final private String marker;
+    final private String end;
     final private int unitLen;
     final private List<String> prefixes;
     final private List<String> antiPrefixes;
@@ -35,11 +37,14 @@ public class ListBucket implements IDataSource {
     private String resultSeparator;
     private List<String> rmFields;
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen, List<String> prefixes,
-                      List<String> antiPrefixes, boolean prefixLeft, boolean prefixRight, String resultPath) {
+    public ListBucket(Auth auth, Configuration configuration, String bucket, String marker, String end, int unitLen,
+                      List<String> prefixes, List<String> antiPrefixes, boolean prefixLeft, boolean prefixRight,
+                      String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
+        this.marker = marker;
+        this.end = end;
         this.unitLen = unitLen;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
@@ -68,7 +73,7 @@ public class ListBucket implements IDataSource {
                     while (retry) {
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    null, "", null, unitLen);
+                                    marker, end, null, unitLen);
                             retry = false;
                         } catch (QiniuException e) {
                             try {
