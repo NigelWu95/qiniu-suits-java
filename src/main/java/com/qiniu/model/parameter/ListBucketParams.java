@@ -1,6 +1,11 @@
 package com.qiniu.model.parameter;
 
 import com.qiniu.service.interfaces.IEntryParam;
+import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.Auth;
+import com.qiniu.util.ListBucketUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -12,6 +17,7 @@ public class ListBucketParams extends QossParams {
     private String prefixLeft;
     private String prefixRight;
     private String marker;
+    private String start;
     private String end;
 
     public ListBucketParams(IEntryParam entryParam) {
@@ -20,7 +26,8 @@ public class ListBucketParams extends QossParams {
         try { this.antiPrefixes = entryParam.getParamValue("anti-prefixes"); } catch (Exception e) { this.antiPrefixes = ""; }
         try { this.prefixLeft = entryParam.getParamValue("prefix-left"); } catch (Exception e) { this.prefixLeft = ""; }
         try { this.prefixRight = entryParam.getParamValue("prefix-right"); } catch (Exception e) { this.prefixRight = ""; }
-        try { this.marker = entryParam.getParamValue("marker"); } catch (Exception e) {}
+        try { this.marker = entryParam.getParamValue("marker"); } catch (Exception e) { this.marker = ""; }
+        try { this.start = entryParam.getParamValue("start"); } catch (Exception e) { this.start = ""; }
         try { this.end = entryParam.getParamValue("end"); } catch (Exception e) {}
     }
 
@@ -65,8 +72,14 @@ public class ListBucketParams extends QossParams {
         }
     }
 
-    public String getMarker() {
-        return marker;
+    public String getMarker() throws IOException {
+        if (!"".equals(marker) || "".equals(start)) return marker;
+        else {
+            BucketManager bucketManager = new BucketManager(Auth.create(getAccessKey(), getSecretKey()),
+                    new Configuration());
+            FileInfo markerFileInfo = bucketManager.stat(getBucket(), start);
+            return ListBucketUtils.calcMarker(markerFileInfo);
+        }
     }
 
     public String getEnd() {
