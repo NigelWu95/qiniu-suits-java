@@ -18,7 +18,7 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
     private String resultPath;
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
-    private List<String> extMimeList = new ArrayList<String>(){{
+    final private List<String> extMimeList = new ArrayList<String>(){{
         add("apk:application/vnd.android.package-archive");
         add("3gp:video/3gpp");
         add("ai:application/postscript");
@@ -57,7 +57,6 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("exe:application/octet-stream");
         add("ez:application/andrew-inset");
         add("flv:video/x-flv");
-        add("gif:image/gif");
         add("gram:application/srgs");
         add("grxml:application/srgs+xml");
         add("gtar:application/x-gtar");
@@ -77,14 +76,38 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("jp2:image/jp2");
         add("jpe:image/jpeg");
         add("jpeg:image/jpeg");
+        add("jpeg:image/png");
+        add("jpeg:image/gif");
+        add("jpeg:image/webp");
         add("jpg:image/jpeg");
+        add("jpg:image/jpg");
+        add("jpg:image/png");
+        add("jpg:image/x-kodak-kdc");
+        add("jpeg:image/x-kodak-kdc");
+        add("png:image/png");
+        add("png:image/jpeg");
+        add("png:image/jpg");
+        add("webp:image/webp");
+        add("png:image/webp");
+        add("jpg:image/webp");
+        add("gif:image/gif");
+        add("gif:image/webp");
+        add("gif:image/jpeg");
+        add("gif:image/jpg");
+        add("gif:image/png");
+        add("png:image/gif");
+        add("jpg:image/gif");
+        add("heic:image/png");
+        add("heic:image/jpeg");
+        add("heic:image/jpg");
+        add("heic:image/gif");
+        add("heic:image/webp");
         add("js:application/x-javascript");
         add("kar:audio/midi");
         add("latex:application/x-latex");
         add("lha:application/octet-stream");
         add("lzh:application/octet-stream");
         add("m3u:audio/x-mpegurl");
-        add("m4a:audio/mp4a-latm");
         add("m4p:audio/mp4a-latm");
         add("m4u:video/vnd.mpegurl");
         add("m4v:video/x-m4v");
@@ -100,7 +123,30 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("movie:video/x-sgi-movie");
         add("mp2:audio/mpeg");
         add("mp3:audio/mpeg");
+        add("mp3:audio/mp3");
+        add("mp3:audio/mp4");
+        add("mp3:video/mp3");
+        add("mp3:video/mp4");
+        add("mp3:video/3gpp");
+        add("aac:audio/mpeg");
+        add("aac:audio/aac");
+        add("aac:audio/mp4");
+        add("aac:video/mp3");
+        add("aac:video/mp4");
+        add("amr:audio/amr");
+        add("ape:audio/ape");
+        add("flac:audio/flac");
+        add("wma:video/x-ms-asf");
+        add("m4a:video/mpeg");
+        add("m4a:video/mp4");
+        add("m4a:audio/mpeg");
+        add("m4a:audio/mp4");
         add("mp4:video/mp4");
+        add("mp4:video/ext-mp4");
+        add("m3u8:application/x-mpegurl");
+        add("m3u8:application/vnd.apple.mpegurl");
+        add("mkv:video/x-matroska");
+        add("ts:video/mp2t");
         add("mpe:video/mpeg");
         add("mpeg:video/mpeg");
         add("mpg:video/mpeg");
@@ -120,7 +166,6 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
         add("pgn:application/x-chess-pgn");
         add("pic:image/pict");
         add("pict:image/pict");
-        add("png:image/png");
         add("pnm:image/x-portable-anymap");
         add("pnt:image/x-macpaint");
         add("pntg:image/x-macpaint");
@@ -235,17 +280,16 @@ public class CCheckMime implements ILineProcess<Map<String, String>>, Cloneable 
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         String key;
-        String keyMimePair = "";
-        List<String> writeList;
         List<Map<String, String>> filteredList = new ArrayList<>();
         for (Map<String, String> line : lineList) {
             key = line.get("key");
             if (key != null && key.contains(".")) {
-                keyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + line.get("mimeType");
-                if (!extMimeList.contains(keyMimePair)) filteredList.add(line);
+                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + line.get("mimeType");
+                if (extMimeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
+                        finalKeyMimePair.equalsIgnoreCase(extMime))) filteredList.add(line);
             }
         }
-        writeList = typeConverter.convertToVList(filteredList);
+        List<String> writeList = typeConverter.convertToVList(filteredList);
         if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
         if (typeConverter.getErrorList().size() > 0)
             fileMap.writeError(String.join("\n", typeConverter.getErrorList()));
