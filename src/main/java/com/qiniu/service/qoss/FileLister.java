@@ -124,7 +124,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
     @Override
     public List<FileInfo> next() {
         List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
-        if (endKeyPrefix != null && !"".equals(endKeyPrefix)) {
+        if (!"".equals(endKeyPrefix)) {
             int size = current.size();
             current = current.parallelStream()
                     .filter(fileInfo -> fileInfo.key.compareTo(endKeyPrefix) < 0)
