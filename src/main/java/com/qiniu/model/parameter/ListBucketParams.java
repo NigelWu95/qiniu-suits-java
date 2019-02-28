@@ -14,7 +14,7 @@ public class ListBucketParams extends QossParams {
     private String marker;
     private String end;
 
-    public ListBucketParams(IEntryParam entryParam) throws IOException {
+    public ListBucketParams(IEntryParam entryParam) {
         super(entryParam);
         try { this.prefixes = entryParam.getParamValue("prefixes"); } catch (Exception e) { this.prefixes = ""; }
         try { this.antiPrefixes = entryParam.getParamValue("anti-prefixes"); } catch (Exception e) { this.antiPrefixes = ""; }
@@ -24,16 +24,16 @@ public class ListBucketParams extends QossParams {
         try { this.end = entryParam.getParamValue("end"); } catch (Exception e) {}
     }
 
-    public List<String> getPrefixes() {
-        if (!"".equals(prefixes)) {
+    private List<String> splitItems(String paramLine) {
+        if (!"".equals(paramLine)) {
             Set<String> set;
-            if (prefixes.contains("\\,")) {
-                String[] elements = prefixes.split("\\\\,");
+            if (paramLine.contains("\\,")) {
+                String[] elements = paramLine.split("\\\\,");
                 set = new HashSet<>(Arrays.asList(elements[0].split(",")));
                 set.add(",");
                 if (elements.length > 1)set.addAll(Arrays.asList(elements[1].split(",")));
             } else {
-                set = new HashSet<>(Arrays.asList(prefixes.split(",")));
+                set = new HashSet<>(Arrays.asList(paramLine.split(",")));
             }
             set.remove("");
             return new ArrayList<>(set);
@@ -41,12 +41,12 @@ public class ListBucketParams extends QossParams {
         return null;
     }
 
+    public List<String> getPrefixes() {
+        return splitItems(prefixes);
+    }
+
     public List<String> getAntiPrefixes() {
-        if (!"".equals(antiPrefixes)) {
-            Set<String> set = new HashSet<>(Arrays.asList(antiPrefixes.split(",")));
-            return new ArrayList<>(set);
-        }
-        return null;
+        return splitItems(antiPrefixes);
     }
 
     public boolean getPrefixLeft() {

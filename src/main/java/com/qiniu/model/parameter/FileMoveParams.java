@@ -11,7 +11,7 @@ public class FileMoveParams extends QossParams {
     private String forceIfOnlyPrefix;
     private String rmPrefix;
 
-    public FileMoveParams(IEntryParam entryParam) throws Exception {
+    public FileMoveParams(IEntryParam entryParam) {
         super(entryParam);
         try { this.toBucket = entryParam.getParamValue("to-bucket"); } catch (Exception e) {}
         try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
