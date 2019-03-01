@@ -38,7 +38,8 @@ java -jar qsuits-x.x.jar [-source-type=list]
 ```
 *配置参数同上述方式*  
 
-(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下所有参数可以完全从命令行指定，形式为 `-<property-name>=<value>`，如  
+(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下所有参数可以完全从命令行指定，形式为：  
+ **`-<property-name>=<value>`**，如  
 ```
 java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 ```
