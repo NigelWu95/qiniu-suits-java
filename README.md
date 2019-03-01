@@ -3,6 +3,10 @@
 # qiniu-suits (qsuits)
 七牛云接口使用套件（可以工具形式使用），主要针对七牛云存储资源的批量处理进行功能的封装，提供更为简洁的操作方式。
 基于 Java 编写，可基于 JDK（1.8 及以上）环境在命令行或 IDE 运行。  
+##### **高级功能列表：**
+- [x] 七牛空间文件并发列举，自定义多前缀和线程数、自定义结果格式和所需字段  
+- [x] 七牛空间文件按照字段过滤，按照日期、文件名、mime 类型等字段筛选目标文件  
+- [x] 批量进行七牛存储文件的 API 操作，批量修改或查询文件、异步抓取文件、转码及查询转码结果等等  
 
 # 使用介绍
 ### 1 程序运行过程  
@@ -94,7 +98,7 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时默认
 不保存原始输出数据，list 源默认保存原始输出数据。 
 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段，每
-一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [result 配置](docs/filesave.md)。  
+一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [result 配置](docs/resultsave.md)。  
 **持久化结果的文件名为 "<source-name>_success_<order>.txt"：  
 （1）list 源 =》 "listbucket_success_<order>.txt"  
 （2）list 源 =》 "fileinput_success_<order>.txt"  
