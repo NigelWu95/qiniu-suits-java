@@ -24,7 +24,7 @@ java -jar qsuits-x.x.jar -config=config.txt
 ```
 配置文件中参数可设置形如：  
 ```
-source-type=list (v.2.11 及以上版本也可以使用 source=file，或者不设置该参数)
+source-type=list (v.2.11 及以上版本也可以使用 source=list，或者不设置该参数)
 ak=
 sk=
 bucket=
