@@ -6,8 +6,10 @@ import com.qiniu.service.convert.MapToString;
 import com.qiniu.service.interfaces.ILineFilter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
+import com.sun.xml.internal.ws.api.ha.StickyFeature;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,10 +29,12 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
-                                 List<String> rmFields, int resultIndex) throws Exception {
+    public FileInfoFilterProcess(FileFilter filter, String checkType, String resultPath, String resultFormat,
+                                 String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
         this.processName = "filter";
-        List<String> methodNameList = new ArrayList<String>() {{
+        Method checkMethod = (checkType == null || "".equals(checkType)) ? null :
+                FileChecker.class.getMethod("checkMimeType", List.class);
+        List<String> filterMethodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
             if (filter.checkKeySuffix()) add("filterKeySuffix");
             if (filter.checkKeyInner()) add("filterKeyInner");
@@ -45,18 +49,35 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
             if (filter.checkAntiKeyRegex()) add("filterAntiKeyRegex");
             if (filter.checkAntiMime()) add("filterAntiMimeType");
         }};
-        List<Method> methods = new ArrayList<Method>() {{
-            for (String name : methodNameList) {
+        List<Method> fileTerMethods = new ArrayList<Method>() {{
+            for (String name : filterMethodNameList) {
                 add(filter.getClass().getMethod(name, Map.class));
             }
         }};
-        this.filter = line -> {
-            boolean result = true;
-            for (Method method : methods) {
-                result = result && (boolean) method.invoke(filter, line);
+        this.filter = new ILineFilter<Map<String, String>>() {
+            @Override
+            public boolean doFilter(Map<String, String> line) throws Exception {
+                boolean result = true;
+                for (Method method : fileTerMethods) {
+                    result = result && (boolean) method.invoke(filter, line);
+                }
+                return result;
             }
-            return result;
+
+            @Override
+            @SuppressWarnings(value = {"unchecked"})
+            public List<Map<String, String>> check(List<Map<String, String>> lineList) throws Exception {
+                if (checkMethod != null) return (List<Map<String, String>>) checkMethod.invoke(filter, lineList);
+                else return lineList;
+            }
         };
+//        this.filter = line -> {
+//            boolean result = true;
+//            for (Method method : methods) {
+//                result = result && (boolean) method.invoke(filter, line);
+//            }
+//            return result;
+//        };
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;
         this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;
@@ -68,9 +89,9 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
     }
 
-    public FileInfoFilterProcess(FileFilter filter, String resultPath, String resultFormat, String resultSeparator,
-                                 List<String> removeFields) throws Exception {
-        this(filter, resultPath, resultFormat, resultSeparator, removeFields, 0);
+    public FileInfoFilterProcess(FileFilter filter, String checkType, String resultPath, String resultFormat,
+                                 String resultSeparator, List<String> removeFields) throws Exception {
+        this(filter, checkType, resultPath, resultFormat, resultSeparator, removeFields, 0);
     }
 
     public String getProcessName() {
