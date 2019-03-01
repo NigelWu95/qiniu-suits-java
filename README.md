@@ -49,11 +49,20 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 
 ##### *关于并发处理*：  
 ```
-(1) list 源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的列举加速，线程数在配置文件中指定，自动按照线程数并发，
-    文件数目较少时不建议使用较多线程，否则反而会增加耗时，如 100 万左右及以下的文件建议线程数少于 50，甚至更少文件时可使用单
-    线程直接列举（设置 threads=1）   
+(1) list 源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的加速列举，线程数在配置文件中指定，自动按照线程数并发，文件数目较少时不建议使
+    用较多线程，否则反而会增加耗时，如 100 万左右及以下的文件建议线程数少于 50（默认 30 线程），文件数更少时可以设置 threads=1 单线程直接列举，
+    理论上文件数量越大并发效果越明显（需要线程数参数 threads 和列举单位参数 unit-len 进行配合）
 (2) file 源，从本地读取目录下的所有文件，一个文件进入一个线程处理，最大线程数由配置文件指定，与输入文件数之间小的值作为并发数  
 ```
+**由于并发处理会同时读取大量的数据列表在内存中（默认的单个列表 size 是 10000，用 unit-len 参数设置），因此会占用较大的内存，线程数过高时可能内存
+溢出，故程序默认线程数为 30，服务器配置较高时可以适当提高这两项参数，建议如下：**  
+1、列举效果依赖机器性能，参数配置要参考机器配置，32CPU 96G 的机器可以达到 500 线程，通常可以设置 100/200/300，8CPU 32G 的机器最好不要超过 
+  200 线程  
+2、unit-len 一般不需要调整，但可视情况而定，如果增加 unit-len 的话，建议设置的线程数参考可能的最大线程数相应减小，如果 unit-len=20000 的话建
+  议线程数参考最大值减半  
+3、出现 memory leak 等错误时需要终止程序然后降低 threads 或者 unit-len 参数重新运行  
+4、v2.11 及以上版本支持的指定*多*前缀参数 prefixes，在设置多个前缀时，线程数建议不要超过 100，因为每个前缀都会尝试按照线程数去并发，线程数过高经
+  过多个指定前缀的递进容易造成内存崩溃。  
 
 #### 1. 过滤器功能
 从数据源输入的数据（针对七牛空间资源）通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型
@@ -63,8 +72,8 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 `f-inner` 表示**选择**文件名包含该部分字符的文件  
 `f-regex` 表示**选择**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-mime` 表示**选择**符合该 mime 类型的文件  
-`f-type` 表示**选择**符合该存储类型的文件, 为 0（） 或 1  
-`f-status` 表示**选择**符合该存储状态的文件, 为 0 或 1  
+`f-type` 表示**选择**符合该存储类型的文件, 为 0（标准存储） 或 1（低频存储）  
+`f-status` 表示**选择**符合该存储状态的文件, 为 0（启用） 或 1（禁用）  
 `f-date, f-time` 设置过滤的时间节点  
 `f-direction` 表示时间节点过滤方向，0 表示选择**时间点以前**更新的文件，1 表示选择**时间点以后**更新的文件  
 `f-anti-prefix` 表示**排除**文件名符合该前缀的文件  
@@ -81,8 +90,15 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 `result-path=` 表示保存结果的文件路径  
 `result-format=` 结果保存格式（json/table），默认为 table  
 `result-separator=` 结果保存分隔符，默认为 "\t" 分隔  
-所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段（详
-见具体配置参数），每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下，详细参数见 [result 配置](docs/filesave.md)。
+`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 list bucket 操作需要在列举出结果之后再针对条件进行
+过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时默认
+不保存原始输出数据，list 源默认保存原始输出数据。 
+所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段，每
+一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [result 配置](docs/filesave.md)。  
+**持久化结果的文件名为 "<source-name>_success_<order>.txt"：  
+（1）list 源 =》 "listbucket_success_<order>.txt"  
+（2）list 源 =》 "fileinput_success_<order>.txt"  
+如果设置了过滤参数，则过滤到的结果文件名为 "filter_success_<order>.txt"**  
 
 ### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，具体处理过程由处理类型参数指定:  
@@ -107,7 +123,8 @@ rename、qhash、stat、pfop、pfopresult、avinfo 一般为对 file 输入方�
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。
 2. 一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
 ```
-list prefix:<prefix>\tlast 3/2/1 times retrying...
+list prefix:<prefix> retrying...
+...
 java.net.SocketTimeoutException: timeout
 ```
 超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
