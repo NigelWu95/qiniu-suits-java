@@ -1,19 +1,19 @@
-package com.qiniu.custom;
+package com.qiniu.service.media;
 
-import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
+import com.qiniu.persistence.FileMap;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.media.MediaManager;
-import com.qiniu.util.*;
+import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.UrlSafeBase64;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Cloneable {
+public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
     private MediaManager mediaManager;
@@ -27,8 +27,8 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
     private String mp4Fop480 = "avthumb/mp4/s/640x480/autoscale/1|saveas/";
     private String m3u8Copy = "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
 
-    public CAvinfoProcess(String bucket, String resultPath, int resultIndex) throws IOException {
-        this.processName = "fop";
+    public PfopCommand(String bucket, String resultPath, int resultIndex) throws IOException {
+        this.processName = "pfopcmd";
         this.mediaManager = new MediaManager();
         this.bucket = bucket;
         this.resultPath = resultPath;
@@ -38,7 +38,7 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         this.fileMap.initDefaultWriters();
     }
 
-    public CAvinfoProcess(String bucket, String resultPath) throws IOException {
+    public PfopCommand(String bucket, String resultPath) throws IOException {
         this(bucket, resultPath, 0);
     }
 
@@ -50,15 +50,15 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         this.resultTag = resultTag == null ? "" : resultTag;
     }
 
-    public CAvinfoProcess clone() throws CloneNotSupportedException {
-        CAvinfoProcess avinfoProcess = (CAvinfoProcess)super.clone();
-        avinfoProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+    public PfopCommand clone() throws CloneNotSupportedException {
+        PfopCommand pfopCommand = (PfopCommand)super.clone();
+        pfopCommand.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
-            avinfoProcess.fileMap.initDefaultWriters();
+            pfopCommand.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return avinfoProcess;
+        return pfopCommand;
     }
 
     private String generateCopyLine(String key, int width) throws QiniuException {
@@ -68,9 +68,6 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         else keySuffix = "F480";
         String copyKey = FileNameUtils.addSuffixKeepExt(key, keySuffix);
         return key + "\t" + copyKey;
-//        String srcCopy = "/copy/" + UrlSafeBase64.encodeToString(bucket + ":" + key) + "/";
-//        String copySaveAs = UrlSafeBase64.encodeToString(bucket + ":" + copyKey);
-//        return copyKey + "\t" + key + "\t" + srcCopy + copySaveAs;
     }
 
     private String generateMp4FopLine(String key, int width) throws QiniuException {
@@ -87,15 +84,15 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
             fop = mp4Fop480;
         }
         String mp4Key = FileNameUtils.addSuffixWithExt(key, keySuffix, "mp4");
-        return generateFopLine(key, mp4Key, fop);
+        return generateFopLine(key, fop, mp4Key);
     }
 
-    private String generateFopLine(String key, String toKey, String fop) {
+    private String generateFopLine(String key, String fop, String toKey) {
         String saveAsEntry = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
         return key + "\t" + fop + saveAsEntry + "\t" + toKey;
     }
 
-    public void processLine1(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
         List<String> copyList = new ArrayList<>();
         List<String> mp4FopList = new ArrayList<>();
         List<String> m3u8FopList = new ArrayList<>();
@@ -108,7 +105,6 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
             if (key == null || "".equals(key) || info == null || "".equals(info))
                 throw new IOException("target value is empty.");
             try {
-//                Avinfo avinfo = JsonConvertUtils.fromJson(line.get("avinfo"), Avinfo.class);
                 Avinfo avinfo = mediaManager.getAvinfoByJson(info);
                 double duration = Double.valueOf(avinfo.getFormat().duration);
                 long size = Long.valueOf(avinfo.getFormat().size);
@@ -137,17 +133,17 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
                 }
 
                 if (width > 1280) {
-                    mp4FopList.add(generateFopLine(key, mp4Key720, mp4Fop720) + other);
-                    mp4FopList.add(generateFopLine(key, mp4Key480, mp4Fop480) + other);
-                    m3u8FopList.add(generateFopLine(mp4Key1080, m3u8Key1080, m3u8Copy) + other);
-                    m3u8FopList.add(generateFopLine(mp4Key720, m3u8Key720, m3u8Copy) + other);
-                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy) + other);
+                    mp4FopList.add(generateFopLine(key, mp4Fop720, mp4Key720) + other);
+                    mp4FopList.add(generateFopLine(key, mp4Fop480, mp4Key480) + other);
+                    m3u8FopList.add(generateFopLine(mp4Key1080, m3u8Copy, m3u8Key1080) + other);
+                    m3u8FopList.add(generateFopLine(mp4Key720, m3u8Copy, m3u8Key720) + other);
+                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Copy, m3u8Key480) + other);
                 } else if (width > 1000) {
-                    mp4FopList.add(generateFopLine(key, mp4Key480, mp4Fop480) + other);
-                    m3u8FopList.add(generateFopLine(mp4Key720, m3u8Key720, m3u8Copy) + other);
-                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy) + other);
+                    mp4FopList.add(generateFopLine(key, mp4Fop480, mp4Key480) + other);
+                    m3u8FopList.add(generateFopLine(mp4Key720, m3u8Copy, m3u8Key720) + other);
+                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Copy, m3u8Key480) + other);
                 } else {
-                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Key480, m3u8Copy) + other);
+                    m3u8FopList.add(generateFopLine(mp4Key480, m3u8Copy, m3u8Key480) + other);
                 }
             } catch (Exception e) {
                 fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage());
@@ -156,38 +152,6 @@ public class CAvinfoProcess implements ILineProcess<Map<String, String>>, Clonea
         if (copyList.size() > 0) fileMap.writeKeyFile("tocopy" + resultIndex, String.join("\n", copyList));
         if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultIndex, String.join("\n", mp4FopList));
         if (m3u8FopList.size() > 0) fileMap.writeKeyFile("tom3u8" + resultIndex, String.join("\n", m3u8FopList));
-    }
-
-    // mp4 retry
-    public void processLine2(List<Map<String, String>> lineList) throws IOException {
-        List<String> mp4FopList = new ArrayList<>();
-        String toKey;
-        String toSaveAs;
-        String srcKey;
-        for (Map<String, String> line : lineList) {
-            try {
-                srcKey = line.get("key");
-                toKey = line.get("newKey");
-                if (srcKey == null || "".equals(srcKey) || toKey == null || "".equals(toKey))
-                    throw new IOException("target value is empty.");
-                toSaveAs = UrlSafeBase64.encodeToString(bucket + ":" + toKey);
-                if (toKey.contains("F480")) {
-                    mp4FopList.add(srcKey + "\t" + mp4Fop720 + toSaveAs + "\t" + toKey);
-                } else if (toKey.contains("F720")) {
-                    mp4FopList.add(srcKey + "\t" + mp4Fop480 + toSaveAs + "\t" + toKey);
-                } else if (toKey.contains("F1080")) {
-                    mp4FopList.add(srcKey + "\t" + mp4Fop1080 + toSaveAs + "\t" + toKey);
-                }
-            } catch (Exception e) {
-                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage());
-            }
-        }
-        if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultIndex, String.join("\n", mp4FopList));
-    }
-
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine1(lineList);
-//        processLine2(lineList);
     }
 
     public void closeResource() {
