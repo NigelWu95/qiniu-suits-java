@@ -78,6 +78,7 @@ public class ListBucketParams extends QossParams {
             BucketManager bucketManager = new BucketManager(Auth.create(getAccessKey(), getSecretKey()),
                     new Configuration());
             FileInfo markerFileInfo = bucketManager.stat(getBucket(), start);
+            markerFileInfo.key = start;
             return ListBucketUtils.calcMarker(markerFileInfo);
         }
     }

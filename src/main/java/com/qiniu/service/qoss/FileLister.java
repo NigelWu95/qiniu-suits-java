@@ -82,7 +82,8 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return fileInfoList;
     }
 
-    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
+    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit)
+            throws QiniuException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
@@ -94,9 +95,9 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 .map(line -> new ListLine().fromLine(line))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        if (listLines.size() < lines.size()) {
-            throw new QiniuException(new QiniuException(response), "convert line to file info error.");
-        }
+        response.close();
+        // 转换成 ListLine 过程中可能出现问题，直接返回空列表，marker 不做修改，返回后则会再次使用同样的 marker 值进行列举
+        if (listLines.size() < lines.size()) return new ArrayList<>();
         List<FileInfo> resultList = listLines.parallelStream()
                 .map(listLine -> listLine.fileInfo)
                 .filter(Objects::nonNull)
@@ -104,7 +105,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
         Optional<ListLine> lastListLine = listLines.parallelStream()
                 .max(ListLine::compareTo);
         this.marker = lastListLine.map(listLine -> listLine.marker).orElse("");
-        response.close();
         return resultList;
     }
 
