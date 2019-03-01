@@ -52,30 +52,30 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                 add(filter.getClass().getMethod(name, Map.class));
             }
         }};
-        this.filter = new ILineFilter<Map<String, String>>() {
-            @Override
-            public boolean doFilter(Map<String, String> line) throws Exception {
-                boolean result = true;
-                for (Method method : fileTerMethods) {
-                    result = result && (boolean) method.invoke(filter, line);
-                }
-                return result;
-            }
-
-            @Override
-            @SuppressWarnings(value = {"unchecked"})
-            public List<Map<String, String>> check(List<Map<String, String>> lineList) throws Exception {
-                if (checkMethod != null) return (List<Map<String, String>>) checkMethod.invoke(filter, lineList);
-                else return lineList;
-            }
-        };
-//        this.filter = line -> {
-//            boolean result = true;
-//            for (Method method : methods) {
-//                result = result && (boolean) method.invoke(filter, line);
+//        this.filter = new ILineFilter<Map<String, String>>() {
+//            @Override
+//            public boolean doFilter(Map<String, String> line) throws Exception {
+//                boolean result = true;
+//                for (Method method : fileTerMethods) {
+//                    result = result && (boolean) method.invoke(filter, line);
+//                }
+//                return result;
 //            }
-//            return result;
+//
+//            @Override
+//            @SuppressWarnings(value = {"unchecked"})
+//            public List<Map<String, String>> check(List<Map<String, String>> lineList) throws Exception {
+//                if (checkMethod != null) return (List<Map<String, String>>) checkMethod.invoke(filter, lineList);
+//                else return lineList;
+//            }
 //        };
+        this.filter = line -> {
+            boolean result = true;
+            for (Method method : fileTerMethods) {
+                result = result && (boolean) method.invoke(filter, line);
+            }
+            return result;
+        };
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;
         this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;

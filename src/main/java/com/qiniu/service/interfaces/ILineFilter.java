@@ -6,5 +6,5 @@ public interface ILineFilter<T> {
 
     boolean doFilter(T line) throws Exception;
 
-    List<T> check(List<T> lineList) throws Exception;
+//    List<T> doFilter(List<T> lineList) throws Exception;
 }

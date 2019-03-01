@@ -233,4 +233,18 @@ public class SeniorChecker {
         }
         return filteredList;
     }
+
+    public boolean checkMimeType(Map<String, String> line) {
+        if (line.get("key") != null && line.get("key").contains(".")) {
+            String finalKeyMimePair = line.get("key").substring(line.get("key").lastIndexOf(".") + 1) +
+                    ":" + line.get("mimeType");
+            if (extMimeList.parallelStream().anyMatch(extMime ->
+                    finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
+                return false;
+            }
+            return extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
+                    finalKeyMimePair.equalsIgnoreCase(extMime));
+        }
+        return false;
+    }
 }
