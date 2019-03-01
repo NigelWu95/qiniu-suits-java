@@ -6,8 +6,8 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
-import com.qiniu.service.process.FileFilter;
-import com.qiniu.service.process.FileInfoFilterProcess;
+import com.qiniu.service.filtration.BaseFieldsFilter;
+import com.qiniu.service.filtration.FilterProcess;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -39,18 +39,18 @@ public class ProcessorChoice {
 
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
         FileFilterParams fileFilterParams = new FileFilterParams(entryParam);
-        FileFilter fileFilter = new FileFilter();
-        fileFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
+        BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
+        baseFieldsFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
                 fileFilterParams.getKeyInner(), fileFilterParams.getKeyRegex());
-        fileFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
+        baseFieldsFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
                 fileFilterParams.getAntiKeyInner(), fileFilterParams.getAntiKeyRegex());
-        fileFilter.setMimeTypeConditions(fileFilterParams.getMimeType(), fileFilterParams.getAntiMimeType());
-        fileFilter.setOtherConditions(fileFilterParams.getPutTimeMax(), fileFilterParams.getPutTimeMin(),
+        baseFieldsFilter.setMimeTypeConditions(fileFilterParams.getMimeType(), fileFilterParams.getAntiMimeType());
+        baseFieldsFilter.setOtherConditions(fileFilterParams.getPutTimeMax(), fileFilterParams.getPutTimeMin(),
                 fileFilterParams.getType(), fileFilterParams.getStatus());
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
-        if (fileFilter.isValid()) {
-            processor = new FileInfoFilterProcess(fileFilter, resultPath, resultFormat, resultSeparator,
+        if (baseFieldsFilter.isValid()) {
+            processor = new FilterProcess(baseFieldsFilter, "mime", resultPath, resultFormat, resultSeparator,
                     fileFilterParams.getRmFields());
             processor.setNextProcessor(nextProcessor);
         } else {
