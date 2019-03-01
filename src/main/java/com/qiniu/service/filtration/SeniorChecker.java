@@ -1,10 +1,10 @@
-package com.qiniu.service.process;
+package com.qiniu.service.filtration;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class FileChecker {
+public class SeniorChecker {
 
     final private List<String> extMimeList = new ArrayList<String>(){{
         add("ico:image");

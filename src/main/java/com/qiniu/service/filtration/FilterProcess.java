@@ -1,4 +1,4 @@
-package com.qiniu.service.process;
+package com.qiniu.service.filtration;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
@@ -6,16 +6,14 @@ import com.qiniu.service.convert.MapToString;
 import com.qiniu.service.interfaces.ILineFilter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
-import com.sun.xml.internal.ws.api.ha.StickyFeature;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
+public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
     private ILineFilter<Map<String, String>> filter;
@@ -29,11 +27,11 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FileInfoFilterProcess(FileFilter filter, String checkType, String resultPath, String resultFormat,
-                                 String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
+    public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
+                         String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
         this.processName = "filter";
         Method checkMethod = (checkType == null || "".equals(checkType)) ? null :
-                FileChecker.class.getMethod("checkMimeType", List.class);
+                SeniorChecker.class.getMethod("checkMimeType", List.class);
         List<String> filterMethodNameList = new ArrayList<String>() {{
             if (filter.checkKeyPrefix()) add("filterKeyPrefix");
             if (filter.checkKeySuffix()) add("filterKeySuffix");
@@ -89,8 +87,8 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
     }
 
-    public FileInfoFilterProcess(FileFilter filter, String checkType, String resultPath, String resultFormat,
-                                 String resultSeparator, List<String> removeFields) throws Exception {
+    public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
+                         String resultSeparator, List<String> removeFields) throws Exception {
         this(filter, checkType, resultPath, resultFormat, resultSeparator, removeFields, 0);
     }
 
@@ -102,19 +100,19 @@ public class FileInfoFilterProcess implements ILineProcess<Map<String, String>>,
         this.resultTag = resultTag == null ? "" : resultTag;
     }
 
-    public FileInfoFilterProcess clone() throws CloneNotSupportedException {
-        FileInfoFilterProcess fileInfoFilterProcess = (FileInfoFilterProcess)super.clone();
-        fileInfoFilterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+    public FilterProcess clone() throws CloneNotSupportedException {
+        FilterProcess filterProcess = (FilterProcess)super.clone();
+        filterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
         try {
-            fileInfoFilterProcess.fileMap.initDefaultWriters();
-            fileInfoFilterProcess.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
+            filterProcess.fileMap.initDefaultWriters();
+            filterProcess.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
             if (nextProcessor != null) {
-                fileInfoFilterProcess.nextProcessor = nextProcessor.clone();
+                filterProcess.nextProcessor = nextProcessor.clone();
             }
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return fileInfoFilterProcess;
+        return filterProcess;
     }
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
