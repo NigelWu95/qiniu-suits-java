@@ -44,13 +44,16 @@
     </dependencies>
 
     <build>
-        <!--<resources>-->
-          <!--<resource>-->
-              <!--<directory>resources</directory>-->
-              <!--<filtering>false</filtering>-->
-              <!--<targetPath>resources/</targetPath>-->
-          <!--</resource>-->
-        <!--</resources>-->
+        <resources>
+          <resource>
+              <directory>resources</directory>
+              <filtering>false</filtering>
+              <targetPath>resources/</targetPath>
+              <includes>
+                  <include>*.json</include>
+              </includes>
+          </resource>
+        </resources>
 
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
             <plugins>
