@@ -62,10 +62,10 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 **由于并发处理会同时读取大量的数据列表在内存中（默认的单个列表 size 是 10000，用 unit-len 参数设置），因此会占用较大的内存，线程数过高时可能内存
 溢出，故程序默认线程数为 30，服务器配置较高时可以适当提高这两项参数，建议如下：**  
 1、列举效果依赖机器性能，参数配置要参考机器配置，32CPU 96G 的机器可以达到 500 线程，通常可以设置 100/200/300，8CPU 32G 的机器最好不要超过 
-  200 线程  
+  200 线程。  
 2、unit-len 一般不需要调整，但可视情况而定，如果增加 unit-len 的话，建议设置的线程数参考可能的最大线程数相应减小，如果 unit-len=20000 的话建
-  议线程数参考最大值减半  
-3、出现 memory leak 等错误时需要终止程序然后降低 threads 或者 unit-len 参数重新运行  
+  议线程数参考最大值减半。  
+3、出现 memory leak 等错误时需要终止程序然后降低 threads 或者 unit-len 参数重新运行。  
 4、v2.11 及以上版本支持的指定*多*前缀参数 prefixes，在设置多个前缀时，线程数建议不要超过 100，因为每个前缀都会尝试按照线程数去并发，线程数过高经
   过多个指定前缀的递进容易造成内存崩溃。  
 
@@ -88,7 +88,7 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 `f-anti-mime` 表示**排除**该 mime 类型的文件  
 [filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后
 的记录可以直接持久化保存结果，如对于 listbucket/fileinput 的结果过滤后进行保存，此时可通过 save-total 选项来选择是否将过
-滤之前的记录进行完整保存。
+滤之前的记录进行完整保存。  
 
 #### 2. 输出结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
@@ -97,8 +97,8 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 `result-separator=` 结果保存分隔符，默认为 "\t" 分隔  
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 list bucket 操作需要在列举出结果之后再针对条件进行
 过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时默认
-不保存原始输出数据，list 源默认保存原始输出数据。 
-所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段，每
+不保存原始输出数据，list 源默认保存原始输出数据。   
+**--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段，每
 一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [result 配置](docs/resultsave.md)。  
 **持久化结果的文件名为 "<source-name>_success_<order>.txt"：  
 （1）list 源 =》 "listbucket_success_<order>.txt"  
