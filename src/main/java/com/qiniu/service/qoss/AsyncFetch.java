@@ -146,10 +146,10 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 }
             }
             if (fetchResult != null && !"".equals(fetchResult)) {
-                fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult);
+                fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult, false);
             } else {
                 fileMap.writeError( key + "\t" + url + "\t" + line.get(md5Index) +  "\t" + line.get("hash") +
-                        "\tempty fetch result");
+                        "\tempty fetch result", false);
             }
         }
     }

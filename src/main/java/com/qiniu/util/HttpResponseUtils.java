@@ -25,12 +25,12 @@ public class HttpResponseUtils {
             }
         }
         if (infoList == null || infoList.size() == 0) {
-            fileMap.writeError(message.replaceAll("\n", "\t"));
+            fileMap.writeError(message.replaceAll("\n", "\t"), false);
         } else {
             String finalMessage = message;
             fileMap.writeError(String.join("\n", infoList.stream()
                     .map(line -> line + "\t" + finalMessage.replaceAll("\n", "\t"))
-                    .collect(Collectors.toList())));
+                    .collect(Collectors.toList())), false);
         }
     }
 

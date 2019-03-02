@@ -91,8 +91,9 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                             new ArrayList<String>(){{ add(line.get("key") + "\t" + line.get(fopsIndex)); }});
                 }
             }
-            if (persistentId != null && !"".equals(persistentId)) fileMap.writeSuccess(persistentId + "\t" + key);
-            else fileMap.writeError( key + "\t" + line.get(fopsIndex) + "\tempty persistent id");
+            if (persistentId != null && !"".equals(persistentId))
+                fileMap.writeSuccess(persistentId + "\t" + key, false);
+            else fileMap.writeError( key + "\t" + line.get(fopsIndex) + "\tempty persistent id", false);
         }
     }
 

@@ -146,12 +146,15 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
                     m3u8FopList.add(generateFopLine(mp4Key480, m3u8Copy, m3u8Key480) + other);
                 }
             } catch (Exception e) {
-                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage());
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
             }
         }
-        if (copyList.size() > 0) fileMap.writeKeyFile("tocopy" + resultIndex, String.join("\n", copyList));
-        if (mp4FopList.size() > 0) fileMap.writeKeyFile("tomp4" + resultIndex, String.join("\n", mp4FopList));
-        if (m3u8FopList.size() > 0) fileMap.writeKeyFile("tom3u8" + resultIndex, String.join("\n", m3u8FopList));
+        if (copyList.size() > 0)
+            fileMap.writeKeyFile("tocopy" + resultIndex, String.join("\n", copyList), false);
+        if (mp4FopList.size() > 0)
+            fileMap.writeKeyFile("tomp4" + resultIndex, String.join("\n", mp4FopList), false);
+        if (m3u8FopList.size() > 0)
+            fileMap.writeKeyFile("tom3u8" + resultIndex, String.join("\n", m3u8FopList), false);
     }
 
     public void closeResource() {
