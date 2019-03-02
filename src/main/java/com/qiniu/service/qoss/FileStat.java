@@ -83,12 +83,12 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 if (jsonObject.get("code").getAsInt() == 200)
                     if ("table".equals(format))
                         fileMap.writeSuccess( stringFormatter.toFormatString(
-                                jsonObjParser.getItemMap(jsonObject.get("data").getAsJsonObject())));
-                    else fileMap.writeSuccess(jsonObject.get("data").toString());
+                                jsonObjParser.getItemMap(jsonObject.get("data").getAsJsonObject())), false);
+                    else fileMap.writeSuccess(jsonObject.get("data").toString(), false);
                 else
-                    fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString());
+                    fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
             } else {
-                fileMap.writeError(processList.get(j).get("key") + "\tempty stat result");
+                fileMap.writeError(processList.get(j).get("key") + "\tempty stat result", false);
             }
         }
     }
