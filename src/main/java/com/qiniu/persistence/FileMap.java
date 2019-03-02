@@ -212,11 +212,11 @@ public class FileMap {
 
     public void writeKeyFile(String key, String item) throws IOException {
         if (notHasWriter(key)) addWriter(prefix + key + suffix);
-        doWrite(prefix + key + suffix, item);
+        if (item != null) doWrite(prefix + key + suffix, item);
     }
 
     synchronized public void writeSuccess(String item) {
-        doWrite(prefix + "success" + suffix, item);
+        if (item != null) doWrite(prefix + "success" + suffix, item);
     }
 
     public void addErrorWriter() throws IOException {
@@ -225,6 +225,6 @@ public class FileMap {
 
     synchronized public void writeError(String item) throws IOException {
         if (notHasWriter("error")) addErrorWriter();
-        doWrite(prefix + "error" + suffix, item);
+        if (item != null) doWrite(prefix + "error" + suffix, item);
     }
 }
