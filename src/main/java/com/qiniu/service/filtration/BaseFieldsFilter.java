@@ -1,10 +1,10 @@
-package com.qiniu.service.process;
+package com.qiniu.service.filtration;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class FileFilter {
+public class BaseFieldsFilter {
 
     private List<String> keyPrefix;
     private List<String> keySuffix;
