@@ -90,7 +90,7 @@ public class ListBucket implements IDataSource {
                 })
                 .filter(fileLister -> fileLister != null && fileLister.hasNext())
                 .collect(Collectors.toList());
-        if (errorList.size() > 0) fileMap.writeError(String.join("\n", errorList));
+        if (errorList.size() > 0) fileMap.writeError(String.join("\n", errorList), false);
         fileMap.closeWriters();
         return listerList;
     }
@@ -186,10 +186,10 @@ public class ListBucket implements IDataSource {
             }
             infoMapList = typeConverter.convertToVList(fileInfoList);
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
+                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
             if (saveTotal) {
                 writeList = writeTypeConverter.convertToVList(infoMapList);
-                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
+                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
@@ -200,14 +200,14 @@ public class ListBucket implements IDataSource {
         }
     }
 
-    private void export(String identifier, FileLister fileLister, ILineProcess<Map<String, String>> processor)
-            throws Exception {
-        FileMap recordFileMap = new FileMap(resultPath);
+    private void export(FileMap recordFileMap, String identifier, FileLister fileLister,
+                        ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap fileMap = new FileMap(resultPath, "listbucket", identifier);
         fileMap.initDefaultWriters();
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order " + identifier + ": " + fileLister.getPrefix();
         try {
+            recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
             execLister(fileLister, fileMap, lineProcessor);
             if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
             else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
@@ -217,9 +217,8 @@ public class ListBucket implements IDataSource {
                     "\t" + e.getMessage().replaceAll("\n", "\t");
             throw e;
         } finally {
-            try { recordFileMap.writeKeyFile("result", record); } catch (IOException e) { e.printStackTrace(); }
+            recordFileMap.writeKeyFile("result", record, true);
             fileMap.closeWriters();
-            recordFileMap.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             fileLister.remove();
         }
@@ -232,13 +231,13 @@ public class ListBucket implements IDataSource {
     }
 
     private void execInThreads(ExecutorService executorPool, AtomicBoolean exit, List<FileLister> fileListerList,
-                               int alreadyOrder, ILineProcess<Map<String, String>> processor) {
+                               FileMap recordFileMap, int alreadyOrder, ILineProcess<Map<String, String>> processor) {
         for (int j = 0; j < fileListerList.size(); j++) {
             int finalJ = j;
             FileLister lister = fileListerList.get(finalJ);
             executorPool.execute(() -> {
                 try {
-                    export(String.valueOf(finalJ + 1 + alreadyOrder), lister, processor);
+                    export(recordFileMap, String.valueOf(finalJ + 1 + alreadyOrder), lister, processor);
                 } catch (Exception e) {
                     exit(exit, e);
                 }
@@ -249,6 +248,7 @@ public class ListBucket implements IDataSource {
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        FileMap recordFileMap = new FileMap(resultPath);
         ExecutorService executorPool = Executors.newFixedThreadPool(threads);
         AtomicBoolean exit = new AtomicBoolean(false);
         Collections.sort(prefixes);
@@ -256,7 +256,7 @@ public class ListBucket implements IDataSource {
         List<FileLister> fileListerList = new ArrayList<>();
         if (prefixes.size() == 0) {
             fileListerList = nextLevelListBySinglePrefix(threads, "");
-            execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
+            execInThreads(executorPool, exit, fileListerList, recordFileMap, alreadyOrder, processor);
         } else {
             for (int i = 0; i < prefixes.size(); i++) {
                 fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefixes.get(i)));
@@ -274,23 +274,17 @@ public class ListBucket implements IDataSource {
                     }
                 }
                 if (fileListerList.size() >= threads) {
-                    execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
+                    execInThreads(executorPool, exit, fileListerList, recordFileMap, alreadyOrder, processor);
                     alreadyOrder += fileListerList.size();
                     fileListerList = new ArrayList<>();
                 }
             }
-            execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
+            execInThreads(executorPool, exit, fileListerList, recordFileMap, alreadyOrder, processor);
         }
         executorPool.shutdown();
-        FileMap fileMap = new FileMap(resultPath);
-        try {
-            fileMap.writeKeyFile("count_" + (alreadyOrder + fileListerList.size()), null);
-        } catch (IOException e) {
-            System.out.println("there are total " + (alreadyOrder + fileListerList.size()) + "prefixes for listing...");
-            e.printStackTrace();
-        }
-        fileMap.closeWriters();
+        recordFileMap.writeKeyFile("count_" + (alreadyOrder + fileListerList.size()), null, false);
         while (!executorPool.isTerminated()) Thread.sleep(1000);
+        recordFileMap.closeWriters();
         System.out.println(info + " finished");
     }
 }

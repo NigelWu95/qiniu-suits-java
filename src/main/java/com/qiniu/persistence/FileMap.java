@@ -188,16 +188,17 @@ public class FileMap {
         }
     }
 
-    private void writeLine(String key, String item) throws IOException {
+    private void writeLine(String key, String item, boolean flush) throws IOException {
         getWriter(key).write(item);
         getWriter(key).newLine();
+        if (flush) getWriter(key).flush();
     }
 
-    private void doWrite(String key, String item) {
+    private void doWrite(String key, String item, boolean flush) {
         int count = retryCount;
         while (count > 0) {
             try {
-                writeLine(key, item);
+                writeLine(key, item, flush);
                 count = 0;
             } catch (IOException e) {
                 count--;
@@ -210,21 +211,22 @@ public class FileMap {
         return !writerMap.containsKey(prefix + key + suffix);
     }
 
-    public void writeKeyFile(String key, String item) throws IOException {
+    // 如果 item 为 null 的话则不进行写入，flush 参数无效
+    synchronized public void writeKeyFile(String key, String item, boolean flush) throws IOException {
         if (notHasWriter(key)) addWriter(prefix + key + suffix);
-        if (item != null) doWrite(prefix + key + suffix, item);
+        if (item != null) doWrite(prefix + key + suffix, item, flush);
     }
 
-    synchronized public void writeSuccess(String item) {
-        if (item != null) doWrite(prefix + "success" + suffix, item);
+    synchronized public void writeSuccess(String item, boolean flush) {
+        if (item != null) doWrite(prefix + "success" + suffix, item, flush);
     }
 
     public void addErrorWriter() throws IOException {
         addWriter(prefix + "error" + suffix);
     }
 
-    synchronized public void writeError(String item) throws IOException {
+    synchronized public void writeError(String item, boolean flush) throws IOException {
         if (notHasWriter("error")) addErrorWriter();
-        if (item != null) doWrite(prefix + "error" + suffix, item);
+        if (item != null) doWrite(prefix + "error" + suffix, item, flush);
     }
 }

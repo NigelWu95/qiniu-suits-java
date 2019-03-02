@@ -25,9 +25,9 @@ public class M3U8Tools {
             try {
                 inputStream = new URL(ts.getUrl()).openStream();
                 IOUtils.copyLarge(inputStream, fileOutputStream);
-                fileMap.writeSuccess(ts.getUrl());
+                fileMap.writeSuccess(ts.getUrl(), false);
             } catch (IOException e) {
-                fileMap.writeError(ts.getUrl() + "\t" + e.getMessage());
+                fileMap.writeError(ts.getUrl() + "\t" + e.getMessage(), false);
             }
         }
 
@@ -62,9 +62,9 @@ public class M3U8Tools {
                 fileOutputStream = new FileOutputStream(file);
                 inputStream = new URL(url).openStream();
                 IOUtils.copyLarge(inputStream, fileOutputStream);
-                fileMap.writeSuccess(ts.toString());
+                fileMap.writeSuccess(ts.toString(), false);
             } catch (IOException e) {
-                fileMap.writeError(ts + "\t" + e.getMessage());
+                fileMap.writeError(ts + "\t" + e.getMessage(), false);
             }
         }
 
