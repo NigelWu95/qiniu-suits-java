@@ -30,51 +30,32 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
                          String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
         this.processName = "filter";
+        SeniorChecker seniorChecker = new SeniorChecker();
         Method checkMethod = (checkType == null || "".equals(checkType)) ? null :
-                SeniorChecker.class.getMethod("checkMimeType", List.class);
-        List<String> filterMethodNameList = new ArrayList<String>() {{
-            if (filter.checkKeyPrefix()) add("filterKeyPrefix");
-            if (filter.checkKeySuffix()) add("filterKeySuffix");
-            if (filter.checkKeyInner()) add("filterKeyInner");
-            if (filter.checkKeyRegex()) add("filterKeyRegex");
-            if (filter.checkPutTime()) add("filterPutTime");
-            if (filter.checkMime()) add("filterMimeType");
-            if (filter.checkType()) add("filterType");
-            if (filter.checkStatus()) add("filterStatus");
-            if (filter.checkAntiKeyPrefix()) add("filterAntiKeyPrefix");
-            if (filter.checkAntiKeySuffix()) add("filterAntiKeySuffix");
-            if (filter.checkAntiKeyInner()) add("filterAntiKeyInner");
-            if (filter.checkAntiKeyRegex()) add("filterAntiKeyRegex");
-            if (filter.checkAntiMime()) add("filterAntiMimeType");
-        }};
+                SeniorChecker.class.getMethod("checkMimeType", Map.class);
         List<Method> fileTerMethods = new ArrayList<Method>() {{
-            for (String name : filterMethodNameList) {
-                add(filter.getClass().getMethod(name, Map.class));
-            }
+            if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
+            if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
+            if (filter.checkKeyInner()) add(filter.getClass().getMethod("filterKeyInner", Map.class));
+            if (filter.checkKeyRegex()) add(filter.getClass().getMethod("filterKeyRegex", Map.class));
+            if (filter.checkPutTime()) add(filter.getClass().getMethod("filterPutTime", Map.class));
+            if (filter.checkMime()) add(filter.getClass().getMethod("filterMimeType", Map.class));
+            if (filter.checkType()) add(filter.getClass().getMethod("filterType", Map.class));
+            if (filter.checkStatus()) add(filter.getClass().getMethod("filterStatus", Map.class));
+            if (filter.checkAntiKeyPrefix()) add(filter.getClass().getMethod("filterAntiKeyPrefix", Map.class));
+            if (filter.checkAntiKeySuffix()) add(filter.getClass().getMethod("filterAntiKeySuffix", Map.class));
+            if (filter.checkAntiKeyInner()) add(filter.getClass().getMethod("filterAntiKeyInner", Map.class));
+            if (filter.checkAntiKeyRegex()) add(filter.getClass().getMethod("filterAntiKeyRegex", Map.class));
+            if (filter.checkAntiMime()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
-//        this.filter = new ILineFilter<Map<String, String>>() {
-//            @Override
-//            public boolean doFilter(Map<String, String> line) throws Exception {
-//                boolean result = true;
-//                for (Method method : fileTerMethods) {
-//                    result = result && (boolean) method.invoke(filter, line);
-//                }
-//                return result;
-//            }
-//
-//            @Override
-//            @SuppressWarnings(value = {"unchecked"})
-//            public List<Map<String, String>> check(List<Map<String, String>> lineList) throws Exception {
-//                if (checkMethod != null) return (List<Map<String, String>>) checkMethod.invoke(filter, lineList);
-//                else return lineList;
-//            }
-//        };
         this.filter = line -> {
             boolean result = true;
             for (Method method : fileTerMethods) {
                 result = result && (boolean) method.invoke(filter, line);
             }
-            return result;
+            return result
+//                    && (boolean) checkMethod.invoke(seniorChecker, line)
+                    ;
         };
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;
