@@ -252,12 +252,12 @@ public class ListBucket implements IDataSource {
         ExecutorService executorPool = Executors.newFixedThreadPool(threads);
         AtomicBoolean exit = new AtomicBoolean(false);
         Collections.sort(prefixes);
+        int alreadyOrder = 0;
+        List<FileLister> fileListerList = new ArrayList<>();
         if (prefixes.size() == 0) {
-            List<FileLister> fileListerList = nextLevelListBySinglePrefix(threads, "");
-            execInThreads(executorPool, exit, fileListerList, 0, processor);
+            fileListerList = nextLevelListBySinglePrefix(threads, "");
+            execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
         } else {
-            int alreadyOrder = 0;
-            List<FileLister> fileListerList = new ArrayList<>();
             for (int i = 0; i < prefixes.size(); i++) {
                 fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefixes.get(i)));
                 if (i == 0) {
@@ -282,6 +282,14 @@ public class ListBucket implements IDataSource {
             execInThreads(executorPool, exit, fileListerList, alreadyOrder, processor);
         }
         executorPool.shutdown();
+        FileMap fileMap = new FileMap(resultPath);
+        try {
+            fileMap.writeKeyFile("count_" + (alreadyOrder + fileListerList.size()), null);
+        } catch (IOException e) {
+            System.out.println("there are total " + (alreadyOrder + fileListerList.size()) + "prefixes for listing...");
+            e.printStackTrace();
+        }
+        fileMap.closeWriters();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
         System.out.println(info + " finished");
     }
