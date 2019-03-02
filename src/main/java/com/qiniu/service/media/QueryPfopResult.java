@@ -92,14 +92,15 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                     // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
                     if (item.code == 0) {
                         fileMap.writeSuccess(line.get(persistentIdIndex) + "\t" + pfopResult.inputKey + "\t" +
-                                item.key + "\t" + result);
+                                item.key + "\t" + result, false);
                     } else {
                         fileMap.writeError( line.get(persistentIdIndex) + "\t" + pfopResult.inputKey + "\t" +
-                                item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" + item.error);
+                                item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" +
+                                item.error, false);
                     }
                 }
             } else {
-                fileMap.writeError( line.get(persistentIdIndex) + "\tempty pfop result");
+                fileMap.writeError( line.get(persistentIdIndex) + "\tempty pfop result", false);
             }
         }
     }

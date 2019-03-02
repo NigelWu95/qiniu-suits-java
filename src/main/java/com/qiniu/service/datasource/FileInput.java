@@ -66,10 +66,10 @@ public class FileInput implements IDataSource {
             if (srcList.size() >= unitLen || line == null) {
                 infoMapList = typeConverter.convertToVList(srcList);
                 if (typeConverter.getErrorList().size() > 0)
-                    fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()));
+                    fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
-                    if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList));
+                    if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -114,7 +114,7 @@ public class FileInput implements IDataSource {
             e.printStackTrace();
             throw e;
         } finally {
-            try { recordFileMap.writeKeyFile("result", record); } catch (IOException e) { e.printStackTrace(); }
+            try { recordFileMap.writeKeyFile("result", record, true); } catch (IOException e) { e.printStackTrace(); }
             fileMap.closeWriters();
             recordFileMap.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();

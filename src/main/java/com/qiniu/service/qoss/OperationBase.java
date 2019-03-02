@@ -92,11 +92,11 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             JsonObject jsonObject = jsonArray.get(j).getAsJsonObject();
             if (j < jsonArray.size()) {
                 if (jsonObject.get("code").getAsInt() == 200)
-                    fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject);
+                    fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject, false);
                 else
-                    fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject);
+                    fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject, false);
             } else {
-                fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result");
+                fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result", false);
             }
         }
     }
@@ -127,7 +127,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             }
         }
         if (errorLineList.size() > 0) {
-            fileMap.writeError(String.join("\n", errorLineList));
+            fileMap.writeError(String.join("\n", errorLineList), false);
             errorLineList.clear();
         }
     }

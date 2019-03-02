@@ -99,9 +99,9 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 }
             }
             if (avinfo != null && !"".equals(avinfo))
-                fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(avinfo).toString());
+                fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(avinfo).toString(), false);
             else
-                fileMap.writeError( key + "\t" + url + "\tempty avinfo");
+                fileMap.writeError( key + "\t" + url + "\tempty avinfo", false);
         }
     }
 

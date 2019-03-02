@@ -81,9 +81,9 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             }
             signedUrl = auth.privateDownloadUrl(url, expires);
             if (signedUrl != null && !"".equals(signedUrl))
-                fileMap.writeSuccess(key + "\t" + url + "\t" + signedUrl);
+                fileMap.writeSuccess(key + "\t" + url + "\t" + signedUrl, false);
             else
-                fileMap.writeError( key + "\t" + url + "\tempty signed url");
+                fileMap.writeError( key + "\t" + url + "\tempty signed url", false);
         }
     }
 

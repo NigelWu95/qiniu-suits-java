@@ -105,9 +105,9 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 }
             }
             if (qhash != null && !"".equals(qhash)) {
-                fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(qhash).toString());
+                fileMap.writeSuccess(key + "\t" + url + "\t" + jsonParser.parse(qhash).toString(), false);
             } else {
-                fileMap.writeError( key + "\t" + url + "\tempty qhash");
+                fileMap.writeError( key + "\t" + url + "\tempty qhash", false);
             }
         }
     }
