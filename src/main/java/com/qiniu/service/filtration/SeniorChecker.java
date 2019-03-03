@@ -18,7 +18,7 @@ public class SeniorChecker {
 
     public SeniorChecker(String checkName) throws IOException {
         this.checkName = checkName;
-        JsonFile jsonFile = new JsonFile("check.json");
+        JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
         JsonElement jsonElement = jsonFile.getElement("ext-mime");
         JsonObject extMime = jsonElement.getAsJsonObject();
         List<String> list = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray());

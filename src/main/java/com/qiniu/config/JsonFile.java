@@ -11,7 +11,7 @@ public class JsonFile {
     private JsonObject jsonObject;
 
     public JsonFile(String resourceFile) throws IOException {
-        File file = new File("resources" + System.getProperty("file.separator") + resourceFile);
+        File file = new File(resourceFile);
         Long fileLength = file.length();
         byte[] fileContent = new byte[fileLength.intValue()];
         FileInputStream inputStream = null;
@@ -29,6 +29,10 @@ public class JsonFile {
                 }
             }
         }
+    }
+
+    public JsonObject getJsonObject() {
+        return jsonObject;
     }
 
     public JsonElement getElement(String key) throws IOException {
