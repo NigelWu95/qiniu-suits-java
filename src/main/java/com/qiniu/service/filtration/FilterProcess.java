@@ -30,7 +30,6 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath, String resultFormat,
                          String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
         this.processName = "filter";
-        Method checkMethod = checker.getClass().getMethod("checkMimeType", Map.class);
         List<Method> fileTerMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
@@ -46,12 +45,20 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiKeyRegex()) add(filter.getClass().getMethod("filterAntiKeyRegex", Map.class));
             if (filter.checkAntiMime()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
+        List<Method> checkMethods = new ArrayList<Method>() {{
+            if ("mime".equals(checker.getCheckName())) checker.getClass().getMethod("checkMimeType", Map.class);
+        }};
         this.filter = line -> {
-            boolean result = true;
+            boolean result;
             for (Method method : fileTerMethods) {
-                result = result && (boolean) method.invoke(filter, line);
+                result = (boolean) method.invoke(filter, line);
+                if (!result) return false;
             }
-            return result && (boolean) checkMethod.invoke(checker, line);
+            for (Method method : checkMethods) {
+                result = (boolean) method.invoke(filter, line);
+                if (!result) return false;
+            }
+            return true;
         };
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;

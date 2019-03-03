@@ -12,22 +12,24 @@ import java.util.Map;
 
 public class SeniorChecker {
 
+    final private String checkName;
     final private List<String> extMimeList;
     final private List<String> extMimeTypeList;
 
-    public static void main(String[] args) throws IOException {
-        SeniorChecker checker = new SeniorChecker();
-    }
-
-    public SeniorChecker() throws IOException {
+    public SeniorChecker(String checkName) throws IOException {
+        this.checkName = checkName;
         JsonFile jsonFile = new JsonFile("check.json");
         JsonElement jsonElement = jsonFile.getElement("ext-mime");
         JsonObject extMime = jsonElement.getAsJsonObject();
         List<String> list = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray());
         list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("audio").getAsJsonArray()));
         list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("video").getAsJsonArray()));
-        extMimeList = list;
-        extMimeTypeList = JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray());
+        this.extMimeList = list;
+        this.extMimeTypeList = JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray());
+    }
+
+    public String getCheckName() {
+        return checkName;
     }
 
     public List<Map<String, String>> checkMimeType(List<Map<String, String>> lineList) {

@@ -41,7 +41,7 @@ public class ProcessorChoice {
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
         FileFilterParams fileFilterParams = new FileFilterParams(entryParam);
         BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
-        SeniorChecker seniorChecker = new SeniorChecker();
+        SeniorChecker seniorChecker = new SeniorChecker("mime");
         baseFieldsFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
                 fileFilterParams.getKeyInner(), fileFilterParams.getKeyRegex());
         baseFieldsFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
