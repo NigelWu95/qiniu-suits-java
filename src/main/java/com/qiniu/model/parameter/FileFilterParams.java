@@ -27,6 +27,7 @@ public class FileFilterParams extends CommonParams {
     private String antiKeyInner;
     private String antiKeyRegex;
     private String antiMimeType;
+    private String checkType;
 
     public FileFilterParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
@@ -47,6 +48,7 @@ public class FileFilterParams extends CommonParams {
         try { this.antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) {}
         try { this.antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) {}
         try { this.antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) {}
+        try { this.checkType = entryParam.getParamValue("f-check"); } catch (Exception e) {}
     }
 
     public List<String> getKeyPrefix() {
@@ -150,5 +152,9 @@ public class FileFilterParams extends CommonParams {
     public List<String> getAntiMimeType() {
         if (antiMimeType != null && !"".equals(antiMimeType)) return Arrays.asList(antiMimeType.split(","));
         else return null;
+    }
+
+    public String getCheckType() {
+        return checkType;
     }
 }
