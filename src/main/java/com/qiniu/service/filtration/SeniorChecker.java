@@ -32,6 +32,10 @@ public class SeniorChecker {
         return checkName;
     }
 
+    public boolean isValid() {
+        return checkName != null && !"".equals(checkName);
+    }
+
     public List<Map<String, String>> checkMimeType(List<Map<String, String>> lineList) {
         String key;
         List<Map<String, String>> filteredList = new ArrayList<>();
