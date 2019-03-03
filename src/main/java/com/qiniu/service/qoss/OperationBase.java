@@ -77,6 +77,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return operationBase;
     }
 
+    // 实现从 fileInfoList 转换得到 batchOperations 时先清除 batchOperations 中可能存在的上次的内容
     protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
@@ -118,12 +119,11 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         parseBatchResult(processList, result);
                         count = 0;
                     } catch (QiniuException e) {
-                        retryCount--;
-                        HttpResponseUtils.processException(e, retryCount, fileMap,
+                        count--;
+                        HttpResponseUtils.processException(e, count, fileMap,
                                 processList.stream().map(this::getInputParams).collect(Collectors.toList()));
                     }
                 }
-                batchOperations.clearOps();
             }
         }
         if (errorLineList.size() > 0) {

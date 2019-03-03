@@ -59,6 +59,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
+        batchOperations.clearOps();
         lineList.forEach(line -> {
             if (line.get("key") == null)
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
