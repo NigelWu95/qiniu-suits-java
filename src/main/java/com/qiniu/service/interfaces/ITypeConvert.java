@@ -3,9 +3,9 @@ package com.qiniu.service.interfaces;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface ITypeConvert<T, V> {
+public interface ITypeConvert<E, M> {
 
-    List<V> convertToVList(List<T> srcList);
+    List<M> convertToVList(List<E> srcList);
 
     // 获得完整的 errorList，可以多次调用
     default List<String> getErrorList() {

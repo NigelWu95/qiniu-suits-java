@@ -2,7 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
-import com.qiniu.config.PropertyConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.model.parameter.CommonParams;
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.HttpParams;
@@ -81,8 +81,8 @@ public class EntryMain {
 
     private static IEntryParam getEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
-            add("resources/qiniu.properties");
-            add("resources/.qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + "qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + ".qiniu.properties");
         }};
         boolean paramFromConfig = true;
         if (args != null && args.length > 0) {
@@ -102,6 +102,6 @@ public class EntryMain {
             else paramFromConfig = true;
         }
 
-        return paramFromConfig ? new PropertyConfig(configFilePath) : new CommandArgs(args);
+        return paramFromConfig ? new PropertiesFile(configFilePath) : new CommandArgs(args);
     }
 }

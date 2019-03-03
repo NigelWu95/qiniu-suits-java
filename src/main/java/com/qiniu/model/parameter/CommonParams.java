@@ -1,7 +1,7 @@
 package com.qiniu.model.parameter;
 
 import com.qiniu.config.CommandArgs;
-import com.qiniu.config.PropertyConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class CommonParams {
     }
 
     public CommonParams(String configFileName) throws IOException {
-        this(new PropertyConfig(configFileName));
+        this(new PropertiesFile(configFileName));
     }
 
     public String getParamByKey(String key) throws IOException {

@@ -1,6 +1,10 @@
 package com.qiniu.util;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.List;
 
 public final class JsonConvertUtils {
 
@@ -27,5 +31,10 @@ public final class JsonConvertUtils {
     public static String toJsonWithoutUrlEscape(Object srcObject) {
         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         return gson.toJson(srcObject).replace("\\\\", "\\");
+    }
+
+    public static <T> List<T> fromJsonArray(JsonArray jsonElements) {
+        Gson gson = new Gson();
+        return gson.fromJson(jsonElements, new TypeToken<List<T>>(){}.getType());
     }
 }

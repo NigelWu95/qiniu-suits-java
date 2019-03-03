@@ -5,11 +5,11 @@ import com.qiniu.service.interfaces.IEntryParam;
 import java.io.*;
 import java.util.Properties;
 
-public class PropertyConfig implements IEntryParam {
+public class PropertiesFile implements IEntryParam {
 
     private Properties properties;
 
-    public PropertyConfig(String resourceName) throws IOException {
+    public PropertiesFile(String resourceName) throws IOException {
         InputStream inputStream = null;
 
         try {
