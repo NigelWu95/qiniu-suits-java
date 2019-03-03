@@ -34,6 +34,7 @@ public class ListBucketParams extends QossParams {
     private List<String> splitItems(String paramLine) {
         if (!"".equals(paramLine)) {
             Set<String> set;
+            // 指定前缀包含 "," 号时需要用转义符解决
             if (paramLine.contains("\\,")) {
                 String[] elements = paramLine.split("\\\\,");
                 set = new HashSet<>(Arrays.asList(elements[0].split(",")));
@@ -42,6 +43,7 @@ public class ListBucketParams extends QossParams {
             } else {
                 set = new HashSet<>(Arrays.asList(paramLine.split(",")));
             }
+            // 删除空前缀的情况避免列举操作时造成误解
             set.remove("");
             return new ArrayList<>(set);
         }
