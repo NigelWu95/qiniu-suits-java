@@ -1,6 +1,7 @@
 package com.qiniu.entry;
 
 import com.qiniu.model.parameter.*;
+import com.qiniu.service.filtration.SeniorChecker;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.media.QiniuPfop;
@@ -40,6 +41,7 @@ public class ProcessorChoice {
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
         FileFilterParams fileFilterParams = new FileFilterParams(entryParam);
         BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
+        SeniorChecker seniorChecker = new SeniorChecker(fileFilterParams.getCheckType());
         baseFieldsFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
                 fileFilterParams.getKeyInner(), fileFilterParams.getKeyRegex());
         baseFieldsFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
@@ -49,8 +51,8 @@ public class ProcessorChoice {
                 fileFilterParams.getType(), fileFilterParams.getStatus());
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
-        if (baseFieldsFilter.isValid()) {
-            processor = new FilterProcess(baseFieldsFilter, "mime", resultPath, resultFormat, resultSeparator,
+        if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
+            processor = new FilterProcess(baseFieldsFilter, seniorChecker, resultPath, resultFormat, resultSeparator,
                     fileFilterParams.getRmFields());
             processor.setNextProcessor(nextProcessor);
         } else {
