@@ -6,7 +6,6 @@ import com.qiniu.service.convert.MapToString;
 import com.qiniu.service.interfaces.ILineFilter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
-import com.sun.istack.internal.NotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,7 +27,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FilterProcess(@NotNull BaseFieldsFilter filter, @NotNull SeniorChecker checker, String resultPath,
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath,
                          String resultFormat, String resultSeparator, List<String> rmFields, int resultIndex)
             throws Exception {
         this.processName = "filter";
