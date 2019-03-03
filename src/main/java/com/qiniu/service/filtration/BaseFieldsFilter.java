@@ -1,7 +1,5 @@
 package com.qiniu.service.filtration;
 
-import com.qiniu.util.LineUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -104,69 +102,73 @@ public class BaseFieldsFilter {
     }
 
     public boolean filterKeyPrefix(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return false;
+        if (checkItem(item, "key")) return false;
         else return keyPrefix.stream().anyMatch(prefix -> item.get("key").startsWith(prefix));
     }
 
     public boolean filterKeySuffix(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return false;
+        if (checkItem(item, "key")) return false;
         else return keySuffix.stream().anyMatch(suffix -> item.get("key").endsWith(suffix));
     }
 
     public boolean filterKeyInner(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return false;
+        if (checkItem(item, "key")) return false;
         else return keyInner.stream().anyMatch(inner -> item.get("key").contains(inner));
     }
 
     public boolean filterKeyRegex(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return false;
+        if (checkItem(item, "key")) return false;
         else return keyRegex.stream().anyMatch(regex -> item.get("key").matches(regex));
     }
 
     public boolean filterPutTime(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "putTime")) return false;
+        if (checkItem(item, "putTime")) return false;
         else if (putTimeMax > 0) return Long.valueOf(item.get("putTime")) <= putTimeMax;
         else return putTimeMin <= Long.valueOf(item.get("putTime"));
     }
 
     public boolean filterMimeType(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "mimeType")) return false;
+        if (checkItem(item, "mimeType")) return false;
         else return mimeType.stream().anyMatch(mimeType -> item.get("mimeType").contains(mimeType));
     }
 
     public boolean filterType(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "type")) return false;
+        if (checkItem(item, "type")) return false;
         else return (Integer.valueOf(item.get("type")) == type);
     }
 
     public boolean filterStatus(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "status")) return false;
+        if (checkItem(item, "status")) return false;
         else return (Integer.valueOf(item.get("status")) == status);
     }
 
     public boolean filterAntiKeyPrefix(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return true;
         else return antiKeyPrefix.stream().noneMatch(prefix -> item.get("key").startsWith(prefix));
     }
 
     public boolean filterAntiKeySuffix(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return true;
         else return antiKeySuffix.stream().noneMatch(suffix -> item.get("key").endsWith(suffix));
     }
 
     public boolean filterAntiKeyInner(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return true;
         else return antiKeyInner.stream().noneMatch(inner -> item.get("key").contains(inner));
     }
 
     public boolean filterAntiKeyRegex(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "key")) return true;
+        if (checkItem(item, "key")) return true;
         else return antiKeyRegex.stream().noneMatch(regex -> item.get("key").matches(regex));
     }
 
     public boolean filterAntiMimeType(Map<String, String> item) {
-        if (LineUtils.checkItem(item, "mimeType")) return true;
+        if (checkItem(item, "mimeType")) return true;
         else return antiMimeType.stream().noneMatch(mimeType -> item.get("mimeType").contains(mimeType));
+    }
+
+    private boolean checkItem(Map<String, String> item, String key) {
+        return item == null || item.get(key) == null || "".equals(item.get(key));
     }
 
     private boolean checkList(List<String> list) {
