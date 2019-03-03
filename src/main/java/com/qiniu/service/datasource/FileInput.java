@@ -82,20 +82,8 @@ public class FileInput implements IDataSource {
         }
     }
 
-    private FileMap getSourceFileMap() throws IOException {
-        FileMap inputFileMap = new FileMap();
-        File sourceFile = new File(filePath);
-        if (sourceFile.isDirectory()) {
-            inputFileMap.initReaders(filePath);
-        } else {
-            inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
-        }
-        return inputFileMap;
-    }
-
-    private void export(String identifier, BufferedReader reader, ILineProcess<Map<String, String>> processor)
-            throws Exception {
-        FileMap recordFileMap = new FileMap(resultPath);
+    private void export(FileMap recordFileMap, String identifier, BufferedReader reader,
+                        ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap fileMap = new FileMap(resultPath, "fileinput", identifier);
         fileMap.initDefaultWriters();
         if (processor != null) processor.setResultTag(identifier);
@@ -103,6 +91,7 @@ public class FileInput implements IDataSource {
         String record = "order: " + identifier;
         String next;
         try {
+            recordFileMap.writeKeyFile("result", record + "\treading...", true);
             traverseByReader(reader, fileMap, lineProcessor);
             next = reader.readLine();
             if (next == null) record += "\tsuccessfully done";
@@ -114,9 +103,8 @@ public class FileInput implements IDataSource {
             e.printStackTrace();
             throw e;
         } finally {
-            try { recordFileMap.writeKeyFile("result", record, true); } catch (IOException e) { e.printStackTrace(); }
+            recordFileMap.writeKeyFile("result", record, true);
             fileMap.closeWriters();
-            recordFileMap.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
         }
     }
@@ -128,7 +116,14 @@ public class FileInput implements IDataSource {
     }
 
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap inputFileMap = getSourceFileMap();
+        FileMap inputFileMap = new FileMap(resultPath);
+        File sourceFile = new File(filePath);
+        if (sourceFile.isDirectory()) {
+            inputFileMap.initReaders(filePath);
+        } else {
+            inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
+        }
+
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
         int listSize = readerEntrySet.size();
         int runningThreads = listSize < threads ? listSize : threads;
@@ -139,7 +134,7 @@ public class FileInput implements IDataSource {
         for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
             executorPool.execute(() -> {
                 try {
-                    export(readerEntry.getKey(), readerEntry.getValue(), processor);
+                    export(inputFileMap, readerEntry.getKey(), readerEntry.getValue(), processor);
                 } catch (Exception e) {
                     exit(exit, e);
                 }

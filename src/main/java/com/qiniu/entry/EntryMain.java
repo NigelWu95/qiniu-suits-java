@@ -2,7 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
-import com.qiniu.config.PropertyConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.model.parameter.CommonParams;
 import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.HttpParams;
@@ -56,14 +56,12 @@ public class EntryMain {
             String accessKey = listBucketParams.getAccessKey();
             String secretKey = listBucketParams.getSecretKey();
             String bucket = listBucketParams.getBucket();
-            String marker = listBucketParams.getMarker();
-            String end = listBucketParams.getEnd();
-            List<String> prefixes = listBucketParams.getPrefixes();
+            Map<String, String[]> prefixesConfig = listBucketParams.getPrefixConfig();
             List<String> antiPrefixes = listBucketParams.getAntiPrefixes();
             boolean prefixLeft = listBucketParams.getPrefixLeft();
             boolean prefixRight = listBucketParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, marker, end, unitLen, prefixes, antiPrefixes,
+            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesConfig, antiPrefixes,
                     prefixLeft, prefixRight, resultPath);
         } else if ("file".equals(sourceType)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
@@ -81,8 +79,8 @@ public class EntryMain {
 
     private static IEntryParam getEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
-            add("resources/qiniu.properties");
-            add("resources/.qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + "qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + ".qiniu.properties");
         }};
         boolean paramFromConfig = true;
         if (args != null && args.length > 0) {
@@ -102,6 +100,6 @@ public class EntryMain {
             else paramFromConfig = true;
         }
 
-        return paramFromConfig ? new PropertyConfig(configFilePath) : new CommandArgs(args);
+        return paramFromConfig ? new PropertiesFile(configFilePath) : new CommandArgs(args);
     }
 }

@@ -6,6 +6,7 @@ import com.qiniu.service.convert.MapToString;
 import com.qiniu.service.interfaces.ILineFilter;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
+import com.sun.istack.internal.NotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -27,12 +28,10 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
-                         String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
+    public FilterProcess(@NotNull BaseFieldsFilter filter, @NotNull SeniorChecker checker, String resultPath,
+                         String resultFormat, String resultSeparator, List<String> rmFields, int resultIndex)
+            throws Exception {
         this.processName = "filter";
-        SeniorChecker seniorChecker = new SeniorChecker();
-        Method checkMethod = (checkType == null || "".equals(checkType)) ? null :
-                SeniorChecker.class.getMethod("checkMimeType", Map.class);
         List<Method> fileTerMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
@@ -48,14 +47,20 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiKeyRegex()) add(filter.getClass().getMethod("filterAntiKeyRegex", Map.class));
             if (filter.checkAntiMime()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
+        List<Method> checkMethods = new ArrayList<Method>() {{
+            if ("mime".equals(checker.getCheckName())) checker.getClass().getMethod("checkMimeType", Map.class);
+        }};
         this.filter = line -> {
-            boolean result = true;
+            boolean result;
             for (Method method : fileTerMethods) {
-                result = result && (boolean) method.invoke(filter, line);
+                result = (boolean) method.invoke(filter, line);
+                if (!result) return false;
             }
-            return result
-//                    && (boolean) checkMethod.invoke(seniorChecker, line)
-                    ;
+            for (Method method : checkMethods) {
+                result = (boolean) method.invoke(filter, line);
+                if (!result) return false;
+            }
+            return true;
         };
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;
@@ -68,9 +73,9 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
     }
 
-    public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath, String resultFormat,
                          String resultSeparator, List<String> removeFields) throws Exception {
-        this(filter, checkType, resultPath, resultFormat, resultSeparator, removeFields, 0);
+        this(filter, checker, resultPath, resultFormat, resultSeparator, removeFields, 0);
     }
 
     public String getProcessName() {

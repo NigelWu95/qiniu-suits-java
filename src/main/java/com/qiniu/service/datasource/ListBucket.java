@@ -24,10 +24,9 @@ public class ListBucket implements IDataSource {
     final private Auth auth;
     final private Configuration configuration;
     final private String bucket;
-    final private String marker;
-    final private String end;
     final private int unitLen;
     final private List<String> prefixes;
+    final private Map<String, String[]> prefixesMap;
     final private List<String> antiPrefixes;
     final private boolean prefixLeft;
     final private boolean prefixRight;
@@ -37,18 +36,19 @@ public class ListBucket implements IDataSource {
     private String resultSeparator;
     private List<String> rmFields;
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, String marker, String end, int unitLen,
-                      List<String> prefixes, List<String> antiPrefixes, boolean prefixLeft, boolean prefixRight,
-                      String resultPath) {
+    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
+                      Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
+                      boolean prefixRight, String resultPath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
-        this.marker = marker;
-        this.end = end;
         this.unitLen = unitLen;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
-        this.prefixes = prefixes == null ? new ArrayList<>() : removeAntiPrefixes(prefixes);
+        this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
+        this.prefixes = prefixesMap == null ? new ArrayList<>() : removeAntiPrefixes(new ArrayList<String>(){{
+            addAll(prefixesMap.keySet());
+        }});
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
         this.resultPath = resultPath;
@@ -62,6 +62,12 @@ public class ListBucket implements IDataSource {
         this.rmFields = removeFields;
     }
 
+    private String[] getMarkerAndEnd(String prefix) {
+        String[] mapValue = prefixesMap.get(prefix);
+        if (mapValue == null) return new String[]{"", ""};
+        else return mapValue;
+    }
+
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
         FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
         fileMap.addErrorWriter();
@@ -73,7 +79,7 @@ public class ListBucket implements IDataSource {
                     while (retry) {
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    marker, end, null, unitLen);
+                                    getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
                             retry = false;
                         } catch (QiniuException e) {
                             try {
