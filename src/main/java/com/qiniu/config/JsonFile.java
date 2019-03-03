@@ -18,8 +18,10 @@ public class JsonFile {
 
         try {
             inputStream = new FileInputStream(file);
-            System.out.println(inputStream.read(fileContent));
+            inputStream.read(fileContent);
             jsonObject = JsonConvertUtils.toJsonObject(new String(fileContent, "UTF-8"));
+        } catch (Exception e) {
+            throw new IOException("load " + resourceFile + " json config failed", e);
         } finally {
             if (inputStream != null) {
                 try {
