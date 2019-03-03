@@ -19,6 +19,7 @@ public class CommandArgs implements IEntryParam {
             boolean cmdGoon = true;
             paramsMap = new HashMap<>();
             for (String arg : args) {
+                // "-" 开头的参数之前放置到 params 数组中
                 if (!arg.startsWith("-") && cmdGoon) cmdCount++;
                 else {
                     paramsMap.put(splitParam(arg)[0], splitParam(arg)[1]);
@@ -37,11 +38,12 @@ public class CommandArgs implements IEntryParam {
         }
 
         String[] strings = paramCommand.substring(1).split("=");
-
         if (strings.length == 1) {
             throw new IOException("the " + strings[0] + " param has no value.");
         }
 
+        if (strings[1].matches("(\".*\"|\'.*\')"))
+            return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
         return strings;
     }
 
