@@ -62,6 +62,12 @@ public class ListBucket implements IDataSource {
         this.rmFields = removeFields;
     }
 
+    private String[] getMarkerAndEnd(String prefix) {
+        String[] mapValue = prefixesMap.get(prefix);
+        if (mapValue == null) return new String[]{"", ""};
+        else return mapValue;
+    }
+
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
         FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
         fileMap.addErrorWriter();
@@ -73,7 +79,7 @@ public class ListBucket implements IDataSource {
                     while (retry) {
                         try {
                             fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                                    prefixesMap.get(prefix)[0], prefixesMap.get(prefix)[1], null, unitLen);
+                                    getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
                             retry = false;
                         } catch (QiniuException e) {
                             try {
