@@ -27,12 +27,10 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath, String resultFormat,
                          String resultSeparator, List<String> rmFields, int resultIndex) throws Exception {
         this.processName = "filter";
-        SeniorChecker seniorChecker = new SeniorChecker();
-        Method checkMethod = (checkType == null || "".equals(checkType)) ? null :
-                SeniorChecker.class.getMethod("checkMimeType", Map.class);
+        Method checkMethod = checker.getClass().getMethod("checkMimeType", Map.class);
         List<Method> fileTerMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
@@ -53,9 +51,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             for (Method method : fileTerMethods) {
                 result = result && (boolean) method.invoke(filter, line);
             }
-            return result
-//                    && (boolean) checkMethod.invoke(seniorChecker, line)
-                    ;
+            return result && (boolean) checkMethod.invoke(checker, line);
         };
         this.resultPath = resultPath;
         this.resultFormat = resultFormat;
@@ -68,9 +64,9 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
     }
 
-    public FilterProcess(BaseFieldsFilter filter, String checkType, String resultPath, String resultFormat,
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath, String resultFormat,
                          String resultSeparator, List<String> removeFields) throws Exception {
-        this(filter, checkType, resultPath, resultFormat, resultSeparator, removeFields, 0);
+        this(filter, checker, resultPath, resultFormat, resultSeparator, removeFields, 0);
     }
 
     public String getProcessName() {
