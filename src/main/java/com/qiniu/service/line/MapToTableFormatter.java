@@ -53,12 +53,12 @@ public class MapToTableFormatter implements IStringFormat<Map<String, String>> {
             keys.remove("status");
         }
         if (keys.contains("endUser")) {
-            converted.append(infoMap.get("endUser"));
+            converted.append(infoMap.get("endUser")).append(separator);
             keys.remove("endUser");
         }
         for (String key : keys) {
-            converted.append(separator).append(infoMap.get(key));
+            converted.append(infoMap.get(key)).append(separator);
         }
-        return converted.toString();
+        return converted.deleteCharAt(converted.length() - 1).toString();
     }
 }
