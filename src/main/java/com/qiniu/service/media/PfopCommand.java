@@ -1,17 +1,20 @@
 package com.qiniu.service.media;
 
-import com.qiniu.common.QiniuException;
+import com.google.gson.JsonObject;
+import com.qiniu.config.JsonFile;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.UrlSafeBase64;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -22,12 +25,24 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private int resultIndex;
     private FileMap fileMap;
     private String bucket;
+    private List<JsonObject> pfopConfigs;
     private String mp4Fop1080 = "avthumb/mp4/s/1920x1080/autoscale/1|saveas/";
     private String mp4Fop720 = "avthumb/mp4/s/1280x720/autoscale/1|saveas/";
     private String mp4Fop480 = "avthumb/mp4/s/640x480/autoscale/1|saveas/";
     private String m3u8Copy = "avthumb/m3u8/vcodec/copy/acodec/copy|saveas/";
 
     public PfopCommand(String bucket, String resultPath, int resultIndex) throws IOException {
+        String configPath = "resources" + System.getProperty("file.separator") + "pfop.json";
+        JsonFile jsonFile = new JsonFile(configPath);
+        for (String key : jsonFile.getConfigKeys()) {
+            JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
+            List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray());
+            if (scale.size() < 1) throw new IOException(configPath + " miss the scale field in \"" + key + "\"");
+            else if (scale.size() == 1) scale.add(Integer.MAX_VALUE);
+            if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
+                throw new IOException(configPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
+            pfopConfigs.add(jsonObject);
+        }
         this.processName = "pfopcmd";
         this.mediaManager = new MediaManager();
         this.bucket = bucket;
@@ -61,7 +76,18 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         return pfopCommand;
     }
 
-    private String generateCopyLine(String key, int width) throws QiniuException {
+    private String generateFopCmd(String srcKey, JsonObject pfopJson) throws IOException {
+        String saveAs = pfopJson.get("saveas").getAsString();
+        if (saveAs.contains("$(key)")) {
+            if (saveAs.contains(".")) {
+                String[] nameParts = saveAs.split(".");
+                saveAs = FileNameUtils.addSuffixWithExt(srcKey, nameParts[0].substring(6), nameParts[1]);
+            }
+        }
+        return pfopJson.get("cmd").getAsString() + "|saveas/" + saveAs;
+    }
+
+    private String generateCopyLine(String key, int width) throws IOException {
         String keySuffix;
         if (width > 1280) keySuffix = "F1080";
         else if (width > 1000) keySuffix = "F720";
@@ -70,7 +96,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         return key + "\t" + copyKey;
     }
 
-    private String generateMp4FopLine(String key, int width) throws QiniuException {
+    private String generateMp4FopLine(String key, int width) throws IOException {
         String keySuffix;
         String fop;
         if (width > 1280) {

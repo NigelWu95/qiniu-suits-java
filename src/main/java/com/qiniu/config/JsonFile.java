@@ -6,6 +6,7 @@ import com.qiniu.util.JsonConvertUtils;
 
 import java.io.*;
 import java.net.URL;
+import java.util.Set;
 
 public class JsonFile {
 
@@ -49,5 +50,9 @@ public class JsonFile {
         } else {
             throw new IOException("no member name: " + key);
         }
+    }
+
+    public Set<String> getConfigKeys() {
+        return jsonObject.keySet();
     }
 }
