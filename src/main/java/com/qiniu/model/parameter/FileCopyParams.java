@@ -10,9 +10,9 @@ public class FileCopyParams extends QossParams {
 
     public FileCopyParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.toBucket = entryParam.getParamValue("to-bucket");
-        try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try { this.rmPrefix = entryParam.getParamValue("rm-prefix"); } catch (Exception e) { rmPrefix = ""; }
+        toBucket = entryParam.getParamValue("to-bucket");
+        try { keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
+        try { rmPrefix = entryParam.getParamValue("rm-prefix"); } catch (Exception e) { rmPrefix = ""; }
     }
 
     public String getToBucket() {

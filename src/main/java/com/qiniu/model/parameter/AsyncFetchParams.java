@@ -21,18 +21,18 @@ public class AsyncFetchParams extends QossParams {
 
     public AsyncFetchParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.targetBucket = entryParam.getParamValue("to-bucket");
-        this.domain = entryParam.getParamValue("domain");
-        try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
-        try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try { this.host = entryParam.getParamValue("host"); } catch (Exception e) {}
-        try { this.callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
-        try { this.callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
-        try { this.callbackBodyType = entryParam.getParamValue("callback-body-type"); } catch (Exception e) {}
-        try { this.callbackHost = entryParam.getParamValue("callback-host"); } catch (Exception e) {}
-        try { this.fileType = entryParam.getParamValue("file-type"); } catch (Exception e) { fileType = ""; }
-        try { this.ignoreSameKey = entryParam.getParamValue("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
+        targetBucket = entryParam.getParamValue("to-bucket");
+        domain = entryParam.getParamValue("domain");
+        try { https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
+        try { needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
+        try { keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
+        try { host = entryParam.getParamValue("host"); } catch (Exception e) {}
+        try { callbackUrl = entryParam.getParamValue("callback-url"); } catch (Exception e) {}
+        try { callbackBody = entryParam.getParamValue("callback-body"); } catch (Exception e) {}
+        try { callbackBodyType = entryParam.getParamValue("callback-body-type"); } catch (Exception e) {}
+        try { callbackHost = entryParam.getParamValue("callback-host"); } catch (Exception e) {}
+        try { fileType = entryParam.getParamValue("file-type"); } catch (Exception e) { fileType = ""; }
+        try { ignoreSameKey = entryParam.getParamValue("ignore-same-key"); } catch (Exception e) { ignoreSameKey = ""; }
     }
 
     public String getTargetBucket() {

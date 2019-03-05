@@ -9,9 +9,9 @@ public class HttpParams {
     private String writeTimeout;
 
     public HttpParams(IEntryParam entryParam) {
-        try { this.connectTimeout = entryParam.getParamValue("connect-timeout"); } catch (Exception e) { connectTimeout = ""; }
-        try { this.readTimeout = entryParam.getParamValue("read-timeout"); } catch (Exception e) { readTimeout = ""; }
-        try { this.writeTimeout = entryParam.getParamValue("write-timeout"); } catch (Exception e) { writeTimeout = ""; }
+        try { connectTimeout = entryParam.getParamValue("connect-timeout"); } catch (Exception e) { connectTimeout = ""; }
+        try { readTimeout = entryParam.getParamValue("read-timeout"); } catch (Exception e) { readTimeout = ""; }
+        try { writeTimeout = entryParam.getParamValue("write-timeout"); } catch (Exception e) { writeTimeout = ""; }
     }
 
     public int getConnectTimeout() {

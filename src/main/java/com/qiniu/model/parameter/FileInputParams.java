@@ -37,14 +37,14 @@ public class FileInputParams extends CommonParams {
 
     public FileInputParams(IEntryParam entryParam) {
         super(entryParam);
-        try { this.parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { parseType = ""; }
-        try { this.separator = entryParam.getParamValue("in-separator"); } catch (Exception e) { separator = ""; }
-        try { this.indexes = entryParam.getParamValue("indexes"); } catch (Exception e) { indexes = ""; }
-        try { this.urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
-        try { this.md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) { md5Index = ""; }
-        try { this.newKeyIndex = entryParam.getParamValue("newKey-index"); } catch (Exception e) { newKeyIndex = ""; }
-        try { this.fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) { fopsIndex = ""; }
-        try { this.persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) { persistentIdIndex = ""; }
+        try { parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { parseType = ""; }
+        try { separator = entryParam.getParamValue("in-separator"); } catch (Exception e) { separator = ""; }
+        try { indexes = entryParam.getParamValue("indexes"); } catch (Exception e) { indexes = ""; }
+        try { urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
+        try { md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) { md5Index = ""; }
+        try { newKeyIndex = entryParam.getParamValue("newKey-index"); } catch (Exception e) { newKeyIndex = ""; }
+        try { fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) { fopsIndex = ""; }
+        try { persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) { persistentIdIndex = ""; }
     }
 
     public String getParseType() throws IOException {

@@ -8,7 +8,7 @@ public class FileTypeParams extends QossParams {
 
     public FileTypeParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.targetType = entryParam.getParamValue("type");
+        targetType = entryParam.getParamValue("type");
     }
 
     public int getTargetType() throws Exception {

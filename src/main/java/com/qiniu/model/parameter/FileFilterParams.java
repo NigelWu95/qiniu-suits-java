@@ -31,24 +31,24 @@ public class FileFilterParams extends CommonParams {
 
     public FileFilterParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        try { this.keyPrefix = entryParam.getParamValue("f-prefix"); } catch (Exception e) {}
-        try { this.keySuffix = entryParam.getParamValue("f-suffix"); } catch (Exception e) {}
-        try { this.keyInner = entryParam.getParamValue("f-inner"); } catch (Exception e) {}
-        try { this.keyRegex = entryParam.getParamValue("f-regex"); } catch (Exception e) {}
-        try { this.pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) { pointDate = ""; }
-        try { this.pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) { pointTime = ""; }
-        try { this.direction = entryParam.getParamValue("f-direction"); } catch (Exception e) { direction = ""; }
-        try { this.mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) {}
-        try { this.type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
-        try { this.status = entryParam.getParamValue("f-status"); } catch (Exception e) { status = ""; }
-        this.datetime = getPointDatetime();
-        if (!"".equals(pointDate)) this.directionFlag = getDirection();
-        try { this.antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) {}
-        try { this.antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) {}
-        try { this.antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) {}
-        try { this.antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) {}
-        try { this.antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) {}
-        try { this.checkType = entryParam.getParamValue("f-check"); } catch (Exception e) {}
+        try { keyPrefix = entryParam.getParamValue("f-prefix"); } catch (Exception e) {}
+        try { keySuffix = entryParam.getParamValue("f-suffix"); } catch (Exception e) {}
+        try { keyInner = entryParam.getParamValue("f-inner"); } catch (Exception e) {}
+        try { keyRegex = entryParam.getParamValue("f-regex"); } catch (Exception e) {}
+        try { pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) { pointDate = ""; }
+        try { pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) { pointTime = ""; }
+        try { direction = entryParam.getParamValue("f-direction"); } catch (Exception e) { direction = ""; }
+        try { mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) {}
+        try { type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
+        try { status = entryParam.getParamValue("f-status"); } catch (Exception e) { status = ""; }
+        datetime = getPointDatetime();
+        if (!"".equals(pointDate)) directionFlag = getDirection();
+        try { antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) {}
+        try { antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) {}
+        try { antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) {}
+        try { antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) {}
+        try { antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) {}
+        try { checkType = entryParam.getParamValue("f-check"); } catch (Exception e) {}
     }
 
     public List<String> getKeyPrefix() {

@@ -13,8 +13,8 @@ public class PrivateUrlParams extends QossParams {
     public PrivateUrlParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
         this.domain = entryParam.getParamValue("domain");
-        try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
-        try { this.expires = entryParam.getParamValue("expires"); } catch (Exception e) { expires = ""; }
+        try { https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
+        try { expires = entryParam.getParamValue("expires"); } catch (Exception e) { expires = ""; }
     }
 
     public String getDomain() {

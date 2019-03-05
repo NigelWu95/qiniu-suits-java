@@ -12,9 +12,9 @@ public class AvinfoParams extends QossParams {
 
     public AvinfoParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.domain = entryParam.getParamValue("domain");
-        try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
+        domain = entryParam.getParamValue("domain");
+        try { https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
+        try { needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
     }
 
     public String getDomain() {

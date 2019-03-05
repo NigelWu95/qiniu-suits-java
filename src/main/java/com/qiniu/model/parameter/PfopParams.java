@@ -11,8 +11,8 @@ public class PfopParams extends QossParams {
 
     public PfopParams(IEntryParam entryParam) {
         super(entryParam);
-        try { this.pipeline = entryParam.getParamValue("pipeline"); } catch (Exception e) { pipeline = ""; }
-        try { this.forcePublic = entryParam.getParamValue("force-public"); } catch (Exception e) { forcePublic = ""; }
+        try { pipeline = entryParam.getParamValue("pipeline"); } catch (Exception e) { pipeline = ""; }
+        try { forcePublic = entryParam.getParamValue("force-public"); } catch (Exception e) { forcePublic = ""; }
     }
 
     public String getPipeline() throws IOException {
