@@ -8,7 +8,7 @@ public class FileStatusParams extends QossParams {
 
     public FileStatusParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.targetStatus = entryParam.getParamValue("status");
+        targetStatus = entryParam.getParamValue("status");
     }
 
     public int getTargetStatus() throws Exception {

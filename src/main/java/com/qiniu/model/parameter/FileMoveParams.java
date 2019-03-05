@@ -13,10 +13,10 @@ public class FileMoveParams extends QossParams {
 
     public FileMoveParams(IEntryParam entryParam) {
         super(entryParam);
-        try { this.toBucket = entryParam.getParamValue("to-bucket"); } catch (Exception e) {}
-        try { this.keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try { this.forceIfOnlyPrefix = entryParam.getParamValue("prefix-force"); } catch (Exception e) { forceIfOnlyPrefix = ""; }
-        try { this.rmPrefix = entryParam.getParamValue("rm-prefix"); } catch (Exception e) { rmPrefix = ""; }
+        try { toBucket = entryParam.getParamValue("to-bucket"); } catch (Exception e) {}
+        try { keyPrefix = entryParam.getParamValue("add-prefix"); } catch (Exception e) { keyPrefix = ""; }
+        try { forceIfOnlyPrefix = entryParam.getParamValue("prefix-force"); } catch (Exception e) { forceIfOnlyPrefix = ""; }
+        try { rmPrefix = entryParam.getParamValue("rm-prefix"); } catch (Exception e) { rmPrefix = ""; }
     }
 
     public String getToBucket() throws IOException {

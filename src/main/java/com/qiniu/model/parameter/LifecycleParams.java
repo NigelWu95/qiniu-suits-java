@@ -8,7 +8,7 @@ public class LifecycleParams extends QossParams {
 
     public LifecycleParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.days = entryParam.getParamValue("days");
+        days = entryParam.getParamValue("days");
     }
 
     public int getDays() throws Exception {

@@ -24,16 +24,16 @@ public class CommonParams {
 
     public CommonParams(IEntryParam entryParam) {
         this.entryParam = entryParam;
-        try { this.filePath = entryParam.getParamValue("file-path");} catch (Exception e) { filePath = ""; }
-        try { this.unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
-        try { this.threads = entryParam.getParamValue("threads"); } catch (Exception e) { threads = ""; }
-        try { this.retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
-        try { this.saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
-        try { this.resultPath = entryParam.getParamValue("result-path"); } catch (Exception e) { resultPath = ""; }
-        try { this.resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
-        try { this.resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
-        try { this.rmFields = entryParam.getParamValue("rm-fields"); } catch (Exception e) { rmFields = ""; }
-        try { this.process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
+        try { filePath = entryParam.getParamValue("file-path");} catch (Exception e) { filePath = ""; }
+        try { unitLen = entryParam.getParamValue("unit-len"); } catch (Exception e) { unitLen = ""; }
+        try { threads = entryParam.getParamValue("threads"); } catch (Exception e) { threads = ""; }
+        try { retryCount = entryParam.getParamValue("retry-times"); } catch (Exception e) { retryCount = ""; }
+        try { saveTotal = entryParam.getParamValue("save-total"); } catch (Exception e) { saveTotal = ""; }
+        try { resultPath = entryParam.getParamValue("result-path"); } catch (Exception e) { resultPath = ""; }
+        try { resultFormat = entryParam.getParamValue("result-format"); } catch (Exception e) {}
+        try { resultSeparator = entryParam.getParamValue("result-separator"); } catch (Exception e) {}
+        try { rmFields = entryParam.getParamValue("rm-fields"); } catch (Exception e) { rmFields = ""; }
+        try { process = entryParam.getParamValue("process"); } catch (Exception e) { process = ""; }
     }
 
     public CommonParams(String[] args) throws IOException {

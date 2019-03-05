@@ -13,10 +13,10 @@ public class QhashParams extends QossParams {
 
     public QhashParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        this.domain = entryParam.getParamValue("domain");
-        try { this.algorithm = entryParam.getParamValue("algorithm"); } catch (Exception e) { algorithm = ""; }
-        try { this.https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
-        try { this.needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
+        domain = entryParam.getParamValue("domain");
+        try { algorithm = entryParam.getParamValue("algorithm"); } catch (Exception e) { algorithm = ""; }
+        try { https = entryParam.getParamValue("https"); } catch (Exception e) { https = ""; }
+        try { needSign = entryParam.getParamValue("private"); } catch (Exception e) { needSign = ""; }
     }
 
     public String getDomain() {
