@@ -23,7 +23,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
-    private List<JsonObject> pfopConfigs;
+    private List<JsonObject> pfopConfigs = new ArrayList<>();
 
     public PfopCommand(String resultPath, int resultIndex) throws IOException {
         String configPath = "resources" + System.getProperty("file.separator") + "pfop.json";
