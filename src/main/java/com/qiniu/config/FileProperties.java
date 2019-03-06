@@ -29,16 +29,16 @@ public class FileProperties implements IEntryParam {
     }
 
     /**
-     * 获取属性值，判断是否存在相应的 key，否则抛出异常
+     * 获取属性值，判断是否存在相应的 key，不存在或 value 为空则抛出异常
      * @param key 属性名
      * @return 属性值字符
      * @throws IOException
      */
     public String getValue(String key) throws IOException {
-        if (properties.containsKey(key)) {
-            return properties.getProperty(key);
+        if (!properties.containsKey(key) || "".equals(properties.getProperty(key))) {
+            throw new IOException("not set \"" + key + "\" param.");
         } else {
-            throw new IOException("not set " + key + " param.");
+            return properties.getProperty(key);
         }
     }
 
@@ -49,6 +49,7 @@ public class FileProperties implements IEntryParam {
      * @return 属性值字符
      */
     public String getValue(String key, String Default) {
+        if ("".equals(properties.getProperty(key))) return Default;
         return String.valueOf(properties.getOrDefault(key, Default));
     }
 

@@ -14,14 +14,14 @@ public class CommandArgs implements IEntryParam {
 
     public CommandArgs(String[] args) throws IOException {
         if (args == null || args.length == 0)
-            throw new IOException("args is null");
+            throw new IOException("args is null.");
         else {
             int cmdCount = 0;
             boolean cmdGoon = true;
             paramsMap = new HashMap<>();
             for (String arg : args) {
                 // "-" 开头的参数之前放置到 params 数组中
-                if (!arg.startsWith("-") && cmdGoon) cmdCount++;
+                if (!arg.contains("=") && !arg.startsWith("-") && cmdGoon) cmdCount++;
                 else {
                     paramsMap.put(splitParam(arg)[0], splitParam(arg)[1]);
                     cmdGoon = false;
@@ -35,12 +35,13 @@ public class CommandArgs implements IEntryParam {
     private static String[] splitParam(String paramCommand) throws IOException {
 
         if (!paramCommand.contains("=") || !paramCommand.startsWith("-")) {
-            throw new IOException("there is invalid command param: " + paramCommand + ".");
+            throw new IOException("there is invalid command param: \"" + paramCommand + "\".");
         }
 
         String[] strings = paramCommand.substring(1).split("=");
         if (strings.length == 1) {
-            throw new IOException("the " + strings[0] + " param has no value.");
+            // 不允许空值的出现
+            throw new IOException("the \"" + strings[0] + "\" param has no value.");
         }
 
         if (strings[1].matches("(\".*\"|\'.*\')"))
@@ -49,7 +50,7 @@ public class CommandArgs implements IEntryParam {
     }
 
     /**
-     * 获取属性值，判断是否存在相应的 key，否则抛出异常
+     * 获取属性值，判断是否存在相应的 key，不存在或 value 为空则抛出异常
      * @param key 属性名
      * @return 属性值字符
      * @throws IOException
@@ -62,7 +63,7 @@ public class CommandArgs implements IEntryParam {
         if (paramsMap.containsKey(key)) {
             return paramsMap.get(key);
         } else {
-            throw new IOException("not set " + key + " param.");
+            throw new IOException("not set \"" + key + "\" parameter.");
         }
 
     }
@@ -74,6 +75,7 @@ public class CommandArgs implements IEntryParam {
      * @return 属性值字符
      */
     public String getValue(String key, String Default) {
+        if ("".equals(paramsMap.get(key))) return Default;
         return paramsMap.getOrDefault(key, Default);
     }
 
