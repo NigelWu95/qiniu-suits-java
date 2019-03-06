@@ -10,7 +10,6 @@ public class FileInputParams extends CommonParams {
     private String parseType;
     private String separator;
     private String indexes;
-    private Map<String, String> indexMap;
     private String urlIndex;
     private String md5Index;
     private String newKeyIndex;
