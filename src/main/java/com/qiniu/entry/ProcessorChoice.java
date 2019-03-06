@@ -4,6 +4,7 @@ import com.qiniu.model.parameter.*;
 import com.qiniu.service.filtration.SeniorChecker;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.media.PfopCommand;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
@@ -165,6 +166,9 @@ public class ProcessorChoice {
                 processor = new PrivateUrl(Auth.create(ak, sk), privateUrlParams.getDomain(), privateUrlParams.getProtocol(),
                         fileInputParams.getUrlIndex(), privateUrlParams.getExpires(), privateUrlParams.getResultPath());
                 break;
+            }
+            case "pfopcmd": {
+//                processor = new PfopCommand();
             }
         }
         if (processor != null) processor.setRetryCount(retryCount);

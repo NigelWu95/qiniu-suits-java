@@ -10,11 +10,13 @@ public class FileInputParams extends CommonParams {
     private String parseType;
     private String separator;
     private String indexes;
+    private Map<String, String> indexMap;
     private String urlIndex;
     private String md5Index;
     private String newKeyIndex;
     private String fopsIndex;
-    private String persistentIdIndex;
+    private String pidIndex;
+    private String avnfoIndex;
     private List<String> needUrlIndex = new ArrayList<String>(){{
         add("asyncfetch");
         add("privateurl");
@@ -31,23 +33,39 @@ public class FileInputParams extends CommonParams {
     private List<String> needFopsIndex = new ArrayList<String>(){{
         add("pfop");
     }};
-    private List<String> needPersistentIdIndex = new ArrayList<String>(){{
+    private List<String> needPidIndex = new ArrayList<String>(){{
         add("pfopresult");
     }};
+    private List<String> needAvinfoIndex = new ArrayList<String>(){{
+        add("pfopcmd");
+    }};
 
-    public FileInputParams(IEntryParam entryParam) {
+    public FileInputParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
-        try { parseType = entryParam.getParamValue("parse-type"); } catch (Exception e) { parseType = ""; }
-        try { separator = entryParam.getParamValue("in-separator"); } catch (Exception e) { separator = ""; }
-        try { indexes = entryParam.getParamValue("indexes"); } catch (Exception e) { indexes = ""; }
-        try { urlIndex = entryParam.getParamValue("url-index"); } catch (Exception e) { urlIndex = ""; }
-        try { md5Index = entryParam.getParamValue("md5-index"); } catch (Exception e) { md5Index = ""; }
-        try { newKeyIndex = entryParam.getParamValue("newKey-index"); } catch (Exception e) { newKeyIndex = ""; }
-        try { fopsIndex = entryParam.getParamValue("fops-index"); } catch (Exception e) { fopsIndex = ""; }
-        try { persistentIdIndex = entryParam.getParamValue("persistentId-index"); } catch (Exception e) { persistentIdIndex = ""; }
+        try {
+            parseType = entryParam.getParamValue("parse-type");
+            separator = entryParam.getParamValue("in-separator");
+            indexes = entryParam.getParamValue("indexes");
+            urlIndex = entryParam.getParamValue("url-index");
+            md5Index = entryParam.getParamValue("md5-index");
+            newKeyIndex = entryParam.getParamValue("newKey-index");
+            fopsIndex = entryParam.getParamValue("fops-index");
+            pidIndex = entryParam.getParamValue("persistentId-index");
+            avnfoIndex = entryParam.getParamValue("avinfo-index");
+        } catch (Exception ignored) {}
+
+        parseType = checkedParseType();
+        separator = checkedSeparator();
+        indexMap = checkedIndexMap();
+        urlIndex = getIndex(urlIndex, "url");
+        md5Index = getIndex(md5Index, "md5");
+        newKeyIndex = getIndex(newKeyIndex, "newKey");
+        fopsIndex = getIndex(fopsIndex, "fops");
+        pidIndex = getIndex(pidIndex, "persistentId");
+        avnfoIndex = getIndex(avnfoIndex, "avinfo");
     }
 
-    public String getParseType() throws IOException {
+    private String checkedParseType() throws IOException {
         if (getSourceType().equals("list")) return "object";
         else {
             if ("json".equals(parseType) || "table".equals(parseType) ) {
@@ -58,7 +76,26 @@ public class FileInputParams extends CommonParams {
         }
     }
 
-    public String getSeparator() {
+    private String getIndex(String index, String indexName) throws IOException {
+        if (index == null || "".equals(index)) {
+            throw new IOException("no incorrect " + indexName + "-index.");
+        } else {
+            if ("json".equals(getParseType())) {
+                return index;
+            } else if ("table".equals(getParseType())) {
+                if (index.matches("\\d")) {
+                    return index;
+                } else {
+                    throw new IOException("no incorrect " + indexName + "-index, it should be a number.");
+                }
+            } else {
+                // 其他情况忽略该索引
+                return "";
+            }
+        }
+    }
+
+    private String checkedSeparator() {
         if ("".equals(separator)) {
             return "\t";
         } else {
@@ -66,7 +103,7 @@ public class FileInputParams extends CommonParams {
         }
     }
 
-    public Map<String, String> getIndexMap() throws IOException {
+    private Map<String, String> checkedIndexMap() throws IOException {
         Map<String, String> indexMap = new HashMap<>();
         if (needMd5Index.contains(getProcess())) {
             String md5Index = getMd5Index();
@@ -79,7 +116,7 @@ public class FileInputParams extends CommonParams {
                 return indexMap;
             }
         }
-        if (needPersistentIdIndex.contains(getProcess())) {
+        if (needPidIndex.contains(getProcess())) {
             String persistentIdIndex = getPersistentIdIndex();
             if (!"".equals(persistentIdIndex)) {
                 indexMap.put(persistentIdIndex, persistentIdIndex);
@@ -132,78 +169,39 @@ public class FileInputParams extends CommonParams {
         return indexMap;
     }
 
-    public String getUrlIndex() throws IOException {
-        if ("json".equals(getParseType())) {
-            return urlIndex;
-        } else if ("table".equals(getParseType())) {
-            if ("".equals(urlIndex) || urlIndex.matches("\\d")) {
-                return urlIndex;
-            } else {
-                throw new IOException("no incorrect url index, it should be a number.");
-            }
-        } else {
-            // 其他情况忽略该索引
-            return "";
-        }
+    public String getParseType() {
+        return parseType;
     }
 
-    public String getMd5Index() throws IOException {
-        if ("json".equals(getParseType())) {
-            return md5Index;
-        } else if ("table".equals(getParseType())) {
-            if ("".equals(md5Index) || md5Index.matches("\\d")) {
-                return md5Index;
-            } else {
-                throw new IOException("no incorrect md5 index, it should be a number.");
-            }
-        } else {
-            // 其他情况忽略该索引
-            return "";
-        }
+    public String getSeparator() {
+        return separator;
     }
 
-    public String getNewKeyIndex() throws IOException {
-        if ("json".equals(getParseType())) {
-            return newKeyIndex;
-        } else if ("table".equals(getParseType())) {
-            if ("".equals(newKeyIndex) || newKeyIndex.matches("\\d")) {
-                return newKeyIndex;
-            } else {
-                throw new IOException("no incorrect newKey index, it should be a number.");
-            }
-        } else {
-            // 其他情况忽略该索引
-            return "";
-        }
+    public Map<String, String> getIndexMap() {
+        return indexMap;
     }
 
-    public String getFopsIndex() throws IOException {
-        if ("json".equals(getParseType())) {
-            return fopsIndex;
-        } else if ("table".equals(getParseType())) {
-            if ("".equals(fopsIndex) || fopsIndex.matches("\\d")) {
-                return fopsIndex;
-            } else {
-                throw new IOException("no incorrect fops index, it should be a number.");
-            }
-        } else {
-            // 其他情况忽略该索引
-            return "";
-        }
+    public String getUrlIndex() {
+        return urlIndex;
     }
 
-    public String getPersistentIdIndex() throws IOException {
-        if ("json".equals(getParseType())) {
-            return persistentIdIndex;
-        } else if ("table".equals(getParseType())) {
-            if ("".equals(persistentIdIndex) || persistentIdIndex.matches("\\d")) {
-                return persistentIdIndex;
-            } else {
-                throw new IOException("no incorrect persistentId index, it should be a number.");
-            }
-        } else {
-            // 其他情况忽略该索引
-            return "";
-        }
+    public String getMd5Index() {
+        return md5Index;
+    }
+
+    public String getNewKeyIndex() {
+        return newKeyIndex;
+    }
+
+    public String getFopsIndex() {
+        return fopsIndex;
+    }
+
+    public String getPersistentIdIndex() {
+        return pidIndex;
+    }
+
+    public String getAvnfoIndex() {
+        return avnfoIndex;
     }
 }

@@ -3,6 +3,7 @@ package com.qiniu.config;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,17 +48,55 @@ public class CommandArgs implements IEntryParam {
         return strings;
     }
 
+    /**
+     * 获取属性值，判断是否存在相应的 key，否则抛出异常
+     * @param key 属性名
+     * @return 属性值字符
+     * @throws IOException
+     */
     public String getParamValue(String key) throws IOException {
-
         if (paramsMap == null) {
             throw new IOException("please set the args.");
         }
 
-        if (!paramsMap.keySet().contains(key)) {
+        if (paramsMap.containsKey(key)) {
+            return paramsMap.get(key);
+        } else {
             throw new IOException("not set " + key + " param.");
         }
 
-        return paramsMap.get(key);
+    }
+
+    /**
+     * 获取属性值，不抛出异常，使用 default 值进行返回
+     * @param key
+     * @param defaultValue 默认返回值
+     * @return 属性值字符
+     */
+    public String getParamValue(String key, String defaultValue) {
+        if (paramsMap.containsKey(key)) {
+            return paramsMap.get(key);
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * 获取属性值，通过反射转换成指定类型
+     * @param key
+     * @param clazz 返回值类型 class
+     * @param defaultValue
+     * @param <T> 范型
+     * @return
+     * @throws Exception
+     */
+    public <T> T getParamValue(String key, Class<T> clazz, T defaultValue) throws Exception {
+        Method method = clazz.getMethod("valueOf", clazz.getClasses());
+        if (paramsMap.containsKey(key)) {
+            return (T) method.invoke(clazz, paramsMap.get(key));
+        } else {
+            return defaultValue;
+        }
     }
 
     public String[] getParams() {
