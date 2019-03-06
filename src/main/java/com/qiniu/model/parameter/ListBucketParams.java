@@ -12,21 +12,43 @@ import com.qiniu.util.ListBucketUtils;
 import java.io.IOException;
 import java.util.*;
 
-public class ListBucketParams extends QossParams {
+public class ListBucketParams extends CommonParams {
 
+    private String accessKey;
+    private String secretKey;
+    private String bucket;
     private String prefixes;
     private String antiPrefixes;
     private String prefixLeft;
     private String prefixRight;
     private String prefixConfig;
 
-    public ListBucketParams(IEntryParam entryParam) {
+    public ListBucketParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
-        try { prefixes = entryParam.getParamValue("prefixes"); } catch (Exception e) { prefixes = ""; }
-        try { antiPrefixes = entryParam.getParamValue("anti-prefixes"); } catch (Exception e) { antiPrefixes = ""; }
-        try { prefixLeft = entryParam.getParamValue("prefix-left"); } catch (Exception e) { prefixLeft = ""; }
-        try { prefixRight = entryParam.getParamValue("prefix-right"); } catch (Exception e) { prefixRight = ""; }
-        try { prefixConfig = entryParam.getParamValue("prefix-config"); } catch (Exception e) { prefixConfig = ""; }
+        accessKey = entryParam.getValue("ak");
+        secretKey = entryParam.getValue("sk");
+        bucket = entryParam.getValue("bucket");
+        prefixes = entryParam.getValue("prefixes", "");
+        antiPrefixes = entryParam.getValue("anti-prefixes", "");
+        prefixLeft = entryParam.getValue("prefix-left", "");
+        prefixRight = entryParam.getValue("prefix-right", "");
+        prefixConfig = entryParam.getValue("prefix-config", "");
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getBucket() throws IOException {
+        if (bucket == null || "".equals(bucket)) {
+            throw new IOException("no incorrect bucket, please set it.");
+        } else {
+            return bucket;
+        }
     }
 
     private List<String> splitItems(String paramLine) {
@@ -75,7 +97,7 @@ public class ListBucketParams extends QossParams {
     public String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
         if (!"".equals(marker) || "".equals(start)) return marker;
         else {
-            FileInfo markerFileInfo = bucketManager.stat(getBucket(), start);
+            FileInfo markerFileInfo = bucketManager.stat(bucket, start);
             markerFileInfo.key = start;
             return ListBucketUtils.calcMarker(markerFileInfo);
         }
@@ -88,7 +110,7 @@ public class ListBucketParams extends QossParams {
             JsonObject jsonCfg;
             String marker;
             String end;
-            BucketManager manager = new BucketManager(Auth.create(getAccessKey(), getSecretKey()), new Configuration());
+            BucketManager manager = new BucketManager(Auth.create(accessKey, secretKey), new Configuration());
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);

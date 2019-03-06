@@ -42,27 +42,15 @@ public class FileInputParams extends CommonParams {
 
     public FileInputParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
-        try {
-            parseType = entryParam.getParamValue("parse-type");
-            separator = entryParam.getParamValue("in-separator");
-            indexes = entryParam.getParamValue("indexes");
-            urlIndex = entryParam.getParamValue("url-index");
-            md5Index = entryParam.getParamValue("md5-index");
-            newKeyIndex = entryParam.getParamValue("newKey-index");
-            fopsIndex = entryParam.getParamValue("fops-index");
-            pidIndex = entryParam.getParamValue("persistentId-index");
-            avnfoIndex = entryParam.getParamValue("avinfo-index");
-        } catch (Exception ignored) {}
-
-        parseType = checkedParseType();
-        separator = checkedSeparator();
-        indexMap = checkedIndexMap();
-        urlIndex = getIndex(urlIndex, "url");
-        md5Index = getIndex(md5Index, "md5");
-        newKeyIndex = getIndex(newKeyIndex, "newKey");
-        fopsIndex = getIndex(fopsIndex, "fops");
-        pidIndex = getIndex(pidIndex, "persistentId");
-        avnfoIndex = getIndex(avnfoIndex, "avinfo");
+        parseType = entryParam.getValue("parse-type", null);
+        separator = entryParam.getValue("in-separator", "\t");
+        indexes = entryParam.getValue("indexes", null);
+        urlIndex = entryParam.getValue("url-index", null);
+        md5Index = entryParam.getValue("md5-index", null);
+        newKeyIndex = entryParam.getValue("newKey-index", null);
+        fopsIndex = entryParam.getValue("fops-index", null);
+        pidIndex = entryParam.getValue("persistentId-index", null);
+        avnfoIndex = entryParam.getValue("avinfo-index", null);
     }
 
     private String checkedParseType() throws IOException {
@@ -92,14 +80,6 @@ public class FileInputParams extends CommonParams {
                 // 其他情况忽略该索引
                 return "";
             }
-        }
-    }
-
-    private String checkedSeparator() {
-        if ("".equals(separator)) {
-            return "\t";
-        } else {
-            return separator;
         }
     }
 
@@ -169,39 +149,39 @@ public class FileInputParams extends CommonParams {
         return indexMap;
     }
 
-    public String getParseType() {
-        return parseType;
+    public String getParseType() throws IOException {
+        return checkedParseType();
     }
 
     public String getSeparator() {
         return separator;
     }
 
-    public Map<String, String> getIndexMap() {
-        return indexMap;
+    public Map<String, String> getIndexMap() throws IOException {
+        return checkedIndexMap();
     }
 
-    public String getUrlIndex() {
-        return urlIndex;
+    public String getUrlIndex() throws IOException {
+        return getIndex(urlIndex, "url");
     }
 
-    public String getMd5Index() {
-        return md5Index;
+    public String getMd5Index() throws IOException {
+        return getIndex(md5Index, "md5");
     }
 
-    public String getNewKeyIndex() {
-        return newKeyIndex;
+    public String getNewKeyIndex() throws IOException {
+        return getIndex(newKeyIndex, "newKey");
     }
 
-    public String getFopsIndex() {
-        return fopsIndex;
+    public String getFopsIndex() throws IOException {
+        return getIndex(fopsIndex, "fops");
     }
 
-    public String getPersistentIdIndex() {
-        return pidIndex;
+    public String getPersistentIdIndex() throws IOException {
+        return getIndex(pidIndex, "persistentId");
     }
 
-    public String getAvnfoIndex() {
-        return avnfoIndex;
+    public String getAvnfoIndex() throws IOException {
+        return getIndex(avnfoIndex, "avinfo");
     }
 }
