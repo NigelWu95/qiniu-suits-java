@@ -23,9 +23,11 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private String resultTag;
     private int resultIndex;
     private FileMap fileMap;
+    private boolean hasDuration;
+    private boolean hasSize;
     private List<JsonObject> pfopConfigs = new ArrayList<>();
 
-    public PfopCommand(String resultPath, int resultIndex) throws IOException {
+    public PfopCommand(boolean hasDuration, boolean hasSize, String resultPath, int resultIndex) throws IOException {
         String configPath = "resources" + System.getProperty("file.separator") + "pfop.json";
         JsonFile jsonFile = new JsonFile(configPath);
         for (String key : jsonFile.getConfigKeys()) {
@@ -42,6 +44,8 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         }
         this.processName = "pfopcmd";
         this.mediaManager = new MediaManager();
+        this.hasDuration = hasDuration;
+        this.hasSize = hasSize;
         this.resultPath = resultPath;
         this.resultTag = "";
         this.resultIndex = resultIndex;
@@ -49,8 +53,8 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public PfopCommand(String resultPath) throws IOException {
-        this(resultPath, 0);
+    public PfopCommand(boolean hasDuration, boolean hasSize, String resultPath) throws IOException {
+        this(hasDuration, hasSize, resultPath, 0);
     }
 
     public String getProcessName() {
@@ -92,7 +96,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         String key;
         String info;
         Avinfo avinfo;
-        String other;
+        StringBuilder other = new StringBuilder("");
         VideoStream videoStream;
         List<Integer> scale;
         for (JsonObject pfopConfig : pfopConfigs) {
@@ -105,13 +109,12 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
                     throw new IOException("target value is empty.");
                 try {
                     avinfo = mediaManager.getAvinfoByJson(info);
-                    double duration = Double.valueOf(avinfo.getFormat().duration);
-                    long size = Long.valueOf(avinfo.getFormat().size);
-                    other = "\t" + duration + "\t" + size;
+                    if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
+                    if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
                     videoStream = avinfo.getVideoStream();
                     if (videoStream == null) throw new Exception("videoStream is null");
                     if (scale.get(0) > videoStream.width && videoStream.width < scale.get(1)) {
-                        commandList.add(key + "\t" + generateFopCmd(key, pfopConfig) + "\t" + other);
+                        commandList.add(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString());
                     }
                 } catch (Exception e) {
                     fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
