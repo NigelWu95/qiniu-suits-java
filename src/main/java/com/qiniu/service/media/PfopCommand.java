@@ -27,18 +27,18 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private boolean hasSize;
     private List<JsonObject> pfopConfigs = new ArrayList<>();
 
-    public PfopCommand(boolean hasDuration, boolean hasSize, String resultPath, int resultIndex) throws IOException {
-        String configPath = "resources" + System.getProperty("file.separator") + "pfop.json";
-        JsonFile jsonFile = new JsonFile(configPath);
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String resultPath, int resultIndex)
+            throws IOException {
+        JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getConfigKeys()) {
             JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
             List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray());
-            if (scale.size() < 1) throw new IOException(configPath + " miss the scale field in \"" + key + "\"");
+            if (scale.size() < 1) throw new IOException(jsonPath + " miss the scale field in \"" + key + "\"");
             else if (scale.size() == 1) scale.add(Integer.MAX_VALUE);
             if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
-                throw new IOException(configPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
+                throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
             else if (!jsonObject.get("saveas").getAsString().contains(":"))
-                throw new IOException(configPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
+                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
             jsonObject.addProperty("name", key);
             pfopConfigs.add(jsonObject);
         }
@@ -53,8 +53,8 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public PfopCommand(boolean hasDuration, boolean hasSize, String resultPath) throws IOException {
-        this(hasDuration, hasSize, resultPath, 0);
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String resultPath) throws IOException {
+        this(jsonPath, hasDuration, hasSize, resultPath, 0);
     }
 
     public String getProcessName() {
