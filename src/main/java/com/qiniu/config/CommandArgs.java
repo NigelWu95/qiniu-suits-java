@@ -88,10 +88,10 @@ public class CommandArgs implements IEntryParam {
      * @return
      * @throws Exception
      */
+
     public <T> T getValue(String key, Class<T> clazz, T Default) throws Exception {
-        Method method = clazz.getMethod("valueOf", clazz.getClasses());
-        if (paramsMap.containsKey(key)) {
-            return (T) method.invoke(clazz, paramsMap.get(key));
+        if (paramsMap.containsKey(key) && !"".equals(paramsMap.get(key))) {
+            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, paramsMap.get(key));
         } else {
             return Default;
         }
