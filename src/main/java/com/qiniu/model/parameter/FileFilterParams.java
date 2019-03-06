@@ -20,7 +20,6 @@ public class FileFilterParams extends FileInputParams {
     private String mimeType;
     private String type;
     private String status;
-    private long datetime;
     private boolean directionFlag;
     private String antiKeyPrefix;
     private String antiKeySuffix;
@@ -41,7 +40,6 @@ public class FileFilterParams extends FileInputParams {
         try { mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) { mimeType = ""; }
         try { type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
         try { status = entryParam.getParamValue("f-status"); } catch (Exception e) { status = ""; }
-        datetime = getPointDatetime();
         if (!"".equals(pointDate)) directionFlag = getDirection();
         try { antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) { antiKeyPrefix = ""; }
         try { antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) { antiKeySuffix = ""; }
@@ -77,9 +75,12 @@ public class FileFilterParams extends FileInputParams {
         return getFilterValues("key", keyRegex, "regix");
     }
 
-    private Long getPointDatetime() throws ParseException {
+    private Long getPointDatetime() throws IOException, ParseException {
         String pointDatetime;
         if(pointDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            if (!getIndexMap().containsValue("putTime")) {
+                throw new IOException("f-date filter must get the putTime's index.");
+            }
             if (pointTime.matches("\\d{2}:\\d{2}:\\d{2}"))
                 pointDatetime =  pointDate + " " + pointTime;
             else {
@@ -100,13 +101,13 @@ public class FileFilterParams extends FileInputParams {
         }
     }
 
-    public long getPutTimeMax() {
-        if (directionFlag) return datetime * 10000;
+    public long getPutTimeMax() throws IOException, ParseException {
+        if (directionFlag) return getPointDatetime() * 10000;
         return 0;
     }
 
-    public long getPutTimeMin() {
-        if (!directionFlag) return datetime * 10000;
+    public long getPutTimeMin() throws IOException, ParseException {
+        if (!directionFlag) return getPointDatetime() * 10000;
         return 0;
     }
 
