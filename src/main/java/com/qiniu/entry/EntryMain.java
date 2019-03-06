@@ -54,7 +54,7 @@ public class EntryMain {
             String accessKey = listBucketParams.getAccessKey();
             String secretKey = listBucketParams.getSecretKey();
             String bucket = listBucketParams.getBucket();
-            Map<String, String[]> prefixesConfig = listBucketParams.getPrefixConfig();
+            Map<String, String[]> prefixesConfig = listBucketParams.getPrefixMap();
             List<String> antiPrefixes = listBucketParams.getAntiPrefixes();
             boolean prefixLeft = listBucketParams.getPrefixLeft();
             boolean prefixRight = listBucketParams.getPrefixRight();
