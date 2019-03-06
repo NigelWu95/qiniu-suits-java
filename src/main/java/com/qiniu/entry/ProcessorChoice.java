@@ -4,7 +4,6 @@ import com.qiniu.model.parameter.*;
 import com.qiniu.service.filtration.SeniorChecker;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.media.PfopCommand;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
@@ -13,12 +12,10 @@ import com.qiniu.service.filtration.FilterProcess;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.DateUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ProcessorChoice {
 
@@ -55,22 +52,107 @@ public class ProcessorChoice {
         this.configuration = configuration;
     }
 
+    private String getIndex(String parseType, String index, String indexName) throws IOException {
+        if (index == null || "".equals(index)) {
+            throw new IOException("no incorrect " + indexName + "-index.");
+        } else {
+            if ("json".equals(parseType)) {
+                return index;
+            } else if ("table".equals(parseType)) {
+                if (index.matches("\\d")) {
+                    return index;
+                } else {
+                    throw new IOException("no incorrect " + indexName + "-index, it should be a number.");
+                }
+            } else {
+                // 其他情况忽略该索引
+                return "";
+            }
+        }
+    }
+
+    private List<String> getFilterList(Map<String, String> indexMap, String key, String field, String name)
+            throws IOException {
+        if (!"".equals(field)) {
+            if (!indexMap.containsValue(key)) {
+                throw new IOException("f-" + name + " filter must get the " + key + "'s index.");
+            }
+            return Arrays.asList(field.split(","));
+        } else return null;
+    }
+
+    private Long getPointDatetime(Map<String, String> indexMap, String date, String time) throws Exception {
+        String pointDatetime;
+        if(date.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            if (!indexMap.containsValue("putTime")) {
+                throw new IOException("f-date filter must get the putTime's index.");
+            }
+            if (time.matches("\\d{2}:\\d{2}:\\d{2}"))
+                pointDatetime =  date + " " + time;
+            else {
+                pointDatetime =  date + " " + "00:00:00";
+            }
+            return DateUtils.parseYYYYMMDDHHMMSSdatetime(pointDatetime);
+        } else {
+            return 0L;
+        }
+
+    }
+
     public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
-        FileFilterParams fileFilterParams = new FileFilterParams(entryParam);
+        Map<String, String> indexMap = new HashMap<>();
+        String keyPrefix = entryParam.getValue("f-prefix", "");
+        String keySuffix = entryParam.getValue("f-suffix", "");
+        String keyInner = entryParam.getValue("f-inner", "");
+        String keyRegex = entryParam.getValue("f-regex", "");
+        String mimeType = entryParam.getValue("f-mime", "");
+        String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
+        String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
+        String antiKeyInner = entryParam.getValue("f-anti-inner", "");
+        String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
+        String antiMimeType = entryParam.getValue("f-anti-mime", "");
+        String checkType = entryParam.getValue("f-check", "");
+        String date = entryParam.getValue("f-date", "");
+        String time = entryParam.getValue("f-time", "");
+        String direction = entryParam.getValue("f-direction", "");
+        if (!checkValue(direction, "[01]")) {
+            throw new IOException("no incorrect f-direction, please set it 0 or 1");
+        }
+        long putTimeMax = !"".equals(date) && "0".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
+        long putTimeMin = !"".equals(date) && "1".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
+        String type = entryParam.getValue("f-type", "-1");
+        if (!checkValue(type, "[01]")) {
+            throw new IOException("no incorrect f-type, please set it 0 or 1");
+        }
+        String status = entryParam.getValue("f-status", "");
+        if (!checkValue(status, "[01]")) {
+            throw new IOException("no incorrect f-status, please set it 0 or 1");
+        }
+
+        List<String> keyPrefixList = getFilterList(indexMap, "key", keyPrefix, "prefix");
+        List<String> keySuffixList = getFilterList(indexMap, "key", keySuffix, "suffix");
+        List<String> keyInnerList = getFilterList(indexMap, "key", keyInner, "inner");
+        List<String> keyRegexList = getFilterList(indexMap, "key", keyRegex, "regex");
+        List<String> mimeTypeList = getFilterList(indexMap, "mimeType", mimeType, "mime");
+        List<String> antiKeyPrefixList = getFilterList(indexMap, "key", antiKeyPrefix, "anti-prefix");
+        List<String> antiKeySuffixList = getFilterList(indexMap, "key", antiKeySuffix, "anti-suffix");
+        List<String> antiKeyInnerList = getFilterList(indexMap, "key", antiKeyInner, "anti-inner");
+        List<String> antiKeyRegexList = getFilterList(indexMap, "key", antiKeyRegex, "anti-regex");
+        List<String> antiMimeTypeList = getFilterList(indexMap, "mimeType", antiMimeType, "anti-mime");
+
         BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
-        SeniorChecker seniorChecker = new SeniorChecker(fileFilterParams.getCheckType());
-        baseFieldsFilter.setKeyConditions(fileFilterParams.getKeyPrefix(), fileFilterParams.getKeySuffix(),
-                fileFilterParams.getKeyInner(), fileFilterParams.getKeyRegex());
-        baseFieldsFilter.setAntiKeyConditions(fileFilterParams.getAntiKeyPrefix(), fileFilterParams.getAntiKeySuffix(),
-                fileFilterParams.getAntiKeyInner(), fileFilterParams.getAntiKeyRegex());
-        baseFieldsFilter.setMimeTypeConditions(fileFilterParams.getMimeType(), fileFilterParams.getAntiMimeType());
-        baseFieldsFilter.setOtherConditions(fileFilterParams.getPutTimeMax(), fileFilterParams.getPutTimeMin(),
-                fileFilterParams.getType(), fileFilterParams.getStatus());
+        SeniorChecker seniorChecker = new SeniorChecker(checkType);
+
+        baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
+        baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
+        baseFieldsFilter.setMimeTypeConditions(mimeTypeList, antiMimeTypeList);
+        baseFieldsFilter.setOtherConditions(putTimeMax, putTimeMin, type, status);
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
+            List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, resultPath, resultFormat, resultSeparator,
-                    fileFilterParams.getRmFields());
+                    rmFields);
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
@@ -91,59 +173,20 @@ public class ProcessorChoice {
         }
         ILineProcess<Map<String, String>> processor = null;
         switch (process) {
-            case "status": {
-                processor = getChangeStatus();
-                break;
-            }
-            case "type": {
-                processor = getChangeType();
-                break;
-            }
-            case "lifecycle": {
-                processor = getUpdateLifecycle();
-                break;
-            }
-            case "copy": {
-                processor = getCopyFile();
-                break;
-            }
+            case "status": processor = getChangeStatus(); break;
+            case "type": processor = getChangeType(); break;
+            case "lifecycle": processor = getUpdateLifecycle(); break;
+            case "copy": processor = getCopyFile(); break;
             case "move":
-            case "rename": {
-                processor = getMoveFile();
-                break;
-            }
-            case "delete": {
-                processor = getDeleteFile();
-                break;
-            }
-            case "asyncfetch": {
-                processor = getAsyncFetch();
-                break;
-            }
-            case "avinfo": {
-                processor = getQueryAvinfo();
-                break;
-            }
-            case "pfop": {
-                processor = getQiniuPfop();
-                break;
-            }
-            case "pfopresult": {
-                processor = getPfopResult();
-                break;
-            }
-            case "qhash": {
-                processor = getQueryHash();
-                break;
-            }
-            case "stat": {
-                processor = getFileStat();
-                break;
-            }
-            case "privateurl": {
-                processor = getPrivateUrl();
-                break;
-            }
+            case "rename": processor = getMoveFile(); break;
+            case "delete": processor = getDeleteFile(); break;
+            case "asyncfetch": processor = getAsyncFetch(); break;
+            case "avinfo": processor = getQueryAvinfo(); break;
+            case "pfop": processor = getQiniuPfop(); break;
+            case "pfopresult": processor = getPfopResult(); break;
+            case "qhash": processor = getQueryHash(); break;
+            case "stat": processor = getFileStat(); break;
+            case "privateurl": processor = getPrivateUrl(); break;
         }
         if (processor != null) processor.setRetryCount(retryCount);
         return processor;

@@ -13,8 +13,8 @@ public class BaseFieldsFilter {
     private long putTimeMin;
     private long putTimeMax;
     private List<String> mimeType;
-    private int type;
-    private int status;
+    private String type;
+    private String status;
     private List<String> antiKeyPrefix;
     private List<String> antiKeySuffix;
     private List<String> antiKeyInner;
@@ -42,11 +42,11 @@ public class BaseFieldsFilter {
         this.antiMimeType = antiMimeType == null ? new ArrayList<>() : antiMimeType;
     }
 
-    public void setOtherConditions(long putTimeMax, long putTimeMin, int type, int status) {
+    public void setOtherConditions(long putTimeMax, long putTimeMin, String type, String status) {
         this.putTimeMax = putTimeMax;
         this.putTimeMin = putTimeMin;
-        this.type = type;
-        this.status = status;
+        this.type = type == null || "".equals(type) ? "-1" : type;
+        this.status = status == null || "".equals(status) ? "-1" : status;
     }
 
     public boolean checkKeyPrefix() {
@@ -74,11 +74,11 @@ public class BaseFieldsFilter {
     }
 
     public boolean checkType() {
-        return type == 0 || type == 1;
+        return type.matches("[01]");
     }
 
     public boolean checkStatus() {
-        return status == 0 || status == 1;
+        return status.matches("[01]");
     }
 
     public boolean checkAntiKeyPrefix() {
@@ -134,12 +134,12 @@ public class BaseFieldsFilter {
 
     public boolean filterType(Map<String, String> item) {
         if (checkItem(item, "type")) return false;
-        else return (Integer.valueOf(item.get("type")) == type);
+        else return item.get("type").equals(type);
     }
 
     public boolean filterStatus(Map<String, String> item) {
         if (checkItem(item, "status")) return false;
-        else return (Integer.valueOf(item.get("status")) == status);
+        else return item.get("status").equals(status);
     }
 
     public boolean filterAntiKeyPrefix(Map<String, String> item) {
@@ -177,8 +177,8 @@ public class BaseFieldsFilter {
 
     public boolean isValid() {
         return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || (type == 0 || type == 1) ||
-                (status == 0 || status == 1) || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
+                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || type.matches("[01]") ||
+                status.matches("[01]") || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
                 checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
     }
 }
