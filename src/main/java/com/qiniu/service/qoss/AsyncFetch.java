@@ -75,10 +75,10 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this(auth, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, resultPath, 0);
     }
 
-    public void setFetchArgs(String md5Index, String host, String callbackUrl, String callbackBody, String callbackBodyType,
-                             String callbackHost, int fileType, boolean ignoreSameKey) {
-        this.md5Index = md5Index == null ? "" : md5Index;
+    public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
+                             String callbackBodyType, String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;
+        this.md5Index = md5Index == null ? "" : md5Index;
         this.callbackUrl = callbackUrl;
         this.callbackBody = callbackBody;
         this.callbackBodyType = callbackBodyType;

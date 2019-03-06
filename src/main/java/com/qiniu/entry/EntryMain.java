@@ -2,10 +2,9 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
-import com.qiniu.config.PropertiesFile;
+import com.qiniu.config.FileProperties;
 import com.qiniu.model.parameter.CommonParams;
 import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.model.parameter.HttpParams;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
@@ -27,12 +26,11 @@ public class EntryMain {
 
     public static void main(String[] args) throws Exception {
         IEntryParam entryParam = getEntryParam(args);
-        HttpParams httpParams = new HttpParams(entryParam);
         configuration = new Configuration(Zone.autoZone());
         // 自定义超时时间
-        configuration.connectTimeout = httpParams.getConnectTimeout();
-        configuration.readTimeout = httpParams.getReadTimeout();
-        configuration.writeTimeout = httpParams.getWriteTimeout();
+        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "30"));
+        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "60"));
+        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "10"));
 
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration).getFileProcessor();
         CommonParams commonParams = new CommonParams(entryParam);
@@ -69,8 +67,7 @@ public class EntryMain {
             String parseType = fileInputParams.getParseType();
             String separator = fileInputParams.getSeparator();
             Map<String, String> indexMap = fileInputParams.getIndexMap();
-            String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-            dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
+            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, resultPath);
         }
         if (dataSource != null) dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
 
@@ -100,6 +97,6 @@ public class EntryMain {
             else paramFromConfig = true;
         }
 
-        return paramFromConfig ? new PropertiesFile(configFilePath) : new CommandArgs(args);
+        return paramFromConfig ? new FileProperties(configFilePath) : new CommandArgs(args);
     }
 }

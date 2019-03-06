@@ -30,23 +30,23 @@ public class FileFilterParams extends FileInputParams {
 
     public FileFilterParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        try { keyPrefix = entryParam.getParamValue("f-prefix"); } catch (Exception e) { keyPrefix = ""; }
-        try { keySuffix = entryParam.getParamValue("f-suffix"); } catch (Exception e) { keySuffix = ""; }
-        try { keyInner = entryParam.getParamValue("f-inner"); } catch (Exception e) { keyPrefix = ""; }
-        try { keyRegex = entryParam.getParamValue("f-regex"); } catch (Exception e) { keyInner = ""; }
-        try { pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) { pointDate = ""; }
-        try { pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) { pointTime = ""; }
-        try { direction = entryParam.getParamValue("f-direction"); } catch (Exception e) { direction = ""; }
-        try { mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) { mimeType = ""; }
-        try { type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
-        try { status = entryParam.getParamValue("f-status"); } catch (Exception e) { status = ""; }
+        keyPrefix = entryParam.getValue("f-prefix", "");
+        keySuffix = entryParam.getValue("f-suffix", "");
+        keyInner = entryParam.getValue("f-inner", "");
+        keyRegex = entryParam.getValue("f-regex", "");
+        pointDate = entryParam.getValue("f-date", "");
+        pointTime = entryParam.getValue("f-time", "");
+        direction = entryParam.getValue("f-direction", "");
+        mimeType = entryParam.getValue("f-mime", "");
+        type = entryParam.getValue("f-type", "");
+        status = entryParam.getValue("f-status", "");
         if (!"".equals(pointDate)) directionFlag = getDirection();
-        try { antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) { antiKeyPrefix = ""; }
-        try { antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) { antiKeySuffix = ""; }
-        try { antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) { antiKeyInner = ""; }
-        try { antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) { antiKeyRegex = ""; }
-        try { antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) { antiMimeType = ""; }
-        try { checkType = entryParam.getParamValue("f-check"); } catch (Exception e) { checkType = ""; }
+        antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
+        antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
+        antiKeyInner = entryParam.getValue("f-anti-inner", "");
+        antiKeyRegex = entryParam.getValue("f-anti-regex", "");
+        antiMimeType = entryParam.getValue("f-anti-mime", "");
+        checkType = entryParam.getValue("f-check", "");
     }
 
     private List<String> getFilterValues(String key, String field, String name) throws IOException {
