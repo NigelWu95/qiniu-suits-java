@@ -3,7 +3,6 @@ package com.qiniu.config;
 import com.qiniu.service.interfaces.IEntryParam;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.Properties;
 
 public class FileProperties implements IEntryParam {
@@ -63,9 +62,8 @@ public class FileProperties implements IEntryParam {
      * @throws Exception
      */
     public <T> T getValue(String key, Class<T> clazz, T Default) throws Exception {
-        Method method = clazz.getMethod("valueOf", clazz.getClasses());
-        if (properties.containsKey(key)) {
-            return (T) method.invoke(clazz, properties.getProperty(key));
+        if (properties.containsKey(key) && !"".equals(properties.getProperty(key))) {
+            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, properties.getProperty(key));
         } else {
             return Default;
         }
