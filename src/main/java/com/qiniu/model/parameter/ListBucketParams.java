@@ -17,22 +17,20 @@ public class ListBucketParams extends CommonParams {
     private String accessKey;
     private String secretKey;
     private String bucket;
-    private List<String> prefixes;
+    private Map<String, String[]> prefixMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
-    private Map<String, String[]> prefixConfig;
 
     public ListBucketParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         accessKey = entryParam.getValue("ak");
         secretKey = entryParam.getValue("sk");
         bucket = entryParam.getValue("bucket");
-        setPrefixes(entryParam.getValue("prefixes", ""));
+        setPrefixConfig(entryParam.getValue("prefix-config", ""), entryParam.getValue("prefixes", ""));
         setAntiPrefixes(entryParam.getValue("anti-prefixes", ""));
         setPrefixLeft(entryParam.getValue("prefix-left", ""));
         setPrefixRight(entryParam.getValue("prefix-right", ""));
-        setPrefixConfig(entryParam.getValue("prefix-config", ""));
     }
 
     private List<String> splitItems(String paramLine) {
@@ -51,11 +49,7 @@ public class ListBucketParams extends CommonParams {
             set.remove("");
             return new ArrayList<>(set);
         }
-        return null;
-    }
-
-    public void setPrefixes(String prefixes) {
-        this.prefixes = splitItems(prefixes);
+        return new ArrayList<>();
     }
 
     public void setAntiPrefixes(String antiPrefixes) {
@@ -87,8 +81,8 @@ public class ListBucketParams extends CommonParams {
         }
     }
 
-    public void setPrefixConfig(String prefixConfig) throws IOException {
-        this.prefixConfig = new HashMap<>();
+    public void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
+        this.prefixMap = new HashMap<>();
         if (!"".equals(prefixConfig)) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
@@ -99,12 +93,12 @@ public class ListBucketParams extends CommonParams {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
                 end = jsonCfg.get("end").getAsString();
-                this.prefixConfig.put(prefix, new String[]{marker, end});
+                this.prefixMap.put(prefix, new String[]{marker, end});
             }
         } else {
-            List<String> prefixList = getPrefixes();
+            List<String> prefixList = splitItems(prefixes);
             for (String prefix : prefixList) {
-                this.prefixConfig.put(prefix, new String[]{"", ""});
+                this.prefixMap.put(prefix, new String[]{"", ""});
             }
         }
     }
@@ -121,10 +115,6 @@ public class ListBucketParams extends CommonParams {
         return bucket;
     }
 
-    public List<String> getPrefixes() {
-        return prefixes;
-    }
-
     public List<String> getAntiPrefixes() {
         return antiPrefixes;
     }
@@ -135,5 +125,9 @@ public class ListBucketParams extends CommonParams {
 
     public boolean getPrefixRight() {
         return prefixRight;
+    }
+
+    public Map<String, String[]> getPrefixMap() {
+        return prefixMap;
     }
 }
