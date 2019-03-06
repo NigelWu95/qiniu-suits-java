@@ -17,38 +17,22 @@ public class ListBucketParams extends CommonParams {
     private String accessKey;
     private String secretKey;
     private String bucket;
-    private String prefixes;
-    private String antiPrefixes;
-    private String prefixLeft;
-    private String prefixRight;
-    private String prefixConfig;
+    private List<String> prefixes;
+    private List<String> antiPrefixes;
+    private boolean prefixLeft;
+    private boolean prefixRight;
+    private Map<String, String[]> prefixConfig;
 
     public ListBucketParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
         accessKey = entryParam.getValue("ak");
         secretKey = entryParam.getValue("sk");
         bucket = entryParam.getValue("bucket");
-        prefixes = entryParam.getValue("prefixes", "");
-        antiPrefixes = entryParam.getValue("anti-prefixes", "");
-        prefixLeft = entryParam.getValue("prefix-left", "");
-        prefixRight = entryParam.getValue("prefix-right", "");
-        prefixConfig = entryParam.getValue("prefix-config", "");
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public String getBucket() throws IOException {
-        if (bucket == null || "".equals(bucket)) {
-            throw new IOException("no incorrect bucket, please set it.");
-        } else {
-            return bucket;
-        }
+        setPrefixes(entryParam.getValue("prefixes", ""));
+        setAntiPrefixes(entryParam.getValue("anti-prefixes", ""));
+        setPrefixLeft(entryParam.getValue("prefix-left", ""));
+        setPrefixRight(entryParam.getValue("prefix-right", ""));
+        setPrefixConfig(entryParam.getValue("prefix-config", ""));
     }
 
     private List<String> splitItems(String paramLine) {
@@ -70,31 +54,31 @@ public class ListBucketParams extends CommonParams {
         return null;
     }
 
-    public List<String> getPrefixes() {
-        return splitItems(prefixes);
+    public void setPrefixes(String prefixes) {
+        this.prefixes = splitItems(prefixes);
     }
 
-    public List<String> getAntiPrefixes() {
-        return splitItems(antiPrefixes);
+    public void setAntiPrefixes(String antiPrefixes) {
+        this.antiPrefixes = splitItems(antiPrefixes);
     }
 
-    public boolean getPrefixLeft() {
+    public void setPrefixLeft(String prefixLeft) {
         if (prefixLeft.matches("(true|false)")) {
-            return Boolean.valueOf(prefixLeft);
+            this.prefixLeft = Boolean.valueOf(prefixLeft);
         } else {
-            return false;
+            this.prefixLeft = false;
         }
     }
 
-    public boolean getPrefixRight() {
+    public void setPrefixRight(String prefixRight) {
         if (prefixRight.matches("(true|false)")) {
-            return Boolean.valueOf(prefixRight);
+            this.prefixRight = Boolean.valueOf(prefixRight);
         } else {
-            return false;
+            this.prefixRight = false;
         }
     }
 
-    public String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
+    private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
         if (!"".equals(marker) || "".equals(start)) return marker;
         else {
             FileInfo markerFileInfo = bucketManager.stat(bucket, start);
@@ -103,8 +87,8 @@ public class ListBucketParams extends CommonParams {
         }
     }
 
-    public Map<String, String[]> getPrefixConfig() throws IOException {
-        Map<String, String[]> prefixes = new HashMap<>();
+    public void setPrefixConfig(String prefixConfig) throws IOException {
+        this.prefixConfig = new HashMap<>();
         if (!"".equals(prefixConfig)) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
@@ -115,14 +99,41 @@ public class ListBucketParams extends CommonParams {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
                 end = jsonCfg.get("end").getAsString();
-                prefixes.put(prefix, new String[]{marker, end});
+                this.prefixConfig.put(prefix, new String[]{marker, end});
             }
         } else {
             List<String> prefixList = getPrefixes();
             for (String prefix : prefixList) {
-                prefixes.put(prefix, new String[]{"", ""});
+                this.prefixConfig.put(prefix, new String[]{"", ""});
             }
         }
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getBucket() {
+        return bucket;
+    }
+
+    public List<String> getPrefixes() {
         return prefixes;
+    }
+
+    public List<String> getAntiPrefixes() {
+        return antiPrefixes;
+    }
+
+    public boolean getPrefixLeft() {
+        return prefixLeft;
+    }
+
+    public boolean getPrefixRight() {
+        return prefixRight;
     }
 }

@@ -13,14 +13,14 @@ public class CommonParams {
     protected IEntryParam entryParam;
     private String sourceType;
     private String filePath;
-    private String unitLen;
-    private String threads;
-    private String retryCount;
-    private String saveTotal;
+    private int unitLen;
+    private int threads;
+    private int retryCount;
+    private boolean saveTotal;
     private String resultPath;
     private String resultFormat;
     private String resultSeparator;
-    private String rmFields;
+    private List<String> rmFields;
     private String process;
 
     public CommonParams(IEntryParam entryParam) {
@@ -36,14 +36,15 @@ public class CommonParams {
             }
         }
         filePath = entryParam.getValue("file-path", null);
-        unitLen = entryParam.getValue("unit-len", null);
-        threads = entryParam.getValue("threads", null);
-        retryCount = entryParam.getValue("retry-times", null);
-        saveTotal = entryParam.getValue("save-total", null);
-        resultPath = entryParam.getValue("result-path", null);
-        resultFormat = entryParam.getValue("result-format", null);
-        resultSeparator = entryParam.getValue("result-separator", null);
-        rmFields = entryParam.getValue("rm-fields", null);
+
+        setUnitLen(entryParam.getValue("unit-len", null));
+        setThreads(entryParam.getValue("threads", null));
+        setRetryCount(entryParam.getValue("retry-times", null));
+        setSaveTotal(entryParam.getValue("save-total", null));
+        resultPath = entryParam.getValue("result-path", "result");
+        resultFormat = entryParam.getValue("result-format", "table");
+        resultSeparator = entryParam.getValue("result-separator", "\t");
+        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
         process = entryParam.getValue("process", null);
     }
 
@@ -59,73 +60,84 @@ public class CommonParams {
         return entryParam.getValue(key);
     }
 
+    private void setFilePath(String filePath) throws IOException {
+        if ("".equals(filePath)) {
+            throw new IOException("not set file path.");
+        } else {
+            this.filePath = filePath;
+        }
+    }
+
+    private void setUnitLen(String unitLen) {
+        if (unitLen.matches("\\d+")) {
+            this.unitLen = Integer.valueOf(unitLen);
+        } else {
+            this.unitLen = 10000;
+        }
+    }
+
+    private void setThreads(String threads) {
+        if (threads.matches("[1-9]\\d*")) {
+            this.threads = Integer.valueOf(threads);
+        } else {
+            this.threads = 30;
+        }
+    }
+
+    private void setRetryCount(String retryCount) {
+        if (retryCount.matches("\\d+")) {
+            this.retryCount = Integer.valueOf(retryCount);
+        } else {
+            this.retryCount = 3;
+        }
+    }
+
+    private void setSaveTotal(String saveTotal) {
+        if (saveTotal.matches("(true|false)")) {
+            this.saveTotal = Boolean.valueOf(saveTotal);
+        } else {
+            this.saveTotal = "list".equals(getSourceType());
+        }
+    }
+
     public String getSourceType() {
         return sourceType;
     }
-    public String getFilePath() throws IOException {
-        if ("".equals(filePath)) throw new IOException("not set file path.");
-        else if (filePath.startsWith("/")) return filePath;
-        else return System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
+
+    public String getFilePath() {
+        return filePath;
     }
 
     public int getUnitLen() {
-        if (unitLen.matches("\\d+")) {
-            return Integer.valueOf(unitLen);
-        } else {
-            return 10000;
-        }
+        return unitLen;
     }
 
     public int getThreads() {
-        if (threads.matches("[1-9]\\d*")) {
-            return Integer.valueOf(threads);
-        } else {
-            return 30;
-        }
+        return threads;
     }
 
     public int getRetryCount() {
-        if (retryCount.matches("\\d+")) {
-            return Integer.valueOf(retryCount);
-        } else {
-            return 3;
-        }
+        return retryCount;
     }
 
     public Boolean getSaveTotal() {
-        if (saveTotal.matches("(true|false)")) {
-            return Boolean.valueOf(saveTotal);
-        } else {
-            return "list".equals(getSourceType());
-        }
+        return saveTotal;
     }
 
-    public String getResultPath() throws IOException {
-        if (resultPath.startsWith("/")) throw new IOException("the file path only support relative path.");
-        else if ("".equals(resultPath)) {
-            return "result";
-        }
-        return System.getProperty("user.dir") + System.getProperty("file.separator") + resultPath;
+    public String getResultPath() {
+        return resultPath;
     }
 
     public String getResultFormat() {
-        if (resultFormat == null) {
-            return "table";
-        } else {
-            return resultFormat;
-        }
+        return resultFormat;
     }
 
     public String getResultSeparator() {
-        if (resultSeparator == null) {
-            return "\t";
-        } else {
-            return resultSeparator;
-        }
+        return resultSeparator;
     }
 
     public List<String> getRmFields() {
-        return Arrays.asList(rmFields.split(","));
+        return rmFields;
     }
 
     public String getProcess() {
