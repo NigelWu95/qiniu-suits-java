@@ -8,7 +8,7 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
-public class FileFilterParams extends CommonParams {
+public class FileFilterParams extends FileInputParams {
 
     private String keyPrefix;
     private String keySuffix;
@@ -31,44 +31,50 @@ public class FileFilterParams extends CommonParams {
 
     public FileFilterParams(IEntryParam entryParam) throws Exception {
         super(entryParam);
-        try { keyPrefix = entryParam.getParamValue("f-prefix"); } catch (Exception e) {}
-        try { keySuffix = entryParam.getParamValue("f-suffix"); } catch (Exception e) {}
-        try { keyInner = entryParam.getParamValue("f-inner"); } catch (Exception e) {}
-        try { keyRegex = entryParam.getParamValue("f-regex"); } catch (Exception e) {}
+        try { keyPrefix = entryParam.getParamValue("f-prefix"); } catch (Exception e) { keyPrefix = ""; }
+        try { keySuffix = entryParam.getParamValue("f-suffix"); } catch (Exception e) { keySuffix = ""; }
+        try { keyInner = entryParam.getParamValue("f-inner"); } catch (Exception e) { keyPrefix = ""; }
+        try { keyRegex = entryParam.getParamValue("f-regex"); } catch (Exception e) { keyInner = ""; }
         try { pointDate = entryParam.getParamValue("f-date"); } catch (Exception e) { pointDate = ""; }
         try { pointTime = entryParam.getParamValue("f-time"); } catch (Exception e) { pointTime = ""; }
         try { direction = entryParam.getParamValue("f-direction"); } catch (Exception e) { direction = ""; }
-        try { mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) {}
+        try { mimeType = entryParam.getParamValue("f-mime"); } catch (Exception e) { mimeType = ""; }
         try { type = entryParam.getParamValue("f-type"); } catch (Exception e) { type = ""; }
         try { status = entryParam.getParamValue("f-status"); } catch (Exception e) { status = ""; }
         datetime = getPointDatetime();
         if (!"".equals(pointDate)) directionFlag = getDirection();
-        try { antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) {}
-        try { antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) {}
-        try { antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) {}
-        try { antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) {}
-        try { antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) {}
-        try { checkType = entryParam.getParamValue("f-check"); } catch (Exception e) {}
+        try { antiKeyPrefix = entryParam.getParamValue("f-anti-prefix"); } catch (Exception e) { antiKeyPrefix = ""; }
+        try { antiKeySuffix = entryParam.getParamValue("f-anti-suffix"); } catch (Exception e) { antiKeySuffix = ""; }
+        try { antiKeyInner = entryParam.getParamValue("f-anti-inner"); } catch (Exception e) { antiKeyInner = ""; }
+        try { antiKeyRegex = entryParam.getParamValue("f-anti-regex"); } catch (Exception e) { antiKeyRegex = ""; }
+        try { antiMimeType = entryParam.getParamValue("f-anti-mime"); } catch (Exception e) { antiMimeType = ""; }
+        try { checkType = entryParam.getParamValue("f-check"); } catch (Exception e) { checkType = ""; }
     }
 
-    public List<String> getKeyPrefix() {
-        if (keyPrefix != null && !"".equals(keyPrefix)) return Arrays.asList(keyPrefix.split(","));
+    private List<String> getFilterValues(String key, String field, String name) throws IOException {
+        if (!"".equals(field)) {
+            if (!getIndexMap().containsValue(key)) {
+                throw new IOException("f-" + name + " filter must get the " + key + "'s index.");
+            }
+            return Arrays.asList(field.split(","));
+        }
         else return null;
     }
 
-    public List<String> getKeySuffix() {
-        if (keySuffix != null && !"".equals(keySuffix)) return Arrays.asList(keySuffix.split(","));
-        else return null;
+    public List<String> getKeyPrefix() throws IOException {
+        return getFilterValues("key", keyPrefix, "prefix");
     }
 
-    public List<String>  getKeyInner() {
-        if (keyInner != null && !"".equals(keyInner)) return Arrays.asList(keyInner.split(","));
-        else return null;
+    public List<String> getKeySuffix() throws IOException {
+        return getFilterValues("key", keySuffix, "suffix");
     }
 
-    public List<String> getKeyRegex() {
-        if (keyRegex != null && !"".equals(keyRegex)) return Arrays.asList(keyRegex.split(","));
-        else return null;
+    public List<String> getKeyInner() throws IOException {
+        return getFilterValues("key", keyInner, "inner");
+    }
+
+    public List<String> getKeyRegex() throws IOException {
+        return getFilterValues("key", keyRegex, "regix");
     }
 
     private Long getPointDatetime() throws ParseException {
@@ -104,15 +110,17 @@ public class FileFilterParams extends CommonParams {
         return 0;
     }
 
-    public List<String> getMimeType() {
-        if (mimeType != null && !"".equals(mimeType)) return Arrays.asList(mimeType.split(","));
-        else return null;
+    public List<String> getMimeType() throws IOException {
+        return getFilterValues("mimeType", mimeType, "mime");
     }
 
     public int getType() throws IOException {
         if ("".equals(type)) {
             return -1;
         } else if (type.matches("([01])")) {
+            if (!getIndexMap().containsValue("type")) {
+                throw new IOException("f-type filter must get the type's index.");
+            }
             return Integer.valueOf(type);
         } else {
             throw new IOException("no incorrect type, please set it 0/1.");
@@ -123,35 +131,33 @@ public class FileFilterParams extends CommonParams {
         if ("".equals(status)) {
             return -1;
         } else if (status.matches("([01])")) {
+            if (!getIndexMap().containsValue("status")) {
+                throw new IOException("f-status filter must get the status's index.");
+            }
             return Integer.valueOf(status);
         } else {
             throw new IOException("no incorrect status, please set it 0/1.");
         }
     }
 
-    public List<String> getAntiKeyPrefix() {
-        if (antiKeyPrefix != null && !"".equals(antiKeyPrefix)) return Arrays.asList(antiKeyPrefix.split(","));
-        else return null;
+    public List<String> getAntiKeyPrefix() throws IOException {
+        return getFilterValues("key", antiKeyPrefix, "anti-prefix");
     }
 
-    public List<String> getAntiKeySuffix() {
-        if (antiKeySuffix != null && !"".equals(antiKeySuffix)) return Arrays.asList(antiKeySuffix.split(","));
-        else return null;
+    public List<String> getAntiKeySuffix() throws IOException {
+        return getFilterValues("key", antiKeySuffix, "anti-suffix");
     }
 
-    public List<String>  getAntiKeyInner() {
-        if (antiKeyInner != null && !"".equals(antiKeyInner)) return Arrays.asList(antiKeyInner.split(","));
-        else return null;
+    public List<String>  getAntiKeyInner() throws IOException {
+        return getFilterValues("key", antiKeyInner, "anti-inner");
     }
 
-    public List<String> getAntiKeyRegex() {
-        if (antiKeyRegex != null && !"".equals(antiKeyRegex)) return Arrays.asList(antiKeyRegex.split(","));
-        else return null;
+    public List<String> getAntiKeyRegex() throws IOException {
+        return getFilterValues("key", antiKeyRegex, "anti-regix");
     }
 
-    public List<String> getAntiMimeType() {
-        if (antiMimeType != null && !"".equals(antiMimeType)) return Arrays.asList(antiMimeType.split(","));
-        else return null;
+    public List<String> getAntiMimeType() throws IOException {
+        return getFilterValues("mime", antiMimeType, "anti-mime");
     }
 
     public String getCheckType() {
