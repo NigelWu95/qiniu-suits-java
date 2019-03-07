@@ -4,7 +4,6 @@ import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
 import com.qiniu.model.parameter.CommonParams;
-import com.qiniu.model.parameter.FileInputParams;
 import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
@@ -62,11 +61,10 @@ public class EntryMain {
             dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesConfig, antiPrefixes,
                     prefixLeft, prefixRight, savePath);
         } else if ("file".equals(source)) {
-            FileInputParams fileInputParams = new FileInputParams(entryParam);
-            String filePath = fileInputParams.getFilePath();
-            String parseType = fileInputParams.getParseType();
-            String separator = fileInputParams.getSeparator();
-            Map<String, String> indexMap = fileInputParams.getIndexMap();
+            String filePath = commonParams.getPath();
+            String parseType = commonParams.getParse();
+            String separator = commonParams.getSeparator();
+            Map<String, String> indexMap = commonParams.getIndexMap();
             dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, savePath);
         }
         if (dataSource != null) dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, removeFields);
