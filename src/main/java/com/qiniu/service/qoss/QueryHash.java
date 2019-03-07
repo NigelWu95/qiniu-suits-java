@@ -44,7 +44,8 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.algorithm = algorithm;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
-        this.fileChecker = new FileChecker(algorithm, protocol, Auth.create(accessKey, secretKey));
+        this.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null :
+                Auth.create(accessKey, secretKey));
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -71,7 +72,8 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, protocol, Auth.create(accessKey, secretKey));
+        queryHash.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null :
+                Auth.create(accessKey, secretKey));
         queryHash.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryHash.fileMap.initDefaultWriters();
