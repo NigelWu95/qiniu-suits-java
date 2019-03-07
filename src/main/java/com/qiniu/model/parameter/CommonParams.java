@@ -1,20 +1,34 @@
 package com.qiniu.model.parameter;
 
+import com.google.gson.JsonObject;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
+import com.qiniu.config.JsonFile;
 import com.qiniu.service.interfaces.IEntryParam;
+import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
+import com.qiniu.util.Auth;
+import com.qiniu.util.ListBucketUtils;
 
 import java.io.IOException;
 import java.util.*;
 
 public class CommonParams {
 
-    protected IEntryParam entryParam;
+    private IEntryParam entryParam;
     private String path;
     private String source;
     private String parse;
     private String separator;
     private Map<String, String> indexMap;
+    private String accessKey;
+    private String secretKey;
+    private String bucket;
+    private Map<String, String[]> prefixMap;
+    private List<String> antiPrefixes;
+    private boolean prefixLeft;
+    private boolean prefixRight;
     private int unitLen;
     private int threads;
     private int retryCount;
@@ -50,9 +64,23 @@ public class CommonParams {
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", null);
-        setSource(path);
-        parse = checked(entryParam.getValue("parse", "table"), "parse", "(csv|table|json)");
-        separator = entryParam.getValue("separator", "\t");
+        setSource();
+        if ("list".equals(source)) {
+            accessKey = entryParam.getValue("ak");
+            secretKey = entryParam.getValue("sk");
+            if (path.startsWith("qiniu://")) bucket = path.substring(8);
+            else bucket = entryParam.getValue("bucket");
+            antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
+            String prefixes = entryParam.getValue("prefixes", "");
+            setPrefixConfig(entryParam.getValue("prefix-config", ""), prefixes);
+            setPrefixLeft(entryParam.getValue("prefix-left", ""));
+            setPrefixRight(entryParam.getValue("prefix-right", ""));
+        } else if ("file".equals(source)) {
+            setParse(entryParam.getValue("parse", "table"));
+            setSeparator(entryParam.getValue("separator", null));
+            setIndexMap();
+        }
+
         setUnitLen(entryParam.getValue("unit-len", "10000"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryCount(entryParam.getValue("retry-times", "3"));
@@ -79,7 +107,7 @@ public class CommonParams {
         return entryParam.getValue(key);
     }
 
-    private void setSource(String path) throws IOException {
+    private void setSource() throws IOException {
         try {
             source = entryParam.getValue("source-type");
         } catch (IOException e1) {
@@ -93,6 +121,19 @@ public class CommonParams {
         if (source.matches("(list|file)")) {
             throw new IOException("please set the \"source\" conform to regex:" +
                     " (list|file)");
+        }
+    }
+
+    private void setParse(String parse) throws IOException {
+        this.parse = checked(parse, "parse", "(csv|table|json)");
+    }
+
+    private void setSeparator(String separator) {
+        if (separator == null) {
+            if ("table".equals(parse)) this.separator = "\t";
+            else if ("csv".equals(parse)) this.separator = ",";
+        } else {
+            this.separator = separator;
         }
     }
 
@@ -112,20 +153,14 @@ public class CommonParams {
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
     }
 
-    public String checked(String param, String name, String conditionReg) throws IOException {
-        if (param == null || !param.matches(conditionReg))
-            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
-        else return param;
-    }
-
     private void setIndex(String index, String indexName, List<String> needList) throws IOException {
         if (index != null && needList.contains(getProcess())) {
             if (indexMap.containsValue(index)) {
                 throw new IOException("the value: " + index + "is already in map: " + indexMap);
             }
-            if ("json".equals(getParse())) {
+            if ("json".equals(parse)) {
                 indexMap.put(indexName, index);
-            } else if ("table".equals(getParse())) {
+            } else if ("table".equals(parse) || "csv".equals(parse)) {
                 if (index.matches("\\d")) {
                     indexMap.put(indexName, index);
                 } else {
@@ -137,11 +172,11 @@ public class CommonParams {
         }
     }
 
-    public void setIndexMap() throws IOException {
+    private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
         String indexes = entryParam.getValue("indexes", "");
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
-        if ("table".equals(getParse())) {
+        if ("table".equals(parse) || "csv".equals(parse)) {
             if ("".equals(indexes)) {
                 indexMap.put("0", keys.get(0));
             } else if (indexes.matches("(\\d+,)*\\d")) {
@@ -176,6 +211,70 @@ public class CommonParams {
         setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfoIndex);
     }
 
+    private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
+        if (!"".equals(marker) || "".equals(start)) return marker;
+        else {
+            FileInfo markerFileInfo = bucketManager.stat(bucket, start);
+            markerFileInfo.key = start;
+            return ListBucketUtils.calcMarker(markerFileInfo);
+        }
+    }
+
+    private void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
+        prefixMap = new HashMap<>();
+        if (!"".equals(prefixConfig)) {
+            JsonFile jsonFile = new JsonFile(prefixConfig);
+            JsonObject jsonCfg;
+            String marker;
+            String end;
+            BucketManager manager = new BucketManager(Auth.create(accessKey, secretKey), new Configuration());
+            for (String prefix : jsonFile.getJsonObject().keySet()) {
+                jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
+                marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
+                end = jsonCfg.get("end").getAsString();
+                prefixMap.put(prefix, new String[]{marker, end});
+            }
+        } else {
+            List<String> prefixList = splitItems(prefixes);
+            for (String prefix : prefixList) {
+                prefixMap.put(prefix, new String[]{"", ""});
+            }
+        }
+    }
+
+    private List<String> splitItems(String paramLine) {
+        if (!"".equals(paramLine)) {
+            Set<String> set;
+            // 指定前缀包含 "," 号时需要用转义符解决
+            if (paramLine.contains("\\,")) {
+                String[] elements = paramLine.split("\\\\,");
+                set = new HashSet<>(Arrays.asList(elements[0].split(",")));
+                set.add(",");
+                if (elements.length > 1)set.addAll(Arrays.asList(elements[1].split(",")));
+            } else {
+                set = new HashSet<>(Arrays.asList(paramLine.split(",")));
+            }
+            // 删除空前缀的情况避免列举操作时造成误解
+            set.remove("");
+            return new ArrayList<>(set);
+        }
+        return new ArrayList<>();
+    }
+
+    private void setPrefixLeft(String prefixLeft) throws IOException {
+        this.prefixLeft = Boolean.valueOf(checked(prefixLeft, "prefix-left", "(true|false)"));
+    }
+
+    private void setPrefixRight(String prefixRight) throws IOException {
+        this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
+    }
+
+    public String checked(String param, String name, String conditionReg) throws IOException {
+        if (param == null || !param.matches(conditionReg))
+            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
+        else return param;
+    }
+
     public String getPath() {
         return path;
     }
@@ -194,6 +293,34 @@ public class CommonParams {
 
     public Map<String, String> getIndexMap() {
         return indexMap;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getBucket() {
+        return bucket;
+    }
+
+    public List<String> getAntiPrefixes() {
+        return antiPrefixes;
+    }
+
+    public boolean getPrefixLeft() {
+        return prefixLeft;
+    }
+
+    public boolean getPrefixRight() {
+        return prefixRight;
+    }
+
+    public Map<String, String[]> getPrefixMap() {
+        return prefixMap;
     }
 
     public int getUnitLen() {

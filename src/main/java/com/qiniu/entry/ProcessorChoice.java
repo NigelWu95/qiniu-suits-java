@@ -43,12 +43,12 @@ public class ProcessorChoice {
 
     public ProcessorChoice(IEntryParam entryParam, Configuration configuration) throws IOException {
         this.entryParam = entryParam;
-        FileInputParams fileInputParams = new FileInputParams(entryParam);
-        this.process = fileInputParams.getProcess();
-        this.retryCount = fileInputParams.getRetryCount();
-        this.savePath = fileInputParams.getSavePath();
-        this.saveFormat = fileInputParams.getSaveFormat();
-        this.saveSeparator = fileInputParams.getSaveSeparator();
+        CommonParams commonParams = new CommonParams(entryParam);
+        this.process = commonParams.getProcess();
+        this.retryCount = commonParams.getRetryCount();
+        this.savePath = commonParams.getSavePath();
+        this.saveFormat = commonParams.getSaveFormat();
+        this.saveSeparator = commonParams.getSaveSeparator();
         this.configuration = configuration;
     }
 
