@@ -47,7 +47,6 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         this(accessKey, secretKey, configuration, bucket, savePath, format, 0);
     }
 
-    @Override
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
         fileStat.stringFormatter = new MapToTableFormatter("\t", null);

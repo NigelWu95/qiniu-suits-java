@@ -40,7 +40,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         } else this.urlIndex = urlIndex;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
-        this.mediaManager = new MediaManager(protocol, Auth.create(accessKey, secretKey));
+        this.mediaManager = new MediaManager(protocol, accessKey == null ? null :
+                Auth.create(accessKey, secretKey));
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -67,7 +68,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(protocol, Auth.create(accessKey, secretKey));
+        queryAvinfo.mediaManager = new MediaManager(protocol, accessKey == null ? null :
+                Auth.create(accessKey, secretKey));
         queryAvinfo.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryAvinfo.fileMap.initDefaultWriters();

@@ -22,7 +22,7 @@ public class MediaManager {
 
     public MediaManager(String protocol, Auth srcAuth) {
         this.client = new Client();
-        this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+        this.protocol = "https".equals(protocol)? "https" : "http";
         this.srcAuth = srcAuth;
     }
 
