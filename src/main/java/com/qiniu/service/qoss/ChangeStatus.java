@@ -13,15 +13,15 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
 
     final private int status;
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String savePath,
-                        int saveIndex) throws IOException {
-        super("status", auth, configuration, bucket, savePath, saveIndex);
+    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
+                          String savePath, int saveIndex) throws IOException {
+        super("status", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.status = status;
     }
 
-    public ChangeStatus(Auth auth, Configuration configuration, String bucket, int status, String savePath)
-            throws IOException {
-        this(auth, configuration, bucket, status, savePath, 0);
+    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
+                        String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, status, savePath, 0);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

@@ -14,7 +14,9 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     private String domain;
     private String protocol;
     final private String urlIndex;
-    final private Auth auth;
+    final private String accessKey;
+    final private String secretKey;
+    private Auth auth;
     final private long expires;
     final private String processName;
     final private String savePath;
@@ -22,10 +24,12 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     private int saveIndex;
     private FileMap fileMap;
 
-    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String savePath,
-                      int saveIndex) throws IOException {
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
+                      String savePath, int saveIndex) throws IOException {
         this.processName = "privateurl";
-        this.auth = auth;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.auth = Auth.create(accessKey, secretKey);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
@@ -43,9 +47,9 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
         this.fileMap.initDefaultWriters();
     }
 
-    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String savePath)
-            throws IOException {
-        this(auth, domain, protocol, urlIndex, expires, savePath, 0);
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
     }
 
     public String getProcessName() {
@@ -57,14 +61,15 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {
-        PrivateUrl queryAvinfo = (PrivateUrl)super.clone();
-        queryAvinfo.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
+        PrivateUrl privateUrl = (PrivateUrl)super.clone();
+        privateUrl.auth = Auth.create(accessKey, secretKey);
+        privateUrl.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
-            queryAvinfo.fileMap.initDefaultWriters();
+            privateUrl.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return queryAvinfo;
+        return privateUrl;
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {

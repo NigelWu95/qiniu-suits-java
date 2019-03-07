@@ -17,7 +17,9 @@ import java.util.Map;
 
 public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final private Auth auth;
+    final private String accessKey;
+    final private String secretKey;
+    private Auth auth;
     final private Configuration configuration;
     private BucketManager bucketManager;
     final private String bucket;
@@ -43,10 +45,12 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private int saveIndex;
     private FileMap fileMap;
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      boolean srcPrivate, String keyPrefix, String urlIndex, String savePath, int saveIndex)
-            throws IOException {
-        this.auth = auth;
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
+                      String protocol, boolean srcPrivate, String keyPrefix, String urlIndex, String savePath,
+                      int saveIndex) throws IOException {
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
@@ -70,9 +74,10 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.fileMap.initDefaultWriters();
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      boolean srcPrivate, String keyPrefix, String urlIndex, String savePath) throws IOException {
-        this(auth, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, savePath, 0);
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
+                      String protocol, boolean srcPrivate, String keyPrefix, String urlIndex, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, savePath, 0);
     }
 
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
@@ -102,7 +107,8 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(auth, configuration);
+        asyncFetch.auth = Auth.create(accessKey, secretKey);
+        asyncFetch.bucketManager = new BucketManager(asyncFetch.auth, configuration);
         asyncFetch.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             asyncFetch.fileMap.initDefaultWriters();

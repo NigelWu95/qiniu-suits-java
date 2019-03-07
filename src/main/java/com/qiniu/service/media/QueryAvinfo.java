@@ -17,7 +17,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private String domain;
     private String protocol;
     final private String urlIndex;
-    final private Auth auth;
+    final private String accessKey;
+    final private String secretKey;
     private MediaManager mediaManager;
     private int retryCount;
     final private String savePath;
@@ -25,8 +26,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private int saveIndex;
     private FileMap fileMap;
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String savePath, int saveIndex)
-            throws IOException {
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
+                       String savePath, int saveIndex) throws IOException {
         this.processName = "avinfo";
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
@@ -37,8 +38,9 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else this.urlIndex = urlIndex;
-        this.auth = auth;
-        this.mediaManager = new MediaManager(protocol, auth);
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.mediaManager = new MediaManager(protocol, Auth.create(accessKey, secretKey));
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -46,8 +48,9 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String savePath) throws IOException {
-        this(domain, protocol, urlIndex, auth, savePath, 0);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
+                       String savePath) throws IOException {
+        this(domain, protocol, urlIndex, accessKey, secretKey, savePath, 0);
     }
 
     public String getProcessName() {
@@ -64,7 +67,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(protocol, auth);
+        queryAvinfo.mediaManager = new MediaManager(protocol, Auth.create(accessKey, secretKey));
         queryAvinfo.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryAvinfo.fileMap.initDefaultWriters();

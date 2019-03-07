@@ -18,7 +18,8 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private String domain;
     private String protocol;
     final private String urlIndex;
-    final private Auth auth;
+    final private String accessKey;
+    final private String secretKey;
     final private String algorithm;
     private FileChecker fileChecker;
     final private String processName;
@@ -28,9 +29,8 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private int saveIndex;
     private FileMap fileMap;
 
-    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, Auth auth, String savePath,
-                     int saveIndex)
-            throws IOException {
+    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
+                     String savePath, int saveIndex) throws IOException {
         this.processName = "qhash";
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
@@ -42,8 +42,9 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
             }
         } else this.urlIndex = urlIndex;
         this.algorithm = algorithm;
-        this.auth = auth;
-        this.fileChecker = new FileChecker(algorithm, protocol, auth);
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.fileChecker = new FileChecker(algorithm, protocol, Auth.create(accessKey, secretKey));
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -51,9 +52,9 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileMap.initDefaultWriters();
     }
 
-    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, Auth auth, String savePath)
-            throws IOException {
-        this(domain, algorithm, protocol, urlIndex, auth, savePath, 0);
+    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
+                     String savePath) throws IOException {
+        this(domain, algorithm, protocol, urlIndex, accessKey, secretKey, savePath, 0);
     }
 
     public String getProcessName() {
@@ -70,7 +71,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
 
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, protocol, auth);
+        queryHash.fileChecker = new FileChecker(algorithm, protocol, Auth.create(accessKey, secretKey));
         queryHash.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryHash.fileMap.initDefaultWriters();

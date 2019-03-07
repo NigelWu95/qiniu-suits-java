@@ -20,6 +20,8 @@ public class ProcessorChoice {
 
     private IEntryParam entryParam;
     private CommonParams commonParams;
+    private String accessKey;
+    private String secretKey;
     private String process;
     private int retryCount;
     private String savePath;
@@ -39,11 +41,12 @@ public class ProcessorChoice {
         add("stat");
         add("privateurl");
     }};
-    private Auth auth;
 
     public ProcessorChoice(IEntryParam entryParam, Configuration configuration, CommonParams commonParams) {
         this.entryParam = entryParam;
         this.commonParams = commonParams;
+        this.accessKey = commonParams.getAccessKey();
+        this.secretKey = commonParams.getSecretKey();
         this.process = commonParams.getProcess();
         this.retryCount = commonParams.getRetryCount();
         this.savePath = commonParams.getSavePath();
@@ -138,9 +141,8 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
         if (needAuthProcesses.contains(process)) {
-            String ak = entryParam.getValue("ak");
-            String sk = entryParam.getValue("sk");
-            auth = Auth.create(ak, sk);
+            accessKey = entryParam.getValue("ak");
+            secretKey = entryParam.getValue("sk");
         }
         ILineProcess<Map<String, String>> processor = null;
         switch (process) {
@@ -166,19 +168,19 @@ public class ProcessorChoice {
     private ILineProcess<Map<String, String>> getChangeStatus() throws IOException {
         String bucket = entryParam.getValue("bucket");
         String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
-        return new ChangeStatus(auth, configuration, bucket, Integer.valueOf(status), savePath);
+        return new ChangeStatus(accessKey, secretKey, configuration, bucket, Integer.valueOf(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType() throws IOException {
         String bucket = entryParam.getValue("bucket");
         String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
-        return new ChangeType(auth, configuration, bucket, Integer.valueOf(type), savePath);
+        return new ChangeType(accessKey, secretKey, configuration, bucket, Integer.valueOf(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
         String bucket = entryParam.getValue("bucket");
         String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
-        return new UpdateLifecycle(auth, configuration, bucket, Integer.valueOf(days), savePath);
+        return new UpdateLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
@@ -187,7 +189,7 @@ public class ProcessorChoice {
         String newKeyIndex = entryParam.getValue("newKey-index", null);
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new CopyFile(auth, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
+        return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
@@ -199,13 +201,13 @@ public class ProcessorChoice {
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String force = entryParam.getValue("prefix-force", null);
         force = commonParams.checked(force, "prefix-force", "(true|false)");
-        return new MoveFile(auth, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix,
+        return new MoveFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix,
                 Boolean.valueOf(force), savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        return new DeleteFile(auth, configuration, bucket, savePath);
+        return new DeleteFile(accessKey, secretKey, configuration, bucket, savePath);
     }
 
     private ILineProcess<Map<String, String>> getAsyncFetch() throws IOException {
@@ -226,8 +228,8 @@ public class ProcessorChoice {
         String type = entryParam.getValue("file-type", "0");
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
-        ILineProcess<Map<String, String>> processor = new AsyncFetch(auth, configuration, toBucket, domain, protocol,
-                Boolean.valueOf(sign), keyPrefix, urlIndex, savePath);
+        ILineProcess<Map<String, String>> processor = new AsyncFetch(accessKey, secretKey, configuration, toBucket,
+                domain, protocol, Boolean.valueOf(sign), keyPrefix, urlIndex, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
@@ -244,11 +246,10 @@ public class ProcessorChoice {
         String sign = entryParam.getValue("private", null);
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign)) {
-            String accessKey = entryParam.getValue("ak");
-            String secretKey = entryParam.getValue("sk");
-            auth = Auth.create(accessKey, secretKey);
+            accessKey = entryParam.getValue("ak");
+            secretKey = entryParam.getValue("sk");
         }
-        return new QueryAvinfo(domain, protocol, urlIndex, auth, savePath);
+        return new QueryAvinfo(domain, protocol, urlIndex, accessKey, secretKey, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQiniuPfop() throws IOException {
@@ -260,7 +261,7 @@ public class ProcessorChoice {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
-        return new QiniuPfop(auth, configuration, bucket, pipeline, fopsIndex, savePath);
+        return new QiniuPfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
@@ -278,16 +279,15 @@ public class ProcessorChoice {
         String sign = entryParam.getValue("private", null);
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign)) {
-            String accessKey = entryParam.getValue("ak");
-            String secretKey = entryParam.getValue("sk");
-            auth = Auth.create(accessKey, secretKey);
+            accessKey = entryParam.getValue("ak");
+            secretKey = entryParam.getValue("sk");
         }
-        return new QueryHash(domain, algorithm, protocol, urlIndex, auth, savePath);
+        return new QueryHash(domain, algorithm, protocol, urlIndex, accessKey, secretKey, savePath);
     }
 
     private ILineProcess<Map<String, String>> getFileStat() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        return new FileStat(auth, configuration, bucket, savePath, saveFormat);
+        return new FileStat(accessKey, secretKey, configuration, bucket, savePath, saveFormat);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
@@ -297,6 +297,6 @@ public class ProcessorChoice {
         String urlIndex = entryParam.getValue("url-index");
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
-        return new PrivateUrl(auth, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
+        return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
     }
 }
