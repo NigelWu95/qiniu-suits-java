@@ -4,7 +4,6 @@ import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
 import com.qiniu.model.parameter.CommonParams;
-import com.qiniu.model.parameter.ListBucketParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
 import com.qiniu.service.datasource.ListBucket;
@@ -33,13 +32,13 @@ public class EntryMain {
 
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration).getFileProcessor();
         CommonParams commonParams = new CommonParams(entryParam);
-        IDataSource dataSource = getDataSource(entryParam, commonParams);
+        IDataSource dataSource = getDataSource(commonParams);
         int threads = commonParams.getThreads();
         if (dataSource != null) dataSource.export(threads, processor);
         if (processor != null) processor.closeResource();
     }
 
-    private static IDataSource getDataSource(IEntryParam entryParam, CommonParams commonParams) throws IOException {
+    private static IDataSource getDataSource(CommonParams commonParams) {
         IDataSource dataSource = null;
         String source = commonParams.getSource();
         boolean saveTotal = commonParams.getSaveTotal();
@@ -49,14 +48,13 @@ public class EntryMain {
         int unitLen = commonParams.getUnitLen();
         List<String> removeFields = commonParams.getRmFields();
         if ("list".equals(source)) {
-            ListBucketParams listBucketParams = new ListBucketParams(entryParam);
-            String accessKey = listBucketParams.getAccessKey();
-            String secretKey = listBucketParams.getSecretKey();
-            String bucket = listBucketParams.getBucket();
-            Map<String, String[]> prefixesConfig = listBucketParams.getPrefixMap();
-            List<String> antiPrefixes = listBucketParams.getAntiPrefixes();
-            boolean prefixLeft = listBucketParams.getPrefixLeft();
-            boolean prefixRight = listBucketParams.getPrefixRight();
+            String accessKey = commonParams.getAccessKey();
+            String secretKey = commonParams.getSecretKey();
+            String bucket = commonParams.getBucket();
+            Map<String, String[]> prefixesConfig = commonParams.getPrefixMap();
+            List<String> antiPrefixes = commonParams.getAntiPrefixes();
+            boolean prefixLeft = commonParams.getPrefixLeft();
+            boolean prefixRight = commonParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
             dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesConfig, antiPrefixes,
                     prefixLeft, prefixRight, savePath);
