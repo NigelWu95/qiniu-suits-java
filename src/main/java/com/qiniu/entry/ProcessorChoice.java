@@ -19,6 +19,7 @@ import java.util.*;
 public class ProcessorChoice {
 
     private IEntryParam entryParam;
+    private CommonParams commonParams;
     private String process;
     private int retryCount;
     private String savePath;
@@ -42,6 +43,7 @@ public class ProcessorChoice {
 
     public ProcessorChoice(IEntryParam entryParam, Configuration configuration, CommonParams commonParams) {
         this.entryParam = entryParam;
+        this.commonParams = commonParams;
         this.process = commonParams.getProcess();
         this.retryCount = commonParams.getRetryCount();
         this.savePath = commonParams.getSavePath();
@@ -94,19 +96,11 @@ public class ProcessorChoice {
         String date = entryParam.getValue("f-date", "");
         String time = entryParam.getValue("f-time", "");
         String direction = entryParam.getValue("f-direction", "");
-        if (!checkValue(direction, "[01]")) {
-            throw new IOException("no incorrect f-direction, please set it 0 or 1");
-        }
+        direction = commonParams.checked(direction, "f-direction", "[01]");
         long putTimeMax = !"".equals(date) && "0".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
         long putTimeMin = !"".equals(date) && "1".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
-        String type = entryParam.getValue("f-type", "-1");
-        if (!checkValue(type, "[01]")) {
-            throw new IOException("no incorrect f-type, please set it 0 or 1");
-        }
-        String status = entryParam.getValue("f-status", "");
-        if (!checkValue(status, "[01]")) {
-            throw new IOException("no incorrect f-status, please set it 0 or 1");
-        }
+        String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
+        String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
 
         List<String> keyPrefixList = getFilterList(indexMap, "key", keyPrefix, "prefix");
         List<String> keySuffixList = getFilterList(indexMap, "key", keySuffix, "suffix");
@@ -118,14 +112,13 @@ public class ProcessorChoice {
         List<String> antiKeyInnerList = getFilterList(indexMap, "key", antiKeyInner, "anti-inner");
         List<String> antiKeyRegexList = getFilterList(indexMap, "key", antiKeyRegex, "anti-regex");
         List<String> antiMimeTypeList = getFilterList(indexMap, "mimeType", antiMimeType, "anti-mime");
-
         BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
-        SeniorChecker seniorChecker = new SeniorChecker(checkType);
-
         baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
         baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
         baseFieldsFilter.setMimeTypeConditions(mimeTypeList, antiMimeTypeList);
         baseFieldsFilter.setOtherConditions(putTimeMax, putTimeMin, type, status);
+        SeniorChecker seniorChecker = new SeniorChecker(checkType);
+
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
@@ -145,9 +138,9 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
         if (needAuthProcesses.contains(process)) {
-            String accessKey = entryParam.getValue("ak");
-            String secretKey = entryParam.getValue("sk");
-            auth = Auth.create(accessKey, secretKey);
+            String ak = entryParam.getValue("ak");
+            String sk = entryParam.getValue("sk");
+            auth = Auth.create(ak, sk);
         }
         ILineProcess<Map<String, String>> processor = null;
         switch (process) {
@@ -170,41 +163,21 @@ public class ProcessorChoice {
         return processor;
     }
 
-    /**
-     * 检测值是否满足正则表达式
-     * @param value 原值
-     * @param conditionRegex 正则表达式
-     * @return
-     */
-    private boolean checkValue(String value, String conditionRegex) {
-        if (value == null) return false;
-        else return value.matches(conditionRegex);
-    }
-
     private ILineProcess<Map<String, String>> getChangeStatus() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        String status = entryParam.getValue("status");
-        if (!checkValue(status, "[01]")) {
-            throw new IOException("no incorrect status, please set it 0 or 1");
-        }
+        String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
         return new ChangeStatus(auth, configuration, bucket, Integer.valueOf(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        String type = entryParam.getValue("type");
-        if (!checkValue(type, "[01]")) {
-            throw new IOException("no incorrect type, please set it 0 or 1");
-        }
+        String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
         return new ChangeType(auth, configuration, bucket, Integer.valueOf(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        String days = entryParam.getValue("days");
-        if (!checkValue(days, "[\\d]+")) {
-            throw new IOException("no incorrect days, please set it 0 or 1");
-        }
+        String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
         return new UpdateLifecycle(auth, configuration, bucket, Integer.valueOf(days), savePath);
     }
 
@@ -224,12 +197,10 @@ public class ProcessorChoice {
         String newKeyIndex = entryParam.getValue("newKey-index", null);
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String forceIfOnlyPrefix = entryParam.getValue("prefix-force", null);
-        if (!checkValue(forceIfOnlyPrefix, "(true|false)")) {
-            throw new IOException("no incorrect prefix-force, please set it true or false");
-        }
+        String force = entryParam.getValue("prefix-force", null);
+        force = commonParams.checked(force, "prefix-force", "(true|false)");
         return new MoveFile(auth, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix,
-                Boolean.valueOf(forceIfOnlyPrefix), savePath);
+                Boolean.valueOf(force), savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
@@ -241,13 +212,9 @@ public class ProcessorChoice {
         String toBucket = entryParam.getValue("to-bucket");
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", null);
-        if (!checkValue(protocol, "https?")) {
-            throw new IOException("no incorrect protocol, please set it http or https");
-        }
+        protocol = commonParams.checked(protocol, "protocol", "https?");
         String sign = entryParam.getValue("private", null);
-        if (!checkValue(sign, "(true|false)")) {
-            throw new IOException("no incorrect private, please set it true or false");
-        }
+        sign = commonParams.checked(sign, "private", "(true|false)");
         String keyPrefix = entryParam.getValue("add-prefix", null);
         String urlIndex = entryParam.getValue("url-index", null);
         String host = entryParam.getValue("host", null);
@@ -258,9 +225,7 @@ public class ProcessorChoice {
         String callbackHost = entryParam.getValue("callback-host", null);
         String type = entryParam.getValue("file-type", "0");
         String ignore = entryParam.getValue("ignore-same-key", "false");
-        if (!checkValue(ignore, "(true|false)")) {
-            throw new IOException("no incorrect ignore-same-key, please set it true or false");
-        }
+        ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = new AsyncFetch(auth, configuration, toBucket, domain, protocol,
                 Boolean.valueOf(sign), keyPrefix, urlIndex, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
@@ -274,14 +239,11 @@ public class ProcessorChoice {
     private ILineProcess<Map<String, String>> getQueryAvinfo() throws IOException {
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", null);
-        if (!checkValue(protocol, "https?")) {
-            throw new IOException("no incorrect protocol, please set it http or https");
-        }
+        protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = entryParam.getValue("url-index");
         String sign = entryParam.getValue("private", null);
-        if (!checkValue(sign, "(true|false)")) {
-            throw new IOException("no incorrect private, please set it true or false");
-        } else if (Boolean.valueOf(sign)) {
+        sign = commonParams.checked(sign, "private", "(true|false)");
+        if (Boolean.valueOf(sign)) {
             String accessKey = entryParam.getValue("ak");
             String secretKey = entryParam.getValue("sk");
             auth = Auth.create(accessKey, secretKey);
@@ -309,18 +271,13 @@ public class ProcessorChoice {
     private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
         String domain = entryParam.getValue("domain");
         String algorithm = entryParam.getValue("algorithm", null);
-        if (!checkValue(algorithm, "(md5|sha1)")) {
-            throw new IOException("no incorrect algorithm, please set it md5 or sha1");
-        }
+        algorithm = commonParams.checked(algorithm, "algorithm", "(md5|sha1)");
         String protocol = entryParam.getValue("protocol", null);
-        if (!checkValue(protocol, "https?")) {
-            throw new IOException("no incorrect protocol, please set it http or https");
-        }
+        protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = entryParam.getValue("url-index");
         String sign = entryParam.getValue("private", null);
-        if (!checkValue(sign, "(true|false)")) {
-            throw new IOException("no incorrect private, please set it true or false");
-        } else if (Boolean.valueOf(sign)) {
+        sign = commonParams.checked(sign, "private", "(true|false)");
+        if (Boolean.valueOf(sign)) {
             String accessKey = entryParam.getValue("ak");
             String secretKey = entryParam.getValue("sk");
             auth = Auth.create(accessKey, secretKey);
@@ -336,14 +293,10 @@ public class ProcessorChoice {
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", null);
-        if (!checkValue(protocol, "https?")) {
-            throw new IOException("no incorrect protocol, please set it http or https");
-        }
+        protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = entryParam.getValue("url-index");
         String expires = entryParam.getValue("expires", "3600");
-        if (!checkValue(expires, "[1-9]\\d*")) {
-            throw new IOException("no incorrect expires, please set it as a number.");
-        }
+        expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
         return new PrivateUrl(auth, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
     }
 }
