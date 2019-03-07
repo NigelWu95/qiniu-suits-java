@@ -21,9 +21,9 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
 
-    public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format,
-                    int resultIndex) throws IOException {
-        super("stat", auth, configuration, bucket, resultPath, resultIndex);
+    public FileStat(Auth auth, Configuration configuration, String bucket, String savePath, String format,
+                    int saveIndex) throws IOException {
+        super("stat", auth, configuration, bucket, savePath, saveIndex);
         this.format = format;
         if ("table".equals(format)) {
             Map<String, String> indexMap = new HashMap<String, String>(){{
@@ -42,9 +42,9 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         this.stringFormatter = new MapToTableFormatter("\t", null);
     }
 
-    public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format)
+    public FileStat(Auth auth, Configuration configuration, String bucket, String savePath, String format)
             throws IOException {
-        this(auth, configuration, bucket, resultPath, format, 0);
+        this(auth, configuration, bucket, savePath, format, 0);
     }
 
     @Override

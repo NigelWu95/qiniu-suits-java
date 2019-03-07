@@ -24,13 +24,13 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     final private String fopsIndex;
     final private StringMap pfopParams;
     public int retryCount;
-    final private String resultPath;
-    private String resultTag;
-    private int resultIndex;
+    final private String savePath;
+    private String saveTag;
+    private int saveIndex;
     private FileMap fileMap;
 
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String fopsIndex,
-                     String resultPath, int resultIndex) throws IOException {
+                     String savePath, int saveIndex) throws IOException {
         this.processName = "pfop";
         this.auth = auth;
         this.configuration = configuration;
@@ -39,16 +39,16 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
     public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String fopsIndex,
-                     String resultPath) throws IOException {
-        this(auth, configuration, bucket, pipeline, fopsIndex, resultPath, 0);
+                     String savePath) throws IOException {
+        this(auth, configuration, bucket, pipeline, fopsIndex, savePath, 0);
     }
 
     public String getProcessName() {
@@ -59,14 +59,14 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(auth, configuration);
-        qiniuPfop.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        qiniuPfop.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             qiniuPfop.fileMap.initDefaultWriters();
         } catch (IOException e) {

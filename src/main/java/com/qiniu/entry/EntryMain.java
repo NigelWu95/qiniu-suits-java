@@ -42,14 +42,14 @@ public class EntryMain {
 
     private static IDataSource getDataSource(IEntryParam entryParam, CommonParams commonParams) throws IOException {
         IDataSource dataSource = null;
-        String sourceType = commonParams.getSourceType();
+        String source = commonParams.getSource();
         boolean saveTotal = commonParams.getSaveTotal();
-        String resultFormat = commonParams.getResultFormat();
-        String resultSeparator = commonParams.getResultSeparator();
-        String resultPath = commonParams.getResultPath();
+        String savePath = commonParams.getSavePath();
+        String saveFormat = commonParams.getSaveFormat();
+        String saveSeparator = commonParams.getSaveSeparator();
         int unitLen = commonParams.getUnitLen();
         List<String> removeFields = commonParams.getRmFields();
-        if ("list".equals(sourceType)) {
+        if ("list".equals(source)) {
             ListBucketParams listBucketParams = new ListBucketParams(entryParam);
             String accessKey = listBucketParams.getAccessKey();
             String secretKey = listBucketParams.getSecretKey();
@@ -60,16 +60,16 @@ public class EntryMain {
             boolean prefixRight = listBucketParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
             dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesConfig, antiPrefixes,
-                    prefixLeft, prefixRight, resultPath);
-        } else if ("file".equals(sourceType)) {
+                    prefixLeft, prefixRight, savePath);
+        } else if ("file".equals(source)) {
             FileInputParams fileInputParams = new FileInputParams(entryParam);
             String filePath = fileInputParams.getFilePath();
             String parseType = fileInputParams.getParseType();
             String separator = fileInputParams.getSeparator();
             Map<String, String> indexMap = fileInputParams.getIndexMap();
-            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, resultPath);
+            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, savePath);
         }
-        if (dataSource != null) dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
+        if (dataSource != null) dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, removeFields);
 
         return dataSource;
     }

@@ -20,12 +20,12 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     final private Auth auth;
     private MediaManager mediaManager;
     private int retryCount;
-    final private String resultPath;
-    private String resultTag;
-    private int resultIndex;
+    final private String savePath;
+    private String saveTag;
+    private int saveIndex;
     private FileMap fileMap;
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath, int resultIndex)
+    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String savePath, int saveIndex)
             throws IOException {
         this.processName = "avinfo";
         if (urlIndex == null || "".equals(urlIndex)) {
@@ -39,15 +39,15 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         } else this.urlIndex = urlIndex;
         this.auth = auth;
         this.mediaManager = new MediaManager(protocol, auth);
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String resultPath) throws IOException {
-        this(domain, protocol, urlIndex, auth, resultPath, 0);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, Auth auth, String savePath) throws IOException {
+        this(domain, protocol, urlIndex, auth, savePath, 0);
     }
 
     public String getProcessName() {
@@ -58,14 +58,14 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.mediaManager = new MediaManager(protocol, auth);
-        queryAvinfo.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        queryAvinfo.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryAvinfo.fileMap.initDefaultWriters();
         } catch (IOException e) {

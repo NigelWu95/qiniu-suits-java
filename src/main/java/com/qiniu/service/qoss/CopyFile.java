@@ -17,8 +17,8 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     final private String rmPrefix;
 
     public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
-                    String keyPrefix, String rmPrefix, String resultPath, int resultIndex) throws IOException {
-        super("copy", auth, configuration, bucket, resultPath, resultIndex);
+                    String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
+        super("copy", auth, configuration, bucket, savePath, saveIndex);
         this.toBucket = toBucket;
         // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
@@ -27,8 +27,8 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     }
 
     public CopyFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
-                    String keyPrefix, String rmPrefix, String resultPath) throws IOException {
-        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, resultPath, 0);
+                    String keyPrefix, String rmPrefix, String savePath) throws IOException {
+        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, savePath, 0);
     }
 
     private String formatKey(String key) {

@@ -23,26 +23,26 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     final private String persistentIdIndex;
     private MediaManager mediaManager;
     private int retryCount;
-    final private String resultPath;
-    private String resultTag;
-    private int resultIndex;
+    final private String savePath;
+    private String saveTag;
+    private int saveIndex;
     private FileMap fileMap;
 
-    public QueryPfopResult(String persistentIdIndex, String resultPath, int resultIndex) throws IOException {
+    public QueryPfopResult(String persistentIdIndex, String savePath, int saveIndex) throws IOException {
         this.processName = "pfopresult";
         if (persistentIdIndex == null || "".equals(persistentIdIndex))
             throw new IOException("please set the persistentIdIndex.");
         else this.persistentIdIndex = persistentIdIndex;
         this.mediaManager = new MediaManager();
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
-    public QueryPfopResult(String persistentIdIndex, String resultPath) throws IOException {
-        this(persistentIdIndex, resultPath, 0);
+    public QueryPfopResult(String persistentIdIndex, String savePath) throws IOException {
+        this(persistentIdIndex, savePath, 0);
     }
 
     public String getProcessName() {
@@ -53,14 +53,14 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
         queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        queryPfopResult.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryPfopResult.fileMap.initDefaultWriters();
         } catch (IOException e) {
