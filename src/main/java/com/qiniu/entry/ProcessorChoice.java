@@ -52,25 +52,6 @@ public class ProcessorChoice {
         this.configuration = configuration;
     }
 
-    private String getIndex(String parseType, String index, String indexName) throws IOException {
-        if (index == null || "".equals(index)) {
-            throw new IOException("no incorrect " + indexName + "-index.");
-        } else {
-            if ("json".equals(parseType)) {
-                return index;
-            } else if ("table".equals(parseType)) {
-                if (index.matches("\\d")) {
-                    return index;
-                } else {
-                    throw new IOException("no incorrect " + indexName + "-index, it should be a number.");
-                }
-            } else {
-                // 其他情况忽略该索引
-                return "";
-            }
-        }
-    }
-
     private List<String> getFilterList(Map<String, String> indexMap, String key, String field, String name)
             throws IOException {
         if (!"".equals(field)) {
