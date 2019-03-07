@@ -1,4 +1,4 @@
-package com.qiniu.model.parameter;
+package com.qiniu.entry;
 
 import com.google.gson.JsonObject;
 import com.qiniu.config.CommandArgs;
@@ -93,18 +93,6 @@ public class CommonParams {
         saveSeparator = entryParam.getValue("save-separator", "\t");
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
         process = entryParam.getValue("process", null);
-    }
-
-    public CommonParams(String[] args) throws IOException {
-        this(new CommandArgs(args));
-    }
-
-    public CommonParams(String configFileName) throws IOException {
-        this(new FileProperties(configFileName));
-    }
-
-    public String getParamByKey(String key) throws IOException {
-        return entryParam.getValue(key);
     }
 
     private void setSource() throws IOException {

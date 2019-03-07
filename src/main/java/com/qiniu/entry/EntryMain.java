@@ -3,7 +3,6 @@ package com.qiniu.entry;
 import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
-import com.qiniu.model.parameter.CommonParams;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
 import com.qiniu.service.datasource.ListBucket;
@@ -30,8 +29,8 @@ public class EntryMain {
         configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "60"));
         configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "10"));
 
-        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration).getFileProcessor();
         CommonParams commonParams = new CommonParams(entryParam);
+        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
         IDataSource dataSource = getDataSource(commonParams);
         int threads = commonParams.getThreads();
         if (dataSource != null) dataSource.export(threads, processor);

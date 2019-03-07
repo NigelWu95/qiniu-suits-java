@@ -1,6 +1,5 @@
 package com.qiniu.entry;
 
-import com.qiniu.model.parameter.*;
 import com.qiniu.service.filtration.SeniorChecker;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
@@ -41,9 +40,8 @@ public class ProcessorChoice {
     }};
     private Auth auth;
 
-    public ProcessorChoice(IEntryParam entryParam, Configuration configuration) throws IOException {
+    public ProcessorChoice(IEntryParam entryParam, Configuration configuration, CommonParams commonParams) {
         this.entryParam = entryParam;
-        CommonParams commonParams = new CommonParams(entryParam);
         this.process = commonParams.getProcess();
         this.retryCount = commonParams.getRetryCount();
         this.savePath = commonParams.getSavePath();
@@ -80,7 +78,7 @@ public class ProcessorChoice {
 
     }
 
-    public ILineProcess<Map<String, String>> getFileProcessor() throws Exception {
+    public ILineProcess<Map<String, String>> get() throws Exception {
         Map<String, String> indexMap = new HashMap<>();
         String keyPrefix = entryParam.getValue("f-prefix", "");
         String keySuffix = entryParam.getValue("f-suffix", "");
