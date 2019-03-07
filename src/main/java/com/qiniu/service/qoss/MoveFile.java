@@ -16,11 +16,12 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     final private String keyPrefix;
     final private String rmPrefix;
 
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
-                    String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath, int saveIndex)
-            throws IOException {
+    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath,
+                    int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", auth, configuration, bucket, savePath, saveIndex);
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
+                savePath, saveIndex);
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
             if (toBucket == null || "".equals(toBucket)) {
@@ -41,9 +42,10 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
-    public MoveFile(Auth auth, Configuration configuration, String bucket, String toBucket, String newKeyIndex,
-                    String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath) throws IOException {
-        this(auth, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, forceIfOnlyPrefix,
+    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, forceIfOnlyPrefix,
                 savePath, 0);
     }
 

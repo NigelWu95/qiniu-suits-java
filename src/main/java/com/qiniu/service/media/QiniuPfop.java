@@ -17,7 +17,8 @@ import java.util.Map;
 public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     final private String processName;
-    final private Auth auth;
+    final private String accessKey;
+    final private String secretKey;
     final private Configuration configuration;
     private OperationManager operationManager;
     final private String bucket;
@@ -29,12 +30,13 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     private int saveIndex;
     private FileMap fileMap;
 
-    public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String fopsIndex,
-                     String savePath, int saveIndex) throws IOException {
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String fopsIndex, String savePath, int saveIndex) throws IOException {
         this.processName = "pfop";
-        this.auth = auth;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
         this.configuration = configuration;
-        this.operationManager = new OperationManager(auth, configuration);
+        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration);
         this.bucket = bucket;
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
@@ -46,9 +48,9 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileMap.initDefaultWriters();
     }
 
-    public QiniuPfop(Auth auth, Configuration configuration, String bucket, String pipeline, String fopsIndex,
-                     String savePath) throws IOException {
-        this(auth, configuration, bucket, pipeline, fopsIndex, savePath, 0);
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String fopsIndex, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, savePath, 0);
     }
 
     public String getProcessName() {
@@ -65,7 +67,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
-        qiniuPfop.operationManager = new OperationManager(auth, configuration);
+        qiniuPfop.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration);
         qiniuPfop.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             qiniuPfop.fileMap.initDefaultWriters();

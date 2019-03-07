@@ -22,7 +22,8 @@ import java.util.stream.Collectors;
 
 public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final protected Auth auth;
+    final protected String accessKey;
+    final protected String secretKey;
     final protected Configuration configuration;
     protected BucketManager bucketManager;
     final protected String bucket;
@@ -35,12 +36,13 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected int saveIndex;
     protected FileMap fileMap;
 
-    public OperationBase(String processName, Auth auth, Configuration configuration, String bucket, String savePath,
-                         int saveIndex) throws IOException {
+    public OperationBase(String processName, String accessKey, String secretKey, Configuration configuration,
+                         String bucket, String savePath, int saveIndex) throws IOException {
         this.processName = processName;
-        this.auth = auth;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(auth, configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         this.bucket = bucket;
         this.batchOperations = new BatchOperations();
         this.errorLineList = new ArrayList<>();
@@ -65,7 +67,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
-        operationBase.bucketManager = new BucketManager(auth, configuration);
+        operationBase.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         operationBase.batchOperations = new BatchOperations();
         operationBase.errorLineList = new ArrayList<>();
         operationBase.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
