@@ -7,6 +7,7 @@ import java.util.*;
 
 public class FileInputParams extends CommonParams {
 
+    private String filePath;
     private String parseType;
     private String separator;
     private String urlIndex;
@@ -41,6 +42,7 @@ public class FileInputParams extends CommonParams {
 
     public FileInputParams(IEntryParam entryParam) throws IOException {
         super(entryParam);
+        filePath = entryParam.getValue("file-path", null);
         parseType = entryParam.getValue("parse-type", "table");
         if (!parseType.matches("(json|table)")) {
             throw new IOException("no incorrect parse type, please set it as \"json\" or \"table\".");
@@ -151,6 +153,10 @@ public class FileInputParams extends CommonParams {
 
     public String getParseType() {
         return parseType;
+    }
+
+    public String getFilePath() {
+        return filePath;
     }
 
     public String getSeparator() {

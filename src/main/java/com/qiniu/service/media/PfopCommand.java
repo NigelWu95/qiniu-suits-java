@@ -19,15 +19,15 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
 
     private String processName;
     private MediaManager mediaManager;
-    private String resultPath;
-    private String resultTag;
-    private int resultIndex;
     private FileMap fileMap;
     private boolean hasDuration;
     private boolean hasSize;
     private List<JsonObject> pfopConfigs = new ArrayList<>();
+    private String savePath;
+    private String saveTag;
+    private int saveIndex;
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String resultPath, int resultIndex)
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, int saveIndex)
             throws IOException {
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getConfigKeys()) {
@@ -46,28 +46,28 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.mediaManager = new MediaManager();
         this.hasDuration = hasDuration;
         this.hasSize = hasSize;
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String resultPath) throws IOException {
-        this(jsonPath, hasDuration, hasSize, resultPath, 0);
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath) throws IOException {
+        this(jsonPath, hasDuration, hasSize, savePath, 0);
     }
 
     public String getProcessName() {
         return this.processName;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public PfopCommand clone() throws CloneNotSupportedException {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
-        pfopCommand.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        pfopCommand.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             pfopCommand.fileMap.initDefaultWriters();
         } catch (IOException e) {
@@ -122,7 +122,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
             }
 
             if (commandList.size() > 0)
-                fileMap.writeKeyFile(pfopConfig.get("name").getAsString() + resultIndex,
+                fileMap.writeKeyFile(pfopConfig.get("name").getAsString() + saveIndex,
                         String.join("\n", commandList), false);
         }
     }

@@ -17,13 +17,13 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     final private Auth auth;
     final private long expires;
     final private String processName;
-    final private String resultPath;
-    private String resultTag;
-    private int resultIndex;
+    final private String savePath;
+    private String saveTag;
+    private int saveIndex;
     private FileMap fileMap;
 
-    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String resultPath,
-                      int resultIndex) throws IOException {
+    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String savePath,
+                      int saveIndex) throws IOException {
         this.processName = "privateurl";
         this.auth = auth;
         if (urlIndex == null || "".equals(urlIndex)) {
@@ -36,29 +36,29 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             }
         } else this.urlIndex = urlIndex;
         this.expires = expires == 0L ? 3600 : expires;
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
-    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String resultPath)
+    public PrivateUrl(Auth auth, String domain, String protocol, String urlIndex, long expires, String savePath)
             throws IOException {
-        this(auth, domain, protocol, urlIndex, expires, resultPath, 0);
+        this(auth, domain, protocol, urlIndex, expires, savePath, 0);
     }
 
     public String getProcessName() {
         return this.processName;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl queryAvinfo = (PrivateUrl)super.clone();
-        queryAvinfo.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        queryAvinfo.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             queryAvinfo.fileMap.initDefaultWriters();
         } catch (IOException e) {

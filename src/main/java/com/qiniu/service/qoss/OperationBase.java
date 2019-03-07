@@ -30,13 +30,13 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected int retryCount;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
-    final protected String resultPath;
-    protected String resultTag;
-    protected int resultIndex;
+    final protected String savePath;
+    protected String saveTag;
+    protected int saveIndex;
     protected FileMap fileMap;
 
-    public OperationBase(String processName, Auth auth, Configuration configuration, String bucket, String resultPath,
-                         int resultIndex) throws IOException {
+    public OperationBase(String processName, Auth auth, Configuration configuration, String bucket, String savePath,
+                         int saveIndex) throws IOException {
         this.processName = processName;
         this.auth = auth;
         this.configuration = configuration;
@@ -44,10 +44,10 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.bucket = bucket;
         this.batchOperations = new BatchOperations();
         this.errorLineList = new ArrayList<>();
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
@@ -59,8 +59,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
@@ -68,7 +68,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         operationBase.bucketManager = new BucketManager(auth, configuration);
         operationBase.batchOperations = new BatchOperations();
         operationBase.errorLineList = new ArrayList<>();
-        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        operationBase.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             operationBase.fileMap.initDefaultWriters();
         } catch (IOException e) {

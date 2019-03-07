@@ -22,9 +22,9 @@ public class ProcessorChoice {
     private IEntryParam entryParam;
     private String process;
     private int retryCount;
-    private String resultPath;
-    private String resultFormat;
-    private String resultSeparator;
+    private String savePath;
+    private String saveFormat;
+    private String saveSeparator;
     private Configuration configuration;
     final private List<String> needAuthProcesses = new ArrayList<String>(){{
         add("status");
@@ -46,9 +46,9 @@ public class ProcessorChoice {
         FileInputParams fileInputParams = new FileInputParams(entryParam);
         this.process = fileInputParams.getProcess();
         this.retryCount = fileInputParams.getRetryCount();
-        this.resultPath = fileInputParams.getResultPath();
-        this.resultFormat = fileInputParams.getResultFormat();
-        this.resultSeparator = fileInputParams.getResultSeparator();
+        this.savePath = fileInputParams.getSavePath();
+        this.saveFormat = fileInputParams.getSaveFormat();
+        this.saveSeparator = fileInputParams.getSaveSeparator();
         this.configuration = configuration;
     }
 
@@ -151,8 +151,7 @@ public class ProcessorChoice {
         ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
-            processor = new FilterProcess(baseFieldsFilter, seniorChecker, resultPath, resultFormat, resultSeparator,
-                    rmFields);
+            processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
@@ -209,7 +208,7 @@ public class ProcessorChoice {
         if (!checkValue(status, "[01]")) {
             throw new IOException("no incorrect status, please set it 0 or 1");
         }
-        return new ChangeStatus(auth, configuration, bucket, Integer.valueOf(status), resultPath);
+        return new ChangeStatus(auth, configuration, bucket, Integer.valueOf(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType() throws IOException {
@@ -218,7 +217,7 @@ public class ProcessorChoice {
         if (!checkValue(type, "[01]")) {
             throw new IOException("no incorrect type, please set it 0 or 1");
         }
-        return new ChangeType(auth, configuration, bucket, Integer.valueOf(type), resultPath);
+        return new ChangeType(auth, configuration, bucket, Integer.valueOf(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
@@ -227,7 +226,7 @@ public class ProcessorChoice {
         if (!checkValue(days, "[\\d]+")) {
             throw new IOException("no incorrect days, please set it 0 or 1");
         }
-        return new UpdateLifecycle(auth, configuration, bucket, Integer.valueOf(days), resultPath);
+        return new UpdateLifecycle(auth, configuration, bucket, Integer.valueOf(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
@@ -236,7 +235,7 @@ public class ProcessorChoice {
         String newKeyIndex = entryParam.getValue("newKey-index", null);
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new CopyFile(auth, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, resultPath);
+        return new CopyFile(auth, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
@@ -251,12 +250,12 @@ public class ProcessorChoice {
             throw new IOException("no incorrect prefix-force, please set it true or false");
         }
         return new MoveFile(auth, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix,
-                Boolean.valueOf(forceIfOnlyPrefix), resultPath);
+                Boolean.valueOf(forceIfOnlyPrefix), savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        return new DeleteFile(auth, configuration, bucket, resultPath);
+        return new DeleteFile(auth, configuration, bucket, savePath);
     }
 
     private ILineProcess<Map<String, String>> getAsyncFetch() throws IOException {
@@ -284,7 +283,7 @@ public class ProcessorChoice {
             throw new IOException("no incorrect ignore-same-key, please set it true or false");
         }
         ILineProcess<Map<String, String>> processor = new AsyncFetch(auth, configuration, toBucket, domain, protocol,
-                Boolean.valueOf(sign), keyPrefix, urlIndex, resultPath);
+                Boolean.valueOf(sign), keyPrefix, urlIndex, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
@@ -308,7 +307,7 @@ public class ProcessorChoice {
             String secretKey = entryParam.getValue("sk");
             auth = Auth.create(accessKey, secretKey);
         }
-        return new QueryAvinfo(domain, protocol, urlIndex, auth, resultPath);
+        return new QueryAvinfo(domain, protocol, urlIndex, auth, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQiniuPfop() throws IOException {
@@ -320,12 +319,12 @@ public class ProcessorChoice {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
-        return new QiniuPfop(auth, configuration, bucket, pipeline, fopsIndex, resultPath);
+        return new QiniuPfop(auth, configuration, bucket, pipeline, fopsIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
         String persistentIdIndex = entryParam.getValue("persistentId-index");
-        return new QueryPfopResult(persistentIdIndex, resultPath);
+        return new QueryPfopResult(persistentIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
@@ -347,12 +346,12 @@ public class ProcessorChoice {
             String secretKey = entryParam.getValue("sk");
             auth = Auth.create(accessKey, secretKey);
         }
-        return new QueryHash(domain, algorithm, protocol, urlIndex, auth, resultPath);
+        return new QueryHash(domain, algorithm, protocol, urlIndex, auth, savePath);
     }
 
     private ILineProcess<Map<String, String>> getFileStat() throws IOException {
         String bucket = entryParam.getValue("bucket");
-        return new FileStat(auth, configuration, bucket, resultPath, resultFormat);
+        return new FileStat(auth, configuration, bucket, savePath, saveFormat);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
@@ -366,6 +365,6 @@ public class ProcessorChoice {
         if (!checkValue(expires, "[1-9]\\d*")) {
             throw new IOException("no incorrect expires, please set it as a number.");
         }
-        return new PrivateUrl(auth, domain, protocol, urlIndex, Long.valueOf(expires), resultPath);
+        return new PrivateUrl(auth, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
     }
 }

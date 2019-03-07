@@ -32,8 +32,8 @@ public class ListBucket implements IDataSource {
     final private boolean prefixRight;
     final private String resultPath;
     private boolean saveTotal;
-    private String resultFormat;
-    private String resultSeparator;
+    private String saveFormat;
+    private String saveSeparator;
     private List<String> rmFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
@@ -55,11 +55,11 @@ public class ListBucket implements IDataSource {
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(boolean saveTotal, String format, String separator, List<String> removeFields) {
+    public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
-        this.resultFormat = format;
-        this.resultSeparator = separator;
-        this.rmFields = removeFields;
+        this.saveFormat = format;
+        this.saveSeparator = separator;
+        this.rmFields = rmFields;
     }
 
     private String[] getMarkerAndEnd(String prefix) {
@@ -175,8 +175,7 @@ public class ListBucket implements IDataSource {
     private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(resultFormat,
-                resultSeparator, rmFields);
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
