@@ -21,6 +21,8 @@ public class ProcessorChoice {
     private CommonParams commonParams;
     private String accessKey;
     private String secretKey;
+    private String bucket;
+    private Map<String, String> indexMap;
     private String process;
     private int retryCount;
     private String savePath;
@@ -33,6 +35,8 @@ public class ProcessorChoice {
         this.commonParams = commonParams;
         this.accessKey = commonParams.getAccessKey();
         this.secretKey = commonParams.getSecretKey();
+        this.indexMap = commonParams.getIndexMap();
+        this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
         this.retryCount = commonParams.getRetryCount();
         this.savePath = commonParams.getSavePath();
@@ -41,7 +45,7 @@ public class ProcessorChoice {
         this.configuration = configuration;
     }
 
-    private List<String> getFilterList(Map<String, String> indexMap, String key, String field, String name)
+    private List<String> getFilterList(String key, String field, String name)
             throws IOException {
         if (!"".equals(field)) {
             if (indexMap == null || indexMap.containsValue(key)) {
@@ -52,7 +56,7 @@ public class ProcessorChoice {
         } else return null;
     }
 
-    private Long getPointDatetime(Map<String, String> indexMap, String date, String time) throws Exception {
+    private Long getPointDatetime(String date, String time) throws Exception {
         String pointDatetime;
         if(date.matches("\\d{4}-\\d{2}-\\d{2}")) {
             if (indexMap != null && !indexMap.containsValue("putTime")) {
@@ -71,7 +75,6 @@ public class ProcessorChoice {
     }
 
     public ILineProcess<Map<String, String>> get() throws Exception {
-        Map<String, String> indexMap = commonParams.getIndexMap();
         String keyPrefix = entryParam.getValue("f-prefix", "");
         String keySuffix = entryParam.getValue("f-suffix", "");
         String keyInner = entryParam.getValue("f-inner", "");
@@ -90,24 +93,24 @@ public class ProcessorChoice {
         long putTimeMin = 0;
         if (!"".equals(date)) {
             direction = commonParams.checked(direction, "f-direction", "[01]");
-            putTimeMax = "0".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
-            putTimeMin = "1".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
+            putTimeMax = "0".equals(direction) ? 0 : getPointDatetime(date, time) * 10000;
+            putTimeMin = "1".equals(direction) ? 0 : getPointDatetime(date, time) * 10000;
         }
         String type = entryParam.getValue("type", null);
         String status = entryParam.getValue("status", null);
         if (type != null) type = commonParams.checked(type, "type", "[01]");
         if (status != null) status = commonParams.checked(status, "status", "[01]");
 
-        List<String> keyPrefixList = getFilterList(indexMap, "key", keyPrefix, "prefix");
-        List<String> keySuffixList = getFilterList(indexMap, "key", keySuffix, "suffix");
-        List<String> keyInnerList = getFilterList(indexMap, "key", keyInner, "inner");
-        List<String> keyRegexList = getFilterList(indexMap, "key", keyRegex, "regex");
-        List<String> mimeTypeList = getFilterList(indexMap, "mimeType", mimeType, "mime");
-        List<String> antiKeyPrefixList = getFilterList(indexMap, "key", antiKeyPrefix, "anti-prefix");
-        List<String> antiKeySuffixList = getFilterList(indexMap, "key", antiKeySuffix, "anti-suffix");
-        List<String> antiKeyInnerList = getFilterList(indexMap, "key", antiKeyInner, "anti-inner");
-        List<String> antiKeyRegexList = getFilterList(indexMap, "key", antiKeyRegex, "anti-regex");
-        List<String> antiMimeTypeList = getFilterList(indexMap, "mimeType", antiMimeType, "anti-mime");
+        List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
+        List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
+        List<String> keyInnerList = getFilterList("key", keyInner, "inner");
+        List<String> keyRegexList = getFilterList("key", keyRegex, "regex");
+        List<String> mimeTypeList = getFilterList("mimeType", mimeType, "mime");
+        List<String> antiKeyPrefixList = getFilterList("key", antiKeyPrefix, "anti-prefix");
+        List<String> antiKeySuffixList = getFilterList("key", antiKeySuffix, "anti-suffix");
+        List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
+        List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
+        List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
         BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
         baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
         baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
@@ -155,25 +158,21 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getChangeStatus() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
         return new ChangeStatus(accessKey, secretKey, configuration, bucket, Integer.valueOf(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
         return new ChangeType(accessKey, secretKey, configuration, bucket, Integer.valueOf(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
         return new UpdateLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         String toBucket = entryParam.getValue("to-bucket");
         String newKeyIndex = entryParam.getValue("newKey-index", null);
         String addPrefix = entryParam.getValue("add-prefix", null);
@@ -182,7 +181,6 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         String toBucket = entryParam.getValue("to-bucket", null);
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
         String newKeyIndex = entryParam.getValue("newKey-index", null);
@@ -195,16 +193,15 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         return new DeleteFile(accessKey, secretKey, configuration, bucket, savePath);
     }
 
     private ILineProcess<Map<String, String>> getAsyncFetch() throws IOException {
         String toBucket = entryParam.getValue("to-bucket");
-        String domain = entryParam.getValue("domain");
-        String protocol = entryParam.getValue("protocol", null);
+        String domain = entryParam.getValue("domain", null);
+        String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String sign = entryParam.getValue("private", null);
+        String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         String keyPrefix = entryParam.getValue("add-prefix", null);
         String urlIndex = entryParam.getValue("url-index", null);
@@ -229,10 +226,10 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> getQueryAvinfo() throws IOException {
         String domain = entryParam.getValue("domain");
-        String protocol = entryParam.getValue("protocol", null);
+        String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = entryParam.getValue("url-index");
-        String sign = entryParam.getValue("private", null);
+        String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign) && accessKey == null) {
             accessKey = entryParam.getValue("ak");
@@ -242,7 +239,6 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getQiniuPfop() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         String fopsIndex = entryParam.getValue("fops-index");
         String forcePublic = entryParam.getValue("force-public", "false");
         String pipeline = entryParam.getValue("pipeline", null);
@@ -260,12 +256,12 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
         String domain = entryParam.getValue("domain");
-        String algorithm = entryParam.getValue("algorithm", null);
+        String algorithm = entryParam.getValue("algorithm", "md5");
         algorithm = commonParams.checked(algorithm, "algorithm", "(md5|sha1)");
-        String protocol = entryParam.getValue("protocol", null);
+        String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = entryParam.getValue("url-index");
-        String sign = entryParam.getValue("private", null);
+        String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign)) {
             accessKey = entryParam.getValue("ak");
@@ -275,13 +271,12 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getFileStat() throws IOException {
-        String bucket = entryParam.getValue("bucket");
         return new FileStat(accessKey, secretKey, configuration, bucket, savePath, saveFormat);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
         String domain = entryParam.getValue("domain");
-        String protocol = entryParam.getValue("protocol", null);
+        String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = entryParam.getValue("url-index");
         String expires = entryParam.getValue("expires", "3600");
