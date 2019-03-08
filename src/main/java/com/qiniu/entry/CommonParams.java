@@ -19,9 +19,9 @@ public class CommonParams {
     private IEntryParam entryParam;
     private String path;
     private String source;
+    private Map<String, String> indexMap;
     private String parse;
     private String separator;
-    private Map<String, String> indexMap;
     private String accessKey;
     private String secretKey;
     private String bucket;
@@ -81,6 +81,7 @@ public class CommonParams {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", null);
         setSource();
+        indexMap = new HashMap<>();
         if ("list".equals(source)) {
             accessKey = entryParam.getValue("ak");
             secretKey = entryParam.getValue("sk");
@@ -186,7 +187,6 @@ public class CommonParams {
     }
 
     private void setIndexMap() throws IOException {
-        indexMap = new HashMap<>();
         String indexes = entryParam.getValue("indexes", "");
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
         if ("table".equals(parse) || "csv".equals(parse)) {

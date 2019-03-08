@@ -45,7 +45,7 @@ public class ProcessorChoice {
             throws IOException {
         if (!"".equals(field)) {
             if (!indexMap.containsValue(key)) {
-                throw new IOException("f-" + name + " filter must get the " + key + "'s index.");
+                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
             }
             return Arrays.asList(field.split(","));
         } else return null;
@@ -70,7 +70,7 @@ public class ProcessorChoice {
     }
 
     public ILineProcess<Map<String, String>> get() throws Exception {
-        Map<String, String> indexMap = new HashMap<>();
+        Map<String, String> indexMap = commonParams.getIndexMap();
         String keyPrefix = entryParam.getValue("f-prefix", "");
         String keySuffix = entryParam.getValue("f-suffix", "");
         String keyInner = entryParam.getValue("f-inner", "");
@@ -227,7 +227,7 @@ public class ProcessorChoice {
         String urlIndex = entryParam.getValue("url-index");
         String sign = entryParam.getValue("private", null);
         sign = commonParams.checked(sign, "private", "(true|false)");
-        if (Boolean.valueOf(sign)) {
+        if (Boolean.valueOf(sign) && accessKey == null) {
             accessKey = entryParam.getValue("ak");
             secretKey = entryParam.getValue("sk");
         }
