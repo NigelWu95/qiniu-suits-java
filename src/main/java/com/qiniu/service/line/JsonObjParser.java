@@ -14,7 +14,8 @@ public class JsonObjParser implements ILineParser<JsonObject> {
     private Map<String, String> indexMap;
     private boolean forceParse;
 
-    public JsonObjParser(Map<String, String> indexMap, boolean forceParse) {
+    public JsonObjParser(Map<String, String> indexMap, boolean forceParse) throws IOException {
+        if (indexMap == null || indexMap.size() == 0) throw new IOException("there are no indexMap be set.");
         this.indexMap = indexMap;
         this.forceParse = forceParse;
     }

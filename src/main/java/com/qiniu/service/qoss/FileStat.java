@@ -18,14 +18,15 @@ import java.util.Map;
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String format;
+    private String separator;
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, int saveIndex) throws IOException {
+                    String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
-        this.format = format;
-        if ("table".equals(format)) {
+        this.format = format == null || !format.matches("(csv|tab|json)") ? "tab" : format;
+        if (!"json".equals(this.format)) {
             Map<String, String> indexMap = new HashMap<String, String>(){{
                 put("key", "key");
                 put("hash", "hash");
@@ -39,17 +40,18 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
             }};
             this.jsonObjParser = new JsonObjParser(indexMap, true);
         }
-        this.stringFormatter = new MapToTableFormatter("\t", null);
+        this.separator = (separator == null || "".equals(separator)) ? "\t" : separator;
+        this.stringFormatter = new MapToTableFormatter(this.separator, null);
     }
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, format, 0);
+                    String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
-        fileStat.stringFormatter = new MapToTableFormatter("\t", null);
+        fileStat.stringFormatter = new MapToTableFormatter(separator, null);
         return fileStat;
     }
 
@@ -81,7 +83,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 jsonObject.get("data").getAsJsonObject()
                         .addProperty("key", processList.get(j).get("key"));
                 if (jsonObject.get("code").getAsInt() == 200)
-                    if ("table".equals(format))
+                    if (!"json".equals(format))
                         fileMap.writeSuccess( stringFormatter.toFormatString(
                                 jsonObjParser.getItemMap(jsonObject.get("data").getAsJsonObject())), false);
                     else fileMap.writeSuccess(jsonObject.get("data").toString(), false);
