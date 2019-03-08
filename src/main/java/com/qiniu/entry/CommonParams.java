@@ -185,7 +185,7 @@ public class CommonParams {
             } else if ("table".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
-                } else {
+                } else if (!"-1".equals(indexName)) {
                     throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
                 }
             } else {
