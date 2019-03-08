@@ -191,7 +191,7 @@ public class CommonParams {
         setIndex(entryParam.getValue("md5-index", null), "md5", needMd5.contains(process));
         setIndex(entryParam.getValue("newKey-index", null), "newKey", needNewKey.contains(process));
         setIndex(entryParam.getValue("fops-index", null), "fops", needFops.contains(process));
-        setIndex(entryParam.getValue("persistentId-index", null), "persistentId", needPid.contains(process));
+        setIndex(entryParam.getValue("persistentId-index", null), "pid", needPid.contains(process));
         setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfo.contains(process));
 
         String indexes = entryParam.getValue("indexes", "");
