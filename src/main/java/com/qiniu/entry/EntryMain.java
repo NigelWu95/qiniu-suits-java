@@ -2,11 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
-import com.qiniu.config.PropertiesFile;
-import com.qiniu.model.parameter.CommonParams;
-import com.qiniu.model.parameter.FileInputParams;
-import com.qiniu.model.parameter.HttpParams;
-import com.qiniu.model.parameter.ListBucketParams;
+import com.qiniu.config.FileProperties;
 import com.qiniu.service.datasource.FileInput;
 import com.qiniu.service.datasource.IDataSource;
 import com.qiniu.service.datasource.ListBucket;
@@ -27,52 +23,48 @@ public class EntryMain {
 
     public static void main(String[] args) throws Exception {
         IEntryParam entryParam = getEntryParam(args);
-        HttpParams httpParams = new HttpParams(entryParam);
         configuration = new Configuration(Zone.autoZone());
         // 自定义超时时间
-        configuration.connectTimeout = httpParams.getConnectTimeout();
-        configuration.readTimeout = httpParams.getReadTimeout();
-        configuration.writeTimeout = httpParams.getWriteTimeout();
+        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "30"));
+        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "60"));
+        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "10"));
 
-        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration).getFileProcessor();
         CommonParams commonParams = new CommonParams(entryParam);
-        IDataSource dataSource = getDataSource(entryParam, commonParams);
+        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
+        IDataSource dataSource = getDataSource(commonParams);
         int threads = commonParams.getThreads();
         if (dataSource != null) dataSource.export(threads, processor);
         if (processor != null) processor.closeResource();
     }
 
-    private static IDataSource getDataSource(IEntryParam entryParam, CommonParams commonParams) throws IOException {
+    private static IDataSource getDataSource(CommonParams commonParams) {
         IDataSource dataSource = null;
-        String sourceType = commonParams.getSourceType();
+        String source = commonParams.getSource();
         boolean saveTotal = commonParams.getSaveTotal();
-        String resultFormat = commonParams.getResultFormat();
-        String resultSeparator = commonParams.getResultSeparator();
-        String resultPath = commonParams.getResultPath();
+        String savePath = commonParams.getSavePath();
+        String saveFormat = commonParams.getSaveFormat();
+        String saveSeparator = commonParams.getSaveSeparator();
         int unitLen = commonParams.getUnitLen();
         List<String> removeFields = commonParams.getRmFields();
-        if ("list".equals(sourceType)) {
-            ListBucketParams listBucketParams = new ListBucketParams(entryParam);
-            String accessKey = listBucketParams.getAccessKey();
-            String secretKey = listBucketParams.getSecretKey();
-            String bucket = listBucketParams.getBucket();
-            Map<String, String[]> prefixesConfig = listBucketParams.getPrefixConfig();
-            List<String> antiPrefixes = listBucketParams.getAntiPrefixes();
-            boolean prefixLeft = listBucketParams.getPrefixLeft();
-            boolean prefixRight = listBucketParams.getPrefixRight();
+        if ("list".equals(source)) {
+            String accessKey = commonParams.getAccessKey();
+            String secretKey = commonParams.getSecretKey();
+            String bucket = commonParams.getBucket();
+            Map<String, String[]> prefixesConfig = commonParams.getPrefixMap();
+            List<String> antiPrefixes = commonParams.getAntiPrefixes();
+            boolean prefixLeft = commonParams.getPrefixLeft();
+            boolean prefixRight = commonParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
             dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesConfig, antiPrefixes,
-                    prefixLeft, prefixRight, resultPath);
-        } else if ("file".equals(sourceType)) {
-            FileInputParams fileInputParams = new FileInputParams(entryParam);
-            String filePath = fileInputParams.getFilePath();
-            String parseType = fileInputParams.getParseType();
-            String separator = fileInputParams.getSeparator();
-            Map<String, String> indexMap = fileInputParams.getIndexMap();
-            String sourceFilePath = System.getProperty("user.dir") + System.getProperty("file.separator") + filePath;
-            dataSource = new FileInput(sourceFilePath, parseType, separator, indexMap, unitLen, resultPath);
+                    prefixLeft, prefixRight, savePath);
+        } else if ("file".equals(source)) {
+            String filePath = commonParams.getPath();
+            String parseType = commonParams.getParse();
+            String separator = commonParams.getSeparator();
+            Map<String, String> indexMap = commonParams.getIndexMap();
+            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, savePath);
         }
-        if (dataSource != null) dataSource.setResultSaveOptions(saveTotal, resultFormat, resultSeparator, removeFields);
+        if (dataSource != null) dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, removeFields);
 
         return dataSource;
     }
@@ -100,6 +92,6 @@ public class EntryMain {
             else paramFromConfig = true;
         }
 
-        return paramFromConfig ? new PropertiesFile(configFilePath) : new CommandArgs(args);
+        return paramFromConfig ? new FileProperties(configFilePath) : new CommandArgs(args);
     }
 }

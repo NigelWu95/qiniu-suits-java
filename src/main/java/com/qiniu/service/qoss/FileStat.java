@@ -4,7 +4,9 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.line.JsonObjParser;
+import com.qiniu.service.line.JsonStrParser;
 import com.qiniu.service.line.MapToTableFormatter;
+import com.qiniu.service.line.SplitLineParser;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
@@ -18,14 +20,16 @@ import java.util.Map;
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String format;
+    private String separator;
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
 
-    public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format,
-                    int resultIndex) throws IOException {
-        super("stat", auth, configuration, bucket, resultPath, resultIndex);
+    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator, int saveIndex) throws IOException {
+        super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.format = format;
-        if ("table".equals(format)) {
+        if ("csv".equals(format) || "tab".equals(format)) {
+            this.separator = "csv".equals(format) ? "," : separator;
             Map<String, String> indexMap = new HashMap<String, String>(){{
                 put("key", "key");
                 put("hash", "hash");
@@ -38,19 +42,20 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 put("md5", "md5");
             }};
             this.jsonObjParser = new JsonObjParser(indexMap, true);
+        } else if (!"json".equals(this.format)) {
+            throw new IOException("please check your format for line to map.");
         }
-        this.stringFormatter = new MapToTableFormatter("\t", null);
+        this.stringFormatter = new MapToTableFormatter(this.separator, null);
     }
 
-    public FileStat(Auth auth, Configuration configuration, String bucket, String resultPath, String format)
-            throws IOException {
-        this(auth, configuration, bucket, resultPath, format, 0);
+    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
-    @Override
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
-        fileStat.stringFormatter = new MapToTableFormatter("\t", null);
+        fileStat.stringFormatter = new MapToTableFormatter(separator, null);
         return fileStat;
     }
 
@@ -82,9 +87,9 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 jsonObject.get("data").getAsJsonObject()
                         .addProperty("key", processList.get(j).get("key"));
                 if (jsonObject.get("code").getAsInt() == 200)
-                    if ("table".equals(format))
-                        fileMap.writeSuccess( stringFormatter.toFormatString(
-                                jsonObjParser.getItemMap(jsonObject.get("data").getAsJsonObject())), false);
+                    if (!"json".equals(format))
+                        fileMap.writeSuccess(stringFormatter.toFormatString(jsonObjParser.getItemMap(
+                                jsonObject.get("data").getAsJsonObject())), false);
                     else fileMap.writeSuccess(jsonObject.get("data").toString(), false);
                 else
                     fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);

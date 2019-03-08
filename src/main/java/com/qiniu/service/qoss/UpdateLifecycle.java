@@ -13,15 +13,15 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
 
     final private int days;
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultPath,
-                           int resultIndex) throws IOException {
-        super("lifecycle", auth, configuration, bucket, resultPath, resultIndex);
+    public UpdateLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
+                           String savePath, int saveIndex) throws IOException {
+        super("lifecycle", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.days = days;
     }
 
-    public UpdateLifecycle(Auth auth, Configuration configuration, String bucket, int days, String resultPath)
-            throws IOException {
-        this(auth, configuration, bucket, days, resultPath, 0);
+    public UpdateLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
+                           String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, days, savePath, 0);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

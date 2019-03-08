@@ -22,7 +22,8 @@ import java.util.stream.Collectors;
 
 public abstract class OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final protected Auth auth;
+    final protected String accessKey;
+    final protected String secretKey;
     final protected Configuration configuration;
     protected BucketManager bucketManager;
     final protected String bucket;
@@ -30,24 +31,25 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected int retryCount;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
-    final protected String resultPath;
-    protected String resultTag;
-    protected int resultIndex;
+    final protected String savePath;
+    protected String saveTag;
+    protected int saveIndex;
     protected FileMap fileMap;
 
-    public OperationBase(String processName, Auth auth, Configuration configuration, String bucket, String resultPath,
-                         int resultIndex) throws IOException {
+    public OperationBase(String processName, String accessKey, String secretKey, Configuration configuration,
+                         String bucket, String savePath, int saveIndex) throws IOException {
         this.processName = processName;
-        this.auth = auth;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(auth, configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         this.bucket = bucket;
         this.batchOperations = new BatchOperations();
         this.errorLineList = new ArrayList<>();
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
@@ -59,16 +61,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
-        operationBase.bucketManager = new BucketManager(auth, configuration);
+        operationBase.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         operationBase.batchOperations = new BatchOperations();
         operationBase.errorLineList = new ArrayList<>();
-        operationBase.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        operationBase.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             operationBase.fileMap.initDefaultWriters();
         } catch (IOException e) {

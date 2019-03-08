@@ -11,13 +11,14 @@ import java.util.Map;
 
 public class DeleteFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
-    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath,
-                      int resultIndex) throws IOException {
-        super("delete", auth, configuration, bucket, resultPath, resultIndex);
+    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                      int saveIndex) throws IOException {
+        super("delete", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
     }
 
-    public DeleteFile(Auth auth, Configuration configuration, String bucket, String resultPath) throws IOException {
-        this(auth, configuration, bucket, resultPath, 0);
+    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, 0);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

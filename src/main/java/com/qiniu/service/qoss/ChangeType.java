@@ -14,15 +14,15 @@ public class ChangeType extends OperationBase implements ILineProcess<Map<String
 
     final private int type;
 
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultPath,
-                      int resultIndex) throws IOException {
-        super("type", auth, configuration, bucket, resultPath, resultIndex);
+    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
+                      String savePath, int saveIndex) throws IOException {
+        super("type", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.type = type;
     }
 
-    public ChangeType(Auth auth, Configuration configuration, String bucket, int type, String resultPath)
-            throws IOException {
-        this(auth, configuration, bucket, type, resultPath, 0);
+    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, type, savePath, 0);
     }
 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {

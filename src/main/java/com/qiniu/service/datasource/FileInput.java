@@ -24,35 +24,34 @@ public class FileInput implements IDataSource {
     final private String separator;
     final private Map<String, String> indexMap;
     final private int unitLen;
-    final private String resultPath;
+    final private String savePath;
     private boolean saveTotal;
-    private String resultFormat;
-    private String resultSeparator;
+    private String saveFormat;
+    private String saveSeparator;
     private List<String> rmFields;
 
     public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int unitLen,
-                     String resultPath) {
+                     String savePath) {
         this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
         this.indexMap = indexMap;
         this.unitLen = unitLen;
-        this.resultPath = resultPath;
+        this.savePath = savePath;
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(boolean saveTotal, String format, String separator, List<String> removeFields) {
+    public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
-        this.resultFormat = format;
-        this.resultSeparator = separator;
-        this.rmFields = removeFields;
+        this.saveFormat = format;
+        this.saveSeparator = separator;
+        this.rmFields = rmFields;
     }
 
     private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, indexMap);
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(resultFormat,
-                resultSeparator, rmFields);
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;
         List<String> writeList;
@@ -84,9 +83,9 @@ public class FileInput implements IDataSource {
 
     private void export(FileMap recordFileMap, String identifier, BufferedReader reader,
                         ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap fileMap = new FileMap(resultPath, "fileinput", identifier);
+        FileMap fileMap = new FileMap(savePath, "fileinput", identifier);
         fileMap.initDefaultWriters();
-        if (processor != null) processor.setResultTag(identifier);
+        if (processor != null) processor.setSaveTag(identifier);
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order: " + identifier;
         String next;
@@ -116,7 +115,7 @@ public class FileInput implements IDataSource {
     }
 
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap inputFileMap = new FileMap(resultPath);
+        FileMap inputFileMap = new FileMap(savePath);
         File sourceFile = new File(filePath);
         if (sourceFile.isDirectory()) {
             inputFileMap.initReaders(filePath);

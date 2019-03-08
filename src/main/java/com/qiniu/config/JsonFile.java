@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.*;
+import java.net.URL;
+import java.util.Set;
 
 public class JsonFile {
 
@@ -12,6 +14,11 @@ public class JsonFile {
 
     public JsonFile(String resourceFile) throws IOException {
         File file = new File(resourceFile);
+        if (!file.exists()) {
+            URL url = getClass().getResource(System.getProperty("file.separator") + resourceFile);
+            if (url == null) throw new IOException("load " + resourceFile + " json config failed");
+            else file = new File(url.getFile());
+        }
         Long fileLength = file.length();
         byte[] fileContent = new byte[fileLength.intValue()];
         FileInputStream inputStream = null;
@@ -43,5 +50,9 @@ public class JsonFile {
         } else {
             throw new IOException("no member name: " + key);
         }
+    }
+
+    public Set<String> getConfigKeys() {
+        return jsonObject.keySet();
     }
 }
