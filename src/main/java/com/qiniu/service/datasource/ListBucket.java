@@ -30,15 +30,15 @@ public class ListBucket implements IDataSource {
     final private List<String> antiPrefixes;
     final private boolean prefixLeft;
     final private boolean prefixRight;
-    final private String resultPath;
+    final private String savePath;
     private boolean saveTotal;
-    private String resultFormat;
-    private String resultSeparator;
+    private String saveFormat;
+    private String saveSeparator;
     private List<String> rmFields;
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
-                      boolean prefixRight, String resultPath) {
+                      boolean prefixRight, String savePath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -51,15 +51,15 @@ public class ListBucket implements IDataSource {
         }});
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
-        this.resultPath = resultPath;
+        this.savePath = savePath;
         this.saveTotal = false;
     }
 
-    public void setResultSaveOptions(boolean saveTotal, String format, String separator, List<String> removeFields) {
+    public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
-        this.resultFormat = format;
-        this.resultSeparator = separator;
-        this.rmFields = removeFields;
+        this.saveFormat = format;
+        this.saveSeparator = separator;
+        this.rmFields = rmFields;
     }
 
     private String[] getMarkerAndEnd(String prefix) {
@@ -69,7 +69,7 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
-        FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
+        FileMap fileMap = new FileMap(savePath, "list_prefix", "");
         fileMap.addErrorWriter();
         List<String> errorList = new ArrayList<>();
         List<FileLister> listerList = prefixList.parallelStream()
@@ -175,8 +175,7 @@ public class ListBucket implements IDataSource {
     private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(resultFormat,
-                resultSeparator, rmFields);
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
@@ -208,7 +207,7 @@ public class ListBucket implements IDataSource {
 
     private void export(FileMap recordFileMap, String identifier, FileLister fileLister,
                         ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap fileMap = new FileMap(resultPath, "listbucket", identifier);
+        FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
         fileMap.initDefaultWriters();
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order " + identifier + ": " + fileLister.getPrefix();
@@ -254,7 +253,7 @@ public class ListBucket implements IDataSource {
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        FileMap recordFileMap = new FileMap(resultPath);
+        FileMap recordFileMap = new FileMap(savePath);
         ExecutorService executorPool = Executors.newFixedThreadPool(threads);
         AtomicBoolean exit = new AtomicBoolean(false);
         Collections.sort(prefixes);
@@ -266,6 +265,7 @@ public class ListBucket implements IDataSource {
         } else {
             for (int i = 0; i < prefixes.size(); i++) {
                 fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefixes.get(i)));
+                // 第一个前缀可能需要判断是否列举该前缀排序之前的文件
                 if (i == 0) {
                     if (prefixLeft) {
                         List<FileLister> firstLister = prefixList(new ArrayList<String>(){{add("");}}, unitLen);
@@ -273,7 +273,7 @@ public class ListBucket implements IDataSource {
                         fileListerList.addAll(firstLister);
                     }
                 } else if (i == prefixes.size() - 1) {
-                    // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
+                    // 最后一个前缀可能需要判断是否列举该前缀排序之后的文件
                     if (fileListerList.size() > 1) {
                         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
                         if (prefixRight) fileListerList.get(fileListerList.size() -1).setPrefix("");

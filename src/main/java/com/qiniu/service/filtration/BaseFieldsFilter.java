@@ -1,6 +1,5 @@
 package com.qiniu.service.filtration;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,8 +12,8 @@ public class BaseFieldsFilter {
     private long putTimeMin;
     private long putTimeMax;
     private List<String> mimeType;
-    private int type;
-    private int status;
+    private String type;
+    private String status;
     private List<String> antiKeyPrefix;
     private List<String> antiKeySuffix;
     private List<String> antiKeyInner;
@@ -23,30 +22,41 @@ public class BaseFieldsFilter {
 
     public void setKeyConditions(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner,
                                  List<String> keyRegex) {
-        this.keyPrefix = keyPrefix == null ? new ArrayList<>() : keyPrefix;
-        this.keySuffix = keySuffix == null ? new ArrayList<>() : keySuffix;
-        this.keyInner = keyInner == null ? new ArrayList<>() : keyInner;
-        this.keyRegex = keyRegex == null ? new ArrayList<>() : keyRegex;
+        this.keyPrefix = keyPrefix;
+        this.keySuffix = keySuffix;
+        this.keyInner = keyInner;
+        this.keyRegex = keyRegex;
     }
 
     public void setAntiKeyConditions(List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
                                      List<String> antiKeyRegex) {
-        this.antiKeyPrefix = antiKeyPrefix == null ? new ArrayList<>() : antiKeyPrefix;
-        this.antiKeySuffix = antiKeySuffix == null ? new ArrayList<>() : antiKeySuffix;
-        this.antiKeyInner = antiKeyInner == null ? new ArrayList<>() : antiKeyInner;
-        this.antiKeyRegex = antiKeyRegex == null ? new ArrayList<>() : antiKeyRegex;
+        this.antiKeyPrefix = antiKeyPrefix;
+        this.antiKeySuffix = antiKeySuffix;
+        this.antiKeyInner = antiKeyInner;
+        this.antiKeyRegex = antiKeyRegex;
     }
 
     public void setMimeTypeConditions(List<String> mimeType, List<String> antiMimeType) {
-        this.mimeType = mimeType == null ? new ArrayList<>() : mimeType;
-        this.antiMimeType = antiMimeType == null ? new ArrayList<>() : antiMimeType;
+        this.mimeType = mimeType;
+        this.antiMimeType = antiMimeType;
     }
 
-    public void setOtherConditions(long putTimeMax, long putTimeMin, int type, int status) {
+    public void setOtherConditions(long putTimeMax, long putTimeMin, String type, String status) {
         this.putTimeMax = putTimeMax;
         this.putTimeMin = putTimeMin;
         this.type = type;
         this.status = status;
+    }
+
+    private boolean checkList(List<String> list) {
+        return list != null && list.size() != 0;
+    }
+
+    public boolean isValid() {
+        return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
+                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || type.matches("[01]") ||
+                status.matches("[01]") || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
+                checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
     }
 
     public boolean checkKeyPrefix() {
@@ -74,11 +84,11 @@ public class BaseFieldsFilter {
     }
 
     public boolean checkType() {
-        return type == 0 || type == 1;
+        return "0".equals(type) || "1".equals(type);
     }
 
     public boolean checkStatus() {
-        return status == 0 || status == 1;
+        return "0".equals(status) || "1".equals(status);
     }
 
     public boolean checkAntiKeyPrefix() {
@@ -134,12 +144,12 @@ public class BaseFieldsFilter {
 
     public boolean filterType(Map<String, String> item) {
         if (checkItem(item, "type")) return false;
-        else return (Integer.valueOf(item.get("type")) == type);
+        else return item.get("type").equals(type);
     }
 
     public boolean filterStatus(Map<String, String> item) {
         if (checkItem(item, "status")) return false;
-        else return (Integer.valueOf(item.get("status")) == status);
+        else return item.get("status").equals(status);
     }
 
     public boolean filterAntiKeyPrefix(Map<String, String> item) {
@@ -169,16 +179,5 @@ public class BaseFieldsFilter {
 
     private boolean checkItem(Map<String, String> item, String key) {
         return item == null || item.get(key) == null || "".equals(item.get(key));
-    }
-
-    private boolean checkList(List<String> list) {
-        return list != null && list.size() != 0;
-    }
-
-    public boolean isValid() {
-        return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || (type == 0 || type == 1) ||
-                (status == 0 || status == 1) || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
-                checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
     }
 }

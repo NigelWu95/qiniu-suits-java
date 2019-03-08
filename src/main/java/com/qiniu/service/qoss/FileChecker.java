@@ -7,12 +7,19 @@ import com.qiniu.http.Response;
 import com.qiniu.model.qoss.Qhash;
 import com.qiniu.util.Auth;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FileChecker {
 
     final private Client client;
     final private String algorithm;
     final private String protocol;
     final private Auth srcAuth;
+    final private List<String> algorithms = new ArrayList<String>(){{
+        add("md5");
+        add("sha1");
+    }};
 
     public FileChecker() {
         this.client = new Client();
@@ -23,8 +30,8 @@ public class FileChecker {
 
     public FileChecker(String algorithm, String protocol, Auth srcAuth) {
         this.client = new Client();
-        this.algorithm = (algorithm == null || "".equals(algorithm)) ? "md5" : algorithm;
-        this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+        this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
+        this.protocol = "https".equals(protocol)? "https" : "http";
         this.srcAuth = srcAuth;
     }
 

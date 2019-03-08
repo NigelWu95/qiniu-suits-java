@@ -17,7 +17,9 @@ import java.util.Map;
 
 public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final private Auth auth;
+    final private String accessKey;
+    final private String secretKey;
+    private Auth auth;
     final private Configuration configuration;
     private BucketManager bucketManager;
     final private String bucket;
@@ -38,15 +40,17 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
-    final private String resultPath;
-    private String resultTag;
-    private int resultIndex;
+    final private String savePath;
+    private String saveTag;
+    private int saveIndex;
     private FileMap fileMap;
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      boolean srcPrivate, String keyPrefix, String urlIndex, String resultPath, int resultIndex)
-            throws IOException {
-        this.auth = auth;
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
+                      String protocol, boolean srcPrivate, String keyPrefix, String urlIndex, String savePath,
+                      int saveIndex) throws IOException {
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(auth, configuration);
         this.bucket = bucket;
@@ -63,22 +67,23 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.srcPrivate = srcPrivate;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
 //        this.m3u8Manager = new M3U8Manager();
-        this.resultPath = resultPath;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.savePath = savePath;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
-    public AsyncFetch(Auth auth, Configuration configuration, String bucket, String domain, String protocol,
-                      boolean srcPrivate, String keyPrefix, String urlIndex, String resultPath) throws IOException {
-        this(auth, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, resultPath, 0);
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
+                      String protocol, boolean srcPrivate, String keyPrefix, String urlIndex, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, savePath, 0);
     }
 
-    public void setFetchArgs(String md5Index, String host, String callbackUrl, String callbackBody, String callbackBodyType,
-                             String callbackHost, int fileType, boolean ignoreSameKey) {
-        this.md5Index = md5Index == null ? "" : md5Index;
+    public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
+                             String callbackBodyType, String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;
+        this.md5Index = md5Index == null ? "" : md5Index;
         this.callbackUrl = callbackUrl;
         this.callbackBody = callbackBody;
         this.callbackBodyType = callbackBodyType;
@@ -96,14 +101,15 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         this.retryCount = retryCount < 1 ? 1 : retryCount;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(auth, configuration);
-        asyncFetch.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        asyncFetch.auth = Auth.create(accessKey, secretKey);
+        asyncFetch.bucketManager = new BucketManager(asyncFetch.auth, configuration);
+        asyncFetch.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             asyncFetch.fileMap.initDefaultWriters();
         } catch (IOException e) {

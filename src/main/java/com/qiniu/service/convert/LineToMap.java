@@ -1,11 +1,11 @@
 package com.qiniu.service.convert;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.service.line.JsonStrParser;
 import com.qiniu.service.line.SplitLineParser;
 import com.qiniu.service.interfaces.ILineParser;
 import com.qiniu.service.interfaces.ITypeConvert;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -14,12 +14,15 @@ public class LineToMap implements ITypeConvert<String, Map<String, String>> {
     private ILineParser<String> lineParser;
     private List<String> errorList = new ArrayList<>();
 
-    public LineToMap(String parseType, String separator, Map<String, String> indexMap) throws QiniuException {
-        if (indexMap == null || indexMap.size() == 0) throw new QiniuException(null, "there are no indexes be set.");
+    public LineToMap(String parseType, String separator, Map<String, String> indexMap) throws IOException {
         if ("json".equals(parseType)) {
             this.lineParser = new JsonStrParser(indexMap);
-        } else {
+        } else if ("csv".equals(parseType)) {
+            this.lineParser = new SplitLineParser(",", indexMap);
+        } else if ("tab".equals(parseType)) {
             this.lineParser = new SplitLineParser(separator, indexMap);
+        } else {
+            throw new IOException("please check your format for line to map.");
         }
     }
 

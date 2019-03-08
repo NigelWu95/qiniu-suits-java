@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface IDataSource {
 
-    void setResultSaveOptions(boolean saveTotal, String format, String separator, List<String> removeFields);
+    void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields);
 
     void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception;
 }
