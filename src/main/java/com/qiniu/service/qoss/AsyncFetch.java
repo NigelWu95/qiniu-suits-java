@@ -142,7 +142,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             int retry = retryCount;
             while (retry > 0) {
                 try {
-                    response = fetch(url, key, line.get(md5Index), line.get("hash"));
+                    response = fetch(url, keyPrefix + key, line.get(md5Index), line.get("hash"));
                     fetchResult = HttpResponseUtils.responseJson(response) + "\t" + response.reqId;
                     retry = 0;
                 } catch (QiniuException e) {
