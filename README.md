@@ -153,3 +153,10 @@ java.net.SocketTimeoutException: timeout
 ```
 超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。
+3. 常见错误信息：  
+（1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
+表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
+（2）java.lang.OutOfMemoryError: unable to create new native thread   
+与（1）类似，内存溢出导致无法继续创建更多线程。  
+（3）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
+请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  
