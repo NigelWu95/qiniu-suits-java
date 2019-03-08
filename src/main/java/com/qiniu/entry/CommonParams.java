@@ -60,6 +60,22 @@ public class CommonParams {
     private List<String> needAvinfoIndex = new ArrayList<String>(){{
         add("pfopcmd");
     }};
+    private List<String> needBucketProcesses = new ArrayList<String>(){{
+        add("status");
+        add("type");
+        add("lifecycle");
+        add("copy");
+        add("move");
+        add("rename");
+        add("delete");
+        add("asyncfetch");
+        add("pfop");
+        add("stat");
+    }};
+    private List<String> needAuthProcesses = new ArrayList<String>(){{
+        addAll(needBucketProcesses);
+        add("privateurl");
+    }};
 
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
@@ -93,6 +109,15 @@ public class CommonParams {
         saveSeparator = entryParam.getValue("save-separator", "\t");
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
         process = entryParam.getValue("process", null);
+
+        if ("file".equals(source) && needBucketProcesses.contains(process)) {
+            if (path.startsWith("qiniu://")) bucket = path.substring(8);
+            else bucket = entryParam.getValue("bucket");
+            if (needAuthProcesses.contains(process)) {
+                accessKey = entryParam.getValue("ak");
+                secretKey = entryParam.getValue("sk");
+            }
+        }
     }
 
     private void setSource() throws IOException {

@@ -10,7 +10,6 @@ import com.qiniu.service.filtration.BaseFieldsFilter;
 import com.qiniu.service.filtration.FilterProcess;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
 import com.qiniu.util.DateUtils;
 
 import java.io.IOException;
@@ -28,19 +27,6 @@ public class ProcessorChoice {
     private String saveFormat;
     private String saveSeparator;
     private Configuration configuration;
-    final private List<String> needAuthProcesses = new ArrayList<String>(){{
-        add("status");
-        add("type");
-        add("lifecycle");
-        add("copy");
-        add("move");
-        add("rename");
-        add("delete");
-        add("asyncfetch");
-        add("pfop");
-        add("stat");
-        add("privateurl");
-    }};
 
     public ProcessorChoice(IEntryParam entryParam, Configuration configuration, CommonParams commonParams) {
         this.entryParam = entryParam;
@@ -140,10 +126,6 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
-        if (needAuthProcesses.contains(process)) {
-            accessKey = entryParam.getValue("ak");
-            secretKey = entryParam.getValue("sk");
-        }
         ILineProcess<Map<String, String>> processor = null;
         switch (process) {
             case "status": processor = getChangeStatus(); break;
