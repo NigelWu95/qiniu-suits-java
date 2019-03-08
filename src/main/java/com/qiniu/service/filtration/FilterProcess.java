@@ -62,8 +62,8 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             return true;
         };
         this.savePath = savePath;
-        this.saveFormat = saveFormat == null || !saveFormat.matches("(csv|tab|json)") ? "tab" : saveFormat;
-        this.saveSeparator = (saveSeparator == null || "".equals(saveSeparator)) ? "\t" : saveSeparator;
+        this.saveFormat = saveFormat;
+        this.saveSeparator = saveSeparator;
         this.rmFields = rmFields;
         this.saveTag = "";
         this.saveIndex = saveIndex;
