@@ -49,8 +49,29 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 【说明】**在 v2.11 及以上版本，取消了设置该参数的强制性，可以进行指定，或者使用简化参数名 source=<source>**  
 支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
 **source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
-`source-type=list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md)，配置文件示例可参考 [配置模板](templates/list.config)  
-`source-type=file` 表示从本地读取文件获取资源列表 [fileinput 配置](docs/fileinput.md)，配置文件示例可参考 [配置模板](templates/file.config)  
+`source-type=list` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/list.config)  
+`source-type=file` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/file.config)  
+##### 常用参数
+```
+source-type=list/file (v.2.11 及以上版本也可以使用 source=list/file，或者不设置该参数)
+path=
+threads=30
+unit-len=10000
+```  
+##### list 参数：
+```
+ak=
+sk=
+bucket=
+```
+##### file 参数：
+```
+parse=
+separator=
+indexes=0,1,2
+```  
+#### 获取数据源中的资源列表更多的参数配置和详细解释见：[数据源配置](docs/datasource.md)
+
 
 ##### *关于并发处理*：  
 ```
