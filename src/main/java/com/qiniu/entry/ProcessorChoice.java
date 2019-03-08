@@ -174,7 +174,7 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
         String toBucket = entryParam.getValue("to-bucket");
-        String newKeyIndex = entryParam.getValue("newKey-index", null);
+        String newKeyIndex = indexMap.get("newKey");
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
@@ -183,7 +183,7 @@ public class ProcessorChoice {
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
         String toBucket = entryParam.getValue("to-bucket", null);
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
-        String newKeyIndex = entryParam.getValue("newKey-index", null);
+        String newKeyIndex = indexMap.get("newKey");
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String force = entryParam.getValue("prefix-force", null);
@@ -205,7 +205,7 @@ public class ProcessorChoice {
         sign = commonParams.checked(sign, "private", "(true|false)");
         String keyPrefix = entryParam.getValue("add-prefix", null);
         String urlIndex = entryParam.getValue("url-index", null);
-        String host = entryParam.getValue("host", null);
+        String host = indexMap.get("url");
         String md5Index = entryParam.getValue("md5-index", null);
         String callbackUrl = entryParam.getValue("callback-url", null);
         String callbackBody = entryParam.getValue("callback-body", null);

@@ -18,6 +18,7 @@ public class CommonParams {
 
     private IEntryParam entryParam;
     private String path;
+    private String process;
     private String source;
     private String parse;
     private String separator;
@@ -37,27 +38,26 @@ public class CommonParams {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
-    private String process;
-    private List<String> needUrlIndex = new ArrayList<String>(){{
+    private List<String> needUrl = new ArrayList<String>(){{
         add("asyncfetch");
         add("privateurl");
         add("qhash");
         add("avinfo");
     }};
-    private List<String> needMd5Index = new ArrayList<String>(){{
+    private List<String> needMd5 = new ArrayList<String>(){{
         add("asyncfetch");
     }};
-    private List<String> needNewKeyIndex = new ArrayList<String>(){{
+    private List<String> needNewKey = new ArrayList<String>(){{
         add("rename");
         add("copy");
     }};
-    private List<String> needFopsIndex = new ArrayList<String>(){{
+    private List<String> needFops = new ArrayList<String>(){{
         add("pfop");
     }};
-    private List<String> needPidIndex = new ArrayList<String>(){{
+    private List<String> needPid = new ArrayList<String>(){{
         add("pfopresult");
     }};
-    private List<String> needAvinfoIndex = new ArrayList<String>(){{
+    private List<String> needAvinfo = new ArrayList<String>(){{
         add("pfopcmd");
     }};
     private List<String> needBucketProcesses = new ArrayList<String>(){{
@@ -80,6 +80,7 @@ public class CommonParams {
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", null);
+        process = entryParam.getValue("process", null);
         setSource();
         if ("list".equals(source)) {
             accessKey = entryParam.getValue("ak");
@@ -108,7 +109,6 @@ public class CommonParams {
         saveFormat = checked(saveFormat, "save-format", "(csv|table|json)");
         saveSeparator = entryParam.getValue("save-separator", "\t");
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
-        process = entryParam.getValue("process", null);
 
         if ("file".equals(source) && needBucketProcesses.contains(process)) {
             if (path.startsWith("qiniu://")) bucket = path.substring(8);
@@ -166,18 +166,18 @@ public class CommonParams {
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
     }
 
-    private void setIndex(String index, String indexName, List<String> needList) throws IOException {
-        if (index != null && needList.contains(getProcess())) {
-            if (indexMap.containsValue(index)) {
-                throw new IOException("the value: " + index + "is already in map: " + indexMap);
+    private void setIndex(String indexName, String index, boolean check) throws IOException {
+        if (indexName != null && check) {
+            if (indexMap.containsKey(indexName)) {
+                throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
             }
             if ("json".equals(parse)) {
                 indexMap.put(indexName, index);
             } else if ("table".equals(parse) || "csv".equals(parse)) {
-                if (index.matches("\\d")) {
+                if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
                 } else {
-                    throw new IOException("no incorrect " + indexName + "-index, it should be a number.");
+                    throw new IOException("no incorrect " + index + "-index, it should be a number.");
                 }
             } else {
                 // 其他情况暂且忽略该索引
@@ -187,41 +187,28 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
+        setIndex(entryParam.getValue("url-index", null), "url", needUrl.contains(process));
+        setIndex(entryParam.getValue("md5-index", null), "md5", needMd5.contains(process));
+        setIndex(entryParam.getValue("newKey-index", null), "newKey", needNewKey.contains(process));
+        setIndex(entryParam.getValue("fops-index", null), "fops", needFops.contains(process));
+        setIndex(entryParam.getValue("persistentId-index", null), "persistentId", needPid.contains(process));
+        setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfo.contains(process));
+
         String indexes = entryParam.getValue("indexes", "");
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
-        if ("table".equals(parse) || "csv".equals(parse)) {
-            if ("".equals(indexes)) {
-                indexMap.put("0", keys.get(0));
-            } else if (indexes.matches("(\\d+,)*\\d")) {
-                List<String> indexList = Arrays.asList(indexes.split(","));
-                if (indexList.size() > 8) {
-                    throw new IOException("the file info's index length is too long.");
-                } else {
-                    for (int i = 0; i < indexList.size(); i++) {
-                        if (indexList.get(i).matches("\\d+") && Integer.valueOf(indexList.get(i)) > -1)
-                            indexMap.put(indexList.get(i), keys.get(i));
-                    }
-                }
-            } else {
-                throw new IOException("the index pattern is not supported.");
-            }
+        List<String> indexList = Arrays.asList(indexes.split(","));
+        if (indexList.size() > 8) {
+            throw new IOException("the file info's index length is too long.");
         } else {
-            List<String> indexList = Arrays.asList(indexes.split(","));
-            if (indexList.size() == 0) {
-                indexMap.put("key", keys.get(0));
-            } else if (indexList.size() > 8) {
-                throw new IOException("the file info's index length is too long.");
-            } else {
-                for (int i = 0; i < indexList.size(); i++) { indexMap.put(indexList.get(i), keys.get(i)); }
+            for (int i = 0; i < indexList.size(); i++) {
+                setIndex(indexList.get(i), keys.get(i), true);
             }
         }
 
-        setIndex(entryParam.getValue("url-index", null), "url", needUrlIndex);
-        setIndex(entryParam.getValue("md5-index", null), "md5", needMd5Index);
-        setIndex(entryParam.getValue("newKey-index", null), "newKey", needNewKeyIndex);
-        setIndex(entryParam.getValue("fops-index", null), "fops", needFopsIndex);
-        setIndex(entryParam.getValue("persistentId-index", null), "persistentId", needPidIndex);
-        setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfoIndex);
+        // 默认索引
+        if (indexMap.size() == 0) {
+            indexMap.put("json".equals(parse) ? "key" : "0", "key");
+        }
     }
 
     private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
