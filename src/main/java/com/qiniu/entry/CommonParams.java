@@ -90,8 +90,8 @@ public class CommonParams {
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixConfig(entryParam.getValue("prefix-config", ""), prefixes);
-            setPrefixLeft(entryParam.getValue("prefix-left", ""));
-            setPrefixRight(entryParam.getValue("prefix-right", ""));
+            setPrefixLeft(entryParam.getValue("prefix-left", "false"));
+            setPrefixRight(entryParam.getValue("prefix-right", "false"));
         } else if ("file".equals(source)) {
             setParse(entryParam.getValue("parse", "tab"));
             setSeparator(entryParam.getValue("separator", null));
@@ -112,7 +112,7 @@ public class CommonParams {
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
         if ("file".equals(source) && needBucketProcesses.contains(process)) {
-            if ("".equals(path) || path.startsWith("qiniu://")) bucket = path.substring(8);
+            if (path.startsWith("qiniu://")) bucket = path.substring(8);
             else bucket = entryParam.getValue("bucket");
             if (needAuthProcesses.contains(process)) {
                 accessKey = entryParam.getValue("ak");
@@ -128,7 +128,7 @@ public class CommonParams {
             try {
                 source = entryParam.getValue("source");
             } catch (IOException e2) {
-                if (path.startsWith("qiniu://")) source = "list";
+                if ("".equals(path) || path.startsWith("qiniu://")) source = "list";
                 else source = "file";
             }
         }

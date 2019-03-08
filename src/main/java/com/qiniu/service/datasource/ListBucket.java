@@ -265,6 +265,7 @@ public class ListBucket implements IDataSource {
         } else {
             for (int i = 0; i < prefixes.size(); i++) {
                 fileListerList.addAll(nextLevelListBySinglePrefix(threads, prefixes.get(i)));
+                // 第一个前缀可能需要判断是否列举该前缀排序之前的文件
                 if (i == 0) {
                     if (prefixLeft) {
                         List<FileLister> firstLister = prefixList(new ArrayList<String>(){{add("");}}, unitLen);
@@ -272,7 +273,7 @@ public class ListBucket implements IDataSource {
                         fileListerList.addAll(firstLister);
                     }
                 } else if (i == prefixes.size() - 1) {
-                    // 为第一段 FileLister 设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
+                    // 最后一个前缀可能需要判断是否列举该前缀排序之后的文件
                     if (fileListerList.size() > 1) {
                         fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
                         if (prefixRight) fileListerList.get(fileListerList.size() -1).setPrefix("");
