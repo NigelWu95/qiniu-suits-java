@@ -35,7 +35,10 @@ public class ProcessorChoice {
         this.commonParams = commonParams;
         this.accessKey = commonParams.getAccessKey();
         this.secretKey = commonParams.getSecretKey();
-        this.indexMap = commonParams.getIndexMap();
+        this.indexMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : commonParams.getIndexMap().entrySet()) {
+            this.indexMap.put(entry.getValue(), entry.getKey());
+        }
         this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
         this.retryCount = commonParams.getRetryCount();
@@ -48,7 +51,7 @@ public class ProcessorChoice {
     private List<String> getFilterList(String key, String field, String name)
             throws IOException {
         if (!"".equals(field)) {
-            if (indexMap == null || indexMap.containsValue(key)) {
+            if (indexMap == null || indexMap.containsKey(key)) {
                 return Arrays.asList(field.split(","));
             } else {
                 throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
@@ -59,7 +62,7 @@ public class ProcessorChoice {
     private Long getPointDatetime(String date, String time) throws Exception {
         String pointDatetime;
         if(date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            if (indexMap != null && !indexMap.containsValue("putTime")) {
+            if (indexMap != null && !indexMap.containsKey("putTime")) {
                 throw new IOException("f-date filter must get the putTime's index.");
             }
             if (time.matches("\\d{2}:\\d{2}:\\d{2}"))
@@ -204,9 +207,9 @@ public class ProcessorChoice {
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         String keyPrefix = entryParam.getValue("add-prefix", null);
-        String urlIndex = entryParam.getValue("url-index", null);
-        String host = indexMap.get("url");
-        String md5Index = entryParam.getValue("md5-index", null);
+        String urlIndex = indexMap.get("url");
+        String host = entryParam.getValue("host", null);
+        String md5Index = indexMap.get("md5");
         String callbackUrl = entryParam.getValue("callback-url", null);
         String callbackBody = entryParam.getValue("callback-body", null);
         String callbackBodyType = entryParam.getValue("callback-body-type", null);
@@ -228,7 +231,7 @@ public class ProcessorChoice {
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String urlIndex = entryParam.getValue("url-index");
+        String urlIndex = indexMap.get("url");
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign) && accessKey == null) {
@@ -239,7 +242,7 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getQiniuPfop() throws IOException {
-        String fopsIndex = entryParam.getValue("fops-index");
+        String fopsIndex = indexMap.get("fops");
         String forcePublic = entryParam.getValue("force-public", "false");
         String pipeline = entryParam.getValue("pipeline", null);
         if (pipeline == null && !"true".equals(forcePublic)) {
@@ -250,7 +253,7 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
-        String persistentIdIndex = entryParam.getValue("persistentId-index");
+        String persistentIdIndex = indexMap.get("pid");
         return new QueryPfopResult(persistentIdIndex, savePath);
     }
 
@@ -260,7 +263,7 @@ public class ProcessorChoice {
         algorithm = commonParams.checked(algorithm, "algorithm", "(md5|sha1)");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String urlIndex = entryParam.getValue("url-index");
+        String urlIndex = indexMap.get("url");
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign)) {
@@ -278,7 +281,7 @@ public class ProcessorChoice {
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String urlIndex = entryParam.getValue("url-index");
+        String urlIndex = indexMap.get("url");
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
         return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
