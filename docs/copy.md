@@ -1,27 +1,22 @@
 # 资源复制
 
-# 简介
+## 简介
 对空间中的资源进行**复制**到另一个目标空间。参考：[七牛空间资源复制](https://developer.qiniu.com/kodo/api/1254/copy)/[批量复制](https://developer.qiniu.com/kodo/api/1250/batch)
 
-### 配置文件选项
+## 配置文件选项
 
-#### 必须参数
-|数据源方式|参数及赋值|  
-|--------|-----|  
-|source-type=list（空间资源列举）|[list 数据源参数](listbucket.md) <br> process=copy <br> to-bucket=\<to-bucket\> |  
-|source-type=file（文件资源列表）|[file 数据源参数](fileinput.md) <br> process=copy <br> ak=\<ak\> <br> sk=\<sk\> <br> bucket=\<bucket\> <br> to-bucket=\<to-bucket\> |  
-
-#### 可选参数
+### 配置参数
 ```
-ak=
-sk=
-bucket=  
-newKey-index=1
+process=copy 
+ak=<ak> 
+sk=<sk> 
+bucket=<bucket> 
+to-bucket=<to-bucket>
+newKey-index=
 add-prefix=
 rm-prefix=
-```
-
-### 参数字段说明
+prefix-force=
+```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=copy| 复制资源时设置为copy| 表示复制操作|  
@@ -32,7 +27,7 @@ rm-prefix=
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 copy 之后的文件名|  
 
-### 命令行方式
+## 命令行方式
 ```
--process=copy -ak= -sk= -bucket= -to-bucket= -add-prefix=
+-process=copy -ak= -sk= -bucket= -to-bucket= -newKey-index= -add-prefix= -rm-prefix=
 ```

@@ -56,14 +56,10 @@ public class CommandArgs implements IEntryParam {
      * @throws IOException
      */
     public String getValue(String key) throws IOException {
-        if (paramsMap == null) {
-            throw new IOException("please set the args.");
-        }
-
-        if (paramsMap.containsKey(key)) {
-            return paramsMap.get(key);
-        } else {
+        if (paramsMap == null || "".equals(paramsMap.getOrDefault(key, ""))) {
             throw new IOException("not set \"" + key + "\" parameter.");
+        } else {
+            return paramsMap.get(key);
         }
 
     }
@@ -75,8 +71,11 @@ public class CommandArgs implements IEntryParam {
      * @return 属性值字符
      */
     public String getValue(String key, String Default) {
-        if ("".equals(paramsMap.get(key))) return Default;
-        return paramsMap.getOrDefault(key, Default);
+        if (paramsMap == null || "".equals(paramsMap.getOrDefault(key, ""))) {
+            return Default;
+        } else {
+            return paramsMap.getOrDefault(key, Default);
+        }
     }
 
     /**
@@ -90,10 +89,10 @@ public class CommandArgs implements IEntryParam {
      */
 
     public <T> T getValue(String key, Class<T> clazz, T Default) throws Exception {
-        if (paramsMap.containsKey(key) && !"".equals(paramsMap.get(key))) {
-            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, paramsMap.get(key));
-        } else {
+        if (paramsMap == null || "".equals(paramsMap.getOrDefault(key, ""))) {
             return Default;
+        } else {
+            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, paramsMap.get(key));
         }
     }
 
