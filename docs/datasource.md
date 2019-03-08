@@ -31,7 +31,7 @@ indexes=0,1,2
 |indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标，默认只有 key 的下标，parse-type=table 时为 0，
 parse-type=json 时默认为 "key"|  
 
-####### 关于 indexes 索引
+###### # 关于 indexes 索引
 indexes 指输入行中包含的资源元信息字段的映射关系，指定索引的顺序为 key,hash,fsize,putTime,mimeType,type,status,endUser，默认情况下，程
 序只从输入行中读取 key 字段数据，parse-type=table 时索引为 0，parse-type=json 时索引为 "key"，需要指定更多字段时可设置为数字：0,1,2,3,5 
 等或者 json 的 key 名称列表，长度不超过 8，长度表明取对应顺序的前几个字段。当 parse-type=table 时索引必须均为整数，如果输入行中本身只包含部分
