@@ -8,7 +8,7 @@
 - [x] 七牛空间文件按照字段过滤，按照日期、文件名、mime 类型等字段筛选目标文件  
 - [x] 批量进行七牛存储文件的 API 操作，批量修改或查询文件、异步抓取文件、转码及查询转码结果等等  
 
-# 使用介绍
+## 使用介绍
 ### 1 程序运行过程  
 读取数据源 =》[过滤器 =》] [按指定过程处理数据 =》] 结果持久化  
 
@@ -41,7 +41,7 @@ java -jar qsuits-x.x.jar [-source-type=list]
 (3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下所有参数可以完全从命令行指定，形式为：  
  **`-<property-name>=<value>`**，如  
 ```
-java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
+java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -path=<path>
 ```
 *在 v2.11 及以上版本，source 效果与 source-type 相同，也可以不设置该输入参数，由程序自动判断*  
 
@@ -49,8 +49,29 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 【说明】**在 v2.11 及以上版本，取消了设置该参数的强制性，可以进行指定，或者使用简化参数名 source=<source>**  
 支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
 **source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
-`source-type=list` 表示从七牛存储空间列举出资源 [listbucket 配置](docs/listbucket.md)，配置文件示例可参考 [配置模板](templates/list.config)  
-`source-type=file` 表示从本地读取文件获取资源列表 [fileinput 配置](docs/fileinput.md)，配置文件示例可参考 [配置模板](templates/file.config)  
+`source-type=list` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/list.config)  
+`source-type=file` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/file.config)  
+##### 常用参数
+```
+source-type=list/file (v.2.11 及以上版本也可以使用 source=list/file，或者不设置该参数)
+path=
+threads=30
+unit-len=10000
+```  
+##### list 参数：
+```
+ak=
+sk=
+bucket=
+```
+##### file 参数：
+```
+parse=
+separator=
+indexes=0,1,2
+```  
+#### 获取数据源中的资源列表更多的参数配置和详细解释见：[数据源配置](docs/datasource.md)
+
 
 ##### *关于并发处理*：  
 ```
@@ -86,27 +107,26 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 `f-anti-inner` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime` 表示**排除**该 mime 类型的文件  
-[filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后
-的记录可以直接持久化保存结果，如对于 listbucket/fileinput 的结果过滤后进行保存，此时可通过 save-total 选项来选择是否将过
-滤之前的记录进行完整保存。  
+[filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可
+以直接持久化保存结果，如通过 list/file 源获取列表并过滤后进行保存，并且可设置 save-total=true/false 来选择是否将过滤之前的记录进行完整保存。  
 
 #### 2. 输出结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
-`result-path=` 表示保存结果的文件路径  
-`result-format=` 结果保存格式（json/table），默认为 table  
-`result-separator=` 结果保存分隔符，默认为 "\t" 分隔  
+`save-path=` 表示保存结果的文件路径  
+`save-format=` 结果保存格式（json/tab），默认为 tab  
+`save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 list bucket 操作需要在列举出结果之后再针对条件进行
 过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时默认
 不保存原始输出数据，list 源默认保存原始输出数据。   
-**--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些字段，每
-一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [result 配置](docs/resultsave.md)。  
+**--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些
+字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
 **持久化结果的文件名为 "<source-name>_success_<order>.txt"：  
 （1）list 源 =》 "listbucket_success_<order>.txt"  
-（2）list 源 =》 "fileinput_success_<order>.txt"  
+（2）file 源 =》 "fileinput_success_<order>.txt"  
 如果设置了过滤参数，则过滤到的结果文件名为 "filter_success_<order>.txt"**  
 
 ### 5 处理过程
-处理过程表示对由数据源输入的每一条记录进行处理，具体处理过程由处理类型参数指定:  
+处理过程表示对由数据源输入的每一条记录进行处理，所有处理结果保存在 save-path 路径下，具体处理过程由处理类型参数指定:  
 **process=type/status/lifecycle/copy** (命令行方式则指定为 **-process=xxx**) 等  
 `process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 `process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
@@ -121,8 +141,7 @@ java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -bucket=<bucket>
 `process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
 `process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
-`process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
-rename、qhash、stat、pfop、pfopresult、avinfo 一般为对 file 输入方式进行处理，所有处理结果保存在 result-path 下。  
+`process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)    
 
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。

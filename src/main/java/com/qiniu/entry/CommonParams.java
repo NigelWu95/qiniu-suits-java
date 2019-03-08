@@ -68,12 +68,12 @@ public class CommonParams {
         add("move");
         add("rename");
         add("delete");
-        add("asyncfetch");
         add("pfop");
         add("stat");
     }};
     private List<String> needAuthProcesses = new ArrayList<String>(){{
         addAll(needBucketProcesses);
+        add("asyncfetch");
         add("privateurl");
     }};
 
@@ -185,7 +185,7 @@ public class CommonParams {
             } else if ("table".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
-                } else {
+                } else if (!"-1".equals(indexName)) {
                     throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
                 }
             } else {
