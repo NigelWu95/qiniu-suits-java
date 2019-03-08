@@ -168,7 +168,7 @@ public class CommonParams {
 
     private void setSaveSeparator(String separator) {
         if (separator == null) {
-            if ("table".equals(saveFormat)) this.saveSeparator = "\t";
+            if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
             else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
         } else {
             this.saveSeparator = separator;
