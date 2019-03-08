@@ -34,7 +34,7 @@ public class FileProperties implements IEntryParam {
      * @throws IOException
      */
     public String getValue(String key) throws IOException {
-        if (!properties.containsKey(key) || "".equals(properties.getProperty(key))) {
+        if ("".equals(properties.getProperty(key, ""))) {
             throw new IOException("not set \"" + key + "\" param.");
         } else {
             return properties.getProperty(key);
@@ -48,7 +48,7 @@ public class FileProperties implements IEntryParam {
      * @return 属性值字符
      */
     public String getValue(String key, String Default) {
-        if ("".equals(properties.getProperty(key))) return Default;
+        if ("".equals(properties.getProperty(key, ""))) return Default;
         return properties.getProperty(key, Default);
     }
 
@@ -62,10 +62,10 @@ public class FileProperties implements IEntryParam {
      * @throws Exception
      */
     public <T> T getValue(String key, Class<T> clazz, T Default) throws Exception {
-        if (properties.containsKey(key) && !"".equals(properties.getProperty(key))) {
-            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, properties.getProperty(key));
-        } else {
+        if ("".equals(properties.getProperty(key, ""))) {
             return Default;
+        } else {
+            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, properties.getProperty(key));
         }
     }
 }

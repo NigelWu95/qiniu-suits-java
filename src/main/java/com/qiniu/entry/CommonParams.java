@@ -68,12 +68,12 @@ public class CommonParams {
         add("move");
         add("rename");
         add("delete");
-        add("asyncfetch");
         add("pfop");
         add("stat");
     }};
     private List<String> needAuthProcesses = new ArrayList<String>(){{
         addAll(needBucketProcesses);
+        add("asyncfetch");
         add("privateurl");
     }};
 

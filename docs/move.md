@@ -1,26 +1,21 @@
 # 资源移动
 
-# 简介
+## 简介
 对空间中的资源进行**移动**到另一目标空间。参考：[七牛空间资源移动](https://developer.qiniu.com/kodo/api/1288/move)/[批量移动](https://developer.qiniu.com/kodo/api/1250/batch)
 
-### 配置文件选项
+## 配置文件选项
 
-#### 必须参数
-|数据源方式|参数及赋值|  
-|--------|-----|  
-|source-type=list（空间资源列举）|[list 数据源参数](listbucket.md) <br> process=move <br> to-bucket=\<to-bucket\> |  
-|source-type=file（文件资源列表）|[file 数据源参数](fileinput.md) <br> process=move <br> ak=\<ak\> <br> sk=\<sk\> <br> bucket=\<bucket\> <br> to-bucket=\<to-bucket\> |  
-
-#### 可选参数
+### 配置参数
 ```
+process=move
 ak=
 sk=
 bucket= 
+to-bucket=
 add-prefix=
 rm-prefix=
-```
-
-### 参数字段说明
+prefix-force=
+```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=move| 移动资源时设置为move| 表示移动操作|  
@@ -32,5 +27,5 @@ rm-prefix=
 
 ### 命令行方式
 ```
--process=move -ak= -sk= -bucket= -to-bucket= -keep-key= -add-prefix=
+-process=move -ak= -sk= -bucket= -to-bucket= -add-prefix= -rm-prefix=
 ```
