@@ -30,7 +30,7 @@ public class ListBucket implements IDataSource {
     final private List<String> antiPrefixes;
     final private boolean prefixLeft;
     final private boolean prefixRight;
-    final private String resultPath;
+    final private String savePath;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -38,7 +38,7 @@ public class ListBucket implements IDataSource {
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
-                      boolean prefixRight, String resultPath) {
+                      boolean prefixRight, String savePath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
@@ -51,7 +51,7 @@ public class ListBucket implements IDataSource {
         }});
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
-        this.resultPath = resultPath;
+        this.savePath = savePath;
         this.saveTotal = false;
     }
 
@@ -69,7 +69,7 @@ public class ListBucket implements IDataSource {
     }
 
     private List<FileLister> prefixList(List<String> prefixList, int unitLen) throws IOException {
-        FileMap fileMap = new FileMap(resultPath, "list_prefix", "");
+        FileMap fileMap = new FileMap(savePath, "list_prefix", "");
         fileMap.addErrorWriter();
         List<String> errorList = new ArrayList<>();
         List<FileLister> listerList = prefixList.parallelStream()
@@ -207,7 +207,7 @@ public class ListBucket implements IDataSource {
 
     private void export(FileMap recordFileMap, String identifier, FileLister fileLister,
                         ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap fileMap = new FileMap(resultPath, "listbucket", identifier);
+        FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
         fileMap.initDefaultWriters();
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order " + identifier + ": " + fileLister.getPrefix();
@@ -253,7 +253,7 @@ public class ListBucket implements IDataSource {
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        FileMap recordFileMap = new FileMap(resultPath);
+        FileMap recordFileMap = new FileMap(savePath);
         ExecutorService executorPool = Executors.newFixedThreadPool(threads);
         AtomicBoolean exit = new AtomicBoolean(false);
         Collections.sort(prefixes);
