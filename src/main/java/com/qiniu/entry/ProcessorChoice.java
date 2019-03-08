@@ -122,7 +122,7 @@ public class ProcessorChoice {
         SeniorChecker seniorChecker = new SeniorChecker(checkType);
 
         ILineProcess<Map<String, String>> processor;
-        ILineProcess<Map<String, String>> nextProcessor = whichNextProcessor();
+        ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
@@ -274,7 +274,7 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getFileStat() throws IOException {
-        return new FileStat(accessKey, secretKey, configuration, bucket, savePath, saveFormat);
+        return new FileStat(accessKey, secretKey, configuration, bucket, savePath, saveFormat, saveSeparator);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {

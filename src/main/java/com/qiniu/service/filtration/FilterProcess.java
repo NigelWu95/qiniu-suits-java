@@ -18,17 +18,17 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     private String processName;
     private ILineFilter<Map<String, String>> filter;
     private ILineProcess<Map<String, String>> nextProcessor;
-    private String resultPath;
-    private String resultFormat;
-    private String resultSeparator;
+    private String savePath;
+    private String saveFormat;
+    private String saveSeparator;
     private List<String> rmFields;
-    private String resultTag;
-    private int resultIndex;
+    private String saveTag;
+    private int saveIndex;
     private FileMap fileMap;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath,
-                         String resultFormat, String resultSeparator, List<String> rmFields, int resultIndex)
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath,
+                         String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
         List<Method> fileTerMethods = new ArrayList<Method>() {{
@@ -61,36 +61,36 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             }
             return true;
         };
-        this.resultPath = resultPath;
-        this.resultFormat = resultFormat;
-        this.resultSeparator = (resultSeparator == null || "".equals(resultSeparator)) ? "\t" : resultSeparator;
+        this.savePath = savePath;
+        this.saveFormat = saveFormat == null || !saveFormat.matches("(csv|tab|json)") ? "tab" : saveFormat;
+        this.saveSeparator = (saveSeparator == null || "".equals(saveSeparator)) ? "\t" : saveSeparator;
         this.rmFields = rmFields;
-        this.resultTag = "";
-        this.resultIndex = resultIndex;
-        this.fileMap = new FileMap(resultPath, processName, String.valueOf(resultIndex));
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
-        this.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
+        this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
     }
 
-    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String resultPath, String resultFormat,
-                         String resultSeparator, List<String> removeFields) throws Exception {
-        this(filter, checker, resultPath, resultFormat, resultSeparator, removeFields, 0);
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath, String saveFormat,
+                         String saveSeparator, List<String> rmFields) throws Exception {
+        this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
     public String getProcessName() {
         return this.processName;
     }
 
-    public void setResultTag(String resultTag) {
-        this.resultTag = resultTag == null ? "" : resultTag;
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     public FilterProcess clone() throws CloneNotSupportedException {
         FilterProcess filterProcess = (FilterProcess)super.clone();
-        filterProcess.fileMap = new FileMap(resultPath, processName, resultTag + String.valueOf(++resultIndex));
+        filterProcess.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             filterProcess.fileMap.initDefaultWriters();
-            filterProcess.typeConverter = new MapToString(resultFormat, resultSeparator, rmFields);
+            filterProcess.typeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
             if (nextProcessor != null) {
                 filterProcess.nextProcessor = nextProcessor.clone();
             }

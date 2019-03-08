@@ -79,7 +79,7 @@ public class CommonParams {
 
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
-        path = entryParam.getValue("path", null);
+        path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
         setSource();
         if ("list".equals(source)) {
@@ -93,7 +93,7 @@ public class CommonParams {
             setPrefixLeft(entryParam.getValue("prefix-left", ""));
             setPrefixRight(entryParam.getValue("prefix-right", ""));
         } else if ("file".equals(source)) {
-            setParse(entryParam.getValue("parse", "table"));
+            setParse(entryParam.getValue("parse", "tab"));
             setSeparator(entryParam.getValue("separator", null));
             setIndexMap();
         }
@@ -104,14 +104,15 @@ public class CommonParams {
         // list 操作时默认保存全部原始文件
         setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(getSource()))));
         savePath = entryParam.getValue("save-path", "result");
-        saveFormat = entryParam.getValue("save-format", "table");
+        saveFormat = entryParam.getValue("save-format", "tab");
         // 校验设置的 format 参数
-        saveFormat = checked(saveFormat, "save-format", "(csv|table|json)");
-        saveSeparator = entryParam.getValue("save-separator", "\t");
+        saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
+        saveSeparator = entryParam.getValue("save-separator", null);
+        setSaveSeparator(saveSeparator);
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
         if ("file".equals(source) && needBucketProcesses.contains(process)) {
-            if (path.startsWith("qiniu://")) bucket = path.substring(8);
+            if ("".equals(path) || path.startsWith("qiniu://")) bucket = path.substring(8);
             else bucket = entryParam.getValue("bucket");
             if (needAuthProcesses.contains(process)) {
                 accessKey = entryParam.getValue("ak");
@@ -127,23 +128,22 @@ public class CommonParams {
             try {
                 source = entryParam.getValue("source");
             } catch (IOException e2) {
-                if (path == null || path.startsWith("qiniu://")) source = "list";
+                if (path.startsWith("qiniu://")) source = "list";
                 else source = "file";
             }
         }
-        if (source.matches("(list|file)")) {
-            throw new IOException("please set the \"source\" conform to regex:" +
-                    " (list|file)");
+        if (!source.matches("(list|file)")) {
+            throw new IOException("please set the \"source\" conform to regex: (list|file)");
         }
     }
 
     private void setParse(String parse) throws IOException {
-        this.parse = checked(parse, "parse", "(csv|table|json)");
+        this.parse = checked(parse, "parse", "(csv|tab|json)");
     }
 
     private void setSeparator(String separator) {
         if (separator == null) {
-            if ("table".equals(parse)) this.separator = "\t";
+            if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
         } else {
             this.separator = separator;
@@ -166,6 +166,15 @@ public class CommonParams {
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
     }
 
+    private void setSaveSeparator(String separator) {
+        if (separator == null) {
+            if ("table".equals(saveFormat)) this.saveSeparator = "\t";
+            else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
+        } else {
+            this.saveSeparator = separator;
+        }
+    }
+
     private void setIndex(String indexName, String index, boolean check) throws IOException {
         if (indexName != null && check) {
             if (indexMap.containsKey(indexName)) {
@@ -177,7 +186,7 @@ public class CommonParams {
                 if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
                 } else {
-                    throw new IOException("no incorrect " + index + "-index, it should be a number.");
+                    throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
                 }
             } else {
                 // 其他情况暂且忽略该索引
@@ -196,7 +205,7 @@ public class CommonParams {
 
         String indexes = entryParam.getValue("indexes", "");
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
-        List<String> indexList = Arrays.asList(indexes.split(","));
+        List<String> indexList = splitItems(indexes);
         if (indexList.size() > 8) {
             throw new IOException("the file info's index length is too long.");
         } else {

@@ -8,11 +8,12 @@ import java.util.*;
 public class SplitLineParser implements ILineParser<String> {
 
     private String separator;
-    private Map<String, String> infoIndexMap;
+    private Map<String, String> indexMap;
 
-    public SplitLineParser(String separator, Map<String, String> infoIndexMap) {
+    public SplitLineParser(String separator, Map<String, String> indexMap) throws IOException {
+        if (indexMap == null || indexMap.size() == 0) throw new IOException("there are no indexMap be set.");
         this.separator = separator;
-        this.infoIndexMap = infoIndexMap;
+        this.indexMap = indexMap;
     }
 
     public Map<String, String> getItemMap(String line) throws IOException {
@@ -20,13 +21,13 @@ public class SplitLineParser implements ILineParser<String> {
         Map<String, String> itemMap = new HashMap<>();
         String mapKey;
         for (int i = 0; i < items.length; i++) {
-            mapKey = infoIndexMap.get(String.valueOf(i));
+            mapKey = indexMap.get(String.valueOf(i));
             if (mapKey != null) {
                 if (items[i] == null) itemMap.put(mapKey, null);
                 else itemMap.put(mapKey, items[i]);
             }
         }
-        if (itemMap.size() < infoIndexMap.size()) throw new IOException("no enough indexes in line." +
+        if (itemMap.size() < indexMap.size()) throw new IOException("no enough indexes in line." +
                 " The parameter indexes may have incorrect order or name.");
         return itemMap;
     }
