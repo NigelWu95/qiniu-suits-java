@@ -49,7 +49,7 @@ public class FileProperties implements IEntryParam {
      */
     public String getValue(String key, String Default) {
         if ("".equals(properties.getProperty(key))) return Default;
-        return String.valueOf(properties.getOrDefault(key, Default));
+        return properties.getProperty(key, Default);
     }
 
     /**
