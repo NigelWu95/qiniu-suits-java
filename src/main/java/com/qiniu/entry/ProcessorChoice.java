@@ -36,8 +36,10 @@ public class ProcessorChoice {
         this.accessKey = commonParams.getAccessKey();
         this.secretKey = commonParams.getSecretKey();
         this.indexMap = new HashMap<>();
-        for (Map.Entry<String, String> entry : commonParams.getIndexMap().entrySet()) {
-            this.indexMap.put(entry.getValue(), entry.getKey());
+        if (commonParams.getIndexMap() != null) {
+            for (Map.Entry<String, String> entry : commonParams.getIndexMap().entrySet()) {
+                this.indexMap.put(entry.getValue(), entry.getKey());
+            }
         }
         this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
