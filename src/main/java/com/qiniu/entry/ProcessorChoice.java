@@ -44,17 +44,18 @@ public class ProcessorChoice {
     private List<String> getFilterList(Map<String, String> indexMap, String key, String field, String name)
             throws IOException {
         if (!"".equals(field)) {
-            if (!indexMap.containsValue(key)) {
+            if (indexMap == null || indexMap.containsValue(key)) {
+                return Arrays.asList(field.split(","));
+            } else {
                 throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
             }
-            return Arrays.asList(field.split(","));
         } else return null;
     }
 
     private Long getPointDatetime(Map<String, String> indexMap, String date, String time) throws Exception {
         String pointDatetime;
         if(date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            if (!indexMap.containsValue("putTime")) {
+            if (indexMap != null && !indexMap.containsValue("putTime")) {
                 throw new IOException("f-date filter must get the putTime's index.");
             }
             if (time.matches("\\d{2}:\\d{2}:\\d{2}"))
@@ -85,11 +86,17 @@ public class ProcessorChoice {
         String date = entryParam.getValue("f-date", "");
         String time = entryParam.getValue("f-time", "");
         String direction = entryParam.getValue("f-direction", "");
-        direction = commonParams.checked(direction, "f-direction", "[01]");
-        long putTimeMax = !"".equals(date) && "0".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
-        long putTimeMin = !"".equals(date) && "1".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
-        String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
-        String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
+        long putTimeMax = 0;
+        long putTimeMin = 0;
+        if (!"".equals(date)) {
+            direction = commonParams.checked(direction, "f-direction", "[01]");
+            putTimeMax = "0".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
+            putTimeMin = "1".equals(direction) ? 0 : getPointDatetime(indexMap, date, time) * 10000;
+        }
+        String type = entryParam.getValue("type", null);
+        String status = entryParam.getValue("status", null);
+        if (type != null) type = commonParams.checked(type, "type", "[01]");
+        if (status != null) status = commonParams.checked(status, "status", "[01]");
 
         List<String> keyPrefixList = getFilterList(indexMap, "key", keyPrefix, "prefix");
         List<String> keySuffixList = getFilterList(indexMap, "key", keySuffix, "suffix");
