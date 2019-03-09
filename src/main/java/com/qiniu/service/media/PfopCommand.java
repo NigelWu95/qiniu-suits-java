@@ -80,16 +80,16 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
 
     private String generateFopCmd(String srcKey, JsonObject pfopJson) throws IOException {
         String saveAs = pfopJson.get("saveas").getAsString();
-        String saveAsKey = saveAs.substring(saveAs.indexOf(":"));
+        String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
         if (saveAsKey.contains("$(key)")) {
             if (saveAsKey.contains(".")) {
                 String[] nameParts = saveAsKey.split("(\\$\\(key\\)|\\.)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixWithExt(srcKey, nameParts[0], nameParts[1], nameParts[2]);
+                saveAsKey = FileNameUtils.addPrefixAndSuffixWithExt(nameParts[0], srcKey, nameParts[1], nameParts[2]);
             } else {
                 String[] nameParts = saveAsKey.split("\\$\\(key\\)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixKeepExt(srcKey, nameParts[0], nameParts[1]);
+                saveAsKey = FileNameUtils.addPrefixAndSuffixKeepExt(nameParts[0], srcKey, nameParts[1]);
             }
-            saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":")), saveAsKey);
+            saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
         }
         return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(saveAs);
     }
