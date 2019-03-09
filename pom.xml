@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qiniu-suits-java</artifactId>
-    <version>2.13</version>
+    <version>2.20</version>
     <name>qiniu-suits-java</name>
 
     <properties>
@@ -50,8 +50,11 @@
               <filtering>false</filtering>
               <targetPath>resources/</targetPath>
               <includes>
-                  <include>*.json</include>
+                  <include>check.json</include>
               </includes>
+              <excludes>
+                  <exclude>.*.json</exclude>
+              </excludes>
           </resource>
         </resources>
 
