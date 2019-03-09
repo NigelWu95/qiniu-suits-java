@@ -44,8 +44,8 @@ public class BaseFieldsFilter {
     public void setOtherConditions(long putTimeMin, long putTimeMax, String type, String status) {
         this.putTimeMin = putTimeMin;
         this.putTimeMax = putTimeMax;
-        this.type = type;
-        this.status = status;
+        this.type = type == null ? "" : type;
+        this.status = status == null ? "" : status;
     }
 
     private boolean checkList(List<String> list) {

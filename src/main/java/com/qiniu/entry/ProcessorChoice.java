@@ -81,7 +81,7 @@ public class ProcessorChoice {
 
     private Long checkedDatetime(String datetime) throws Exception {
         long time;
-        if (datetime == null || "".equals(datetime)) {
+        if (datetime == null ||datetime.matches("(|0s)")) {
             time = 0L;
         } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
@@ -98,7 +98,7 @@ public class ProcessorChoice {
 
     private String[] splitDateScale(String dateScale) throws IOException {
         String[] scale;
-        if (dateScale != null) {
+        if (dateScale != null && !"".equals(dateScale)) {
             // 设置的 dateScale 格式应该为 [yyyy-MM-dd HH:mm:ss,yyyy-MM-dd HH:mm:ss]
             if (dateScale.startsWith("[") && dateScale.endsWith("]")) {
                 scale = dateScale.substring(1, dateScale.length() - 1).split(",");
@@ -109,6 +109,9 @@ public class ProcessorChoice {
             }
         } else {
             scale = new String[]{"", ""};
+        }
+        if (scale.length <= 1) {
+            throw new IOException("please set start and end date, if no start please set is as \"[0,<date>]\"");
         }
         return scale;
     }
@@ -125,7 +128,7 @@ public class ProcessorChoice {
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
         String checkType = entryParam.getValue("f-check", "");
-        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", ""));
+        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
         long putTimeMin = checkedDatetime(dateScale[0]);
         long putTimeMax = checkedDatetime(dateScale[1]);
         if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {

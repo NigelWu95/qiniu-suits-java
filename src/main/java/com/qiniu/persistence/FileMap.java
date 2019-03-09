@@ -131,6 +131,7 @@ public class FileMap {
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
         String fileName;
+        String key;
         BufferedReader reader;
         if (fs == null) throw new IOException("The current path you gave may be incorrect: " + fileDir);
         for(File f : fs) {
@@ -138,16 +139,20 @@ public class FileMap {
                 FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
                 reader = new BufferedReader(fileReader);
                 fileName = f.getName();
-                if (fileName.endsWith(".txt")) readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
+                if (fileName.endsWith(".txt")) {
+                    key = fileName.substring(0, fileName.length() - 4);
+                    if (readerMap.containsKey(key)) throw new IOException("the reader: " + key + " is already init.");
+                    readerMap.put(key, reader);
+                }
             }
         }
         if (readerMap.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
                 " path you gave is: " + fileDir);
     }
 
-    public void initReader(String fileDir, String fileName) throws IOException {
-        if (fileName.endsWith(".txt")) {
-            File sourceFile = new File(fileDir, fileName);
+    public void initReader(String filepath) throws IOException {
+        if (filepath.endsWith(".txt")) {
+            File sourceFile = new File(filepath);
             FileReader fileReader;
             try {
                 fileReader = new FileReader(sourceFile);
@@ -155,10 +160,11 @@ public class FileMap {
                 throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
             }
             BufferedReader reader = new BufferedReader(fileReader);
-            readerMap.put(fileName.substring(0, fileName.length() - 4), reader);
+            String key = sourceFile.getName().substring(0, sourceFile.getName().length() - 4);
+            if (readerMap.containsKey(key)) throw new IOException("the reader: " + key + " is already init.");
+            readerMap.put(key, reader);
         } else {
-            throw new IOException("please provide the .txt file. The current path you gave is: "
-                    + fileDir + System.getProperty("file.separator") + fileName);
+            throw new IOException("please provide the .txt file. The current path you gave is: " + filepath);
         }
     }
 

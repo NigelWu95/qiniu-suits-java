@@ -120,7 +120,7 @@ public class FileInput implements IDataSource {
         if (sourceFile.isDirectory()) {
             inputFileMap.initReaders(filePath);
         } else {
-            inputFileMap.initReader(sourceFile.getParent(), sourceFile.getName());
+            inputFileMap.initReader(filePath);
         }
 
         Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
