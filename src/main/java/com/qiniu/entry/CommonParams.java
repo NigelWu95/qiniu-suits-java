@@ -189,14 +189,14 @@ public class CommonParams {
             }
             if ("json".equals(parse)) {
                 indexMap.put(indexName, index);
-            } else if ("table".equals(parse) || "csv".equals(parse)) {
+            } else if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
                 } else if (!"-1".equals(indexName)) {
                     throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
                 }
             } else {
-                // 其他情况暂且忽略该索引
+                throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
         }
     }
