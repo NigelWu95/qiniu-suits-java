@@ -12,7 +12,7 @@ import java.util.*;
 public class SeniorChecker {
 
     final private String checkName;
-    final private Set<String> extMimeList;
+    private Set<String> extMimeList;
     private Set<String> extMimeTypeList;
 
     public SeniorChecker(String checkName, String configPath, boolean rewrite) throws IOException {
