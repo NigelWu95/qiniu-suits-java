@@ -95,9 +95,8 @@ public class CommonParams {
         } else if ("file".equals(source)) {
             setParse(entryParam.getValue("parse", "tab"));
             setSeparator(entryParam.getValue("separator", null));
-            setIndexMap();
         }
-
+        setIndexMap();
         setUnitLen(entryParam.getValue("unit-len", "10000"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryCount(entryParam.getValue("retry-times", "3"));
@@ -204,24 +203,28 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        setIndex(entryParam.getValue("url-index", null), "url", needUrl.contains(process));
-        setIndex(entryParam.getValue("md5-index", null), "md5", needMd5.contains(process));
-        setIndex(entryParam.getValue("newKey-index", null), "newKey", needNewKey.contains(process));
-        setIndex(entryParam.getValue("fops-index", null), "fops", needFops.contains(process));
-        setIndex(entryParam.getValue("persistentId-index", null), "pid", needPid.contains(process));
-        setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfo.contains(process));
-
-        String indexes = entryParam.getValue("indexes", "");
         List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
-        List<String> indexList = splitItems(indexes);
-        if (indexList.size() > 8) {
-            throw new IOException("the file info's index length is too long.");
+        if ("list".equals(source)) {
+            for (String key : keys) {
+                indexMap.put(key, key);
+            }
         } else {
-            for (int i = 0; i < indexList.size(); i++) {
-                setIndex(indexList.get(i), keys.get(i), true);
+            setIndex(entryParam.getValue("url-index", null), "url", needUrl.contains(process));
+            setIndex(entryParam.getValue("md5-index", null), "md5", needMd5.contains(process));
+            setIndex(entryParam.getValue("newKey-index", null), "newKey", needNewKey.contains(process));
+            setIndex(entryParam.getValue("fops-index", null), "fops", needFops.contains(process));
+            setIndex(entryParam.getValue("persistentId-index", null), "pid", needPid.contains(process));
+            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfo.contains(process));
+
+            List<String> indexList = splitItems(entryParam.getValue("indexes", ""));
+            if (indexList.size() > 8) {
+                throw new IOException("the file info's index length is too long.");
+            } else {
+                for (int i = 0; i < indexList.size(); i++) {
+                    setIndex(indexList.get(i), keys.get(i), true);
+                }
             }
         }
-
         // 默认索引
         if (indexMap.size() == 0) {
             indexMap.put("json".equals(parse) ? "key" : "0", "key");
