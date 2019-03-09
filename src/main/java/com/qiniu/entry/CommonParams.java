@@ -183,7 +183,7 @@ public class CommonParams {
     }
 
     private void setIndex(String indexName, String index, boolean check) throws IOException {
-        if (indexName != null && check) {
+        if (indexName != null && !"-1".equals(indexName) && check) {
             if (indexMap.containsKey(indexName)) {
                 throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
             }
@@ -192,7 +192,7 @@ public class CommonParams {
             } else if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
-                } else if (!"-1".equals(indexName)) {
+                } else {
                     throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
                 }
             } else {
@@ -238,7 +238,7 @@ public class CommonParams {
 
     private void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
         prefixMap = new HashMap<>();
-        if (!"".equals(prefixConfig)) {
+        if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
             String marker;
@@ -253,28 +253,40 @@ public class CommonParams {
         } else {
             List<String> prefixList = splitItems(prefixes);
             for (String prefix : prefixList) {
+                // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
+                prefixMap.remove(prefix);
                 prefixMap.put(prefix, new String[]{"", ""});
             }
         }
     }
 
     private List<String> splitItems(String paramLine) {
-        if (!"".equals(paramLine)) {
-            Set<String> set;
+        List<String> itemList = new ArrayList<>();
+        String[] items = new String[]{};
+        if (!"".equals(paramLine) && paramLine != null) {
             // 指定前缀包含 "," 号时需要用转义符解决
             if (paramLine.contains("\\,")) {
                 String[] elements = paramLine.split("\\\\,");
-                set = new HashSet<>(Arrays.asList(elements[0].split(",")));
-                set.add(",");
-                if (elements.length > 1)set.addAll(Arrays.asList(elements[1].split(",")));
+                String[] items1 = elements[0].split(",");
+                if (elements.length > 1) {
+                    String[] items2 = elements[1].split(",");
+                    items = new String[items1.length + items2.length + 1];
+                    System.arraycopy(items1, 0, items, 0, items1.length);
+                    items[items1.length] = "";
+                    System.arraycopy(items2, 0, items, items1.length + 1, items2.length + 1);
+                } else {
+                    items = new String[items1.length];
+                    System.arraycopy(items1, 0, items, 0, items1.length);
+                }
             } else {
-                set = new HashSet<>(Arrays.asList(paramLine.split(",")));
+                items = paramLine.split(",");
             }
-            // 删除空前缀的情况避免列举操作时造成误解
-            set.remove("");
-            return new ArrayList<>(set);
         }
-        return new ArrayList<>();
+        // itemList 不能去重，因为要用于解析 indexes 设置，可能存在同时使用多个 "-1" 来跳过某些字段
+        for (String item : items) {
+            if (!"".equals(item)) itemList.add(item);
+        }
+        return itemList;
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
