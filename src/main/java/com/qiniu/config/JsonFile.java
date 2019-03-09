@@ -13,22 +13,24 @@ public class JsonFile {
     private JsonObject jsonObject;
 
     public JsonFile(String resourceFile) throws IOException {
-        File file = new File(resourceFile);
-        if (!file.exists()) {
-            URL url = getClass().getResource(System.getProperty("file.separator") + resourceFile);
-            if (url == null) throw new IOException("load " + resourceFile + " json config failed");
-            else file = new File(url.getFile());
-        }
-        Long fileLength = file.length();
-        byte[] fileContent = new byte[fileLength.intValue()];
-        FileInputStream inputStream = null;
-
+        InputStream inputStream = null;
         try {
-            inputStream = new FileInputStream(file);
-            inputStream.read(fileContent);
-            jsonObject = JsonConvertUtils.toJsonObject(new String(fileContent, "UTF-8"));
+            File file = new File(resourceFile);
+            if (!file.exists()) {
+                inputStream = getClass().getResourceAsStream(System.getProperty("file.separator") + resourceFile);
+            } else {
+                inputStream = new FileInputStream(file);
+            }
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            jsonObject = JsonConvertUtils.toJsonObject(stringBuilder.toString());
         } catch (Exception e) {
-            throw new IOException("load " + resourceFile + " json config failed", e);
+            throw new IOException("load " + resourceFile + " json config failed, " + e.getMessage());
         } finally {
             if (inputStream != null) {
                 try {
