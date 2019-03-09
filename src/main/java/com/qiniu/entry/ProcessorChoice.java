@@ -3,6 +3,7 @@ package com.qiniu.entry;
 import com.qiniu.service.filtration.SeniorChecker;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.media.PfopCommand;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
@@ -54,7 +55,7 @@ public class ProcessorChoice {
             throws IOException {
         if (!"".equals(field)) {
             if (indexMap == null || indexMap.containsKey(key)) {
-                return Arrays.asList(field.split(","));
+                return commonParams.splitItems(field);
             } else {
                 throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
             }
@@ -79,6 +80,43 @@ public class ProcessorChoice {
 
     }
 
+    private Long checkedDatetime(String datetime) throws Exception {
+        long time;
+        if (datetime == null ||datetime.matches("(|0)")) {
+            time = 0L;
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime + " 00:00:00");
+        } else {
+            throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
+        }
+        if (time > 0L && indexMap != null && !indexMap.containsKey("putTime")) {
+            throw new IOException("f-date filter must get the putTime's index.");
+        }
+        return time * 10000;
+    }
+
+    private String[] splitDateScale(String dateScale) throws IOException {
+        String[] scale;
+        if (dateScale != null && !"".equals(dateScale)) {
+            // 设置的 dateScale 格式应该为 [yyyy-MM-dd HH:mm:ss,yyyy-MM-dd HH:mm:ss]
+            if (dateScale.startsWith("[") && dateScale.endsWith("]")) {
+                scale = dateScale.substring(1, dateScale.length() - 1).split(",");
+            } else if (dateScale.startsWith("[") || dateScale.endsWith("]")) {
+                throw new IOException("please check your date scale, set it as \"[<date1>,<date2>]\".");
+            } else {
+                scale = dateScale.split(",");
+            }
+        } else {
+            scale = new String[]{"", ""};
+        }
+        if (scale.length <= 1) {
+            throw new IOException("please set start and end date, if no start please set is as \"[0,<date>]\"");
+        }
+        return scale;
+    }
+
     public ILineProcess<Map<String, String>> get() throws Exception {
         String keyPrefix = entryParam.getValue("f-prefix", "");
         String keySuffix = entryParam.getValue("f-suffix", "");
@@ -90,16 +128,12 @@ public class ProcessorChoice {
         String antiKeyInner = entryParam.getValue("f-anti-inner", "");
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
-        String checkType = entryParam.getValue("f-check", "");
-        String date = entryParam.getValue("f-date", "");
-        String time = entryParam.getValue("f-time", "");
-        String direction = entryParam.getValue("f-direction", "");
-        long putTimeMax = 0;
-        long putTimeMin = 0;
-        if (!"".equals(date)) {
-            direction = commonParams.checked(direction, "f-direction", "[01]");
-            putTimeMax = "0".equals(direction) ? 0 : getPointDatetime(date, time) * 10000;
-            putTimeMin = "1".equals(direction) ? 0 : getPointDatetime(date, time) * 10000;
+        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
+        long putTimeMin = checkedDatetime(dateScale[0]);
+        long putTimeMax = checkedDatetime(dateScale[1]);
+        if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
+            throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
+                    "should earlier then <date2>.");
         }
         String type = entryParam.getValue("type", null);
         String status = entryParam.getValue("status", null);
@@ -120,8 +154,14 @@ public class ProcessorChoice {
         baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
         baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
         baseFieldsFilter.setMimeTypeConditions(mimeTypeList, antiMimeTypeList);
-        baseFieldsFilter.setOtherConditions(putTimeMax, putTimeMin, type, status);
-        SeniorChecker seniorChecker = new SeniorChecker(checkType);
+        baseFieldsFilter.setOtherConditions(putTimeMin, putTimeMax, type, status);
+
+        String checkType = entryParam.getValue("f-check", "");
+        checkType = commonParams.checked(checkType, "f-check", "mime");
+        String checkConfig = entryParam.getValue("f-check-config", "");
+        String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
+        checkRewrite = commonParams.checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        SeniorChecker seniorChecker = new SeniorChecker(checkType, checkConfig, Boolean.valueOf(checkRewrite));
 
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
@@ -157,6 +197,7 @@ public class ProcessorChoice {
             case "qhash": processor = getQueryHash(); break;
             case "stat": processor = getFileStat(); break;
             case "privateurl": processor = getPrivateUrl(); break;
+            case "pfopcmd": processor = getPfopCommand(); break;
         }
         if (processor != null) processor.setRetryCount(retryCount);
         return processor;
@@ -287,5 +328,14 @@ public class ProcessorChoice {
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
         return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getPfopCommand() throws IOException {
+        String configJson = entryParam.getValue("pfop-config");
+        String duration = entryParam.getValue("duration", "false");
+        duration = commonParams.checked(duration, "duration", "(true|false)");
+        String size = entryParam.getValue("size", "false");
+        size = commonParams.checked(size, "size", "(true|false)");
+        return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
     }
 }

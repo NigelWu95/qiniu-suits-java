@@ -100,13 +100,15 @@ indexes=0,1,2
 `f-mime` 表示**选择**符合该 mime 类型的文件  
 `f-type` 表示**选择**符合该存储类型的文件, 为 0（标准存储） 或 1（低频存储）  
 `f-status` 表示**选择**符合该存储状态的文件, 为 0（启用） 或 1（禁用）  
-`f-date, f-time` 设置过滤的时间节点  
-`f-direction` 表示时间节点过滤方向，0 表示选择**时间点以前**更新的文件，1 表示选择**时间点以后**更新的文件  
+`f-date-scale` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为："2018-08-01 00:00:00"  
 `f-anti-prefix` 表示**排除**文件名符合该前缀的文件  
 `f-anti-suffix` 表示**排除**文件名符合该后缀的文件  
 `f-anti-inner` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime` 表示**排除**该 mime 类型的文件  
+`f-check` 是否进行**后缀名**和**mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来|  
+`f-check-config` 自定义资源字段规范对应关系列表的配置文件，格式为 json，配置举例：[check-config 配置](../resources/check-config.json)|  
+`f-check-rewrite` 是否完全使用自定义的规范列表进行检查，默认为 false，程序包含的默认字段规范对应关系配置见：[check 默认配置](../resources/check.json)|  
 [filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可
 以直接持久化保存结果，如通过 list/file 源获取列表并过滤后进行保存，并且可设置 save-total=true/false 来选择是否将过滤之前的记录进行完整保存。  
 
@@ -141,7 +143,8 @@ indexes=0,1,2
 `process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
 `process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
-`process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)    
+`process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
+`process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。
@@ -153,3 +156,10 @@ java.net.SocketTimeoutException: timeout
 ```
 超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。
+3. 常见错误信息：  
+（1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
+表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
+（2）java.lang.OutOfMemoryError: unable to create new native thread   
+与（1）类似，内存溢出导致无法继续创建更多线程。  
+（3）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
+请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  

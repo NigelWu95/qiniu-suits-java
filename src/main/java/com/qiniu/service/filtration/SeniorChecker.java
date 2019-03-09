@@ -2,30 +2,42 @@ package com.qiniu.service.filtration;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.qiniu.config.JsonFile;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SeniorChecker {
 
     final private String checkName;
-    final private List<String> extMimeList;
-    final private List<String> extMimeTypeList;
+    private Set<String> extMimeList;
+    private Set<String> extMimeTypeList;
 
-    public SeniorChecker(String checkName) throws IOException {
+    public SeniorChecker(String checkName, String configPath, boolean rewrite) throws IOException {
         this.checkName = checkName;
-        JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
-        JsonElement jsonElement = jsonFile.getElement("ext-mime");
-        JsonObject extMime = jsonElement.getAsJsonObject();
-        List<String> list = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray());
-        list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("audio").getAsJsonArray()));
-        list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("video").getAsJsonArray()));
-        this.extMimeList = list;
-        this.extMimeTypeList = JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray());
+        this.extMimeList = new HashSet<>();
+        this.extMimeTypeList = new HashSet<>();
+        if (configPath != null && !"".equals(configPath)) {
+            JsonFile customJson = new JsonFile(configPath);
+            JsonElement jsonElement = customJson.getElement("ext-mime");
+            this.extMimeTypeList = new HashSet<>(JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(),
+                    new TypeToken<List<String>>(){}));
+        }
+        if (!rewrite) {
+            JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
+            JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
+            List<String> defaultList = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
+                    new TypeToken<List<String>>(){});
+            defaultList.addAll(JsonConvertUtils.fromJsonArray(extMime.get("audio").getAsJsonArray(),
+                    new TypeToken<List<String>>(){}));
+            defaultList.addAll(JsonConvertUtils.fromJsonArray(extMime.get("video").getAsJsonArray(),
+                    new TypeToken<List<String>>(){}));
+            this.extMimeList.addAll(defaultList);
+            this.extMimeTypeList.addAll(JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray(),
+                    new TypeToken<List<String>>(){}));
+        }
     }
 
     public String getCheckName() {
