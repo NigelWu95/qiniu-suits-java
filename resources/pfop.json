@@ -1,7 +1,12 @@
 {
   "F720":{
-    "scale":[1000,1281],
+    "scale":[1000,1280],
     "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
     "saveas":"bucket:$(key)F720.mp4"
+  },
+  "F1080":{
+    "scale":[1280],
+    "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
+    "saveas":"bucket:$(key)F1080"
   }
 }

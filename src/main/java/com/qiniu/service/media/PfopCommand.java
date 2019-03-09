@@ -1,5 +1,6 @@
 package com.qiniu.service.media;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.qiniu.config.JsonFile;
@@ -35,8 +36,14 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
             JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
             List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});
-            if (scale.size() < 1) throw new IOException(jsonPath + " miss the scale field in \"" + key + "\"");
-            else if (scale.size() == 1) scale.add(Integer.MAX_VALUE);
+            if (scale.size() < 1) {
+                throw new IOException(jsonPath + " miss the scale field in \"" + key + "\"");
+            } else if (scale.size() == 1) {
+                JsonArray jsonArray = new JsonArray();
+                jsonArray.add(scale.get(0));
+                jsonArray.add(Integer.MAX_VALUE);
+                jsonObject.add("scale", jsonArray);
+            }
             if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
                 throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
             else if (!jsonObject.get("saveas").getAsString().contains(":"))
@@ -118,7 +125,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
                     if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
                     videoStream = avinfo.getVideoStream();
                     if (videoStream == null) throw new Exception("videoStream is null");
-                    if (scale.get(0) < videoStream.width && videoStream.width < scale.get(1)) {
+                    if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
                         commandList.add(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString());
                     }
                 } catch (Exception e) {
