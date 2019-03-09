@@ -157,7 +157,7 @@ public class ProcessorChoice {
         baseFieldsFilter.setOtherConditions(putTimeMin, putTimeMax, type, status);
 
         String checkType = entryParam.getValue("f-check", "");
-        checkType = commonParams.checked(checkType, "f-check", "mime");
+        checkType = commonParams.checked(checkType, "f-check", "(|mime)");
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
         checkRewrite = commonParams.checked(checkRewrite, "f-check-rewrite", "(true|false)");
