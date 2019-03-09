@@ -3,6 +3,7 @@ package com.qiniu.entry;
 import com.qiniu.service.filtration.SeniorChecker;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.service.media.PfopCommand;
 import com.qiniu.service.media.QiniuPfop;
 import com.qiniu.service.media.QueryAvinfo;
 import com.qiniu.service.media.QueryPfopResult;
@@ -191,6 +192,7 @@ public class ProcessorChoice {
             case "qhash": processor = getQueryHash(); break;
             case "stat": processor = getFileStat(); break;
             case "privateurl": processor = getPrivateUrl(); break;
+            case "pfopcmd": processor = getPfopCommand(); break;
         }
         if (processor != null) processor.setRetryCount(retryCount);
         return processor;
@@ -321,5 +323,14 @@ public class ProcessorChoice {
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
         return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getPfopCommand() throws IOException {
+        String configJson = entryParam.getValue("pfop-config");
+        String duration = entryParam.getValue("duration", "false");
+        duration = commonParams.checked(duration, "duration", "(true|false)");
+        String size = entryParam.getValue("size", "false");
+        size = commonParams.checked(size, "size", "(true|false)");
+        return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
     }
 }

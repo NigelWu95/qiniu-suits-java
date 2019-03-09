@@ -18,12 +18,12 @@ import java.util.Map;
 
 public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable {
 
-    private String processName;
+    final private String processName;
     private MediaManager mediaManager;
     private FileMap fileMap;
     private boolean hasDuration;
     private boolean hasSize;
-    private List<JsonObject> pfopConfigs = new ArrayList<>();
+    private ArrayList<JsonObject> pfopConfigs = new ArrayList<>();
     private String savePath;
     private String saveTag;
     private int saveIndex;
@@ -69,6 +69,8 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
 
     public PfopCommand clone() throws CloneNotSupportedException {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
+        pfopCommand.mediaManager = new MediaManager();
+        pfopCommand.pfopConfigs = (ArrayList<JsonObject>) pfopConfigs.clone();
         pfopCommand.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             pfopCommand.fileMap.initDefaultWriters();
