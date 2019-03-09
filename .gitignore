@@ -23,5 +23,6 @@ out/
 
 ### custom
 resources/.*.properties
+resources/.*.json
 assembly/
 .DS_Store

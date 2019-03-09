@@ -1,6 +1,7 @@
 package com.qiniu.entry;
 
 import com.google.gson.JsonObject;
+import com.qiniu.common.QiniuException;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
 import com.qiniu.config.JsonFile;
@@ -85,8 +86,7 @@ public class CommonParams {
         if ("list".equals(source)) {
             accessKey = entryParam.getValue("ak");
             secretKey = entryParam.getValue("sk");
-            if (path.startsWith("qiniu://")) bucket = path.substring(8);
-            else bucket = entryParam.getValue("bucket");
+            setBucket();
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixConfig(entryParam.getValue("prefix-config", ""), prefixes);
@@ -112,8 +112,7 @@ public class CommonParams {
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
         if ("file".equals(source) && needBucketProcesses.contains(process)) {
-            if (path.startsWith("qiniu://")) bucket = path.substring(8);
-            else bucket = entryParam.getValue("bucket");
+            setBucket();
             if (needAuthProcesses.contains(process)) {
                 accessKey = entryParam.getValue("ak");
                 secretKey = entryParam.getValue("sk");
@@ -134,6 +133,15 @@ public class CommonParams {
         }
         if (!source.matches("(list|file)")) {
             throw new IOException("please set the \"source\" conform to regex: (list|file)");
+        }
+    }
+
+    private void setBucket() throws IOException {
+        if (path.startsWith("qiniu://")) {
+            bucket = path.substring(8);
+            bucket = entryParam.getValue("bucket", bucket);
+        } else {
+            bucket = entryParam.getValue("bucket");
         }
     }
 
@@ -176,20 +184,20 @@ public class CommonParams {
     }
 
     private void setIndex(String indexName, String index, boolean check) throws IOException {
-        if (indexName != null && check) {
+        if (indexName != null && !"-1".equals(indexName) && check) {
             if (indexMap.containsKey(indexName)) {
                 throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
             }
             if ("json".equals(parse)) {
                 indexMap.put(indexName, index);
-            } else if ("table".equals(parse) || "csv".equals(parse)) {
+            } else if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
                     indexMap.put(indexName, index);
-                } else if (!"-1".equals(indexName)) {
+                } else {
                     throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
                 }
             } else {
-                // 其他情况暂且忽略该索引
+                throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
         }
     }
@@ -223,15 +231,23 @@ public class CommonParams {
     private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
         if (!"".equals(marker) || "".equals(start)) return marker;
         else {
-            FileInfo markerFileInfo = bucketManager.stat(bucket, start);
-            markerFileInfo.key = start;
-            return ListBucketUtils.calcMarker(markerFileInfo);
+            try {
+                FileInfo markerFileInfo = bucketManager.stat(bucket, start);
+                markerFileInfo.key = start;
+                return ListBucketUtils.calcMarker(markerFileInfo);
+            } catch (QiniuException e) {
+                if (e.code() == 612) {
+                    throw new IOException("start: \"" + start + "\", can not get invalid marker because " + e.error());
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
     private void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
         prefixMap = new HashMap<>();
-        if (!"".equals(prefixConfig)) {
+        if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
             String marker;
@@ -246,28 +262,40 @@ public class CommonParams {
         } else {
             List<String> prefixList = splitItems(prefixes);
             for (String prefix : prefixList) {
+                // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
+                prefixMap.remove(prefix);
                 prefixMap.put(prefix, new String[]{"", ""});
             }
         }
     }
 
-    private List<String> splitItems(String paramLine) {
-        if (!"".equals(paramLine)) {
-            Set<String> set;
+    public List<String> splitItems(String paramLine) {
+        List<String> itemList = new ArrayList<>();
+        String[] items = new String[]{};
+        if (!"".equals(paramLine) && paramLine != null) {
             // 指定前缀包含 "," 号时需要用转义符解决
             if (paramLine.contains("\\,")) {
                 String[] elements = paramLine.split("\\\\,");
-                set = new HashSet<>(Arrays.asList(elements[0].split(",")));
-                set.add(",");
-                if (elements.length > 1)set.addAll(Arrays.asList(elements[1].split(",")));
+                String[] items1 = elements[0].split(",");
+                if (elements.length > 1) {
+                    String[] items2 = elements[1].split(",");
+                    items = new String[items1.length + items2.length + 1];
+                    System.arraycopy(items1, 0, items, 0, items1.length);
+                    items[items1.length] = "";
+                    System.arraycopy(items2, 0, items, items1.length + 1, items2.length + 1);
+                } else {
+                    items = new String[items1.length];
+                    System.arraycopy(items1, 0, items, 0, items1.length);
+                }
             } else {
-                set = new HashSet<>(Arrays.asList(paramLine.split(",")));
+                items = paramLine.split(",");
             }
-            // 删除空前缀的情况避免列举操作时造成误解
-            set.remove("");
-            return new ArrayList<>(set);
         }
-        return new ArrayList<>();
+        // itemList 不能去重，因为要用于解析 indexes 设置，可能存在同时使用多个 "-1" 来跳过某些字段
+        for (String item : items) {
+            if (!"".equals(item)) itemList.add(item);
+        }
+        return itemList;
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {

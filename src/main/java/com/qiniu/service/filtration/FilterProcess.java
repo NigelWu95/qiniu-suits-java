@@ -31,7 +31,26 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                          String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
-        List<Method> fileTerMethods = new ArrayList<Method>() {{
+        this.filter = newFilter(filter, checker);
+        this.savePath = savePath;
+        this.saveFormat = saveFormat;
+        this.saveSeparator = saveSeparator;
+        this.rmFields = rmFields;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
+        this.fileMap.initDefaultWriters();
+        this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
+    }
+
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath, String saveFormat,
+                         String saveSeparator, List<String> rmFields) throws Exception {
+        this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
+    }
+
+    private ILineFilter<Map<String, String>> newFilter(BaseFieldsFilter filter, SeniorChecker checker)
+            throws NoSuchMethodException {
+        List<Method> filterMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
             if (filter.checkKeyInner()) add(filter.getClass().getMethod("filterKeyInner", Map.class));
@@ -47,34 +66,22 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiMime()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
         List<Method> checkMethods = new ArrayList<Method>() {{
-            if ("mime".equals(checker.getCheckName())) checker.getClass().getMethod("checkMimeType", Map.class);
+            if ("mime".equals(checker.getCheckName()))
+                add(checker.getClass().getMethod("checkMimeType", Map.class));
         }};
-        this.filter = line -> {
+
+        return line -> {
             boolean result;
-            for (Method method : fileTerMethods) {
+            for (Method method : filterMethods) {
                 result = (boolean) method.invoke(filter, line);
                 if (!result) return false;
             }
             for (Method method : checkMethods) {
-                result = (boolean) method.invoke(filter, line);
+                result = (boolean) method.invoke(checker, line);
                 if (!result) return false;
             }
             return true;
         };
-        this.savePath = savePath;
-        this.saveFormat = saveFormat;
-        this.saveSeparator = saveSeparator;
-        this.rmFields = rmFields;
-        this.saveTag = "";
-        this.saveIndex = saveIndex;
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
-        this.fileMap.initDefaultWriters();
-        this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
-    }
-
-    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath, String saveFormat,
-                         String saveSeparator, List<String> rmFields) throws Exception {
-        this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
     public String getProcessName() {
