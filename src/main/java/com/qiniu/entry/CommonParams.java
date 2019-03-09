@@ -85,8 +85,7 @@ public class CommonParams {
         if ("list".equals(source)) {
             accessKey = entryParam.getValue("ak");
             secretKey = entryParam.getValue("sk");
-            if (path.startsWith("qiniu://")) bucket = path.substring(8);
-            else bucket = entryParam.getValue("bucket");
+            setBucket();
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixConfig(entryParam.getValue("prefix-config", ""), prefixes);
@@ -112,8 +111,7 @@ public class CommonParams {
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
         if ("file".equals(source) && needBucketProcesses.contains(process)) {
-            if (path.startsWith("qiniu://")) bucket = path.substring(8);
-            else bucket = entryParam.getValue("bucket");
+            setBucket();
             if (needAuthProcesses.contains(process)) {
                 accessKey = entryParam.getValue("ak");
                 secretKey = entryParam.getValue("sk");
@@ -134,6 +132,15 @@ public class CommonParams {
         }
         if (!source.matches("(list|file)")) {
             throw new IOException("please set the \"source\" conform to regex: (list|file)");
+        }
+    }
+
+    private void setBucket() throws IOException {
+        if (path.startsWith("qiniu://")) {
+            bucket = path.substring(8);
+            bucket = entryParam.getValue("bucket", bucket);
+        } else {
+            bucket = entryParam.getValue("bucket");
         }
     }
 
