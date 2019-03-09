@@ -5,15 +5,13 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
-
 public class FilePropertiesTest {
 
     private FileProperties fileProperties;
 
     @Before
     public void init() throws IOException {
-        fileProperties = new FileProperties("resources" + System.getProperty("file.separator") + ".qiniu.properties");
+        fileProperties = new FileProperties("resources" + System.getProperty("file.separator") + ".qiniu..properties");
     }
 
     @Test
