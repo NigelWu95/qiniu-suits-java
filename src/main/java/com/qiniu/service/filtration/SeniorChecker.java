@@ -2,6 +2,7 @@ package com.qiniu.service.filtration;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.qiniu.config.JsonFile;
 import com.qiniu.util.JsonConvertUtils;
 
@@ -21,11 +22,15 @@ public class SeniorChecker {
         JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
         JsonElement jsonElement = jsonFile.getElement("ext-mime");
         JsonObject extMime = jsonElement.getAsJsonObject();
-        List<String> list = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray());
-        list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("audio").getAsJsonArray()));
-        list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("video").getAsJsonArray()));
+        List<String> list = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
+                new TypeToken<List<String>>(){});
+        list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("audio").getAsJsonArray(),
+                new TypeToken<List<String>>(){}));
+        list.addAll(JsonConvertUtils.fromJsonArray(extMime.get("video").getAsJsonArray(),
+                new TypeToken<List<String>>(){}));
         this.extMimeList = list;
-        this.extMimeTypeList = JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray());
+        this.extMimeTypeList = JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray(),
+                new TypeToken<List<String>>(){});
     }
 
     public String getCheckName() {

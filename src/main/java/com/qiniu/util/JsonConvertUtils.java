@@ -3,7 +3,6 @@ package com.qiniu.util;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.List;
 
 public final class JsonConvertUtils {
@@ -33,8 +32,8 @@ public final class JsonConvertUtils {
         return gson.toJson(srcObject).replace("\\\\", "\\");
     }
 
-    public static <T> List<T> fromJsonArray(JsonArray jsonElements) {
+    public static <T> List<T> fromJsonArray(JsonArray jsonElements, TypeToken<List<T>> typeToken) {
         Gson gson = new Gson();
-        return gson.fromJson(jsonElements, new TypeToken<List<T>>(){}.getType());
+        return gson.fromJson(jsonElements, typeToken.getType());
     }
 }
