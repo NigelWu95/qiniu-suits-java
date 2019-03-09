@@ -106,6 +106,9 @@ indexes=0,1,2
 `f-anti-inner` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime` 表示**排除**该 mime 类型的文件  
+`f-check` 是否进行**后缀名**和**mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来|  
+`f-check-config` 自定义资源字段规范对应关系列表的配置文件，格式为 json，配置举例：[check-config 配置](../resources/check-config.json)|  
+`f-check-rewrite` 是否完全使用自定义的规范列表进行检查，默认为 false，程序包含的默认字段规范对应关系配置见：[check 默认配置](../resources/check.json)|  
 [filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可
 以直接持久化保存结果，如通过 list/file 源获取列表并过滤后进行保存，并且可设置 save-total=true/false 来选择是否将过滤之前的记录进行完整保存。  
 
