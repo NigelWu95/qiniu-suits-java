@@ -1,6 +1,7 @@
 package com.qiniu.entry;
 
 import com.google.gson.JsonObject;
+import com.qiniu.common.QiniuException;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
 import com.qiniu.config.JsonFile;
@@ -230,9 +231,17 @@ public class CommonParams {
     private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
         if (!"".equals(marker) || "".equals(start)) return marker;
         else {
-            FileInfo markerFileInfo = bucketManager.stat(bucket, start);
-            markerFileInfo.key = start;
-            return ListBucketUtils.calcMarker(markerFileInfo);
+            try {
+                FileInfo markerFileInfo = bucketManager.stat(bucket, start);
+                markerFileInfo.key = start;
+                return ListBucketUtils.calcMarker(markerFileInfo);
+            } catch (QiniuException e) {
+                if (e.code() == 612) {
+                    throw new IOException("start: \"" + start + "\", can not get invalid marker because " + e.error());
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
