@@ -94,6 +94,7 @@
       "3gpp:video"
     ],
     "other":[
+      "json:application/json",
       "map:application/x-navimap",
       "ttf:application/x-font-ttf",
       "woff:application/font-woff",
