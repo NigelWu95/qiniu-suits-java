@@ -15,7 +15,7 @@ size=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=pfopcmd| 该操作设置为pfopcmd| 表示根据 avinfo 生成音视频转码指令|  
-|pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径|  
+|pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径，配置文件格式为 json，用于设置多个转码条件和指令，配置举例：[pfop-config 配置](../resources/pfop.json)|  
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
 

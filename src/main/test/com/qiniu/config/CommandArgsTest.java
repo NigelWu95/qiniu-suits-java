@@ -6,8 +6,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
-
 public class CommandArgsTest {
 
     private CommandArgs commandArgs;

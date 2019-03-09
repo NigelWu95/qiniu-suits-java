@@ -39,7 +39,7 @@ prefix-right=
 |threads| 整型数字| 表示并发列举时使用的线程数（默认 30）|  
 |unit-len| 整型数字| 表示每次列举请求列举的文件个数（列举长度，默认值 10000）|  
 |prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表，如果需要表示 "," 作为前缀的话需要加双转义符表示为 "\\,"|  
-|prefix-config| 字符串| 该选项用于设置列举前缀的配置文件路径，配置文件格式为 json，用于设置多个 <prefix>、<start/marker>、<end>，用于在同时指定多个前缀且可选起始位置时使用，配置举例：[prefix.json 配置](../resources/prefixes.json)，该配置会覆盖 prefixes 的配置|
+|prefix-config| 字符串| 该选项用于设置列举前缀的配置文件路径，配置文件格式为 json，用于设置多个 <prefix>、<start/marker>、<end>，用于在同时指定多个前缀且可选起始位置时使用，配置举例：[prefix-config 配置](../resources/prefixes.json)，该配置会覆盖 prefixes 的配置|
 |anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，"," 同样需要双转义符|  
 |prefix-left| true/false| 当设置 prefixes 时，可选择是否在prefixes ASCII顺序之前的所有未知前缀的文件是否进行列举|  
 |prefix-right| true/false| 当设置 prefixes 时，可选择是否在prefixes ASCII顺序之后的所有未知前缀的文件是否进行列举|  

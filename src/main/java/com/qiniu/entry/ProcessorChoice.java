@@ -128,7 +128,6 @@ public class ProcessorChoice {
         String antiKeyInner = entryParam.getValue("f-anti-inner", "");
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
-        String checkType = entryParam.getValue("f-check", "");
         String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
         long putTimeMin = checkedDatetime(dateScale[0]);
         long putTimeMax = checkedDatetime(dateScale[1]);
@@ -156,7 +155,13 @@ public class ProcessorChoice {
         baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
         baseFieldsFilter.setMimeTypeConditions(mimeTypeList, antiMimeTypeList);
         baseFieldsFilter.setOtherConditions(putTimeMin, putTimeMax, type, status);
-        SeniorChecker seniorChecker = new SeniorChecker(checkType);
+
+        String checkType = entryParam.getValue("f-check", "");
+        checkType = commonParams.checked(checkType, "f-check", "mime");
+        String checkConfig = entryParam.getValue("f-check-config", "");
+        String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
+        checkRewrite = commonParams.checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        SeniorChecker seniorChecker = new SeniorChecker(checkType, checkConfig, Boolean.valueOf(checkRewrite));
 
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
