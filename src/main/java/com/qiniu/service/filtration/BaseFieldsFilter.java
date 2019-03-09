@@ -41,9 +41,9 @@ public class BaseFieldsFilter {
         this.antiMimeType = antiMimeType;
     }
 
-    public void setOtherConditions(long putTimeMax, long putTimeMin, String type, String status) {
-        this.putTimeMax = putTimeMax;
+    public void setOtherConditions(long putTimeMin, long putTimeMax, String type, String status) {
         this.putTimeMin = putTimeMin;
+        this.putTimeMax = putTimeMax;
         this.type = type;
         this.status = status;
     }
@@ -54,7 +54,7 @@ public class BaseFieldsFilter {
 
     public boolean isValid() {
         return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mimeType) || putTimeMin > 0 || putTimeMax > 0 || type.matches("[01]") ||
+                checkList(mimeType) || (putTimeMax > putTimeMin && putTimeMin >= 0) || type.matches("[01]") ||
                 status.matches("[01]") || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
                 checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
     }
@@ -76,7 +76,7 @@ public class BaseFieldsFilter {
     }
 
     public boolean checkPutTime() {
-        return putTimeMin > 0 || putTimeMax > 0;
+        return putTimeMax > putTimeMin && putTimeMin >= 0;
     }
 
     public boolean checkMime() {
@@ -133,8 +133,7 @@ public class BaseFieldsFilter {
 
     public boolean filterPutTime(Map<String, String> item) {
         if (checkItem(item, "putTime")) return false;
-        else if (putTimeMax > 0) return Long.valueOf(item.get("putTime")) <= putTimeMax;
-        else return putTimeMin <= Long.valueOf(item.get("putTime"));
+        else return Long.valueOf(item.get("putTime")) <= putTimeMax && putTimeMin <= Long.valueOf(item.get("putTime"));
     }
 
     public boolean filterMimeType(Map<String, String> item) {

@@ -79,6 +79,40 @@ public class ProcessorChoice {
 
     }
 
+    private Long checkedDatetime(String datetime) throws Exception {
+        long time;
+        if (datetime == null || "".equals(datetime)) {
+            time = 0L;
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime + " 00:00:00");
+        } else {
+            throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
+        }
+        if (time > 0L && indexMap != null && !indexMap.containsKey("putTime")) {
+            throw new IOException("f-date filter must get the putTime's index.");
+        }
+        return time * 10000;
+    }
+
+    private String[] splitDateScale(String dateScale) throws IOException {
+        String[] scale;
+        if (dateScale != null) {
+            // 设置的 dateScale 格式应该为 [yyyy-MM-dd HH:mm:ss,yyyy-MM-dd HH:mm:ss]
+            if (dateScale.startsWith("[") && dateScale.endsWith("]")) {
+                scale = dateScale.substring(1, dateScale.length() - 1).split(",");
+            } else if (dateScale.startsWith("[") || dateScale.endsWith("]")) {
+                throw new IOException("please check your date scale, set it as \"[<date1>,<date2>]\".");
+            } else {
+                scale = dateScale.split(",");
+            }
+        } else {
+            scale = new String[]{"", ""};
+        }
+        return scale;
+    }
+
     public ILineProcess<Map<String, String>> get() throws Exception {
         String keyPrefix = entryParam.getValue("f-prefix", "");
         String keySuffix = entryParam.getValue("f-suffix", "");
@@ -91,15 +125,12 @@ public class ProcessorChoice {
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
         String checkType = entryParam.getValue("f-check", "");
-        String date = entryParam.getValue("f-date", "");
-        String time = entryParam.getValue("f-time", "");
-        String direction = entryParam.getValue("f-direction", "");
-        long putTimeMax = 0;
-        long putTimeMin = 0;
-        if (!"".equals(date)) {
-            direction = commonParams.checked(direction, "f-direction", "[01]");
-            putTimeMax = "0".equals(direction) ? 0 : getPointDatetime(date, time) * 10000;
-            putTimeMin = "1".equals(direction) ? 0 : getPointDatetime(date, time) * 10000;
+        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", ""));
+        long putTimeMin = checkedDatetime(dateScale[0]);
+        long putTimeMax = checkedDatetime(dateScale[1]);
+        if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
+            throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
+                    "should earlier then <date2>.");
         }
         String type = entryParam.getValue("type", null);
         String status = entryParam.getValue("status", null);
