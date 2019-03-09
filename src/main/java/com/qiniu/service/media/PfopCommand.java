@@ -1,6 +1,7 @@
 package com.qiniu.service.media;
 
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.qiniu.config.JsonFile;
 import com.qiniu.model.media.Avinfo;
 import com.qiniu.model.media.VideoStream;
@@ -32,7 +33,8 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getConfigKeys()) {
             JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
-            List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray());
+            List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
+                    new TypeToken<List<Integer>>(){});
             if (scale.size() < 1) throw new IOException(jsonPath + " miss the scale field in \"" + key + "\"");
             else if (scale.size() == 1) scale.add(Integer.MAX_VALUE);
             if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
@@ -96,11 +98,12 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         String key;
         String info;
         Avinfo avinfo;
-        StringBuilder other = new StringBuilder("");
+        StringBuilder other = new StringBuilder();
         VideoStream videoStream;
         List<Integer> scale;
         for (JsonObject pfopConfig : pfopConfigs) {
-            scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray());
+            scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(),
+                    new TypeToken<List<Integer>>(){});
             List<String> commandList = new ArrayList<>();
             for (Map<String, String> line : lineList) {
                 key = line.get("key");
@@ -113,7 +116,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
                     if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
                     videoStream = avinfo.getVideoStream();
                     if (videoStream == null) throw new Exception("videoStream is null");
-                    if (scale.get(0) > videoStream.width && videoStream.width < scale.get(1)) {
+                    if (scale.get(0) < videoStream.width && videoStream.width < scale.get(1)) {
                         commandList.add(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString());
                     }
                 } catch (Exception e) {
