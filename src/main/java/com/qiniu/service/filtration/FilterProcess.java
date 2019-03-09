@@ -31,6 +31,25 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                          String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
+        this.filter = newFilter(filter, checker);
+        this.savePath = savePath;
+        this.saveFormat = saveFormat;
+        this.saveSeparator = saveSeparator;
+        this.rmFields = rmFields;
+        this.saveTag = "";
+        this.saveIndex = saveIndex;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
+        this.fileMap.initDefaultWriters();
+        this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
+    }
+
+    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath, String saveFormat,
+                         String saveSeparator, List<String> rmFields) throws Exception {
+        this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
+    }
+
+    private ILineFilter<Map<String, String>> newFilter(BaseFieldsFilter filter, SeniorChecker checker)
+            throws NoSuchMethodException {
         List<Method> filterMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
@@ -51,7 +70,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                 add(checker.getClass().getMethod("checkMimeType", Map.class));
         }};
 
-        this.filter = line -> {
+        return line -> {
             boolean result;
             for (Method method : filterMethods) {
                 result = (boolean) method.invoke(filter, line);
@@ -63,20 +82,6 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             }
             return true;
         };
-        this.savePath = savePath;
-        this.saveFormat = saveFormat;
-        this.saveSeparator = saveSeparator;
-        this.rmFields = rmFields;
-        this.saveTag = "";
-        this.saveIndex = saveIndex;
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
-        this.fileMap.initDefaultWriters();
-        this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
-    }
-
-    public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath, String saveFormat,
-                         String saveSeparator, List<String> rmFields) throws Exception {
-        this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
     public String getProcessName() {
