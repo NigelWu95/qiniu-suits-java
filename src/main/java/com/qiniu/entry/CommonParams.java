@@ -260,7 +260,7 @@ public class CommonParams {
         }
     }
 
-    private List<String> splitItems(String paramLine) {
+    public List<String> splitItems(String paramLine) {
         List<String> itemList = new ArrayList<>();
         String[] items = new String[]{};
         if (!"".equals(paramLine) && paramLine != null) {

@@ -54,7 +54,7 @@ public class ProcessorChoice {
             throws IOException {
         if (!"".equals(field)) {
             if (indexMap == null || indexMap.containsKey(key)) {
-                return Arrays.asList(field.split(","));
+                return commonParams.splitItems(field);
             } else {
                 throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
             }
@@ -81,7 +81,7 @@ public class ProcessorChoice {
 
     private Long checkedDatetime(String datetime) throws Exception {
         long time;
-        if (datetime == null ||datetime.matches("(|0s)")) {
+        if (datetime == null ||datetime.matches("(|0)")) {
             time = 0L;
         } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
@@ -154,7 +154,7 @@ public class ProcessorChoice {
         baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
         baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
         baseFieldsFilter.setMimeTypeConditions(mimeTypeList, antiMimeTypeList);
-        baseFieldsFilter.setOtherConditions(putTimeMax, putTimeMin, type, status);
+        baseFieldsFilter.setOtherConditions(putTimeMin, putTimeMax, type, status);
         SeniorChecker seniorChecker = new SeniorChecker(checkType);
 
         ILineProcess<Map<String, String>> processor;
