@@ -17,6 +17,8 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
 
     private String processName;
     private ILineFilter<Map<String, String>> filter;
+    private List<Method> fileTerMethods;
+    private List<Method> checkMethods;
     private ILineProcess<Map<String, String>> nextProcessor;
     private String savePath;
     private String saveFormat;
@@ -31,7 +33,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                          String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
-        List<Method> fileTerMethods = new ArrayList<Method>() {{
+        fileTerMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
             if (filter.checkKeyInner()) add(filter.getClass().getMethod("filterKeyInner", Map.class));
@@ -46,21 +48,11 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiKeyRegex()) add(filter.getClass().getMethod("filterAntiKeyRegex", Map.class));
             if (filter.checkAntiMime()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
-        List<Method> checkMethods = new ArrayList<Method>() {{
+        checkMethods = new ArrayList<Method>() {{
             if ("mime".equals(checker.getCheckName())) checker.getClass().getMethod("checkMimeType", Map.class);
         }};
-        this.filter = line -> {
-            boolean result;
-            for (Method method : fileTerMethods) {
-                result = (boolean) method.invoke(filter, line);
-                if (!result) return false;
-            }
-            for (Method method : checkMethods) {
-                result = (boolean) method.invoke(filter, line);
-                if (!result) return false;
-            }
-            return true;
-        };
+
+        this.filter = newFilter();
         this.savePath = savePath;
         this.saveFormat = saveFormat;
         this.saveSeparator = saveSeparator;
@@ -85,8 +77,24 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.saveTag = saveTag == null ? "" : saveTag;
     }
 
+    private ILineFilter<Map<String, String>> newFilter() {
+        return line -> {
+            boolean result;
+            for (Method method : fileTerMethods) {
+                result = (boolean) method.invoke(filter, line);
+                if (!result) return false;
+            }
+            for (Method method : checkMethods) {
+                result = (boolean) method.invoke(filter, line);
+                if (!result) return false;
+            }
+            return true;
+        };
+    }
+
     public FilterProcess clone() throws CloneNotSupportedException {
         FilterProcess filterProcess = (FilterProcess)super.clone();
+        filterProcess.filter = newFilter();
         filterProcess.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             filterProcess.fileMap.initDefaultWriters();
