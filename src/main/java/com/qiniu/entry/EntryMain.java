@@ -30,22 +30,25 @@ public class EntryMain {
         configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "10"));
 
         CommonParams commonParams = new CommonParams(entryParam);
+        boolean saveTotal = commonParams.getSaveTotal();
+        String saveFormat = commonParams.getSaveFormat();
+        String saveSeparator = commonParams.getSaveSeparator();
+        List<String> rmFields = commonParams.getRmFields();
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
         IDataSource dataSource = getDataSource(commonParams);
         int threads = commonParams.getThreads();
-        if (dataSource != null) dataSource.export(threads, processor);
+        if (dataSource != null) {
+            dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+            dataSource.export(threads, processor);
+        }
         if (processor != null) processor.closeResource();
     }
 
     private static IDataSource getDataSource(CommonParams commonParams) {
         IDataSource dataSource = null;
         String source = commonParams.getSource();
-        boolean saveTotal = commonParams.getSaveTotal();
         String savePath = commonParams.getSavePath();
-        String saveFormat = commonParams.getSaveFormat();
-        String saveSeparator = commonParams.getSaveSeparator();
         int unitLen = commonParams.getUnitLen();
-        List<String> removeFields = commonParams.getRmFields();
         if ("list".equals(source)) {
             String accessKey = commonParams.getAccessKey();
             String secretKey = commonParams.getSecretKey();
@@ -64,8 +67,6 @@ public class EntryMain {
             Map<String, String> indexMap = commonParams.getIndexMap();
             dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, savePath);
         }
-        if (dataSource != null) dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, removeFields);
-
         return dataSource;
     }
 
