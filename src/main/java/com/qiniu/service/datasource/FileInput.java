@@ -85,7 +85,7 @@ public class FileInput implements IDataSource {
                         ILineProcess<Map<String, String>> processor) throws Exception {
         FileMap fileMap = new FileMap(savePath, "fileinput", identifier.split(": ")[0]);
         fileMap.initDefaultWriters();
-        if (processor != null) processor.setSaveTag(identifier);
+//        if (processor != null) processor.setSaveTag(identifier);
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         String record = "order " + identifier;
         String next;
