@@ -114,10 +114,10 @@ indexes=0,1,2
 不保存原始输出数据，list 源默认保存原始输出数据。   
 **--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些
 字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
-**持久化结果的文件名为 "<source-name>_success_<order>.txt"：  
-（1）list 源 =》 "listbucket_success_<order>.txt"  
-（2）file 源 =》 "fileinput_success_<order>.txt"  
-如果设置了过滤参数，则过滤到的结果文件名为 "filter_success_<order>.txt"**  
+**持久化结果的文件名为 "\<source-name\>_success_\<order\>.txt"：  
+（1）list 源 =》 "listbucket_success_\<order\>.txt"  
+（2）file 源 =》 "fileinput_success_\<order\>.txt"  
+如果设置了过滤参数，则过滤到的结果文件名为 "filter_success_\<order\>.txt"**  
 
 ### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，所有处理结果保存在 save-path 路径下，具体处理过程由处理类型参数指定:  

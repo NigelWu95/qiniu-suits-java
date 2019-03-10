@@ -83,11 +83,11 @@ public class FileInput implements IDataSource {
 
     private void export(FileMap recordFileMap, String identifier, BufferedReader reader,
                         ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap fileMap = new FileMap(savePath, "fileinput", identifier);
+        FileMap fileMap = new FileMap(savePath, "fileinput", identifier.split(": ")[0]);
         fileMap.initDefaultWriters();
-        if (processor != null) processor.setSaveTag(identifier);
+//        if (processor != null) processor.setSaveTag(identifier);
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        String record = "order: " + identifier;
+        String record = "order " + identifier;
         String next;
         try {
             recordFileMap.writeKeyFile("result", record + "\treading...", true);
@@ -115,25 +115,27 @@ public class FileInput implements IDataSource {
     }
 
     public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap inputFileMap = new FileMap(savePath);
+        FileMap inputFiles = new FileMap(savePath);
         File sourceFile = new File(filePath);
         if (sourceFile.isDirectory()) {
-            inputFileMap.initReaders(filePath);
+            inputFiles.initReaders(filePath);
         } else {
-            inputFileMap.initReader(filePath);
+            inputFiles.initReader(filePath);
         }
 
-        Set<Entry<String, BufferedReader>> readerEntrySet = inputFileMap.getReaderMap().entrySet();
-        int listSize = readerEntrySet.size();
+        HashMap<String, BufferedReader> readers = inputFiles.getReaderMap();
+        int listSize = readers.size();
         int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         AtomicBoolean exit = new AtomicBoolean(false);
-        for (Entry<String, BufferedReader> readerEntry : readerEntrySet) {
+        List<String> keys = new ArrayList<>(readers.keySet());
+        for (int i = 0; i < keys.size(); i++) {
+            int fi = i;
             executorPool.execute(() -> {
                 try {
-                    export(inputFileMap, readerEntry.getKey(), readerEntry.getValue(), processor);
+                    export(inputFiles, fi + ": " + keys.get(fi), readers.get(keys.get(fi)), processor);
                 } catch (Exception e) {
                     exit(exit, e);
                 }
@@ -141,7 +143,7 @@ public class FileInput implements IDataSource {
         }
         executorPool.shutdown();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
-        inputFileMap.closeReaders();
+        inputFiles.closeReaders();
         System.out.println(info + " finished");
     }
 }
