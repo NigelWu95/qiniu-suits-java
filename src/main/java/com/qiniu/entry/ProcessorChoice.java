@@ -168,6 +168,8 @@ public class ProcessorChoice {
         // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
         if (nextProcessor != null) nextProcessor.setRetryCount(retryCount);
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
+            // 如果设置了 filter，默认情况下不保留原始数据
+            commonParams.setSaveTotal(false);
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
             processor.setNextProcessor(nextProcessor);
