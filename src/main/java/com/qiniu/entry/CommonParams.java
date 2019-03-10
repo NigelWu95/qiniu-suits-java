@@ -106,7 +106,7 @@ public class CommonParams {
         setThreads(entryParam.getValue("threads", "30"));
         setRetryCount(entryParam.getValue("retry-times", "3"));
         // list 操作时默认保存全部原始文件
-        setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source))));
+        setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
         savePath = entryParam.getValue("save-path", "result");
         saveFormat = entryParam.getValue("save-format", "tab");
         // 校验设置的 format 参数
@@ -176,6 +176,10 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
+    }
+
+    public void setSaveTotal(boolean saveTotal) {
+        this.saveTotal = Boolean.valueOf(entryParam.getValue("save-total", String.valueOf(saveTotal)));
     }
 
     private void setSaveSeparator(String separator) {
