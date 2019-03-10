@@ -165,6 +165,8 @@ public class ProcessorChoice {
 
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
+        // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
+        if (nextProcessor != null) nextProcessor.setRetryCount(retryCount);
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
@@ -176,7 +178,6 @@ public class ProcessorChoice {
                 processor = nextProcessor;
             }
         }
-        if (processor != null) processor.setRetryCount(retryCount);
         return processor;
     }
 
@@ -199,7 +200,6 @@ public class ProcessorChoice {
             case "privateurl": processor = getPrivateUrl(); break;
             case "pfopcmd": processor = getPfopCommand(); break;
         }
-        if (processor != null) processor.setRetryCount(retryCount);
         return processor;
     }
 

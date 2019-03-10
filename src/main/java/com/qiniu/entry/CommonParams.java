@@ -78,6 +78,11 @@ public class CommonParams {
         add("privateurl");
     }};
 
+    /**
+     * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
+     * @param entryParam 配置参数入口
+     * @throws IOException 获取一些参数失败时抛出的异常
+     */
     public CommonParams(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", "");
@@ -101,7 +106,7 @@ public class CommonParams {
         setThreads(entryParam.getValue("threads", "30"));
         setRetryCount(entryParam.getValue("retry-times", "3"));
         // list 操作时默认保存全部原始文件
-        setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(getSource()))));
+        setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source))));
         savePath = entryParam.getValue("save-path", "result");
         saveFormat = entryParam.getValue("save-format", "tab");
         // 校验设置的 format 参数
