@@ -30,13 +30,14 @@ public class EntryMain {
         configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "10"));
 
         CommonParams commonParams = new CommonParams(entryParam);
+        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
+        IDataSource dataSource = getDataSource(commonParams);
+        // 这些参数需要在获取 processor 之后再访问，因为可能由于 ProcessorChoice 的过程对参数的默认值进行修改
+        int threads = commonParams.getThreads();
         boolean saveTotal = commonParams.getSaveTotal();
         String saveFormat = commonParams.getSaveFormat();
         String saveSeparator = commonParams.getSaveSeparator();
         List<String> rmFields = commonParams.getRmFields();
-        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
-        IDataSource dataSource = getDataSource(commonParams);
-        int threads = commonParams.getThreads();
         if (dataSource != null) {
             dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
             dataSource.export(threads, processor);
