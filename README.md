@@ -1,3 +1,4 @@
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.qiniu/qsuits/badge.svg)](https://search.maven.org/artifact/com.qiniu/qsuits/2.20/jar)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
@@ -15,7 +16,16 @@
 ### 2 运行方式  
 (1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
 (2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
-**所有参数设置，无论命令行或胖配置文件方式均无需加引号**  
+jar 包下载地址：https://search.maven.org/search?q=a:qsuits
+maven 引入:
+```
+<dependency>
+  <groupId>com.qiniu</groupId>
+  <artifactId>qsuits</artifactId>
+  <version>2.20</version>
+</dependency>
+```   
+
 
 ### 3 命令行运行配置
 (1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径，命令为：  
