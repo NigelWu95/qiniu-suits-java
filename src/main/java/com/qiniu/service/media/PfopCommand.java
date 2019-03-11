@@ -24,13 +24,14 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private FileMap fileMap;
     private boolean hasDuration;
     private boolean hasSize;
-    private ArrayList<JsonObject> pfopConfigs = new ArrayList<>();
+    private ArrayList<JsonObject> pfopConfigs;
     private String savePath;
     private String saveTag;
     private int saveIndex;
 
     public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, int saveIndex)
             throws IOException {
+        pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getConfigKeys()) {
             JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
@@ -74,6 +75,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.saveTag = saveTag == null ? "" : saveTag;
     }
 
+    @SuppressWarnings("unchecked")
     public PfopCommand clone() throws CloneNotSupportedException {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
         pfopCommand.mediaManager = new MediaManager();

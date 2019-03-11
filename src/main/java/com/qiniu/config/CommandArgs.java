@@ -78,23 +78,6 @@ public class CommandArgs implements IEntryParam {
         }
     }
 
-    /**
-     * 获取属性值，通过反射转换成指定类型
-     * @param key 属性名
-     * @param clazz 返回值类型 class
-     * @param Default 返回的默认值，当 key 不存在或者 value 为空时返回该默认值
-     * @param <T> 范型
-     * @return 属性值字符
-     * @throws Exception 根据范型转换返回值类型失败时抛出的异常
-     */
-    public <T> T getValue(String key, Class<T> clazz, T Default) throws Exception {
-        if (paramsMap == null || "".equals(paramsMap.getOrDefault(key, ""))) {
-            return Default;
-        } else {
-            return (T) clazz.getMethod("valueOf", clazz.getClasses()).invoke(clazz, paramsMap.get(key));
-        }
-    }
-
     public String[] getParams() {
         return params;
     }
