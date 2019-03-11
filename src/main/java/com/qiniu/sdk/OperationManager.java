@@ -13,7 +13,7 @@ import com.qiniu.util.StringUtils;
  * 对七牛空间中的文件进行持久化处理，适用于官方的fop指令和客户开发的ufop指令
  * 例如图片处理指令，视频转码指令等
  *
- * @link http://developer.qiniu.com/dora
+// * @link http://developer.qiniu.com/dora
  */
 public class OperationManager {
     /**
@@ -60,7 +60,7 @@ public class OperationManager {
      * @param fops   fops指令，如果有多个指令，需要使用分号(;)进行拼接，例如 avthumb/mp4/xxx|saveas/xxx;vframe/jpg/xxx|saveas/xxx
      * @return persistentId 请求返回的任务ID，可以根据该ID查询任务状态
      * @throws QiniuException 触发失败异常，包含错误响应等信息
-     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
+//     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
      * @deprecated 数据持久化处理时，请指定 pipeline 参数以保障处理效率
      */
     public String pfop(String bucket, String key, String fops) throws QiniuException {
@@ -76,7 +76,7 @@ public class OperationManager {
      * @param params notifyURL、force、pipeline 等参数
      * @return persistentId 请求返回的任务ID，可以根据该ID查询任务状态
      * @throws QiniuException 触发失败异常，包含错误响应等信息
-     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
+//     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
      */
     public String pfop(String bucket, String key, String fops, StringMap params) throws QiniuException {
         params = params == null ? new StringMap() : params;
@@ -106,7 +106,7 @@ public class OperationManager {
      * @param notifyURL 处理结果通知地址，任务完成后自动以POST方式将处理结果提交到指定的地址
      * @return persistentId 请求返回的任务ID，可以根据该ID查询任务状态
      * @throws QiniuException 触发失败异常，包含错误响应等信息
-     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
+//     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
      */
     public String pfop(String bucket, String key, String fops, String pipeline, String notifyURL)
             throws QiniuException {
@@ -124,7 +124,7 @@ public class OperationManager {
      * @param force    用于对同一个指令进行强制处理时指定，一般用于覆盖空间已有文件或者重试失败的指令
      * @return persistentId 请求返回的任务ID，可以根据该ID查询任务状态
      * @throws QiniuException 触发失败异常，包含错误响应等信息
-     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
+//     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
      */
     public String pfop(String bucket, String key, String fops, String pipeline, boolean force)
             throws QiniuException {
@@ -143,7 +143,7 @@ public class OperationManager {
      * @param force     用于对同一个指令进行强制处理时指定，一般用于覆盖空间已有文件或者重试失败的指令
      * @return persistentId 请求返回的任务ID，可以根据该ID查询任务状态
      * @throws QiniuException 触发失败异常，包含错误响应等信息
-     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
+//     * @link http://developer.qiniu.com/dora/api/persistent-data-processing-pfop
      */
     public String pfop(String bucket, String key, String fops, String pipeline, String notifyURL, boolean force)
             throws QiniuException {
@@ -156,17 +156,10 @@ public class OperationManager {
         public String persistentId;
     }
 
-    /**
-     * 根据persistentId查询任务状态
-     */
     public OperationStatus prefop(String persistentId) throws QiniuException {
         return prefop(persistentId, OperationStatus.class);
     }
 
-    /**
-     * 根据persistentId查询任务状态
-     * 返回结果的 class
-     */
     public <T> T prefop(String persistentId, Class<T> retClass) throws QiniuException {
         StringMap params = new StringMap().put("id", persistentId);
         byte[] data = StringUtils.utf8Bytes(params.formString());

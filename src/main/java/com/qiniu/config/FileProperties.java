@@ -31,7 +31,7 @@ public class FileProperties implements IEntryParam {
      * 获取属性值，判断是否存在相应的 key，不存在或 value 为空则抛出异常
      * @param key 属性名
      * @return 属性值字符
-     * @throws IOException
+     * @throws IOException 无法获取参数值或者参数值为空时抛出异常
      */
     public String getValue(String key) throws IOException {
         if ("".equals(properties.getProperty(key, ""))) {
@@ -43,7 +43,7 @@ public class FileProperties implements IEntryParam {
 
     /**
      * 获取属性值，不抛出异常，使用 default 值进行返回
-     * @param key
+     * @param key 属性名
      * @param Default 默认返回值
      * @return 属性值字符
      */
@@ -54,12 +54,12 @@ public class FileProperties implements IEntryParam {
 
     /**
      * 获取属性值，通过反射转换成指定类型
-     * @param key
+     * @param key 属性名
      * @param clazz 返回值类型 class
-     * @param Default
+     * @param Default 返回的默认值，当 key 不存在或者 value 为空时返回该默认值
      * @param <T> 范型
-     * @return
-     * @throws Exception
+     * @return 属性值字符
+     * @throws Exception 根据范型转换返回值类型失败时抛出的异常
      */
     public <T> T getValue(String key, Class<T> clazz, T Default) throws Exception {
         if ("".equals(properties.getProperty(key, ""))) {
