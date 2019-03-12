@@ -2,8 +2,6 @@ package com.qiniu.entry;
 
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
-import com.qiniu.config.CommandArgs;
-import com.qiniu.config.FileProperties;
 import com.qiniu.config.JsonFile;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.storage.BucketManager;

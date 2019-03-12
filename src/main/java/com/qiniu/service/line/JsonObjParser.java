@@ -3,7 +3,6 @@ package com.qiniu.service.line;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.util.Json;
 
 import java.io.IOException;
 import java.util.HashMap;

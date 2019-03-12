@@ -4,13 +4,10 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.line.JsonObjParser;
-import com.qiniu.service.line.JsonStrParser;
 import com.qiniu.service.line.MapToTableFormatter;
-import com.qiniu.service.line.SplitLineParser;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.HashMap;

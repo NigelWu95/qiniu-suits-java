@@ -4,7 +4,6 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.StorageType;
-import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
