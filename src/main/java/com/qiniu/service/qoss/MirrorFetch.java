@@ -74,8 +74,9 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+        int retry;
         for (Map<String, String> line : lineList) {
-            int retry = retryCount;
+            retry = retryCount;
             while (retry > 0) {
                 try {
                     bucketManager.prefetch(bucket, line.get("key"));

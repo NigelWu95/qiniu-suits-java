@@ -69,8 +69,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         String result = null;
         PfopResult pfopResult;
         Gson gson = new Gson();
+        int retry;
         for (Map<String, String> line : lineList) {
-            int retry = retryCount;
+            retry = retryCount;
             while (retry > 0) {
                 try {
                     result = mediaManager.getPfopResultBodyById(line.get(persistentIdIndex));
