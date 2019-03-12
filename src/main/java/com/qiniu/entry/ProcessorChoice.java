@@ -201,6 +201,7 @@ public class ProcessorChoice {
             case "stat": processor = getFileStat(); break;
             case "privateurl": processor = getPrivateUrl(); break;
             case "pfopcmd": processor = getPfopCommand(); break;
+            case "mirror": processor = getMirrorFetch(); break;
         }
         return processor;
     }
@@ -339,5 +340,9 @@ public class ProcessorChoice {
         String size = entryParam.getValue("size", "false");
         size = commonParams.checked(size, "size", "(true|false)");
         return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getMirrorFetch() throws IOException {
+        return new MirrorFetch(accessKey, secretKey, configuration, bucket, savePath);
     }
 }
