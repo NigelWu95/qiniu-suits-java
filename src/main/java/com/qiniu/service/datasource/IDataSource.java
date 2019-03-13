@@ -9,5 +9,7 @@ public interface IDataSource {
 
     void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields);
 
-    void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception;
+    void setProcessor(ILineProcess<Map<String, String>> processor);
+
+    void export() throws Exception;
 }

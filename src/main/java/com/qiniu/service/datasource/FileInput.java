@@ -7,6 +7,7 @@ import com.qiniu.service.convert.LineToMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.service.interfaces.ITypeConvert;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.SystemUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,19 +23,24 @@ public class FileInput implements IDataSource {
     final private String parseType;
     final private String separator;
     final private Map<String, String> indexMap;
+    final private int threads;
     final private int unitLen;
     final private String savePath;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
+    private ExecutorService executorPool; // 线程池
+    private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int unitLen,
-                     String savePath) {
+    public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int threads,
+                     int unitLen, String savePath) {
         this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
         this.indexMap = indexMap;
+        this.threads = threads;
         this.unitLen = unitLen;
         this.savePath = savePath;
         this.saveTotal = false;
@@ -45,6 +51,10 @@ public class FileInput implements IDataSource {
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+    }
+
+    public void setProcessor(ILineProcess<Map<String, String>> processor) {
+        this.processor = processor;
     }
 
     private void traverseByReader(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
@@ -107,13 +117,7 @@ public class FileInput implements IDataSource {
         }
     }
 
-    synchronized private void exit(AtomicBoolean exit, Exception e) {
-        if (!exit.get()) e.printStackTrace();
-        exit.set(true);
-        System.exit(-1);
-    }
-
-    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void export() throws Exception {
         FileMap inputFiles = new FileMap(savePath);
         File sourceFile = new File(filePath);
         if (sourceFile.isDirectory()) {
@@ -127,8 +131,8 @@ public class FileInput implements IDataSource {
         int runningThreads = listSize < threads ? listSize : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        AtomicBoolean exit = new AtomicBoolean(false);
+        executorPool = Executors.newFixedThreadPool(runningThreads);
+        exitBool = new AtomicBoolean(false);
         List<String> keys = new ArrayList<>(readers.keySet());
         for (int i = 0; i < keys.size(); i++) {
             int fi = i;
@@ -136,7 +140,7 @@ public class FileInput implements IDataSource {
                 try {
                     export(inputFiles, fi + ": " + keys.get(fi), readers.get(keys.get(fi)), processor);
                 } catch (Exception e) {
-                    exit(exit, e);
+                    SystemUtils.exit(exitBool, e);
                 }
             });
         }

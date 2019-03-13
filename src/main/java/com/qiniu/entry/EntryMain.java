@@ -33,14 +33,14 @@ public class EntryMain {
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
         IDataSource dataSource = getDataSource(commonParams);
         // 这些参数需要在获取 processor 之后再访问，因为可能由于 ProcessorChoice 的过程对参数的默认值进行修改
-        int threads = commonParams.getThreads();
         boolean saveTotal = commonParams.getSaveTotal();
         String saveFormat = commonParams.getSaveFormat();
         String saveSeparator = commonParams.getSaveSeparator();
         List<String> rmFields = commonParams.getRmFields();
         if (dataSource != null) {
             dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
-            dataSource.export(threads, processor);
+            dataSource.setProcessor(processor);
+            dataSource.export();
         }
         if (processor != null) processor.closeResource();
     }
@@ -49,6 +49,7 @@ public class EntryMain {
         IDataSource dataSource = null;
         String source = commonParams.getSource();
         String savePath = commonParams.getSavePath();
+        int threads = commonParams.getThreads();
         int unitLen = commonParams.getUnitLen();
         if ("list".equals(source)) {
             String accessKey = commonParams.getAccessKey();
@@ -59,14 +60,14 @@ public class EntryMain {
             boolean prefixLeft = commonParams.getPrefixLeft();
             boolean prefixRight = commonParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes,
+            dataSource = new ListBucket(auth, configuration, bucket, threads, unitLen, prefixesMap, antiPrefixes,
                     prefixLeft, prefixRight, savePath);
         } else if ("file".equals(source)) {
             String filePath = commonParams.getPath();
             String parseType = commonParams.getParse();
             String separator = commonParams.getSeparator();
             Map<String, String> indexMap = commonParams.getIndexMap();
-            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, savePath);
+            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, unitLen, savePath);
         }
         return dataSource;
     }
