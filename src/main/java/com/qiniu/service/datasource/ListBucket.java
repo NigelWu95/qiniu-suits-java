@@ -24,6 +24,7 @@ public class ListBucket implements IDataSource {
     final private Auth auth;
     final private Configuration configuration;
     final private String bucket;
+    final private int threads;
     final private int unitLen;
     final private List<String> prefixes;
     final private Map<String, String[]> prefixesMap;
@@ -36,14 +37,16 @@ public class ListBucket implements IDataSource {
     private String saveSeparator;
     private List<String> rmFields;
     private ExecutorService executorPool; // 线程池
-    private AtomicBoolean exit; // 多线程的原子操作 bool 值
+    private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
+    public ListBucket(Auth auth, Configuration configuration, String bucket, int threads, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                       boolean prefixRight, String savePath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
+        this.threads = threads;
         this.unitLen = unitLen;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
@@ -62,6 +65,10 @@ public class ListBucket implements IDataSource {
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+    }
+
+    public void setProcessor(ILineProcess<Map<String, String>> processor) {
+        this.processor = processor;
     }
 
     /**
@@ -294,16 +301,6 @@ public class ListBucket implements IDataSource {
     }
 
     /**
-     * 程序退出方法，用于在多线程情况下某个线程出现异常时退出程序
-     * @param e 异常对象
-     */
-    synchronized private void exit(Exception e) {
-        if (!exit.get()) e.printStackTrace();
-        exit.set(true);
-        System.exit(-1);
-    }
-
-    /**
      * 从 FileLister 列表中取出对应的 FileLister 放入线程中调用导出方法进行执行
      * @param fileListerList 计算好的 FileLister 列表
      * @param recordFileMap 用于记录导出结果的持久化文件对象
@@ -319,7 +316,7 @@ public class ListBucket implements IDataSource {
                 try {
                     export(recordFileMap, String.valueOf(finalJ + 1 + alreadyOrder), lister, processor);
                 } catch (Exception e) {
-                    exit(e);
+                    SystemUtils.exit(exitBool, e);
                 }
             });
         }
@@ -327,16 +324,14 @@ public class ListBucket implements IDataSource {
 
     /**
      * 启动多线程导出的方法，根据线程数自动执行多线程并发导出
-     * @param threads 预期的线程数目
-     * @param processor 定义的资源处理过程
      * @throws Exception 计算 FileLister 列表失败或者写入失败等情况下的异常
      */
-    public void export(int threads, ILineProcess<Map<String, String>> processor) throws Exception {
+    public void export() throws Exception {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileMap recordFileMap = new FileMap(savePath);
         executorPool = Executors.newFixedThreadPool(threads);
-        exit = new AtomicBoolean(false);
+        exitBool = new AtomicBoolean(false);
         Collections.sort(prefixes);
         int alreadyOrder = 0;
         List<FileLister> fileListerList = new ArrayList<>();
