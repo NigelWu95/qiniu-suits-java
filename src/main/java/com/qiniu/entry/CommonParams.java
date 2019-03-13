@@ -25,7 +25,7 @@ public class CommonParams {
     private String accessKey;
     private String secretKey;
     private String bucket;
-    private Map<String, String[]> prefixMap;
+    private Map<String, String[]> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -256,7 +256,7 @@ public class CommonParams {
     }
 
     private void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
-        prefixMap = new HashMap<>();
+        prefixesMap = new HashMap<>();
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
@@ -267,14 +267,14 @@ public class CommonParams {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
                 end = jsonCfg.get("end").getAsString();
-                prefixMap.put(prefix, new String[]{marker, end});
+                prefixesMap.put(prefix, new String[]{marker, end});
             }
         } else {
             List<String> prefixList = splitItems(prefixes);
             for (String prefix : prefixList) {
                 // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
-                prefixMap.remove(prefix);
-                prefixMap.put(prefix, new String[]{"", ""});
+                prefixesMap.remove(prefix);
+                prefixesMap.put(prefix, new String[]{"", ""});
             }
         }
     }
@@ -366,8 +366,8 @@ public class CommonParams {
         return prefixRight;
     }
 
-    public Map<String, String[]> getPrefixMap() {
-        return prefixMap;
+    public Map<String, String[]> getPrefixesMap() {
+        return prefixesMap;
     }
 
     public int getUnitLen() {
