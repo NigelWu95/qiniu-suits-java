@@ -11,7 +11,6 @@ import com.qiniu.service.filtration.BaseFieldsFilter;
 import com.qiniu.service.filtration.FilterProcess;
 import com.qiniu.service.qoss.*;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.DateUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -23,7 +22,6 @@ public class ProcessorChoice {
     private String accessKey;
     private String secretKey;
     private String bucket;
-    private Map<String, String> indexMap;
     private String process;
     private int retryCount;
     private String savePath;
@@ -36,12 +34,6 @@ public class ProcessorChoice {
         this.commonParams = commonParams;
         this.accessKey = commonParams.getAccessKey();
         this.secretKey = commonParams.getSecretKey();
-        this.indexMap = new HashMap<>();
-        if (commonParams.getIndexMap() != null) {
-            for (Map.Entry<String, String> entry : commonParams.getIndexMap().entrySet()) {
-                this.indexMap.put(entry.getValue(), entry.getKey());
-            }
-        }
         this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
         this.retryCount = commonParams.getRetryCount();
@@ -49,52 +41,6 @@ public class ProcessorChoice {
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
         this.configuration = configuration;
-    }
-
-    private List<String> getFilterList(String key, String field, String name)
-            throws IOException {
-        if (!"".equals(field)) {
-            if (indexMap == null || indexMap.containsKey(key)) {
-                return commonParams.splitItems(field);
-            } else {
-                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
-            }
-        } else return null;
-    }
-
-    private Long getPointDatetime(String date, String time) throws Exception {
-        String pointDatetime;
-        if(date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            if (indexMap != null && !indexMap.containsKey("putTime")) {
-                throw new IOException("f-date filter must get the putTime's index.");
-            }
-            if (time.matches("\\d{2}:\\d{2}:\\d{2}"))
-                pointDatetime =  date + " " + time;
-            else {
-                pointDatetime =  date + " " + "00:00:00";
-            }
-            return DateUtils.parseYYYYMMDDHHMMSSdatetime(pointDatetime);
-        } else {
-            return 0L;
-        }
-
-    }
-
-    private Long checkedDatetime(String datetime) throws Exception {
-        long time;
-        if (datetime == null ||datetime.matches("(|0)")) {
-            time = 0L;
-        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
-            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
-        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime + " 00:00:00");
-        } else {
-            throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
-        }
-        if (time > 0L && indexMap != null && !indexMap.containsKey("putTime")) {
-            throw new IOException("f-date filter must get the putTime's index.");
-        }
-        return time * 10000;
     }
 
     private String[] splitDateScale(String dateScale) throws IOException {
@@ -129,8 +75,8 @@ public class ProcessorChoice {
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
         String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
-        long putTimeMin = checkedDatetime(dateScale[0]);
-        long putTimeMax = checkedDatetime(dateScale[1]);
+        long putTimeMin = commonParams.checkedDatetime(dateScale[0]);
+        long putTimeMax = commonParams.checkedDatetime(dateScale[1]);
         if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
             throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
                     "should earlier then <date2>.");
@@ -140,16 +86,16 @@ public class ProcessorChoice {
         if (type != null) type = commonParams.checked(type, "type", "[01]");
         if (status != null) status = commonParams.checked(status, "status", "[01]");
 
-        List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
-        List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
-        List<String> keyInnerList = getFilterList("key", keyInner, "inner");
-        List<String> keyRegexList = getFilterList("key", keyRegex, "regex");
-        List<String> mimeTypeList = getFilterList("mimeType", mimeType, "mime");
-        List<String> antiKeyPrefixList = getFilterList("key", antiKeyPrefix, "anti-prefix");
-        List<String> antiKeySuffixList = getFilterList("key", antiKeySuffix, "anti-suffix");
-        List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
-        List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
-        List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
+        List<String> keyPrefixList = commonParams.getFilterList("key", keyPrefix, "prefix");
+        List<String> keySuffixList = commonParams.getFilterList("key", keySuffix, "suffix");
+        List<String> keyInnerList = commonParams.getFilterList("key", keyInner, "inner");
+        List<String> keyRegexList = commonParams.getFilterList("key", keyRegex, "regex");
+        List<String> mimeTypeList = commonParams.getFilterList("mimeType", mimeType, "mime");
+        List<String> antiKeyPrefixList = commonParams.getFilterList("key", antiKeyPrefix, "anti-prefix");
+        List<String> antiKeySuffixList = commonParams.getFilterList("key", antiKeySuffix, "anti-suffix");
+        List<String> antiKeyInnerList = commonParams.getFilterList("key", antiKeyInner, "anti-inner");
+        List<String> antiKeyRegexList = commonParams.getFilterList("key", antiKeyRegex, "anti-regex");
+        List<String> antiMimeTypeList = commonParams.getFilterList("mimeType", antiMimeType, "anti-mime");
         BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
         baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
         baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
@@ -223,16 +169,17 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
         String toBucket = entryParam.getValue("to-bucket");
-        String newKeyIndex = indexMap.get("newKey");
+        String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
+        return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
+                rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
         String toBucket = entryParam.getValue("to-bucket", null);
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
-        String newKeyIndex = indexMap.get("newKey");
+        String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String force = entryParam.getValue("prefix-force", null);
@@ -253,9 +200,9 @@ public class ProcessorChoice {
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         String keyPrefix = entryParam.getValue("add-prefix", null);
-        String urlIndex = indexMap.get("url");
+        String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String host = entryParam.getValue("host", null);
-        String md5Index = indexMap.get("md5");
+        String md5Index = commonParams.containIndex("md5") ? "md5" : null;
         String callbackUrl = entryParam.getValue("callback-url", null);
         String callbackBody = entryParam.getValue("callback-body", null);
         String callbackBodyType = entryParam.getValue("callback-body-type", null);
@@ -277,7 +224,7 @@ public class ProcessorChoice {
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String urlIndex = indexMap.get("url");
+        String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign) && accessKey == null) {
@@ -288,7 +235,7 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getQiniuPfop() throws IOException {
-        String fopsIndex = indexMap.get("fops");
+        String fopsIndex = commonParams.containIndex("fops") ? "fops" : null;
         String forcePublic = entryParam.getValue("force-public", "false");
         String pipeline = entryParam.getValue("pipeline", null);
         if (pipeline == null && !"true".equals(forcePublic)) {
@@ -299,7 +246,7 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
-        String persistentIdIndex = indexMap.get("pid");
+        String persistentIdIndex = commonParams.containIndex("pid") ? "pid" : null;
         return new QueryPfopResult(persistentIdIndex, savePath);
     }
 
@@ -309,7 +256,7 @@ public class ProcessorChoice {
         algorithm = commonParams.checked(algorithm, "algorithm", "(md5|sha1)");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String urlIndex = indexMap.get("url");
+        String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
         if (Boolean.valueOf(sign)) {
@@ -327,7 +274,7 @@ public class ProcessorChoice {
         String domain = entryParam.getValue("domain");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String urlIndex = indexMap.get("url");
+        String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
         return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
