@@ -128,29 +128,31 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
-        URL url;
+        URL httpUrl;
+        String url;
         String key;
         Response response;
         String fetchResult = null;
         int retry;
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
-                if (line.get(urlIndex) != null) {
-                    url = new URL(line.get(urlIndex));
-                    key = url.getPath().startsWith("/") ? url.getPath().substring(1) : url.getPath();
+                url = line.get(urlIndex);
+                if (url != null) {
+                    httpUrl = new URL(url);
+                    key = httpUrl.getPath().startsWith("/") ? httpUrl.getPath().substring(1) : httpUrl.getPath();
                 } else {
                     fileMap.writeError(String.valueOf(line) + "\tempty url line", false);
                     continue;
                 }
-            } else  {
-                url = new URL(protocol + "://" + domain + "/" + line.get("key"));
+            } else {
+                url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
             String finalInfo = key + "\t" + url + "\t" + line.get(md5Index) + "\t" + line.get("hash");
             retry = retryCount;
             while (retry > 0) {
                 try {
-                    response = fetch(line.get(urlIndex), keyPrefix + key, line.get(md5Index), line.get("hash"));
+                    response = fetch(url, keyPrefix + key, line.get(md5Index), line.get("hash"));
                     fetchResult = HttpResponseUtils.responseJson(response) + "\t" + response.reqId;
                     retry = 0;
                 } catch (QiniuException e) {
