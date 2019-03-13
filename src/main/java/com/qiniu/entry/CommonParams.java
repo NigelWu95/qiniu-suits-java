@@ -8,6 +8,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.DateUtils;
 import com.qiniu.util.ListBucketUtils;
 
 import java.io.IOException;
@@ -92,7 +93,7 @@ public class CommonParams {
             setBucket();
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
-            setPrefixConfig(entryParam.getValue("prefix-config", ""), prefixes);
+            setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
             setPrefixLeft(entryParam.getValue("prefix-left", "false"));
             setPrefixRight(entryParam.getValue("prefix-right", "false"));
         } else if ("file".equals(source)) {
@@ -255,7 +256,7 @@ public class CommonParams {
         }
     }
 
-    private void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
+    private void setPrefixesMap(String prefixConfig, String prefixes) throws IOException {
         prefixesMap = new HashMap<>();
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
@@ -320,6 +321,38 @@ public class CommonParams {
         if (param == null || !param.matches(conditionReg))
             throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
         else return param;
+    }
+
+    public List<String> getFilterList(String key, String field, String name)
+            throws IOException {
+        if (!"".equals(field)) {
+            if (indexMap == null || indexMap.containsValue(key)) {
+                return splitItems(field);
+            } else {
+                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
+            }
+        } else return null;
+    }
+
+    public Long checkedDatetime(String datetime) throws Exception {
+        long time;
+        if (datetime == null ||datetime.matches("(|0)")) {
+            time = 0L;
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime + " 00:00:00");
+        } else {
+            throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
+        }
+        if (time > 0L && indexMap != null && !indexMap.containsValue("putTime")) {
+            throw new IOException("f-date filter must get the putTime's index.");
+        }
+        return time * 10000;
+    }
+
+    public boolean containIndex(String name) {
+        return indexMap.containsValue(name);
     }
 
     public String getPath() {
