@@ -35,6 +35,8 @@ public class ListBucket implements IDataSource {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
+    private ExecutorService executorPool; // 线程池
+    private AtomicBoolean exit; // 多线程的原子操作 bool 值
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
@@ -293,10 +295,9 @@ public class ListBucket implements IDataSource {
 
     /**
      * 程序退出方法，用于在多线程情况下某个线程出现异常时退出程序
-     * @param exit 原子操作对象
      * @param e 异常对象
      */
-    synchronized private void exit(AtomicBoolean exit, Exception e) {
+    synchronized private void exit(Exception e) {
         if (!exit.get()) e.printStackTrace();
         exit.set(true);
         System.exit(-1);
@@ -304,15 +305,13 @@ public class ListBucket implements IDataSource {
 
     /**
      * 从 FileLister 列表中取出对应的 FileLister 放入线程中调用导出方法进行执行
-     * @param executorPool 已经初始化的线程池
-     * @param exit 原子操作 bool 值
      * @param fileListerList 计算好的 FileLister 列表
      * @param recordFileMap 用于记录导出结果的持久化文件对象
      * @param alreadyOrder 目前执行的进度，已经执行多少个 FileLister 的列举
      * @param processor 处理过程对象
      */
-    private void execInThreads(ExecutorService executorPool, AtomicBoolean exit, List<FileLister> fileListerList,
-                               FileMap recordFileMap, int alreadyOrder, ILineProcess<Map<String, String>> processor) {
+    private void execInThreads(List<FileLister> fileListerList, FileMap recordFileMap, int alreadyOrder,
+                               ILineProcess<Map<String, String>> processor) {
         for (int j = 0; j < fileListerList.size(); j++) {
             int finalJ = j;
             FileLister lister = fileListerList.get(finalJ);
@@ -320,7 +319,7 @@ public class ListBucket implements IDataSource {
                 try {
                     export(recordFileMap, String.valueOf(finalJ + 1 + alreadyOrder), lister, processor);
                 } catch (Exception e) {
-                    exit(exit, e);
+                    exit(e);
                 }
             });
         }
@@ -336,14 +335,14 @@ public class ListBucket implements IDataSource {
         String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileMap recordFileMap = new FileMap(savePath);
-        ExecutorService executorPool = Executors.newFixedThreadPool(threads);
-        AtomicBoolean exit = new AtomicBoolean(false);
+        executorPool = Executors.newFixedThreadPool(threads);
+        exit = new AtomicBoolean(false);
         Collections.sort(prefixes);
         int alreadyOrder = 0;
         List<FileLister> fileListerList = new ArrayList<>();
         if (prefixes.size() == 0) {
             fileListerList = computeFileLister(threads, "");
-            execInThreads(executorPool, exit, fileListerList, recordFileMap, alreadyOrder, processor);
+            execInThreads(fileListerList, recordFileMap, alreadyOrder, processor);
         } else {
             for (int i = 0; i < prefixes.size(); i++) {
                 fileListerList.addAll(computeFileLister(threads, prefixes.get(i)));
@@ -362,12 +361,12 @@ public class ListBucket implements IDataSource {
                     }
                 }
                 if (fileListerList.size() >= threads) {
-                    execInThreads(executorPool, exit, fileListerList, recordFileMap, alreadyOrder, processor);
+                    execInThreads(fileListerList, recordFileMap, alreadyOrder, processor);
                     alreadyOrder += fileListerList.size();
                     fileListerList = new ArrayList<>();
                 }
             }
-            execInThreads(executorPool, exit, fileListerList, recordFileMap, alreadyOrder, processor);
+            execInThreads(fileListerList, recordFileMap, alreadyOrder, processor);
         }
         executorPool.shutdown();
         recordFileMap.writeKeyFile("count_" + (alreadyOrder + fileListerList.size()), null, false);
