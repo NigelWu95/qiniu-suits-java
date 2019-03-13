@@ -113,8 +113,8 @@ public class CommonParams {
         setSaveSeparator(saveSeparator);
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
-        if ("file".equals(source) && needBucketProcesses.contains(process)) {
-            setBucket();
+        if ("file".equals(source)) {
+            if (needBucketProcesses.contains(process)) setBucket();
             if (needAuthProcesses.contains(process)) {
                 accessKey = entryParam.getValue("ak");
                 secretKey = entryParam.getValue("sk");
