@@ -30,7 +30,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private String saveTag;
     private int saveIndex;
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, String avinfoIndex,
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String savePath,
                        int saveIndex) throws IOException {
         this.processName = "pfopcmd";
         pfopConfigs = new ArrayList<>();
@@ -66,9 +66,9 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, String avinfoIndex)
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String savePath)
             throws IOException {
-        this(jsonPath, hasDuration, hasSize, savePath, avinfoIndex, 0);
+        this(jsonPath, hasDuration, hasSize, avinfoIndex, savePath, 0);
     }
 
     public String getProcessName() {
