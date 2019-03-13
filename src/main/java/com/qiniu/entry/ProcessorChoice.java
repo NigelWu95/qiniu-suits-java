@@ -286,7 +286,8 @@ public class ProcessorChoice {
         duration = commonParams.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false");
         size = commonParams.checked(size, "size", "(true|false)");
-        return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
+        String urlIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
+        return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), urlIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFetch() throws IOException {
