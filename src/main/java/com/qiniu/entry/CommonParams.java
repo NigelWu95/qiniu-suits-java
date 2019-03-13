@@ -2,14 +2,13 @@ package com.qiniu.entry;
 
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
-import com.qiniu.config.CommandArgs;
-import com.qiniu.config.FileProperties;
 import com.qiniu.config.JsonFile;
 import com.qiniu.service.interfaces.IEntryParam;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.DateUtils;
 import com.qiniu.util.ListBucketUtils;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ public class CommonParams {
     private String accessKey;
     private String secretKey;
     private String bucket;
-    private Map<String, String[]> prefixMap;
+    private Map<String, String[]> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -94,7 +93,7 @@ public class CommonParams {
             setBucket();
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
-            setPrefixConfig(entryParam.getValue("prefix-config", ""), prefixes);
+            setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
             setPrefixLeft(entryParam.getValue("prefix-left", "false"));
             setPrefixRight(entryParam.getValue("prefix-right", "false"));
         } else if ("file".equals(source)) {
@@ -115,8 +114,8 @@ public class CommonParams {
         setSaveSeparator(saveSeparator);
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
-        if ("file".equals(source) && needBucketProcesses.contains(process)) {
-            setBucket();
+        if ("file".equals(source)) {
+            if (needBucketProcesses.contains(process)) setBucket();
             if (needAuthProcesses.contains(process)) {
                 accessKey = entryParam.getValue("ak");
                 secretKey = entryParam.getValue("sk");
@@ -257,8 +256,8 @@ public class CommonParams {
         }
     }
 
-    private void setPrefixConfig(String prefixConfig, String prefixes) throws IOException {
-        prefixMap = new HashMap<>();
+    private void setPrefixesMap(String prefixConfig, String prefixes) throws IOException {
+        prefixesMap = new HashMap<>();
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
@@ -269,14 +268,14 @@ public class CommonParams {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
                 end = jsonCfg.get("end").getAsString();
-                prefixMap.put(prefix, new String[]{marker, end});
+                prefixesMap.put(prefix, new String[]{marker, end});
             }
         } else {
             List<String> prefixList = splitItems(prefixes);
             for (String prefix : prefixList) {
                 // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
-                prefixMap.remove(prefix);
-                prefixMap.put(prefix, new String[]{"", ""});
+                prefixesMap.remove(prefix);
+                prefixesMap.put(prefix, new String[]{"", ""});
             }
         }
     }
@@ -324,6 +323,38 @@ public class CommonParams {
         else return param;
     }
 
+    public List<String> getFilterList(String key, String field, String name)
+            throws IOException {
+        if (!"".equals(field)) {
+            if (indexMap == null || indexMap.containsValue(key)) {
+                return splitItems(field);
+            } else {
+                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
+            }
+        } else return null;
+    }
+
+    public Long checkedDatetime(String datetime) throws Exception {
+        long time;
+        if (datetime == null ||datetime.matches("(|0)")) {
+            time = 0L;
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime);
+        } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            time = DateUtils.parseYYYYMMDDHHMMSSdatetime(datetime + " 00:00:00");
+        } else {
+            throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
+        }
+        if (time > 0L && indexMap != null && !indexMap.containsValue("putTime")) {
+            throw new IOException("f-date filter must get the putTime's index.");
+        }
+        return time * 10000;
+    }
+
+    public boolean containIndex(String name) {
+        return indexMap.containsValue(name);
+    }
+
     public String getPath() {
         return path;
     }
@@ -368,8 +399,8 @@ public class CommonParams {
         return prefixRight;
     }
 
-    public Map<String, String[]> getPrefixMap() {
-        return prefixMap;
+    public Map<String, String[]> getPrefixesMap() {
+        return prefixesMap;
     }
 
     public int getUnitLen() {

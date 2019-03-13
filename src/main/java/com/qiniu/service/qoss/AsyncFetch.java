@@ -131,6 +131,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         String key;
         Response response;
         String fetchResult = null;
+        int retry;
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
                 url = line.get(urlIndex);
@@ -139,7 +140,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
-            int retry = retryCount;
+            retry = retryCount;
             while (retry > 0) {
                 try {
                     response = fetch(url, keyPrefix + key, line.get(md5Index), line.get("hash"));

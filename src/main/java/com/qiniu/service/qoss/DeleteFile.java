@@ -3,7 +3,6 @@ package com.qiniu.service.qoss;
 import com.qiniu.storage.BucketManager.BatchOperations;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;

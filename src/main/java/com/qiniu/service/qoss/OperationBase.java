@@ -80,7 +80,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     // 实现从 fileInfoList 转换得到 batchOperations 时先清除 batchOperations 中可能存在的上次的内容
-    protected abstract BatchOperations getOperations(List<Map<String, String>> fileInfoList);
+    protected abstract BatchOperations getOperations(List<Map<String, String>> lineList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
@@ -90,9 +90,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         JsonArray jsonArray;
         try {
             jsonArray = new Gson().fromJson(result, JsonArray.class);
-        } catch (JsonParseException e) { throw new QiniuException(null, "parse to json array error.");}
+        } catch (JsonParseException e) {
+            throw new QiniuException(null, "parse to json array error.");
+        }
+        JsonObject jsonObject;
         for (int j = 0; j < processList.size(); j++) {
-            JsonObject jsonObject = jsonArray.get(j).getAsJsonObject();
+            jsonObject = jsonArray.get(j).getAsJsonObject();
             if (j < jsonArray.size()) {
                 if (jsonObject.get("code").getAsInt() == 200)
                     fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject, false);
@@ -104,25 +107,26 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList, int retryCount) throws IOException {
-        int times = fileInfoList.size()/1000 + 1;
+    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+        int times = lineList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response;
         String result;
+        int retry;
         for (int i = 0; i < times; i++) {
-            processList = fileInfoList.subList(1000 * i, i == times - 1 ? fileInfoList.size() : 1000 * (i + 1));
+            processList = lineList.subList(1000 * i, i == times - 1 ? lineList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 batchOperations = getOperations(processList);
-                int count = retryCount;
-                while (count > 0) {
+                retry = retryCount;
+                while (retry > 0) {
                     try {
                         response = bucketManager.batch(batchOperations);
                         result = HttpResponseUtils.getResult(response);
                         parseBatchResult(processList, result);
-                        count = 0;
+                        retry = 0;
                     } catch (QiniuException e) {
-                        count--;
-                        HttpResponseUtils.processException(e, count, fileMap,
+                        retry--;
+                        HttpResponseUtils.processException(e, retry, fileMap,
                                 processList.stream().map(this::getInputParams).collect(Collectors.toList()));
                     }
                 }
@@ -134,8 +138,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         }
     }
 
-    public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        processLine(fileInfoList, retryCount);
+    public void processLine(List<Map<String, String>> lineList) throws IOException {
+        processLine(lineList, retryCount);
     }
 
     public void closeResource() {

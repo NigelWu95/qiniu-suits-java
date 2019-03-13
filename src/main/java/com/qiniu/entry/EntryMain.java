@@ -54,12 +54,12 @@ public class EntryMain {
             String accessKey = commonParams.getAccessKey();
             String secretKey = commonParams.getSecretKey();
             String bucket = commonParams.getBucket();
-            Map<String, String[]> prefixesConfig = commonParams.getPrefixMap();
+            Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
             List<String> antiPrefixes = commonParams.getAntiPrefixes();
             boolean prefixLeft = commonParams.getPrefixLeft();
             boolean prefixRight = commonParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesConfig, antiPrefixes,
+            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes,
                     prefixLeft, prefixRight, savePath);
         } else if ("file".equals(source)) {
             String filePath = commonParams.getPath();

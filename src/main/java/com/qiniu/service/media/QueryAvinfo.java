@@ -84,6 +84,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         String key;
         String avinfo = null;
         JsonParser jsonParser = new JsonParser();
+        int retry;
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
                 url = line.get(urlIndex);
@@ -92,7 +93,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
-            int retry = retryCount;
+            retry = retryCount;
             while (retry > 0) {
                 try {
                     avinfo = mediaManager.getAvinfoBody(url);
