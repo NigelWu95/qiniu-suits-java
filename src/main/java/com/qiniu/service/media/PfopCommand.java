@@ -24,13 +24,15 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private FileMap fileMap;
     private boolean hasDuration;
     private boolean hasSize;
+    private String avinfoIndex;
     private ArrayList<JsonObject> pfopConfigs;
     private String savePath;
     private String saveTag;
     private int saveIndex;
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, int saveIndex)
-            throws IOException {
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, String avinfoIndex,
+                       int saveIndex) throws IOException {
+        this.processName = "pfopcmd";
         pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getConfigKeys()) {
@@ -52,10 +54,11 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
             jsonObject.addProperty("name", key);
             pfopConfigs.add(jsonObject);
         }
-        this.processName = "pfopcmd";
         this.mediaManager = new MediaManager();
         this.hasDuration = hasDuration;
         this.hasSize = hasSize;
+        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
+        else this.avinfoIndex = avinfoIndex;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -63,8 +66,9 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath) throws IOException {
-        this(jsonPath, hasDuration, hasSize, savePath, 0);
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String savePath, String avinfoIndex)
+            throws IOException {
+        this(jsonPath, hasDuration, hasSize, savePath, avinfoIndex, 0);
     }
 
     public String getProcessName() {
@@ -118,7 +122,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
             List<String> commandList = new ArrayList<>();
             for (Map<String, String> line : lineList) {
                 key = line.get("key");
-                info = line.get("avinfo");
+                info = line.get(avinfoIndex);
                 if (key == null || "".equals(key) || info == null || "".equals(info))
                     throw new IOException("target value is empty.");
                 try {
