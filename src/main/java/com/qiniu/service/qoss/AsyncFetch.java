@@ -11,6 +11,7 @@ import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +128,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+        URL httpUrl;
         String url;
         String key;
         Response response;
@@ -135,11 +137,18 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
                 url = line.get(urlIndex);
-                key = url.split("(https?://[^\\s/]+\\.[^\\s/.]{1,3}/)|(\\?.+)")[1];
-            } else  {
+                if (url != null) {
+                    httpUrl = new URL(url);
+                    key = httpUrl.getPath().startsWith("/") ? httpUrl.getPath().substring(1) : httpUrl.getPath();
+                } else {
+                    fileMap.writeError(String.valueOf(line) + "\tempty url line", false);
+                    continue;
+                }
+            } else {
                 url = protocol + "://" + domain + "/" + line.get("key");
                 key = line.get("key");
             }
+            String finalInfo = key + "\t" + url + "\t" + line.get(md5Index) + "\t" + line.get("hash");
             retry = retryCount;
             while (retry > 0) {
                 try {
@@ -148,15 +157,13 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;
-                    String finalKey = key + "\t" + url;
-                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{ add(finalKey); }});
+                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{ add(finalInfo); }});
                 }
             }
             if (fetchResult != null && !"".equals(fetchResult)) {
-                fileMap.writeSuccess(key + "\t" + url + "\t" + fetchResult, false);
+                fileMap.writeSuccess(finalInfo + "\t" + fetchResult, false);
             } else {
-                fileMap.writeError( key + "\t" + url + "\t" + line.get(md5Index) +  "\t" + line.get("hash") +
-                        "\tempty fetch result", false);
+                fileMap.writeError(finalInfo + "\tempty fetch result", false);
             }
         }
     }

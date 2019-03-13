@@ -16,7 +16,7 @@ import java.util.Map;
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
     final private String processName;
-    final private String persistentIdIndex;
+    final private String pidIndex;
     private MediaManager mediaManager;
     private int retryCount;
     final private String savePath;
@@ -24,11 +24,10 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     private int saveIndex;
     private FileMap fileMap;
 
-    public QueryPfopResult(String persistentIdIndex, String savePath, int saveIndex) throws IOException {
+    public QueryPfopResult(String pidIndex, String savePath, int saveIndex) throws IOException {
         this.processName = "pfopresult";
-        if (persistentIdIndex == null || "".equals(persistentIdIndex))
-            throw new IOException("please set the persistentIdIndex.");
-        else this.persistentIdIndex = persistentIdIndex;
+        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
+        else this.pidIndex = pidIndex;
         this.mediaManager = new MediaManager();
         this.savePath = savePath;
         this.saveTag = "";
@@ -74,12 +73,12 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
             retry = retryCount;
             while (retry > 0) {
                 try {
-                    result = mediaManager.getPfopResultBodyById(line.get(persistentIdIndex));
+                    result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;
                     HttpResponseUtils.processException(e, retry, fileMap,
-                            new ArrayList<String>(){{add(line.get(persistentIdIndex));}});
+                            new ArrayList<String>(){{add(line.get(pidIndex));}});
                 }
             }
             if (result != null && !"".equals(result)) {
@@ -88,16 +87,16 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                 for (Item item : pfopResult.items) {
                     // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
                     if (item.code == 0) {
-                        fileMap.writeSuccess(line.get(persistentIdIndex) + "\t" + pfopResult.inputKey + "\t" +
+                        fileMap.writeSuccess(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
                                 item.key + "\t" + result, false);
                     } else {
-                        fileMap.writeError( line.get(persistentIdIndex) + "\t" + pfopResult.inputKey + "\t" +
+                        fileMap.writeError( line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
                                 item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" +
                                 item.error, false);
                     }
                 }
             } else {
-                fileMap.writeError( line.get(persistentIdIndex) + "\tempty pfop result", false);
+                fileMap.writeError( line.get(pidIndex) + "\tempty pfop result", false);
             }
         }
     }
