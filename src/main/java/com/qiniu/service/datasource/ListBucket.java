@@ -192,6 +192,8 @@ public class ListBucket implements IDataSource {
         Map<Boolean, List<FileLister>> groupedListerMap;
         int size = progressiveList.size() + 1;
         while (size > 0 && size < threads) {
+            // 给 progressiveList 按照是否有下一个 marker 进行分组，有下个 marker 的对象进一步进行前缀检索查询，没有下个 marker 的对象
+            // 先添加进列表，整个列表 size 达到线程个数时即可放入线程池进行并发列举
             groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
             if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
             if (groupedListerMap.get(true) != null) {
@@ -348,9 +350,9 @@ public class ListBucket implements IDataSource {
                 // 第一个前缀可能需要判断是否列举该前缀排序之前的文件
                 if (i == 0) {
                     if (prefixLeft) {
-                        List<FileLister> firstLister = prefixList(new ArrayList<String>(){{add("");}});
-                        firstLister.get(0).setEndKeyPrefix(prefixes.get(0));
-                        fileListerList.addAll(firstLister);
+                        FileLister firstLister = generateLister("");
+                        firstLister.setEndKeyPrefix(prefixes.get(0));
+                        fileListerList.add(firstLister);
                     }
                 } else if (i == prefixes.size() - 1) {
                     // 最后一个前缀可能需要判断是否列举该前缀排序之后的文件
