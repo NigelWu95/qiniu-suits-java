@@ -1,8 +1,6 @@
 package com.qiniu.service.media;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.qiniu.model.media.Item;
 import com.qiniu.model.media.PfopResult;
 import com.qiniu.persistence.FileMap;
@@ -14,8 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -73,8 +69,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         String result = null;
         PfopResult pfopResult;
         Gson gson = new Gson();
+        int retry;
         for (Map<String, String> line : lineList) {
-            int retry = retryCount;
+            retry = retryCount;
             while (retry > 0) {
                 try {
                     result = mediaManager.getPfopResultBodyById(line.get(persistentIdIndex));

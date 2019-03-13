@@ -3,7 +3,6 @@ package com.qiniu.service.line;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.service.interfaces.ILineParser;
-import com.qiniu.util.Json;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,8 +29,8 @@ public class JsonObjParser implements ILineParser<JsonObject> {
                 else itemMap.put(mapKey, json.get(key).getAsString());
             }
         }
-        if (!forceParse && itemMap.size() < indexMap.size()) throw new IOException("no enough indexes in line." +
-                " The parameter indexes may have incorrect order or name.");
+        if (!forceParse && itemMap.size() < indexMap.size())
+            throw new IOException("no enough indexes in line. The parameter indexes may have incorrect order or name.");
         return itemMap;
     }
 }

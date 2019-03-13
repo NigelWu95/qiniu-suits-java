@@ -80,9 +80,10 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String key;
         String persistentId = null;
+        int retry;
         for (Map<String, String> line : lineList) {
             key = line.get("key");
-            int retry = retryCount;
+            retry = retryCount;
             while (retry > 0) {
                 try {
                     persistentId = operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);

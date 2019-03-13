@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.*;
-import java.net.URL;
 import java.util.Set;
 
 public class JsonFile {

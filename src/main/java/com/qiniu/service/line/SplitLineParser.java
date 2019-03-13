@@ -27,8 +27,8 @@ public class SplitLineParser implements ILineParser<String> {
                 else itemMap.put(mapKey, items[i]);
             }
         }
-        if (itemMap.size() < indexMap.size()) throw new IOException("no enough indexes in line." +
-                " The parameter indexes may have incorrect order or name.");
+        if (itemMap.size() < indexMap.size())
+            throw new IOException("no enough indexes in line. The parameter indexes may have incorrect order or name.");
         return itemMap;
     }
 }
