@@ -78,6 +78,7 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
             while (retry > 0) {
                 try {
                     bucketManager.prefetch(bucket, line.get("key"));
+                    fileMap.writeSuccess(line.get("key") + "\t" + "200", false);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;

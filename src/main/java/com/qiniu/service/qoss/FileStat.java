@@ -1,7 +1,6 @@
 package com.qiniu.service.qoss;
 
 import com.google.gson.*;
-import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.line.JsonObjParser;
 import com.qiniu.service.line.MapToTableFormatter;
@@ -73,16 +72,19 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
 
     @Override
     public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
-        if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
+        if (result == null || "".equals(result)) throw new IOException("not valid json.");
         JsonArray jsonArray;
         try {
             jsonArray = new Gson().fromJson(result, JsonArray.class);
-        } catch (JsonParseException e) { throw new QiniuException(null, "parse to json array error.");}
+        } catch (JsonParseException e) {
+            throw new IOException("parse to json array error.");
+        }
+        JsonObject jsonObject;
         for (int j = 0; j < processList.size(); j++) {
             if (j < jsonArray.size()) {
-                JsonObject jsonObject = jsonArray.get(j).getAsJsonObject();
-                jsonObject.get("data").getAsJsonObject()
-                        .addProperty("key", processList.get(j).get("key"));
+                jsonObject = jsonArray.get(j).getAsJsonObject();
+                // stat 接口查询结果不包含文件名，故再加入对应的文件名
+                jsonObject.get("data").getAsJsonObject().addProperty("key", processList.get(j).get("key"));
                 if (jsonObject.get("code").getAsInt() == 200)
                     if (!"json".equals(format))
                         fileMap.writeSuccess(stringFormatter.toFormatString(jsonObjParser.getItemMap(

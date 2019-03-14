@@ -85,28 +85,41 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
 
+    /**
+     * 处理 batchOperations 执行的结果，将输入的文件信息和结果对应地记录下来
+     * @param processList batch 操作的资源列表
+     * @param result batch 操作之后的响应结果
+     * @throws IOException 写入结果失败抛出的异常
+     */
     public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
-        if (result == null || "".equals(result)) throw new QiniuException(null, "not valid json.");
+        if (result == null || "".equals(result)) throw new IOException("not valid json.");
         JsonArray jsonArray;
         try {
             jsonArray = new Gson().fromJson(result, JsonArray.class);
         } catch (JsonParseException e) {
-            throw new QiniuException(null, "parse to json array error.");
+            throw new IOException("parse to json array error.");
         }
         JsonObject jsonObject;
         for (int j = 0; j < processList.size(); j++) {
             jsonObject = jsonArray.get(j).getAsJsonObject();
+            // 正常情况下 jsonArray 和 processList 的长度是相同的
             if (j < jsonArray.size()) {
                 if (jsonObject.get("code").getAsInt() == 200)
                     fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject, false);
                 else
                     fileMap.writeError(getInputParams(processList.get(j)) + "\t" + jsonObject, false);
             } else {
-                fileMap.writeError(getInputParams(processList.get(j)) + "\tempty result", false);
+                fileMap.writeKeyFile("empty_result", getInputParams(processList.get(j)), false);
             }
         }
     }
 
+    /**
+     * 批量处理输入行，具体执行的操作取决于 batchOperations 设置的指令（通过子类去设置）
+     * @param lineList 输入列表
+     * @param retryCount 每一行信息处理时需要的重试次数
+     * @throws IOException 处理失败可能抛出的异常
+     */
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         int times = lineList.size()/1000 + 1;
         List<Map<String, String>> processList;
