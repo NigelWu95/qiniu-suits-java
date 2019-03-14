@@ -64,39 +64,53 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return queryPfopResult;
     }
 
+    /**
+     * 处理操作的结果
+     * @param result 处理的结果字符串
+     * @param line 原始的 line
+     * @throws IOException 写入处理结果报错
+     */
+    private void parseResult(String result, Map<String, String> line) throws IOException{
+        if (result != null && !"".equals(result)) {
+            PfopResult pfopResult = new Gson().fromJson(result, PfopResult.class);
+            // 可能有多条转码指令
+            for (Item item : pfopResult.items) {
+                // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
+                if (item.code == 0) {
+                    fileMap.writeSuccess(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
+                            item.key + "\t" + result, false);
+                } else {
+                    fileMap.writeError( line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
+                            item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" +
+                            item.error, false);
+                }
+            }
+        } else {
+            fileMap.writeKeyFile("empty_result", line.get(pidIndex), false);
+        }
+    }
+
+    /**
+     * 批量处理输入行进行 pfop result 的查询
+     * @param lineList 输入列表
+     * @param retryCount 每一行信息处理时需要的重试次数
+     * @throws IOException 处理失败可能抛出的异常
+     */
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
-        String result = null;
-        PfopResult pfopResult;
-        Gson gson = new Gson();
+        String result;
         int retry;
         for (Map<String, String> line : lineList) {
             retry = retryCount;
             while (retry > 0) {
                 try {
                     result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
+                    parseResult(result, line);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;
                     HttpResponseUtils.processException(e, retry, fileMap,
                             new ArrayList<String>(){{add(line.get(pidIndex));}});
                 }
-            }
-            if (result != null && !"".equals(result)) {
-                pfopResult = gson.fromJson(result, PfopResult.class);
-                // 可能有多条转码指令
-                for (Item item : pfopResult.items) {
-                    // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
-                    if (item.code == 0) {
-                        fileMap.writeSuccess(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
-                                item.key + "\t" + result, false);
-                    } else {
-                        fileMap.writeError( line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
-                                item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" +
-                                item.error, false);
-                    }
-                }
-            } else {
-                fileMap.writeError( line.get(pidIndex) + "\tempty pfop result", false);
             }
         }
     }
