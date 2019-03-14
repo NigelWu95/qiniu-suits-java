@@ -67,7 +67,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
 
     public OperationBase clone() throws CloneNotSupportedException {
         OperationBase operationBase = (OperationBase)super.clone();
-        operationBase.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        operationBase.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         operationBase.batchOperations = new BatchOperations();
         operationBase.errorLineList = new ArrayList<>();
         operationBase.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
