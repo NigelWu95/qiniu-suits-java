@@ -102,7 +102,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         JsonObject jsonObject;
         for (int j = 0; j < processList.size(); j++) {
             jsonObject = jsonArray.get(j).getAsJsonObject();
-            // 正常情况下 jsonArray 和 processList 的长度是相同的
+            // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录，否则结果记录为空
             if (j < jsonArray.size()) {
                 if (jsonObject.get("code").getAsInt() == 200)
                     fileMap.writeSuccess(getInputParams(processList.get(j)) + "\t" + jsonObject, false);
@@ -139,8 +139,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         retry = 0;
                     } catch (QiniuException e) {
                         retry--;
-                        HttpResponseUtils.processException(e, retry, fileMap,
-                                processList.stream().map(this::getInputParams).collect(Collectors.toList()));
+                        HttpResponseUtils.processException(e, retry, fileMap, processList.stream()
+                                .map(this::getInputParams).collect(Collectors.toList())
+                        );
                     }
                 }
             }

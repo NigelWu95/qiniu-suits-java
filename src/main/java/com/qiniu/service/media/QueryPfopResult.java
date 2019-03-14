@@ -66,11 +66,11 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
 
     /**
      * 处理操作的结果
-     * @param result 处理的结果字符串
      * @param line 原始的 line
+     * @param result 处理的结果字符串
      * @throws IOException 写入处理结果报错
      */
-    private void parseResult(String result, Map<String, String> line) throws IOException{
+    private void parseResult(Map<String, String> line, String result) throws IOException{
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult = new Gson().fromJson(result, PfopResult.class);
             // 可能有多条转码指令
@@ -104,7 +104,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
             while (retry > 0) {
                 try {
                     result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
-                    parseResult(result, line);
+                    parseResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;
