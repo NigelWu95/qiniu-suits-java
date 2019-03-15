@@ -124,7 +124,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
                 info = line.get(avinfoIndex);
                 try {
                     if (key == null || "".equals(key) || info == null || "".equals(info))
-                        throw new IOException("target value is empty.");
+                        throw new IOException("key or avinfo is empty.");
                     avinfo = mediaManager.getAvinfoByJson(info);
                     if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
                     if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));

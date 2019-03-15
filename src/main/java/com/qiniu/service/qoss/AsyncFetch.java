@@ -6,10 +6,7 @@ import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.RequestUtils;
-import com.qiniu.util.URLUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +29,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private String md5Index;
     final private boolean srcPrivate;
     final private String keyPrefix;
+    final private String rmPrefix;
 //    private M3U8Manager m3u8Manager;
     private boolean hasCustomArgs;
     private String host;
@@ -47,8 +45,8 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private FileMap fileMap;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, boolean srcPrivate, String keyPrefix, String urlIndex, String savePath,
-                      int saveIndex) throws IOException {
+                      String protocol, boolean srcPrivate, String keyPrefix, String rmPrefix, String urlIndex,
+                      String savePath, int saveIndex) throws IOException {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.auth = Auth.create(accessKey, secretKey);
@@ -67,6 +65,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         } else this.urlIndex = urlIndex;
         this.srcPrivate = srcPrivate;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.rmPrefix = rmPrefix;
 //        this.m3u8Manager = new M3U8Manager();
         this.savePath = savePath;
         this.saveTag = "";
@@ -76,9 +75,10 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, boolean srcPrivate, String keyPrefix, String urlIndex, String savePath)
-            throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, urlIndex, savePath, 0);
+                      String protocol, boolean srcPrivate, String keyPrefix, String rmPrefix, String urlIndex,
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, srcPrivate, keyPrefix, rmPrefix, urlIndex,
+                savePath, 0);
     }
 
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
@@ -143,6 +143,12 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
             } else {
                 key = line.get("key").replaceAll("\\?", "%3F");
                 url = protocol + "://" + domain + "/" + key;
+            }
+            try {
+                key = FileNameUtils.rmPrefix(rmPrefix, key);
+            } catch (IOException e) {
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
+                continue;
             }
             String finalInfo = url + "\t" + key;
             retry = retryCount;

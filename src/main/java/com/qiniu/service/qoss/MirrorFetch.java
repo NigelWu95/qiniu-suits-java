@@ -6,6 +6,7 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -18,9 +19,10 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     final protected String accessKey;
     final protected String secretKey;
     final protected Configuration configuration;
-    protected BucketManager bucketManager;
+    private BucketManager bucketManager;
     final protected String bucket;
     final protected String processName;
+    final private String rmPrefix;
     protected int retryCount;
     final protected String savePath;
     protected String saveTag;
@@ -28,13 +30,14 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     protected FileMap fileMap;
 
     public MirrorFetch(String accessKey, String secretKey, Configuration configuration,
-                         String bucket, String savePath, int saveIndex) throws IOException {
+                         String bucket, String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = "mirror";
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         this.bucket = bucket;
+        this.rmPrefix = rmPrefix;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -42,9 +45,9 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
-            throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, 0);
+    public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+                       String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -73,11 +76,18 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         int retry;
+        String key;
         for (Map<String, String> line : lineList) {
             retry = retryCount;
             while (retry > 0) {
                 try {
-                    bucketManager.prefetch(bucket, line.get("key"));
+                    key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
+                } catch (IOException e) {
+                    fileMap.writeError(line.get("key") + "\t" + e.getMessage(), false);
+                    continue;
+                }
+                try {
+                    bucketManager.prefetch(bucket, key);
                     fileMap.writeSuccess(line.get("key") + "\t" + "200", false);
                     retry = 0;
                 } catch (QiniuException e) {

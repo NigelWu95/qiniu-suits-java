@@ -7,7 +7,6 @@ import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.*;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     final private String accessKey;
     final private String secretKey;
     private MediaManager mediaManager;
+    final private String rmPrefix;
     private int retryCount;
     final private String savePath;
     private String saveTag;
@@ -28,7 +28,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     private FileMap fileMap;
 
     public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                       String savePath, int saveIndex) throws IOException {
+                       String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = "avinfo";
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
@@ -43,6 +43,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         this.secretKey = secretKey;
         this.mediaManager = new MediaManager(protocol, accessKey == null ? null :
                 Auth.create(accessKey, secretKey));
+        this.rmPrefix = rmPrefix;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -51,8 +52,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                       String savePath) throws IOException {
-        this(domain, protocol, urlIndex, accessKey, secretKey, savePath, 0);
+                       String rmPrefix, String savePath) throws IOException {
+        this(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -98,6 +99,11 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
             } else {
                 key = line.get("key").replaceAll("\\?", "%3F");
                 url = protocol + "://" + domain + "/" + key;
+            }
+            try {
+                key = FileNameUtils.rmPrefix(rmPrefix, key);
+            } catch (IOException e) {
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
             }
             String finalInfo = key + "\t" + url;
             retry = retryCount;

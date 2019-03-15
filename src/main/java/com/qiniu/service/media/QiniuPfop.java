@@ -6,6 +6,7 @@ import com.qiniu.sdk.OperationManager;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.StringMap;
 
@@ -22,8 +23,9 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     final private Configuration configuration;
     private OperationManager operationManager;
     final private String bucket;
-    final private String fopsIndex;
     final private StringMap pfopParams;
+    final private String fopsIndex;
+    final private String rmPrefix;
     public int retryCount;
     final private String savePath;
     private String saveTag;
@@ -31,16 +33,17 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     private FileMap fileMap;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String savePath, int saveIndex) throws IOException {
+                     String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = "pfop";
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration);
         this.bucket = bucket;
+        this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
-        this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
+        this.rmPrefix = rmPrefix;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -49,8 +52,8 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, savePath, 0);
+                     String fopsIndex, String rmPrefix, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -82,7 +85,12 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         String persistentId;
         int retry;
         for (Map<String, String> line : lineList) {
-            key = line.get("key");
+            try {
+                key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
+            } catch (IOException e) {
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
+                continue;
+            }
             retry = retryCount;
             while (retry > 0) {
                 try {
