@@ -87,8 +87,8 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
                     continue;
                 }
             } else  {
-                url = protocol + "://" + domain + "/" + line.get("key");
-                key = line.get("key");
+                key = line.get("key").replaceAll("\\?", "%3F");
+                url = protocol + "://" + domain + "/" + key;
             }
             String finalInfo = key + "\t" + url;
             signedUrl = auth.privateDownloadUrl(url, expires);
