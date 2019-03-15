@@ -67,7 +67,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
-        qiniuPfop.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration);
+        qiniuPfop.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
         qiniuPfop.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
             qiniuPfop.fileMap.initDefaultWriters();
@@ -79,7 +79,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
         String key;
-        String persistentId = null;
+        String persistentId;
         int retry;
         for (Map<String, String> line : lineList) {
             key = line.get("key");
@@ -87,16 +87,15 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
             while (retry > 0) {
                 try {
                     persistentId = operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);
+                    fileMap.writeSuccess(key + "\t" + persistentId, false);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;
-                    HttpResponseUtils.processException(e, retry, fileMap,
-                            new ArrayList<String>(){{ add(line.get("key") + "\t" + line.get(fopsIndex)); }});
+                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
+                        add(line.get("key") + "\t" + line.get(fopsIndex));
+                    }});
                 }
             }
-            if (persistentId != null && !"".equals(persistentId))
-                fileMap.writeSuccess(persistentId + "\t" + key, false);
-            else fileMap.writeError( key + "\t" + line.get(fopsIndex) + "\tempty persistent id", false);
         }
     }
 

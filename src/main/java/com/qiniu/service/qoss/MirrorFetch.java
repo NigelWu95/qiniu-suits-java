@@ -59,18 +59,16 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
         this.saveTag = saveTag == null ? "" : saveTag;
     }
 
-    public OperationBase clone() throws CloneNotSupportedException {
-        OperationBase operationBase = (OperationBase) super.clone();
-        operationBase.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
-        operationBase.batchOperations = new BucketManager.BatchOperations();
-        operationBase.errorLineList = new ArrayList<>();
-        operationBase.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
+    public MirrorFetch clone() throws CloneNotSupportedException {
+        MirrorFetch mirrorFetch = (MirrorFetch) super.clone();
+        mirrorFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        mirrorFetch.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
-            operationBase.fileMap.initDefaultWriters();
+            mirrorFetch.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return operationBase;
+        return mirrorFetch;
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
@@ -80,6 +78,7 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
             while (retry > 0) {
                 try {
                     bucketManager.prefetch(bucket, line.get("key"));
+                    fileMap.writeSuccess(line.get("key") + "\t" + "200", false);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;

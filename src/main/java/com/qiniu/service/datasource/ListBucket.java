@@ -72,6 +72,46 @@ public class ListBucket implements IDataSource {
     }
 
     /**
+     * 执行列举操作，直到当前的 FileLister 列举结束，并使用 processor 对象执行处理过程
+     * @param fileLister 已经初始化的 FileLister 对象
+     * @param fileMap 用于列举结果持久化的文件对象
+     * @param processor 用于资源处理的处理器对象
+     * @throws IOException 列举出现错误或者持久化错误抛出的异常
+     */
+    private void export(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
+            throws IOException {
+        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
+        List<FileInfo> fileInfoList;
+        List<Map<String, String>> infoMapList;
+        List<String> writeList;
+        while (fileLister.hasNext()) {
+            fileInfoList = fileLister.next();
+            while (fileLister.exception != null) {
+                System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
+                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
+                    add(fileLister.getPrefix() + "|" + fileLister.getMarker());
+                }});
+                fileLister.exception = null;
+                fileInfoList = fileLister.next();
+            }
+            infoMapList = typeConverter.convertToVList(fileInfoList);
+            if (typeConverter.getErrorList().size() > 0)
+                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+            if (saveTotal) {
+                writeList = writeTypeConverter.convertToVList(infoMapList);
+                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
+            }
+            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+            try {
+                if (processor != null) processor.processLine(infoMapList);
+            } catch (QiniuException e) {
+                HttpResponseUtils.processException(e, 1, null, null);
+            }
+        }
+    }
+
+    /**
      * 在 prefixes map 的参数配置中取出 marker 和 end 参数
      * @param prefix 配置的前缀参数
      * @return 返回针对该前缀配置的 marker 和 end
@@ -182,12 +222,11 @@ public class ListBucket implements IDataSource {
 
     /**
      * 计算所需要的 FileLiter 列表
-     * @param threads 预期线程数
      * @param customPrefix 定义的前缀
      * @return 根据线程数计算得到的 customPrefix 前缀下能够进行同时列举的 FileLiter 列表
      * @throws IOException 更新 FileLiter 列表可能产生的异常
      */
-    private List<FileLister> computeFileLister(int threads, String customPrefix) throws IOException {
+    private List<FileLister> computeFileLister(String customPrefix) throws IOException {
         List<String> originPrefixList = new ArrayList<>();
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
         // 优化列举的超时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
@@ -229,92 +268,44 @@ public class ListBucket implements IDataSource {
     }
 
     /**
-     * 执行列举操作，直到当前的 FileLister 列举结束
-     * @param fileLister 已经初始化的 FileLister 对象
-     * @param fileMap 用于列举结果持久化的文件对象
-     * @param processor 用于资源处理的处理器对象
-     * @throws IOException 列举出现错误或者持久化错误抛出的异常
-     */
-    private void execLister(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
-            throws IOException {
-        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
-        List<FileInfo> fileInfoList;
-        List<Map<String, String>> infoMapList;
-        List<String> writeList;
-        while (fileLister.hasNext()) {
-            fileInfoList = fileLister.next();
-            while (fileLister.exception != null) {
-                System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
-                    add(fileLister.getPrefix() + "|" + fileLister.getMarker());
-                }});
-                fileLister.exception = null;
-                fileInfoList = fileLister.next();
-            }
-            infoMapList = typeConverter.convertToVList(fileInfoList);
-            if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
-            if (saveTotal) {
-                writeList = writeTypeConverter.convertToVList(infoMapList);
-                if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
-            }
-            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-            try {
-                if (processor != null) processor.processLine(infoMapList);
-            } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, 1, null, null);
-            }
-        }
-    }
-
-    /**
-     * 执行数据源数据导出工作，并可能进行 process 过程，记录导出结果
-     * @param recordFileMap 可记录导出结果的文件持久化对象
-     * @param identifier 标识信息
-     * @param fileLister 初始化好的 FileLister 对象
-     * @param processor 定义的处理过程
-     * @throws Exception 持久化失败、列举失败等情况可能产生的异常
-     */
-    private void export(FileMap recordFileMap, String identifier, FileLister fileLister,
-                        ILineProcess<Map<String, String>> processor) throws Exception {
-        FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
-        fileMap.initDefaultWriters();
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        String record = "order " + identifier + ": " + fileLister.getPrefix();
-        try {
-            recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
-            execLister(fileLister, fileMap, lineProcessor);
-            if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) record += "\tsuccessfully done";
-            else record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
-            System.out.println(record);
-        } catch (QiniuException e) {
-            record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
-                    "\t" + e.getMessage().replaceAll("\n", "\t");
-            throw e;
-        } finally {
-            recordFileMap.writeKeyFile("result", record, true);
-            fileMap.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
-            fileLister.remove();
-        }
-    }
-
-    /**
-     * 从 FileLister 列表中取出对应的 FileLister 放入线程中调用导出方法进行执行
+     * 从 FileLister 列表中取出对应的 FileLister 放入线程池中调用导出方法执行数据源数据导出工作，并可能进行 process 过程，记录导出结果
      * @param fileListerList 计算好的 FileLister 列表
      * @param recordFileMap 用于记录导出结果的持久化文件对象
-     * @param alreadyOrder 目前执行的进度，已经执行多少个 FileLister 的列举
-     * @param processor 处理过程对象
+     * @param order 目前执行的进度，已经执行多少个 FileLister 的列举
+     * @throws Exception 持久化失败、列举失败等情况可能产生的异常
      */
-    private void execInThreads(List<FileLister> fileListerList, FileMap recordFileMap, int alreadyOrder,
-                               ILineProcess<Map<String, String>> processor) {
+    private void execInThreads(List<FileLister> fileListerList, FileMap recordFileMap, int order) throws Exception {
         for (int j = 0; j < fileListerList.size(); j++) {
-            int finalJ = j;
-            FileLister lister = fileListerList.get(finalJ);
+            FileLister fileLister = fileListerList.get(j);
+            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象
+            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null :
+                    order == 0 ? processor : processor.clone();
+            // 持久化结果标识信息
+            String identifier = String.valueOf(j + 1 + order);
             executorPool.execute(() -> {
                 try {
-                    export(recordFileMap, String.valueOf(finalJ + 1 + alreadyOrder), lister, processor);
+                    FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
+                    fileMap.initDefaultWriters();
+                    String record = "order " + identifier + ": " + fileLister.getPrefix();
+                    try {
+                        recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
+                        export(fileLister, fileMap, lineProcessor);
+                        if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
+                            record += "\tsuccessfully done";
+                        } else {
+                            record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
+                        }
+                        System.out.println(record);
+                    } catch (QiniuException e) {
+                        record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
+                                "\t" + e.getMessage().replaceAll("\n", "\t");
+                        throw e;
+                    } finally {
+                        recordFileMap.writeKeyFile("result", record, true);
+                        fileMap.closeWriters();
+                        if (lineProcessor != null) lineProcessor.closeResource();
+                        fileLister.remove();
+                    }
                 } catch (Exception e) {
                     SystemUtils.exit(exitBool, e);
                 }
@@ -336,11 +327,11 @@ public class ListBucket implements IDataSource {
         int alreadyOrder = 0;
         List<FileLister> fileListerList = new ArrayList<>();
         if (prefixes.size() == 0) {
-            fileListerList = computeFileLister(threads, "");
-            execInThreads(fileListerList, recordFileMap, alreadyOrder, processor);
+            fileListerList = computeFileLister("");
+            execInThreads(fileListerList, recordFileMap, alreadyOrder);
         } else {
             for (int i = 0; i < prefixes.size(); i++) {
-                fileListerList.addAll(computeFileLister(threads, prefixes.get(i)));
+                fileListerList.addAll(computeFileLister(prefixes.get(i)));
                 // 第一个前缀可能需要判断是否列举该前缀排序之前的文件
                 if (i == 0) {
                     if (prefixLeft) {
@@ -356,12 +347,12 @@ public class ListBucket implements IDataSource {
                     }
                 }
                 if (fileListerList.size() >= threads) {
-                    execInThreads(fileListerList, recordFileMap, alreadyOrder, processor);
+                    execInThreads(fileListerList, recordFileMap, alreadyOrder);
                     alreadyOrder += fileListerList.size();
                     fileListerList = new ArrayList<>();
                 }
             }
-            execInThreads(fileListerList, recordFileMap, alreadyOrder, processor);
+            execInThreads(fileListerList, recordFileMap, alreadyOrder);
         }
         executorPool.shutdown();
         recordFileMap.writeKeyFile("count_" + (alreadyOrder + fileListerList.size()), null, false);
