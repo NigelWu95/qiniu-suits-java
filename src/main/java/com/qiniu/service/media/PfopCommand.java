@@ -26,12 +26,13 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
     private boolean hasSize;
     private String avinfoIndex;
     private ArrayList<JsonObject> pfopConfigs;
+    final private String rmPrefix;
     private String savePath;
     private String saveTag;
     private int saveIndex;
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String savePath,
-                       int saveIndex) throws IOException {
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
+                       String savePath, int saveIndex) throws IOException {
         this.processName = "pfopcmd";
         pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
@@ -59,6 +60,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.hasSize = hasSize;
         if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
         else this.avinfoIndex = avinfoIndex;
+        this.rmPrefix = rmPrefix;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -66,9 +68,9 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         this.fileMap.initDefaultWriters();
     }
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String savePath)
-            throws IOException {
-        this(jsonPath, hasDuration, hasSize, avinfoIndex, savePath, 0);
+    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
+                       String savePath) throws IOException {
+        this(jsonPath, hasDuration, hasSize, avinfoIndex, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -125,6 +127,7 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
                 try {
                     if (key == null || "".equals(key) || info == null || "".equals(info))
                         throw new IOException("key or avinfo is empty.");
+                    key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
                     avinfo = mediaManager.getAvinfoByJson(info);
                     if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
                     if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
