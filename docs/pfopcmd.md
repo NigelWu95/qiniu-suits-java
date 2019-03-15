@@ -11,6 +11,8 @@ process=pfopcmd
 pfop-config=
 duration=
 size=
+avinfo-index=
+rm-prefix=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
@@ -18,6 +20,8 @@ size=
 |pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径，配置文件格式为 json，用于设置多个转码条件和指令，配置举例：[pfop-config 配置](../resources/pfop.json)|  
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
+|avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），必须指定才能进行处理|  
+|rm-prefix| 字符串| 表示将得到输入的原文件名去除存在的指定前缀后再进行指令的生成，用于输入的文件名可能比实际空间的文件名多了前缀的情况|  
 
 #### # pfop-config 配置文件写法如下：
 ```
