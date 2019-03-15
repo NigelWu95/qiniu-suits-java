@@ -154,7 +154,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                     retry = 0;
                 } catch (QiniuException e) {
                     retry--;
-                    HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
+                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
                         add(finalInfo);
                     }});
                 }
