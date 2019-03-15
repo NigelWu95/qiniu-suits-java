@@ -7,6 +7,7 @@
 
 ### 配置参数
 ```
+process=stat
 ak=
 sk=
 bucket=
@@ -21,7 +22,7 @@ bucket=
 
 ## 命令行方式
 ```
--process=stat -ak= -sk= 
+-process=stat -ak= -sk= -bucket=
 ```
 
 ## 备注
