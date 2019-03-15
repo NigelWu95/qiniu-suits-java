@@ -89,18 +89,27 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
             throw new IOException("parse to json array error.");
         }
         JsonObject jsonObject;
+        JsonObject data;
         for (int j = 0; j < processList.size(); j++) {
             if (j < jsonArray.size()) {
                 jsonObject = jsonArray.get(j).getAsJsonObject();
-                // stat 接口查询结果不包含文件名，故再加入对应的文件名
-                jsonObject.get("data").getAsJsonObject().addProperty("key", processList.get(j).get("key"));
-                if (jsonObject.get("code").getAsInt() == 200)
-                    if (!"json".equals(format))
-                        fileMap.writeSuccess(stringFormatter.toFormatString(jsonObjParser.getItemMap(
-                                jsonObject.get("data").getAsJsonObject())), false);
-                    else fileMap.writeSuccess(jsonObject.get("data").toString(), false);
-                else
+                if (!(jsonObject.get("data") instanceof JsonNull) && jsonObject.get("data") instanceof JsonObject) {
+                    data = jsonObject.get("data").getAsJsonObject();
+                } else {
                     fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                    continue;
+                }
+                // stat 接口查询结果不包含文件名，故再加入对应的文件名
+                data.addProperty("key", processList.get(j).get("key"));
+                if (jsonObject.get("code").getAsInt() == 200) {
+                    if (!"json".equals(format)) {
+                        fileMap.writeSuccess(stringFormatter.toFormatString(jsonObjParser.getItemMap(data)), false);
+                    } else {
+                        fileMap.writeSuccess(data.toString(), false);
+                    }
+                } else {
+                    fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                }
             } else {
                 fileMap.writeError(processList.get(j).get("key") + "\tempty stat result", false);
             }
