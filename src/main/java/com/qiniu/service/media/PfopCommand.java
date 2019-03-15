@@ -119,29 +119,24 @@ public class PfopCommand implements ILineProcess<Map<String, String>>, Cloneable
         for (JsonObject pfopConfig : pfopConfigs) {
             scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});
-            List<String> commandList = new ArrayList<>();
             for (Map<String, String> line : lineList) {
                 key = line.get("key");
                 info = line.get(avinfoIndex);
-                if (key == null || "".equals(key) || info == null || "".equals(info))
-                    throw new IOException("target value is empty.");
                 try {
+                    if (key == null || "".equals(key) || info == null || "".equals(info))
+                        throw new IOException("target value is empty.");
                     avinfo = mediaManager.getAvinfoByJson(info);
                     if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
                     if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
                     videoStream = avinfo.getVideoStream();
                     if (videoStream == null) throw new Exception("videoStream is null");
                     if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
-                        commandList.add(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString());
+                        fileMap.writeSuccess(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString(), false);
                     }
                 } catch (Exception e) {
                     fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
                 }
             }
-
-            if (commandList.size() > 0)
-                fileMap.writeKeyFile(pfopConfig.get("name").getAsString() + saveIndex,
-                        String.join("\n", commandList), false);
         }
     }
 

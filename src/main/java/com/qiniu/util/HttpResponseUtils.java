@@ -10,6 +10,13 @@ import java.util.stream.Collectors;
 
 public class HttpResponseUtils {
 
+    /**
+     * 从异常中提取错误描述进行记录，并一一对应输入行信息
+     * @param e 需要记录异常的 QiniuException 对象
+     * @param fileMap 记录错误信息的持久化对象
+     * @param infoList 需要和错误信息同时记录的原始 info 列表
+     * @throws IOException 持久化错误信息失败可能抛出的异常
+     */
     public static void writeLog(QiniuException e, FileMap fileMap, List<String> infoList) throws IOException {
         if (fileMap == null) return;
         String message = "";
@@ -34,31 +41,47 @@ public class HttpResponseUtils {
         }
     }
 
+    /**
+     * 处理异常结果，提取异常信息进行判断或者在需要抛出异常时记录具体错误描述
+     * @param e 需要处理的 QiniuException 异常
+     * @param retry 当前重试次数
+     * @param fileMap 记录错误信息的持久化对象
+     * @param infoList 需要和错误信息同时记录的原始 info 列表
+     * @throws IOException 持久化错误信息失败可能抛出的异常或传入的异常经判断后需要抛出
+     */
     public static void processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
             throws IOException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
             if (e.response != null) {
-                // 需要抛出异常时将错误信息记录下来
                 if (retry <= 0 || e.response.statusCode == 631 || !e.response.needRetry()) {
+                    // 需要抛出异常时将错误信息记录下来
                     writeLog(e, fileMap, infoList);
                     throw e;
                 } else {
+                    // 可重试的异常信息不需要记录，因为重试之后可能成功或者再次进行该方法
                     e.printStackTrace();
                     e.response.close();
                 }
             } else {
-                // 没有重试机会时将错误信息记录下来
                 if (retry <= 0) {
+                    // 没有重试机会时将错误信息记录下来
                     writeLog(e, fileMap, infoList);
                     throw e;
                 } else {
+                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
                     e.printStackTrace();
                 }
             }
         }
     }
 
+    /**
+     * 将 Response 对象转换成为结果字符串
+     * @param response 得到的 Response 对象
+     * @return Response body 转换的 String 对象
+     * @throws QiniuException Response 非正常响应的情况下抛出的异常
+     */
     public static String getResult(Response response) throws QiniuException {
         if (response == null) throw new QiniuException(new Exception("empty response"));
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
@@ -67,6 +90,12 @@ public class HttpResponseUtils {
         return responseBody;
     }
 
+    /**
+     * 将 Response 对象转换成为 json 格式结果字符串
+     * @param response 得到的 Response 对象
+     * @return Response body 转换的 String 对象，用 json 格式记录，包括 status code
+     * @throws QiniuException Response 非正常响应的情况下抛出的异常
+     */
     public static String responseJson(Response response) throws QiniuException {
         String result = getResult(response);
         return "{\"code\":" + response.statusCode + ",\"message\":\"" + result + "\"}";

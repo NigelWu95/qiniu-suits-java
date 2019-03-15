@@ -70,6 +70,7 @@ public class CommonParams {
         add("delete");
         add("pfop");
         add("stat");
+        add("mirror");
     }};
     private List<String> needAuthProcesses = new ArrayList<String>(){{
         addAll(needBucketProcesses);
@@ -88,8 +89,7 @@ public class CommonParams {
         process = entryParam.getValue("process", null);
         setSource();
         if ("list".equals(source)) {
-            accessKey = entryParam.getValue("ak");
-            secretKey = entryParam.getValue("sk");
+            setAkSk();
             setBucket();
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
@@ -116,10 +116,7 @@ public class CommonParams {
 
         if ("file".equals(source)) {
             if (needBucketProcesses.contains(process)) setBucket();
-            if (needAuthProcesses.contains(process)) {
-                accessKey = entryParam.getValue("ak");
-                secretKey = entryParam.getValue("sk");
-            }
+            if (needAuthProcesses.contains(process)) setAkSk();
         }
     }
 
@@ -137,6 +134,11 @@ public class CommonParams {
         if (!source.matches("(list|file)")) {
             throw new IOException("please set the \"source\" conform to regex: (list|file)");
         }
+    }
+
+    private void setAkSk() throws IOException {
+        accessKey = entryParam.getValue("ak");
+        secretKey = entryParam.getValue("sk");
     }
 
     private void setBucket() throws IOException {
