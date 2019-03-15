@@ -5,7 +5,7 @@ import java.io.IOException;
 public class FileNameUtils {
 
     public static String rmPrefix(String prefix, String name) throws IOException {
-        prefix = prefix == null ? "" : prefix;
+        if (prefix == null || "".equals(prefix)) return name;
         if (name == null || name.length() < prefix.length())
             throw new IOException("the name is empty or length is smaller then prefix");
         return prefix + name.substring(0, prefix.length()).replace(prefix, "")

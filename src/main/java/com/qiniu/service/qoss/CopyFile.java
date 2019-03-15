@@ -31,11 +31,6 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, savePath, 0);
     }
 
-    private String formatKey(String key) {
-        return keyPrefix + key.substring(0, rmPrefix.length()).replace(rmPrefix, "")
-                + key.substring(rmPrefix.length());
-    }
-
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
         lineList.forEach(line -> {
@@ -43,7 +38,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
             } else {
                 try {
-                    String newKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                    String newKey = keyPrefix + FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
                     batchOperations.addCopyOp(bucket, line.get("key"), toBucket, newKey);
                 } catch (IOException e) {
                     errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());

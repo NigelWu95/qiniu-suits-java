@@ -56,7 +56,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
             } else {
                 try {
-                    String newKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                    String newKey = keyPrefix + FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
                     if (toBucket == null || "".equals(toBucket))
                         batchOperations.addRenameOp(bucket, line.get("key"), newKey);
                     else
