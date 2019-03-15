@@ -116,7 +116,6 @@ public class FileInput implements IDataSource {
                     } catch (IOException e) {
                         try { next = reader.readLine(); } catch (IOException ex) { next = ex.getMessage(); }
                         record += "\tnextLine:" + next + "\t" + e.getMessage().replaceAll("\n", "\t");
-                        e.printStackTrace();
                         throw e;
                     } finally {
                         initFileMap.writeKeyFile("result", record, true);
