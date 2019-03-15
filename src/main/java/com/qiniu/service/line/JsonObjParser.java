@@ -8,12 +8,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JsonObjParser implements ILineParser<JsonObject> {
+public class JsonObjParser implements ILineParser<JsonObject>, Cloneable {
 
-    private Map<String, String> indexMap;
+    private HashMap<String, String> indexMap;
     private boolean forceParse;
 
-    public JsonObjParser(Map<String, String> indexMap, boolean forceParse) throws IOException {
+    public JsonObjParser(HashMap<String, String> indexMap, boolean forceParse) throws IOException {
         if (indexMap == null || indexMap.size() == 0) throw new IOException("there are no indexMap be set.");
         this.indexMap = indexMap;
         this.forceParse = forceParse;
@@ -32,5 +32,12 @@ public class JsonObjParser implements ILineParser<JsonObject> {
         if (!forceParse && itemMap.size() < indexMap.size())
             throw new IOException("no enough indexes in line. The parameter indexes may have incorrect order or name.");
         return itemMap;
+    }
+
+    @SuppressWarnings("unchecked")
+    public JsonObjParser clone() throws CloneNotSupportedException {
+        JsonObjParser jsonObjParser = (JsonObjParser)super.clone();
+        jsonObjParser.indexMap = (HashMap<String, String>) indexMap.clone();
+        return jsonObjParser;
     }
 }

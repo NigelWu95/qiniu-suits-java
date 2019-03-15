@@ -11,7 +11,7 @@ public class JsonStrParser implements ILineParser<String> {
 
     private JsonObjParser jsonObjParser;
 
-    public JsonStrParser(Map<String, String> indexMap) throws IOException {
+    public JsonStrParser(HashMap<String, String> indexMap) throws IOException {
         this.jsonObjParser = new JsonObjParser(indexMap, false);
     }
 

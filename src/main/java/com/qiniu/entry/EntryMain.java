@@ -14,6 +14,7 @@ import com.qiniu.util.Auth;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ public class EntryMain {
             String filePath = commonParams.getPath();
             String parseType = commonParams.getParse();
             String separator = commonParams.getSeparator();
-            Map<String, String> indexMap = commonParams.getIndexMap();
+            HashMap<String, String> indexMap = commonParams.getIndexMap();
             dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, unitLen, savePath);
         }
         return dataSource;
