@@ -19,7 +19,7 @@ public class PfopCommandTest {
     @Before
     public void init() throws IOException {
         pfopCommand = new PfopCommand("resources" + System.getProperty("file.separator") + "pfop.json",
-                true, true, "avinfo", "../temp3");
+                true, true, "avinfo", "", "../temp3");
     }
 
     @Test

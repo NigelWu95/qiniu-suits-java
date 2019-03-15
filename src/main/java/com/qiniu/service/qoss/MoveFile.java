@@ -1,9 +1,8 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,14 +13,13 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
     final private String toBucket;
     final private String newKeyIndex;
     final private String keyPrefix;
-    final private String rmPrefix;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
-                savePath, saveIndex);
+                rmPrefix, savePath, saveIndex);
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
             if (toBucket == null || "".equals(toBucket)) {
@@ -37,9 +35,8 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         } else {
             this.newKeyIndex = newKeyIndex;
         }
-        this.toBucket = "".equals(toBucket) ? null : toBucket;
+        this.toBucket = toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.rmPrefix = rmPrefix;
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -49,21 +46,13 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 savePath, 0);
     }
 
-    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            if (line.get("key") == null || line.get(newKeyIndex) == null) {
-                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
+            if (toBucket == null || "".equals(toBucket)) {
+                batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
             } else {
-                try {
-                    String newKey = keyPrefix + FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-                    if (toBucket == null || "".equals(toBucket))
-                        batchOperations.addRenameOp(bucket, line.get("key"), newKey);
-                    else
-                        batchOperations.addMoveOp(bucket, line.get("key"), toBucket, newKey);
-                } catch (IOException e) {
-                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
-                }
+                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, keyPrefix + line.get(newKeyIndex));
             }
         });
         return batchOperations;

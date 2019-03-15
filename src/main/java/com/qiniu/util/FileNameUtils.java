@@ -5,11 +5,10 @@ import java.io.IOException;
 public class FileNameUtils {
 
     public static String rmPrefix(String prefix, String name) throws IOException {
+        if (name == null) throw new IOException("the file name is empty");
         if (prefix == null || "".equals(prefix)) return name;
-        if (name == null || name.length() < prefix.length())
-            throw new IOException("the name is empty or length is smaller then prefix to remove");
-        return prefix + name.substring(0, prefix.length()).replace(prefix, "")
-                + name.substring(prefix.length());
+        if (name.length() < prefix.length()) throw new IOException("the name's length is smaller then prefix to remove");
+        return name.substring(0, prefix.length()).replace(prefix, "") + name.substring(prefix.length());
     }
 
     public static String addSuffix(String name, String suffix) {

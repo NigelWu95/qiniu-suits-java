@@ -12,6 +12,7 @@ import com.qiniu.http.Response;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     final protected String bucket;
     final protected String processName;
     protected int retryCount;
+    final private String rmPrefix;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
     final protected String savePath;
@@ -37,13 +39,14 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected FileMap fileMap;
 
     public OperationBase(String processName, String accessKey, String secretKey, Configuration configuration,
-                         String bucket, String savePath, int saveIndex) throws IOException {
+                         String bucket, String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = processName;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         this.bucket = bucket;
+        this.rmPrefix = rmPrefix;
         this.batchOperations = new BatchOperations();
         this.errorLineList = new ArrayList<>();
         this.savePath = savePath;
@@ -79,8 +82,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return operationBase;
     }
 
-    // 实现从 fileInfoList 转换得到 batchOperations 时先清除 batchOperations 中可能存在的上次的内容
-    protected abstract BatchOperations getOperations(List<Map<String, String>> lineList);
+    /**
+     * 实现从 fileInfoList 转换得到 batch 操作的指令集 batchOperations，需要先清除 batchOperations 中可能存在的上次的内容
+     * @param lineList 输入的行信息列表，应当是校验之后的列表（不包含空行或者确实 key 字段的行）
+     * @return 输入 lineList 转换之后的 batchOperations
+     */
+    protected abstract BatchOperations getBatchOperations(List<Map<String, String>> lineList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
@@ -121,6 +128,16 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
      * @throws IOException 处理失败可能抛出的异常
      */
     public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+        // 先进行过滤修改
+        lineList = lineList.parallelStream().filter(line -> {
+            try {
+                line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
+                return true;
+            } catch (IOException e) {
+                errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                return false;
+            }
+        }).collect(Collectors.toList());
         int times = lineList.size()/1000 + 1;
         List<Map<String, String>> processList;
         Response response;
@@ -129,7 +146,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         for (int i = 0; i < times; i++) {
             processList = lineList.subList(1000 * i, i == times - 1 ? lineList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
-                batchOperations = getOperations(processList);
+                batchOperations = getBatchOperations(processList);
                 retry = retryCount;
                 while (retry > 0) {
                     try {
