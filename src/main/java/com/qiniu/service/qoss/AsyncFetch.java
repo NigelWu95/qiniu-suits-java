@@ -132,19 +132,14 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         Response response;
         int retry;
         for (Map<String, String> line : lineList) {
-            if (urlIndex != null) {
-                url = line.get(urlIndex);
-                try {
-                    key = URLUtils.getKey(url);
-                } catch (IOException e) {
-                    fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
-                    continue;
-                }
-            } else {
-                key = line.get("key").replaceAll("\\?", "%3F");
-                url = protocol + "://" + domain + "/" + key;
-            }
             try {
+                if (urlIndex != null) {
+                    url = line.get(urlIndex);
+                    key = URLUtils.getKey(url);
+                } else {
+                    key = line.get("key").replaceAll("\\?", "%3F");
+                    url = protocol + "://" + domain + "/" + key;
+                }
                 key = FileNameUtils.rmPrefix(rmPrefix, key);
             } catch (IOException e) {
                 fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
