@@ -5,14 +5,13 @@ import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.line.JsonObjParser;
 import com.qiniu.service.line.MapToTableFormatter;
 import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -20,11 +19,10 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     private String separator;
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
-    final private String rmPrefix;
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
-        super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
             this.separator = "csv".equals(format) ? "," : separator;
@@ -44,7 +42,6 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
             throw new IOException("please check your format for line to map.");
         }
         this.stringFormatter = new MapToTableFormatter(this.separator, null);
-        this.rmPrefix = rmPrefix;
     }
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -63,17 +60,10 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         return line.get("key");
     }
 
-    synchronized public List<Map<String, String>> setBatchOperations(List<Map<String, String>> lineList) {
+    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
-        return lineList.parallelStream().filter(line -> {
-            try {
-                batchOperations.addStatOps(bucket, FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-                return true;
-            } catch (IOException e) {
-                errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
-                return false;
-            }
-        }).collect(Collectors.toList());
+        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
+        return batchOperations;
     }
 
     @Override
