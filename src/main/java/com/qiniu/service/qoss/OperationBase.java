@@ -79,8 +79,13 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return operationBase;
     }
 
-    // 实现从 fileInfoList 转换得到 batchOperations 时先清除 batchOperations 中可能存在的上次的内容
-    protected abstract BatchOperations getOperations(List<Map<String, String>> lineList);
+    /**
+     * 实现从 fileInfoList 转换得到 batch 操作的指令集 batchOperations，需要先清除 batchOperations 中可能存在的上次的内容，同时返回此次
+     * 指令集合对应的有效的 lineList（可能会从输入行中剔除部分错误行）
+     * @param lineList
+     * @return
+     */
+    protected abstract List<Map<String, String>> setBatchOperations(List<Map<String, String>> lineList);
 
     // 获取输入行中的关键参数，将其保存到对应结果的行当中，方便确定对应关系和失败重试
     protected abstract String getInputParams(Map<String, String> line);
@@ -129,7 +134,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         for (int i = 0; i < times; i++) {
             processList = lineList.subList(1000 * i, i == times - 1 ? lineList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
-                batchOperations = getOperations(processList);
+                processList = setBatchOperations(processList);
                 retry = retryCount;
                 while (retry > 0) {
                     try {

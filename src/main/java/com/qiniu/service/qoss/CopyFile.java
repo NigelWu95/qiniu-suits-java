@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.FileNameUtils;
@@ -8,6 +7,7 @@ import com.qiniu.util.FileNameUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -31,21 +31,18 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, savePath, 0);
     }
 
-    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public List<Map<String, String>> setBatchOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
-        lineList.forEach(line -> {
-            if (line.get("key") == null || line.get(newKeyIndex) == null) {
-                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
-            } else {
-                try {
-                    String newKey = keyPrefix + FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-                    batchOperations.addCopyOp(bucket, line.get("key"), toBucket, newKey);
-                } catch (IOException e) {
-                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
-                }
+        return lineList.parallelStream().filter(line -> {
+            try {
+                String newKey = keyPrefix + FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                batchOperations.addCopyOp(bucket, line.get("key"), toBucket, newKey);
+                return true;
+            } catch (IOException e) {
+                errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                return false;
             }
-        });
-        return batchOperations;
+        }).collect(Collectors.toList());
     }
 
     public String getInputParams(Map<String, String> line) {

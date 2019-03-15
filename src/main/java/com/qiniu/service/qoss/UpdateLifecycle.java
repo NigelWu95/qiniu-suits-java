@@ -1,6 +1,5 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.FileNameUtils;
@@ -8,6 +7,7 @@ import com.qiniu.util.FileNameUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -26,20 +26,17 @@ public class UpdateLifecycle extends OperationBase implements ILineProcess<Map<S
         this(accessKey, secretKey, configuration, bucket, days, rmPrefix, savePath, 0);
     }
 
-    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public List<Map<String, String>> setBatchOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
-        lineList.forEach(line -> {
-            if (line.get("key") == null) {
-                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
-            } else {
-                try {
-                    batchOperations.addDeleteAfterDaysOps(bucket, days, FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-                } catch (IOException e) {
-                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
-                }
+        return lineList.parallelStream().filter(line -> {
+            try {
+                batchOperations.addDeleteAfterDaysOps(bucket, days, FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
+                return true;
+            } catch (IOException e) {
+                errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                return false;
             }
-        });
-        return batchOperations;
+        }).collect(Collectors.toList());
     }
 
     public String getInputParams(Map<String, String> line) {

@@ -4,7 +4,6 @@ import com.google.gson.*;
 import com.qiniu.service.interfaces.IStringFormat;
 import com.qiniu.service.line.JsonObjParser;
 import com.qiniu.service.line.MapToTableFormatter;
-import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.FileNameUtils;
@@ -13,6 +12,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -63,20 +63,17 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         return line.get("key");
     }
 
-    synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
+    synchronized public List<Map<String, String>> setBatchOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
-        lineList.forEach(line -> {
-            if (line.get("key") == null) {
-                errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
-            } else {
-                try {
-                    batchOperations.addStatOps(bucket, FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-                } catch (IOException e) {
-                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
-                }
+        return lineList.parallelStream().filter(line -> {
+            try {
+                batchOperations.addStatOps(bucket, FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
+                return true;
+            } catch (IOException e) {
+                errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                return false;
             }
-        });
-        return batchOperations;
+        }).collect(Collectors.toList());
     }
 
     @Override
