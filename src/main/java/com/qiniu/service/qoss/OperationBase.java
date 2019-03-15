@@ -139,7 +139,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         retry = 0;
                     } catch (QiniuException e) {
                         retry--;
-                        HttpResponseUtils.processException(e, retry, fileMap, processList.stream()
+                        retry = HttpResponseUtils.processException(e, retry, fileMap, processList.stream()
                                 .map(this::getInputParams).collect(Collectors.toList())
                         );
                     }
