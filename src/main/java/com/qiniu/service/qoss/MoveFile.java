@@ -39,7 +39,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         }
         this.toBucket = "".equals(toBucket) ? null : toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
+        this.rmPrefix = rmPrefix;
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,

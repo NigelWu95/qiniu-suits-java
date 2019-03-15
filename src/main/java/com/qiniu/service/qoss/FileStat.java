@@ -19,6 +19,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     private String separator;
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
+//    final private String rmPrefix;
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
                     String format, String separator, int saveIndex) throws IOException {
@@ -26,7 +27,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
             this.separator = "csv".equals(format) ? "," : separator;
-            Map<String, String> indexMap = new HashMap<String, String>(){{
+            HashMap<String, String> indexMap = new HashMap<String, String>(){{
                 put("key", "key");
                 put("hash", "hash");
                 put("fsize", "fsize");
@@ -51,6 +52,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
 
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
+        fileStat.jsonObjParser = jsonObjParser.clone();
         fileStat.stringFormatter = new MapToTableFormatter(separator, null);
         return fileStat;
     }

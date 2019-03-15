@@ -22,7 +22,7 @@ public class FileInput implements IDataSource {
     final private String filePath;
     final private String parseType;
     final private String separator;
-    final private Map<String, String> indexMap;
+    final private HashMap<String, String> indexMap;
     final private int threads;
     final private int unitLen;
     final private String savePath;
@@ -34,7 +34,7 @@ public class FileInput implements IDataSource {
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int threads,
+    public FileInput(String filePath, String parseType, String separator, HashMap<String, String> indexMap, int threads,
                      int unitLen, String savePath) {
         this.filePath = filePath;
         this.parseType = parseType;

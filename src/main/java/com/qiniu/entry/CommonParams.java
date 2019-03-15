@@ -22,7 +22,7 @@ public class CommonParams {
     private String source;
     private String parse;
     private String separator;
-    private Map<String, String> indexMap;
+    private HashMap<String, String> indexMap;
     private String accessKey;
     private String secretKey;
     private String bucket;
@@ -373,7 +373,7 @@ public class CommonParams {
         return separator;
     }
 
-    public Map<String, String> getIndexMap() {
+    public HashMap<String, String> getIndexMap() {
         return indexMap;
     }
 
