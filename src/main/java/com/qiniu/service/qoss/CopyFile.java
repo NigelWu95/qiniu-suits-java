@@ -3,6 +3,7 @@ package com.qiniu.service.qoss;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,10 +39,16 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            if (line.get("key") == null || line.get(newKeyIndex) == null)
+            if (line.get("key") == null || line.get(newKeyIndex) == null) {
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
-            else
-                batchOperations.addCopyOp(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)));
+            } else {
+                try {
+                    String newKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                    batchOperations.addCopyOp(bucket, line.get("key"), toBucket, newKey);
+                } catch (IOException e) {
+                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                }
+            }
         });
         return batchOperations;
     }

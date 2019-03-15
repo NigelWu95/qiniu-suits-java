@@ -3,6 +3,7 @@ package com.qiniu.service.qoss;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,21 +49,21 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 savePath, 0);
     }
 
-    private String formatKey(String key) {
-        return keyPrefix + key.substring(0, rmPrefix.length()).replace(rmPrefix, "")
-                + key.substring(rmPrefix.length());
-    }
-
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            if (line.get("key") == null || line.get(newKeyIndex) == null)
+            if (line.get("key") == null || line.get(newKeyIndex) == null) {
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
-            else {
-                if (toBucket == null || "".equals(toBucket))
-                    batchOperations.addRenameOp(bucket, line.get("key"), formatKey(line.get(newKeyIndex)));
-                else
-                    batchOperations.addMoveOp(bucket, line.get("key"), toBucket, formatKey(line.get(newKeyIndex)));
+            } else {
+                try {
+                    String newKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                    if (toBucket == null || "".equals(toBucket))
+                        batchOperations.addRenameOp(bucket, line.get("key"), newKey);
+                    else
+                        batchOperations.addMoveOp(bucket, line.get("key"), toBucket, newKey);
+                } catch (IOException e) {
+                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                }
             }
         });
         return batchOperations;
