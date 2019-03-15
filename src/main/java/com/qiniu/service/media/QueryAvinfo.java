@@ -88,22 +88,17 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         JsonParser jsonParser = new JsonParser();
         int retry;
         for (Map<String, String> line : lineList) {
-            if (urlIndex != null) {
-                url = line.get(urlIndex);
-                try {
-                    key = URLUtils.getKey(url);
-                } catch (IOException e) {
-                    fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
-                    continue;
-                }
-            } else {
-                key = line.get("key").replaceAll("\\?", "%3F");
-                url = protocol + "://" + domain + "/" + key;
-            }
             try {
-                key = FileNameUtils.rmPrefix(rmPrefix, key);
+                if (urlIndex != null) {
+                    url = line.get(urlIndex);
+                    key = URLUtils.getKey(url);
+                } else  {
+                    key = FileNameUtils.rmPrefix(rmPrefix, line.get("key")).replaceAll("\\?", "%3F");
+                    url = protocol + "://" + domain + "/" + key;
+                }
             } catch (IOException e) {
                 fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
+                continue;
             }
             String finalInfo = key + "\t" + url;
             retry = retryCount;

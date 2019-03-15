@@ -203,8 +203,8 @@ public class ProcessorChoice {
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String sign = entryParam.getValue("private", "false");
         sign = commonParams.checked(sign, "private", "(true|false)");
-        String keyPrefix = entryParam.getValue("add-prefix", null);
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
+        String keyPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String host = entryParam.getValue("host", null);
         String md5Index = commonParams.containIndex("md5") ? "md5" : null;

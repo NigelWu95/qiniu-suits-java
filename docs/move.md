@@ -12,6 +12,7 @@ ak=
 sk=
 bucket= 
 to-bucket=
+newKey-index=
 add-prefix=
 rm-prefix=
 prefix-force=
@@ -22,8 +23,9 @@ prefix-force=
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源方式为 list 时无需再设置|  
 |bucket| 字符串| 操作的资源原空间，当数据源为 list 时无需再设置|  
 |to-bucket| 字符串| 移动资源保存的目标空间|  
+|newKey-index| 字符串| rename 操作所需要设置的目标文件名索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
-|rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 move 之后的文件名|  
+|rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 move 之后保存的文件名，如果设置了另外的 newKey-index 则该参数不生效|  
 
 ### 命令行方式
 ```
