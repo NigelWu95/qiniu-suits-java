@@ -4,9 +4,9 @@ import com.qiniu.persistence.FileMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.Auth;
 import com.qiniu.util.RequestUtils;
+import com.qiniu.util.URLUtils;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -74,18 +74,16 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        URL httpUrl;
         String url;
         String key;
         String signedUrl;
         for (Map<String, String> line : lineList) {
             if (urlIndex != null) {
                 url = line.get(urlIndex);
-                if (url != null) {
-                    httpUrl = new URL(url);
-                    key = httpUrl.getPath().startsWith("/") ? httpUrl.getPath().substring(1) : httpUrl.getPath();
-                } else {
-                    fileMap.writeError(String.valueOf(line) + "\tempty url line", false);
+                try {
+                    key = URLUtils.getKey(url);
+                } catch (IOException e) {
+                    fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
                     continue;
                 }
             } else  {
@@ -94,10 +92,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             }
             String finalInfo = key + "\t" + url;
             signedUrl = auth.privateDownloadUrl(url, expires);
-            if (signedUrl != null && !"".equals(signedUrl))
-                fileMap.writeSuccess(finalInfo + "\t" + signedUrl, false);
-            else
-                fileMap.writeError( finalInfo + "\tempty signed url", false);
+            fileMap.writeSuccess(finalInfo + "\t" + signedUrl, false);
         }
     }
 
