@@ -47,33 +47,42 @@ public class HttpResponseUtils {
      * @param retry 当前重试次数
      * @param fileMap 记录错误信息的持久化对象
      * @param infoList 需要和错误信息同时记录的原始 info 列表
+     * @return 返回重试次数（可能有些异常需要直接将重试次数置为 0 但不抛出异常）
      * @throws IOException 持久化错误信息失败可能抛出的异常或传入的异常经判断后需要抛出
      */
-    public static void processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
+    public static int processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
             throws IOException {
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
             if (e.response != null) {
-                if (retry <= 0 || e.response.statusCode == 631 || !e.response.needRetry()) {
-                    // 需要抛出异常时将错误信息记录下来
+                // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序终端先处理该异常
+                if (e.response.statusCode == 478) {
                     writeLog(e, fileMap, infoList);
-                    throw e;
-                } else {
+                    return 0;
+                }
+                // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
+                else if (e.response.statusCode != 631 && e.response.needRetry() && retry > 0) {
                     // 可重试的异常信息不需要记录，因为重试之后可能成功或者再次进行该方法
                     e.printStackTrace();
                     e.response.close();
+                } else {
+                    // 需要抛出异常时将错误信息记录下来
+                    writeLog(e, fileMap, infoList);
+                    throw e;
                 }
             } else {
-                if (retry <= 0) {
+                if (retry > 0) {
+                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
+                    e.printStackTrace();
+                } else {
                     // 没有重试机会时将错误信息记录下来
                     writeLog(e, fileMap, infoList);
                     throw e;
-                } else {
-                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
-                    e.printStackTrace();
                 }
             }
         }
+
+        return retry;
     }
 
     /**
