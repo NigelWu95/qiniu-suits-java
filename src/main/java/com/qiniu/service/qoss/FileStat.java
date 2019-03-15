@@ -7,6 +7,7 @@ import com.qiniu.service.line.MapToTableFormatter;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -19,10 +20,10 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     private String separator;
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
-//    final private String rmPrefix;
+    final private String rmPrefix;
 
-    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator, int saveIndex) throws IOException {
+    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+                    String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
@@ -43,11 +44,12 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
             throw new IOException("please check your format for line to map.");
         }
         this.stringFormatter = new MapToTableFormatter(this.separator, null);
+        this.rmPrefix = rmPrefix;
     }
 
-    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
+    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+                    String savePath, String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, format, separator, 0);
     }
 
     public FileStat clone() throws CloneNotSupportedException {
@@ -64,10 +66,15 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
     synchronized public BatchOperations getOperations(List<Map<String, String>> lineList) {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            if (line.get("key") == null)
+            if (line.get("key") == null) {
                 errorLineList.add(String.valueOf(line) + "\tno target key in the line map.");
-            else
-                batchOperations.addStatOps(bucket, line.get("key"));
+            } else {
+                try {
+                    batchOperations.addStatOps(bucket, FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
+                } catch (IOException e) {
+                    errorLineList.add(String.valueOf(line) + "\t" + e.getMessage());
+                }
+            }
         });
         return batchOperations;
     }

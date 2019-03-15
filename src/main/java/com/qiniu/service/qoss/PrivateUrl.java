@@ -3,6 +3,7 @@ package com.qiniu.service.qoss;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.RequestUtils;
 import com.qiniu.util.URLUtils;
 
@@ -20,13 +21,14 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     private Auth auth;
     final private long expires;
     final private String processName;
+    final private String rmPrefix;
     final private String savePath;
     private String saveTag;
     private int saveIndex;
     private FileMap fileMap;
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String savePath, int saveIndex) throws IOException {
+                      String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = "privateurl";
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -41,6 +43,7 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             }
         } else this.urlIndex = urlIndex;
         this.expires = expires == 0L ? 3600 : expires;
+        this.rmPrefix = rmPrefix;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -49,8 +52,8 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
+                      String rmPrefix, String savePath) throws IOException {
+        this(accessKey, secretKey, domain, protocol, urlIndex, expires, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -89,6 +92,12 @@ public class PrivateUrl implements ILineProcess<Map<String, String>>, Cloneable 
             } else  {
                 key = line.get("key").replaceAll("\\?", "%3F");
                 url = protocol + "://" + domain + "/" + key;
+            }
+            try {
+                key = FileNameUtils.rmPrefix(rmPrefix, key);
+            } catch (IOException e) {
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
+                continue;
             }
             String finalInfo = key + "\t" + url;
             signedUrl = auth.privateDownloadUrl(url, expires);

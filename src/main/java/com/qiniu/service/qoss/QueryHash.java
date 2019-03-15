@@ -4,10 +4,7 @@ import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.RequestUtils;
-import com.qiniu.util.URLUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,6 +20,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     final private String secretKey;
     final private String algorithm;
     private FileChecker fileChecker;
+    final private String rmPrefix;
     final private String processName;
     private int retryCount;
     final private String savePath;
@@ -31,7 +29,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private FileMap fileMap;
 
     public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
-                     String savePath, int saveIndex) throws IOException {
+                     String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = "qhash";
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
@@ -47,6 +45,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.secretKey = secretKey;
         this.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null :
                 Auth.create(accessKey, secretKey));
+        this.rmPrefix = rmPrefix;
         this.savePath = savePath;
         this.saveTag = "";
         this.saveIndex = saveIndex;
@@ -55,8 +54,8 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
-                     String savePath) throws IOException {
-        this(domain, algorithm, protocol, urlIndex, accessKey, secretKey, savePath, 0);
+                     String rmPrefix, String savePath) throws IOException {
+        this(domain, algorithm, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -102,6 +101,12 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
             } else  {
                 key = line.get("key").replaceAll("\\?", "%3F");
                 url = protocol + "://" + domain + "/" + key;
+            }
+            try {
+                key = FileNameUtils.rmPrefix(rmPrefix, key);
+            } catch (IOException e) {
+                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
+                continue;
             }
             String finalInfo = key + "\t" + url;
             retry = retryCount;
