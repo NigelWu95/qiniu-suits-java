@@ -29,8 +29,8 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     protected int saveIndex;
     protected FileMap fileMap;
 
-    public MirrorFetch(String accessKey, String secretKey, Configuration configuration,
-                         String bucket, String rmPrefix, String savePath, int saveIndex) throws IOException {
+    public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+                       String savePath, int saveIndex) throws IOException {
         this.processName = "mirror";
         this.accessKey = accessKey;
         this.secretKey = secretKey;
