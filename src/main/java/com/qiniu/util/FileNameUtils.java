@@ -8,7 +8,7 @@ public class FileNameUtils {
         if (prefix == null || "".equals(prefix)) return name;
         if (name == null || name.length() < prefix.length())
             throw new IOException("the name is empty or length is smaller then prefix to remove");
-        return prefix + name.substring(0, prefix.length()).replace(prefix, "")
+        return name.substring(0, prefix.length()).replace(prefix, "")
                 + name.substring(prefix.length());
     }
 
