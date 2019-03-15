@@ -22,9 +22,10 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>2.20</version>
+  <version>2.21</version>
 </dependency>
 ```   
+**建议使用最新版本**
 
 
 ### 3 命令行运行配置
@@ -143,6 +144,7 @@ indexes=0,1,2
 `process=pfop` 表示对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
 `process=pfopresult` 表示通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
 `process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
+`process=mirror` 表示对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
 `process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
 `process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
