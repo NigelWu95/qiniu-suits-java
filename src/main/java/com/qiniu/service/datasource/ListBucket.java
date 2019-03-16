@@ -282,10 +282,10 @@ public class ListBucket implements IDataSource {
                     order == 0 ? processor : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
+            FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
+            fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
-                    FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
-                    fileMap.initDefaultWriters();
                     String record = "order " + identifier + ": " + fileLister.getPrefix();
                     recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
                     export(fileLister, fileMap, lineProcessor);
@@ -296,7 +296,8 @@ public class ListBucket implements IDataSource {
                     if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
                 } catch (Exception e) {
-                    System.out.println("marker: " + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix());
+                    System.out.println("order " + identifier + ": " + fileLister.getPrefix() + "\tmarker: " +
+                            fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix());
                     SystemUtils.exit(exitBool, e);
                 }
             });
