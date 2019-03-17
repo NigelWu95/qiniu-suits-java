@@ -18,7 +18,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     final private String processName;
     final private String pidIndex;
     private MediaManager mediaManager;
-    private int retryCount;
+    private int retryTimes = 3;
     final private String savePath;
     private String saveTag;
     private int saveIndex;
@@ -44,8 +44,8 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -93,21 +93,20 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     /**
      * 批量处理输入行进行 pfop result 的查询
      * @param lineList 输入列表
-     * @param retryCount 每一行信息处理时需要的重试次数
+     * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String result;
         int retry;
         for (Map<String, String> line : lineList) {
-            retry = retryCount;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
                     parseResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry--;
                     retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
                         add(line.get(pidIndex));
                     }});
@@ -117,7 +116,7 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryCount);
+        processLine(lineList, retryTimes);
     }
 
     public void closeResource() {

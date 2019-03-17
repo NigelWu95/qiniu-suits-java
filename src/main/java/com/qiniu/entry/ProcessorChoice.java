@@ -23,7 +23,7 @@ public class ProcessorChoice {
     private String secretKey;
     private String bucket;
     private String process;
-    private int retryCount;
+    private int retryTimes;
     private String savePath;
     private String saveFormat;
     private String saveSeparator;
@@ -36,7 +36,7 @@ public class ProcessorChoice {
         this.secretKey = commonParams.getSecretKey();
         this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
-        this.retryCount = commonParams.getRetryCount();
+        this.retryTimes = commonParams.getRetryTimes();
         this.savePath = commonParams.getSavePath();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
@@ -112,7 +112,7 @@ public class ProcessorChoice {
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
         // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
-        if (nextProcessor != null) nextProcessor.setRetryCount(retryCount);
+        if (nextProcessor != null) nextProcessor.setRetryTimes(retryTimes);
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             // 如果设置了 filter，默认情况下不保留原始数据
             commonParams.setSaveTotal(false);

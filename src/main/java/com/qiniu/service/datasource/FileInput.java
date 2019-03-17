@@ -64,14 +64,23 @@ public class FileInput implements IDataSource {
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;
         List<String> writeList;
-        String line = null;
-        boolean goon = true;
-        while (goon) {
-            // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
-            try { line = reader.readLine(); } catch (IOException e) { e.printStackTrace(); }
-            if (line == null) goon = false;
-            else srcList.add(line);
-            if (srcList.size() >= unitLen || line == null) {
+        String line = "";
+        int autoRetry;
+        while (line != null) {
+            autoRetry = 5;
+            while (autoRetry > 0) {
+                try {
+                    // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
+                    line = reader.readLine();
+                    autoRetry = 0;
+                } catch (IOException e) {
+                    String finalLine = line;
+                    autoRetry = HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
+                            new ArrayList<String>(){{ add(finalLine); }});
+                }
+            }
+            if (line != null) srcList.add(line);
+            if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 infoMapList = typeConverter.convertToVList(srcList);
                 if (typeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
@@ -99,30 +108,25 @@ public class FileInput implements IDataSource {
                     i == 0 ? processor : processor.clone();
             String order = String.valueOf(i);
             String key = keys.get(i);
+            BufferedReader reader = readersMap.get(key);
+            FileMap fileMap = new FileMap(savePath, "fileinput", order);
+            fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
-                    BufferedReader reader = readersMap.get(key);
-                    FileMap fileMap = new FileMap(savePath, "fileinput", order);
-                    fileMap.initDefaultWriters();
                     String record = "order " + order + ": " + key;
-                    String next;
-                    try {
-                        initFileMap.writeKeyFile("result", record + "\treading...", true);
-                        export(reader, fileMap, lineProcessor);
-                        next = reader.readLine();
-                        if (next == null) record += "\tsuccessfully done";
-                        else record += "\tnextLine:" + next;
-                        System.out.println(record);
-                    } catch (IOException e) {
-                        try { next = reader.readLine(); } catch (IOException ex) { next = ex.getMessage(); }
-                        record += "\tnextLine:" + next + "\t" + e.getMessage().replaceAll("\n", "\t");
-                        throw e;
-                    } finally {
-                        initFileMap.writeKeyFile("result", record, true);
-                        fileMap.closeWriters();
-                        if (lineProcessor != null) lineProcessor.closeResource();
-                    }
+                    initFileMap.writeKeyFile("result", record + "\treading...", true);
+                    export(reader, fileMap, lineProcessor);
+                    record += "\tsuccessfully done";
+                    System.out.println(record);
+                    initFileMap.writeKeyFile("result", record, true);
+                    fileMap.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
                 } catch (Exception e) {
+                    try {
+                        System.out.println("order " + order + ": " + key + "\tnextLine:" + reader.readLine());
+                    } catch (IOException ioE) {
+                        ioE.printStackTrace();
+                    }
                     SystemUtils.exit(exitBool, e);
                 }
             });
