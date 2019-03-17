@@ -177,8 +177,9 @@ public class ListBucket implements IDataSource {
     }
 
     /**
-     * 通过 FileLister 得到目前列举出的最大文件名首字母和前缀列表进行比较，筛选出在当前列举位置之后的单字母前缀列表
-     * 该方法是为了优化前缀检索过程中算法复杂度，通过剔除在当前列举位置之前的前缀，减少不必要的检索
+     * 通过 FileLister 得到目前列举出的最大文件名首字母和前缀列表进行比较，筛选出在当前列举位置之后的单字母前缀列表，该方法是为了优化前缀检索过程
+     * 中算法复杂度，通过剔除在当前列举位置之前的前缀，减少不必要的检索，如果传过来的 FileLister 的 FileInfoList 中没有数据的话应当是存在下一
+     * 个 marker 的（可能是文件被删除的情况），也可以直接检索下一级前缀（所有的前缀字符都比 "" 大）
      * @param fileLister 当前的 fileLister 参数，不能为空
      * @param originPrefixList 进行比较的初始前缀列表，不能为空
      * @return 返回比较之后的前缀列表
@@ -211,9 +212,11 @@ public class ListBucket implements IDataSource {
             fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
             fileListerList.get(0).setEndKeyPrefix(fileListerList.get(1).getPrefix());
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
+            int size = fileLister.getFileInfoList().size();
             fileLister.setPrefix(customPrefix);
             if (!fileLister.checkMarkerValid()) {
-                FileInfo lastFileInfo = fileLister.getFileInfoList().get(fileLister.getFileInfoList().size() -1 );
+                // 实际上传过来的 FileLister 在下一个 marker 为空的情况下 FileInfoList 是应该一定包含数据的
+                FileInfo lastFileInfo = size > 0 ? fileLister.getFileInfoList().get(size -1) : null;
                 fileLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
             }
         }

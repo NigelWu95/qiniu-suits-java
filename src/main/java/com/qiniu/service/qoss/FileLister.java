@@ -103,7 +103,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 .map(listLine -> listLine.fileInfo)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        this.marker = listLines.get(listLines.size() - 1).marker;
+        this.marker = listLines.size() > 0 ? listLines.get(listLines.size() - 1).marker : null;
         return resultList;
     }
 
