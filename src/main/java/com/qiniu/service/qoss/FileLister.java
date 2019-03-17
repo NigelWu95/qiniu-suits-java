@@ -94,6 +94,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         List<ListLine> listLines = lines.parallelStream()
                 .map(line -> new ListLine().fromLine(line))
                 .filter(Objects::nonNull)
+                .sorted(ListLine::compareTo)
                 .collect(Collectors.toList());
         response.close();
         // 转换成 ListLine 过程中可能出现问题，直接返回空列表，marker 不做修改，返回后则会再次使用同样的 marker 值进行列举
@@ -102,9 +103,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
                 .map(listLine -> listLine.fileInfo)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        Optional<ListLine> lastListLine = listLines.parallelStream()
-                .max(ListLine::compareTo);
-        this.marker = lastListLine.map(listLine -> listLine.marker).orElse("");
+        this.marker = listLines.get(listLines.size() - 1).marker;
         return resultList;
     }
 
