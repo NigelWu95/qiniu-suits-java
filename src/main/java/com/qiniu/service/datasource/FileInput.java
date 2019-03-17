@@ -127,6 +127,8 @@ public class FileInput implements IDataSource {
                     } catch (IOException ioE) {
                         ioE.printStackTrace();
                     }
+                    initFileMap.closeWriters();
+                    fileMap.closeWriters();
                     SystemUtils.exit(exitBool, e);
                 }
             });
@@ -134,24 +136,24 @@ public class FileInput implements IDataSource {
     }
 
     public void export() throws Exception {
-        FileMap inputFiles = new FileMap(savePath);
+        FileMap initFileMap = new FileMap(savePath);
         File sourceFile = new File(filePath);
         if (sourceFile.isDirectory()) {
-            inputFiles.initReaders(filePath);
+            initFileMap.initReaders(filePath);
         } else {
-            inputFiles.initReader(filePath);
+            initFileMap.initReader(filePath);
         }
 
-        int filesCount = inputFiles.getReaderMap().size();
+        int filesCount = initFileMap.getReaderMap().size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);
-        execInThreads(inputFiles);
+        execInThreads(initFileMap);
         executorPool.shutdown();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
-        inputFiles.closeReaders();
+        initFileMap.closeReaders();
         System.out.println(info + " finished");
     }
 }
