@@ -109,30 +109,25 @@ public class FileInput implements IDataSource {
                     i == 0 ? processor : processor.clone();
             String order = String.valueOf(i);
             String key = keys.get(i);
+            BufferedReader reader = readersMap.get(key);
+            FileMap fileMap = new FileMap(savePath, "fileinput", order);
+            fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
-                    BufferedReader reader = readersMap.get(key);
-                    FileMap fileMap = new FileMap(savePath, "fileinput", order);
-                    fileMap.initDefaultWriters();
                     String record = "order " + order + ": " + key;
-                    String next;
-                    try {
-                        initFileMap.writeKeyFile("result", record + "\treading...", true);
-                        export(reader, fileMap, lineProcessor);
-                        next = reader.readLine();
-                        if (next == null) record += "\tsuccessfully done";
-                        else record += "\tnextLine:" + next;
-                        System.out.println(record);
-                    } catch (IOException e) {
-                        try { next = reader.readLine(); } catch (IOException ex) { next = ex.getMessage(); }
-                        record += "\tnextLine:" + next + "\t" + e.getMessage().replaceAll("\n", "\t");
-                        throw e;
-                    } finally {
-                        initFileMap.writeKeyFile("result", record, true);
-                        fileMap.closeWriters();
-                        if (lineProcessor != null) lineProcessor.closeResource();
-                    }
+                    initFileMap.writeKeyFile("result", record + "\treading...", true);
+                    export(reader, fileMap, lineProcessor);
+                    record += "\tsuccessfully done";
+                    System.out.println(record);
+                    initFileMap.writeKeyFile("result", record, true);
+                    fileMap.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
                 } catch (Exception e) {
+                    try {
+                        System.out.println("order " + order + ": " + key + "\tnextLine:" + reader.readLine());
+                    } catch (IOException ioE) {
+                        ioE.printStackTrace();
+                    }
                     SystemUtils.exit(exitBool, e);
                 }
             });
