@@ -253,6 +253,8 @@ public class ListBucket implements IDataSource {
                 } catch (Exception e) {
                     System.out.println("order " + identifier + ": " + fileLister.getPrefix() + "\tmarker: " +
                             fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix());
+                    recordFileMap.closeWriters();
+                    fileMap.closeWriters();
                     SystemUtils.exit(exitBool, e);
                 }
             });

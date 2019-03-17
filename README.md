@@ -22,7 +22,7 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>2.22</version>
+  <version>2.24</version>
 </dependency>
 ```   
 **建议使用最新版本**
