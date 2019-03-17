@@ -200,7 +200,7 @@ public class FileMap {
         if (flush) getWriter(key).flush();
     }
 
-    private void doWrite(String key, String item, boolean flush) {
+    private void doWrite(String key, String item, boolean flush) throws IOException {
         int count = retryTimes;
         while (count > 0) {
             try {
@@ -208,7 +208,7 @@ public class FileMap {
                 count = 0;
             } catch (IOException e) {
                 count--;
-                if (count <= 0) e.printStackTrace();
+                if (count <= 0) throw e;
             }
         }
     }
@@ -223,11 +223,11 @@ public class FileMap {
         if (item != null) doWrite(prefix + key + suffix, item, flush);
     }
 
-    synchronized public void writeSuccess(String item, boolean flush) {
+    synchronized public void writeSuccess(String item, boolean flush) throws IOException {
         if (item != null) doWrite(prefix + "success" + suffix, item, flush);
     }
 
-    public void addErrorWriter() throws IOException {
+    private void addErrorWriter() throws IOException {
         addWriter(prefix + "error" + suffix);
     }
 
