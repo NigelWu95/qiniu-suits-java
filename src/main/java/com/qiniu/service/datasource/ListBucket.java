@@ -184,13 +184,13 @@ public class ListBucket implements IDataSource {
      * @return 返回比较之后的前缀列表
      */
     private List<String> nextPrefixes(FileLister fileLister, List<String> originPrefixList) {
-        List<FileInfo> list = fileLister.getFileInfoList();
+        List<FileInfo> FileInfoList = fileLister.getFileInfoList();
         String point = "";
         int prefixLen = fileLister.getPrefix().length();
-        if (list != null && list.size() > 0) {
-            String key0 = list.get(0).key;
-            if (key0.length() > prefixLen + 1) point = key0.substring(prefixLen, prefixLen + 1);
-            else if (key0.length() > prefixLen) point = key0.substring(prefixLen);
+        if (FileInfoList != null && FileInfoList.size() > 0) {
+            String keyLast = FileInfoList.get(FileInfoList.size() - 1).key;
+            if (keyLast.length() > prefixLen + 1) point = keyLast.substring(prefixLen, prefixLen + 1);
+            else if (keyLast.length() > prefixLen) point = keyLast.substring(prefixLen);
         }
         String finalPoint = point;
         return originPrefixList.stream()
