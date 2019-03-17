@@ -56,6 +56,7 @@ public class HttpResponseUtils {
         retry--;
         // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
+            System.out.println(e.getMessage());
             if (e.response != null) {
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序终端先处理该异常
                 if (e.response.statusCode == 478) {
