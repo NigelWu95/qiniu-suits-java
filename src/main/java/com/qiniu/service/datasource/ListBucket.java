@@ -213,8 +213,7 @@ public class ListBucket implements IDataSource {
             FileLister fileLister = fileListerList.get(fileListerList.size() -1);
             fileLister.setPrefix(customPrefix);
             if (!fileLister.checkMarkerValid()) {
-                FileInfo lastFileInfo = fileLister.getFileInfoList().parallelStream().filter(Objects::nonNull)
-                        .max(Comparator.comparing(fileInfo -> fileInfo.key)).orElse(null);
+                FileInfo lastFileInfo = fileLister.getFileInfoList().get(fileLister.getFileInfoList().size() -1 );
                 fileLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
             }
         }
