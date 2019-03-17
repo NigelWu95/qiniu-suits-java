@@ -91,7 +91,6 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
                     fileMap.writeSuccess(line.get("key") + "\t" + "200", false);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry--;
                     retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
                         add(line.get("key"));
                     }});

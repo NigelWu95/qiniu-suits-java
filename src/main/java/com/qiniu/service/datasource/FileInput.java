@@ -74,9 +74,8 @@ public class FileInput implements IDataSource {
                     line = reader.readLine();
                     autoRetry = 0;
                 } catch (IOException e) {
-                    autoRetry--;
                     String finalLine = line;
-                    HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
+                    autoRetry = HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
                             new ArrayList<String>(){{ add(finalLine); }});
                 }
             }
