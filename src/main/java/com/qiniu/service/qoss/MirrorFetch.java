@@ -78,14 +78,14 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
         int retry;
         String key;
         for (Map<String, String> line : lineList) {
+            try {
+                key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
+            } catch (IOException e) {
+                fileMap.writeError(line.get("key") + "\t" + e.getMessage(), false);
+                continue;
+            }
             retry = retryTimes;
             while (retry > 0) {
-                try {
-                    key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
-                } catch (IOException e) {
-                    fileMap.writeError(line.get("key") + "\t" + e.getMessage(), false);
-                    continue;
-                }
                 try {
                     bucketManager.prefetch(bucket, key);
                     fileMap.writeSuccess(line.get("key") + "\t" + "200", false);
