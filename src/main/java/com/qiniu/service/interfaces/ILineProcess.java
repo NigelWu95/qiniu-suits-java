@@ -13,7 +13,7 @@ public interface ILineProcess<T> {
         return "line_process";
     }
 
-    default void setRetryCount(int retryCount) {}
+    default void setRetryTimes(int retryTimes) {}
 
     default void setSaveTag(String saveTag) {}
 

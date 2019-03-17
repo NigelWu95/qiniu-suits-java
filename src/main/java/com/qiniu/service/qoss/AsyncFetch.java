@@ -22,7 +22,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     private BucketManager bucketManager;
     final private String bucket;
     final private String processName;
-    private int retryCount;
+    private int retryTimes = 3;
     private String domain;
     private String protocol;
     final private String urlIndex;
@@ -98,8 +98,8 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -126,7 +126,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 bucketManager.asynFetch(url, bucket, key);
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String url;
         String key;
         Response response;
@@ -146,7 +146,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                 continue;
             }
             String finalInfo = url + "\t" + key;
-            retry = retryCount;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     response = fetch(url, keyPrefix + key, line.get(md5Index), line.get("hash"));
@@ -163,7 +163,7 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryCount);
+        processLine(lineList, retryTimes);
     }
 
     public void closeResource() {

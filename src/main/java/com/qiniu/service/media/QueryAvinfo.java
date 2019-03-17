@@ -21,7 +21,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     final private String secretKey;
     private MediaManager mediaManager;
     final private String rmPrefix;
-    private int retryCount;
+    private int retryTimes = 3;
     final private String savePath;
     private String saveTag;
     private int saveIndex;
@@ -60,8 +60,8 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -81,7 +81,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
         return queryAvinfo;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String url;
         String key;
         String avinfo;
@@ -101,7 +101,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
                 continue;
             }
             String finalInfo = key + "\t" + url;
-            retry = retryCount;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     avinfo = mediaManager.getAvinfoBody(url);
@@ -122,7 +122,7 @@ public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryCount);
+        processLine(lineList, retryTimes);
     }
 
     public void closeResource() {

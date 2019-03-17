@@ -32,7 +32,7 @@ public class CommonParams {
     private boolean prefixRight;
     private int unitLen;
     private int threads;
-    private int retryCount;
+    private int retryTimes;
     private boolean saveTotal;
     private String savePath;
     private String saveFormat;
@@ -103,7 +103,7 @@ public class CommonParams {
         setIndexMap();
         setUnitLen(entryParam.getValue("unit-len", "10000"));
         setThreads(entryParam.getValue("threads", "30"));
-        setRetryCount(entryParam.getValue("retry-times", "3"));
+        setRetryTimes(entryParam.getValue("retry-times", "3"));
         // list 操作时默认保存全部原始文件
         setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
         savePath = entryParam.getValue("save-path", "result");
@@ -171,8 +171,8 @@ public class CommonParams {
         this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
     }
 
-    private void setRetryCount(String retryCount) throws IOException {
-        this.retryCount = Integer.valueOf(checked(retryCount, "retry-times", "\\d+"));
+    private void setRetryTimes(String retryTimes) throws IOException {
+        this.retryTimes = Integer.valueOf(checked(retryTimes, "retry-times", "\\d+"));
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
@@ -413,8 +413,8 @@ public class CommonParams {
         return threads;
     }
 
-    public int getRetryCount() {
-        return retryCount;
+    public int getRetryTimes() {
+        return retryTimes;
     }
 
     public Boolean getSaveTotal() {
