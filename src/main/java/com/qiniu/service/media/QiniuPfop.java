@@ -26,7 +26,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     final private StringMap pfopParams;
     final private String fopsIndex;
     final private String rmPrefix;
-    public int retryCount;
+    public int retryTimes = 3;
     final private String savePath;
     private String saveTag;
     private int saveIndex;
@@ -60,8 +60,8 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -80,7 +80,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
         return qiniuPfop;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String key;
         String persistentId;
         int retry;
@@ -91,14 +91,13 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                 fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
                 continue;
             }
-            retry = retryCount;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     persistentId = operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);
                     fileMap.writeSuccess(key + "\t" + persistentId, false);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry--;
                     retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
                         add(line.get("key") + "\t" + line.get(fopsIndex));
                     }});
@@ -108,7 +107,7 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryCount);
+        processLine(lineList, retryTimes);
     }
 
     public void closeResource() {

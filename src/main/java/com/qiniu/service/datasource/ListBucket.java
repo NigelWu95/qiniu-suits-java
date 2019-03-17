@@ -282,31 +282,22 @@ public class ListBucket implements IDataSource {
                     order == 0 ? processor : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
+            FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
+            fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
-                    FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
-                    fileMap.initDefaultWriters();
                     String record = "order " + identifier + ": " + fileLister.getPrefix();
-                    try {
-                        recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
-                        export(fileLister, fileMap, lineProcessor);
-                        if (fileLister.getMarker() == null || "".equals(fileLister.getMarker())) {
-                            record += "\tsuccessfully done";
-                        } else {
-                            record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix();
-                        }
-                        System.out.println(record);
-                    } catch (QiniuException e) {
-                        record += "\tmarker:" + fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix() +
-                                "\t" + e.getMessage().replaceAll("\n", "\t");
-                        throw e;
-                    } finally {
-                        recordFileMap.writeKeyFile("result", record, true);
-                        fileMap.closeWriters();
-                        if (lineProcessor != null) lineProcessor.closeResource();
-                        fileLister.remove();
-                    }
+                    recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
+                    export(fileLister, fileMap, lineProcessor);
+                    record += "\tsuccessfully done";
+                    System.out.println(record);
+                    recordFileMap.writeKeyFile("result", record, true);
+                    fileMap.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
+                    fileLister.remove();
                 } catch (Exception e) {
+                    System.out.println("order " + identifier + ": " + fileLister.getPrefix() + "\tmarker: " +
+                            fileLister.getMarker() + "\tend:" + fileLister.getEndKeyPrefix());
                     SystemUtils.exit(exitBool, e);
                 }
             });

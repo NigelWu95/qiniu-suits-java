@@ -12,7 +12,7 @@ public class FileMap {
     private String targetFileDir = null;
     private String prefix = null;
     private String suffix = null;
-    private int retryCount = 3;
+    private int retryTimes = 3;
 
     public FileMap() {
         this.defaultWriters = Collections.singleton("success");
@@ -33,8 +33,8 @@ public class FileMap {
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public String getPrefix() {
@@ -68,7 +68,7 @@ public class FileMap {
 
     private void addWriter(String key) throws IOException {
         File resultFile = new File(targetFileDir, key + ".txt");
-        int retry = retryCount;
+        int retry = retryTimes;
         while (retry > 0) {
             try {
                 if (!mkDirAndFile(resultFile)) throw new IOException("create result file " + resultFile + " failed.");
@@ -103,7 +103,7 @@ public class FileMap {
 
     synchronized public void closeWriters() {
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
-            int retry = retryCount;
+            int retry = retryTimes;
             while (retry > 0) {
                 try {
                     if (writerMap.get(entry.getKey()) != null) writerMap.get(entry.getKey()).close();
@@ -200,15 +200,15 @@ public class FileMap {
         if (flush) getWriter(key).flush();
     }
 
-    private void doWrite(String key, String item, boolean flush) {
-        int count = retryCount;
+    private void doWrite(String key, String item, boolean flush) throws IOException {
+        int count = retryTimes;
         while (count > 0) {
             try {
                 writeLine(key, item, flush);
                 count = 0;
             } catch (IOException e) {
                 count--;
-                if (count <= 0) e.printStackTrace();
+                if (count <= 0) throw e;
             }
         }
     }
@@ -223,11 +223,11 @@ public class FileMap {
         if (item != null) doWrite(prefix + key + suffix, item, flush);
     }
 
-    synchronized public void writeSuccess(String item, boolean flush) {
+    synchronized public void writeSuccess(String item, boolean flush) throws IOException {
         if (item != null) doWrite(prefix + "success" + suffix, item, flush);
     }
 
-    public void addErrorWriter() throws IOException {
+    private void addErrorWriter() throws IOException {
         addWriter(prefix + "error" + suffix);
     }
 

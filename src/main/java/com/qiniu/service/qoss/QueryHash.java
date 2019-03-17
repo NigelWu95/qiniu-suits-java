@@ -22,7 +22,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
     private FileChecker fileChecker;
     final private String rmPrefix;
     final private String processName;
-    private int retryCount;
+    private int retryTimes = 3;
     final private String savePath;
     private String saveTag;
     private int saveIndex;
@@ -62,8 +62,8 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -83,7 +83,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         return queryHash;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String url;
         String key;
         String qhash;
@@ -103,7 +103,7 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 continue;
             }
             String finalInfo = key + "\t" + url;
-            retry = retryCount;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     qhash = fileChecker.getQHashBody(url);
@@ -116,15 +116,16 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                     }
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry--;
-                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{ add(finalInfo); }});
+                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
+                        add(finalInfo);
+                    }});
                 }
             }
         }
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryCount);
+        processLine(lineList, retryTimes);
     }
 
     public void closeResource() {
