@@ -29,7 +29,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     protected BucketManager bucketManager;
     final protected String bucket;
     final protected String processName;
-    protected int retryCount;
+    protected int retryTimes = 3;
     final private String rmPrefix;
     protected volatile BatchOperations batchOperations;
     protected volatile List<String> errorLineList;
@@ -60,8 +60,8 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -124,10 +124,10 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     /**
      * 批量处理输入行，具体执行的操作取决于 batchOperations 设置的指令（通过子类去设置）
      * @param lineList 输入列表
-     * @param retryCount 每一行信息处理时需要的重试次数
+     * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         // 先进行过滤修改
         lineList = lineList.parallelStream().filter(line -> {
             try {
@@ -147,7 +147,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
             processList = lineList.subList(1000 * i, i == times - 1 ? lineList.size() : 1000 * (i + 1));
             if (processList.size() > 0) {
                 batchOperations = getBatchOperations(processList);
-                retry = retryCount;
+                retry = retryTimes;
                 while (retry > 0) {
                     try {
                         response = bucketManager.batch(batchOperations);
@@ -169,7 +169,7 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
     }
 
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryCount);
+        processLine(lineList, retryTimes);
     }
 
     public void closeResource() {

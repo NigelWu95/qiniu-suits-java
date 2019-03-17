@@ -23,7 +23,7 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     final protected String bucket;
     final protected String processName;
     final private String rmPrefix;
-    protected int retryCount;
+    protected int retryTimes = 3;
     final protected String savePath;
     protected String saveTag;
     protected int saveIndex;
@@ -54,8 +54,8 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
         return this.processName;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount < 1 ? 1 : retryCount;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
     public void setSaveTag(String saveTag) {
@@ -74,11 +74,11 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
         return mirrorFetch;
     }
 
-    public void processLine(List<Map<String, String>> lineList, int retryCount) throws IOException {
+    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         int retry;
         String key;
         for (Map<String, String> line : lineList) {
-            retry = retryCount;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
@@ -100,7 +100,7 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     }
 
     public void processLine(List<Map<String, String>> fileInfoList) throws IOException {
-        processLine(fileInfoList, retryCount);
+        processLine(fileInfoList, retryTimes);
     }
 
     public void closeResource() {
