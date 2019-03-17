@@ -98,7 +98,6 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                     fileMap.writeSuccess(key + "\t" + persistentId, false);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry--;
                     retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
                         add(line.get("key") + "\t" + line.get(fopsIndex));
                     }});
