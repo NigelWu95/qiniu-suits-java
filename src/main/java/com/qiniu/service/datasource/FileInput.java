@@ -64,14 +64,24 @@ public class FileInput implements IDataSource {
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;
         List<String> writeList;
-        String line = null;
-        boolean goon = true;
-        while (goon) {
-            // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
-            try { line = reader.readLine(); } catch (IOException e) { e.printStackTrace(); }
-            if (line == null) goon = false;
-            else srcList.add(line);
-            if (srcList.size() >= unitLen || line == null) {
+        String line = "";
+        int autoRetry;
+        while (line != null) {
+            autoRetry = 5;
+            while (autoRetry > 0) {
+                try {
+                    // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
+                    line = reader.readLine();
+                    autoRetry = 0;
+                } catch (IOException e) {
+                    autoRetry--;
+                    String finalLine = line;
+                    HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
+                            new ArrayList<String>(){{ add(finalLine); }});
+                }
+            }
+            if (line != null) srcList.add(line);
+            if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 infoMapList = typeConverter.convertToVList(srcList);
                 if (typeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
