@@ -189,9 +189,9 @@ public class ListBucket implements IDataSource {
         String point = "";
         int prefixLen = fileLister.getPrefix().length();
         if (FileInfoList != null && FileInfoList.size() > 0) {
-            String keyLast = FileInfoList.get(FileInfoList.size() - 1).key;
-            if (keyLast.length() > prefixLen + 1) point = keyLast.substring(prefixLen, prefixLen + 1);
-            else if (keyLast.length() > prefixLen) point = keyLast.substring(prefixLen);
+            String key0 = FileInfoList.get(0).key;
+            if (key0.length() > prefixLen + 1) point = key0.substring(prefixLen, prefixLen + 1);
+            else if (key0.length() > prefixLen) point = key0.substring(prefixLen);
         }
         String finalPoint = point;
         return originPrefixList.stream()
