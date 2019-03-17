@@ -38,6 +38,7 @@ public class ListBucket implements IDataSource {
     private List<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public ListBucket(Auth auth, Configuration configuration, String bucket, int threads, int unitLen,
@@ -58,6 +59,11 @@ public class ListBucket implements IDataSource {
         this.prefixRight = prefixRight;
         this.savePath = savePath;
         this.saveTotal = false;
+        // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
+        // 优化列举的超时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
+        // 去除前数个非常见作为文件名的 ASCII 字符（" !"#$%&'()*+,-"）优化前缀列举
+        originPrefixList.addAll(Arrays.asList(("./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST").split("")));
+        originPrefixList.addAll(Arrays.asList(("UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
     }
 
     public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
@@ -200,73 +206,20 @@ public class ListBucket implements IDataSource {
     }
 
     /**
-     * 添加第一段 FileLister 并设置结束标志 EndKeyPrefix，及为最后一段 FileLister 修改前缀 prefix 和开始 marker
-     * 该方法是为了确保实际文件名不包含在预定义的前缀情况下的文件被成功列举（最大的预定义前缀之后的文件和最小的预定义前缀之前的文件）
-     * @param fileListerList 通过计算得到的所有确定前缀下的列举器列表
-     * @param customPrefix 计算该列举器列表时所用的前缀
-     * @throws IOException 获取第一段未知前缀的列举器（generateLister(customPrefix)）时可能会抛出失败的异常
+     * 最后一段 FileLister 修改前缀 prefix 和开始 marker，该方法是为了确保实际文件名前缀在最大的预定义前缀之后的文件被成功列举
+     * @param lastLister 通过计算得到的所有确定前缀下的列举器列表
+     * @param prefix 计算该列举器列表时所用的前缀
      */
-    private void updateFileLiters(List<FileLister> fileListerList, String customPrefix) throws IOException {
-        if (fileListerList.size() > 1) {
-            fileListerList.add(generateLister(customPrefix));
-            fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-            fileListerList.get(0).setEndKeyPrefix(fileListerList.get(1).getPrefix());
-            FileLister fileLister = fileListerList.get(fileListerList.size() -1);
-            int size = fileLister.getFileInfoList().size();
-            fileLister.setPrefix(customPrefix);
-            if (!fileLister.checkMarkerValid()) {
+    private void updateLastLiter(FileLister lastLister, String prefix) {
+        if (lastLister != null) {
+            int size = lastLister.getFileInfoList().size();
+            lastLister.setPrefix(prefix);
+            if (!lastLister.checkMarkerValid()) {
                 // 实际上传过来的 FileLister 在下一个 marker 为空的情况下 FileInfoList 是应该一定包含数据的
-                FileInfo lastFileInfo = size > 0 ? fileLister.getFileInfoList().get(size -1) : null;
-                fileLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
+                FileInfo lastFileInfo = size > 0 ? lastLister.getFileInfoList().get(size -1) : null;
+                lastLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
             }
         }
-    }
-
-    /**
-     * 计算所需要的 FileLiter 列表
-     * @param customPrefix 定义的前缀
-     * @return 根据线程数计算得到的 customPrefix 前缀下能够进行同时列举的 FileLiter 列表
-     * @throws IOException 更新 FileLiter 列表可能产生的异常
-     */
-    private List<FileLister> computeFileLister(String customPrefix) throws IOException {
-        List<String> originPrefixList = new ArrayList<>();
-        // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
-        // 优化列举的超时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
-        // 去除前数个非常见作为文件名的 ASCII 字符（" !"#$%&'()*+,-"）优化前缀列举
-        originPrefixList.addAll(Arrays.asList(("./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST").split("")));
-        originPrefixList.addAll(Arrays.asList(("UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
-        List<String> validPrefixList = new ArrayList<String>(){{add(customPrefix);}};
-        List<FileLister> progressiveList = prefixList(validPrefixList);
-        List<FileLister> fileListerList = new ArrayList<>();
-        // 避免重复生成新对象，将 groupedListerMap 放在循环外部
-        Map<Boolean, List<FileLister>> groupedListerMap;
-        int size = progressiveList.size() + 1;
-        while (size > 0 && size < threads) {
-            // 给 progressiveList 按照是否有下一个 marker 进行分组，有下个 marker 的对象进一步进行前缀检索查询，没有下个 marker 的对象
-            // 先添加进列表，整个列表 size 达到线程个数时即可放入线程池进行并发列举
-            groupedListerMap = progressiveList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
-            if (groupedListerMap.get(false) != null) fileListerList.addAll(groupedListerMap.get(false));
-            if (groupedListerMap.get(true) != null) {
-                Optional<List<String>> listOptional = groupedListerMap.get(true).parallelStream()
-                        .map(fileLister -> nextPrefixes(fileLister, originPrefixList))
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                if (listOptional.isPresent() && listOptional.get().size() > 0) {
-                    validPrefixList = removeAntiPrefixes(listOptional.get());
-                    progressiveList = prefixList(validPrefixList);
-                    size = fileListerList.size() + progressiveList.size() + 1;
-                } else {
-                    progressiveList = groupedListerMap.get(true);
-                    break;
-                }
-            } else {
-                progressiveList = new ArrayList<>();
-                break;
-            }
-        }
-        fileListerList.addAll(progressiveList);
-        // 必须对计算得到的列举器列表进行更新
-        updateFileLiters(fileListerList, customPrefix);
-        return fileListerList;
     }
 
     /**
@@ -307,6 +260,77 @@ public class ListBucket implements IDataSource {
     }
 
     /**
+     * 根据 startLister（及其 prefix 参数）和有序的前缀列表往前计算下级有效的前缀并得到新的 FileLister 放入线程执行列举
+     * @param lastPrefix startLister 的 prefix 条件下能够得到的 FileLister 列表中最后一个 FileLister 需要更新的前缀
+     * @return 根据线程数计算得到的 customPrefix 前缀下能够进行同时列举的 FileLiter 列表
+     * @throws IOException 更新 FileLiter 列表可能产生的异常
+     */
+    private int computeToList(FileLister startLister, String lastPrefix, int alreadyOrder, FileMap recordFileMap)
+            throws Exception {
+        // 率先得到下一级的前缀列表
+        List<String> validPrefixList = nextPrefixes(startLister, originPrefixList);
+        // 如果得到的下一级前缀个数小于固定的前缀个数，说明不存在文件以第一个固定前缀之前的特殊字符来命名文件名前缀的，相反则需要为此第一段
+        // FileLister 设置结束标志 EndKeyPrefix，然后先放入线程执行
+        if (validPrefixList.size() == originPrefixList.size()) {
+            startLister.setEndKeyPrefix(originPrefixList.get(0));
+            execInThreads(new ArrayList<FileLister>(){{ add(startLister); }}, recordFileMap, alreadyOrder);
+            alreadyOrder += 1;
+        }
+        // 去掉不进行列举的前缀
+        validPrefixList = removeAntiPrefixes(validPrefixList);
+        List<FileLister> fileListerList = prefixList(validPrefixList);
+        boolean lastListerUpdated = false;
+        // 取出前缀最大的 FileLister，如果其不存在下一个 marker，则该 FileLister 不需要继续往下计算前缀，那么此 FileLister 将是整体的最后
+        // 的一个 FileLister，为了保证能列举到 lastPrefix 的所有文件，需要对其现有的 prefix 做更新，一般情况下 startLister.getPrefix()
+        // 是和 lastPrefix 相同的，但是如果初始参数 prefixes 不为空且 prefixRight 为 true 的情况下表示需要列举 prefixes 中最后一个前缀
+        // 开始的文件之后的所有文件，因此此时需要最后一个 FileLister 更新前缀为 ""
+        fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
+        FileLister lastLister = fileListerList.size() > 0 ? fileListerList.get(fileListerList.size() - 1) : null;
+        if (lastLister != null && lastLister.checkMarkerValid()) {
+            updateLastLiter(lastLister, lastPrefix);
+            lastListerUpdated = true;
+        }
+
+        // 避免重复生成新对象，将 groupedListerMap 放在循环外部
+        Map<Boolean, List<FileLister>> groupedListerMap;
+        while (fileListerList.size() > 0 && fileListerList.size() < threads) {
+            // 给 progressiveList 按照是否有下一个 marker 进行分组，有下个 marker 的对象进一步进行前缀检索查询，没有下个 marker 的对象
+            // 先添加进列表，整个列表 size 达到线程个数时即可放入线程池进行并发列举
+            groupedListerMap = fileListerList.stream().collect(Collectors.groupingBy(FileLister::checkMarkerValid));
+            // 将没有下一个 marker 的 FileLister 先放入线程执行掉
+            if (groupedListerMap.get(false) != null) {
+                execInThreads(groupedListerMap.get(false), recordFileMap, alreadyOrder);
+                alreadyOrder += groupedListerMap.get(false).size();
+            }
+            // 有下一个有效 marker 的 FileLister 可以用于继续检索前缀
+            if (groupedListerMap.get(true) != null) {
+                Optional<List<String>> listOptional = groupedListerMap.get(true).parallelStream()
+                        .map(fileLister -> nextPrefixes(fileLister, originPrefixList))
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+                if (listOptional.isPresent() && listOptional.get().size() > 0) {
+                    validPrefixList = removeAntiPrefixes(listOptional.get());
+                    fileListerList = prefixList(validPrefixList);
+                } else {
+                    fileListerList = groupedListerMap.get(true);
+                    break;
+                }
+            } else {
+                fileListerList = new ArrayList<>();
+                break;
+            }
+        }
+
+        // 如果没有更新过最后一个 FileLister 必须对计算得到的列举器列表进行更新
+        if (!lastListerUpdated) {
+            fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
+            lastLister = fileListerList.size() > 0 ? fileListerList.get(fileListerList.size() - 1) : null;
+            updateLastLiter(lastLister, lastPrefix);
+        }
+        execInThreads(fileListerList, recordFileMap, alreadyOrder);
+        return alreadyOrder;
+    }
+
+    /**
      * 启动多线程导出的方法，根据线程数自动执行多线程并发导出
      * @throws Exception 计算 FileLister 列表失败或者写入失败等情况下的异常
      */
@@ -318,37 +342,28 @@ public class ListBucket implements IDataSource {
         exitBool = new AtomicBoolean(false);
         Collections.sort(prefixes);
         int alreadyOrder = 0;
-        List<FileLister> fileListerList = new ArrayList<>();
         if (prefixes.size() == 0) {
-            fileListerList = computeFileLister("");
-            execInThreads(fileListerList, recordFileMap, alreadyOrder);
+            FileLister startLister = generateLister("");
+            computeToList(startLister, "", alreadyOrder, recordFileMap);
         } else {
-            for (int i = 0; i < prefixes.size(); i++) {
-                fileListerList.addAll(computeFileLister(prefixes.get(i)));
-                // 第一个前缀可能需要判断是否列举该前缀排序之前的文件
-                if (i == 0) {
-                    if (prefixLeft) {
-                        FileLister firstLister = generateLister("");
-                        firstLister.setEndKeyPrefix(prefixes.get(0));
-                        fileListerList.add(firstLister);
-                    }
-                } else if (i == prefixes.size() - 1) {
-                    // 最后一个前缀可能需要判断是否列举该前缀排序之后的文件
-                    if (fileListerList.size() > 1) {
-                        fileListerList.sort(Comparator.comparing(FileLister::getPrefix));
-                        if (prefixRight) fileListerList.get(fileListerList.size() -1).setPrefix("");
-                    }
-                }
-                if (fileListerList.size() >= threads) {
-                    execInThreads(fileListerList, recordFileMap, alreadyOrder);
-                    alreadyOrder += fileListerList.size();
-                    fileListerList = new ArrayList<>();
-                }
+            if (prefixLeft) {
+                FileLister startLister = generateLister("");
+                startLister.setEndKeyPrefix(prefixes.get(0));
+                execInThreads(new ArrayList<FileLister>(){{ add(startLister); }}, recordFileMap, alreadyOrder);
+                alreadyOrder += 1;
             }
-            execInThreads(fileListerList, recordFileMap, alreadyOrder);
+            for (int i = 0; i < prefixes.size() - 1; i++) {
+                FileLister startLister = generateLister(prefixes.get(i));
+                alreadyOrder = computeToList(startLister, prefixes.get(i), alreadyOrder, recordFileMap);
+            }
+            FileLister startLister = generateLister(prefixes.get(prefixes.size() - 1));
+            if (prefixRight) {
+                computeToList(startLister, "", alreadyOrder, recordFileMap);
+            } else {
+                computeToList(startLister, prefixes.get(prefixes.size() - 1), alreadyOrder, recordFileMap);
+            }
         }
         executorPool.shutdown();
-        recordFileMap.writeKeyFile("count_" + (alreadyOrder + fileListerList.size()), null, false);
         while (!executorPool.isTerminated()) Thread.sleep(1000);
         recordFileMap.closeWriters();
         System.out.println(info + " finished");
