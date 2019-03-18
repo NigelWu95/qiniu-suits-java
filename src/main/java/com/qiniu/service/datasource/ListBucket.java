@@ -155,16 +155,21 @@ public class ListBucket implements IDataSource {
      * @return 返回得到的 FileLister 列表
      */
     private List<FileLister> prefixList(List<String> prefixList) {
-        return prefixList.parallelStream()
-                .map(prefix -> {
-                    try {
-                        return generateLister(prefix);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .filter(fileLister -> fileLister != null && fileLister.hasNext())
-                .collect(Collectors.toList());
+        try {
+            return prefixList.parallelStream()
+                    .map(prefix -> {
+                        try {
+                            return generateLister(prefix);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .filter(fileLister -> fileLister != null && fileLister.hasNext())
+                    .collect(Collectors.toList());
+        } catch (Error error) {
+            SystemUtils.exit(exitBool, error);
+            return null;
+        }
     }
 
     /**
