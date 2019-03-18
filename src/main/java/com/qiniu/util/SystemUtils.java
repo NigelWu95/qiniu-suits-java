@@ -10,7 +10,7 @@ public class SystemUtils {
      * @param exitBool 多线程的原子操作 bool 值，初始值应该为 false
      * @param e 异常对象
      */
-    synchronized static public void exit(AtomicBoolean exitBool, Exception e) {
+    synchronized static public void exit(AtomicBoolean exitBool, Throwable e) {
         if (!exitBool.get()) e.printStackTrace();
         exitBool.set(true);
         System.exit(-1);
