@@ -111,6 +111,10 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return marker != null && !"".equals(marker);
     }
 
+    public boolean checkEndKeyPrefixValid() {
+        return endKeyPrefix != null && !"".equals(endKeyPrefix);
+    }
+
     public boolean checkListValid() {
         return fileInfoList != null && fileInfoList.size() > 0;
     }
