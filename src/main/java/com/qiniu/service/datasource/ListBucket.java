@@ -156,11 +156,11 @@ public class ListBucket implements IDataSource {
      */
     private List<FileLister> prefixList(List<String> prefixList) {
         try {
-            return prefixList.parallelStream()
+            return prefixList.stream()
                     .map(prefix -> {
                         try {
                             return generateLister(prefix);
-                        } catch (IOException e) {
+                        } catch (Throwable e) {
                             throw new RuntimeException(e);
                         }
                     })
