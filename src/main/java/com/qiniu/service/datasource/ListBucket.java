@@ -168,7 +168,7 @@ public class ListBucket implements IDataSource {
                     .collect(Collectors.toList());
         } catch (Error error) {
             SystemUtils.exit(exitBool, error);
-            return null;
+            return new ArrayList<>();
         }
     }
 
