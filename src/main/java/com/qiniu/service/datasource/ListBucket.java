@@ -261,7 +261,7 @@ public class ListBucket implements IDataSource {
             else if (keyLast.length() > prefixLen) point = keyLast.substring(prefixLen);
         }
         String finalPoint = point;
-        List<String> validPrefixList = originPrefixList.stream()
+        List<String> validPrefixList = originPrefixList.parallelStream()
                 .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
                 .map(originPrefix -> fileLister.getPrefix() + originPrefix)
                 .collect(Collectors.toList());
@@ -313,7 +313,7 @@ public class ListBucket implements IDataSource {
             // 先添加进列表，整个列表 size 达到线程个数时即可放入线程池进行并发列举
             // 加入 !fileLister.checkEndKeyPrefixValid()) 过滤的原因是经过 nextLevelLister 处理时将初始列举器设置了 endKeyPrefix，
             // 需要将其直接放入线程执行不做进一步前缀检索
-            groupedListerMap = fileListerList.stream().collect(Collectors.groupingBy(fileLister ->
+            groupedListerMap = fileListerList.parallelStream().collect(Collectors.groupingBy(fileLister ->
                     fileLister.checkMarkerValid() && !fileLister.checkEndKeyPrefixValid()));
             if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
             // 将没有下一个 marker 的 FileLister 先放入线程执行掉
