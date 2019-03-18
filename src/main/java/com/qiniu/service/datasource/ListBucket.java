@@ -295,6 +295,7 @@ public class ListBucket implements IDataSource {
         List<FileLister> execListerList = new ArrayList<>();
         boolean lastListerUpdated = false;
         FileLister lastLister;
+        int nextSize = 0;
         // 避免重复生成新对象，将 groupedListerMap 放在循环外部
         Map<Boolean, List<FileLister>> groupedListerMap;
         do {
@@ -331,6 +332,8 @@ public class ListBucket implements IDataSource {
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     fileListerList = listOptional.get();
+                    nextSize = fileListerList.parallelStream().filter(FileLister::checkMarkerValid)
+                            .collect(Collectors.toList()).size();
                 } else {
                     fileListerList = groupedListerMap.get(true);
                     break;
@@ -339,7 +342,7 @@ public class ListBucket implements IDataSource {
                 fileListerList.clear();
                 break;
             }
-        } while (fileListerList.size() > 0 && fileListerList.size() < threads);
+        } while (nextSize < threads);
 
         // 如果没有更新过整体的最后一个 FileLister 则必须对计算得到的列举器列表中最大的一个 FileLister 进行更新
         if (!lastListerUpdated && fileListerList.size() > 0) {
