@@ -248,8 +248,11 @@ public class ListBucket implements IDataSource {
     private List<FileLister> nextLevelLister(FileLister fileLister) {
         // 由于下面 point 是通过最大的文件名来计算的，故初始的 FileLister 还是要放入列表中
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 fileLister 的列表
-        List<FileLister> nextLevelList = new ArrayList<FileLister>(){{ add(fileLister); }};
-        if (!fileLister.checkMarkerValid()) return nextLevelList;
+        List<FileLister> nextLevelList = new ArrayList<>();
+        if (!fileLister.checkMarkerValid()) {
+            nextLevelList.add(fileLister);
+            return nextLevelList;
+        }
 
         List<FileInfo> fileInfoList = fileLister.getFileInfoList();
         String point = "";
@@ -258,6 +261,11 @@ public class ListBucket implements IDataSource {
             String keyLast = fileInfoList.get(fileInfoList.size() - 1).key;
             if (keyLast.length() > prefixLen + 1) point = keyLast.substring(prefixLen, prefixLen + 1);
             else if (keyLast.length() > prefixLen) point = keyLast.substring(prefixLen);
+            // 如果得到的列表中第一个文件和最后一个文件的下一级前缀是相同的话，说明此次列举只有一个下级前缀，则不需要将此 fileLister
+            // 添加进列表，反之则应该添加之列表中，后面还需要根据第一个（最小的）下一级前缀来设置 endKeyPrefix
+            if (!fileInfoList.get(0).key.startsWith(keyLast.substring(0, prefixLen))) {
+                nextLevelList.add(fileLister);
+            }
         }
         String finalPoint = point;
         List<String> validPrefixList = originPrefixList.parallelStream()
@@ -269,9 +277,6 @@ public class ListBucket implements IDataSource {
         if (validPrefixList.size() == 0) return nextLevelList;
         // 从上步得到的前缀列表都会进行下一级检索列举，初始的 fileLister 应当将第一个前缀作为结束符
         fileLister.setEndKeyPrefix(validPrefixList.get(0));
-        // 如果得到的下一级前缀个数小于固定的前缀个数，说明不存在文件以第一个固定前缀之前的特殊字符来命名文件名前缀的，则第一段 Lister 不需要再更
-        // 多地列举，可以直接设置 marker 为空
-        if (validPrefixList.size() < originPrefixList.size()) fileLister.setMarker(null);
         // 去掉不进行列举的前缀
         validPrefixList = removeAntiPrefixes(validPrefixList);
         nextLevelList.addAll(prefixList(validPrefixList));
@@ -331,7 +336,7 @@ public class ListBucket implements IDataSource {
                     break;
                 }
             } else {
-                fileListerList = new ArrayList<>();
+                fileListerList.clear();
                 break;
             }
         } while (fileListerList.size() > 0 && fileListerList.size() < threads);
