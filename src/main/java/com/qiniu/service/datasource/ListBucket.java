@@ -59,11 +59,10 @@ public class ListBucket implements IDataSource {
         this.prefixRight = prefixRight;
         this.savePath = savePath;
         this.saveTotal = false;
-        // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符包括 "{" 及其 ASCII 顺序之后的字符去掉（"|}~"），从而
-        // 优化列举的超时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
-        // 去除前数个非常见作为文件名的 ASCII 字符（" !"#$%&'()*+,-"）优化前缀列举
-        originPrefixList.addAll(Arrays.asList(("./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRST").split("")));
-        originPrefixList.addAll(Arrays.asList(("UVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
+        // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
+        // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
+        originPrefixList.addAll(Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
+        originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
     }
 
     public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
