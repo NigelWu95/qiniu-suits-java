@@ -167,10 +167,10 @@ public class ListBucket implements IDataSource {
      * @return 检验结果，true 表示 validPrefix 有效不需要剔除
      */
     private boolean checkAntiPrefixes(String validPrefix) {
-            for (String antiPrefix : antiPrefixes) {
-                if (validPrefix.startsWith(antiPrefix)) return false;
-            }
-            return true;
+        for (String antiPrefix : antiPrefixes) {
+            if (validPrefix.startsWith(antiPrefix)) return false;
+        }
+        return true;
     }
 
     /**
