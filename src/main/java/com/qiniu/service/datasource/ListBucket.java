@@ -245,23 +245,33 @@ public class ListBucket implements IDataSource {
         int prefixLen = fileLister.getPrefix().length();
         String point = "";
         if (lastKey.length() > prefixLen + 1) point = lastKey.substring(prefixLen, prefixLen + 1);
-        else if (lastKey.length() > prefixLen) point = lastKey.substring(prefixLen);
+        else if (lastKey.length() == prefixLen + 1) point = lastKey.substring(prefixLen);
+
+        // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
+        if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+            nextLevelList.add(fileLister);
+            return nextLevelList;
+        }
 
         List<FileInfo> fileInfoList = fileLister.getFileInfoList();
         if (fileInfoList != null && fileInfoList.size() > 0) {
-            // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
-            if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
-                nextLevelList.add(fileLister);
-                return nextLevelList;
-            }
             // 如果得到的列表中第一个文件和最后一个文件的下一级前缀是相同的话，说明此次列举只有一个下级前缀，则不需要将此 fileLister
             // 添加进列表，反之则应该添加之列表中，且根据最后一个文件名下一级前缀来设置 endKeyPrefix
-            if (!fileInfoList.get(0).key.startsWith(lastKey.substring(0, prefixLen + 1))) {
-                fileLister.setEndKeyPrefix(lastKey.substring(0, prefixLen + 1));
+            if (!fileInfoList.get(0).key.startsWith(fileLister.getPrefix() + point)) {
+                nextLevelList.add(fileLister);
+            } else if (point.compareTo(originPrefixList.get(0)) < 0) {
                 nextLevelList.add(fileLister);
             }
+        } else { // 文件存在删除的情况，fileInfoList 为空
+            nextLevelList.add(fileLister);
         }
 
+        // 避免出现字符在预定义前缀字符 ASCII 顺序之前的情况，至少保证结束位置在第一个预定义前缀处，因此前缀检索最小的从第一个预定义前缀开始
+        if (point.compareTo(originPrefixList.get(0)) < 0) {
+            point = originPrefixList.get(0);
+        }
+        // 当前的 fileLister 应该设置 endKeyPrefix 到 point 处，从 point 处开始会进行下一级检索
+        fileLister.setEndKeyPrefix(fileLister.getPrefix() + point);
         String finalPoint = point;
         List<FileLister> prefixListerList;
         try {
