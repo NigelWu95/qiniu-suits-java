@@ -31,7 +31,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         this.bucket = bucket;
         this.prefix = prefix;
         this.marker = marker;
-        this.endKeyPrefix = endKeyPrefix == null ? "" : endKeyPrefix;
+        this.endKeyPrefix = endKeyPrefix == null ? "" : endKeyPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
         this.delimiter = delimiter;
         this.limit = limit;
         this.fileInfoList = getListResult(prefix, delimiter, marker, limit);
@@ -67,7 +67,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
     }
 
     public void setEndKeyPrefix(String endKeyPrefix) {
-        this.endKeyPrefix = endKeyPrefix == null ? "" : endKeyPrefix;;
+        this.endKeyPrefix = endKeyPrefix;;
     }
 
     public String getDelimiter() {
@@ -111,10 +111,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
         return marker != null && !"".equals(marker);
     }
 
-    public boolean checkEndKeyPrefixValid() {
-        return endKeyPrefix != null && !"".equals(endKeyPrefix);
-    }
-
     public boolean checkListValid() {
         return fileInfoList != null && fileInfoList.size() > 0;
     }
@@ -127,7 +123,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
     @Override
     public List<FileInfo> next() {
         List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
-        if (!"".equals(endKeyPrefix)) {
+        if (endKeyPrefix != null && !"".equals(endKeyPrefix)) {
             int size = current.size();
             current = current.parallelStream()
                     .filter(fileInfo -> fileInfo.key.compareTo(endKeyPrefix) < 0)

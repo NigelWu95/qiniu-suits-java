@@ -125,9 +125,18 @@ public class ListBucket implements IDataSource {
      * @return 返回针对该前缀配置的 marker 和 end
      */
     private String[] getMarkerAndEnd(String prefix) {
-        String[] mapValue = prefixesMap.get(prefix);
-        if (mapValue == null) return new String[]{"", ""};
-        else return mapValue;
+        if (prefixesMap.containsKey(prefix)) {
+            String[] mapValue = prefixesMap.get(prefix);
+            if (mapValue != null && mapValue.length > 1) {
+                return mapValue;
+            } else if (mapValue == null || mapValue.length == 0){
+                return new String[]{"", ""};
+            } else {
+                return new String[]{mapValue[0], ""};
+            }
+        } else {
+            return new String[]{"", ""};
+        }
     }
 
     /**
@@ -249,6 +258,7 @@ public class ListBucket implements IDataSource {
 
         // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
         if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+            fileLister.setEndKeyPrefix(null);
             nextLevelList.add(fileLister);
             return nextLevelList;
         }
@@ -327,10 +337,10 @@ public class ListBucket implements IDataSource {
             }
             // 给 progressiveList 按照是否有下一个 marker 进行分组，有下个 marker 的对象进一步进行前缀检索查询，没有下个 marker 的对象
             // 先添加进列表，整个列表 size 达到线程个数时即可放入线程池进行并发列举
-            // 加入 !fileLister.checkEndKeyPrefixValid()) 过滤的原因是经过 nextLevelLister 处理时将初始列举器设置了 endKeyPrefix，
-            // 需要将其直接放入线程执行不做进一步前缀检索
+            // 加入 "".equals(fileLister.getEndKeyPrefix()) 过滤的原因是因为经过 nextLevelLister 处理时修改了 endKeyPrefix 的需
+            // 要将其直接放入线程执行不做进一步前缀检索
             groupedListerMap = fileListerList.parallelStream().collect(Collectors.groupingBy(fileLister ->
-                    fileLister.checkMarkerValid() && !fileLister.checkEndKeyPrefixValid()));
+                    fileLister.checkMarkerValid() && "".equals(fileLister.getEndKeyPrefix())));
             if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
             // 将没有下一个 marker 的 FileLister 先放入线程执行掉
             execInThreads(execListerList, recordFileMap, alreadyOrder);
