@@ -81,10 +81,10 @@ public class ProcessorChoice {
             throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
                     "should earlier then <date2>.");
         }
-        String type = entryParam.getValue("type", null);
-        String status = entryParam.getValue("status", null);
-        if (type != null) type = commonParams.checked(type, "type", "[01]");
-        if (status != null) status = commonParams.checked(status, "status", "[01]");
+        String type = entryParam.getValue("f-type", null);
+        String status = entryParam.getValue("f-status", null);
+        if (type != null) type = commonParams.checked(type, "f-type", "[01]");
+        if (status != null) status = commonParams.checked(status, "f-status", "[01]");
 
         List<String> keyPrefixList = commonParams.getFilterList("key", keyPrefix, "prefix");
         List<String> keySuffixList = commonParams.getFilterList("key", keySuffix, "suffix");
