@@ -52,9 +52,12 @@ public class ListBucket implements IDataSource {
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
         this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
-        this.prefixes = prefixesMap == null ? new ArrayList<>() : removeAntiPrefixes(new ArrayList<String>(){{
-            addAll(prefixesMap.keySet());
-        }});
+        this.prefixes = new ArrayList<>();
+        if (prefixesMap != null) {
+            for (String prefix : prefixesMap.keySet()) {
+                if (checkAntiPrefixes(prefix)) prefixes.add(prefix);
+            }
+        }
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
         this.savePath = savePath;
@@ -150,40 +153,15 @@ public class ListBucket implements IDataSource {
     }
 
     /**
-     * 根据前缀列表得到 FileLister 列表，如果某个前缀列举失败抛出非预期异常直接终止程序
-     * @param prefixList 指定的前缀列表参数
-     * @return 返回得到的 FileLister 列表
+     * 检验 prefix 是否在 antiPrefixes 前缀列表中
+     * @param validPrefix 待检验的 prefix
+     * @return 检验结果，true 表示 validPrefix 有效不需要剔除
      */
-    private List<FileLister> prefixList(List<String> prefixList) {
-        try {
-            return prefixList.stream()
-                    .map(prefix -> {
-                        try {
-                            return generateLister(prefix);
-                        } catch (Throwable e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .filter(fileLister -> fileLister != null && fileLister.hasNext())
-                    .collect(Collectors.toList());
-        } catch (Error error) {
-            SystemUtils.exit(exitBool, error);
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * 剔除不进行列举的 antiPrefixes 前缀列表
-     * @param validPrefixList 过滤之前的 prefix 列表
-     * @return 过滤之后的 prefix 列表
-     */
-    private List<String> removeAntiPrefixes(List<String> validPrefixList) {
-        return validPrefixList.stream().filter(validPrefix -> {
+    private boolean checkAntiPrefixes(String validPrefix) {
             for (String antiPrefix : antiPrefixes) {
                 if (validPrefix.startsWith(antiPrefix)) return false;
             }
             return true;
-        }).collect(Collectors.toList());
     }
 
     /**
@@ -266,25 +244,39 @@ public class ListBucket implements IDataSource {
             String keyLast = fileInfoList.get(fileInfoList.size() - 1).key;
             if (keyLast.length() > prefixLen + 1) point = keyLast.substring(prefixLen, prefixLen + 1);
             else if (keyLast.length() > prefixLen) point = keyLast.substring(prefixLen);
+
+            // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
+            if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+                nextLevelList.add(fileLister);
+                return nextLevelList;
+            }
             // 如果得到的列表中第一个文件和最后一个文件的下一级前缀是相同的话，说明此次列举只有一个下级前缀，则不需要将此 fileLister
-            // 添加进列表，反之则应该添加之列表中，后面还需要根据第一个（最小的）下一级前缀来设置 endKeyPrefix
-            if (!fileInfoList.get(0).key.startsWith(keyLast.substring(0, prefixLen))) {
+            // 添加进列表，反之则应该添加之列表中，且根据最后一个文件名下一级前缀来设置 endKeyPrefix
+            if (!fileInfoList.get(0).key.startsWith(keyLast.substring(0, prefixLen + 1))) {
+                fileLister.setEndKeyPrefix(keyLast.substring(0, prefixLen + 1));
                 nextLevelList.add(fileLister);
             }
         }
-        String finalPoint = point;
-        List<String> validPrefixList = originPrefixList.parallelStream()
-                .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
-                .map(originPrefix -> fileLister.getPrefix() + originPrefix)
-                .collect(Collectors.toList());
 
-        // 列举到的位置已经超过了所有预定义前缀，直接返回即可
-        if (validPrefixList.size() == 0) return nextLevelList;
-        // 从上步得到的前缀列表都会进行下一级检索列举，初始的 fileLister 应当将第一个前缀作为结束符
-        fileLister.setEndKeyPrefix(validPrefixList.get(0));
-        // 去掉不进行列举的前缀
-        validPrefixList = removeAntiPrefixes(validPrefixList);
-        nextLevelList.addAll(prefixList(validPrefixList));
+        String finalPoint = point;
+        List<FileLister> prefixListerList;
+        try {
+            prefixListerList = originPrefixList.parallelStream()
+                    .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
+                    .filter(this::checkAntiPrefixes)
+                    .map(originPrefix -> {
+                        try {
+                            return generateLister(fileLister.getPrefix() + originPrefix);
+                        } catch (Throwable e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+            if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
+        } catch (Error error) {
+            SystemUtils.exit(exitBool, error);
+        }
+
         return nextLevelList;
     }
 
