@@ -237,14 +237,18 @@ public class ListBucket implements IDataSource {
             return nextLevelList;
         }
 
-        List<FileInfo> fileInfoList = fileLister.getFileInfoList();
-        String point = "";
+        // 用于下次列举的 marker 实际上是通过此次列举到的最后一个文件信息（包括已经删除的文件）编码出来的，因此通过下一个 marker 可解析出最后一
+        // 个文件信息即已经列举到的位置
+        FileInfo nextFileInfo = ListBucketUtils.decodeMarker(fileLister.getMarker());
+        String lastKey = nextFileInfo.key;
+        // 计算出当前列举使用的前缀往前的一个字符，用于下级前缀的检索
         int prefixLen = fileLister.getPrefix().length();
-        if (fileInfoList != null && fileInfoList.size() > 0) {
-            String keyLast = fileInfoList.get(fileInfoList.size() - 1).key;
-            if (keyLast.length() > prefixLen + 1) point = keyLast.substring(prefixLen, prefixLen + 1);
-            else if (keyLast.length() > prefixLen) point = keyLast.substring(prefixLen);
+        String point = "";
+        if (lastKey.length() > prefixLen + 1) point = lastKey.substring(prefixLen, prefixLen + 1);
+        else if (lastKey.length() > prefixLen) point = lastKey.substring(prefixLen);
 
+        List<FileInfo> fileInfoList = fileLister.getFileInfoList();
+        if (fileInfoList != null && fileInfoList.size() > 0) {
             // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
             if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
                 nextLevelList.add(fileLister);
@@ -252,8 +256,8 @@ public class ListBucket implements IDataSource {
             }
             // 如果得到的列表中第一个文件和最后一个文件的下一级前缀是相同的话，说明此次列举只有一个下级前缀，则不需要将此 fileLister
             // 添加进列表，反之则应该添加之列表中，且根据最后一个文件名下一级前缀来设置 endKeyPrefix
-            if (!fileInfoList.get(0).key.startsWith(keyLast.substring(0, prefixLen + 1))) {
-                fileLister.setEndKeyPrefix(keyLast.substring(0, prefixLen + 1));
+            if (!fileInfoList.get(0).key.startsWith(lastKey.substring(0, prefixLen + 1))) {
+                fileLister.setEndKeyPrefix(lastKey.substring(0, prefixLen + 1));
                 nextLevelList.add(fileLister);
             }
         }
