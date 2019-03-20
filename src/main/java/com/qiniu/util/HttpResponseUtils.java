@@ -21,14 +21,14 @@ public class HttpResponseUtils {
         if (fileMap == null) return;
         String message = "";
         if (e != null) {
-            message = e.getMessage() == null ? "" : e.getMessage();
+            // 取 error 信息优先从 exception 的 message 中取，避免直接 e.error() 抛出非预期异常，因为 error() 方法底层可能会调用
+            // response.isJson()，该方法底层会抛出空指针异常（位置 com.qiniu.http.Response.ctype(Response.java:137)），同时
+            // getMessage 会包含 reqid 等信息
+            message = e.getMessage() == null ? "" : "message:" + e.getMessage();
             if ("".equals(message)) {
-                message = e.response != null ? e.response.reqId + "\t" : "";
-                try {
-                    message += e.error() == null ? "" : e.error();
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
+                message = (e.response != null ? "reqid:" + e.response.reqId + ", ": "") + "code:" + e.code();
+                // 避免抛出空指针异常
+                try { message += "， error:" + e.error(); } catch (Exception ex) { ex.printStackTrace(); }
             }
         }
         if (infoList == null || infoList.size() == 0) {
@@ -52,9 +52,8 @@ public class HttpResponseUtils {
      */
     public static int processException(QiniuException e, int retry, FileMap fileMap, List<String> infoList)
             throws IOException {
-        // 取 error 信息优先从 exception 的 message 中取，避免直接调用 e.error() 抛出非预期异常，同时 getMessage 包含 reqid 等信息
         if (e != null) {
-            System.out.println(e.getMessage());
+            System.out.println("code:" + e.code() + ", message:" + e.getMessage());
             if (e.response != null) {
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序终端先处理该异常
                 if (e.response.statusCode == 478) {
@@ -64,7 +63,7 @@ public class HttpResponseUtils {
                 // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
                 else if (e.response.statusCode != 631 && e.response.needRetry() && retry > 0) {
                     // 可重试的异常信息不需要记录，因为重试之后可能成功或者再次进行该方法
-                    e.printStackTrace();
+//                    e.printStackTrace();
                     e.response.close();
                 } else {
                     // 需要抛出异常时将错误信息记录下来
@@ -72,10 +71,11 @@ public class HttpResponseUtils {
                     throw e;
                 }
             } else {
-                if (retry > 0) {
-                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
-                    e.printStackTrace();
-                } else {
+//                if (retry > 0) {
+//                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
+//                    e.printStackTrace();
+//                }
+                if (retry <= 0) {
                     // 没有重试机会时将错误信息记录下来
                     writeLog(e, fileMap, infoList);
                     throw e;
