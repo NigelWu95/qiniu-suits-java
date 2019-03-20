@@ -86,9 +86,9 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                     fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
                     continue;
                 }
-                // stat 接口查询结果不包含文件名，故再加入对应的文件名
-                data.addProperty("key", processList.get(j).get("key"));
                 if (jsonObject.get("code").getAsInt() == 200) {
+                    // stat 接口查询结果不包含文件名，故再加入对应的文件名
+                    data.addProperty("key", processList.get(j).get("key"));
                     if (!"json".equals(format)) {
                         fileMap.writeSuccess(stringFormatter.toFormatString(jsonObjParser.getItemMap(data)), false);
                     } else {
