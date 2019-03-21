@@ -238,11 +238,13 @@ public class ListBucket implements IDataSource {
                     .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
                     .filter(this::checkAntiPrefixes)
                     .map(originPrefix -> {
+                        FileLister fileLister = null;
                         try {
-                            return generateLister(startPrefix + originPrefix);
+                            fileLister = generateLister(startPrefix + originPrefix);
                         } catch (IOException e) {
-                            throw new Error(e);
+                            SystemUtils.exit(exitBool, e);
                         }
+                        return fileLister;
                     })
                     .filter(lister -> lister != null && lister.hasNext())
                     .collect(Collectors.toList());
