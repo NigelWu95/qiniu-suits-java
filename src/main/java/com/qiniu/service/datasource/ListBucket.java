@@ -229,6 +229,28 @@ public class ListBucket implements IDataSource {
         }
     }
 
+    private List<FileLister> generateNextList(String startPrefix, String point) {
+        List<FileLister> prefixListerList = null;
+        try {
+            prefixListerList = originPrefixList.parallelStream()
+                    .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
+                    .filter(this::checkAntiPrefixes)
+                    .map(originPrefix -> {
+                        try {
+                            return generateLister(startPrefix + originPrefix);
+                        } catch (Throwable e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .filter(lister -> lister != null && lister.hasNext())
+                    .collect(Collectors.toList());
+        } catch (Error error) {
+            SystemUtils.exit(exitBool, error);
+        }
+
+        return prefixListerList;
+    }
+
     /**
      * 通过 FileLister 得到目前列举出的最大文件名首字母和前缀列表进行比较，筛选出在当前列举位置之后的单字母前缀列表，该方法是为了优化前缀检索过程
      * 中算法复杂度，通过剔除在当前列举位置之前的前缀，减少不必要的检索，如果传过来的 FileLister 的 FileInfoList 中没有数据的话应当是存在下一
@@ -281,26 +303,8 @@ public class ListBucket implements IDataSource {
         }
         // 当前的 fileLister 应该设置 endKeyPrefix 到 point 处，从 point 处开始会进行下一级检索
         fileLister.setEndKeyPrefix(fileLister.getPrefix() + point);
-        String finalPoint = point;
-        List<FileLister> prefixListerList;
-        try {
-            prefixListerList = originPrefixList.parallelStream()
-                    .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
-                    .filter(this::checkAntiPrefixes)
-                    .map(originPrefix -> {
-                        try {
-                            return generateLister(fileLister.getPrefix() + originPrefix);
-                        } catch (Throwable e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .filter(lister -> lister != null && lister.hasNext())
-                    .collect(Collectors.toList());
-            if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
-        } catch (Error error) {
-            SystemUtils.exit(exitBool, error);
-        }
-
+        List<FileLister> prefixListerList = generateNextList(fileLister.getPrefix(), point);
+        if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
         return nextLevelList;
     }
 
@@ -316,7 +320,7 @@ public class ListBucket implements IDataSource {
         List<FileLister> execListerList = new ArrayList<>();
         boolean lastListerUpdated = false;
         FileLister lastLister;
-        int nextSize = 0;
+        int nextSize;
         // 避免重复生成新对象，将 groupedListerMap 放在循环外部
         Map<Boolean, List<FileLister>> groupedListerMap;
         do {
