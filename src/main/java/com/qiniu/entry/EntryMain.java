@@ -26,9 +26,9 @@ public class EntryMain {
         IEntryParam entryParam = getEntryParam(args);
         configuration = new Configuration(Zone.autoZone());
         // 自定义超时时间
-        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "30"));
-        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "60"));
-        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "10"));
+        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
+        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
+        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "60"));
 
         CommonParams commonParams = new CommonParams(entryParam);
         ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
