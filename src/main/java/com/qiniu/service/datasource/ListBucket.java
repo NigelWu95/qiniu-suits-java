@@ -174,23 +174,6 @@ public class ListBucket implements IDataSource {
     }
 
     /**
-     * 最后一段 FileLister 修改前缀 prefix 和下一个 marker，该方法是为了确保实际文件名前缀在最大的预定义前缀之后的文件被成功列举
-     * @param lastLister 通过计算得到的所有确定前缀下的列举器列表
-     * @param prefix 计算该列举器列表时所用的前缀
-     */
-    private void updateLastLiter(FileLister lastLister, String prefix) {
-        if (lastLister != null) {
-            int size = lastLister.getFileInfoList().size();
-            lastLister.setPrefix(prefix);
-            if (!lastLister.checkMarkerValid()) {
-                // 实际上传过来的 FileLister 在下一个 marker 为空的情况下 FileInfoList 是应该一定包含数据的
-                FileInfo lastFileInfo = size > 0 ? lastLister.getFileInfoList().get(size -1) : null;
-                lastLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
-            }
-        }
-    }
-
-    /**
      * 从 FileLister 列表中取出对应的 FileLister 放入线程池中调用导出方法执行数据源数据导出工作，并可能进行 process 过程，记录导出结果
      * @param fileListerList 计算好的 FileLister 列表
      * @param recordFileMap 用于记录导出结果的持久化文件对象
@@ -230,6 +213,49 @@ public class ListBucket implements IDataSource {
     }
 
     /**
+     * 最后一段 FileLister 修改前缀 prefix 和下一个 marker，该方法是为了确保实际文件名前缀在最大的预定义前缀之后的文件被成功列举
+     * @param lastLister 通过计算得到的所有确定前缀下的列举器列表
+     * @param prefix 计算该列举器列表时所用的前缀
+     */
+    private void updateLastLiter(FileLister lastLister, String prefix) {
+        if (lastLister != null) {
+            int size = lastLister.getFileInfoList().size();
+            lastLister.setPrefix(prefix);
+            if (!lastLister.checkMarkerValid()) {
+                // 实际上传过来的 FileLister 在下一个 marker 为空的情况下 FileInfoList 是应该一定包含数据的
+                FileInfo lastFileInfo = size > 0 ? lastLister.getFileInfoList().get(size -1) : null;
+                lastLister.setMarker(ListBucketUtils.calcMarker(lastFileInfo));
+            }
+        }
+    }
+
+    private List<FileLister> generateNextList(String startPrefix, String point) {
+        List<FileLister> prefixListerList = null;
+        try {
+            // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
+            // java.util.concurrent.RejectedExecutionException: Thread limit exceeded replacing blocked worker
+            prefixListerList = originPrefixList.stream()
+                    .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
+                    .filter(this::checkAntiPrefixes)
+                    .map(originPrefix -> {
+                        FileLister fileLister = null;
+                        try {
+                            fileLister = generateLister(startPrefix + originPrefix);
+                        } catch (IOException e) {
+                            SystemUtils.exit(exitBool, e);
+                        }
+                        return fileLister;
+                    })
+                    .filter(lister -> lister != null && lister.hasNext())
+                    .collect(Collectors.toList());
+        } catch (Throwable e) {
+            SystemUtils.exit(exitBool, e);
+        }
+
+        return prefixListerList;
+    }
+
+    /**
      * 通过 FileLister 得到目前列举出的最大文件名首字母和前缀列表进行比较，筛选出在当前列举位置之后的单字母前缀列表，该方法是为了优化前缀检索过程
      * 中算法复杂度，通过剔除在当前列举位置之前的前缀，减少不必要的检索，如果传过来的 FileLister 的 FileInfoList 中没有数据的话应当是存在下一
      * 个 marker 的（可能是文件被删除的情况），也可以直接检索下一级前缀（所有的前缀字符都比 "" 大），对初始的列举器更新参数并对所有有效的下一级前
@@ -238,7 +264,6 @@ public class ListBucket implements IDataSource {
      * @return 根据检索结果得到的下一级列举器列表
      */
     private List<FileLister> nextLevelLister(FileLister fileLister) {
-        // 由于下面 point 是通过最大的文件名来计算的，故初始的 FileLister 还是要放入列表中
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 fileLister 的列表
         List<FileLister> nextLevelList = new ArrayList<>();
         if (!fileLister.checkMarkerValid()) {
@@ -282,25 +307,8 @@ public class ListBucket implements IDataSource {
         }
         // 当前的 fileLister 应该设置 endKeyPrefix 到 point 处，从 point 处开始会进行下一级检索
         fileLister.setEndKeyPrefix(fileLister.getPrefix() + point);
-        String finalPoint = point;
-        List<FileLister> prefixListerList;
-        try {
-            prefixListerList = originPrefixList.parallelStream()
-                    .filter(originPrefix -> originPrefix.compareTo(finalPoint) >= 0)
-                    .filter(this::checkAntiPrefixes)
-                    .map(originPrefix -> {
-                        try {
-                            return generateLister(fileLister.getPrefix() + originPrefix);
-                        } catch (Throwable e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-            if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
-        } catch (Error error) {
-            SystemUtils.exit(exitBool, error);
-        }
-
+        List<FileLister> prefixListerList = generateNextList(fileLister.getPrefix(), point);
+        if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
         return nextLevelList;
     }
 
@@ -316,7 +324,7 @@ public class ListBucket implements IDataSource {
         List<FileLister> execListerList = new ArrayList<>();
         boolean lastListerUpdated = false;
         FileLister lastLister;
-        int nextSize = 0;
+        int nextSize;
         // 避免重复生成新对象，将 groupedListerMap 放在循环外部
         Map<Boolean, List<FileLister>> groupedListerMap;
         do {
@@ -353,8 +361,9 @@ public class ListBucket implements IDataSource {
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     fileListerList = listOptional.get();
-                    nextSize = fileListerList.parallelStream().filter(FileLister::checkMarkerValid)
-                            .collect(Collectors.toList()).size();
+                    nextSize = (int) fileListerList.parallelStream()
+                            .filter(fileLister -> fileLister.checkMarkerValid() && "".equals(fileLister.getEndKeyPrefix()))
+                            .count();
                 } else {
                     fileListerList = groupedListerMap.get(true);
                     break;
