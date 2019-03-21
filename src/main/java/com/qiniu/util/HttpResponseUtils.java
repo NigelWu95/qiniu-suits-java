@@ -71,14 +71,13 @@ public class HttpResponseUtils {
                     throw e;
                 }
             } else {
-//                if (retry > 0) {
-//                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
-//                    e.printStackTrace();
-//                }
                 if (retry <= 0) {
                     // 没有重试机会时将错误信息记录下来
                     writeLog(e, fileMap, infoList);
                     throw e;
+                } else {
+                    // 重试次数大于 0 时只输出错误信息，不需要记录，因为重试之后可能成功或者再次进行该方法
+                    e.printStackTrace();
                 }
             }
         }
