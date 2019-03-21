@@ -232,20 +232,22 @@ public class ListBucket implements IDataSource {
     private List<FileLister> generateNextList(String startPrefix, String point) {
         List<FileLister> prefixListerList = null;
         try {
-            prefixListerList = originPrefixList.parallelStream()
+            // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
+            // java.util.concurrent.RejectedExecutionException: Thread limit exceeded replacing blocked worker
+            prefixListerList = originPrefixList.stream()
                     .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
                     .filter(this::checkAntiPrefixes)
                     .map(originPrefix -> {
                         try {
                             return generateLister(startPrefix + originPrefix);
-                        } catch (Throwable e) {
-                            throw new RuntimeException(e);
+                        } catch (IOException e) {
+                            throw new Error(e);
                         }
                     })
                     .filter(lister -> lister != null && lister.hasNext())
                     .collect(Collectors.toList());
-        } catch (Error error) {
-            SystemUtils.exit(exitBool, error);
+        } catch (Throwable e) {
+            SystemUtils.exit(exitBool, e);
         }
 
         return prefixListerList;
