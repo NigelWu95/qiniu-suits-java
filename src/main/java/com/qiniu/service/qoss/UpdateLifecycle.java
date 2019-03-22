@@ -1,6 +1,6 @@
 package com.qiniu.service.qoss;
 
-import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 

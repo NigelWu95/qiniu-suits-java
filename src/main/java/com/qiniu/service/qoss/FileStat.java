@@ -1,10 +1,10 @@
 package com.qiniu.service.qoss;
 
 import com.google.gson.*;
-import com.qiniu.service.interfaces.IStringFormat;
-import com.qiniu.service.line.JsonObjParser;
-import com.qiniu.service.line.MapToTableFormatter;
-import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.interfaces.IStringFormat;
+import com.qiniu.line.JsonObjParser;
+import com.qiniu.line.MapToTableFormatter;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 

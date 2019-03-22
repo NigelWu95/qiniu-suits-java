@@ -3,7 +3,7 @@ package com.qiniu.entry;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
-import com.qiniu.service.interfaces.IEntryParam;
+import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;

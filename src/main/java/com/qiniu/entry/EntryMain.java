@@ -3,11 +3,11 @@ package com.qiniu.entry;
 import com.qiniu.common.Zone;
 import com.qiniu.config.CommandArgs;
 import com.qiniu.config.FileProperties;
-import com.qiniu.service.datasource.FileInput;
-import com.qiniu.service.datasource.IDataSource;
-import com.qiniu.service.datasource.ListBucket;
-import com.qiniu.service.interfaces.IEntryParam;
-import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.datasource.FileInput;
+import com.qiniu.datasource.IDataSource;
+import com.qiniu.datasource.ListBucket;
+import com.qiniu.interfaces.IEntryParam;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 

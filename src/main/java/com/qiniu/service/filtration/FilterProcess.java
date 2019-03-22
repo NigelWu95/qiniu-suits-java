@@ -2,10 +2,10 @@ package com.qiniu.service.filtration;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.service.convert.MapToString;
-import com.qiniu.service.interfaces.ILineFilter;
-import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.interfaces.ITypeConvert;
+import com.qiniu.convert.MapToString;
+import com.qiniu.interfaces.ILineFilter;
+import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.ITypeConvert;
 
 import java.io.IOException;
 import java.lang.reflect.Method;

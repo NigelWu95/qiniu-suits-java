@@ -4,7 +4,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.BucketManager;
-import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
