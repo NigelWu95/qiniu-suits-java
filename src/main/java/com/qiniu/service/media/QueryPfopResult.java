@@ -107,9 +107,11 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                     parseResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
-                        add(line.get(pidIndex));
-                    }});
+                    retry = HttpResponseUtils.checkException(e, retry);
+                    if (retry < 1) {
+                        HttpResponseUtils.writeLog(e, fileMap, line.get(pidIndex));
+                        if (retry == -1) throw e;
+                    }
                 }
             }
         }

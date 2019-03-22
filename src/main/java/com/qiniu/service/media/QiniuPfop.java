@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -98,9 +99,11 @@ public class QiniuPfop implements ILineProcess<Map<String, String>>, Cloneable {
                     fileMap.writeSuccess(key + "\t" + persistentId, false);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
-                        add(line.get("key") + "\t" + line.get(fopsIndex));
-                    }});
+                    retry = HttpResponseUtils.checkException(e, retry);
+                    if (retry < 1) {
+                        HttpResponseUtils.writeLog(e, fileMap, line.get("key"));
+                        if (retry == -1) throw e;
+                    }
                 }
             }
         }

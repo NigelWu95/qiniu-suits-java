@@ -116,9 +116,11 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                     }
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
-                        add(finalInfo);
-                    }});
+                    retry = HttpResponseUtils.checkException(e, retry);
+                    if (retry < 1) {
+                        HttpResponseUtils.writeLog(e, fileMap, finalInfo);
+                        if (retry == -1) throw e;
+                    }
                 }
             }
         }

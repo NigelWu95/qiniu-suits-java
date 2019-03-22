@@ -75,8 +75,8 @@ public class FileInput implements IDataSource {
                     autoRetry = 0;
                 } catch (IOException e) {
                     String finalLine = line;
-                    autoRetry = HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
-                            new ArrayList<String>(){{ add(finalLine); }});
+//                    autoRetry = HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
+//                            new ArrayList<String>(){{ add(finalLine); }});
                 }
             }
             if (line != null) srcList.add(line);
@@ -92,7 +92,7 @@ public class FileInput implements IDataSource {
                 try {
                     if (processor != null) processor.processLine(infoMapList);
                 } catch (QiniuException e) {
-                    HttpResponseUtils.processException(e, 1, null, null);
+//                    HttpResponseUtils.processException(e, 1, null, null);
                 }
                 srcList = new ArrayList<>();
             }
