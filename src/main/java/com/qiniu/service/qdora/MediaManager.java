@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
-import com.qiniu.model.media.*;
+import com.qiniu.model.qdora.*;
 import com.qiniu.util.Auth;
 import com.qiniu.util.JsonConvertUtils;
 

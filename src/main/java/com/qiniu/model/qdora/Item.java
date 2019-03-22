@@ -1,4 +1,4 @@
-package com.qiniu.model.media;
+package com.qiniu.model.qdora;
 
 public class Item {
 

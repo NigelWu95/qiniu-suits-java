@@ -1,8 +1,8 @@
 package com.qiniu.service.qdora;
 
 import com.google.gson.Gson;
-import com.qiniu.model.media.Item;
-import com.qiniu.model.media.PfopResult;
+import com.qiniu.model.qdora.Item;
+import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
