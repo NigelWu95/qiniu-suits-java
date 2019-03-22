@@ -1,4 +1,4 @@
-package com.qiniu.service.qoss;
+package com.qiniu.service.qdora;
 
 import com.google.gson.JsonParser;
 import com.qiniu.persistence.FileMap;
@@ -11,26 +11,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
+public class QueryAvinfo implements ILineProcess<Map<String, String>>, Cloneable {
 
+    final private String processName;
     private String domain;
     private String protocol;
     final private String urlIndex;
     final private String accessKey;
     final private String secretKey;
-    final private String algorithm;
-    private FileChecker fileChecker;
+    private MediaManager mediaManager;
     final private String rmPrefix;
-    final private String processName;
     private int retryTimes = 3;
     final private String savePath;
     private String saveTag;
     private int saveIndex;
     private FileMap fileMap;
 
-    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
-                     String rmPrefix, String savePath, int saveIndex) throws IOException {
-        this.processName = "qhash";
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
+                       String rmPrefix, String savePath, int saveIndex) throws IOException {
+        this.processName = "avinfo";
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
@@ -40,10 +39,9 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else this.urlIndex = urlIndex;
-        this.algorithm = algorithm;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
-        this.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null :
+        this.mediaManager = new MediaManager(protocol, accessKey == null ? null :
                 Auth.create(accessKey, secretKey));
         this.rmPrefix = rmPrefix;
         this.savePath = savePath;
@@ -53,9 +51,9 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.fileMap.initDefaultWriters();
     }
 
-    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
-                     String rmPrefix, String savePath) throws IOException {
-        this(domain, algorithm, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
+                       String rmPrefix, String savePath) throws IOException {
+        this(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
     }
 
     public String getProcessName() {
@@ -70,23 +68,23 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
         this.saveTag = saveTag == null ? "" : saveTag;
     }
 
-    public QueryHash clone() throws CloneNotSupportedException {
-        QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null :
+    public QueryAvinfo clone() throws CloneNotSupportedException {
+        QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
+        queryAvinfo.mediaManager = new MediaManager(protocol, accessKey == null ? null :
                 Auth.create(accessKey, secretKey));
-        queryHash.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
+        queryAvinfo.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
         try {
-            queryHash.fileMap.initDefaultWriters();
+            queryAvinfo.fileMap.initDefaultWriters();
         } catch (IOException e) {
             throw new CloneNotSupportedException("init writer failed.");
         }
-        return queryHash;
+        return queryAvinfo;
     }
 
     public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String url;
         String key;
-        String qhash;
+        String avinfo;
         JsonParser jsonParser = new JsonParser();
         int retry;
         Map<String, String> line;
@@ -108,14 +106,13 @@ public class QueryHash implements ILineProcess<Map<String, String>>, Cloneable {
             retry = retryTimes;
             while (retry > 0) {
                 try {
-                    qhash = fileChecker.getQHashBody(url);
-                    if (qhash != null && !"".equals(qhash)) {
+                    avinfo = mediaManager.getAvinfoBody(url);
+                    if (avinfo != null && !"".equals(avinfo))
                         // 由于响应的 body 经过格式化通过 JsonParser 处理为一行字符串
-                        fileMap.writeSuccess(finalInfo + "\t" + jsonParser.parse(qhash).toString(), false);
-                    } else {
+                        fileMap.writeSuccess(finalInfo + "\t" + jsonParser.parse(avinfo).toString(), false);
+                    else
                         // 因为需要经过 JsonParser 处理，进行下控制判断，避免抛出异常
                         fileMap.writeKeyFile("empty_result", finalInfo, false);
-                    }
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);

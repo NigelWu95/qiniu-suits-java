@@ -1,12 +1,12 @@
 package com.qiniu.entry;
 
 import com.qiniu.service.filtration.SeniorChecker;
-import com.qiniu.service.interfaces.IEntryParam;
-import com.qiniu.service.interfaces.ILineProcess;
-import com.qiniu.service.media.PfopCommand;
-import com.qiniu.service.media.QiniuPfop;
-import com.qiniu.service.media.QueryAvinfo;
-import com.qiniu.service.media.QueryPfopResult;
+import com.qiniu.interfaces.IEntryParam;
+import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.service.qdora.PfopCommand;
+import com.qiniu.service.qdora.QiniuPfop;
+import com.qiniu.service.qdora.QueryAvinfo;
+import com.qiniu.service.qdora.QueryPfopResult;
 import com.qiniu.service.filtration.BaseFieldsFilter;
 import com.qiniu.service.filtration.FilterProcess;
 import com.qiniu.service.qoss.*;

@@ -1,6 +1,6 @@
 package com.qiniu.config;
 
-import com.qiniu.service.interfaces.IEntryParam;
+import com.qiniu.interfaces.IEntryParam;
 
 import java.io.*;
 import java.util.Properties;

@@ -1,7 +1,7 @@
 package com.qiniu.service.qoss;
 
 import com.qiniu.persistence.FileMap;
-import com.qiniu.service.interfaces.ILineProcess;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.RequestUtils;

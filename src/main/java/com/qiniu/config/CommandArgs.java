@@ -1,9 +1,8 @@
 package com.qiniu.config;
 
-import com.qiniu.service.interfaces.IEntryParam;
+import com.qiniu.interfaces.IEntryParam;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
