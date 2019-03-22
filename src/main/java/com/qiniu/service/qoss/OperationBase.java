@@ -14,6 +14,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -156,11 +157,9 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         retry = 0;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
-                        if (retry < 1) {
-                            HttpResponseUtils.writeLog(e, fileMap, processList.stream().map(this::getInputParams)
-                                    .collect(Collectors.toList()));
-                            if (retry == -1) throw e;
-                        }
+                        if (retry < 0) LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1)
+                                .parallelStream().map(String::valueOf).collect(Collectors.toList()));
+                        if (retry == -1) throw e;
                     }
                 }
             }

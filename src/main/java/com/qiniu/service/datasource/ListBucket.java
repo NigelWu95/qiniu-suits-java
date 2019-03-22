@@ -93,13 +93,14 @@ public class ListBucket implements IDataSource {
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
+        int retry;
         while (fileLister.hasNext()) {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-//                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
-//                    add(fileLister.getPrefix() + "|" + fileLister.getMarker());
-//                }});
+                retry = HttpResponseUtils.checkException(fileLister.exception, 1);
+                if (retry == -1) throw fileLister.exception;
+                if (fileLister.exception.response != null) fileLister.exception.response.close();
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
@@ -114,7 +115,8 @@ public class ListBucket implements IDataSource {
             try {
                 if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
-//                HttpResponseUtils.processException(e, 1, null, null);
+                retry = HttpResponseUtils.checkException(e, 1);
+                if (retry == -1) throw e;
             }
         }
     }
@@ -146,16 +148,17 @@ public class ListBucket implements IDataSource {
      * @throws IOException 如果出现非预期异常导致列举失败（初始化 FileLister）则抛出异常
      */
     private FileLister generateLister(String prefix) throws IOException {
-        FileLister fileLister = null;
-        boolean retry = true;
-        while (retry) {
+        FileLister fileLister;
+        int retry;
+        while (true) {
             try {
                 fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
                         getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
-                retry = false;
+                break;
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
-//                HttpResponseUtils.processException(e, 1, null, null);
+                retry = HttpResponseUtils.checkException(e, 1);
+                if (retry == -1) throw e;
             }
         }
         return fileLister;

@@ -65,16 +65,6 @@ public class HttpResponseUtils {
      * @param e 需要处理的 QiniuException 异常
      * @param retry 当前重试次数
      * @param fileMap 记录错误信息的持久化对象
-     * @param info 需要和错误信息同时记录的原始 info（可以传入文件名等信息）
-     * @return 返回重试次数（可能有些异常需要直接将重试次数置为 0 但不抛出异常）
-     * @throws IOException 持久化错误信息失败可能抛出的异常或传入的异常经判断后需要抛出
-     */
-
-    /**
-     * 处理异常结果，提取异常信息进行判断或者在需要抛出异常时记录具体错误描述
-     * @param e 需要处理的 QiniuException 异常
-     * @param retry 当前重试次数
-     * @param fileMap 记录错误信息的持久化对象
      * @param infoList 需要和错误信息同时记录的原始 info 列表
      * @return 返回重试次数（可能有些异常需要直接将重试次数置为 0 但不抛出异常）
      * @throws IOException 持久化错误信息失败可能抛出的异常或传入的异常经判断后需要抛出
@@ -122,7 +112,7 @@ public class HttpResponseUtils {
      * 处理异常结果，提取异常信息进行判断或者在需要抛出异常时记录具体错误描述
      * @param e 需要处理的 QiniuException 异常
      * @param retry 当前重试次数
-     * @return 返回重试次数，返回 -1 表示该异常应该抛出，返回 0 表示该异常可以记录并进行跳过，返回 1 表示可以进行重试
+     * @return 返回重试次数，返回 -2 表示传入的异常为空，返回 -1 表示该异常应该抛出，返回 0 表示该异常可以记录并跳过，返回 1 表示可以进行重试
      */
     public static int checkException(QiniuException e, int retry) {
         if (e != null) {
@@ -143,6 +133,8 @@ public class HttpResponseUtils {
                     return -1;
                 }
             }
+        } else {
+            return -2;
         }
 
         // 处理一次异常返回的重试次数应该少一次

@@ -8,10 +8,12 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -76,11 +78,13 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
     public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         int retry;
         String key;
-        for (Map<String, String> line : lineList) {
+        Map<String, String> line;
+        for (int i = 0; i < lineList.size(); i++) {
+            line = lineList.get(i);
             try {
                 key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
             } catch (IOException e) {
-                fileMap.writeError(line.get("key") + "\t" + e.getMessage(), false);
+                LogUtils.writeLog(e, fileMap, line.get("key"));
                 continue;
             }
             retry = retryTimes;
@@ -91,9 +95,11 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry < 1) {
-                        HttpResponseUtils.writeLog(e, fileMap, line.get("key"));
-                        if (retry == -1) throw e;
+                    if (retry == 0) LogUtils.writeLog(e, fileMap, line.get("key"));
+                    else if (retry == -1) {
+                        LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).parallelStream()
+                                .map(String::valueOf).collect(Collectors.toList()));
+                        throw e;
                     }
                 }
             }
