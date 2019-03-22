@@ -9,9 +9,9 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -131,7 +131,9 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
         String key;
         Response response;
         int retry;
-        for (Map<String, String> line : lineList) {
+        Map<String, String> line;
+        for (int i = 0; i < lineList.size(); i++) {
+            line = lineList.get(i);
             try {
                 if (urlIndex != null) {
                     url = line.get(urlIndex);
@@ -155,9 +157,11 @@ public class AsyncFetch implements ILineProcess<Map<String, String>>, Cloneable 
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry < 1) {
-                        HttpResponseUtils.writeLog(e, fileMap, finalInfo);
-                        if (retry == -1) throw e;
+                    if (retry == 0) LogUtils.writeLog(e, fileMap, line.get("key"));
+                    else if (retry == -1) {
+                        LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).parallelStream()
+                                .map(String::valueOf).collect(Collectors.toList()));
+                        throw e;
                     }
                 }
             }

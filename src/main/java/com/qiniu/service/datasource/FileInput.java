@@ -65,18 +65,17 @@ public class FileInput implements IDataSource {
         List<Map<String, String>> infoMapList;
         List<String> writeList;
         String line = "";
-        int autoRetry;
+        int retry;
         while (line != null) {
-            autoRetry = 5;
-            while (autoRetry > 0) {
+            retry = 5;
+            while (retry > 0) {
                 try {
                     // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
                     line = reader.readLine();
-                    autoRetry = 0;
+                    retry = 0;
                 } catch (IOException e) {
-                    String finalLine = line;
-//                    autoRetry = HttpResponseUtils.processException(new QiniuException(e), autoRetry, fileMap,
-//                            new ArrayList<String>(){{ add(finalLine); }});
+                    retry--;
+                    if (retry == 0) throw e;
                 }
             }
             if (line != null) srcList.add(line);
@@ -92,9 +91,10 @@ public class FileInput implements IDataSource {
                 try {
                     if (processor != null) processor.processLine(infoMapList);
                 } catch (QiniuException e) {
-//                    HttpResponseUtils.processException(e, 1, null, null);
+                    retry = HttpResponseUtils.checkException(e, 1);
+                    if (retry == -1) throw e;
                 }
-                srcList = new ArrayList<>();
+                srcList.clear();
             }
         }
     }

@@ -7,11 +7,13 @@ import com.qiniu.persistence.FileMap;
 import com.qiniu.common.QiniuException;
 import com.qiniu.service.interfaces.ILineProcess;
 import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
 
@@ -99,7 +101,9 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
     public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         String result;
         int retry;
-        for (Map<String, String> line : lineList) {
+        Map<String, String> line;
+        for (int i = 0; i < lineList.size(); i++) {
+            line = lineList.get(i);
             retry = retryTimes;
             while (retry > 0) {
                 try {
@@ -108,9 +112,11 @@ public class QueryPfopResult implements ILineProcess<Map<String, String>>, Clone
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry < 1) {
-                        HttpResponseUtils.writeLog(e, fileMap, line.get(pidIndex));
-                        if (retry == -1) throw e;
+                    if (retry == 0) LogUtils.writeLog(e, fileMap, line.get("key"));
+                    else if (retry == -1) {
+                        LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).parallelStream()
+                                .map(String::valueOf).collect(Collectors.toList()));
+                        throw e;
                     }
                 }
             }
