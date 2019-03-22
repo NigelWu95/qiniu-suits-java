@@ -1,4 +1,4 @@
-package com.qiniu.service.ai;
+package com.qiniu.service.qai;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
