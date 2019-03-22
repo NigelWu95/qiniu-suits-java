@@ -1,15 +1,15 @@
 package com.qiniu.entry;
 
-import com.qiniu.service.filtration.SeniorChecker;
+import com.qiniu.process.filtration.SeniorChecker;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.service.qdora.PfopCommand;
-import com.qiniu.service.qdora.QiniuPfop;
-import com.qiniu.service.qdora.QueryAvinfo;
-import com.qiniu.service.qdora.QueryPfopResult;
-import com.qiniu.service.filtration.BaseFieldsFilter;
-import com.qiniu.service.filtration.FilterProcess;
-import com.qiniu.service.qoss.*;
+import com.qiniu.process.qdora.PfopCommand;
+import com.qiniu.process.qdora.QiniuPfop;
+import com.qiniu.process.qdora.QueryAvinfo;
+import com.qiniu.process.qdora.QueryPfopResult;
+import com.qiniu.process.filtration.BaseFieldsFilter;
+import com.qiniu.process.filtration.FilterProcess;
+import com.qiniu.process.qoss.*;
 import com.qiniu.storage.Configuration;
 
 import java.io.IOException;
