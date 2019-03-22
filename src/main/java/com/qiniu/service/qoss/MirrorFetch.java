@@ -10,24 +10,23 @@ import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final protected String accessKey;
-    final protected String secretKey;
-    final protected Configuration configuration;
+    final private String accessKey;
+    final private String secretKey;
+    final private Configuration configuration;
     private BucketManager bucketManager;
-    final protected String bucket;
-    final protected String processName;
+    final private String bucket;
+    final private String processName;
     final private String rmPrefix;
-    protected int retryTimes = 3;
-    final protected String savePath;
-    protected String saveTag;
-    protected int saveIndex;
-    protected FileMap fileMap;
+    private int retryTimes = 3;
+    final private String savePath;
+    private String saveTag;
+    private int saveIndex;
+    private FileMap fileMap;
 
     public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                        String savePath, int saveIndex) throws IOException {
@@ -91,9 +90,11 @@ public class MirrorFetch implements ILineProcess<Map<String, String>>, Cloneable
                     fileMap.writeSuccess(line.get("key") + "\t" + "200", false);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.processException(e, retry, fileMap, new ArrayList<String>(){{
-                        add(line.get("key"));
-                    }});
+                    retry = HttpResponseUtils.checkException(e, retry);
+                    if (retry < 1) {
+                        HttpResponseUtils.writeLog(e, fileMap, line.get("key"));
+                        if (retry == -1) throw e;
+                    }
                 }
             }
         }

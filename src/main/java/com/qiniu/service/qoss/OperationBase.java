@@ -155,9 +155,12 @@ public abstract class OperationBase implements ILineProcess<Map<String, String>>
                         parseBatchResult(processList, result);
                         retry = 0;
                     } catch (QiniuException e) {
-                        retry = HttpResponseUtils.processException(e, retry, fileMap, processList.stream()
-                                .map(this::getInputParams).collect(Collectors.toList())
-                        );
+                        retry = HttpResponseUtils.checkException(e, retry);
+                        if (retry < 1) {
+                            HttpResponseUtils.writeLog(e, fileMap, processList.stream().map(this::getInputParams)
+                                    .collect(Collectors.toList()));
+                            if (retry == -1) throw e;
+                        }
                     }
                 }
             }

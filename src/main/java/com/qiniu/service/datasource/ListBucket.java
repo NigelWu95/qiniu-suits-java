@@ -97,9 +97,9 @@ public class ListBucket implements IDataSource {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
-                    add(fileLister.getPrefix() + "|" + fileLister.getMarker());
-                }});
+//                HttpResponseUtils.processException(fileLister.exception, 1, fileMap, new ArrayList<String>(){{
+//                    add(fileLister.getPrefix() + "|" + fileLister.getMarker());
+//                }});
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
             }
@@ -114,7 +114,7 @@ public class ListBucket implements IDataSource {
             try {
                 if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
-                HttpResponseUtils.processException(e, 1, null, null);
+//                HttpResponseUtils.processException(e, 1, null, null);
             }
         }
     }
@@ -155,7 +155,7 @@ public class ListBucket implements IDataSource {
                 retry = false;
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
-                HttpResponseUtils.processException(e, 1, null, null);
+//                HttpResponseUtils.processException(e, 1, null, null);
             }
         }
         return fileLister;
