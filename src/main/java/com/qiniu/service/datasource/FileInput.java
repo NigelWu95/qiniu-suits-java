@@ -129,6 +129,7 @@ public class FileInput implements IDataSource {
                     }
                     initFileMap.closeWriters();
                     fileMap.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
                     SystemUtils.exit(exitBool, e);
                 }
             });

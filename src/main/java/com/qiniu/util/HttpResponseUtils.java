@@ -56,12 +56,12 @@ public class HttpResponseUtils {
             System.out.println("code:" + e.code() + ", message:" + e.getMessage());
             if (e.response != null) {
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序终端先处理该异常
-                if (e.response.statusCode == 478) {
+                if (e.code() == 478 || e.code() == 404) {
                     writeLog(e, fileMap, infoList);
                     return 0;
                 }
                 // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
-                else if (e.response.statusCode != 631 && e.response.needRetry() && retry > 0) {
+                else if (e.code() != 631 && e.response.needRetry() && retry > 0) {
                     // 可重试的异常信息不需要记录，因为重试之后可能成功或者再次进行该方法
 //                    e.printStackTrace();
                     e.response.close();
