@@ -28,13 +28,11 @@ public class LineToMap implements ITypeConvert<String, Map<String, String>> {
 
     public List<Map<String, String>> convertToVList(List<String> srcList) {
         if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        // 使用 parallelStream 时，添加错误行至 errorList 需要同步代码块，stream 时可以直接 errorList.add();
         return srcList.stream()
                 .map(line -> {
                     try {
                         return lineParser.getItemMap(line);
                     } catch (Exception e) {
-//                        errorList.add(line + "\t" + e.getMessage());
                         addError(line + "\t" + e.getMessage());
                         return null;
                     }
