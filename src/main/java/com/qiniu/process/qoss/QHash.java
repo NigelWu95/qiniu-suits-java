@@ -63,7 +63,7 @@ public class QHash extends Base {
                     .replaceAll("\\?", "%3F"));
             line.put("url", protocol + "://" + domain + "/" + line.get("key"));
         }
-        return null;
+        return line;
     }
 
     protected String resultInfo(Map<String, String> line) {
