@@ -2,8 +2,6 @@ package com.qiniu.process.qdora;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.persistence.FileMap;
 import com.qiniu.process.Base;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.storage.Configuration;
@@ -12,7 +10,6 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class Pfop extends Base {
 
