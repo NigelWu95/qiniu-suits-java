@@ -79,7 +79,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param lineList 输入的行信息列表，应当是校验之后的列表（不包含空行或者确实 key 字段的行）
      * @return 输入 lineList 转换之后的 batchOperations
      */
-    protected abstract Response batchResult(List<Map<String, String>> lineList) throws IOException;
+    protected abstract Response batchResult(List<Map<String, String>> lineList) throws QiniuException;
 
     /**
      * 处理 batchOperations 执行的结果，将输入的文件信息和结果对应地记录下来
@@ -105,7 +105,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                 else
                     fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
             } else {
-                fileMap.writeKeyFile("empty_result", resultInfo(processList.get(j)), false);
+                fileMap.writeError(resultInfo(processList.get(j)) + "empty_result", false);
             }
         }
     }
@@ -183,10 +183,14 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry == 0) LogUtils.writeLog(e, fileMap, resultInfo(line));
-                    else if (retry == -1) {
-                        LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).stream()
-                                .map(this::resultInfo).collect(Collectors.toList()));
+                    String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
+                    System.out.println(message);
+                    if (retry == 0) {
+                        fileMap.writeError(resultInfo(line) + "\t" + message, false);
+                    } else if (retry == -1) {
+                        fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1).stream()
+                                .map(srcLine -> resultInfo(srcLine) + "\t" + message)
+                                .collect(Collectors.toList())), false);
                         throw e;
                     }
                 }

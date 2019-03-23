@@ -116,7 +116,6 @@ public class HttpResponseUtils {
      */
     public static int checkException(QiniuException e, int retry) {
         if (e != null) {
-            System.out.println("code:" + e.code() + ", message:" + e.getMessage());
             if (e.response != null) {
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
                 if (e.code() == 478 || e.code() == 404) {
