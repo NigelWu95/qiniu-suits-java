@@ -1,5 +1,6 @@
 package com.qiniu.process.qoss;
 
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
@@ -9,7 +10,6 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class QHash extends Base {
 
@@ -70,7 +70,7 @@ public class QHash extends Base {
         return line.get("key") + "\t" + line.get("url");
     }
 
-    protected Response batchResult(List<Map<String, String>> lineList) throws IOException {
+    protected Response batchResult(List<Map<String, String>> lineList) {
         return null;
     }
 
@@ -78,56 +78,13 @@ public class QHash extends Base {
         String qhash = fileChecker.getQHashBody(line.get("url"));
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 经过格式化通过 JsonParser 处理为一行字符串
-            return jsonParser.parse(qhash).toString();
-        } else {
-            throw new QiniuException(null, "");
-        }
-    }
-
-    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
-        String url;
-        String key;
-        String qhash;
-        JsonParser jsonParser = new JsonParser();
-        int retry;
-        Map<String, String> line;
-        for (int i = 0; i < lineList.size(); i++) {
-            line = lineList.get(i);
             try {
-                if (urlIndex != null) {
-                    url = line.get(urlIndex);
-                    key = URLUtils.getKey(url);
-                } else  {
-                    key = FileNameUtils.rmPrefix(rmPrefix, line.get("key")).replaceAll("\\?", "%3F");
-                    url = protocol + "://" + domain + "/" + key;
-                }
-            } catch (IOException e) {
-                fileMap.writeError(String.valueOf(line) + "\t" + e.getMessage(), false);
-                continue;
+                return jsonParser.parse(qhash).toString();
+            } catch (JsonParseException e) {
+                throw new QiniuException(e);
             }
-            String finalInfo = key + "\t" + url;
-            retry = retryTimes;
-            while (retry > 0) {
-                try {
-                    qhash = fileChecker.getQHashBody(url);
-                    if (qhash != null && !"".equals(qhash)) {
-                        // 由于响应的 body 经过格式化通过 JsonParser 处理为一行字符串
-                        fileMap.writeSuccess(finalInfo + "\t" + jsonParser.parse(qhash).toString(), false);
-                    } else {
-                        // 因为需要经过 JsonParser 处理，进行下控制判断，避免抛出异常
-                        fileMap.writeKeyFile("empty_result", finalInfo, false);
-                    }
-                    retry = 0;
-                } catch (QiniuException e) {
-                    retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry == 0) LogUtils.writeLog(e, fileMap, line.get("key"));
-                    else if (retry == -1) {
-                        LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).parallelStream()
-                                .map(String::valueOf).collect(Collectors.toList()));
-                        throw e;
-                    }
-                }
-            }
+        } else {
+            throw new QiniuException(null, "empty_result");
         }
     }
 }
