@@ -9,6 +9,7 @@ import com.qiniu.http.Response;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.LogUtils;
 
@@ -71,9 +72,15 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         return base;
     }
 
-    protected abstract Map<String, String> formatLine(Map<String, String> line) throws IOException;
+    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
+        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
+                .replaceAll("\\?", "%3F"));
+        return line;
+    }
 
-    protected abstract String resultInfo(Map<String, String> line);
+    protected String resultInfo(Map<String, String> line) {
+        return line.get("key");
+    }
     /**
      * 实现从 fileInfoList 转换得到 batch 操作的指令集 batchOperations，需要先清除 batchOperations 中可能存在的上次的内容
      * @param lineList 输入的行信息列表，应当是校验之后的列表（不包含空行或者确实 key 字段的行）

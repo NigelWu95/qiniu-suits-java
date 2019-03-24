@@ -7,6 +7,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,7 +36,9 @@ public class ChgStatus extends Base {
         return changeStatus;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) {
+    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
+        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
+                .replaceAll("\\?", "%3F"));
         return line;
     }
 
