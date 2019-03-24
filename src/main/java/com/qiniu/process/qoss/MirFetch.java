@@ -6,7 +6,6 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,16 +30,6 @@ public class MirFetch extends Base {
         MirFetch mirrorFetch = (MirFetch) super.clone();
         mirrorFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         return mirrorFetch;
-    }
-
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                .replaceAll("\\?", "%3F"));
-        return line;
-    }
-
-    protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
     }
 
     protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {

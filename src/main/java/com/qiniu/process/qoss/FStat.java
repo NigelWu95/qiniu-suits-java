@@ -63,14 +63,6 @@ public class FStat extends Base {
         return fileStat;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) {
-        return line;
-    }
-
-    protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
-    }
-
     @Override
     public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");

@@ -6,7 +6,6 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,12 +39,7 @@ public class CpFile extends Base {
         return copyFile;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                .replaceAll("\\?", "%3F"));
-        return line;
-    }
-
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(newKeyIndex);
     }
