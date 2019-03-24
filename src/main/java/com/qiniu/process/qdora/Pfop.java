@@ -37,12 +37,7 @@ public class Pfop extends Base {
         return qiniuPfop;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                    .replaceAll("\\?", "%3F"));
-        return line;
-    }
-
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(fopsIndex);
     }

@@ -38,10 +38,12 @@ public class QPfopResult extends Base {
         return pfopResult;
     }
 
+    @Override
     protected Map<String, String> formatLine(Map<String, String> line) {
         return line;
     }
 
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(pidIndex);
     }

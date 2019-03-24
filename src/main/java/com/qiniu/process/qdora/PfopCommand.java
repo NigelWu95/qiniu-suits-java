@@ -74,10 +74,7 @@ public class PfopCommand extends Base {
         return pfopCommand;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) {
-        return line;
-    }
-
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(avinfoIndex);
     }
