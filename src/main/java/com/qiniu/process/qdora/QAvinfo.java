@@ -4,17 +4,14 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
-import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.persistence.FileMap;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-public class Avinfo extends Base {
+public class QAvinfo extends Base {
 
     private String domain;
     private String protocol;
@@ -22,8 +19,8 @@ public class Avinfo extends Base {
     private MediaManager mediaManager;
     private JsonParser jsonParser;
 
-    public Avinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                  String rmPrefix, String savePath, int saveIndex) throws IOException {
+    public QAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
+                   String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("avinfo", accessKey, secretKey, null, null, rmPrefix, savePath, saveIndex);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
@@ -39,25 +36,13 @@ public class Avinfo extends Base {
         this.jsonParser = new JsonParser();
     }
 
-    public Avinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                  String rmPrefix, String savePath) throws IOException {
+    public QAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
+                   String rmPrefix, String savePath) throws IOException {
         this(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
-    }
-
-    public void setSaveTag(String saveTag) {
-        this.saveTag = saveTag == null ? "" : saveTag;
-    }
-
-    public Avinfo clone() throws CloneNotSupportedException {
-        Avinfo avinfo = (Avinfo)super.clone();
+    public QAvinfo clone() throws CloneNotSupportedException {
+        QAvinfo avinfo = (QAvinfo)super.clone();
         avinfo.mediaManager = new MediaManager(protocol, accessKey == null ? null :
                 Auth.create(accessKey, secretKey));
         avinfo.jsonParser = new JsonParser();
