@@ -2,10 +2,7 @@ package com.qiniu.process.qoss;
 
 import com.qiniu.http.Response;
 import com.qiniu.process.Base;
-import com.qiniu.util.Auth;
-import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.RequestUtils;
-import com.qiniu.util.URLUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,13 +21,16 @@ public class PrivateUrl extends Base {
         super("privateurl", accessKey, secretKey, null, null, rmPrefix, savePath, saveIndex);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
-            if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
-            else {
+            if (domain == null || "".equals(domain)) {
+                throw new IOException("please set one of domain and urlIndex.");
+            } else {
                 RequestUtils.checkHost(domain);
                 this.domain = domain;
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
-        } else this.urlIndex = urlIndex;
+        } else {
+            this.urlIndex = urlIndex;
+        }
         this.expires = expires == 0L ? 3600 : expires;
         this.auth = Auth.create(accessKey, secretKey);
     }
@@ -48,9 +48,7 @@ public class PrivateUrl extends Base {
 
     @Override
     protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex != null) {
-            line.put("key", URLUtils.getKey(line.get(urlIndex)));
-        } else  {
+        if (urlIndex == null) {
             line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
                     .replaceAll("\\?", "%3F"));
             urlIndex = "url";
@@ -61,7 +59,7 @@ public class PrivateUrl extends Base {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return line.get(urlIndex);
     }
 
     protected Response batchResult(List<Map<String, String>> lineList) {

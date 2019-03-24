@@ -89,27 +89,27 @@ public class MediaManager {
         return avinfo;
     }
 
-    public QPfopResult getPfopResultByJson(String pfopResultJson) throws QiniuException {
-        QPfopResult pfopResult;
+    public QueryPfopResult getPfopResultByJson(String pfopResultJson) throws QiniuException {
+        QueryPfopResult pfopResult;
         try {
-            pfopResult = JsonConvertUtils.fromJson(pfopResultJson, QPfopResult.class);
+            pfopResult = JsonConvertUtils.fromJson(pfopResultJson, QueryPfopResult.class);
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
         return pfopResult;
     }
 
-    public QPfopResult getPfopResultByJson(JsonObject pfopResultJson) throws QiniuException {
-        QPfopResult QPfopResult;
+    public QueryPfopResult getPfopResultByJson(JsonObject pfopResultJson) throws QiniuException {
+        QueryPfopResult QueryPfopResult;
         try {
-            QPfopResult = JsonConvertUtils.fromJson(pfopResultJson, QPfopResult.class);
+            QueryPfopResult = JsonConvertUtils.fromJson(pfopResultJson, QueryPfopResult.class);
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
-        return QPfopResult;
+        return QueryPfopResult;
     }
 
-    public QPfopResult getPfopResultById(String persistentId) throws QiniuException {
+    public QueryPfopResult getPfopResultById(String persistentId) throws QiniuException {
         JsonObject pfopResultJson = JsonConvertUtils.toJsonObject(getPfopResultBodyById(persistentId));
         JsonElement jsonElement = pfopResultJson.get("reqid");
         if (jsonElement == null || jsonElement instanceof JsonNull) {

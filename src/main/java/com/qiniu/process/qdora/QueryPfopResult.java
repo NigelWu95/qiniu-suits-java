@@ -1,132 +1,76 @@
 package com.qiniu.process.qdora;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
 import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
-import com.qiniu.persistence.FileMap;
-import com.qiniu.common.QiniuException;
-import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.LogUtils;
+import com.qiniu.process.Base;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-public class QueryPfopResult implements ILineProcess<Map<String, String>>, Cloneable {
+public class QueryPfopResult extends Base {
 
-    final private String processName;
     final private String pidIndex;
     private MediaManager mediaManager;
-    private int retryTimes = 3;
-    final private String savePath;
-    private String saveTag;
-    private int saveIndex;
-    private FileMap fileMap;
+    private Gson gson;
 
     public QueryPfopResult(String pidIndex, String savePath, int saveIndex) throws IOException {
-        this.processName = "pfopresult";
+        super("pfopresult", null, null, null, null, null, savePath, saveIndex);
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
         else this.pidIndex = pidIndex;
         this.mediaManager = new MediaManager();
-        this.savePath = savePath;
-        this.saveTag = "";
-        this.saveIndex = saveIndex;
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
-        this.fileMap.initDefaultWriters();
+        this.gson = new Gson();
     }
 
     public QueryPfopResult(String persistentIdIndex, String savePath) throws IOException {
         this(persistentIdIndex, savePath, 0);
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
-    }
-
-    public void setSaveTag(String saveTag) {
-        this.saveTag = saveTag == null ? "" : saveTag;
-    }
-
     public QueryPfopResult clone() throws CloneNotSupportedException {
-        QueryPfopResult queryPfopResult = (QueryPfopResult)super.clone();
-        queryPfopResult.mediaManager = new MediaManager();
-        queryPfopResult.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
-        try {
-            queryPfopResult.fileMap.initDefaultWriters();
-        } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
-        }
-        return queryPfopResult;
+        QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
+        pfopResult.mediaManager = new MediaManager();
+        pfopResult.gson = new Gson();
+        return pfopResult;
     }
 
-    /**
-     * 处理操作的结果
-     * @param line 原始的 line
-     * @param result 处理的结果字符串
-     * @throws IOException 写入处理结果报错
-     */
-    private void parseResult(Map<String, String> line, String result) throws IOException{
+    @Override
+    protected Map<String, String> formatLine(Map<String, String> line) {
+        return line;
+    }
+
+    @Override
+    protected String resultInfo(Map<String, String> line) {
+        return line.get(pidIndex);
+    }
+
+    protected Response batchResult(List<Map<String, String>> lineList) {
+        return null;
+    }
+
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
         if (result != null && !"".equals(result)) {
-            PfopResult pfopResult = new Gson().fromJson(result, PfopResult.class);
+            PfopResult pfopResult;
+            try {
+                pfopResult = gson.fromJson(result, PfopResult.class);
+            } catch (JsonParseException e) {
+                throw new QiniuException(e);
+            }
+            List<String> items = new ArrayList<>();
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
                 // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
-                if (item.code == 0) {
-                    fileMap.writeSuccess(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
-                            item.key + "\t" + result, false);
-                } else {
-                    fileMap.writeError( line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" +
-                            item.key + "\t" + item.cmd + "\t" + item.code + "\t" + item.desc + "\t" +
-                            item.error, false);
-                }
+                items.add(line.get(pidIndex) + item.code + "\t" + pfopResult.inputKey + "\t" + item.key + "\t" +
+                        item.cmd + "\t" + "\t" + item.desc + "\t" + item.error);
             }
+            return String.join("\n", items);
         } else {
-            fileMap.writeKeyFile("empty_result", line.get(pidIndex), false);
+            throw new QiniuException(null, "empty_result");
         }
-    }
-
-    /**
-     * 批量处理输入行进行 pfop result 的查询
-     * @param lineList 输入列表
-     * @param retryTimes 每一行信息处理时需要的重试次数
-     * @throws IOException 处理失败可能抛出的异常
-     */
-    public void processLine(List<Map<String, String>> lineList, int retryTimes) throws IOException {
-        String result;
-        int retry;
-        Map<String, String> line;
-        for (int i = 0; i < lineList.size(); i++) {
-            line = lineList.get(i);
-            retry = retryTimes;
-            while (retry > 0) {
-                try {
-                    result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
-                    parseResult(line, result);
-                    retry = 0;
-                } catch (QiniuException e) {
-                    retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry == 0) LogUtils.writeLog(e, fileMap, line.get("key"));
-                    else if (retry == -1) {
-                        LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).parallelStream()
-                                .map(String::valueOf).collect(Collectors.toList()));
-                        throw e;
-                    }
-                }
-            }
-        }
-    }
-
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
-        processLine(lineList, retryTimes);
-    }
-
-    public void closeResource() {
-        fileMap.closeWriters();
     }
 }

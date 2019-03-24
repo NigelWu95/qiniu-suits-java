@@ -1,18 +1,24 @@
 package com.qiniu.process.qoss;
 
-import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
+import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class DeleteFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
+public class DeleteFile extends Base {
+
+    private BucketManager bucketManager;
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                       String savePath, int saveIndex) throws IOException {
         super("delete", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -20,13 +26,19 @@ public class DeleteFile extends OperationBase implements ILineProcess<Map<String
         this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);
     }
 
-    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));
-        return batchOperations;
+    public DeleteFile clone() throws CloneNotSupportedException {
+        DeleteFile deleteFile = (DeleteFile)super.clone();
+        deleteFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        return deleteFile;
     }
 
-    public String getInputParams(Map<String, String> line) {
-        return line.get("key");
+    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));
+        return bucketManager.batch(batchOperations);
+    }
+
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
     }
 }
