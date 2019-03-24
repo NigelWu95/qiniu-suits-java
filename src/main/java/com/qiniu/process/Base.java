@@ -12,6 +12,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.LogUtils;
+import com.qiniu.util.ProcessUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +52,16 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
 
     public String getProcessName() {
         return this.processName;
+    }
+
+    public void setBatchSize(int batchSize) throws IOException {
+        if (!ProcessUtils.canBatch(processName)) {
+            throw new IOException(processName + " is not support batch operation.");
+        } else if (batchSize > 1000) {
+            throw new IOException("batch size must less than 1000.");
+        } else {
+            this.batchSize = batchSize;
+        }
     }
 
     public void setRetryTimes(int retryTimes) {
@@ -139,13 +150,13 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
             }
         }).collect(Collectors.toList());
         if (errorLineList.size() > 0) fileMap.writeError(String.join("\n", errorLineList), false);
-        int times = lineList.size()/1000 + 1;
+        int times = lineList.size()/batchSize + 1;
         List<Map<String, String>> processList;
         Response response;
         String result;
         int retry;
         for (int i = 0; i < times; i++) {
-            processList = lineList.subList(1000 * i, i == times - 1 ? lineList.size() : 1000 * (i + 1));
+            processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
             if (processList.size() > 0) {
                 retry = retryTimes;
                 while (retry > 0) {

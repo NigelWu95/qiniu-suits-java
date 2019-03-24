@@ -5,26 +5,26 @@ import java.util.List;
 
 public class ProcessUtils {
 
-    private static List<String> needUrl = new ArrayList<String>(){{
+    private static List<String> needUrlProcesses = new ArrayList<String>(){{
         add("asyncfetch");
         add("privateurl");
         add("qhash");
         add("avinfo");
     }};
-    private static List<String> needMd5 = new ArrayList<String>(){{
+    private static List<String> needMd5Processes = new ArrayList<String>(){{
         add("asyncfetch");
     }};
-    private static List<String> needNewKey = new ArrayList<String>(){{
+    private static List<String> needNewKeyProcesses = new ArrayList<String>(){{
         add("rename");
         add("copy");
     }};
-    private static List<String> needFops = new ArrayList<String>(){{
+    private static List<String> needFopsProcesses = new ArrayList<String>(){{
         add("pfop");
     }};
-    private static List<String> needPid = new ArrayList<String>(){{
+    private static List<String> needPidProcesses = new ArrayList<String>(){{
         add("pfopresult");
     }};
-    private static List<String> needAvinfo = new ArrayList<String>(){{
+    private static List<String> needAvinfoProcesses = new ArrayList<String>(){{
         add("pfopcmd");
     }};
     private static List<String> needBucketProcesses = new ArrayList<String>(){{
@@ -54,4 +54,40 @@ public class ProcessUtils {
         add("delete");
         add("stat");
     }};
+
+    public static boolean needUrl(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needMd5(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needNewKey(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needFops(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needPid(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needAvinfo(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needBucket(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean needAuth(String process) {
+        return canBatchProcesses.contains(process);
+    }
+
+    public static boolean canBatch(String process) {
+        return canBatchProcesses.contains(process);
+    }
 }
