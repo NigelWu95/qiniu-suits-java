@@ -14,14 +14,14 @@ import java.util.Map;
 
 public class ChgStatus extends Base {
 
-    private BucketManager bucketManager;
     final private int status;
+    private BucketManager bucketManager;
 
     public ChgStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                      String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         this.status = status;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public ChgStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,

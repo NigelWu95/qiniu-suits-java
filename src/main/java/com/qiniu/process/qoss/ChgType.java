@@ -15,13 +15,14 @@ import java.util.Map;
 
 public class ChgType extends Base {
 
-    private BucketManager bucketManager;
     final private int type;
+    private BucketManager bucketManager;
 
     public ChgType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                    String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.type = type;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChgType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
