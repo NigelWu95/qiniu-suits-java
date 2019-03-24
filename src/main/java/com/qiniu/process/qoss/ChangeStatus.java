@@ -1,21 +1,27 @@
 package com.qiniu.process.qoss;
 
-import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
+import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class ChangeStatus extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
+public class ChangeStatus extends Base {
 
     final private int status;
+    private BucketManager bucketManager;
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                         String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.status = status;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -23,13 +29,19 @@ public class ChangeStatus extends OperationBase implements ILineProcess<Map<Stri
         this(accessKey, secretKey, configuration, bucket, status, rmPrefix, savePath, 0);
     }
 
-    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
-        return batchOperations;
+    public ChangeStatus clone() throws CloneNotSupportedException {
+        ChangeStatus changeStatus = (ChangeStatus)super.clone();
+        changeStatus.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        return changeStatus;
     }
 
-    public String getInputParams(Map<String, String> line) {
-        return line.get("key");
+    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        BatchOperations batchOperations = new BatchOperations();
+        lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
+        return bucketManager.batch(batchOperations);
+    }
+
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
     }
 }

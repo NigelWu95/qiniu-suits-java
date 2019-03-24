@@ -1,18 +1,22 @@
 package com.qiniu.process.qoss;
 
-import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
+import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class CopyFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
+public class CopyFile extends Base {
 
     final private String toBucket;
     final private String newKeyIndex;
     final private String keyPrefix;
+    private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
@@ -21,6 +25,7 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -28,14 +33,25 @@ public class CopyFile extends OperationBase implements ILineProcess<Map<String, 
         this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, savePath, 0);
     }
 
-    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"),
-                toBucket, keyPrefix + line.get(newKeyIndex)));
-        return batchOperations;
+    public CopyFile clone() throws CloneNotSupportedException {
+        CopyFile copyFile = (CopyFile)super.clone();
+        copyFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        return copyFile;
     }
 
-    public String getInputParams(Map<String, String> line) {
+    @Override
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(newKeyIndex);
+    }
+
+    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
+                keyPrefix + line.get(newKeyIndex)));
+        return bucketManager.batch(batchOperations);
+    }
+
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
     }
 }

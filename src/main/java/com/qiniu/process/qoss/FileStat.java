@@ -1,24 +1,28 @@
 package com.qiniu.process.qoss;
 
 import com.google.gson.*;
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.line.JsonObjParser;
 import com.qiniu.line.MapToTableFormatter;
-import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FileStat extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
+public class FileStat extends Base {
 
     private String format;
     private String separator;
     private JsonObjParser jsonObjParser;
     private IStringFormat<Map<String, String>> stringFormatter;
+    private BucketManager bucketManager;
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
@@ -42,6 +46,7 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
             throw new IOException("please check your format for line to map.");
         }
         this.stringFormatter = new MapToTableFormatter(this.separator, null);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -53,17 +58,8 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
         FileStat fileStat = (FileStat)super.clone();
         fileStat.jsonObjParser = jsonObjParser.clone();
         fileStat.stringFormatter = new MapToTableFormatter(separator, null);
+        fileStat.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         return fileStat;
-    }
-
-    public String getInputParams(Map<String, String> line) {
-        return line.get("key");
-    }
-
-    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
-        return batchOperations;
     }
 
     @Override
@@ -101,5 +97,15 @@ public class FileStat extends OperationBase implements ILineProcess<Map<String, 
                 fileMap.writeError(processList.get(j).get("key") + "\tempty stat result", false);
             }
         }
+    }
+
+    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
+        return bucketManager.batch(batchOperations);
+    }
+
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
     }
 }

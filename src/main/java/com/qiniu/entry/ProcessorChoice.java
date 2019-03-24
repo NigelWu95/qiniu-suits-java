@@ -3,12 +3,12 @@ package com.qiniu.entry;
 import com.qiniu.process.filtration.SeniorChecker;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.process.qdora.Pfop;
 import com.qiniu.process.qdora.PfopCommand;
-import com.qiniu.process.qdora.QiniuPfop;
-import com.qiniu.process.qdora.QueryAvinfo;
-import com.qiniu.process.qdora.QueryPfopResult;
 import com.qiniu.process.filtration.BaseFieldsFilter;
 import com.qiniu.process.filtration.FilterProcess;
+import com.qiniu.process.qdora.QueryAvinfo;
+import com.qiniu.process.qdora.QueryPfopResult;
 import com.qiniu.process.qoss.*;
 import com.qiniu.storage.Configuration;
 
@@ -249,7 +249,7 @@ public class ProcessorChoice {
                     " private pipeline, please set the force-public as true.");
         }
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new QiniuPfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath);
+        return new Pfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {

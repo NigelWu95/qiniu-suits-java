@@ -1,18 +1,22 @@
 package com.qiniu.process.qoss;
 
-import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
+import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.Auth;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class MoveFile extends OperationBase implements ILineProcess<Map<String, String>>, Cloneable {
+public class MoveFile extends Base {
 
     final private String toBucket;
     final private String newKeyIndex;
     final private String keyPrefix;
+    private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath,
@@ -37,6 +41,7 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
         }
         this.toBucket = toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -46,8 +51,19 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 savePath, 0);
     }
 
-    synchronized public BucketManager.BatchOperations getBatchOperations(List<Map<String, String>> lineList) {
-        batchOperations.clearOps();
+    public MoveFile clone() throws CloneNotSupportedException {
+        MoveFile moveFile = (MoveFile)super.clone();
+        moveFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        return moveFile;
+    }
+
+    @Override
+    protected String resultInfo(Map<String, String> line) {
+        return line.get("key") + "\t" + line.get(newKeyIndex);
+    }
+
+    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
                 batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
@@ -55,10 +71,10 @@ public class MoveFile extends OperationBase implements ILineProcess<Map<String, 
                 batchOperations.addMoveOp(bucket, line.get("key"), toBucket, keyPrefix + line.get(newKeyIndex));
             }
         });
-        return batchOperations;
+        return bucketManager.batch(batchOperations);
     }
 
-    public String getInputParams(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(newKeyIndex);
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
     }
 }
