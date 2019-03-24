@@ -201,8 +201,6 @@ public class ProcessorChoice {
         String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
-        String sign = entryParam.getValue("private", "false");
-        sign = commonParams.checked(sign, "private", "(true|false)");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String keyPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
@@ -216,7 +214,7 @@ public class ProcessorChoice {
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = new AsyncFetch(accessKey, secretKey, configuration, toBucket,
-                domain, protocol, Boolean.valueOf(sign), keyPrefix, rmPrefix, urlIndex, savePath);
+                domain, protocol, keyPrefix, rmPrefix, urlIndex, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,

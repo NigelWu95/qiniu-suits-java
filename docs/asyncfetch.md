@@ -13,7 +13,6 @@ sk=
 to-bucket=
 domain=
 protocol=
-private=false
 url-index=
 add-prefix=
 rm-prefix=
@@ -33,7 +32,6 @@ ignore-same-key=
 |to-bucket|字符串| 保存抓取结果的空间名|  
 |domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当数据源方式为 file 且指定 url-index 时无需设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
-|private| true/false| 资源域名是否是七牛私有空间的域名（默认否）|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|  
@@ -52,6 +50,6 @@ ignore-same-key=
 
 ## 命令行参数方式
 ```
--process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -domain= -protocol= -private= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
+-process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -domain= -protocol= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
 ```
 
