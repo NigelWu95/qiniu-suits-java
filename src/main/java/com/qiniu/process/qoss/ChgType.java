@@ -36,14 +36,6 @@ public class ChgType extends Base {
         return changeType;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) {
-        return line;
-    }
-
-    protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
-    }
-
     protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BatchOperations batchOperations = new BatchOperations();
         lineList.forEach(line -> batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON :

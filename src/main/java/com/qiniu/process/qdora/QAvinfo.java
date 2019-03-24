@@ -49,6 +49,7 @@ public class QAvinfo extends Base {
         return avinfo;
     }
 
+    @Override
     protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
         if (urlIndex != null) {
             line.put("key", URLUtils.getKey(line.get(urlIndex)));
@@ -60,6 +61,7 @@ public class QAvinfo extends Base {
         return line;
     }
 
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(urlIndex);
     }

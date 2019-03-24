@@ -57,10 +57,7 @@ public class MvFile extends Base {
         return moveFile;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) {
-        return line;
-    }
-
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(newKeyIndex);
     }
