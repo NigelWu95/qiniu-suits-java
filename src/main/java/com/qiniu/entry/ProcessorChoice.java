@@ -141,7 +141,7 @@ public class ProcessorChoice {
             case "delete": processor = getDeleteFile(); break;
             case "asyncfetch": processor = getAsyncFetch(); break;
             case "avinfo": processor = getQueryAvinfo(); break;
-            case "pfop": processor = getQiniuPfop(); break;
+            case "pfop": processor = getPfop(); break;
             case "pfopresult": processor = getPfopResult(); break;
             case "qhash": processor = getQueryHash(); break;
             case "stat": processor = getFileStat(); break;
@@ -238,7 +238,7 @@ public class ProcessorChoice {
         return new QueryAvinfo(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getQiniuPfop() throws IOException {
+    private ILineProcess<Map<String, String>> getPfop() throws IOException {
         String fopsIndex = commonParams.containIndex("fops") ? "fops" : null;
         String forcePublic = entryParam.getValue("force-public", "false");
         String pipeline = entryParam.getValue("pipeline", null);

@@ -1,14 +1,12 @@
 package com.qiniu.process.qoss;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public class MirrorFetch extends Base {
@@ -30,10 +28,6 @@ public class MirrorFetch extends Base {
         MirrorFetch mirrorFetch = (MirrorFetch) super.clone();
         mirrorFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         return mirrorFetch;
-    }
-
-    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        return null;
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {

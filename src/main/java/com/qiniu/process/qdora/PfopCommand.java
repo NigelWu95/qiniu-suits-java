@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
-import com.qiniu.http.Response;
 import com.qiniu.model.qdora.Avinfo;
 import com.qiniu.model.qdora.VideoStream;
 import com.qiniu.process.Base;
@@ -77,10 +76,6 @@ public class PfopCommand extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(avinfoIndex);
-    }
-
-    protected Response batchResult(List<Map<String, String>> lineList) {
-        return null;
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {

@@ -1,14 +1,12 @@
 package com.qiniu.process.qdora;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public class Pfop extends Base {
@@ -40,10 +38,6 @@ public class Pfop extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(fopsIndex);
-    }
-
-    protected Response batchResult(List<Map<String, String>> lineList) {
-        return null;
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {

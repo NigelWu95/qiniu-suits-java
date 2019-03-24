@@ -4,6 +4,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 
@@ -63,7 +64,7 @@ public class MoveFile extends Base {
     }
 
     protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
                 batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
@@ -72,9 +73,5 @@ public class MoveFile extends Base {
             }
         });
         return bucketManager.batch(batchOperations);
-    }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
     }
 }

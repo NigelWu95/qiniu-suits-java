@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public abstract class Base implements ILineProcess<Map<String, String>>, Cloneable {
+public class Base implements ILineProcess<Map<String, String>>, Cloneable {
 
     final protected String processName;
     final protected Configuration configuration;
@@ -81,12 +81,15 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
+
     /**
      * 实现从 fileInfoList 转换得到 batch 操作的指令集 batchOperations，需要先清除 batchOperations 中可能存在的上次的内容
      * @param lineList 输入的行信息列表，应当是校验之后的列表（不包含空行或者确实 key 字段的行）
      * @return 输入 lineList 转换之后的 batchOperations
      */
-    protected abstract Response batchResult(List<Map<String, String>> lineList) throws QiniuException;
+    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        return null;
+    }
 
     /**
      * 处理 batchOperations 执行的结果，将输入的文件信息和结果对应地记录下来
@@ -162,7 +165,9 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         }
     }
 
-    protected abstract String singleResult(Map<String, String> line) throws QiniuException;
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
+    }
 
     /**
      * 批量处理输入行进行 pfop result 的查询
