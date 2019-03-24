@@ -15,7 +15,7 @@ public class QAvinfo extends Base {
 
     private String domain;
     private String protocol;
-    final private String urlIndex;
+    private String urlIndex;
     private MediaManager mediaManager;
     private JsonParser jsonParser;
 
@@ -56,7 +56,8 @@ public class QAvinfo extends Base {
         } else  {
             line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
                     .replaceAll("\\?", "%3F"));
-            line.put("url", protocol + "://" + domain + "/" + line.get("key"));
+            urlIndex = "url";
+            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key"));
         }
         return line;
     }
@@ -71,7 +72,7 @@ public class QAvinfo extends Base {
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String avinfo = mediaManager.getAvinfoBody(line.get("url"));
+        String avinfo = mediaManager.getAvinfoBody(line.get(urlIndex));
         if (avinfo != null && !"".equals(avinfo)) {
             // 由于响应的 body 经过格式化通过 JsonParser 处理为一行字符串
             try {

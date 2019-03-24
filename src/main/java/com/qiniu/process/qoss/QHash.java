@@ -15,8 +15,8 @@ public class QHash extends Base {
 
     private String domain;
     private String protocol;
-    final private String urlIndex;
-    final private String algorithm;
+    private String urlIndex;
+    private String algorithm;
     private FileChecker fileChecker;
     private JsonParser jsonParser;
 
@@ -51,19 +51,22 @@ public class QHash extends Base {
         return qHash;
     }
 
+    @Override
     protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
         if (urlIndex != null) {
             line.put("key", URLUtils.getKey(line.get(urlIndex)));
         } else  {
             line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
                     .replaceAll("\\?", "%3F"));
-            line.put("url", protocol + "://" + domain + "/" + line.get("key"));
+            urlIndex = "url";
+            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key"));
         }
         return line;
     }
 
+    @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get("url");
+        return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     protected Response batchResult(List<Map<String, String>> lineList) {
@@ -71,7 +74,7 @@ public class QHash extends Base {
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String qhash = fileChecker.getQHashBody(line.get("url"));
+        String qhash = fileChecker.getQHashBody(line.get(urlIndex));
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 经过格式化通过 JsonParser 处理为一行字符串
             try {

@@ -33,16 +33,6 @@ public class DelFile extends Base {
         return deleteFile;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                .replaceAll("\\?", "%3F"));
-        return line;
-    }
-
-    protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
-    }
-
     protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));
