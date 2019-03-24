@@ -39,8 +39,4 @@ public class UpdateLifecycle extends Base {
         lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));
         return bucketManager.batch(batchOperations);
     }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
 }

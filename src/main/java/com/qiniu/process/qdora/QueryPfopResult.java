@@ -3,7 +3,6 @@ package com.qiniu.process.qdora;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.process.Base;
@@ -46,10 +45,6 @@ public class QueryPfopResult extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(pidIndex);
-    }
-
-    protected Response batchResult(List<Map<String, String>> lineList) {
-        return null;
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {

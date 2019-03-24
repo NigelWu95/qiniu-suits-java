@@ -42,8 +42,4 @@ public class ChangeType extends Base {
                 StorageType.INFREQUENCY, line.get("key")));
         return bucketManager.batch(batchOperations);
     }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
 }

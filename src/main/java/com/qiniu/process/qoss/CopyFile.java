@@ -50,8 +50,4 @@ public class CopyFile extends Base {
                 keyPrefix + line.get(newKeyIndex)));
         return bucketManager.batch(batchOperations);
     }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
 }

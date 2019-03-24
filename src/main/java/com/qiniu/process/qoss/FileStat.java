@@ -104,8 +104,4 @@ public class FileStat extends Base {
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
         return bucketManager.batch(batchOperations);
     }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
 }

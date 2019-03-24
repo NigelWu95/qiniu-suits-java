@@ -8,7 +8,6 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public class AsyncFetch extends Base {
@@ -68,18 +67,6 @@ public class AsyncFetch extends Base {
         this.hasCustomArgs = true;
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
-    }
-
-    public void setSaveTag(String saveTag) {
-        this.saveTag = saveTag == null ? "" : saveTag;
-    }
-
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
         asyncFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
@@ -111,12 +98,8 @@ public class AsyncFetch extends Base {
         return line.get(urlIndex);
     }
 
-    protected Response batchResult(List<Map<String, String>> lineList) {
-        return null;
-    }
-
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        Response response = fetch(line.get("url"), keyPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
-        return line.get("url") + "\t" + HttpResponseUtils.responseJson(response);
+        Response response = fetch(line.get(urlIndex), keyPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
+        return line.get(urlIndex) + "\t" + HttpResponseUtils.responseJson(response);
     }
 }

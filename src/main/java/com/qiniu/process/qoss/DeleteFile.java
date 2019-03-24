@@ -37,8 +37,4 @@ public class DeleteFile extends Base {
         lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));
         return bucketManager.batch(batchOperations);
     }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
 }

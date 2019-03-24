@@ -40,8 +40,4 @@ public class ChangeStatus extends Base {
         lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
         return bucketManager.batch(batchOperations);
     }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
 }

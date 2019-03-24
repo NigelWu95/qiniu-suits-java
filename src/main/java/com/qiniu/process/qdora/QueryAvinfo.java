@@ -3,12 +3,10 @@ package com.qiniu.process.qdora;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public class QueryAvinfo extends Base {
@@ -64,10 +62,6 @@ public class QueryAvinfo extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
-    }
-
-    protected Response batchResult(List<Map<String, String>> lineList) {
-        return null;
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {
