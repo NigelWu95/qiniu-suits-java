@@ -22,6 +22,7 @@ public class ChangeStatus extends Base {
         super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.status = status;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.batchSize = 1000;
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,

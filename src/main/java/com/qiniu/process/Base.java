@@ -27,7 +27,7 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
     final protected String secretKey;
     final protected String bucket;
     final protected String rmPrefix;
-    protected int batchSize = 0;
+    protected int batchSize;
     protected int retryTimes = 3;
     protected String saveTag;
     protected int saveIndex;

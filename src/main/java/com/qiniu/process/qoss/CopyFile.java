@@ -26,6 +26,7 @@ public class CopyFile extends Base {
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.batchSize = 1000;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,

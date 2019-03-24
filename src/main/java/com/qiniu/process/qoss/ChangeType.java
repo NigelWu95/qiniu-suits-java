@@ -22,7 +22,8 @@ public class ChangeType extends Base {
                       String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.type = type;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.batchSize = 1000;
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,

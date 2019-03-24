@@ -21,6 +21,7 @@ public class UpdateLifecycle extends Base {
         super("lifecycle", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.days = days;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.batchSize = 1000;
     }
 
     public UpdateLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
