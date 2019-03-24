@@ -35,13 +35,16 @@ public class AsyncFetch extends Base {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
-            if (domain == null || "".equals(domain)) throw new IOException("please set one of domain and urlIndex.");
-            else {
+            if (domain == null || "".equals(domain)) {
+                throw new IOException("please set one of domain and urlIndex.");
+            } else {
                 RequestUtils.checkHost(domain);
                 this.domain = domain;
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
-        } else this.urlIndex = urlIndex;
+        } else {
+            this.urlIndex = urlIndex;
+        }
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
