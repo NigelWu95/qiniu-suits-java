@@ -31,18 +31,6 @@ public class Pfop extends Base {
         this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath, 0);
     }
 
-    public String getProcessName() {
-        return this.processName;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
-    }
-
-    public void setSaveTag(String saveTag) {
-        this.saveTag = saveTag == null ? "" : saveTag;
-    }
-
     public Pfop clone() throws CloneNotSupportedException {
         Pfop qiniuPfop = (Pfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
