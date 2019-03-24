@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class ChgStatus extends Base {
 
-    protected BucketManager bucketManager;
+    private BucketManager bucketManager;
     final private int status;
 
     public ChgStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
