@@ -64,6 +64,7 @@ public class MoveFile extends Base {
         return line.get("key") + "\t" + line.get(newKeyIndex);
     }
 
+    @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> {

@@ -36,6 +36,7 @@ public class ChangeStatus extends Base {
         return changeStatus;
     }
 
+    @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BatchOperations batchOperations = new BatchOperations();
         lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));

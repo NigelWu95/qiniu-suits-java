@@ -35,6 +35,7 @@ public class UpdateLifecycle extends Base {
         return updateLifecycle;
     }
 
+    @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));

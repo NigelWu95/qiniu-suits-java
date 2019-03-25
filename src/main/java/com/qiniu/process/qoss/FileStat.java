@@ -9,6 +9,7 @@ import com.qiniu.line.MapToTableFormatter;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
@@ -49,7 +50,7 @@ public class FileStat extends Base {
         }
         this.stringFormatter = new MapToTableFormatter(this.separator, null);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
-//        this.batchSize = 1000;
+        this.batchSize = 1000;
     }
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -63,6 +64,13 @@ public class FileStat extends Base {
         fileStat.stringFormatter = new MapToTableFormatter(separator, null);
         fileStat.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         return fileStat;
+    }
+
+    @Override
+    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
+        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
@@ -104,16 +112,12 @@ public class FileStat extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
+        FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
+        fileInfo.key = line.get("key");
         if (!"json".equals(format)) {
-            return new FileInfoFormatter(separator, null).toFormatString(bucketManager.stat(bucket, line.get("key")));
+            return new FileInfoFormatter(separator, null).toFormatString(fileInfo);
         } else {
-            return JsonConvertUtils.toJsonWithoutUrlEscape(bucketManager.stat(bucket, line.get("key")));
+            return JsonConvertUtils.toJsonWithoutUrlEscape(fileInfo);
         }
-    }
-
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
-        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 }

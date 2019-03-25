@@ -83,10 +83,9 @@ public class AsyncFetch extends Base {
     @Override
     protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
         if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                    .replaceAll("\\?", "%3F"));
+            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
             urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key"));
+            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
         } else {
             line.put("key", URLUtils.getKey(line.get(urlIndex)));
         }
@@ -98,6 +97,7 @@ public class AsyncFetch extends Base {
         return line.get(urlIndex);
     }
 
+    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         Response response = fetch(line.get(urlIndex), keyPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
         return line.get(urlIndex) + "\t" + HttpResponseUtils.responseJson(response);
