@@ -7,6 +7,10 @@ import java.util.List;
 
 public final class JsonConvertUtils {
 
+    private static Gson gson = new Gson();
+    private static Gson escapeGson = new GsonBuilder().disableHtmlEscaping().create();
+    private static JsonParser jsonParser = new JsonParser();
+
     public static <T> T fromJson(String jsonData, Class<T> clazz) {
         Gson gson = new Gson();
         return gson.fromJson(jsonData, clazz);
@@ -28,8 +32,7 @@ public final class JsonConvertUtils {
     }
 
     public static String toJsonWithoutUrlEscape(Object srcObject) {
-        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-        return gson.toJson(srcObject).replace("\\\\", "\\");
+        return escapeGson.toJson(srcObject).replace("\\\\", "\\");
     }
 
     public static <T> List<T> fromJsonArray(JsonArray jsonElements, TypeToken<List<T>> typeToken) {
