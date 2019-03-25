@@ -44,6 +44,6 @@ public class ChangeStatus extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
+        return HttpResponseUtils.getResult(bucketManager.changeStatus(bucket, line.get("key"), status));
     }
 }

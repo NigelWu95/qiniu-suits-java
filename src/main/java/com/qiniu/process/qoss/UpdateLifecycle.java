@@ -43,6 +43,6 @@ public class UpdateLifecycle extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
+        return HttpResponseUtils.getResult(bucketManager.deleteAfterDays(bucket, line.get("key"), days));
     }
 }
