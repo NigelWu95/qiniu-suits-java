@@ -65,6 +65,51 @@ public class LineUtils {
         return converted.toString();
     }
 
+    public static String toFormatString(JsonObject json, String separator, List<String> rmFields) throws IOException {
+        StringBuilder converted = new StringBuilder();
+        Set<String> set = json.keySet();
+        List<String> keys = new ArrayList<String>(){{
+            this.addAll(set);
+        }};
+        if (rmFields != null) keys.removeAll(rmFields);
+        if (keys.contains("key")) {
+            converted.append(json.get("key")).append(separator);
+            keys.remove("key");
+        }
+        if (keys.contains("hash")) {
+            converted.append(json.get("hash")).append(separator);
+            keys.remove("hash");
+        }
+        if (keys.contains("fsize")) {
+            converted.append(json.get("fsize")).append(separator);
+            keys.remove("fsize");
+        }
+        if (keys.contains("putTime")) {
+            converted.append(json.get("putTime")).append(separator);
+            keys.remove("putTime");
+        }
+        if (keys.contains("mimeType")) {
+            converted.append(json.get("mimeType")).append(separator);
+            keys.remove("mimeType");
+        }
+        if (keys.contains("type")) {
+            converted.append(json.get("type")).append(separator);
+            keys.remove("type");
+        }
+        if (keys.contains("status")) {
+            converted.append(json.get("status")).append(separator);
+            keys.remove("status");
+        }
+        if (keys.contains("endUser")) {
+            converted.append(json.get("endUser")).append(separator);
+            keys.remove("endUser");
+        }
+        for (String key : keys) {
+            converted.append(json.get(key)).append(separator);
+        }
+        return converted.deleteCharAt(converted.length() - 1).toString();
+    }
+
     public static String toFormatString(Map<String, String> line, List<String> rmFields) {
         JsonObject converted = new JsonObject();
         Set<String> set = line.keySet();
