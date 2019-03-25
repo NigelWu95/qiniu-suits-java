@@ -117,12 +117,15 @@ public class HttpResponseUtils {
     public static int checkException(QiniuException e, int retry) {
         if (e != null) {
             if (e.response != null) {
+                if (e.code() == 631 || retry <= 0) {
+                    return -1;
+                }
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
-                if (e.code() == 478 || e.code() == 404) {
+                else if (e.code() == 478 || e.code() == 404 || e.code() == 612) {
                     return 0;
                 }
                 // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
-                else if (e.code() != 631 && e.response.needRetry() && retry > 0) {
+                else if (e.response.needRetry()) {
                     e.response.close();
                 } else {
                     return -1;

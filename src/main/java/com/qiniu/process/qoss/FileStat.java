@@ -49,7 +49,7 @@ public class FileStat extends Base {
         }
         this.stringFormatter = new MapToTableFormatter(this.separator, null);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
-        this.batchSize = 1000;
+//        this.batchSize = 1000;
     }
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,

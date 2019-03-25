@@ -231,10 +231,10 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     /**
      * 公开的操作调用方入口，通过判断 batch size 来决定调用哪个方法
      * @param lineList 输入的文件信息列表
-     * @throws IOException
+     * @throws IOException 处理过程中出现的异常
      */
     public void processLine(List<Map<String, String>> lineList) throws IOException {
-        if (batchSize > 0) batchProcess(lineList, retryTimes);
+        if (batchSize > 1) batchProcess(lineList, retryTimes);
         else singleProcess(lineList, retryTimes);
     }
 
