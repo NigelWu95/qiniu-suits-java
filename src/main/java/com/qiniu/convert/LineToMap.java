@@ -32,16 +32,12 @@ public class LineToMap implements ITypeConvert<String, Map<String, String>> {
                     try {
                         return lineParser.getItemMap(line);
                     } catch (Exception e) {
-                        addError(line + "\t" + e.getMessage());
+                        errorList.add(line + "\t" + e.getMessage());
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
-
-    synchronized private void addError(String errorLine) {
-        errorList.add(errorLine);
     }
 
     public List<String> getErrorList() {

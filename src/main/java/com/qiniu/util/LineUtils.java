@@ -10,6 +10,37 @@ import java.util.*;
 
 public class LineUtils {
 
+    final static private List<String> fileInfoFields = new ArrayList<String>(){{
+        add("key");
+        add("hash");
+        add("fsize");
+        add("putTime");
+        add("mimeType");
+        add("type");
+        add("status");
+        add("md5");
+        add("endUser");
+    }};
+
+    public static Map<String, String> getItemMap(FileInfo fileInfo)
+            throws IOException {
+        Map<String, String> itemMap = new HashMap<>();
+        fileInfoFields.forEach(key -> {
+            switch (key) {
+                case "key": itemMap.put(key, fileInfo.key); break;
+                case "hash": itemMap.put(key, fileInfo.hash); break;
+                case "fsize": itemMap.put(key, String.valueOf(fileInfo.fsize)); break;
+                case "putTime": itemMap.put(key, String.valueOf(fileInfo.putTime)); break;
+                case "mimeType": itemMap.put(key, fileInfo.mimeType); break;
+                case "type": itemMap.put(key, String.valueOf(fileInfo.type)); break;
+                case "status": itemMap.put(key, String.valueOf(fileInfo.status)); break;
+//                case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
+                case "endUser": itemMap.put(key, fileInfo.endUser); break;
+            }
+        });
+        return itemMap;
+    }
+
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap, boolean force)
             throws IOException {
         Map<String, String> itemMap = new HashMap<>();
