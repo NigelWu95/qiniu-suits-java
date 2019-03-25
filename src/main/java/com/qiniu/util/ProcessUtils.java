@@ -56,35 +56,35 @@ public class ProcessUtils {
     }};
 
     public static boolean needUrl(String process) {
-        return canBatchProcesses.contains(process);
+        return needUrlProcesses.contains(process);
     }
 
     public static boolean needMd5(String process) {
-        return canBatchProcesses.contains(process);
+        return needMd5Processes.contains(process);
     }
 
     public static boolean needNewKey(String process) {
-        return canBatchProcesses.contains(process);
+        return needNewKeyProcesses.contains(process);
     }
 
     public static boolean needFops(String process) {
-        return canBatchProcesses.contains(process);
+        return needFopsProcesses.contains(process);
     }
 
     public static boolean needPid(String process) {
-        return canBatchProcesses.contains(process);
+        return needPidProcesses.contains(process);
     }
 
     public static boolean needAvinfo(String process) {
-        return canBatchProcesses.contains(process);
+        return needAvinfoProcesses.contains(process);
     }
 
     public static boolean needBucket(String process) {
-        return canBatchProcesses.contains(process);
+        return needBucketProcesses.contains(process);
     }
 
     public static boolean needAuth(String process) {
-        return canBatchProcesses.contains(process);
+        return needAuthProcesses.contains(process);
     }
 
     public static boolean canBatch(String process) {
