@@ -47,10 +47,9 @@ public class PrivateUrl extends Base {
     @Override
     protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
         if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                    .replaceAll("\\?", "%3F"));
+            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
             urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key"));
+            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
         }
         return line;
     }

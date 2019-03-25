@@ -33,6 +33,7 @@ public class DeleteFile extends Base {
         return deleteFile;
     }
 
+    @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));

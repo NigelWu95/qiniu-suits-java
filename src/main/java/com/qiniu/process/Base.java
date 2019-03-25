@@ -83,8 +83,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key"))
-                .replaceAll("\\?", "%3F"));
+        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
         return line;
     }
 

@@ -40,6 +40,7 @@ public class Pfop extends Base {
         return line.get("key") + "\t" + line.get(fopsIndex);
     }
 
+    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         return operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
     }

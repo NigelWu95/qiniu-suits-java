@@ -37,6 +37,7 @@ public class ChangeType extends Base {
         return changeType;
     }
 
+    @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BatchOperations batchOperations = new BatchOperations();
         lineList.forEach(line -> batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON :

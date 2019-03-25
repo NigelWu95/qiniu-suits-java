@@ -47,6 +47,7 @@ public class QueryPfopResult extends Base {
         return line.get(pidIndex);
     }
 
+    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
         if (result != null && !"".equals(result)) {

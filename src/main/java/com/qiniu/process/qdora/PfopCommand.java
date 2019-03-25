@@ -78,6 +78,7 @@ public class PfopCommand extends Base {
         return line.get("key") + "\t" + line.get(avinfoIndex);
     }
 
+    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String key;
         String info;
