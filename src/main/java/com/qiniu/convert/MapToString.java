@@ -26,10 +26,17 @@ public class MapToString implements ITypeConvert<Map<String, String>, String> {
         }
     }
 
-    public List<String> convertToVList(List<Map<String, String>> srcList) {
-        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.stream()
-                .map(stringFormatter::toFormatString)
+    public List<String> convertToVList(List<Map<String, String>> lineList) {
+        if (lineList == null || lineList.size() == 0) return new ArrayList<>();
+        return lineList.stream()
+                .map(line -> {
+                    try {
+                        return stringFormatter.toFormatString(line);
+                    } catch (IOException e) {
+                        errorList.add(String.valueOf(line) + "\t" + e.getMessage());
+                        return null;
+                    }
+                })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }

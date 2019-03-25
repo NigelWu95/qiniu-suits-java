@@ -25,9 +25,9 @@ public class LineToMap implements ITypeConvert<String, Map<String, String>> {
         }
     }
 
-    public List<Map<String, String>> convertToVList(List<String> srcList) {
-        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.stream()
+    public List<Map<String, String>> convertToVList(List<String> lineList) {
+        if (lineList == null || lineList.size() == 0) return new ArrayList<>();
+        return lineList.stream()
                 .map(line -> {
                     try {
                         return lineParser.getItemMap(line);

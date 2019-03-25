@@ -22,8 +22,8 @@ public class LineUtils {
         add("endUser");
     }};
 
-    public static Map<String, String> getItemMap(FileInfo fileInfo)
-            throws IOException {
+    public static Map<String, String> getItemMap(FileInfo fileInfo) throws IOException {
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file info.");
         Map<String, String> itemMap = new HashMap<>();
         fileInfoFields.forEach(key -> {
             switch (key) {
@@ -59,7 +59,8 @@ public class LineUtils {
         return itemMap;
     }
 
-    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap, boolean force) throws IOException {
+    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap, boolean force)
+            throws IOException {
         JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
         return getItemMap(parsed ,indexMap, force);
     }
@@ -83,7 +84,7 @@ public class LineUtils {
         return itemMap;
     }
 
-    public static String toFormatString(FileInfo fileInfo, String separator, List<String> rmFields) {
+    public static String toFormatString(FileInfo fileInfo, String separator, List<String> rmFields) throws IOException {
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
@@ -93,6 +94,7 @@ public class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
         if (rmFields == null || !rmFields.contains("endUser")) converted.append(fileInfo.endUser);
+        if (converted.length() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
 
@@ -138,10 +140,11 @@ public class LineUtils {
         for (String key : keys) {
             converted.append(json.get(key)).append(separator);
         }
+        if (converted.length() == 0) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - 1).toString();
     }
 
-    public static String toFormatString(Map<String, String> line, List<String> rmFields) {
+    public static String toFormatString(Map<String, String> line, List<String> rmFields) throws IOException {
         JsonObject converted = new JsonObject();
         Set<String> set = line.keySet();
         List<String> keys = new ArrayList<String>(){{
@@ -183,10 +186,12 @@ public class LineUtils {
         for (String key : keys) {
             converted.addProperty(key, line.get(key));
         }
+        if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
 
-    public static String toFormatString(Map<String, String> line, String separator, List<String> rmFields) {
+    public static String toFormatString(Map<String, String> line, String separator, List<String> rmFields)
+            throws IOException {
         StringBuilder converted = new StringBuilder();
         Set<String> set = line.keySet();
         List<String> keys = new ArrayList<String>(){{
@@ -228,6 +233,7 @@ public class LineUtils {
         for (String key : keys) {
             converted.append(line.get(key)).append(separator);
         }
+        if (converted.length() == 0) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - 1).toString();
     }
 }
