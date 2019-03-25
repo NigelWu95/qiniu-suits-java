@@ -88,14 +88,20 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         return line;
     }
 
+    /**
+     * 当处理失败的时候应该从 line 中记录哪些关键信息，默认只记录 key，需要子类去重写记录更多信息
+     * @param line 输入的 line
+     * @return 返回需要记录的信息字符串
+     */
     protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     /**
-     * 实现从 fileInfoList 转换得到 batch 操作的指令集 batchOperations，需要先清除 batchOperations 中可能存在的上次的内容
-     * @param lineList 输入的行信息列表，应当是校验之后的列表（不包含空行或者确实 key 字段的行）
-     * @return 输入 lineList 转换之后的 batchOperations
+     * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
+     * @param lineList 代执行的文件信息列表
+     * @return 返回执行响应信息的字符串
+     * @throws QiniuException 执行失败抛出的异常
      */
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         return null;
@@ -131,7 +137,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
-     * 批量处理输入行，具体执行的操作取决于 batchOperations 设置的指令（通过子类去设置）
+     * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现
      * @param lineList 输入列表
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
@@ -173,10 +179,16 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         }
     }
 
+    /**
+     * 单个文件进行操作的方法，返回操作的结果字符串
+     * @param line 输入 line
+     * @return 操作结果的字符串
+     * @throws QiniuException 操作失败时的返回
+     */
     abstract protected String singleResult(Map<String, String> line) throws QiniuException;
 
     /**
-     * 批量处理输入行进行 pfop result 的查询
+     * 对输入的文件信息列表单个进行操作，具体的操作方法取决于 singleResult 方法
      * @param lineList 输入列表
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
@@ -216,6 +228,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         }
     }
 
+    /**
+     * 公开的操作调用方入口，通过判断 batch size 来决定调用哪个方法
+     * @param lineList 输入的文件信息列表
+     * @throws IOException
+     */
     public void processLine(List<Map<String, String>> lineList) throws IOException {
         if (batchSize > 0) batchProcess(lineList, retryTimes);
         else singleProcess(lineList, retryTimes);
