@@ -169,8 +169,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                         retry = 0;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
-                        if (retry < 0) LogUtils.writeLog(e, fileMap, lineList.subList(i, lineList.size() - 1).stream()
-                                .map(this::resultInfo).collect(Collectors.toList()));
+                        String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
+                        System.out.println(message);
+                        if (retry < 0) {
+                            fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1)
+                                    .stream().map(line -> line + "\t" + message.replaceAll("\n", "\t"))
+                                    .collect(Collectors.toList())), false);
+                        }
                         if (retry == -1) throw e;
                     }
                 }
