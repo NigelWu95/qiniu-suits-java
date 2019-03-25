@@ -11,9 +11,9 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
 
     private List<String> errorList = new ArrayList<>();
 
-    public List<Map<String, String>> convertToVList(List<FileInfo> srcList) {
-        if (srcList == null || srcList.size() == 0) return new ArrayList<>();
-        return srcList.stream()
+    public List<Map<String, String>> convertToVList(List<FileInfo> lineList) {
+        if (lineList == null || lineList.size() == 0) return new ArrayList<>();
+        return lineList.stream()
                 .map(fileInfo -> {
                     try {
                         return LineUtils.getItemMap(fileInfo);
