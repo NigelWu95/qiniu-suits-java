@@ -3,7 +3,6 @@ package com.qiniu.process.qoss;
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.IStringFormat;
-import com.qiniu.line.FileInfoFormatter;
 import com.qiniu.line.JsonObjParser;
 import com.qiniu.line.MapToTableFormatter;
 import com.qiniu.process.Base;
@@ -13,6 +12,7 @@ import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -115,7 +115,7 @@ public class FileStat extends Base {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
         if (!"json".equals(format)) {
-            return new FileInfoFormatter(separator, null).toFormatString(fileInfo);
+            return LineUtils.toFormatString(fileInfo, separator, null);
         } else {
             return JsonConvertUtils.toJsonWithoutUrlEscape(fileInfo);
         }
