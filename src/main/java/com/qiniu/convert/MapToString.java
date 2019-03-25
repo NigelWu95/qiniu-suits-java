@@ -2,8 +2,7 @@ package com.qiniu.convert;
 
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.line.MapToJsonFormatter;
-import com.qiniu.line.MapToTableFormatter;
+import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -16,11 +15,11 @@ public class MapToString implements ITypeConvert<Map<String, String>, String> {
     public MapToString(String format, String separator, List<String> rmFields) throws IOException {
         // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
         if ("json".equals(format)) {
-            stringFormatter = new MapToJsonFormatter(rmFields);
+            stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
         } else if ("csv".equals(format)) {
-            stringFormatter = new MapToTableFormatter(",", rmFields);
+            stringFormatter = line -> LineUtils.toFormatString(line, ",", rmFields);
         } else if ("tab".equals(format)) {
-            stringFormatter = new MapToTableFormatter(separator, rmFields);
+            stringFormatter = line -> LineUtils.toFormatString(line, separator, rmFields);
         } else {
             throw new IOException("please check your format for map to string.");
         }
