@@ -1,7 +1,6 @@
 package com.qiniu.process.qoss;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -79,6 +78,12 @@ public class MoveFile extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
+        if (toBucket == null || "".equals(toBucket)) {
+            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"),
+                    keyPrefix + line.get(newKeyIndex)));
+        } else {
+            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket,
+                    keyPrefix + line.get(newKeyIndex)));
+        }
     }
 }
