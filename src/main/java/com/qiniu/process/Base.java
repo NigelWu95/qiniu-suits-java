@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.Configuration;
@@ -20,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class Base implements ILineProcess<Map<String, String>>, Cloneable {
+public abstract class Base implements ILineProcess<Map<String, String>>, Cloneable {
 
     final protected String processName;
     final protected Configuration configuration;
@@ -98,7 +97,7 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
      * @param lineList 输入的行信息列表，应当是校验之后的列表（不包含空行或者确实 key 字段的行）
      * @return 输入 lineList 转换之后的 batchOperations
      */
-    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         return null;
     }
 
@@ -152,7 +151,6 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
         if (errorLineList.size() > 0) fileMap.writeError(String.join("\n", errorLineList), false);
         int times = lineList.size()/batchSize + 1;
         List<Map<String, String>> processList;
-        Response response;
         String result;
         int retry;
         for (int i = 0; i < times; i++) {
@@ -161,8 +159,7 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
                 retry = retryTimes;
                 while (retry > 0) {
                     try {
-                        response = batchResult(processList);
-                        result = HttpResponseUtils.getResult(response);
+                        result = batchResult(processList);
                         parseBatchResult(processList, result);
                         retry = 0;
                     } catch (QiniuException e) {
@@ -176,9 +173,7 @@ public class Base implements ILineProcess<Map<String, String>>, Cloneable {
         }
     }
 
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return null;
-    }
+    abstract protected String singleResult(Map<String, String> line) throws QiniuException;
 
     /**
      * 批量处理输入行进行 pfop result 的查询

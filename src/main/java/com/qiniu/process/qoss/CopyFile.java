@@ -1,11 +1,11 @@
 package com.qiniu.process.qoss;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,10 +45,17 @@ public class CopyFile extends Base {
         return line.get("key") + "\t" + line.get(newKeyIndex);
     }
 
-    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    @Override
+    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
                 keyPrefix + line.get(newKeyIndex)));
-        return bucketManager.batch(batchOperations);
+        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+    }
+
+    @Override
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return HttpResponseUtils.getResult(
+                bucketManager.copy(bucket, line.get("key"), toBucket, keyPrefix + line.get(newKeyIndex), false));
     }
 }

@@ -10,6 +10,7 @@ import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.DateUtils;
 import com.qiniu.util.ListBucketUtils;
+import com.qiniu.util.ProcessUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -38,45 +39,6 @@ public class CommonParams {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
-    private List<String> needUrl = new ArrayList<String>(){{
-        add("asyncfetch");
-        add("privateurl");
-        add("qhash");
-        add("avinfo");
-    }};
-    private List<String> needMd5 = new ArrayList<String>(){{
-        add("asyncfetch");
-    }};
-    private List<String> needNewKey = new ArrayList<String>(){{
-        add("rename");
-        add("copy");
-    }};
-    private List<String> needFops = new ArrayList<String>(){{
-        add("pfop");
-    }};
-    private List<String> needPid = new ArrayList<String>(){{
-        add("pfopresult");
-    }};
-    private List<String> needAvinfo = new ArrayList<String>(){{
-        add("pfopcmd");
-    }};
-    private List<String> needBucketProcesses = new ArrayList<String>(){{
-        add("status");
-        add("type");
-        add("lifecycle");
-        add("copy");
-        add("move");
-        add("rename");
-        add("delete");
-        add("pfop");
-        add("stat");
-        add("mirror");
-    }};
-    private List<String> needAuthProcesses = new ArrayList<String>(){{
-        addAll(needBucketProcesses);
-        add("asyncfetch");
-        add("privateurl");
-    }};
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -115,8 +77,8 @@ public class CommonParams {
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
 
         if ("file".equals(source)) {
-            if (needBucketProcesses.contains(process)) setBucket();
-            if (needAuthProcesses.contains(process)) setAkSk();
+            if (ProcessUtils.needBucket(process)) setBucket();
+            if (ProcessUtils.needAuth(process)) setAkSk();
         }
     }
 
@@ -219,12 +181,12 @@ public class CommonParams {
                 indexMap.put(key, key);
             }
         } else {
-            setIndex(entryParam.getValue("url-index", null), "url", needUrl.contains(process));
-            setIndex(entryParam.getValue("md5-index", null), "md5", needMd5.contains(process));
-            setIndex(entryParam.getValue("newKey-index", null), "newKey", needNewKey.contains(process));
-            setIndex(entryParam.getValue("fops-index", null), "fops", needFops.contains(process));
-            setIndex(entryParam.getValue("persistentId-index", null), "pid", needPid.contains(process));
-            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", needAvinfo.contains(process));
+            setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
+            setIndex(entryParam.getValue("md5-index", null), "md5", ProcessUtils.needMd5(process));
+            setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
+            setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
+            setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
+            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
 
             List<String> indexList = splitItems(entryParam.getValue("indexes", ""));
             if (indexList.size() > 8) {

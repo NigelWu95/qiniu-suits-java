@@ -2,7 +2,6 @@ package com.qiniu.process.qoss;
 
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.line.JsonObjParser;
 import com.qiniu.line.MapToTableFormatter;
@@ -10,6 +9,7 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -100,9 +100,14 @@ public class FileStat extends Base {
         }
     }
 
-    protected Response batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    @Override
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        return null;
+    }
+
+    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
-        return bucketManager.batch(batchOperations);
+        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 }
