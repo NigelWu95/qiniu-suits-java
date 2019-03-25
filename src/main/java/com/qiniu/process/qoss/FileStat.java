@@ -31,7 +31,7 @@ public class FileStat extends Base {
             throw new IOException("please check your format for line to map.");
         }
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
-//        this.batchSize = 1000;
+        this.batchSize = 1000;
     }
 
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
