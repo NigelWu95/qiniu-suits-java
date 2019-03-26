@@ -109,6 +109,8 @@ public class ListBucket implements IDataSource {
             if (saveTotal) {
                 writeList = writeTypeConverter.convertToVList(infoMapList);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
+                if (writeTypeConverter.getErrorList().size() > 0)
+                    fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {

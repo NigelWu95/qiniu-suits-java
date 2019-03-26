@@ -113,20 +113,20 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
 
     public void processLine(List<Map<String, String>> list) throws IOException {
         if (list == null || list.size() == 0) return;
-        List<Map<String, String>> resultList = new ArrayList<>();
+        List<Map<String, String>> filterList = new ArrayList<>();
         List<String> writeList;
         for (Map<String, String> line : list) {
             try {
-                if (filter.doFilter(line)) resultList.add(line);
+                if (filter.doFilter(line)) filterList.add(line);
             } catch (Exception e) {
                 throw new QiniuException(e);
             }
         }
-        writeList = typeConverter.convertToVList(resultList);
+        writeList = typeConverter.convertToVList(filterList);
         if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
         if (typeConverter.getErrorList().size() > 0)
-            fileMap.writeError(String.join("\n", typeConverter.getErrorList()), false);
-        if (nextProcessor != null) nextProcessor.processLine(resultList);
+            fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+        if (nextProcessor != null) nextProcessor.processLine(filterList);
     }
 
     public void closeResource() {
