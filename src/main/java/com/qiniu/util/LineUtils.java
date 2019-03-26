@@ -93,8 +93,24 @@ public class LineUtils {
         if (rmFields == null || !rmFields.contains("mimeType")) converted.append(fileInfo.mimeType).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
-        if (rmFields == null || !rmFields.contains("endUser")) converted.append(fileInfo.endUser);
-        if (converted.length() == 0) throw new IOException("empty result.");
+//        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
+        if (rmFields == null || !rmFields.contains("endUser")) converted.append(fileInfo.endUser).append(separator);
+        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
+    public static String toFormatString(FileInfo fileInfo, List<String> rmFields) throws IOException {
+        JsonObject converted = new JsonObject();
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
+        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", fileInfo.hash);
+        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", fileInfo.fsize);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", fileInfo.putTime);
+        if (rmFields == null || !rmFields.contains("mimeType")) converted.addProperty("mimeType", fileInfo.mimeType);
+        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", fileInfo.type);
+        if (rmFields == null || !rmFields.contains("status")) converted.addProperty("status", fileInfo.status);
+//        if (rmFields == null || !rmFields.contains("md5")) converted.addProperty("md5", fileInfo.md5);
+        if (rmFields == null || !rmFields.contains("endUser")) converted.addProperty("endUser", fileInfo.endUser);
+        if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
 
@@ -140,8 +156,8 @@ public class LineUtils {
         for (String key : keys) {
             converted.append(json.get(key)).append(separator);
         }
-        if (converted.length() == 0) throw new IOException("empty result.");
-        return converted.deleteCharAt(converted.length() - 1).toString();
+        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
     public static String toFormatString(Map<String, String> line, List<String> rmFields) throws IOException {
@@ -233,7 +249,7 @@ public class LineUtils {
         for (String key : keys) {
             converted.append(line.get(key)).append(separator);
         }
-        if (converted.length() == 0) throw new IOException("empty result.");
-        return converted.deleteCharAt(converted.length() - 1).toString();
+        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 }

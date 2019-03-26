@@ -94,7 +94,11 @@ public class FileStat extends Base {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
         if (!"json".equals(format)) {
-            return LineUtils.toFormatString(fileInfo, separator, null);
+            try {
+                return LineUtils.toFormatString(fileInfo, separator, null);
+            } catch (IOException e) {
+                throw new QiniuException(e);
+            }
         } else {
             return JsonConvertUtils.toJsonWithoutUrlEscape(fileInfo);
         }
