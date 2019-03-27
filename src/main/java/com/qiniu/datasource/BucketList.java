@@ -24,12 +24,12 @@ public class BucketList implements IDataSource {
     private Auth auth;
     private Configuration configuration;
     private String bucket;
-    private int unitLen;
-    private List<String> prefixes;
-    private Map<String, String[]> prefixesMap;
     private List<String> antiPrefixes;
+    private Map<String, String[]> prefixesMap;
+    private List<String> prefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
+    private int unitLen;
     private int threads;
     private String savePath;
     private boolean saveTotal;
@@ -47,27 +47,23 @@ public class BucketList implements IDataSource {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
-        this.unitLen = unitLen;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
         this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
-        this.prefixes = new ArrayList<>();
-        if (prefixesMap != null) {
-            for (String prefix : prefixesMap.keySet()) {
-                if (checkAntiPrefixes(prefix)) prefixes.add(prefix);
-            }
-        }
+        setPrefixes();
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
+        this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
-        this.saveTotal = false;
+        this.saveTotal = true; // 默认全记录保存
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         originPrefixList.addAll(Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
         originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
     }
 
+    // 不调用则各参数使用默认值
     public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
         this.saveFormat = format;
@@ -75,14 +71,35 @@ public class BucketList implements IDataSource {
         this.rmFields = rmFields;
     }
 
+    // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
-
+        this.bucket = commonParams.getBucket();
+        this.antiPrefixes = commonParams.getAntiPrefixes();
+        this.prefixesMap = commonParams.getPrefixesMap();
+        setPrefixes();
+        this.prefixLeft = commonParams.getPrefixLeft();
+        this.prefixRight = commonParams.getPrefixRight();
+        this.unitLen = commonParams.getUnitLen();
+        this.threads = commonParams.getThreads();
+        this.savePath = commonParams.getSavePath();
+        this.saveTotal = commonParams.getSaveTotal();
+        this.saveFormat = commonParams.getSaveFormat();
+        this.saveSeparator = commonParams.getSaveSeparator();
+        this.rmFields = commonParams.getRmFields();
     }
 
     public void setProcessor(ILineProcess<Map<String, String>> processor) {
         this.processor = processor;
     }
 
+    private void setPrefixes() {
+        this.prefixes = new ArrayList<>();
+        if (prefixesMap != null) {
+            for (String prefix : prefixesMap.keySet()) {
+                if (checkAntiPrefixes(prefix)) prefixes.add(prefix);
+            }
+        }
+    }
     /**
      * 执行列举操作，直到当前的 FileLister 列举结束，并使用 processor 对象执行处理过程
      * @param fileLister 已经初始化的 FileLister 对象

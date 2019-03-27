@@ -44,9 +44,9 @@ public class FileInput implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
-        this.saveTotal = false;
     }
 
+    // 不调用则各参数使用默认值
     public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
         this.saveFormat = format;
@@ -54,8 +54,19 @@ public class FileInput implements IDataSource {
         this.rmFields = rmFields;
     }
 
+    // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
-
+        this.filePath = commonParams.getPath();
+        this.parseType = commonParams.getParse();
+        this.separator = commonParams.getSeparator();
+        this.indexMap = commonParams.getIndexMap();
+        this.unitLen = commonParams.getUnitLen();
+        this.threads = commonParams.getThreads();
+        this.savePath = commonParams.getSavePath();
+        this.saveTotal = commonParams.getSaveTotal();
+        this.saveFormat = commonParams.getSaveFormat();
+        this.saveSeparator = commonParams.getSaveSeparator();
+        this.rmFields = commonParams.getRmFields();
     }
 
     public void setProcessor(ILineProcess<Map<String, String>> processor) {
