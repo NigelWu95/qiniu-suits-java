@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.entry.CommonParams;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.convert.MapToString;
 import com.qiniu.convert.LineToMap;
@@ -19,13 +20,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FileInput implements IDataSource {
 
-    final private String filePath;
-    final private String parseType;
-    final private String separator;
-    final private Map<String, String> indexMap;
-    final private int unitLen;
-    final private int threads;
-    final private String savePath;
+    private String filePath;
+    private String parseType;
+    private String separator;
+    private Map<String, String> indexMap;
+    private int unitLen;
+    private int threads;
+    private String savePath;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -51,6 +52,10 @@ public class FileInput implements IDataSource {
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+    }
+
+    public void updateSettings(CommonParams commonParams) {
+
     }
 
     public void setProcessor(ILineProcess<Map<String, String>> processor) {

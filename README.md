@@ -126,13 +126,13 @@ indexes=0,1,2
 `save-path=` 表示保存结果的文件路径  
 `save-format=` 结果保存格式（json/tab），默认为 tab  
 `save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
-`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 list bucket 操作需要在列举出结果之后再针对条件进行
-过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时默认
-不保存原始输出数据，list 源默认保存原始输出数据。   
+`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 bucket 的 list 操作需要在列举出结果之后再针对字段
+进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时
+默认不保存原始输出数据，list 源默认保存原始输出数据。   
 **--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些
 字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
 **持久化结果的文件名为 "\<source-name\>_success_\<order\>.txt"：  
-（1）list 源 =》 "listbucket_success_\<order\>.txt"  
+（1）list 源 =》 "bucketlist_success_\<order\>.txt"  
 （2）file 源 =》 "fileinput_success_\<order\>.txt"  
 如果设置了过滤参数，则过滤到的结果文件名为 "filter_success_\<order\>.txt"**  
 

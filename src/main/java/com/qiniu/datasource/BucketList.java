@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.entry.CommonParams;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.convert.FileInfoToMap;
 import com.qiniu.convert.MapToString;
@@ -72,6 +73,10 @@ public class BucketList implements IDataSource {
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+    }
+
+    public void updateSettings(CommonParams commonParams) {
+
     }
 
     public void setProcessor(ILineProcess<Map<String, String>> processor) {
@@ -192,7 +197,7 @@ public class BucketList implements IDataSource {
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
-            FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
+            FileMap fileMap = new FileMap(savePath, "bucketlist", identifier);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
