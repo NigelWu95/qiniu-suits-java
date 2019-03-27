@@ -22,6 +22,8 @@ public class HttpResponseUtils {
                 } else if (e.response.needRetry()) {
                     // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
                     e.response.close();
+                    // 处理一次异常返回的重试次数应该少一次
+                    return retry - 1;
                 } else {
                     return -1;
                 }
@@ -31,9 +33,6 @@ public class HttpResponseUtils {
         } else {
             return -2;
         }
-
-        // 处理一次异常返回的重试次数应该少一次
-        return retry - 1;
     }
 
     /**
