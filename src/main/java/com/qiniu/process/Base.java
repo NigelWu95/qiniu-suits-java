@@ -184,7 +184,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
-     * 单个文件进行操作的方法，返回操作的结果字符串
+     * 单个文件进行操作的方法，返回操作的结果字符串，要求子类必须实现该方法，支持单个资源依次请求操作
      * @param line 输入 line
      * @return 操作结果的字符串
      * @throws QiniuException 操作失败时的返回
