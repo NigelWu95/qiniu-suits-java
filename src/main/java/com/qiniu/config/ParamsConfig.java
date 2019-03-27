@@ -1,5 +1,6 @@
 package com.qiniu.config;
 
+import com.google.gson.JsonObject;
 import com.qiniu.interfaces.IEntryParam;
 
 import java.io.*;
@@ -11,11 +12,8 @@ public class ParamsConfig implements IEntryParam {
 
     private Map<String, String> paramsMap;
 
-    public ParamsConfig(String resourceName) throws IOException {
-        InputStream inputStream = null;
-
+    public ParamsConfig(InputStream inputStream) throws IOException {
         try {
-            inputStream = new FileInputStream(resourceName);
             Properties properties = new Properties();
             properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
             paramsMap = new HashMap<>();
@@ -33,19 +31,34 @@ public class ParamsConfig implements IEntryParam {
         }
     }
 
+    public ParamsConfig(String resourceName) throws IOException {
+        this(new FileInputStream(resourceName));
+    }
+
+    public ParamsConfig(JsonObject jsonObject) throws IOException {
+        if (jsonObject == null || jsonObject.size() == 0)
+            throw new IOException("json is empty.");
+        paramsMap = new HashMap<>();
+        for (String key : jsonObject.keySet()) {
+            if (jsonObject.get(key).isJsonNull() || jsonObject.get(key).isJsonPrimitive() ||
+                    jsonObject.get(key).isJsonObject() || jsonObject.get(key).isJsonArray()) { continue; }
+            paramsMap.put(key, jsonObject.get(key).getAsString());
+        }
+    }
+
     public ParamsConfig(String[] args) throws IOException {
         if (args == null || args.length == 0)
-            throw new IOException("args is null.");
+            throw new IOException("args is empty.");
         else {
-            int cmdCount = 0;
-            boolean cmdGoon = true;
+            boolean cmdGoon = false;
             paramsMap = new HashMap<>();
+            String[] strings;
             for (String arg : args) {
-                // "-" 开头的参数之前放置到 params 数组中
-                if (!arg.contains("=") && !arg.startsWith("-") && cmdGoon) cmdCount++;
-                else {
-                    paramsMap.put(splitParam(arg)[0], splitParam(arg)[1]);
-                    cmdGoon = false;
+                // 参数命令格式：-<key>=<value>
+                cmdGoon = arg.matches("-.+=.+") || cmdGoon;
+                if (cmdGoon) {
+                    strings = splitParam(arg);
+                    paramsMap.put(strings[0], strings[1]);
                 }
             }
         }
