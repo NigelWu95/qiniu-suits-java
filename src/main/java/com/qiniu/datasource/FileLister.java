@@ -67,7 +67,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
     }
 
     public void setEndKeyPrefix(String endKeyPrefix) {
-        this.endKeyPrefix = endKeyPrefix;;
+        this.endKeyPrefix = endKeyPrefix;
     }
 
     public String getDelimiter() {
@@ -91,7 +91,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         List<String> lines = bufferedReader.lines()
                     .filter(line -> !StringUtils.isNullOrEmpty(line))
                     .collect(Collectors.toList());
-        List<ListLine> listLines = lines.parallelStream()
+        List<ListLine> listLines = lines.stream()
                 .map(line -> new ListLine().fromLine(line))
                 .filter(Objects::nonNull)
                 .sorted(ListLine::compareTo)
@@ -99,7 +99,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         response.close();
         // 转换成 ListLine 过程中可能出现问题，直接返回空列表，marker 不做修改，返回后则会再次使用同样的 marker 值进行列举
         if (listLines.size() < lines.size()) return new ArrayList<>();
-        List<FileInfo> resultList = listLines.parallelStream()
+        List<FileInfo> resultList = listLines.stream()
                 .map(listLine -> listLine.fileInfo)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -125,7 +125,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         List<FileInfo> current = fileInfoList == null ? new ArrayList<>() : fileInfoList;
         if (endKeyPrefix != null && !"".equals(endKeyPrefix)) {
             int size = current.size();
-            current = current.parallelStream()
+            current = current.stream()
                     .filter(fileInfo -> fileInfo.key.compareTo(endKeyPrefix) < 0)
                     .collect(Collectors.toList());
             int finalSize = current.size();
