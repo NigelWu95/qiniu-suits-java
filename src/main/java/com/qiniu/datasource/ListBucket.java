@@ -187,9 +187,9 @@ public class ListBucket implements IDataSource {
     private void execInThreads(List<FileLister> fileListerList, FileMap recordFileMap, int order) throws Exception {
         for (int j = 0; j < fileListerList.size(); j++) {
             FileLister fileLister = fileListerList.get(j);
-            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象
-            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null :
-                    order == 0 ? processor : processor.clone();
+            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
+            //            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
             FileMap fileMap = new FileMap(savePath, "listbucket", identifier);
