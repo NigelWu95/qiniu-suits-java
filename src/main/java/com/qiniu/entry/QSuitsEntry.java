@@ -24,6 +24,24 @@ public class QSuitsEntry {
     private CommonParams commonParams;
 
     public QSuitsEntry(String[] args) throws IOException {
+        setEntryParam(args);
+        setConfiguration();
+        setCommonParams(new CommonParams(entryParam));
+    }
+
+    public QSuitsEntry(IEntryParam entryParam) throws IOException {
+        this.entryParam = entryParam;
+        setConfiguration();
+        setCommonParams(new CommonParams(entryParam));
+    }
+
+    public QSuitsEntry(IEntryParam entryParam, Configuration configuration) throws IOException {
+        this.entryParam = entryParam;
+        this.configuration = configuration;
+        setCommonParams(new CommonParams(entryParam));
+    }
+
+    private void setEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
             add("resources" + System.getProperty("file.separator") + "qiniu.properties");
             add("resources" + System.getProperty("file.separator") + ".qiniu.properties");
@@ -46,12 +64,18 @@ public class QSuitsEntry {
             else paramFromConfig = true;
         }
         entryParam = paramFromConfig ? new FileProperties(configFilePath) : new CommandArgs(args);
-        configuration = new Configuration(Zone.autoZone());
-        commonParams = new CommonParams(entryParam);
+    }
+
+    private void setConfiguration() {
+        this.configuration = new Configuration(Zone.autoZone());
         // 自定义超时时间
         configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
         configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
         configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "60"));
+    }
+
+    public void setCommonParams(CommonParams commonParams) {
+        this.commonParams = commonParams;
     }
 
     public IEntryParam getEntryParam() {
