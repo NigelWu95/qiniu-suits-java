@@ -20,17 +20,17 @@ import java.util.stream.Collectors;
 
 public class ListBucket implements IDataSource {
 
-    final private Auth auth;
-    final private Configuration configuration;
-    final private String bucket;
-    final private int threads;
-    final private int unitLen;
-    final private List<String> prefixes;
-    final private Map<String, String[]> prefixesMap;
-    final private List<String> antiPrefixes;
-    final private boolean prefixLeft;
-    final private boolean prefixRight;
-    final private String savePath;
+    private Auth auth;
+    private Configuration configuration;
+    private String bucket;
+    private int unitLen;
+    private List<String> prefixes;
+    private Map<String, String[]> prefixesMap;
+    private List<String> antiPrefixes;
+    private boolean prefixLeft;
+    private boolean prefixRight;
+    private int threads;
+    private String savePath;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -40,13 +40,12 @@ public class ListBucket implements IDataSource {
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, int threads, int unitLen,
+    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
-                      boolean prefixRight, String savePath) {
+                      boolean prefixRight, int threads, String savePath) {
         this.auth = auth;
         this.configuration = configuration;
         this.bucket = bucket;
-        this.threads = threads;
         this.unitLen = unitLen;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
@@ -59,6 +58,7 @@ public class ListBucket implements IDataSource {
         }
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
+        this.threads = threads;
         this.savePath = savePath;
         this.saveTotal = false;
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超

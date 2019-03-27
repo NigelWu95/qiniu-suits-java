@@ -104,14 +104,14 @@ public class QSuitsEntry {
             boolean prefixLeft = commonParams.getPrefixLeft();
             boolean prefixRight = commonParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, threads, unitLen, prefixesMap, antiPrefixes,
-                    prefixLeft, prefixRight, savePath);
+            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes, prefixLeft,
+                    prefixRight, threads, savePath);
         } else if ("file".equals(source)) {
             String filePath = commonParams.getPath();
             String parseType = commonParams.getParse();
             String separator = commonParams.getSeparator();
             HashMap<String, String> indexMap = commonParams.getIndexMap();
-            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, unitLen, savePath);
+            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
         }
         return dataSource;
     }

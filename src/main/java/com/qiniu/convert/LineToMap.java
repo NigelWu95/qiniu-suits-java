@@ -13,7 +13,7 @@ public class LineToMap implements ITypeConvert<String, Map<String, String>> {
     private ILineParser<String> lineParser;
     private List<String> errorList = new ArrayList<>();
 
-    public LineToMap(String parseType, String separator, HashMap<String, String> indexMap) throws IOException {
+    public LineToMap(String parseType, String separator, Map<String, String> indexMap) throws IOException {
         if ("json".equals(parseType)) {
             this.lineParser = line -> LineUtils.getItemMap(line, indexMap, false);
         } else if ("csv".equals(parseType)) {
