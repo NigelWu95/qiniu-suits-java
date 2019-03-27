@@ -19,7 +19,7 @@ public class DeleteFile extends Base {
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                       String savePath, int saveIndex) throws IOException {
         super("delete", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
     }
 

@@ -21,7 +21,7 @@ public class ChangeStatus extends Base {
                         String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.status = status;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
     }
 

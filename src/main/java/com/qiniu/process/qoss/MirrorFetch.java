@@ -17,7 +17,7 @@ public class MirrorFetch extends Base {
     public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                        String savePath, int saveIndex) throws IOException {
         super("mirror", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
