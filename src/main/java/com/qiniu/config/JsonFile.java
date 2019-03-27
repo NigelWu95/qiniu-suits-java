@@ -53,7 +53,7 @@ public class JsonFile {
         }
     }
 
-    public Set<String> getConfigKeys() {
+    public Set<String> getKeys() {
         return jsonObject.keySet();
     }
 }

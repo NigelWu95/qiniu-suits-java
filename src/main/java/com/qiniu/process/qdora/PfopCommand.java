@@ -32,7 +32,7 @@ public class PfopCommand extends Base {
         super("pfopcmd", null, null, null, null, rmPrefix, savePath, saveIndex);
         this.pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
-        for (String key : jsonFile.getConfigKeys()) {
+        for (String key : jsonFile.getKeys()) {
             JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
             List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});

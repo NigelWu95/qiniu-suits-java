@@ -1,16 +1,14 @@
 package com.qiniu.config;
 
-import com.qiniu.interfaces.IEntryParam;
-
 import java.io.*;
-import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
-public class FileProperties implements IEntryParam {
+public class PropertiesFile {
 
     private Properties properties;
 
-    public FileProperties(String resourceName) throws IOException {
+    public PropertiesFile(String resourceName) throws IOException {
         InputStream inputStream = null;
 
         try {
@@ -26,6 +24,10 @@ public class FileProperties implements IEntryParam {
                 }
             }
         }
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 
     /**
@@ -53,7 +55,7 @@ public class FileProperties implements IEntryParam {
         return properties.getProperty(key, Default);
     }
 
-    public Map<String, String> getParamsMap() {
-        return null;
+    public Set<String> getKeys() {
+        return properties.stringPropertyNames();
     }
 }
