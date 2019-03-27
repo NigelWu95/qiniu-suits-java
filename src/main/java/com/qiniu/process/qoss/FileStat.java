@@ -30,7 +30,7 @@ public class FileStat extends Base {
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for line to map.");
         }
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
     }
 

@@ -18,7 +18,7 @@ public class Pfop extends Base {
     public Pfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
                 String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("pfop", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration);
+        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;

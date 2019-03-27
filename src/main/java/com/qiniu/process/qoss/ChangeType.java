@@ -22,7 +22,7 @@ public class ChangeType extends Base {
                       String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.type = type;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
     }
 

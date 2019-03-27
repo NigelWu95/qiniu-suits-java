@@ -42,7 +42,7 @@ public class MoveFile extends Base {
         }
         this.toBucket = toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
     }
 

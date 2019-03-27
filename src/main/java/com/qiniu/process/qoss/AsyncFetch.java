@@ -31,7 +31,7 @@ public class AsyncFetch extends Base {
                       String protocol, String keyPrefix, String rmPrefix, String urlIndex, String savePath,
                       int saveIndex) throws IOException {
         super("asyncfetch", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
