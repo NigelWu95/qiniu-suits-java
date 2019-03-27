@@ -119,7 +119,7 @@ public class BucketList implements IDataSource {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                retry = HttpResponseUtils.checkException(fileLister.exception, 1);
+                retry = HttpResponseUtils.checkException(fileLister.exception, 3);
                 if (retry == -1) throw fileLister.exception;
                 if (fileLister.exception.response != null) fileLister.exception.response.close();
                 fileLister.exception = null;
@@ -138,7 +138,7 @@ public class BucketList implements IDataSource {
             try {
                 if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
-                retry = HttpResponseUtils.checkException(e, 1);
+                retry = HttpResponseUtils.checkException(e, 3);
                 if (retry == -1) throw e;
             }
         }
@@ -180,7 +180,7 @@ public class BucketList implements IDataSource {
                 break;
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
-                retry = HttpResponseUtils.checkException(e, 1);
+                retry = HttpResponseUtils.checkException(e, 3);
                 if (retry == -1) throw e;
             }
         }

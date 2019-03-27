@@ -6,32 +6,30 @@ import com.qiniu.http.Response;
 public class HttpResponseUtils {
 
     /**
-     * 处理异常结果，提取异常信息进行判断或者在需要抛出异常时记录具体错误描述
+     * 判断异常结果，返回后续处理标志
      * @param e 需要处理的 QiniuException 异常
-     * @param retry 当前重试次数
-     * @return 返回重试次数，返回 -2 表示传入的异常为空，返回 -1 表示该异常应该抛出，返回 0 表示该异常可以记录并跳过，返回 1 表示可以进行重试
+     * @param times 此次处理失败前的重试次数，如果已经为小于 1 的话则说明没有重试机会需要抛出异常
+     * @return 返回重试次数，返回 -1 表示该异常应该抛出，返回 0 表示该异常可以记录并跳过，返回大于 0 表示可以进行重试
      */
-    public static int checkException(QiniuException e, int retry) {
-        if (e != null) {
-            if (e.response != null) {
-                if (e.code() == 631 || retry <= 0) {
-                    return -1;
-                } else if (e.code() == 478 || e.code() == 404 || e.code() == 612) {
-                    // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
-                    return 0;
-                } else if (e.response.needRetry()) {
-                    // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
-                    e.response.close();
-                    // 处理一次异常返回的重试次数应该少一次
-                    return retry - 1;
-                } else {
-                    return -1;
-                }
-            } else {
+    public static int checkException(QiniuException e, int times) {
+        // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
+        times--;
+        if (e.response != null) {
+            if (e.code() == 478 || e.code() == 404 || e.code() == 612) {
+                // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
                 return 0;
+            } else if (e.code() == 631 || times <= 0) {
+                // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
+                return -1;
+            } else if (e.response.needRetry()) {
+                e.response.close();
+                return times;
+            } else {
+                return -1;
             }
         } else {
-            return -2;
+            // 请求超时等情况下可能异常中的 response 为空，需要重试
+            return times;
         }
     }
 
@@ -42,7 +40,7 @@ public class HttpResponseUtils {
      * @throws QiniuException Response 非正常响应的情况下抛出的异常
      */
     public static String getResult(Response response) throws QiniuException {
-        if (response == null) throw new QiniuException(new Exception("empty response"));
+        if (response == null) throw new QiniuException(null, "empty response");
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         String responseBody = response.bodyString();
         response.close();
