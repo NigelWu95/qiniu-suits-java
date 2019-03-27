@@ -31,7 +31,12 @@ public class CommandArgs implements IEntryParam {
         }
     }
 
-    private static String[] splitParam(String paramCommand) throws IOException {
+    public CommandArgs(Map<String, String> initMap) throws IOException {
+        if (initMap == null || initMap.size() == 0) throw new IOException("no init params.");
+        this.paramsMap = initMap;
+    }
+
+    private String[] splitParam(String paramCommand) throws IOException {
 
         if (!paramCommand.contains("=") || !paramCommand.startsWith("-")) {
             throw new IOException("there is invalid command param: \"" + paramCommand + "\".");
