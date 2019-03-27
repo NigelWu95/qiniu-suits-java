@@ -33,6 +33,7 @@ public class CommonParams {
     private boolean prefixRight;
     private int unitLen;
     private int threads;
+    private int batchSize;
     private int retryTimes;
     private boolean saveTotal;
     private String savePath;
@@ -66,6 +67,7 @@ public class CommonParams {
         setUnitLen(entryParam.getValue("unit-len", "10000"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryTimes(entryParam.getValue("retry-times", "3"));
+        setBatchSize(entryParam.getValue("batch-size", "stat".equals(process) ? "100" : "1000"));
         // list 操作时默认保存全部原始文件
         setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
         savePath = entryParam.getValue("save-path", "result");
@@ -131,6 +133,10 @@ public class CommonParams {
 
     private void setThreads(String threads) throws IOException {
         this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
+    }
+
+    private void setBatchSize(String batchSize) throws IOException {
+        this.retryTimes = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
@@ -367,6 +373,10 @@ public class CommonParams {
         this.threads = threads;
     }
 
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes;
     }
@@ -445,6 +455,10 @@ public class CommonParams {
 
     public int getThreads() {
         return threads;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
     }
 
     public int getRetryTimes() {

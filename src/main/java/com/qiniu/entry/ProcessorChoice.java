@@ -23,6 +23,7 @@ public class ProcessorChoice {
     private String secretKey;
     private String bucket;
     private String process;
+    private int batchSize;
     private int retryTimes;
     private String savePath;
     private String saveFormat;
@@ -36,6 +37,7 @@ public class ProcessorChoice {
         this.secretKey = commonParams.getSecretKey();
         this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
+        this.batchSize = commonParams.getBatchSize();
         this.retryTimes = commonParams.getRetryTimes();
         this.savePath = commonParams.getSavePath();
         this.saveFormat = commonParams.getSaveFormat();
@@ -111,8 +113,11 @@ public class ProcessorChoice {
 
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
-        // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
-        if (nextProcessor != null) nextProcessor.setRetryTimes(retryTimes);
+        if (nextProcessor != null) {
+            nextProcessor.setBatchSize(batchSize);
+            // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
+            nextProcessor.setRetryTimes(retryTimes);
+        }
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);

@@ -91,9 +91,9 @@ public class QSuitsEntry {
     private void setConfiguration() {
         this.configuration = new Configuration(Zone.autoZone());
         // 自定义超时时间
-        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "1"));
-        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "1"));
-        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "1"));
+        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
+        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
+        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "60"));
     }
 
     public void setCommonParams(CommonParams commonParams) {
