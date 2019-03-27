@@ -4,7 +4,7 @@ import com.qiniu.common.Zone;
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.datasource.FileInput;
 import com.qiniu.datasource.IDataSource;
-import com.qiniu.datasource.ListBucket;
+import com.qiniu.datasource.BucketList;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -104,7 +104,7 @@ public class QSuitsEntry {
             boolean prefixLeft = commonParams.getPrefixLeft();
             boolean prefixRight = commonParams.getPrefixRight();
             Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new ListBucket(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes, prefixLeft,
+            dataSource = new BucketList(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes, prefixLeft,
                     prefixRight, threads, savePath);
         } else if ("file".equals(source)) {
             String filePath = commonParams.getPath();

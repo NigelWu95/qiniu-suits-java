@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class ListBucketUtilsTest {
+public class BucketListUtilsTest {
 
     @Test
     public void testCalcMarker() {
