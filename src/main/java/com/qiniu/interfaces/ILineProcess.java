@@ -1,6 +1,5 @@
 package com.qiniu.interfaces;
 
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +17,12 @@ public interface ILineProcess<T> {
     default void setRetryTimes(int retryTimes) {}
 
     default void setSaveTag(String saveTag) {}
+
+    default void updateBucket(String bucket) {}
+
+    default void updateRmPrefix(String rmPrefix) {}
+
+    default void updateSavePath(String savePath) throws IOException {}
 
     void processLine(List<T> list) throws IOException;
 

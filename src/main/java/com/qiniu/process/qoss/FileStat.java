@@ -41,7 +41,7 @@ public class FileStat extends Base {
 
     public FileStat clone() throws CloneNotSupportedException {
         FileStat fileStat = (FileStat)super.clone();
-        fileStat.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        fileStat.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         return fileStat;
     }
 

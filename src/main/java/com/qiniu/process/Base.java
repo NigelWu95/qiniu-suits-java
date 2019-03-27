@@ -22,11 +22,11 @@ import java.util.stream.Collectors;
 public abstract class Base implements ILineProcess<Map<String, String>>, Cloneable {
 
     final protected String processName;
-    final protected Configuration configuration;
-    final protected String accessKey;
-    final protected String secretKey;
-    final protected String bucket;
-    final protected String rmPrefix;
+    protected Configuration configuration;
+    protected String accessKey;
+    protected String secretKey;
+    protected String bucket;
+    protected String rmPrefix;
     protected int batchSize;
     protected int retryTimes = 3;
     protected String saveTag;
@@ -69,6 +69,20 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
 
     public void setSaveTag(String saveTag) {
         this.saveTag = saveTag == null ? "" : saveTag;
+    }
+
+    public void updateBucket(String bucket) {
+        this.bucket = bucket;
+    }
+
+    public void updateRmPrefix(String rmPrefix) {
+        this.rmPrefix = rmPrefix;
+    }
+
+    public void updateSavePath(String savePath) throws IOException {
+        this.savePath = savePath;
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
+        this.fileMap.initDefaultWriters();
     }
 
     public Base clone() throws CloneNotSupportedException {
