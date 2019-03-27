@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ListBucketTest {
+public class BucketListTest {
 
     @Test
     public void setPrefixesScope() {

@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-public class ListBucket implements IDataSource {
+public class BucketList implements IDataSource {
 
     private Auth auth;
     private Configuration configuration;
@@ -40,7 +40,7 @@ public class ListBucket implements IDataSource {
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public ListBucket(Auth auth, Configuration configuration, String bucket, int unitLen,
+    public BucketList(Auth auth, Configuration configuration, String bucket, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                       boolean prefixRight, int threads, String savePath) {
         this.auth = auth;
