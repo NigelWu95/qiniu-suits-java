@@ -109,7 +109,7 @@ public class FileInput implements IDataSource {
                 try {
                     if (processor != null) processor.processLine(infoMapList);
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.checkException(e, 1);
+                    retry = HttpResponseUtils.checkException(e, 3);
                     if (retry == -1) throw e;
                 }
                 srcList.clear();
@@ -142,8 +142,8 @@ public class FileInput implements IDataSource {
                 } catch (Exception e) {
                     try {
                         System.out.println("order " + order + ": " + key + "\tnextLine:" + reader.readLine());
-                    } catch (IOException ioE) {
-                        ioE.printStackTrace();
+                    } catch (IOException io) {
+                        io.printStackTrace();
                     }
                     initFileMap.closeWriters();
                     fileMap.closeWriters();

@@ -161,21 +161,22 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         for (int i = 0; i < times; i++) {
             processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
             if (processList.size() > 0) {
-                retry = retryTimes;
+                retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
                 while (retry > 0) {
                     try {
                         result = batchResult(processList);
                         parseBatchResult(processList, result);
-                        retry = 0;
+                        break;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
                         String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                         System.out.println(message);
-                        if (retry < 0) {
+                        if (retry <= 0) {
                             fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1)
                                     .stream().map(line -> line + "\t" + message.replaceAll("\n", "\t"))
                                     .collect(Collectors.toList())), false);
                         }
+                        if (retry == 0) break;
                         if (retry == -1) throw e;
                     }
                 }
@@ -209,18 +210,19 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                 fileMap.writeError(resultInfo(line) + "\t" + e.getMessage(), false);
                 continue;
             }
-            retry = retryTimes;
+            retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
             while (retry > 0) {
                 try {
                     result = singleResult(line);
                     fileMap.writeSuccess(result, false);
-                    retry = 0;
+                    break;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
                     String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                     System.out.println(message);
                     if (retry == 0) {
                         fileMap.writeError(resultInfo(line) + "\t" + message, false);
+                        break;
                     } else if (retry == -1) {
                         fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1).stream()
                                 .map(srcLine -> resultInfo(srcLine) + "\t" + message)
