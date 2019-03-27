@@ -2,16 +2,38 @@ package com.qiniu.config;
 
 import com.qiniu.interfaces.IEntryParam;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
-public class CommandArgs implements IEntryParam {
+public class ParamsConfig implements IEntryParam {
 
-    private String[] params;
     private Map<String, String> paramsMap;
 
-    public CommandArgs(String[] args) throws IOException {
+    public ParamsConfig(String resourceName) throws IOException {
+        InputStream inputStream = null;
+
+        try {
+            inputStream = new FileInputStream(resourceName);
+            Properties properties = new Properties();
+            properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
+            paramsMap = new HashMap<>();
+            for (String key : properties.stringPropertyNames()) {
+                paramsMap.put(key, properties.getProperty(key));
+            }
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    inputStream = null;
+                }
+            }
+        }
+    }
+
+    public ParamsConfig(String[] args) throws IOException {
         if (args == null || args.length == 0)
             throw new IOException("args is null.");
         else {
@@ -26,12 +48,10 @@ public class CommandArgs implements IEntryParam {
                     cmdGoon = false;
                 }
             }
-            params = new String[cmdCount];
-            System.arraycopy(args, 0, params, 0, cmdCount);
         }
     }
 
-    public CommandArgs(Map<String, String> initMap) throws IOException {
+    public ParamsConfig(Map<String, String> initMap) throws IOException {
         if (initMap == null || initMap.size() == 0) throw new IOException("no init params.");
         this.paramsMap = initMap;
     }
@@ -80,10 +100,6 @@ public class CommandArgs implements IEntryParam {
         } else {
             return paramsMap.getOrDefault(key, Default);
         }
-    }
-
-    public String[] getParams() {
-        return params;
     }
 
     public Map<String, String> getParamsMap() {

@@ -1,6 +1,7 @@
 package com.qiniu.interfaces;
 
 import java.io.IOException;
+import java.util.Map;
 
 public interface IEntryParam {
 
@@ -19,4 +20,6 @@ public interface IEntryParam {
      * @return 属性值字符
      */
     String getValue(String key, String Default);
+
+    Map<String, String> getParamsMap();
 }

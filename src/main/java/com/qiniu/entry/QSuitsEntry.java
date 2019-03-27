@@ -1,8 +1,7 @@
 package com.qiniu.entry;
 
 import com.qiniu.common.Zone;
-import com.qiniu.config.CommandArgs;
-import com.qiniu.config.FileProperties;
+import com.qiniu.config.ParamsConfig;
 import com.qiniu.datasource.FileInput;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.ListBucket;
@@ -63,7 +62,7 @@ public class QSuitsEntry {
             if (configFilePath == null) throw new IOException("there is no config file detected.");
             else paramFromConfig = true;
         }
-        entryParam = paramFromConfig ? new FileProperties(configFilePath) : new CommandArgs(args);
+        entryParam = paramFromConfig ? new ParamsConfig(configFilePath) : new ParamsConfig(args);
     }
 
     private void setConfiguration() {
