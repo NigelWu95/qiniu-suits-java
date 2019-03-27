@@ -141,10 +141,6 @@ public class CommonParams {
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
     }
 
-    public void setSaveTotal(boolean saveTotal) {
-        this.saveTotal = Boolean.valueOf(entryParam.getValue("save-total", String.valueOf(saveTotal)));
-    }
-
     private void setSaveSeparator(String separator) {
         if (separator == null) {
             if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
@@ -313,6 +309,82 @@ public class CommonParams {
             throw new IOException("f-date filter must get the putTime's index.");
         }
         return time * 10000;
+    }
+
+    public void setEntryParam(IEntryParam entryParam) {
+        this.entryParam = entryParam;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setProcess(String process) {
+        this.process = process;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public void setIndexMap(HashMap<String, String> indexMap) {
+        this.indexMap = indexMap;
+    }
+
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public void setBucket(String bucket) {
+        this.bucket = bucket;
+    }
+
+    public void setPrefixesMap(Map<String, String[]> prefixesMap) {
+        this.prefixesMap = prefixesMap;
+    }
+
+    public void setAntiPrefixes(List<String> antiPrefixes) {
+        this.antiPrefixes = antiPrefixes;
+    }
+
+    public void setPrefixLeft(boolean prefixLeft) {
+        this.prefixLeft = prefixLeft;
+    }
+
+    public void setPrefixRight(boolean prefixRight) {
+        this.prefixRight = prefixRight;
+    }
+
+    public void setUnitLen(int unitLen) {
+        this.unitLen = unitLen;
+    }
+
+    public void setThreads(int threads) {
+        this.threads = threads;
+    }
+
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes;
+    }
+
+    public void setSaveTotal(boolean saveTotal) {
+        this.saveTotal = saveTotal;
+    }
+
+    public void setSavePath(String savePath) {
+        this.savePath = savePath;
+    }
+
+    public void setSaveFormat(String saveFormat) {
+        this.saveFormat = saveFormat;
+    }
+
+    public void setRmFields(List<String> rmFields) {
+        this.rmFields = rmFields;
     }
 
     public boolean containIndex(String name) {

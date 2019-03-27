@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 
 import java.util.List;
@@ -12,4 +13,6 @@ public interface IDataSource {
     void setProcessor(ILineProcess<Map<String, String>> processor);
 
     void export() throws Exception;
+
+    void updateSettings(CommonParams commonParams);
 }

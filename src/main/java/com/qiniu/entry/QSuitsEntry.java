@@ -21,24 +21,47 @@ public class QSuitsEntry {
     private IEntryParam entryParam;
     private Configuration configuration;
     private CommonParams commonParams;
+    private String source;
+    private int unitLen;
+    private int threads;
+    private String savePath;
+    private boolean saveTotal;
+    private String saveFormat;
+    private String saveSeparator;
+    private List<String> rmFields;
 
     public QSuitsEntry(String[] args) throws IOException {
         setEntryParam(args);
         setConfiguration();
         setCommonParams(new CommonParams(entryParam));
+        setCommons();
     }
 
     public QSuitsEntry(IEntryParam entryParam) throws IOException {
         this.entryParam = entryParam;
         setConfiguration();
         setCommonParams(new CommonParams(entryParam));
+        setCommons();
     }
 
     public QSuitsEntry(IEntryParam entryParam, Configuration configuration) throws IOException {
         this.entryParam = entryParam;
         this.configuration = configuration;
         setCommonParams(new CommonParams(entryParam));
+        setCommons();
     }
+
+    private void setCommons() {
+        source = commonParams.getSource();
+        unitLen = commonParams.getUnitLen();
+        threads = commonParams.getThreads();
+        savePath = commonParams.getSavePath();
+        saveTotal = commonParams.getSaveTotal();
+        saveFormat = commonParams.getSaveFormat();
+        saveSeparator = commonParams.getSaveSeparator();
+        rmFields = commonParams.getRmFields();
+    }
+
 
     private void setEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
@@ -90,29 +113,37 @@ public class QSuitsEntry {
     }
 
     public IDataSource getDataSource() {
-        IDataSource dataSource = null;
-        String source = commonParams.getSource();
-        String savePath = commonParams.getSavePath();
-        int threads = commonParams.getThreads();
-        int unitLen = commonParams.getUnitLen();
         if ("list".equals(source)) {
-            String accessKey = commonParams.getAccessKey();
-            String secretKey = commonParams.getSecretKey();
-            String bucket = commonParams.getBucket();
-            Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
-            List<String> antiPrefixes = commonParams.getAntiPrefixes();
-            boolean prefixLeft = commonParams.getPrefixLeft();
-            boolean prefixRight = commonParams.getPrefixRight();
-            Auth auth = Auth.create(accessKey, secretKey);
-            dataSource = new BucketList(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes, prefixLeft,
-                    prefixRight, threads, savePath);
+            return getBucketList();
         } else if ("file".equals(source)) {
-            String filePath = commonParams.getPath();
-            String parseType = commonParams.getParse();
-            String separator = commonParams.getSeparator();
-            HashMap<String, String> indexMap = commonParams.getIndexMap();
-            dataSource = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
+            return getFileInput();
+        } else {
+            return null;
         }
-        return dataSource;
+    }
+
+    public FileInput getBucketList() {
+        String filePath = commonParams.getPath();
+        String parseType = commonParams.getParse();
+        String separator = commonParams.getSeparator();
+        HashMap<String, String> indexMap = commonParams.getIndexMap();
+        FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
+        fileInput.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        return fileInput;
+    }
+
+    public BucketList getFileInput() {
+        String accessKey = commonParams.getAccessKey();
+        String secretKey = commonParams.getSecretKey();
+        String bucket = commonParams.getBucket();
+        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        Auth auth = Auth.create(accessKey, secretKey);
+        BucketList bucketList = new BucketList(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes, prefixLeft,
+                prefixRight, threads, savePath);
+        bucketList.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        return bucketList;
     }
 }
