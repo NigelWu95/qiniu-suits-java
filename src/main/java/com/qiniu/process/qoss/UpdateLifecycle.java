@@ -3,6 +3,7 @@ package com.qiniu.process.qoss;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
@@ -37,7 +38,7 @@ public class UpdateLifecycle extends Base {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        BatchOperations batchOperations = new BatchOperations();
         lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
