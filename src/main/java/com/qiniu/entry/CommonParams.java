@@ -136,7 +136,7 @@ public class CommonParams {
     }
 
     private void setBatchSize(String batchSize) throws IOException {
-        this.retryTimes = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
+        this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
