@@ -3,6 +3,7 @@ package com.qiniu.config;
 import com.qiniu.interfaces.IEntryParam;
 
 import java.io.*;
+import java.util.Map;
 import java.util.Properties;
 
 public class FileProperties implements IEntryParam {
@@ -50,5 +51,9 @@ public class FileProperties implements IEntryParam {
     public String getValue(String key, String Default) {
         if ("".equals(properties.getProperty(key, ""))) return Default;
         return properties.getProperty(key, Default);
+    }
+
+    public Map<String, String> getParamsMap() {
+        return null;
     }
 }
