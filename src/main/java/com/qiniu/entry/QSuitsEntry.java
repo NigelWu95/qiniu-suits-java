@@ -122,7 +122,7 @@ public class QSuitsEntry {
         }
     }
 
-    public FileInput getBucketList() {
+    public FileInput getFileInput() {
         String filePath = commonParams.getPath();
         String parseType = commonParams.getParse();
         String separator = commonParams.getSeparator();
@@ -132,7 +132,7 @@ public class QSuitsEntry {
         return fileInput;
     }
 
-    public BucketList getFileInput() {
+    public BucketList getBucketList() {
         String accessKey = commonParams.getAccessKey();
         String secretKey = commonParams.getSecretKey();
         String bucket = commonParams.getBucket();
