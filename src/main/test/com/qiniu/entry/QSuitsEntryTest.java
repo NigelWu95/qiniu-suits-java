@@ -8,7 +8,6 @@ import com.qiniu.storage.Configuration;
 import org.junit.Before;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,16 +16,7 @@ public class QSuitsEntryTest {
     @Before
     public void testEntry() throws Exception {
         IEntryParam entryParam = new ParamsConfig("resources/.qiniu.properties");
-
-        Map<String, String> paramsMap = new HashMap<String, String>(){{
-            put("ak", "");
-            put("sk", "");
-            put("bucket", "");
-//            put("save-total", "");
-            put("process", "");
-            put("to-bucket", "");
-        }};
-
+        Map<String, String> paramsMap = entryParam.getParamsMap();
         List<String> buckets = new ArrayList<String>(){{
             add("fhyfhy261");
             add("fhyfhy262");
@@ -1241,21 +1231,36 @@ public class QSuitsEntryTest {
 
         }};
 
-        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
-        Configuration configuration = qSuitsEntry.getConfiguration();
-        CommonParams commonParams = qSuitsEntry.getCommonParams();
-        ILineProcess<Map<String, String>> processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
-        IDataSource dataSource = qSuitsEntry.getDataSource();
+        QSuitsEntry qSuitsEntry;
+        Configuration configuration;
+        CommonParams commonParams;
+        ILineProcess<Map<String, String>> processor;
+        IDataSource dataSource;
         // 这些参数需要在获取 processor 之后再访问，因为可能由于 ProcessorChoice 的过程对参数的默认值进行修改
-        boolean saveTotal = commonParams.getSaveTotal();
-        String saveFormat = commonParams.getSaveFormat();
-        String saveSeparator = commonParams.getSaveSeparator();
-        List<String> rmFields = commonParams.getRmFields();
-        if (dataSource != null) {
-            dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
-            dataSource.setProcessor(processor);
-            dataSource.export();
+        boolean saveTotal;
+        String saveFormat;
+        String saveSeparator;
+        List<String> rmFields;
+
+        // 不断去更改 bucket 做执行
+        for (String bucket : buckets) {
+            paramsMap.put("bucket", bucket);
+            entryParam = new ParamsConfig(paramsMap);
+            qSuitsEntry = new QSuitsEntry(entryParam);
+            configuration = qSuitsEntry.getConfiguration();
+            commonParams = qSuitsEntry.getCommonParams();
+            processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
+            dataSource = qSuitsEntry.getDataSource();
+            saveTotal = commonParams.getSaveTotal();
+            saveFormat = commonParams.getSaveFormat();
+            saveSeparator = commonParams.getSaveSeparator();
+            rmFields = commonParams.getRmFields();
+            if (dataSource != null) {
+                dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+                dataSource.setProcessor(processor);
+                dataSource.export();
+            }
+            if (processor != null) processor.closeResource();
         }
-        if (processor != null) processor.closeResource();
     }
 }
