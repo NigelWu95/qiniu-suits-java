@@ -7,7 +7,6 @@ import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.BucketList;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +22,7 @@ public class QSuitsEntry {
     private CommonParams commonParams;
     private String source;
     private int unitLen;
+    private int retryTimes;
     private int threads;
     private String savePath;
     private boolean saveTotal;
@@ -54,6 +54,7 @@ public class QSuitsEntry {
     private void setCommons() {
         source = commonParams.getSource();
         unitLen = commonParams.getUnitLen();
+        retryTimes = commonParams.getRetryTimes();
         threads = commonParams.getThreads();
         savePath = commonParams.getSavePath();
         saveTotal = commonParams.getSaveTotal();
@@ -128,6 +129,7 @@ public class QSuitsEntry {
         String separator = commonParams.getSeparator();
         HashMap<String, String> indexMap = commonParams.getIndexMap();
         FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
+        fileInput.setRetryTimes(retryTimes);
         fileInput.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
         return fileInput;
     }
@@ -140,10 +142,10 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        Auth auth = Auth.create(accessKey, secretKey);
-        BucketList bucketList = new BucketList(auth, configuration, bucket, unitLen, prefixesMap, antiPrefixes, prefixLeft,
-                prefixRight, threads, savePath);
+        BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, unitLen, prefixesMap,
+                antiPrefixes, prefixLeft, prefixRight, threads, savePath);
         bucketList.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        bucketList.setRetryTimes(retryTimes);
         return bucketList;
     }
 }

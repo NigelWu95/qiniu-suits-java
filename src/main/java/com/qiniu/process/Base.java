@@ -28,7 +28,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected String bucket;
     protected String rmPrefix;
     protected int batchSize;
-    protected int retryTimes = 3;
+    protected int retryTimes = 5;
     protected String saveTag;
     protected int saveIndex;
     protected String savePath;
@@ -180,7 +180,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     try {
                         result = batchResult(processList);
                         parseBatchResult(processList, result);
-                        break;
+                        retry = 0;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
                         String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
@@ -190,7 +190,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                                     .stream().map(line -> line + "\t" + message.replaceAll("\n", "\t"))
                                     .collect(Collectors.toList())), false);
                         }
-                        if (retry == 0) break;
                         if (retry == -1) throw e;
                     }
                 }
@@ -229,14 +228,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                 try {
                     result = singleResult(line);
                     fileMap.writeSuccess(result, false);
-                    break;
+                    retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
                     String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                     System.out.println(message);
                     if (retry == 0) {
                         fileMap.writeError(resultInfo(line) + "\t" + message, false);
-                        break;
                     } else if (retry == -1) {
                         fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1).stream()
                                 .map(srcLine -> resultInfo(srcLine) + "\t" + message)
