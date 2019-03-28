@@ -15,14 +15,14 @@ import java.util.Map;
 
 public class ChangeType extends Base {
 
-    private int type;
     private BucketManager bucketManager;
+    private int type;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.type = type;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.type = type;
         this.batchSize = 1000;
     }
 

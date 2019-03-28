@@ -15,45 +15,44 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class FileStat extends Base {
+public class StatFile extends Base {
 
+    private BucketManager bucketManager;
     private String format;
     private String separator;
-    private BucketManager bucketManager;
 
-    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.format = format;
-        if ("csv".equals(format) || "tab".equals(format)) {
-            this.separator = "csv".equals(format) ? "," : separator;
-        } else if (!"json".equals(this.format)) {
-            throw new IOException("please check your format for line to map.");
-        }
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        set(format, separator);
         this.batchSize = 1000;
     }
 
     public void updateStat(String bucket, String format, String separator, String rmPrefix) throws IOException {
         this.bucket = bucket;
+        set(format, separator);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String format, String separator) throws IOException {
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
             this.separator = "csv".equals(format) ? "," : separator;
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for line to map.");
         }
-        this.rmPrefix = rmPrefix;
     }
 
-    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator) throws IOException {
         this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, format, separator, 0);
     }
 
-    public FileStat clone() throws CloneNotSupportedException {
-        FileStat fileStat = (FileStat)super.clone();
-        fileStat.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        return fileStat;
+    public StatFile clone() throws CloneNotSupportedException {
+        StatFile statFile = (StatFile)super.clone();
+        statFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        return statFile;
     }
 
     @Override

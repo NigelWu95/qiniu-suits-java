@@ -12,11 +12,11 @@ import java.util.Map;
 
 public class AsyncFetch extends Base {
 
+    private BucketManager bucketManager;
     private String domain;
     private String protocol;
     private String urlIndex;
     private String keyPrefix;
-    private BucketManager bucketManager;
     private boolean hasCustomArgs;
     private String host;
     private String md5Index;
@@ -32,24 +32,17 @@ public class AsyncFetch extends Base {
                       int saveIndex) throws IOException {
         super("asyncfetch", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = null;
-            if (domain == null || "".equals(domain)) {
-                throw new IOException("please set one of domain and urlIndex.");
-            } else {
-                RequestUtils.checkHost(domain);
-                this.domain = domain;
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
-            }
-        } else {
-            this.urlIndex = urlIndex;
-        }
-        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        set(domain, protocol, urlIndex, keyPrefix);
     }
 
     public void updateFetch(String bucket, String domain, String protocol, String urlIndex, String keyPrefix,
-                             String rmPrefix) throws IOException {
+                            String rmPrefix) throws IOException {
         this.bucket = bucket;
+        set(domain, protocol, urlIndex, keyPrefix);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String domain, String protocol, String urlIndex, String keyPrefix) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
@@ -63,7 +56,6 @@ public class AsyncFetch extends Base {
             this.urlIndex = urlIndex;
         }
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.rmPrefix = rmPrefix;
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,

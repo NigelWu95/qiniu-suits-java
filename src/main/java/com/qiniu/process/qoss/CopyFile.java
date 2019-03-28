@@ -14,28 +14,30 @@ import java.util.Map;
 
 public class CopyFile extends Base {
 
+    private BucketManager bucketManager;
     private String toBucket;
     private String newKeyIndex;
     private String keyPrefix;
-    private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.toBucket = toBucket;
-        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
-        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
-        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        set(toBucket, newKeyIndex, keyPrefix);
         this.batchSize = 1000;
     }
 
     public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
         this.bucket = bucket;
+        set(toBucket, newKeyIndex, keyPrefix);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String toBucket, String newKeyIndex, String keyPrefix) {
         this.toBucket = toBucket;
+        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.rmPrefix = rmPrefix;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
