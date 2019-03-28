@@ -74,6 +74,7 @@ public class FileInput implements IDataSource {
         this.unitLen = commonParams.getUnitLen();
         this.threads = commonParams.getThreads();
         this.savePath = commonParams.getSavePath();
+        this.saveTag = commonParams.getSaveTag();
         this.saveTotal = commonParams.getSaveTotal();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
