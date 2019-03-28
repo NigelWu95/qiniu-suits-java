@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
 
 public class BucketList implements IDataSource {
 
-    private Auth auth;
+    private String accessKey;
+    private String secretKey;
     private Configuration configuration;
     private String bucket;
     private List<String> antiPrefixes;
@@ -30,6 +31,7 @@ public class BucketList implements IDataSource {
     private boolean prefixLeft;
     private boolean prefixRight;
     private int unitLen;
+    private int retryTimes = 5;
     private int threads;
     private String savePath;
     private boolean saveTotal;
@@ -41,10 +43,11 @@ public class BucketList implements IDataSource {
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public BucketList(Auth auth, Configuration configuration, String bucket, int unitLen,
+    public BucketList(String accessKey, String secretKey, Configuration configuration, String bucket, int unitLen,
                       Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                       boolean prefixRight, int threads, String savePath) {
-        this.auth = auth;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
         this.configuration = configuration;
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
@@ -69,6 +72,10 @@ public class BucketList implements IDataSource {
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+    }
+
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes;
     }
 
     // 通过 commonParams 来更新基本参数
@@ -114,12 +121,13 @@ public class BucketList implements IDataSource {
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
-        int retry;
+        int retry = retryTimes + 1;
         while (fileLister.hasNext()) {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                retry = HttpResponseUtils.checkException(fileLister.exception, 3);
+                // 每次 check 异常时 retry 会减一，所以在重试次数用尽时（返回的 retry < 0）会抛出异常
+                retry = HttpResponseUtils.checkException(fileLister.exception, retry);
                 if (retry == -1) throw fileLister.exception;
                 if (fileLister.exception.response != null) fileLister.exception.response.close();
                 fileLister.exception = null;
@@ -138,7 +146,8 @@ public class BucketList implements IDataSource {
             try {
                 if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
-                retry = HttpResponseUtils.checkException(e, 3);
+                // 这里其实逻辑上没有做重试次数的限制，因此 retry > 0，所以不是必须抛出的异常则会跳过，process 本身会保存失败的记录
+                retry = HttpResponseUtils.checkException(e, retry);
                 if (retry == -1) throw e;
             }
         }
@@ -172,15 +181,15 @@ public class BucketList implements IDataSource {
      */
     private FileLister generateLister(String prefix) throws IOException {
         FileLister fileLister;
-        int retry;
+        int retry = retryTimes + 1;
         while (true) {
             try {
-                fileLister = new FileLister(new BucketManager(auth, configuration), bucket, prefix,
-                        getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
+                fileLister = new FileLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()),
+                        bucket, prefix, getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
                 break;
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
-                retry = HttpResponseUtils.checkException(e, 3);
+                retry = HttpResponseUtils.checkException(e, retry);
                 if (retry == -1) throw e;
             }
         }

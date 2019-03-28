@@ -25,6 +25,7 @@ public class FileInput implements IDataSource {
     private String separator;
     private Map<String, String> indexMap;
     private int unitLen;
+    private int retryTimes = 5;
     private int threads;
     private String savePath;
     private boolean saveTotal;
@@ -52,6 +53,10 @@ public class FileInput implements IDataSource {
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+    }
+
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes;
     }
 
     // 通过 commonParams 来更新基本参数
@@ -83,7 +88,7 @@ public class FileInput implements IDataSource {
         String line = "";
         int retry;
         while (line != null) {
-            retry = 5;
+            retry = retryTimes + 1;
             while (retry > 0) {
                 try {
                     // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
@@ -109,7 +114,8 @@ public class FileInput implements IDataSource {
                 try {
                     if (processor != null) processor.processLine(infoMapList);
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.checkException(e, 3);
+                    // 这里其实逻辑上没有做重试次数的限制，因此 retry > 0，所以不是必须抛出的异常则会跳过，process 本身会保存失败的记录
+                    retry = HttpResponseUtils.checkException(e, retry);
                     if (retry == -1) throw e;
                 }
                 srcList.clear();

@@ -14,5 +14,7 @@ public interface IDataSource {
 
     void export() throws Exception;
 
+    void setRetryTimes(int retryTimes);
+
     void updateSettings(CommonParams commonParams);
 }
