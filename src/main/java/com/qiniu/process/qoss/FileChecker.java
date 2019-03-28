@@ -5,38 +5,34 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.qoss.Qhash;
-import com.qiniu.util.Auth;
+import com.qiniu.storage.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileChecker {
 
-    final private Client client;
-    final private String algorithm;
-    final private String protocol;
-    final private Auth srcAuth;
+    private Client client;
+    private String algorithm;
+    private String protocol;
     final private List<String> algorithms = new ArrayList<String>(){{
         add("md5");
         add("sha1");
     }};
 
     public FileChecker() {
-        this.client = new Client();
-        this.algorithm = "md5";
-        this.protocol = "http";
-        this.srcAuth = null;
     }
 
-    public FileChecker(String algorithm, String protocol, Auth srcAuth) {
+    public FileChecker(String algorithm, String protocol) {
         this.client = new Client();
         this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
         this.protocol = "https".equals(protocol)? "https" : "http";
-        this.srcAuth = srcAuth;
     }
 
-    public String getAlgorithm() {
-        return algorithm;
+    public FileChecker(Configuration configuration, String algorithm, String protocol) {
+        this.client = new Client(configuration);
+        this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
+        this.protocol = "https".equals(protocol)? "https" : "http";
     }
 
     public Qhash getQHash(String url) throws QiniuException {
@@ -80,8 +76,7 @@ public class FileChecker {
     }
 
     public String getQHashBody(String url) throws QiniuException {
-        url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?qhash/" + algorithm) : url + "?qhash/" + algorithm;
-        Response response = client.get(url);
+        Response response = client.get(url + "?qhash/" + algorithm);
         String qhash = response.bodyString();
         if (response.statusCode != 200) throw new QiniuException(response);
         response.close();
