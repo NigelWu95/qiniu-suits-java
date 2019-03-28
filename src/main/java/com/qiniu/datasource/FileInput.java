@@ -28,6 +28,7 @@ public class FileInput implements IDataSource {
     private int retryTimes = 5;
     private int threads;
     private String savePath;
+    private String saveTag;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -45,6 +46,7 @@ public class FileInput implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
+        this.saveTag = "";
     }
 
     // 不调用则各参数使用默认值
@@ -57,6 +59,10 @@ public class FileInput implements IDataSource {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes;
+    }
+
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     // 通过 commonParams 来更新基本参数
@@ -133,16 +139,16 @@ public class FileInput implements IDataSource {
             String order = String.valueOf(i);
             String key = keys.get(i);
             BufferedReader reader = readersMap.get(key);
-            FileMap fileMap = new FileMap(savePath, "fileinput", order);
+            FileMap fileMap = new FileMap(savePath, "fileinput" + saveTag, order);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
                     String record = "order " + order + ": " + key;
-                    initFileMap.writeKeyFile("result", record + "\treading...", true);
+                    initFileMap.writeKeyFile("input" + saveTag + "_result", record + "\treading...", true);
                     export(reader, fileMap, lineProcessor);
                     record += "\tsuccessfully done";
                     System.out.println(record);
-                    initFileMap.writeKeyFile("result", record, true);
+                    initFileMap.writeKeyFile("input" + saveTag + "_result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                 } catch (Exception e) {
@@ -171,7 +177,7 @@ public class FileInput implements IDataSource {
 
         int filesCount = initFileMap.getReaderMap().size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String info = "read files" + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = "read files: " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);

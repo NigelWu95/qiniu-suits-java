@@ -25,6 +25,7 @@ public class QSuitsEntry {
     private int retryTimes;
     private int threads;
     private String savePath;
+    private String saveTag;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -131,6 +132,7 @@ public class QSuitsEntry {
         FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
         fileInput.setRetryTimes(retryTimes);
         fileInput.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        fileInput.setSaveTag(saveTag);
         return fileInput;
     }
 
@@ -146,6 +148,7 @@ public class QSuitsEntry {
                 antiPrefixes, prefixLeft, prefixRight, threads, savePath);
         bucketList.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
         bucketList.setRetryTimes(retryTimes);
+        bucketList.setSaveTag(saveTag);
         return bucketList;
     }
 }

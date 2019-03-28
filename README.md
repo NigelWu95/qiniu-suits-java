@@ -124,6 +124,7 @@ indexes=0,1,2
 #### 2. 输出结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
 `save-path=` 表示保存结果的文件路径  
+`save-tag=` 保存路径文件名包含的标签，默认为空  
 `save-format=` 结果保存格式（json/tab），默认为 tab  
 `save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 bucket 的 list 操作需要在列举出结果之后再针对字段
@@ -131,10 +132,11 @@ indexes=0,1,2
 默认不保存原始输出数据，list 源默认保存原始输出数据。   
 **--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些
 字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
-**持久化结果的文件名为 "\<source-name\>_success_\<order\>.txt"：  
-（1）list 源 =》 "bucketlist_success_\<order\>.txt"  
-（2）file 源 =》 "fileinput_success_\<order\>.txt"  
-如果设置了过滤参数，则过滤到的结果文件名为 "filter_success_\<order\>.txt"**  
+**持久化结果的文件名为 "\<source-name\>\<save-tag\>_success/error_\<order\>.txt"：  
+（1）list 源 =》 "bucketlist\<save-tag\>_success/error_\<order\>.txt"  
+（2）file 源 =》 "fileinput\<save-tag\>_success/error_\<order\>.txt"  
+如果设置了过滤参数，则过滤到的结果文件名为 "filter\<save-tag\>_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
+"\<process\>\<save-tag\>_success/error_\<order\>.txt"**  
 
 ### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，所有处理结果保存在 save-path 路径下，具体处理过程由处理类型参数指定，如 **process=type/status

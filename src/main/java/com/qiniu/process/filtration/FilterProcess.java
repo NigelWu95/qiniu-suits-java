@@ -38,7 +38,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.rmFields = rmFields;
         this.saveTag = "";
         this.saveIndex = saveIndex;
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
+        this.fileMap = new FileMap(savePath, processName + saveTag, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
         this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
     }
@@ -92,9 +92,13 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.saveTag = saveTag == null ? "" : saveTag;
     }
 
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
+        this.nextProcessor = nextProcessor;
+    }
+
     public FilterProcess clone() throws CloneNotSupportedException {
         FilterProcess filterProcess = (FilterProcess)super.clone();
-        filterProcess.fileMap = new FileMap(savePath, processName, saveTag + String.valueOf(++saveIndex));
+        filterProcess.fileMap = new FileMap(savePath, processName + saveTag, String.valueOf(++saveIndex));
         try {
             filterProcess.fileMap.initDefaultWriters();
             filterProcess.typeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
@@ -105,10 +109,6 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             throw new CloneNotSupportedException("init writer failed.");
         }
         return filterProcess;
-    }
-
-    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
-        this.nextProcessor = nextProcessor;
     }
 
     public void processLine(List<Map<String, String>> list) throws IOException {

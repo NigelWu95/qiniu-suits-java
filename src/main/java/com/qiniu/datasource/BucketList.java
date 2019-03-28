@@ -34,6 +34,7 @@ public class BucketList implements IDataSource {
     private int retryTimes = 5;
     private int threads;
     private String savePath;
+    private String saveTag;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -59,6 +60,7 @@ public class BucketList implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
+        this.saveTag = "";
         this.saveTotal = true; // 默认全记录保存
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
@@ -76,6 +78,10 @@ public class BucketList implements IDataSource {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes;
+    }
+
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     // 通过 commonParams 来更新基本参数
@@ -223,16 +229,16 @@ public class BucketList implements IDataSource {
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
-            FileMap fileMap = new FileMap(savePath, "bucketlist", identifier);
+            FileMap fileMap = new FileMap(savePath, "bucketlist" + saveTag, identifier);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
                     String record = "order " + identifier + ": " + fileLister.getPrefix();
-                    recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
+                    recordFileMap.writeKeyFile("list" + saveTag + "_result", record + "\tlisting...", true);
                     export(fileLister, fileMap, lineProcessor);
                     record += "\tsuccessfully done";
                     System.out.println(record);
-                    recordFileMap.writeKeyFile("result", record, true);
+                    recordFileMap.writeKeyFile("list" + saveTag + "_result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();
@@ -426,7 +432,7 @@ public class BucketList implements IDataSource {
      * @throws Exception 计算 FileLister 列表失败或者写入失败等情况下的异常
      */
     public void export() throws Exception {
-        String info = "list bucket" + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = "list bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileMap recordFileMap = new FileMap(savePath);
         executorPool = Executors.newFixedThreadPool(threads);

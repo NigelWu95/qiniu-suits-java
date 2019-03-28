@@ -16,5 +16,7 @@ public interface IDataSource {
 
     void setRetryTimes(int retryTimes);
 
+    void setSaveTag(String saveTag);
+
     void updateSettings(CommonParams commonParams);
 }
