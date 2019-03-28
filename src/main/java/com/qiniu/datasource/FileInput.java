@@ -46,6 +46,7 @@ public class FileInput implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
+        this.saveTotal = false; // 默认全记录不保存
         this.saveTag = "";
     }
 
@@ -69,10 +70,11 @@ public class FileInput implements IDataSource {
         this.separator = commonParams.getSeparator();
         this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
+        this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();
         this.savePath = commonParams.getSavePath();
-        this.saveTag = commonParams.getSaveTag();
         this.saveTotal = commonParams.getSaveTotal();
+        this.saveTag = commonParams.getSaveTag();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
         this.rmFields = commonParams.getRmFields();

@@ -23,6 +23,7 @@ public class ProcessorChoice {
     private String secretKey;
     private String bucket;
     private String process;
+    private String rmPrefix;
     private int batchSize;
     private int retryTimes;
     private String savePath;
@@ -37,6 +38,7 @@ public class ProcessorChoice {
         this.secretKey = commonParams.getSecretKey();
         this.bucket = commonParams.getBucket();
         this.process = commonParams.getProcess();
+        this.rmPrefix = commonParams.getRmPrefix();
         this.batchSize = commonParams.getBatchSize();
         this.retryTimes = commonParams.getRetryTimes();
         this.savePath = commonParams.getSavePath() + commonParams.getSaveTag();
@@ -157,19 +159,16 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> getChangeStatus() throws IOException {
         String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new ChangeStatus(accessKey, secretKey, configuration, bucket, Integer.valueOf(status), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType() throws IOException {
         String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new ChangeType(accessKey, secretKey, configuration, bucket, Integer.valueOf(type), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
         String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new UpdateLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), rmPrefix, savePath);
     }
 
@@ -177,7 +176,6 @@ public class ProcessorChoice {
         String toBucket = entryParam.getValue("to-bucket");
         String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
                 rmPrefix, savePath);
     }
@@ -187,7 +185,6 @@ public class ProcessorChoice {
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
         String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         String force = entryParam.getValue("prefix-force", null);
         force = commonParams.checked(force, "prefix-force", "(true|false)");
         return new MoveFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix,
@@ -195,7 +192,6 @@ public class ProcessorChoice {
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new DeleteFile(accessKey, secretKey, configuration, bucket, rmPrefix, savePath);
     }
 
@@ -205,8 +201,7 @@ public class ProcessorChoice {
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        String keyPrefix = entryParam.getValue("add-prefix", null);
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
+        String addPrefix = entryParam.getValue("add-prefix", null);
         String host = entryParam.getValue("host", null);
         String md5Index = commonParams.containIndex("md5") ? "md5" : null;
         String callbackUrl = entryParam.getValue("callback-url", null);
@@ -217,7 +212,7 @@ public class ProcessorChoice {
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = new AsyncFetch(accessKey, secretKey, configuration, toBucket,
-                domain, protocol, keyPrefix, rmPrefix, urlIndex, savePath);
+                domain, protocol, addPrefix, rmPrefix, urlIndex, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
@@ -237,7 +232,6 @@ public class ProcessorChoice {
             accessKey = entryParam.getValue("ak");
             secretKey = entryParam.getValue("sk");
         }
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new QueryAvinfo(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath);
     }
 
@@ -249,7 +243,6 @@ public class ProcessorChoice {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new Pfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath);
     }
 
@@ -271,7 +264,6 @@ public class ProcessorChoice {
             accessKey = entryParam.getValue("ak");
             secretKey = entryParam.getValue("sk");
         }
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new QueryHash(domain, algorithm, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath);
     }
 
@@ -287,7 +279,6 @@ public class ProcessorChoice {
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), rmPrefix, savePath);
     }
 
@@ -298,12 +289,10 @@ public class ProcessorChoice {
         String size = entryParam.getValue("size", "false");
         size = commonParams.checked(size, "size", "(true|false)");
         String avinfoIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), avinfoIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFetch() throws IOException {
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return new MirrorFetch(accessKey, secretKey, configuration, bucket, rmPrefix, savePath);
     }
 }
