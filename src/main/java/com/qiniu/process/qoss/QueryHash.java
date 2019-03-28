@@ -34,8 +34,7 @@ public class QueryHash extends Base {
             this.urlIndex = urlIndex;
         }
         this.algorithm = algorithm;
-        this.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null :
-                Auth.create(accessKey, secretKey));
+        this.fileChecker = new FileChecker(configuration, algorithm, protocol);
         this.jsonParser = new JsonParser();
     }
 
@@ -46,7 +45,7 @@ public class QueryHash extends Base {
 
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(algorithm, protocol, accessKey == null ? null : Auth.create(accessKey, secretKey));
+        queryHash.fileChecker = new FileChecker(configuration, algorithm, protocol);
         queryHash.jsonParser = new JsonParser();
         return queryHash;
     }

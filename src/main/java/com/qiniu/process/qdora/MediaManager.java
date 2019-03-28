@@ -5,25 +5,29 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.qdora.*;
-import com.qiniu.util.Auth;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.JsonConvertUtils;
 
 public class MediaManager {
 
-    final private Client client;
-    final private String protocol;
-    final private Auth srcAuth;
+    private Client client;
+    private String protocol;
 
     public MediaManager() {
-        this.client = new Client();
-        this.protocol = "http";
-        this.srcAuth = null;
     }
 
-    public MediaManager(String protocol, Auth srcAuth) {
+    public MediaManager(String protocol) {
         this.client = new Client();
         this.protocol = "https".equals(protocol)? "https" : "http";
-        this.srcAuth = srcAuth;
+    }
+
+    public MediaManager(Configuration configuration) {
+        this.client = new Client(configuration);
+    }
+
+    public MediaManager(Configuration configuration, String protocol) {
+        this(configuration);
+        this.protocol = "https".equals(protocol)? "https" : "http";
     }
 
     public Avinfo getAvinfo(String url) throws QiniuException {
@@ -81,8 +85,7 @@ public class MediaManager {
     }
 
     public String getAvinfoBody(String url) throws QiniuException {
-        url = srcAuth != null ? srcAuth.privateDownloadUrl(url + "?avinfo") : url + "?avinfo";
-        Response response = client.get(url);
+        Response response = client.get(url + "?avinfo");
         if (response.statusCode != 200) throw new QiniuException(response);
         String avinfo = response.bodyString();
         response.close();

@@ -22,7 +22,7 @@ public class QueryPfopResult extends Base {
         super("pfopresult", null, null, null, null, null, savePath, saveIndex);
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
         else this.pidIndex = pidIndex;
-        this.mediaManager = new MediaManager();
+        this.mediaManager = new MediaManager(configuration);
         this.gson = new Gson();
     }
 
@@ -32,7 +32,7 @@ public class QueryPfopResult extends Base {
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
-        pfopResult.mediaManager = new MediaManager();
+        pfopResult.mediaManager = new MediaManager(configuration);
         pfopResult.gson = new Gson();
         return pfopResult;
     }

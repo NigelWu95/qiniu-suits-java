@@ -32,7 +32,7 @@ public class QueryAvinfo extends Base {
         } else {
             this.urlIndex = urlIndex;
         }
-        this.mediaManager = new MediaManager(protocol, accessKey == null ? null : Auth.create(accessKey, secretKey));
+        this.mediaManager = new MediaManager(configuration, protocol);
         this.jsonParser = new JsonParser();
     }
 
@@ -43,7 +43,7 @@ public class QueryAvinfo extends Base {
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(protocol, accessKey == null ? null : Auth.create(accessKey, secretKey));
+        queryAvinfo.mediaManager = new MediaManager(configuration, protocol);
         queryAvinfo.jsonParser = new JsonParser();
         return queryAvinfo;
     }
