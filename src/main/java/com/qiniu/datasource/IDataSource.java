@@ -8,15 +8,13 @@ import java.util.Map;
 
 public interface IDataSource {
 
-    void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields);
+    void setSaveOptions(boolean saveTotal, String saveTag, String format, String separator, List<String> rmFields);
 
     void setProcessor(ILineProcess<Map<String, String>> processor);
 
     void export() throws Exception;
 
     void setRetryTimes(int retryTimes);
-
-    void setSaveTag(String saveTag);
 
     void updateSettings(CommonParams commonParams);
 }

@@ -5,7 +5,6 @@ import com.qiniu.datasource.IDataSource;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.storage.Configuration;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -61,7 +60,7 @@ public class QSuitsEntryTest {
             saveSeparator = commonParams.getSaveSeparator();
             rmFields = commonParams.getRmFields();
             if (dataSource != null) {
-                dataSource.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+                dataSource.setSaveOptions(saveTotal, "", saveFormat, saveSeparator, rmFields);
                 dataSource.setProcessor(processor);
                 dataSource.export();
             }

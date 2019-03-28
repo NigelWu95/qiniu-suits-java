@@ -29,7 +29,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected String rmPrefix;
     protected int batchSize;
     protected int retryTimes = 5;
-    protected String saveTag;
     protected int saveIndex;
     protected String savePath;
     protected FileMap fileMap;
@@ -42,10 +41,9 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.secretKey = secretKey;
         this.bucket = bucket;
         this.rmPrefix = rmPrefix;
-        this.saveTag = "";
         this.saveIndex = saveIndex;
         this.savePath = savePath;
-        this.fileMap = new FileMap(savePath, processName + saveTag, String.valueOf(saveIndex));
+        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
@@ -67,10 +65,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
-    public void setSaveTag(String saveTag) {
-        this.saveTag = saveTag == null ? "" : saveTag;
-    }
-
     public void updateBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -81,13 +75,14 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
 
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
+        this.fileMap.closeWriters();
         this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
         this.fileMap.initDefaultWriters();
     }
 
     public Base clone() throws CloneNotSupportedException {
         Base base = (Base)super.clone();
-        base.fileMap = new FileMap(savePath, processName + saveTag, String.valueOf(++saveIndex));
+        base.fileMap = new FileMap(savePath, processName, String.valueOf(++saveIndex));
         try {
             base.fileMap.initDefaultWriters();
         } catch (IOException e) {
