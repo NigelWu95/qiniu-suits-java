@@ -1,6 +1,5 @@
 package com.qiniu.process.qdora;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -25,42 +24,21 @@ public class PfopCommand extends Base {
     private boolean hasSize;
     private String avinfoIndex;
     private ArrayList<JsonObject> pfopConfigs;
-    private Gson gson;
 
     public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
                        String savePath, int saveIndex) throws IOException {
-        super("pfopcmd", null, null, null, null, rmPrefix, savePath, saveIndex);
-        this.pfopConfigs = new ArrayList<>();
-        JsonFile jsonFile = new JsonFile(jsonPath);
-        for (String key : jsonFile.getKeys()) {
-            JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
-            List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
-                    new TypeToken<List<Integer>>(){});
-            if (scale.size() < 1) {
-                throw new IOException(jsonPath + " miss the scale field in \"" + key + "\"");
-            } else if (scale.size() == 1) {
-                JsonArray jsonArray = new JsonArray();
-                jsonArray.add(scale.get(0));
-                jsonArray.add(Integer.MAX_VALUE);
-                jsonObject.add("scale", jsonArray);
-            }
-            if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
-                throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
-            else if (!jsonObject.get("saveas").getAsString().contains(":"))
-                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
-            jsonObject.addProperty("name", key);
-            this.pfopConfigs.add(jsonObject);
-        }
+        super("pfopcmd", "", "", null, null, rmPrefix, savePath, saveIndex);
         this.mediaManager = new MediaManager();
-        this.hasDuration = hasDuration;
-        this.hasSize = hasSize;
-        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
-        else this.avinfoIndex = avinfoIndex;
-        this.gson = new Gson();
+        set(jsonPath, hasDuration, hasSize, avinfoIndex);
     }
 
     public void updateCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix)
             throws IOException {
+        set(jsonPath, hasDuration, hasSize, avinfoIndex);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex) throws IOException {
         this.pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getKeys()) {
@@ -86,7 +64,6 @@ public class PfopCommand extends Base {
         this.hasSize = hasSize;
         if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
         else this.avinfoIndex = avinfoIndex;
-        this.rmPrefix = rmPrefix;
     }
 
     public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
@@ -99,7 +76,6 @@ public class PfopCommand extends Base {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
         pfopCommand.mediaManager = new MediaManager();
         pfopCommand.pfopConfigs = (ArrayList<JsonObject>) pfopConfigs.clone();
-        pfopCommand.gson = new Gson();
         return pfopCommand;
     }
 
@@ -118,7 +94,7 @@ public class PfopCommand extends Base {
         List<Integer> scale;
         List<String> items = new ArrayList<>();
         for (JsonObject pfopConfig : pfopConfigs) {
-            scale = gson.fromJson(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){}.getType());
+            scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
             info = line.get(avinfoIndex);
             try {

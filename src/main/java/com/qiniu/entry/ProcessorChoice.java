@@ -139,7 +139,7 @@ public class ProcessorChoice {
         switch (process) {
             case "status": processor = getChangeStatus(); break;
             case "type": processor = getChangeType(); break;
-            case "lifecycle": processor = getUpdateLifecycle(); break;
+            case "lifecycle": processor = getChangeLifecycle(); break;
             case "copy": processor = getCopyFile(); break;
             case "move":
             case "rename": processor = getMoveFile(); break;
@@ -149,10 +149,10 @@ public class ProcessorChoice {
             case "pfop": processor = getPfop(); break;
             case "pfopresult": processor = getPfopResult(); break;
             case "qhash": processor = getQueryHash(); break;
-            case "stat": processor = getFileStat(); break;
+            case "stat": processor = getStatFile(); break;
             case "privateurl": processor = getPrivateUrl(); break;
             case "pfopcmd": processor = getPfopCommand(); break;
-            case "mirror": processor = getMirrorFetch(); break;
+            case "mirror": processor = getMirrorFile(); break;
         }
         return processor;
     }
@@ -167,7 +167,7 @@ public class ProcessorChoice {
         return new ChangeType(accessKey, secretKey, configuration, bucket, Integer.valueOf(type), rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
+    private ILineProcess<Map<String, String>> getChangeLifecycle() throws IOException {
         String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
         return new ChangeLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), rmPrefix, savePath);
     }
@@ -176,8 +176,7 @@ public class ProcessorChoice {
         String toBucket = entryParam.getValue("to-bucket");
         String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
-        return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
-                rmPrefix, savePath);
+        return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
@@ -255,9 +254,9 @@ public class ProcessorChoice {
         return new QueryHash(algorithm, protocol, domain, urlIndex, rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getFileStat() throws IOException {
+    private ILineProcess<Map<String, String>> getStatFile() throws IOException {
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new FileStat(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveFormat, saveSeparator);
+        return new StatFile(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveFormat, saveSeparator);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
@@ -280,7 +279,7 @@ public class ProcessorChoice {
         return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), avinfoIndex, rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getMirrorFetch() throws IOException {
-        return new MirrorFetch(accessKey, secretKey, configuration, bucket, rmPrefix, savePath);
+    private ILineProcess<Map<String, String>> getMirrorFile() throws IOException {
+        return new MirrorFile(accessKey, secretKey, configuration, bucket, rmPrefix, savePath);
     }
 }

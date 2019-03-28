@@ -10,12 +10,12 @@ import com.qiniu.util.FileNameUtils;
 import java.io.IOException;
 import java.util.Map;
 
-public class MirrorFetch extends Base {
+public class MirrorFile extends Base {
 
     private BucketManager bucketManager;
 
-    public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                       String savePath, int saveIndex) throws IOException {
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+                      String savePath, int saveIndex) throws IOException {
         super("mirror", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
@@ -25,15 +25,15 @@ public class MirrorFetch extends Base {
         this.rmPrefix = rmPrefix;
     }
 
-    public MirrorFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                       String savePath) throws IOException {
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+                      String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);
     }
 
-    public MirrorFetch clone() throws CloneNotSupportedException {
-        MirrorFetch mirrorFetch = (MirrorFetch) super.clone();
-        mirrorFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        return mirrorFetch;
+    public MirrorFile clone() throws CloneNotSupportedException {
+        MirrorFile mirrorFile = (MirrorFile) super.clone();
+        mirrorFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        return mirrorFile;
     }
 
     @Override

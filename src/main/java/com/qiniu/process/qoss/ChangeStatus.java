@@ -14,14 +14,14 @@ import java.util.Map;
 
 public class ChangeStatus extends Base {
 
-    private int status;
     private BucketManager bucketManager;
+    private int status;
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                         String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.status = status;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.status = status;
         this.batchSize = 1000;
     }
 

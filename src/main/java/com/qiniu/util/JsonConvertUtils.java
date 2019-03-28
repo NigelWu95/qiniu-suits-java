@@ -23,6 +23,10 @@ public final class JsonConvertUtils {
         return jsonParser.parse(jsonData).getAsJsonObject();
     }
 
+    public static String toJson(String jsonData) {
+        return jsonParser.parse(jsonData).toString();
+    }
+
     public static String toJson(Object srcObject) {
         return gson.toJson(srcObject);
     }

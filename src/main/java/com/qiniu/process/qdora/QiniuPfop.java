@@ -19,17 +19,19 @@ public class QiniuPfop extends Base {
                      String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("pfop", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
-        if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
-        else this.fopsIndex = fopsIndex;
+        set(pipeline, fopsIndex);
     }
 
     public void updateFop(String bucket, String pipeline, String fopsIndex, String rmPrefix) throws IOException {
         this.bucket = bucket;
+        set(pipeline, fopsIndex);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String pipeline, String fopsIndex) throws IOException {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
-        this.rmPrefix = rmPrefix;
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,

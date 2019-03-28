@@ -1,11 +1,11 @@
 package com.qiniu.process.qdora;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.process.Base;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,19 +14,20 @@ import java.util.Map;
 
 public class QueryPfopResult extends Base {
 
-    private String pidIndex;
     private MediaManager mediaManager;
-    private Gson gson;
+    private String pidIndex;
 
     public QueryPfopResult(String pidIndex, String savePath, int saveIndex) throws IOException {
         super("pfopresult", "", "", null, null, null, savePath, saveIndex);
-        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
-        else this.pidIndex = pidIndex;
         this.mediaManager = new MediaManager(configuration);
-        this.gson = new Gson();
+        set(pidIndex);
     }
 
     public void updateQuery(String pidIndex) throws IOException {
+        set(pidIndex);
+    }
+
+    private void set(String pidIndex) throws IOException {
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
         else this.pidIndex = pidIndex;
     }
@@ -38,7 +39,6 @@ public class QueryPfopResult extends Base {
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
         pfopResult.mediaManager = new MediaManager(configuration);
-        pfopResult.gson = new Gson();
         return pfopResult;
     }
 
@@ -58,7 +58,7 @@ public class QueryPfopResult extends Base {
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
             try {
-                pfopResult = gson.fromJson(result, PfopResult.class);
+                pfopResult = JsonConvertUtils.fromJson(result, PfopResult.class);
             } catch (JsonParseException e) {
                 throw new QiniuException(e);
             }

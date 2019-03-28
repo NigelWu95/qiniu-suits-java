@@ -14,14 +14,14 @@ import java.util.Map;
 
 public class ChangeLifecycle extends Base {
 
-    private int days;
     private BucketManager bucketManager;
+    private int days;
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                            String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("lifecycle", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.days = days;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.days = days;
         this.batchSize = 1000;
     }
 
