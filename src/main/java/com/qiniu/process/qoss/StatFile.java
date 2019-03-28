@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -57,7 +58,7 @@ public class StatFile extends Base {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+        BatchOperations batchOperations = new BatchOperations();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
