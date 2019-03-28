@@ -15,11 +15,11 @@ public class AsyncFetch extends Base {
     private String domain;
     private String protocol;
     private String urlIndex;
-    private BucketManager bucketManager;
-    private String md5Index;
     private String keyPrefix;
+    private BucketManager bucketManager;
     private boolean hasCustomArgs;
     private String host;
+    private String md5Index;
     private String callbackUrl;
     private String callbackBody;
     private String callbackBodyType;
@@ -28,7 +28,7 @@ public class AsyncFetch extends Base {
     private boolean ignoreSameKey;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String keyPrefix, String rmPrefix, String urlIndex, String savePath,
+                      String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath,
                       int saveIndex) throws IOException {
         super("asyncfetch", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
@@ -47,10 +47,29 @@ public class AsyncFetch extends Base {
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
     }
 
+    public void updateFetch(String bucket, String domain, String protocol, String urlIndex, String keyPrefix,
+                             String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        if (urlIndex == null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) {
+                throw new IOException("please set one of domain and urlIndex.");
+            } else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else {
+            this.urlIndex = urlIndex;
+        }
+        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.rmPrefix = rmPrefix;
+    }
+
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String keyPrefix, String rmPrefix, String urlIndex, String savePath)
+                      String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, keyPrefix, rmPrefix, urlIndex,
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, rmPrefix,
                 savePath, 0);
     }
 

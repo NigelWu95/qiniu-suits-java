@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class ChangeType extends Base {
 
-    final private int type;
+    private int type;
     private BucketManager bucketManager;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
@@ -24,6 +24,12 @@ public class ChangeType extends Base {
         this.type = type;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
+    }
+
+    public void updateType(String bucket, int type, String rmPrefix) {
+        this.bucket = bucket;
+        this.type = type;
+        this.rmPrefix = rmPrefix;
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,

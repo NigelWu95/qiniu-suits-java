@@ -14,9 +14,9 @@ import java.util.Map;
 
 public class CopyFile extends Base {
 
-    final private String toBucket;
-    final private String newKeyIndex;
-    final private String keyPrefix;
+    private String toBucket;
+    private String newKeyIndex;
+    private String keyPrefix;
     private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -28,6 +28,14 @@ public class CopyFile extends Base {
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
+    }
+
+    public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
+        this.bucket = bucket;
+        this.toBucket = toBucket;
+        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
+        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.rmPrefix = rmPrefix;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,

@@ -11,16 +11,17 @@ import java.util.Map;
 
 public class QueryHash extends Base {
 
+    private String algorithm;
     private String domain;
     private String protocol;
     private String urlIndex;
-    private String algorithm;
     private FileChecker fileChecker;
     private JsonParser jsonParser;
 
-    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
-                     String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("qhash", accessKey, secretKey, null, null, rmPrefix, savePath, saveIndex);
+    public QueryHash(String algorithm, String protocol, String domain, String urlIndex, String rmPrefix, String savePath,
+                     int saveIndex) throws IOException {
+        super("qhash", "", "", null, null, rmPrefix, savePath, saveIndex);
+        this.algorithm = algorithm;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
@@ -33,14 +34,31 @@ public class QueryHash extends Base {
         } else {
             this.urlIndex = urlIndex;
         }
-        this.algorithm = algorithm;
         this.fileChecker = new FileChecker(configuration, algorithm, protocol);
         this.jsonParser = new JsonParser();
     }
 
-    public QueryHash(String domain, String algorithm, String protocol, String urlIndex, String accessKey, String secretKey,
-                     String rmPrefix, String savePath) throws IOException {
-        this(domain, algorithm, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
+    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex, String rmPrefix)
+            throws IOException {
+        this.algorithm = algorithm;
+        if (urlIndex == null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) {
+                throw new IOException("please set one of domain and urlIndex.");
+            } else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else {
+            this.urlIndex = urlIndex;
+        }
+        this.rmPrefix = rmPrefix;
+    }
+
+    public QueryHash(String algorithm, String protocol, String domain, String urlIndex, String rmPrefix, String savePath)
+            throws IOException {
+        this(algorithm, protocol, domain, urlIndex, rmPrefix, savePath, 0);
     }
 
     public QueryHash clone() throws CloneNotSupportedException {
