@@ -37,6 +37,7 @@ public class CommonParams {
     private int retryTimes;
     private boolean saveTotal;
     private String savePath;
+    private String saveTag;
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
@@ -71,6 +72,7 @@ public class CommonParams {
         // list 操作时默认保存全部原始文件
         setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
         savePath = entryParam.getValue("save-path", "result");
+        saveTag = entryParam.getValue("save-tag", "");
         saveFormat = entryParam.getValue("save-format", "tab");
         // 校验设置的 format 参数
         saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
@@ -389,6 +391,10 @@ public class CommonParams {
         this.savePath = savePath;
     }
 
+    public void setSaveTag(String saveTag) {
+        this.saveTag = saveTag;
+    }
+
     public void setSaveFormat(String saveFormat) {
         this.saveFormat = saveFormat;
     }
@@ -471,6 +477,10 @@ public class CommonParams {
 
     public String getSavePath() {
         return savePath;
+    }
+
+    public String getSaveTag() {
+        return saveTag;
     }
 
     public String getSaveFormat() {

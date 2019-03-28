@@ -26,6 +26,7 @@ public class ProcessorChoice {
     private int batchSize;
     private int retryTimes;
     private String savePath;
+    private String saveTag;
     private String saveFormat;
     private String saveSeparator;
     private Configuration configuration;
@@ -40,6 +41,7 @@ public class ProcessorChoice {
         this.batchSize = commonParams.getBatchSize();
         this.retryTimes = commonParams.getRetryTimes();
         this.savePath = commonParams.getSavePath();
+        this.saveTag = commonParams.getSaveTag();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
         this.configuration = configuration;
@@ -117,10 +119,12 @@ public class ProcessorChoice {
             nextProcessor.setBatchSize(batchSize);
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
             nextProcessor.setRetryTimes(retryTimes);
+            nextProcessor.setSaveTag(saveTag);
         }
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
+            processor.setSaveTag(saveTag);
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
