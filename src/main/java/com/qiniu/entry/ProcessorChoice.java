@@ -3,7 +3,7 @@ package com.qiniu.entry;
 import com.qiniu.process.filtration.SeniorChecker;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.process.qdora.Pfop;
+import com.qiniu.process.qdora.QiniuPfop;
 import com.qiniu.process.qdora.PfopCommand;
 import com.qiniu.process.filtration.BaseFieldsFilter;
 import com.qiniu.process.filtration.FilterProcess;
@@ -169,7 +169,7 @@ public class ProcessorChoice {
 
     private ILineProcess<Map<String, String>> getUpdateLifecycle() throws IOException {
         String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
-        return new UpdateLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), rmPrefix, savePath);
+        return new ChangeLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
@@ -187,8 +187,8 @@ public class ProcessorChoice {
         String addPrefix = entryParam.getValue("add-prefix", null);
         String force = entryParam.getValue("prefix-force", null);
         force = commonParams.checked(force, "prefix-force", "(true|false)");
-        return new MoveFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix,
-                Boolean.valueOf(force), savePath);
+        return new MoveFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
+                Boolean.valueOf(force), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
@@ -212,12 +212,12 @@ public class ProcessorChoice {
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = new AsyncFetch(accessKey, secretKey, configuration, toBucket,
-                domain, protocol, addPrefix, rmPrefix, urlIndex, savePath);
+                domain, protocol, urlIndex, addPrefix, rmPrefix, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
                     callbackBodyType, callbackHost, Integer.valueOf(type), Boolean.valueOf(ignore));
-        };
+        }
         return processor;
     }
 
@@ -226,13 +226,7 @@ public class ProcessorChoice {
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        String sign = entryParam.getValue("private", "false");
-        sign = commonParams.checked(sign, "private", "(true|false)");
-        if (Boolean.valueOf(sign) && accessKey == null) {
-            accessKey = entryParam.getValue("ak");
-            secretKey = entryParam.getValue("sk");
-        }
-        return new QueryAvinfo(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath);
+        return new QueryAvinfo(domain, protocol, urlIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop() throws IOException {
@@ -243,7 +237,7 @@ public class ProcessorChoice {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
-        return new Pfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath);
+        return new QiniuPfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
@@ -258,13 +252,7 @@ public class ProcessorChoice {
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        String sign = entryParam.getValue("private", "false");
-        sign = commonParams.checked(sign, "private", "(true|false)");
-        if (Boolean.valueOf(sign)) {
-            accessKey = entryParam.getValue("ak");
-            secretKey = entryParam.getValue("sk");
-        }
-        return new QueryHash(domain, algorithm, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath);
+        return new QueryHash(algorithm, protocol, domain, urlIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getFileStat() throws IOException {

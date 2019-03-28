@@ -23,6 +23,11 @@ public class DeleteFile extends Base {
         this.batchSize = 1000;
     }
 
+    public void updateDelete(String bucket, String rmPrefix) {
+        this.bucket = bucket;
+        this.rmPrefix = rmPrefix;
+    }
+
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                       String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);

@@ -14,17 +14,18 @@ import java.util.Map;
 
 public class MoveFile extends Base {
 
-    final private String toBucket;
-    final private String newKeyIndex;
-    final private String keyPrefix;
+    private String toBucket;
+    private String newKeyIndex;
+    private String keyPrefix;
     private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath,
+                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
                 rmPrefix, savePath, saveIndex);
+        this.toBucket = toBucket;
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
             if (toBucket == null || "".equals(toBucket)) {
@@ -40,16 +41,38 @@ public class MoveFile extends Base {
         } else {
             this.newKeyIndex = newKeyIndex;
         }
-        this.toBucket = toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
     }
 
+    public void updateMove(String bucket, String toBucket, String newKeyIndex, String keyPrefix,
+                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        this.toBucket = toBucket;
+        if (newKeyIndex == null || "".equals(newKeyIndex)) {
+            this.newKeyIndex = "key";
+            if (toBucket == null || "".equals(toBucket)) {
+                // rename 操作时未设置 new-key 的条件判断
+                if (forceIfOnlyPrefix) {
+                    if (keyPrefix == null || "".equals(keyPrefix))
+                        throw new IOException("although prefix-force is true, but the add-prefix is empty.");
+                } else {
+                    throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
+                            "please set the \"prefix-force\" as true.");
+                }
+            }
+        } else {
+            this.newKeyIndex = newKeyIndex;
+        }
+        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.rmPrefix = rmPrefix;
+    }
+
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath)
+                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, forceIfOnlyPrefix,
+        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
                 savePath, 0);
     }
 

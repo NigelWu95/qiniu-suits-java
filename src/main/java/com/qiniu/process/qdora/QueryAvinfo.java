@@ -17,9 +17,9 @@ public class QueryAvinfo extends Base {
     private MediaManager mediaManager;
     private JsonParser jsonParser;
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                       String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("avinfo", accessKey, secretKey, null, null, rmPrefix, savePath, saveIndex);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String rmPrefix, String savePath, int saveIndex)
+            throws IOException {
+        super("avinfo", "", "", null, null, rmPrefix, savePath, saveIndex);
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
@@ -36,9 +36,24 @@ public class QueryAvinfo extends Base {
         this.jsonParser = new JsonParser();
     }
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                       String rmPrefix, String savePath) throws IOException {
-        this(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
+    public void updateQuery(String protocol, String domain, String urlIndex, String rmPrefix) throws IOException {
+        if (urlIndex == null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) {
+                throw new IOException("please set one of domain and urlIndex.");
+            } else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else {
+            this.urlIndex = urlIndex;
+        }
+        this.rmPrefix = rmPrefix;
+    }
+
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String rmPrefix, String savePath) throws IOException {
+        this(domain, protocol, urlIndex, rmPrefix, savePath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {

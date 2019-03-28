@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class ChangeStatus extends Base {
 
-    final private int status;
+    private int status;
     private BucketManager bucketManager;
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -23,6 +23,12 @@ public class ChangeStatus extends Base {
         this.status = status;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         this.batchSize = 1000;
+    }
+
+    public void updateStatus(String bucket, int status, String rmPrefix) {
+        this.bucket = bucket;
+        this.status = status;
+        this.rmPrefix = rmPrefix;
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,

@@ -14,16 +14,21 @@ import java.util.Map;
 
 public class QueryPfopResult extends Base {
 
-    final private String pidIndex;
+    private String pidIndex;
     private MediaManager mediaManager;
     private Gson gson;
 
     public QueryPfopResult(String pidIndex, String savePath, int saveIndex) throws IOException {
-        super("pfopresult", null, null, null, null, null, savePath, saveIndex);
+        super("pfopresult", "", "", null, null, null, savePath, saveIndex);
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
         else this.pidIndex = pidIndex;
         this.mediaManager = new MediaManager(configuration);
         this.gson = new Gson();
+    }
+
+    public void updateQuery(String pidIndex) throws IOException {
+        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
+        else this.pidIndex = pidIndex;
     }
 
     public QueryPfopResult(String persistentIdIndex, String savePath) throws IOException {

@@ -65,14 +65,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
-    public void updateBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
-    public void updateRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
-    }
-
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
         this.fileMap.closeWriters();

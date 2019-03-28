@@ -33,6 +33,24 @@ public class PrivateUrl extends Base {
         this.auth = Auth.create(accessKey, secretKey);
     }
 
+    public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
+            throws IOException {
+        if (urlIndex == null || "".equals(urlIndex)) {
+            this.urlIndex = null;
+            if (domain == null || "".equals(domain)) {
+                throw new IOException("please set one of domain and urlIndex.");
+            } else {
+                RequestUtils.checkHost(domain);
+                this.domain = domain;
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            }
+        } else {
+            this.urlIndex = urlIndex;
+        }
+        this.expires = expires == 0L ? 3600 : expires;
+        this.rmPrefix = rmPrefix;
+    }
+
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
                       String rmPrefix, String savePath) throws IOException {
         this(accessKey, secretKey, domain, protocol, urlIndex, expires, rmPrefix, savePath, 0);

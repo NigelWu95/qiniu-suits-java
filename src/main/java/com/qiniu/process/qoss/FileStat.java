@@ -34,6 +34,17 @@ public class FileStat extends Base {
         this.batchSize = 1000;
     }
 
+    public void updateStat(String bucket, String format, String separator, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        this.format = format;
+        if ("csv".equals(format) || "tab".equals(format)) {
+            this.separator = "csv".equals(format) ? "," : separator;
+        } else if (!"json".equals(this.format)) {
+            throw new IOException("please check your format for line to map.");
+        }
+        this.rmPrefix = rmPrefix;
+    }
+
     public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator) throws IOException {
         this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, format, separator, 0);
