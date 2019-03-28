@@ -20,6 +20,7 @@ public class CommonParams {
     private IEntryParam entryParam;
     private String path;
     private String process;
+    private String rmPrefix;
     private String source;
     private String parse;
     private String separator;
@@ -51,6 +52,7 @@ public class CommonParams {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
+        rmPrefix = entryParam.getValue("rm-prefix", null);
         setSource();
         if ("list".equals(source)) {
             setAkSk();
@@ -331,6 +333,10 @@ public class CommonParams {
         this.process = process;
     }
 
+    public void setRmPrefix(String rmPrefix) {
+        this.rmPrefix = rmPrefix;
+    }
+
     public void setSource(String source) {
         this.source = source;
     }
@@ -409,6 +415,14 @@ public class CommonParams {
 
     public String getPath() {
         return path;
+    }
+
+    public String getProcess() {
+        return process;
+    }
+
+    public String getRmPrefix() {
+        return rmPrefix;
     }
 
     public String getSource() {
@@ -493,9 +507,5 @@ public class CommonParams {
 
     public List<String> getRmFields() {
         return rmFields;
-    }
-
-    public String getProcess() {
-        return process;
     }
 }

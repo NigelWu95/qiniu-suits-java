@@ -60,8 +60,8 @@ public class BucketList implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
-        this.saveTag = "";
         this.saveTotal = true; // 默认全记录保存
+        this.saveTag = "";
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         originPrefixList.addAll(Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
@@ -90,10 +90,11 @@ public class BucketList implements IDataSource {
         this.prefixLeft = commonParams.getPrefixLeft();
         this.prefixRight = commonParams.getPrefixRight();
         this.unitLen = commonParams.getUnitLen();
+        this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();
         this.savePath = commonParams.getSavePath();
-        this.saveTag = commonParams.getSaveTag();
         this.saveTotal = commonParams.getSaveTotal();
+        this.saveTag = commonParams.getSaveTag();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
         this.rmFields = commonParams.getRmFields();
