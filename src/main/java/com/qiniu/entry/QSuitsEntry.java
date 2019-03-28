@@ -58,6 +58,7 @@ public class QSuitsEntry {
         retryTimes = commonParams.getRetryTimes();
         threads = commonParams.getThreads();
         savePath = commonParams.getSavePath();
+        saveTag = commonParams.getSaveTag();
         saveTotal = commonParams.getSaveTotal();
         saveFormat = commonParams.getSaveFormat();
         saveSeparator = commonParams.getSaveSeparator();
@@ -130,9 +131,8 @@ public class QSuitsEntry {
         String separator = commonParams.getSeparator();
         HashMap<String, String> indexMap = commonParams.getIndexMap();
         FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
+        fileInput.setSaveOptions(saveTotal, saveTag, saveFormat, saveSeparator, rmFields);
         fileInput.setRetryTimes(retryTimes);
-        fileInput.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
-        fileInput.setSaveTag(saveTag);
         return fileInput;
     }
 
@@ -146,9 +146,8 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, unitLen, prefixesMap,
                 antiPrefixes, prefixLeft, prefixRight, threads, savePath);
-        bucketList.setResultOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        bucketList.setSaveOptions(saveTotal, saveTag, saveFormat, saveSeparator, rmFields);
         bucketList.setRetryTimes(retryTimes);
-        bucketList.setSaveTag(saveTag);
         return bucketList;
     }
 }

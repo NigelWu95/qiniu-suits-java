@@ -69,8 +69,9 @@ public class BucketList implements IDataSource {
     }
 
     // 不调用则各参数使用默认值
-    public void setResultOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(boolean saveTotal, String saveTag, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
+        this.saveTag = saveTag == null ? "" : saveTag;
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
@@ -78,10 +79,6 @@ public class BucketList implements IDataSource {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes;
-    }
-
-    public void setSaveTag(String saveTag) {
-        this.saveTag = saveTag == null ? "" : saveTag;
     }
 
     // 通过 commonParams 来更新基本参数

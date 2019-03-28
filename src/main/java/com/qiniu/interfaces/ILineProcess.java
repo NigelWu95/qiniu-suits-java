@@ -16,8 +16,6 @@ public interface ILineProcess<T> {
 
     default void setRetryTimes(int retryTimes) {}
 
-    default void setSaveTag(String saveTag) {}
-
     default void updateBucket(String bucket) {}
 
     default void updateRmPrefix(String rmPrefix) {}
