@@ -19,13 +19,16 @@ import java.util.Map;
 public class StatFile extends Base {
 
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
     private String format;
     private String separator;
+    String test = "0";
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
         set(format, separator);
         this.batchSize = 1000;
     }
@@ -53,12 +56,14 @@ public class StatFile extends Base {
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) statFile.batchOperations = new BatchOperations();
         return statFile;
     }
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BatchOperations();
+        System.out.println(test + "1");
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }

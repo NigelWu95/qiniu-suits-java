@@ -15,6 +15,7 @@ import java.util.Map;
 public class MoveFile extends Base {
 
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
     private String toBucket;
     private String newKeyIndex;
     private String keyPrefix;
@@ -26,6 +27,7 @@ public class MoveFile extends Base {
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
                 rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
         set(toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix);
         this.batchSize = 1000;
     }
@@ -67,6 +69,7 @@ public class MoveFile extends Base {
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
         moveFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) moveFile.batchOperations = new BatchOperations();
         return moveFile;
     }
 
@@ -77,7 +80,7 @@ public class MoveFile extends Base {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BucketManager.BatchOperations();
+        batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
                 batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));

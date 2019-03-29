@@ -15,6 +15,7 @@ import java.util.Map;
 public class CopyFile extends Base {
 
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
     private String toBucket;
     private String newKeyIndex;
     private String keyPrefix;
@@ -23,6 +24,7 @@ public class CopyFile extends Base {
                     String newKeyIndex, String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
         set(toBucket, newKeyIndex, keyPrefix);
         this.batchSize = 1000;
     }
@@ -48,6 +50,7 @@ public class CopyFile extends Base {
     public CopyFile clone() throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
         copyFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) copyFile.batchOperations = new BatchOperations();
         return copyFile;
     }
 
@@ -58,7 +61,7 @@ public class CopyFile extends Base {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BatchOperations();
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
                 keyPrefix + line.get(newKeyIndex)));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));

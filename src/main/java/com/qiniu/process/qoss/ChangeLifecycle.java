@@ -15,12 +15,14 @@ import java.util.Map;
 public class ChangeLifecycle extends Base {
 
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
     private int days;
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                            String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("lifecycle", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
         this.days = days;
         this.batchSize = 1000;
     }
@@ -39,12 +41,13 @@ public class ChangeLifecycle extends Base {
     public ChangeLifecycle clone() throws CloneNotSupportedException {
         ChangeLifecycle changeLifecycle = (ChangeLifecycle)super.clone();
         changeLifecycle.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) changeLifecycle.batchOperations = new BatchOperations();
         return changeLifecycle;
     }
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BatchOperations();
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }

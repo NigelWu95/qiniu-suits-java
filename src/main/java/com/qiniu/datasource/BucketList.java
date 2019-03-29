@@ -126,8 +126,9 @@ public class BucketList implements IDataSource {
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
-        int retry = retryTimes + 1;
+        int retry;
         while (fileLister.hasNext()) {
+            retry = retryTimes + 1;
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
