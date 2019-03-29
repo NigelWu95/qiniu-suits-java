@@ -9,28 +9,38 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.Map;
 
-public class Pfop extends Base {
+public class QiniuPfop extends Base {
 
     private OperationManager operationManager;
-    final private StringMap pfopParams;
-    final private String fopsIndex;
+    private StringMap pfopParams;
+    private String fopsIndex;
 
-    public Pfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("pfop", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        set(pipeline, fopsIndex);
+    }
+
+    public void updateFop(String bucket, String pipeline, String fopsIndex, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        set(pipeline, fopsIndex);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String pipeline, String fopsIndex) throws IOException {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
     }
 
-    public Pfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                String fopsIndex, String rmPrefix, String savePath) throws IOException {
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String fopsIndex, String rmPrefix, String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath, 0);
     }
 
-    public Pfop clone() throws CloneNotSupportedException {
-        Pfop qiniuPfop = (Pfop)super.clone();
+    public QiniuPfop clone() throws CloneNotSupportedException {
+        QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
         return qiniuPfop;
     }

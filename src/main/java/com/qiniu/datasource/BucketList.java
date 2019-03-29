@@ -34,7 +34,6 @@ public class BucketList implements IDataSource {
     private int retryTimes = 5;
     private int threads;
     private String savePath;
-    private String saveTag;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -60,7 +59,6 @@ public class BucketList implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
-        this.saveTag = "";
         this.saveTotal = true; // 默认全记录保存
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
@@ -69,9 +67,8 @@ public class BucketList implements IDataSource {
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String saveTag, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
-        this.saveTag = saveTag == null ? "" : saveTag;
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
@@ -90,9 +87,9 @@ public class BucketList implements IDataSource {
         this.prefixLeft = commonParams.getPrefixLeft();
         this.prefixRight = commonParams.getPrefixRight();
         this.unitLen = commonParams.getUnitLen();
+        this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();
         this.savePath = commonParams.getSavePath();
-        this.saveTag = commonParams.getSaveTag();
         this.saveTotal = commonParams.getSaveTotal();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
@@ -125,8 +122,9 @@ public class BucketList implements IDataSource {
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
-        int retry = retryTimes + 1;
+        int retry;
         while (fileLister.hasNext()) {
+            retry = retryTimes + 1;
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
@@ -227,16 +225,16 @@ public class BucketList implements IDataSource {
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
-            FileMap fileMap = new FileMap(savePath, "bucketlist" + saveTag, identifier);
+            FileMap fileMap = new FileMap(savePath, "bucketlist", identifier);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
                     String record = "order " + identifier + ": " + fileLister.getPrefix();
-                    recordFileMap.writeKeyFile("list" + saveTag + "_result", record + "\tlisting...", true);
+                    recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
                     export(fileLister, fileMap, lineProcessor);
                     record += "\tsuccessfully done";
                     System.out.println(record);
-                    recordFileMap.writeKeyFile("list" + saveTag + "_result", record, true);
+                    recordFileMap.writeKeyFile("result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     fileLister.remove();

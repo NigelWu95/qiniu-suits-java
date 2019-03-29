@@ -15,15 +15,23 @@ import java.util.Map;
 
 public class ChangeType extends Base {
 
-    final private int type;
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
+    private int type;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.type = type;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
+        this.type = type;
         this.batchSize = 1000;
+    }
+
+    public void updateType(String bucket, int type, String rmPrefix) {
+        this.bucket = bucket;
+        this.type = type;
+        this.rmPrefix = rmPrefix;
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
@@ -34,12 +42,13 @@ public class ChangeType extends Base {
     public ChangeType clone() throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
         changeType.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) changeType.batchOperations = new BatchOperations();
         return changeType;
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BatchOperations();
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON :
                 StorageType.INFREQUENCY, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));

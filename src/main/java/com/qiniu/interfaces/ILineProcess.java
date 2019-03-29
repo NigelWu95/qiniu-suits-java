@@ -16,10 +16,6 @@ public interface ILineProcess<T> {
 
     default void setRetryTimes(int retryTimes) {}
 
-    default void updateBucket(String bucket) {}
-
-    default void updateRmPrefix(String rmPrefix) {}
-
     default void updateSavePath(String savePath) throws IOException {}
 
     void processLine(List<T> list) throws IOException;

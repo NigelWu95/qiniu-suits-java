@@ -65,14 +65,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
     }
 
-    public void updateBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
-    public void updateRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
-    }
-
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
         this.fileMap.closeWriters();
@@ -145,7 +137,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
-     * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现
+     * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现。
      * @param lineList 输入列表
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常

@@ -15,12 +15,19 @@ import java.util.Map;
 public class DeleteFile extends Base {
 
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                       String savePath, int saveIndex) throws IOException {
         super("delete", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
         this.batchSize = 1000;
+    }
+
+    public void updateDelete(String bucket, String rmPrefix) {
+        this.bucket = bucket;
+        this.rmPrefix = rmPrefix;
     }
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -31,12 +38,13 @@ public class DeleteFile extends Base {
     public DeleteFile clone() throws CloneNotSupportedException {
         DeleteFile deleteFile = (DeleteFile)super.clone();
         deleteFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) deleteFile.batchOperations = new BatchOperations();
         return deleteFile;
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BatchOperations();
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }

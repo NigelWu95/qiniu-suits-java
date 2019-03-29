@@ -1,6 +1,5 @@
 package com.qiniu.process.qdora;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -25,11 +24,21 @@ public class PfopCommand extends Base {
     private boolean hasSize;
     private String avinfoIndex;
     private ArrayList<JsonObject> pfopConfigs;
-    private Gson gson;
 
     public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
                        String savePath, int saveIndex) throws IOException {
-        super("pfopcmd", null, null, null, null, rmPrefix, savePath, saveIndex);
+        super("pfopcmd", "", "", null, null, rmPrefix, savePath, saveIndex);
+        this.mediaManager = new MediaManager();
+        set(jsonPath, hasDuration, hasSize, avinfoIndex);
+    }
+
+    public void updateCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix)
+            throws IOException {
+        set(jsonPath, hasDuration, hasSize, avinfoIndex);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex) throws IOException {
         this.pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getKeys()) {
@@ -51,12 +60,10 @@ public class PfopCommand extends Base {
             jsonObject.addProperty("name", key);
             this.pfopConfigs.add(jsonObject);
         }
-        this.mediaManager = new MediaManager();
         this.hasDuration = hasDuration;
         this.hasSize = hasSize;
         if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
         else this.avinfoIndex = avinfoIndex;
-        this.gson = new Gson();
     }
 
     public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
@@ -69,7 +76,6 @@ public class PfopCommand extends Base {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
         pfopCommand.mediaManager = new MediaManager();
         pfopCommand.pfopConfigs = (ArrayList<JsonObject>) pfopConfigs.clone();
-        pfopCommand.gson = new Gson();
         return pfopCommand;
     }
 
@@ -88,7 +94,7 @@ public class PfopCommand extends Base {
         List<Integer> scale;
         List<String> items = new ArrayList<>();
         for (JsonObject pfopConfig : pfopConfigs) {
-            scale = gson.fromJson(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){}.getType());
+            scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
             info = line.get(avinfoIndex);
             try {
