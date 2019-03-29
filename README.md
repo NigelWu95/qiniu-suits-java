@@ -28,10 +28,10 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>4.10</version>
+  <version>4.20</version>
 </dependency>
 ```   
-**建议使用最新版本，旧版在部分功能上尚不支持且可能存在由于编写过程中的疏漏导致的极端情况下的 bug**
+**务必使用最新版本**
 
 
 ### 3 命令行运行配置

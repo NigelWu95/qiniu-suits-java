@@ -28,7 +28,6 @@ public class FileInput implements IDataSource {
     private int retryTimes = 5;
     private int threads;
     private String savePath;
-    private String saveTag;
     private boolean saveTotal;
     private String saveFormat;
     private String saveSeparator;
@@ -46,13 +45,12 @@ public class FileInput implements IDataSource {
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
-        this.saveTag = "";
+        this.saveTotal = false; // 默认全记录不保存
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String saveTag, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
-        this.saveTag = saveTag == null ? "" : saveTag;
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
@@ -69,9 +67,9 @@ public class FileInput implements IDataSource {
         this.separator = commonParams.getSeparator();
         this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
+        this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();
         this.savePath = commonParams.getSavePath();
-        this.saveTag = commonParams.getSaveTag();
         this.saveTotal = commonParams.getSaveTotal();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
@@ -137,16 +135,16 @@ public class FileInput implements IDataSource {
             String order = String.valueOf(i);
             String key = keys.get(i);
             BufferedReader reader = readersMap.get(key);
-            FileMap fileMap = new FileMap(savePath, "fileinput" + saveTag, order);
+            FileMap fileMap = new FileMap(savePath, "fileinput", order);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
                     String record = "order " + order + ": " + key;
-                    initFileMap.writeKeyFile("input" + saveTag + "_result", record + "\treading...", true);
+                    initFileMap.writeKeyFile("result", record + "\treading...", true);
                     export(reader, fileMap, lineProcessor);
                     record += "\tsuccessfully done";
                     System.out.println(record);
-                    initFileMap.writeKeyFile("input" + saveTag + "_result", record, true);
+                    initFileMap.writeKeyFile("result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                 } catch (Exception e) {

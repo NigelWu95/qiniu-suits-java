@@ -1,7 +1,6 @@
 package com.qiniu.process.qdora;
 
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;
@@ -11,15 +10,24 @@ import java.util.Map;
 
 public class QueryAvinfo extends Base {
 
+    private MediaManager mediaManager;
     private String domain;
     private String protocol;
     private String urlIndex;
-    private MediaManager mediaManager;
-    private JsonParser jsonParser;
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                       String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("avinfo", accessKey, secretKey, null, null, rmPrefix, savePath, saveIndex);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String rmPrefix, String savePath, int saveIndex)
+            throws IOException {
+        super("avinfo", "", "", null, null, rmPrefix, savePath, saveIndex);
+        this.mediaManager = new MediaManager(configuration, protocol);
+        set(protocol, domain, urlIndex);
+    }
+
+    public void updateQuery(String protocol, String domain, String urlIndex, String rmPrefix) throws IOException {
+        set(protocol, domain, urlIndex);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String protocol, String domain, String urlIndex) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
@@ -32,19 +40,15 @@ public class QueryAvinfo extends Base {
         } else {
             this.urlIndex = urlIndex;
         }
-        this.mediaManager = new MediaManager(configuration, protocol);
-        this.jsonParser = new JsonParser();
     }
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, String accessKey, String secretKey,
-                       String rmPrefix, String savePath) throws IOException {
-        this(domain, protocol, urlIndex, accessKey, secretKey, rmPrefix, savePath, 0);
+    public QueryAvinfo(String domain, String protocol, String urlIndex, String rmPrefix, String savePath) throws IOException {
+        this(domain, protocol, urlIndex, rmPrefix, savePath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
         queryAvinfo.mediaManager = new MediaManager(configuration, protocol);
-        queryAvinfo.jsonParser = new JsonParser();
         return queryAvinfo;
     }
 
@@ -66,9 +70,9 @@ public class QueryAvinfo extends Base {
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String avinfo = mediaManager.getAvinfoBody(line.get(urlIndex));
         if (avinfo != null && !"".equals(avinfo)) {
-            // 由于响应的 body 经过格式化通过 JsonParser 处理为一行字符串
+            // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
-                return jsonParser.parse(avinfo).toString();
+                return JsonConvertUtils.toJson(avinfo);
             } catch (JsonParseException e) {
                 throw new QiniuException(e);
             }

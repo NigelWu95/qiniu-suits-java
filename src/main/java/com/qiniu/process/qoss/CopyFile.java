@@ -14,20 +14,32 @@ import java.util.Map;
 
 public class CopyFile extends Base {
 
-    final private String toBucket;
-    final private String newKeyIndex;
-    final private String keyPrefix;
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
+    private String toBucket;
+    private String newKeyIndex;
+    private String keyPrefix;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
+        set(toBucket, newKeyIndex, keyPrefix);
+        this.batchSize = 1000;
+    }
+
+    public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
+        this.bucket = bucket;
+        set(toBucket, newKeyIndex, keyPrefix);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String toBucket, String newKeyIndex, String keyPrefix) {
         this.toBucket = toBucket;
         // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchSize = 1000;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -38,6 +50,7 @@ public class CopyFile extends Base {
     public CopyFile clone() throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
         copyFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) copyFile.batchOperations = new BatchOperations();
         return copyFile;
     }
 
@@ -47,8 +60,8 @@ public class CopyFile extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BatchOperations();
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
                 keyPrefix + line.get(newKeyIndex)));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));

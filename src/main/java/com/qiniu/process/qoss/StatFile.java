@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
@@ -15,39 +16,52 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class FileStat extends Base {
+public class StatFile extends Base {
 
+    private BucketManager bucketManager;
+    private BatchOperations batchOperations;
     private String format;
     private String separator;
-    private BucketManager bucketManager;
 
-    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
+        set(format, separator);
+        this.batchSize = 1000;
+    }
+
+    public void updateStat(String bucket, String format, String separator, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        set(format, separator);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String format, String separator) throws IOException {
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
             this.separator = "csv".equals(format) ? "," : separator;
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for line to map.");
         }
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchSize = 1000;
     }
 
-    public FileStat(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator) throws IOException {
         this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, format, separator, 0);
     }
 
-    public FileStat clone() throws CloneNotSupportedException {
-        FileStat fileStat = (FileStat)super.clone();
-        fileStat.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        return fileStat;
+    public StatFile clone() throws CloneNotSupportedException {
+        StatFile statFile = (StatFile)super.clone();
+        statFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) statFile.batchOperations = new BatchOperations();
+        return statFile;
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }

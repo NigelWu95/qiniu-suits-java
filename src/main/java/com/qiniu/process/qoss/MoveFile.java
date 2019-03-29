@@ -14,17 +14,33 @@ import java.util.Map;
 
 public class MoveFile extends Base {
 
-    final private String toBucket;
-    final private String newKeyIndex;
-    final private String keyPrefix;
     private BucketManager bucketManager;
+    private BatchOperations batchOperations;
+    private String toBucket;
+    private String newKeyIndex;
+    private String keyPrefix;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath,
+                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
                 rmPrefix, savePath, saveIndex);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.batchOperations = new BatchOperations();
+        set(toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix);
+        this.batchSize = 1000;
+    }
+
+    public void updateMove(String bucket, String toBucket, String newKeyIndex, String keyPrefix,
+                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        set(toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix);
+        this.rmPrefix = rmPrefix;
+    }
+
+    private void set(String toBucket, String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix) throws IOException {
+        this.toBucket = toBucket;
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
             if (toBucket == null || "".equals(toBucket)) {
@@ -40,22 +56,20 @@ public class MoveFile extends Base {
         } else {
             this.newKeyIndex = newKeyIndex;
         }
-        this.toBucket = toBucket;
         this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchSize = 1000;
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath)
+                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, rmPrefix, forceIfOnlyPrefix,
+        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
                 savePath, 0);
     }
 
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
         moveFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        if (batchSize > 1) moveFile.batchOperations = new BatchOperations();
         return moveFile;
     }
 
@@ -65,8 +79,8 @@ public class MoveFile extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        BatchOperations batchOperations = new BucketManager.BatchOperations();
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+        batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
                 batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
