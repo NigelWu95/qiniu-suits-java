@@ -46,7 +46,7 @@ public class ChangeLifecycle extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));

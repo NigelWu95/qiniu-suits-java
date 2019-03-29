@@ -79,7 +79,7 @@ public class MoveFile extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {

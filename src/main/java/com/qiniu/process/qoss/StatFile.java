@@ -22,7 +22,6 @@ public class StatFile extends Base {
     private BatchOperations batchOperations;
     private String format;
     private String separator;
-    String test = "0";
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
@@ -61,8 +60,7 @@ public class StatFile extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        System.out.println(test + "1");
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));

@@ -137,16 +137,12 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
-     * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现。加上 synchronized 修饰的原因是因为批量操作需要用到 qiniu sdk 的
-     * BatchOperations 对象，为了避免每次请求重新 new 该对象，因此会在支持 batch 操作的子类中使用 BatchOperations 作为成员变量，batchResult
-     * 方法会每次更新该批处理的命令列表后执行并返回结果，由于作为成员变量需要保证多线程读写的情况下对 BatchOperations 操作的原子性，因此需要使用
-     * synchronized 关键字，因为该 batchProcess 操作是对列表分割后顺序执行的，在子类的 batchResult 方法中使用 synchronized 的话则会导致
-     * 更为频繁的加锁解锁操作，因此用来修饰 batchProcess 可以优化性能
+     * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现。
      * @param lineList 输入列表
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    synchronized protected void batchProcess(List<Map<String, String>> lineList, int retryTimes) throws IOException {
+    protected void batchProcess(List<Map<String, String>> lineList, int retryTimes) throws IOException {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {

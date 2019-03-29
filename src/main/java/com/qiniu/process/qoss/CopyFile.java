@@ -60,7 +60,7 @@ public class CopyFile extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
                 keyPrefix + line.get(newKeyIndex)));
