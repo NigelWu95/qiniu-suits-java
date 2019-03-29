@@ -46,7 +46,7 @@ public class ChangeStatus extends Base {
     }
 
     @Override
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
