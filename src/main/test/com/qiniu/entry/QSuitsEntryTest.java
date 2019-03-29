@@ -3,8 +3,7 @@ package com.qiniu.entry;
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.interfaces.IEntryParam;
-import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.storage.Configuration;
+import com.qiniu.process.qoss.CopyFile;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,6 +16,7 @@ public class QSuitsEntryTest {
     public void testEntry() throws Exception {
         IEntryParam entryParam = new ParamsConfig("resources/.qiniu.properties");
         Map<String, String> paramsMap = entryParam.getParamsMap();
+        String savePath = paramsMap.get("save-path");
         List<String> buckets = new ArrayList<String>(){{
             add("fhyfhy261");
             add("fhyfhy262");
@@ -33,38 +33,31 @@ public class QSuitsEntryTest {
             add("fhyfhy273");
         }};
 
-        QSuitsEntry qSuitsEntry;
-        Configuration configuration;
-        CommonParams commonParams;
-        ILineProcess<Map<String, String>> processor;
-        IDataSource dataSource;
-        // 这些参数需要在获取 processor 之后再访问，因为可能由于 ProcessorChoice 的过程对参数的默认值进行修改
-        boolean saveTotal;
-        String saveFormat;
-        String saveSeparator;
-        List<String> rmFields;
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);;
+        CommonParams commonParams = qSuitsEntry.getCommonParams();
+        CopyFile processor = (CopyFile) qSuitsEntry.getProcessor();
+        IDataSource dataSource = qSuitsEntry.getDataSource();
+        boolean saveTotal = commonParams.getSaveTotal();
+        String saveFormat = commonParams.getSaveFormat();
+        String saveSeparator = commonParams.getSaveSeparator();
+        List<String> rmFields = commonParams.getRmFields();
 
         // 不断去更改 bucket 做执行
         for (String bucket : buckets) {
-            paramsMap.put("bucket", bucket + "-src");
-            paramsMap.put("to-bucket", bucket);
-            paramsMap.put("save-path", paramsMap.get("save-path") + "/" + bucket);
-            entryParam = new ParamsConfig(paramsMap);
-            qSuitsEntry = new QSuitsEntry(entryParam);
-            configuration = qSuitsEntry.getConfiguration();
-            commonParams = qSuitsEntry.getCommonParams();
-            processor = new ProcessorChoice(entryParam, configuration, commonParams).get();
-            dataSource = qSuitsEntry.getDataSource();
-            saveTotal = commonParams.getSaveTotal();
-            saveFormat = commonParams.getSaveFormat();
-            saveSeparator = commonParams.getSaveSeparator();
-            rmFields = commonParams.getRmFields();
+            commonParams.setBucket(bucket + "-src");
+            commonParams.setSavePath(savePath + "/" + bucket);
+            if (processor != null) {
+                processor.updateCopy(bucket + "-src", bucket, null, null, null);
+                processor.updateSavePath(savePath + "/" + bucket);
+            }
             if (dataSource != null) {
-                dataSource.setSaveOptions(saveTotal, "", saveFormat, saveSeparator, rmFields);
+                dataSource.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+                dataSource.updateSettings(commonParams);
                 dataSource.setProcessor(processor);
                 dataSource.export();
             }
-            if (processor != null) processor.closeResource();
         }
+
+        if (processor != null) processor.closeResource();
     }
 }
