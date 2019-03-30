@@ -28,7 +28,7 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>4.30</version>
+  <version>4.31</version>
 </dependency>
 ```   
 **务必使用最新版本**
