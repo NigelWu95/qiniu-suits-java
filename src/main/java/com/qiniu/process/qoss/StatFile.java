@@ -13,6 +13,7 @@ import com.qiniu.util.JsonConvertUtils;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -67,8 +68,10 @@ public class StatFile extends Base {
     }
 
     @Override
-    public void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
+    public List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
+            throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
+        List<Map<String, String>> retryList = new ArrayList<>();
         JsonArray jsonArray;
         try {
             jsonArray = new Gson().fromJson(result, JsonArray.class);
@@ -86,21 +89,27 @@ public class StatFile extends Base {
                     fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
                     continue;
                 }
-                if (jsonObject.get("code").getAsInt() == 200) {
-                    // stat 接口查询结果不包含文件名，故再加入对应的文件名
-                    data.addProperty("key", processList.get(j).get("key"));
-                    if (!"json".equals(format)) {
-                        fileMap.writeSuccess(LineUtils.toFormatString(data, separator, null), false);
-                    } else {
-                        fileMap.writeSuccess(data.toString(), false);
-                    }
-                } else {
-                    fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                    case 1:
+                        data.addProperty("key", processList.get(j).get("key"));
+                        if (!"json".equals(format)) {
+                            fileMap.writeSuccess(LineUtils.toFormatString(data, separator, null), false);
+                        } else {
+                            fileMap.writeSuccess(data.toString(), false);
+                        }
+                        break;
+                    case 0:
+                        retryList.add(processList.get(j)); // 放回重试列表
+                        break;
+                    case -1:
+                        fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                        break;
                 }
             } else {
                 fileMap.writeError(processList.get(j).get("key") + "\tempty stat result", false);
             }
         }
+        return retryList;
     }
 
     @Override
