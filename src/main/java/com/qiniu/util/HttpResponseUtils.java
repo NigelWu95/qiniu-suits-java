@@ -8,8 +8,8 @@ public class HttpResponseUtils {
     /**
      * 判断异常结果，返回后续处理标志
      * @param e 需要处理的 QiniuException 异常
-     * @param times 此次处理失败前的重试次数，如果已经为小于 1 的话则说明没有重试机会需要抛出异常
-     * @return 返回重试次数，返回 -2 表示该异常应该抛出，返回 -1 表示重试次数已用尽，返回 0 表示该异常可以记录并跳过，返回大于 0 表示可以进行重试
+     * @param times 此次处理失败前的重试次数，如果已经为小于 1 的话则说明没有重试机会
+     * @return 返回重试次数，返回 -2 表示重试次数已用尽，返回 -1 表示该异常应该抛出，返回 0 表示该异常应该记录并跳过，返回大于 0 表示可以进行重试
      */
     public static int checkException(QiniuException e, int times) {
         // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
@@ -20,14 +20,14 @@ public class HttpResponseUtils {
                 return 0;
             } else if (e.code() == 631) {
                 // 631 状态码表示空间不存在，则不需要重试抛出异常
-                return -2;
-            } else if (times <= 0) {
                 return -1;
+            } else if (times <= 0) {
+                return -2;
             } else if (e.response.needRetry()) {
                 e.response.close();
                 return times;
             } else {
-                return -2;
+                return -1;
             }
         } else {
             // 请求超时等情况下可能异常中的 response 为空，需要重试
