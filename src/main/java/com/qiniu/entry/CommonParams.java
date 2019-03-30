@@ -70,7 +70,7 @@ public class CommonParams {
         setUnitLen(entryParam.getValue("unit-len", "10000"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryTimes(entryParam.getValue("retry-times", "3"));
-        setBatchSize(entryParam.getValue("batch-size", "stat".equals(process) ? "100" : "1000"));
+        setBatchSize(entryParam.getValue("batch-size", "-1"));
         // list 操作时默认保存全部原始文件
         setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
         savePath = entryParam.getValue("save-path", "result");
@@ -140,6 +140,13 @@ public class CommonParams {
     }
 
     private void setBatchSize(String batchSize) throws IOException {
+        if ("-1".equals(batchSize)) {
+            if (ProcessUtils.canBatch(process)) {
+                batchSize = "stat".equals(process) ? "100" : "1000";
+            } else {
+                batchSize = "0";
+            }
+        }
         this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
     }
 
