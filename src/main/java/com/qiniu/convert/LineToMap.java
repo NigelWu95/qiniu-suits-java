@@ -25,6 +25,10 @@ public class LineToMap implements ITypeConvert<String, Map<String, String>> {
         }
     }
 
+    public Map<String, String> convertToV(String line) throws IOException {
+        return lineParser.getItemMap(line);
+    }
+
     public List<Map<String, String>> convertToVList(List<String> lineList) {
         if (lineList == null || lineList.size() == 0) return new ArrayList<>();
         return lineList.stream()
