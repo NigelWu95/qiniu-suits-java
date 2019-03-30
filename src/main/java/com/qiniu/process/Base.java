@@ -8,10 +8,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.LogUtils;
-import com.qiniu.util.ProcessUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -113,11 +110,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param result batch 操作之后的响应结果
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
+    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
+            throws IOException {
+        List<Map<String, String>> retryList = new ArrayList<>();
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         JsonArray jsonArray;
         try {
-            jsonArray = new Gson().fromJson(result, JsonArray.class);
+            jsonArray = JsonConvertUtils.fromJson(result, JsonArray.class);
         } catch (JsonParseException e) {
             throw new IOException("parse to json array error.");
         }
@@ -131,7 +130,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                         fileMap.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
                         break;
                     case 0:
-                        fileMap.writeKeyFile("need_retry", resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
                         fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
@@ -141,6 +140,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                 fileMap.writeError(resultInfo(processList.get(j)) + "empty_result", false);
             }
         }
+        return retryList;
     }
 
     /**
@@ -170,10 +170,12 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
             if (processList.size() > 0) {
                 retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
-                while (retry > 0) {
+                // 加上 processList.size() > 0 的选择原因是会在每一次处理 batch 操作的结果时将需要重试的记录加入重试列表进行返回，并且在
+                // 没有异常的情况下当前的 processList 会执行到没有重试记录返回时才结束
+                while (retry > 0 || processList.size() > 0) {
                     try {
                         result = batchResult(processList);
-                        parseBatchResult(processList, result);
+                        processList = parseBatchResult(processList, result);
                         retry = 0;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
