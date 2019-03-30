@@ -1,23 +1,23 @@
 package com.qiniu.convert;
 
+import com.google.gson.JsonObject;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FileInfoToString implements ITypeConvert<FileInfo, String> {
+public class JsonToString implements ITypeConvert<JsonObject, String> {
 
-    private IStringFormat<FileInfo> stringFormatter;
+    private IStringFormat<JsonObject> stringFormatter;
     private List<String> errorList = new ArrayList<>();
 
-    public FileInfoToString(String format, String separator, List<String> rmFields) throws IOException {
+    public JsonToString(String format, String separator, List<String> rmFields) throws IOException {
         // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
         if ("json".equals(format)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
+            stringFormatter = JsonObject::toString;
         } else if ("csv".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", rmFields);
         } else if ("tab".equals(format)) {
@@ -27,11 +27,11 @@ public class FileInfoToString implements ITypeConvert<FileInfo, String> {
         }
     }
 
-    public String convertToV(FileInfo line) throws IOException {
+    public String convertToV(JsonObject line) throws IOException {
         return stringFormatter.toFormatString(line);
     }
 
-    public List<String> convertToVList(List<FileInfo> lineList) {
+    public List<String> convertToVList(List<JsonObject> lineList) {
         if (lineList == null || lineList.size() == 0) return new ArrayList<>();
         return lineList.stream()
                 .map(line -> {

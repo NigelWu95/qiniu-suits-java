@@ -1,11 +1,16 @@
 package com.qiniu.interfaces;
 
+import com.qiniu.storage.model.FileInfo;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface ITypeConvert<E, M> {
+public interface ITypeConvert<E, V> {
 
-    List<M> convertToVList(List<E> srcList);
+    V convertToV(E line) throws IOException;
+
+    List<V> convertToVList(List<E> srcList);
 
     // 获得完整的 errorList，可以多次调用
     default List<String> getErrorList() {

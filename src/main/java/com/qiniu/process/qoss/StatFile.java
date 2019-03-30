@@ -2,6 +2,9 @@ package com.qiniu.process.qoss;
 
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
+import com.qiniu.convert.FileInfoToString;
+import com.qiniu.convert.JsonToString;
+import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -9,8 +12,6 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class StatFile extends Base {
     private BatchOperations batchOperations;
     private String format;
     private String separator;
+    private ITypeConvert typeConverter;
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
@@ -46,6 +48,8 @@ public class StatFile extends Base {
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for line to map.");
         }
+        if (batchSize > 1) typeConverter = new JsonToString(format, separator, null);
+        else typeConverter = new FileInfoToString(format, separator, null);
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -56,7 +60,20 @@ public class StatFile extends Base {
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        if (batchSize > 1) statFile.batchOperations = new BatchOperations();
+        if (batchSize > 1) {
+            statFile.batchOperations = new BatchOperations();
+            try {
+                statFile.typeConverter = new JsonToString(format, separator, null);
+            } catch (IOException e) {
+                throw new CloneNotSupportedException(e.getMessage());
+            }
+        } else {
+            try {
+                statFile.typeConverter = new FileInfoToString(format, separator, null);
+            } catch (IOException e) {
+                throw new CloneNotSupportedException(e.getMessage());
+            }
+        }
         return statFile;
     }
 
@@ -92,11 +109,7 @@ public class StatFile extends Base {
                 switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         data.addProperty("key", processList.get(j).get("key"));
-                        if (!"json".equals(format)) {
-                            fileMap.writeSuccess(LineUtils.toFormatString(data, separator, null), false);
-                        } else {
-                            fileMap.writeSuccess(data.toString(), false);
-                        }
+                        fileMap.writeSuccess((String) typeConverter.convertToV(data), false);
                         break;
                     case 0:
                         retryList.add(processList.get(j)); // 放回重试列表
@@ -116,14 +129,10 @@ public class StatFile extends Base {
     protected String singleResult(Map<String, String> line) throws QiniuException {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
-        if (!"json".equals(format)) {
-            try {
-                return LineUtils.toFormatString(fileInfo, separator, null);
-            } catch (IOException e) {
-                throw new QiniuException(e);
-            }
-        } else {
-            return JsonConvertUtils.toJsonWithoutUrlEscape(fileInfo);
+        try {
+            return (String) typeConverter.convertToV(fileInfo);
+        } catch (IOException e) {
+            throw new QiniuException(e);
         }
     }
 }
