@@ -16,6 +16,7 @@ import com.qiniu.process.qdora.QueryAvinfo;
 import com.qiniu.process.qdora.QueryPfopResult;
 import com.qiniu.process.qoss.*;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.ProcessUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -243,7 +244,7 @@ public class QSuitsEntry {
         ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
         if (nextProcessor != null) {
-            nextProcessor.setBatchSize(batchSize);
+            if (ProcessUtils.canBatch(nextProcessor.getProcessName())) nextProcessor.setBatchSize(batchSize);
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
             nextProcessor.setRetryTimes(retryTimes);
         }
