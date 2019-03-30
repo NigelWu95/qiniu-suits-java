@@ -126,10 +126,17 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             jsonObject = jsonArray.get(j).getAsJsonObject();
             // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录，否则结果记录为空
             if (j < jsonArray.size()) {
-                if (jsonObject.get("code").getAsInt() == 200)
-                    fileMap.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
-                else
-                    fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                    case 1:
+                        fileMap.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        break;
+                    case 0:
+                        fileMap.writeKeyFile("need_retry", resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        break;
+                    case -1:
+                        fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        break;
+                }
             } else {
                 fileMap.writeError(resultInfo(processList.get(j)) + "empty_result", false);
             }
@@ -173,11 +180,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                         String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                         System.out.println(message);
                         if (retry <= 0) {
-                            fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1)
+                            fileMap.writeError(String.join("\n", lineList.subList(batchSize * i, lineList.size())
                                     .stream().map(line -> line + "\t" + message.replaceAll("\n", "\t"))
                                     .collect(Collectors.toList())), false);
                         }
-                        if (retry == -1) throw e;
+                        if (retry < 0) throw e;
                     }
                 }
             }
@@ -222,8 +229,8 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     System.out.println(message);
                     if (retry == 0) {
                         fileMap.writeError(resultInfo(line) + "\t" + message, false);
-                    } else if (retry == -1) {
-                        fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1).stream()
+                    } else if (retry < 0) {
+                        fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size()).stream()
                                 .map(srcLine -> resultInfo(srcLine) + "\t" + message)
                                 .collect(Collectors.toList())), false);
                         throw e;

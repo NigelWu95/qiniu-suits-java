@@ -130,7 +130,7 @@ public class BucketList implements IDataSource {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
                 // 每次 check 异常时 retry 会减一，所以在重试次数用尽时（返回的 retry < 0）会抛出异常
                 retry = HttpResponseUtils.checkException(fileLister.exception, retry);
-                if (retry == -1) throw fileLister.exception;
+                if (retry < 0) throw fileLister.exception;
                 if (fileLister.exception.response != null) fileLister.exception.response.close();
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
@@ -150,7 +150,7 @@ public class BucketList implements IDataSource {
             } catch (QiniuException e) {
                 // 这里其实逻辑上没有做重试次数的限制，因此 retry > 0，所以不是必须抛出的异常则会跳过，process 本身会保存失败的记录
                 retry = HttpResponseUtils.checkException(e, retry);
-                if (retry == -1) throw e;
+                if (retry < 0) throw e;
             }
         }
     }
@@ -192,7 +192,7 @@ public class BucketList implements IDataSource {
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
                 retry = HttpResponseUtils.checkException(e, retry);
-                if (retry == -1) throw e;
+                if (retry < 0) throw e;
             }
         }
         return fileLister;
