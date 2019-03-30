@@ -9,7 +9,7 @@ public class HttpResponseUtils {
      * 判断异常结果，返回后续处理标志
      * @param e 需要处理的 QiniuException 异常
      * @param times 此次处理失败前的重试次数，如果已经为小于 1 的话则说明没有重试机会需要抛出异常
-     * @return 返回重试次数，返回 -1 表示该异常应该抛出，返回 0 表示该异常可以记录并跳过，返回大于 0 表示可以进行重试
+     * @return 返回重试次数，返回 -2 表示该异常应该抛出，返回 -1 表示重试次数已用尽，返回 0 表示该异常可以记录并跳过，返回大于 0 表示可以进行重试
      */
     public static int checkException(QiniuException e, int times) {
         // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
@@ -18,18 +18,30 @@ public class HttpResponseUtils {
             if (e.code() == 478 || e.code() == 404 || e.code() == 612) {
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
                 return 0;
-            } else if (e.code() == 631 || times <= 0) {
-                // 631 状态码表示空间不存在，则不需要重试直接走抛出异常方式
+            } else if (e.code() == 631) {
+                // 631 状态码表示空间不存在，则不需要重试抛出异常
+                return -2;
+            } else if (times <= 0) {
                 return -1;
             } else if (e.response.needRetry()) {
                 e.response.close();
                 return times;
             } else {
-                return -1;
+                return -2;
             }
         } else {
             // 请求超时等情况下可能异常中的 response 为空，需要重试
             return times;
+        }
+    }
+
+    public static int checkStatusCode(int code) {
+        if (code == 200) {
+            return 1;
+        } else if (code >= 500 && code < 600 && code != 579) {
+            return 0;
+        } else {
+            return -1;
         }
     }
 
