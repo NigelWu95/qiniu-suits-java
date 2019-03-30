@@ -15,7 +15,7 @@ public class HttpResponseUtils {
         // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
         times--;
         if (e.response != null) {
-            if (e.code() == 478 || e.code() == 404 || e.code() == 612) {
+            if (e.code() == 478 || e.code() == 404 || e.code() == 612 || e.code() == 614) {
                 // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
                 return 0;
             } else if (e.code() == 631) {
