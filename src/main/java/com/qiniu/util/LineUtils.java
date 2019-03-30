@@ -10,14 +10,22 @@ import java.util.*;
 
 public class LineUtils {
 
+    final static private List<String> longFields = new ArrayList<String>(){{
+        add("fsize");
+        add("putTime");
+    }};
+
+    final static private List<String> intFields = new ArrayList<String>(){{
+        add("type");
+        add("status");
+    }};
+
     final static private List<String> fileInfoFields = new ArrayList<String>(){{
         add("key");
         add("hash");
-        add("fsize");
-        add("putTime");
+        addAll(longFields);
         add("mimeType");
-        add("type");
-        add("status");
+        addAll(intFields);
         add("md5");
         add("endUser");
     }};
@@ -123,42 +131,14 @@ public class LineUtils {
             this.addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        if (keys.contains("key")) {
-            converted.append(json.get("key").getAsString()).append(separator);
-            keys.remove("key");
-        }
-        if (keys.contains("hash")) {
-            converted.append(json.get("hash").getAsString()).append(separator);
-            keys.remove("hash");
-        }
-        if (keys.contains("fsize")) {
-            converted.append(json.get("fsize").getAsLong()).append(separator);
-            keys.remove("fsize");
-        }
-        if (keys.contains("putTime")) {
-            converted.append(json.get("putTime").getAsLong()).append(separator);
-            keys.remove("putTime");
-        }
-        if (keys.contains("mimeType")) {
-            converted.append(json.get("mimeType").getAsString()).append(separator);
-            keys.remove("mimeType");
-        }
-        if (keys.contains("type")) {
-            converted.append(json.get("type").getAsInt()).append(separator);
-            keys.remove("type");
-        }
-        if (keys.contains("status")) {
-            converted.append(json.get("status").getAsInt()).append(separator);
-            keys.remove("status");
-        }
-        if (keys.contains("md5")) {
-            converted.append(json.get("md5").getAsString()).append(separator);
-            keys.remove("md5");
-        }
-        if (keys.contains("endUser")) {
-            converted.append(json.get("endUser").getAsString()).append(separator);
-            keys.remove("endUser");
-        }
+        fileInfoFields.forEach(key -> {
+            if (keys.contains(key)) {
+                if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
+                else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
+                else converted.append(json.get(key).getAsString()).append(separator);
+                keys.remove(key);
+            }
+        });
         for (String key : keys) {
             converted.append(json.get(key).getAsString()).append(separator);
         }
@@ -173,42 +153,14 @@ public class LineUtils {
             this.addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        if (keys.contains("key")) {
-            converted.addProperty("key", line.get("key"));
-            keys.remove("key");
-        }
-        if (keys.contains("hash")) {
-            converted.addProperty("hash", line.get("hash"));
-            keys.remove("hash");
-        }
-        if (keys.contains("fsize")) {
-            converted.addProperty("fsize", Long.valueOf(line.get("fsize")));
-            keys.remove("fsize");
-        }
-        if (keys.contains("putTime")) {
-            converted.addProperty("putTime", Long.valueOf(line.get("putTime")));
-            keys.remove("putTime");
-        }
-        if (keys.contains("mimeType")) {
-            converted.addProperty("mimeType", line.get("mimeType"));
-            keys.remove("mimeType");
-        }
-        if (keys.contains("type")) {
-            converted.addProperty("type", Integer.valueOf(line.get("type")));
-            keys.remove("type");
-        }
-        if (keys.contains("status")) {
-            converted.addProperty("status", Integer.valueOf(line.get("status")));
-            keys.remove("status");
-        }
-        if (keys.contains("md5")) {
-            converted.addProperty("md5", line.get("md5"));
-            keys.remove("md5");
-        }
-        if (keys.contains("endUser")) {
-            converted.addProperty("endUser", line.get("endUser"));
-            keys.remove("endUser");
-        }
+        fileInfoFields.forEach(key -> {
+            if (keys.contains(key)) {
+                if (longFields.contains(key)) converted.addProperty(key, Long.valueOf(line.get(key)));
+                else if (intFields.contains(key)) converted.addProperty(key, Integer.valueOf(line.get(key)));
+                else converted.addProperty(key, line.get(key));
+                keys.remove(key);
+            }
+        });
         for (String key : keys) {
             converted.addProperty(key, line.get(key));
         }
@@ -224,42 +176,12 @@ public class LineUtils {
             this.addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        if (keys.contains("key")) {
-            converted.append(line.get("key")).append(separator);
-            keys.remove("key");
-        }
-        if (keys.contains("hash")) {
-            converted.append(line.get("hash")).append(separator);
-            keys.remove("hash");
-        }
-        if (keys.contains("fsize")) {
-            converted.append(line.get("fsize")).append(separator);
-            keys.remove("fsize");
-        }
-        if (keys.contains("putTime")) {
-            converted.append(line.get("putTime")).append(separator);
-            keys.remove("putTime");
-        }
-        if (keys.contains("mimeType")) {
-            converted.append(line.get("mimeType")).append(separator);
-            keys.remove("mimeType");
-        }
-        if (keys.contains("type")) {
-            converted.append(line.get("type")).append(separator);
-            keys.remove("type");
-        }
-        if (keys.contains("status")) {
-            converted.append(line.get("status")).append(separator);
-            keys.remove("status");
-        }
-        if (keys.contains("md5")) {
-            converted.append(line.get("md5")).append(separator);
-            keys.remove("md5");
-        }
-        if (keys.contains("endUser")) {
-            converted.append(line.get("endUser")).append(separator);
-            keys.remove("endUser");
-        }
+        fileInfoFields.forEach(key -> {
+            if (keys.contains(key)) {
+                converted.append(line.get(key)).append(separator);
+                keys.remove(key);
+            }
+        });
         for (String key : keys) {
             converted.append(line.get(key)).append(separator);
         }
