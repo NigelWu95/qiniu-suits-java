@@ -112,8 +112,8 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      */
     protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
             throws IOException {
-        List<Map<String, String>> retryList = new ArrayList<>();
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
+        List<Map<String, String>> retryList = new ArrayList<>();
         JsonArray jsonArray;
         try {
             jsonArray = JsonConvertUtils.fromJson(result, JsonArray.class);
