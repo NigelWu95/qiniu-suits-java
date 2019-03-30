@@ -179,12 +179,20 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                         retry = HttpResponseUtils.checkException(e, retry);
                         String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                         System.out.println(message);
-                        if (retry <= 0) {
-                            fileMap.writeError(String.join("\n", lineList.subList(batchSize * i, lineList.size())
-                                    .stream().map(line -> line + "\t" + message.replaceAll("\n", "\t"))
+                        switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
+                            case 0: fileMap.writeError(String.join("\n", processList.stream()
+                                    .map(line -> resultInfo(line) + "\t" + message)
                                     .collect(Collectors.toList())), false);
+                            break;
+                            case -1: fileMap.writeError(String.join("\n", lineList.subList(batchSize * i,
+                                    lineList.size()).stream().map(line -> resultInfo(line) + "\t" + message)
+                                    .collect(Collectors.toList())), false);
+                            case -2: fileMap.writeKeyFile("need_retry", String.join("\n", lineList
+                                    .subList(batchSize * i, lineList.size()).stream()
+                                    .map(line -> resultInfo(line) + "\t" + message)
+                                    .collect(Collectors.toList())), false);
+                            throw e; // 小于 0 的情况抛出异常
                         }
-                        if (retry < 0) throw e;
                     }
                 }
             }
@@ -227,11 +235,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     retry = HttpResponseUtils.checkException(e, retry);
                     String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                     System.out.println(message);
-                    if (retry == 0) {
-                        fileMap.writeError(resultInfo(line) + "\t" + message, false);
-                    } else if (retry < 0) {
-                        fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size()).stream()
-                                .map(srcLine -> resultInfo(srcLine) + "\t" + message)
+                    switch (retry) {
+                        case 0: fileMap.writeError(resultInfo(line) + "\t" + message, false); break;
+                        case -1: fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size()).
+                                stream().map(info -> resultInfo(info) + "\t" + message)
+                                .collect(Collectors.toList())), false);
+                        case -2: fileMap.writeKeyFile("need_retry", String.join("\n", lineList.subList(i,
+                                lineList.size()).stream().map(info -> resultInfo(info) + "\t" + message)
                                 .collect(Collectors.toList())), false);
                         throw e;
                     }
