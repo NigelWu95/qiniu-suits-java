@@ -28,7 +28,7 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>4.20</version>
+  <version>4.30</version>
 </dependency>
 ```   
 **务必使用最新版本**
@@ -142,8 +142,8 @@ indexes=0,1,2
 处理过程表示对由数据源输入的每一条记录进行处理，所有处理结果保存在 save-path 路径下，具体处理过程由处理类型参数指定，如 **process=type/status
 /lifecycle/copy** (命令行方式则指定为 **-process=xxx**) 等，同时 process 操作支持设置公共参数：  
 `retry-times=` 操作失败（可重试的异常情况下，如请求超时）需要进行的重试次数，默认为 5 次  
-`batch-size=` 支持 batch 操作时设置的一次批量操作的文件个数（支持 batch 操作：type/status/lifecycle/delete/copy/move/rename/stat），
-当响应结果较多 573 状态码时需要降低 batch-size，或者直接使用非 batch 方式，设置 batch-size=1  
+`batch-size=` 支持 batch 操作时设置的一次批量操作的文件个数（支持 batch 操作：type/status/lifecycle/delete/copy/move/rename/stat，
+其他操作请勿设置 batchSize 或者设置为 0），当响应结果较多 573 状态码时需要降低 batch-size，或者直接使用非 batch 方式，设置 batch-size=0/1  
 **处理操作类型：**  
 `process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 `process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
