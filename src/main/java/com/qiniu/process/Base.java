@@ -1,6 +1,5 @@
 package com.qiniu.process;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -32,6 +31,8 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
 
     public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
                 String rmPrefix, String savePath, int saveIndex) throws IOException {
+        if (ProcessUtils.needConfiguration(processName) && configuration == null)
+            throw new IOException("please set configuration, it can not be null.");
         this.processName = processName;
         this.configuration = configuration;
         this.accessKey = accessKey;

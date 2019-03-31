@@ -58,6 +58,14 @@ public class ProcessUtils {
         add("avinfo");
         add("exportts");
     }};
+    private static List<String> needConfigurationProcesses = new ArrayList<String>(){{
+        addAll(needBucketProcesses);
+        addAll(needPidProcesses);
+        add("asyncfetch");
+        add("qhash");
+        add("avinfo");
+        add("exportts");
+    }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
@@ -93,5 +101,9 @@ public class ProcessUtils {
 
     public static boolean supportListSource(String process) {
         return supportListSourceProcesses.contains(process);
+    }
+
+    public static boolean needConfiguration(String process) {
+        return needConfigurationProcesses.contains(process);
     }
 }
