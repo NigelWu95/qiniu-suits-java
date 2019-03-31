@@ -14,6 +14,9 @@ public class SeniorChecker {
     final private String checkName;
     private Set<String> extMimeList;
     private Set<String> extMimeTypeList;
+    private static List<String> checkList = new ArrayList<String>(){{
+        add("mime");
+    }};
 
     public SeniorChecker(String checkName, String configPath, boolean rewrite) throws IOException {
         this.checkName = checkName;
@@ -25,7 +28,7 @@ public class SeniorChecker {
             this.extMimeTypeList = new HashSet<>(JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(),
                     new TypeToken<List<String>>(){}));
         }
-        if (!rewrite) {
+        if (checkMime() && !rewrite) {
             JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
             JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
             List<String> defaultList = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
@@ -44,8 +47,12 @@ public class SeniorChecker {
         return checkName;
     }
 
+    public boolean checkMime() {
+        return "mime".equals(checkName);
+    }
+
     public boolean isValid() {
-        return checkName != null && !"".equals(checkName);
+        return checkList.contains(checkName);
     }
 
     public List<Map<String, String>> checkMimeType(List<Map<String, String>> lineList) {

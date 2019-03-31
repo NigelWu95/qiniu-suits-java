@@ -47,10 +47,16 @@ public class BaseFieldsFilter {
     }
 
     public boolean isValid() {
-        return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mimeType) || (putTimeMax > putTimeMin && putTimeMin >= 0) || type.matches("[01]") ||
-                status.matches("[01]") || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
-                checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
+        return checkKey() || checkMimeType() || checkPutTime() || checkType() || checkStatus();
+    }
+
+    public boolean checkKey() {
+        return checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
+                checkList(antiKeyPrefix) || checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex);
+    }
+
+    public boolean checkMime() {
+        return checkList(mimeType) || checkList(antiMimeType);
     }
 
     public boolean checkKeyPrefix() {
@@ -73,7 +79,7 @@ public class BaseFieldsFilter {
         return putTimeMax > putTimeMin && putTimeMin >= 0;
     }
 
-    public boolean checkMime() {
+    public boolean checkMimeType() {
         return checkList(mimeType);
     }
 
@@ -101,7 +107,7 @@ public class BaseFieldsFilter {
         return checkList(antiKeyRegex);
     }
 
-    public boolean checkAntiMime() {
+    public boolean checkAntiMimeType() {
         return checkList(antiMimeType);
     }
 
