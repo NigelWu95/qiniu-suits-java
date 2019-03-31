@@ -31,6 +31,7 @@ public class QSuitsEntry {
     private String accessKey;
     private String secretKey;
     private String bucket;
+    private Map<String, String> indexMap;
     private int unitLen;
     private int threads;
     private boolean saveTotal;
@@ -84,6 +85,7 @@ public class QSuitsEntry {
         this.accessKey = commonParams.getAccessKey();
         this.secretKey = commonParams.getSecretKey();
         this.bucket = commonParams.getBucket();
+        this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
         this.threads = commonParams.getThreads();
         this.saveTotal = commonParams.getSaveTotal();
@@ -156,7 +158,6 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parseType = commonParams.getParse();
         String separator = commonParams.getSeparator();
-        HashMap<String, String> indexMap = commonParams.getIndexMap();
         FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
         fileInput.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
         fileInput.setRetryTimes(retryTimes);
@@ -168,8 +169,8 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, unitLen, prefixesMap,
-                antiPrefixes, prefixLeft, prefixRight, threads, savePath);
+        BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, indexMap, unitLen,
+                prefixesMap, antiPrefixes, prefixLeft, prefixRight, threads, savePath);
         bucketList.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
         bucketList.setRetryTimes(retryTimes);
         return bucketList;

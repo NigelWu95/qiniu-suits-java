@@ -20,6 +20,7 @@ public class M3U8Manager {
 
     public M3U8Manager() {
         this.client = new Client();
+        this.protocol = "http";
     }
 
     public M3U8Manager(Configuration configuration) {

@@ -1,5 +1,6 @@
 package com.qiniu.convert;
 
+import com.qiniu.interfaces.ILineParser;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.LineUtils;
@@ -10,10 +11,15 @@ import java.util.stream.Collectors;
 
 public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
 
+    private ILineParser<FileInfo> lineParser;
     private List<String> errorList = new ArrayList<>();
 
+    public FileInfoToMap(Map<String, String> indexMap) {
+        this.lineParser = line -> LineUtils.getItemMap(line, indexMap);
+    }
+
     public Map<String, String> convertToV(FileInfo line) throws IOException {
-        return LineUtils.getItemMap(line);
+        return lineParser.getItemMap(line);
     }
 
     public List<Map<String, String>> convertToVList(List<FileInfo> lineList) {
@@ -21,7 +27,7 @@ public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>
         return lineList.stream()
                 .map(fileInfo -> {
                     try {
-                        return LineUtils.getItemMap(fileInfo);
+                        return lineParser.getItemMap(fileInfo);
                     } catch (Exception e) {
                         errorList.add(String.valueOf(fileInfo) + "\t" + e.getMessage());
                         return null;

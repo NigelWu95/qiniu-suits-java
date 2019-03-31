@@ -30,20 +30,22 @@ public class LineUtils {
         add("endUser");
     }};
 
-    public static Map<String, String> getItemMap(FileInfo fileInfo) throws IOException {
+    public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file info.");
         Map<String, String> itemMap = new HashMap<>();
         fileInfoFields.forEach(key -> {
-            switch (key) {
-                case "key": itemMap.put(key, fileInfo.key); break;
-                case "hash": itemMap.put(key, fileInfo.hash); break;
-                case "fsize": itemMap.put(key, String.valueOf(fileInfo.fsize)); break;
-                case "putTime": itemMap.put(key, String.valueOf(fileInfo.putTime)); break;
-                case "mimeType": itemMap.put(key, fileInfo.mimeType); break;
-                case "type": itemMap.put(key, String.valueOf(fileInfo.type)); break;
-                case "status": itemMap.put(key, String.valueOf(fileInfo.status)); break;
-//                case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
-                case "endUser": itemMap.put(key, fileInfo.endUser); break;
+            if (indexMap.get(key) != null) {
+                switch (key) {
+                    case "key": itemMap.put(indexMap.get(key), fileInfo.key); break;
+                    case "hash": itemMap.put(indexMap.get(key), fileInfo.hash); break;
+                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.fsize)); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.putTime)); break;
+                    case "mimeType": itemMap.put(indexMap.get(key), fileInfo.mimeType); break;
+                    case "type": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.type)); break;
+                    case "status": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.status)); break;
+//                    case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
+                    case "endUser": itemMap.put(indexMap.get(key), fileInfo.endUser); break;
+                }
             }
         });
         return itemMap;
@@ -51,8 +53,8 @@ public class LineUtils {
 
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap, boolean force)
             throws IOException {
-        Map<String, String> itemMap = new HashMap<>();
         if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
+        Map<String, String> itemMap = new HashMap<>();
         String mapKey;
         for (String key : json.keySet()) {
             mapKey = indexMap.get(key);
@@ -75,9 +77,9 @@ public class LineUtils {
 
     public static Map<String, String> getItemMap(String line, String separator, Map<String, String> indexMap,
                                                  boolean force) throws IOException {
+        if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
-        if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
         String mapKey;
         for (int i = 0; i < items.length; i++) {
             mapKey = indexMap.get(String.valueOf(i));
