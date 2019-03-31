@@ -85,6 +85,7 @@ public class StatFile extends Base {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
             throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
@@ -126,6 +127,7 @@ public class StatFile extends Base {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected String singleResult(Map<String, String> line) throws QiniuException {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
