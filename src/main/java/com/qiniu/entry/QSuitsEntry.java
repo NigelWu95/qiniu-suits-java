@@ -54,6 +54,7 @@ public class QSuitsEntry {
     public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
         this.commonParams = new CommonParams(entryParam);
+        setConfiguration();
         setMembers();
     }
 
