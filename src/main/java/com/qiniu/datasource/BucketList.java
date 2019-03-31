@@ -25,15 +25,15 @@ public class BucketList implements IDataSource {
     private String secretKey;
     private Configuration configuration;
     private String bucket;
-    private Map<String, String> indexMap;
     private List<String> antiPrefixes;
     private Map<String, String[]> prefixesMap;
     private List<String> prefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
+    private Map<String, String> indexMap;
     private int unitLen;
-    private int retryTimes = 5;
     private int threads;
+    private int retryTimes = 5;
     private String savePath;
     private boolean saveTotal;
     private String saveFormat;
@@ -45,19 +45,19 @@ public class BucketList implements IDataSource {
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public BucketList(String accessKey, String secretKey, Configuration configuration, String bucket,
-                      Map<String, String> indexMap, int unitLen, Map<String, String[]> prefixesMap,
-                      List<String> antiPrefixes, boolean prefixLeft, boolean prefixRight, int threads, String savePath) {
+                      List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft, boolean prefixRight,
+                      Map<String, String> indexMap, int unitLen, int threads, String savePath) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
         this.bucket = bucket;
-        setIndexMapWithDefault(indexMap);
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
         this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
         setPrefixes();
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
+        setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
@@ -94,12 +94,12 @@ public class BucketList implements IDataSource {
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.bucket = commonParams.getBucket();
-        setIndexMapWithDefault(commonParams.getIndexMap());
         this.antiPrefixes = commonParams.getAntiPrefixes();
         this.prefixesMap = commonParams.getPrefixesMap();
         setPrefixes();
         this.prefixLeft = commonParams.getPrefixLeft();
         this.prefixRight = commonParams.getPrefixRight();
+        setIndexMapWithDefault(commonParams.getIndexMap());
         this.unitLen = commonParams.getUnitLen();
         this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();

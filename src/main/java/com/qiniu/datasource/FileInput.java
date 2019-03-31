@@ -25,8 +25,8 @@ public class FileInput implements IDataSource {
     private String separator;
     private Map<String, String> indexMap;
     private int unitLen;
-    private int retryTimes = 5;
     private int threads;
+    private int retryTimes = 5;
     private String savePath;
     private boolean saveTotal;
     private String saveFormat;
@@ -67,8 +67,8 @@ public class FileInput implements IDataSource {
         this.separator = commonParams.getSeparator();
         this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
-        this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();
+        this.retryTimes = commonParams.getRetryTimes();
         this.savePath = commonParams.getSavePath();
         this.saveTotal = commonParams.getSaveTotal();
         this.saveFormat = commonParams.getSaveFormat();

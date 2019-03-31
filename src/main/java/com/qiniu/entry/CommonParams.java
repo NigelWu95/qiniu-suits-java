@@ -60,6 +60,7 @@ public class CommonParams {
         if ("list".equals(source)) {
             setAkSk();
             setBucket();
+            parse = "object";
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
@@ -234,7 +235,7 @@ public class CommonParams {
             if (indexMap.containsKey(indexName)) {
                 throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
             }
-            if ("json".equals(parse)) {
+            if ("json".equals(parse) || "object".equals(parse)) {
                 indexMap.put(indexName, index);
             } else if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
