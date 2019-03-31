@@ -25,6 +25,7 @@ public class BucketList implements IDataSource {
     private String secretKey;
     private Configuration configuration;
     private String bucket;
+    private Map<String, String> indexMap;
     private List<String> antiPrefixes;
     private Map<String, String[]> prefixesMap;
     private List<String> prefixes;
@@ -43,13 +44,14 @@ public class BucketList implements IDataSource {
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public BucketList(String accessKey, String secretKey, Configuration configuration, String bucket, int unitLen,
-                      Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
-                      boolean prefixRight, int threads, String savePath) {
+    public BucketList(String accessKey, String secretKey, Configuration configuration, String bucket,
+                      Map<String, String> indexMap, int unitLen, Map<String, String[]> prefixesMap,
+                      List<String> antiPrefixes, boolean prefixLeft, boolean prefixRight, int threads, String savePath) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
         this.bucket = bucket;
+        this.indexMap = indexMap;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
         this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
@@ -81,6 +83,7 @@ public class BucketList implements IDataSource {
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.bucket = commonParams.getBucket();
+        this.indexMap = commonParams.getIndexMap();
         this.antiPrefixes = commonParams.getAntiPrefixes();
         this.prefixesMap = commonParams.getPrefixesMap();
         setPrefixes();
@@ -117,7 +120,7 @@ public class BucketList implements IDataSource {
      */
     private void export(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
+        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(indexMap);
         ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(saveFormat, saveSeparator, rmFields);
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
