@@ -51,7 +51,7 @@ public class BucketList implements IDataSource {
         this.secretKey = secretKey;
         this.configuration = configuration;
         this.bucket = bucket;
-        this.indexMap = indexMap;
+        setIndexMapWithDefault(indexMap);
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
         this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
@@ -80,10 +80,21 @@ public class BucketList implements IDataSource {
         this.retryTimes = retryTimes;
     }
 
+    private void setIndexMapWithDefault(Map<String, String> indexMap) {
+        if (indexMap == null || indexMap.size() == 0) {
+            if (this.indexMap == null) this.indexMap = new HashMap<>();
+            for (String fileInfoField : LineUtils.fileInfoFields) {
+                this.indexMap.put(fileInfoField, fileInfoField);
+            }
+        } else {
+            this.indexMap = indexMap;
+        }
+    }
+
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.bucket = commonParams.getBucket();
-        this.indexMap = commonParams.getIndexMap();
+        setIndexMapWithDefault(commonParams.getIndexMap());
         this.antiPrefixes = commonParams.getAntiPrefixes();
         this.prefixesMap = commonParams.getPrefixesMap();
         setPrefixes();
