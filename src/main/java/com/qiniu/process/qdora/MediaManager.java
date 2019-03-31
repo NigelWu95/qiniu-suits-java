@@ -14,6 +14,7 @@ public class MediaManager {
     private String protocol;
 
     public MediaManager() {
+        this.protocol = "http";
     }
 
     public MediaManager(String protocol) {
@@ -85,6 +86,7 @@ public class MediaManager {
     }
 
     public String getAvinfoBody(String url) throws QiniuException {
+        if (client == null) this.client = new Client();
         Response response = client.get(url + "?avinfo");
         if (response.statusCode != 200) throw new QiniuException(response);
         String avinfo = response.bodyString();
@@ -123,6 +125,7 @@ public class MediaManager {
 
     public String getPfopResultBodyById(String persistentId) throws QiniuException {
         String url = protocol + "://api.qiniu.com/status/get/prefop?id=" + persistentId;
+        if (client == null) this.client = new Client();
         Response response = client.get(url);
         String pfopResult = response.bodyString();
         if (response.statusCode != 200) throw new QiniuException(response);

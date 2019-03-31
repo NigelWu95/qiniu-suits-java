@@ -25,20 +25,22 @@ public class PfopCommand extends Base {
     private ArrayList<JsonObject> pfopConfigs;
     private MediaManager mediaManager;
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
+    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix,
                        String savePath, int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, null, rmPrefix, savePath, saveIndex);
-        set(jsonPath, hasDuration, hasSize, avinfoIndex);
+        set(avinfoIndex, jsonPath, hasDuration, hasSize);
         this.mediaManager = new MediaManager();
     }
 
-    public void updateCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix)
+    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix)
             throws IOException {
-        set(jsonPath, hasDuration, hasSize, avinfoIndex);
+        set(avinfoIndex, jsonPath, hasDuration, hasSize);
         this.rmPrefix = rmPrefix;
     }
 
-    private void set(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex) throws IOException {
+    private void set(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
+        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
+        else this.avinfoIndex = avinfoIndex;
         this.pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getKeys()) {
@@ -62,13 +64,11 @@ public class PfopCommand extends Base {
         }
         this.hasDuration = hasDuration;
         this.hasSize = hasSize;
-        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
-        else this.avinfoIndex = avinfoIndex;
     }
 
-    public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
+    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix,
                        String savePath) throws IOException {
-        this(jsonPath, hasDuration, hasSize, avinfoIndex, rmPrefix, savePath, 0);
+        this(avinfoIndex, jsonPath, hasDuration, hasSize, rmPrefix, savePath, 0);
     }
 
     @SuppressWarnings("unchecked")
