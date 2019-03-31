@@ -289,7 +289,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getQueryAvinfo() throws IOException {
-        String domain = entryParam.getValue("domain");
+        String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
@@ -313,7 +313,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
-        String domain = entryParam.getValue("domain");
+        String domain = entryParam.getValue("domain", null);
         String algorithm = entryParam.getValue("algorithm", "md5");
         algorithm = commonParams.checked(algorithm, "algorithm", "(md5|sha1)");
         String protocol = entryParam.getValue("protocol", "http");
@@ -328,7 +328,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
-        String domain = entryParam.getValue("domain");
+        String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
@@ -352,7 +352,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getExportTs() throws IOException {
-        String domain = entryParam.getValue("domain");
+        String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
