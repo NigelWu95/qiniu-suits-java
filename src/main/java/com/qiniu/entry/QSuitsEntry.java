@@ -354,7 +354,7 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        return new QueryAvinfo(domain, protocol, urlIndex, rmPrefix, savePath);
+        return new QueryAvinfo(configuration, domain, protocol, urlIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop() throws IOException {
@@ -370,7 +370,7 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
         String persistentIdIndex = commonParams.containIndex("pid") ? "pid" : null;
-        return new QueryPfopResult(persistentIdIndex, savePath);
+        return new QueryPfopResult(configuration, persistentIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
@@ -380,7 +380,7 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        return new QueryHash(algorithm, protocol, domain, urlIndex, rmPrefix, savePath);
+        return new QueryHash(configuration, algorithm, protocol, domain, urlIndex, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getStatFile() throws IOException {

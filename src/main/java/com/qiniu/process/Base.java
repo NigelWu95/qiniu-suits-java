@@ -30,8 +30,8 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected String savePath;
     protected FileMap fileMap;
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration,
-                String bucket, String rmPrefix, String savePath, int saveIndex) throws IOException {
+    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
+                String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = processName;
         this.configuration = configuration;
         this.accessKey = accessKey;

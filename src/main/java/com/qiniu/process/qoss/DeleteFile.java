@@ -14,15 +14,15 @@ import java.util.Map;
 
 public class DeleteFile extends Base {
 
-    private BucketManager bucketManager;
     private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                       String savePath, int saveIndex) throws IOException {
         super("delete", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateDelete(String bucket, String rmPrefix) {

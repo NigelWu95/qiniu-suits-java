@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 
 public class ExportTS extends Base {
 
-    private M3U8Manager m3U8Manager;
     private String domain;
     private String protocol;
     private String urlIndex;
+    private M3U8Manager m3U8Manager;
 
     public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
                     String savePath, int saveIndex) throws IOException {

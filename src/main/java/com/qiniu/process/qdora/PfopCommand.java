@@ -19,17 +19,17 @@ import java.util.Map;
 
 public class PfopCommand extends Base {
 
-    private MediaManager mediaManager;
     private boolean hasDuration;
     private boolean hasSize;
     private String avinfoIndex;
     private ArrayList<JsonObject> pfopConfigs;
+    private MediaManager mediaManager;
 
     public PfopCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix,
                        String savePath, int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, null, rmPrefix, savePath, saveIndex);
-        this.mediaManager = new MediaManager();
         set(jsonPath, hasDuration, hasSize, avinfoIndex);
+        this.mediaManager = new MediaManager();
     }
 
     public void updateCommand(String jsonPath, boolean hasDuration, boolean hasSize, String avinfoIndex, String rmPrefix)

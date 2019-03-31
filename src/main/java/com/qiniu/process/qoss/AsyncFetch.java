@@ -12,7 +12,6 @@ import java.util.Map;
 
 public class AsyncFetch extends Base {
 
-    private BucketManager bucketManager;
     private String domain;
     private String protocol;
     private String urlIndex;
@@ -26,13 +25,14 @@ public class AsyncFetch extends Base {
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
+    private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
                       String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath,
                       int saveIndex) throws IOException {
         super("asyncfetch", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         set(domain, protocol, urlIndex, keyPrefix);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateFetch(String bucket, String domain, String protocol, String urlIndex, String keyPrefix,

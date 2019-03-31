@@ -15,17 +15,17 @@ import java.util.Map;
 
 public class ChangeType extends Base {
 
-    private BucketManager bucketManager;
-    private BatchOperations batchOperations;
     private int type;
+    private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         this.type = type;
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateType(String bucket, int type, String rmPrefix) {

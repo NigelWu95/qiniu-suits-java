@@ -14,19 +14,19 @@ import java.util.Map;
 
 public class CopyFile extends Base {
 
-    private BucketManager bucketManager;
-    private BatchOperations batchOperations;
     private String toBucket;
     private String newKeyIndex;
     private String keyPrefix;
+    private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         set(toBucket, newKeyIndex, keyPrefix);
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
