@@ -8,10 +8,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
-import com.qiniu.util.LogUtils;
-import com.qiniu.util.ProcessUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,8 +30,8 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected String savePath;
     protected FileMap fileMap;
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration,
-                String bucket, String rmPrefix, String savePath, int saveIndex) throws IOException {
+    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
+                String rmPrefix, String savePath, int saveIndex) throws IOException {
         this.processName = processName;
         this.configuration = configuration;
         this.accessKey = accessKey;
@@ -113,11 +110,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param result batch 操作之后的响应结果
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected void parseBatchResult(List<Map<String, String>> processList, String result) throws IOException {
+    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
+            throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
+        List<Map<String, String>> retryList = new ArrayList<>();
         JsonArray jsonArray;
         try {
-            jsonArray = new Gson().fromJson(result, JsonArray.class);
+            jsonArray = JsonConvertUtils.fromJson(result, JsonArray.class);
         } catch (JsonParseException e) {
             throw new IOException("parse to json array error.");
         }
@@ -126,14 +125,22 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             jsonObject = jsonArray.get(j).getAsJsonObject();
             // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录，否则结果记录为空
             if (j < jsonArray.size()) {
-                if (jsonObject.get("code").getAsInt() == 200)
-                    fileMap.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
-                else
-                    fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                    case 1:
+                        fileMap.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        break;
+                    case 0:
+                        retryList.add(processList.get(j)); // 放回重试列表
+                        break;
+                    case -1:
+                        fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        break;
+                }
             } else {
                 fileMap.writeError(resultInfo(processList.get(j)) + "empty_result", false);
             }
         }
+        return retryList;
     }
 
     /**
@@ -163,21 +170,31 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
             if (processList.size() > 0) {
                 retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
-                while (retry > 0) {
+                // 加上 processList.size() > 0 的选择原因是会在每一次处理 batch 操作的结果时将需要重试的记录加入重试列表进行返回，并且在
+                // 没有异常的情况下当前的 processList 会执行到没有重试记录返回时才结束
+                while (retry > 0 || processList.size() > 0) {
                     try {
                         result = batchResult(processList);
-                        parseBatchResult(processList, result);
+                        processList = parseBatchResult(processList, result);
                         retry = 0;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
                         String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                         System.out.println(message);
-                        if (retry <= 0) {
-                            fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1)
-                                    .stream().map(line -> line + "\t" + message.replaceAll("\n", "\t"))
+                        switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
+                            case 0: fileMap.writeError(String.join("\n", processList.stream()
+                                    .map(line -> resultInfo(line) + "\t" + message)
                                     .collect(Collectors.toList())), false);
+                            break;
+                            case -1: fileMap.writeError(String.join("\n", lineList.subList(batchSize * i,
+                                    lineList.size()).stream().map(line -> resultInfo(line) + "\t" + message)
+                                    .collect(Collectors.toList())), false);
+                            case -2: fileMap.writeKeyFile("need_retry", String.join("\n", lineList
+                                    .subList(batchSize * i, lineList.size()).stream()
+                                    .map(line -> resultInfo(line) + "\t" + message)
+                                    .collect(Collectors.toList())), false);
+                            throw e; // 小于 0 的情况抛出异常
                         }
-                        if (retry == -1) throw e;
                     }
                 }
             }
@@ -220,11 +237,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     retry = HttpResponseUtils.checkException(e, retry);
                     String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                     System.out.println(message);
-                    if (retry == 0) {
-                        fileMap.writeError(resultInfo(line) + "\t" + message, false);
-                    } else if (retry == -1) {
-                        fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size() - 1).stream()
-                                .map(srcLine -> resultInfo(srcLine) + "\t" + message)
+                    switch (retry) {
+                        case 0: fileMap.writeError(resultInfo(line) + "\t" + message, false); break;
+                        case -1: fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size()).
+                                stream().map(info -> resultInfo(info) + "\t" + message)
+                                .collect(Collectors.toList())), false);
+                        case -2: fileMap.writeKeyFile("need_retry", String.join("\n", lineList.subList(i,
+                                lineList.size()).stream().map(info -> resultInfo(info) + "\t" + message)
                                 .collect(Collectors.toList())), false);
                         throw e;
                     }

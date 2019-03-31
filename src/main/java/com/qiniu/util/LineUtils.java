@@ -10,32 +10,42 @@ import java.util.*;
 
 public class LineUtils {
 
-    final static private List<String> fileInfoFields = new ArrayList<String>(){{
-        add("key");
-        add("hash");
+    final static private List<String> longFields = new ArrayList<String>(){{
         add("fsize");
         add("putTime");
-        add("mimeType");
+    }};
+
+    final static private List<String> intFields = new ArrayList<String>(){{
         add("type");
         add("status");
+    }};
+
+    final static public List<String> fileInfoFields = new ArrayList<String>(){{
+        add("key");
+        add("hash");
+        addAll(longFields);
+        add("mimeType");
+        addAll(intFields);
         add("md5");
         add("endUser");
     }};
 
-    public static Map<String, String> getItemMap(FileInfo fileInfo) throws IOException {
+    public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file info.");
         Map<String, String> itemMap = new HashMap<>();
         fileInfoFields.forEach(key -> {
-            switch (key) {
-                case "key": itemMap.put(key, fileInfo.key); break;
-                case "hash": itemMap.put(key, fileInfo.hash); break;
-                case "fsize": itemMap.put(key, String.valueOf(fileInfo.fsize)); break;
-                case "putTime": itemMap.put(key, String.valueOf(fileInfo.putTime)); break;
-                case "mimeType": itemMap.put(key, fileInfo.mimeType); break;
-                case "type": itemMap.put(key, String.valueOf(fileInfo.type)); break;
-                case "status": itemMap.put(key, String.valueOf(fileInfo.status)); break;
-//                case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
-                case "endUser": itemMap.put(key, fileInfo.endUser); break;
+            if (indexMap.get(key) != null) {
+                switch (key) {
+                    case "key": itemMap.put(indexMap.get(key), fileInfo.key); break;
+                    case "hash": itemMap.put(indexMap.get(key), fileInfo.hash); break;
+                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.fsize)); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.putTime)); break;
+                    case "mimeType": itemMap.put(indexMap.get(key), fileInfo.mimeType); break;
+                    case "type": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.type)); break;
+                    case "status": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.status)); break;
+//                    case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
+                    case "endUser": itemMap.put(indexMap.get(key), fileInfo.endUser); break;
+                }
             }
         });
         return itemMap;
@@ -43,8 +53,8 @@ public class LineUtils {
 
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap, boolean force)
             throws IOException {
-        Map<String, String> itemMap = new HashMap<>();
         if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
+        Map<String, String> itemMap = new HashMap<>();
         String mapKey;
         for (String key : json.keySet()) {
             mapKey = indexMap.get(key);
@@ -67,9 +77,9 @@ public class LineUtils {
 
     public static Map<String, String> getItemMap(String line, String separator, Map<String, String> indexMap,
                                                  boolean force) throws IOException {
+        if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
-        if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
         String mapKey;
         for (int i = 0; i < items.length; i++) {
             mapKey = indexMap.get(String.valueOf(i));
@@ -94,7 +104,8 @@ public class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
 //        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
-        if (rmFields == null || !rmFields.contains("endUser")) converted.append(fileInfo.endUser).append(separator);
+        if ((rmFields == null || !rmFields.contains("endUser")) && fileInfo.endUser != null)
+            converted.append(fileInfo.endUser).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
@@ -109,7 +120,8 @@ public class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", fileInfo.type);
         if (rmFields == null || !rmFields.contains("status")) converted.addProperty("status", fileInfo.status);
 //        if (rmFields == null || !rmFields.contains("md5")) converted.addProperty("md5", fileInfo.md5);
-        if (rmFields == null || !rmFields.contains("endUser")) converted.addProperty("endUser", fileInfo.endUser);
+        if ((rmFields == null || !rmFields.contains("endUser")) && fileInfo.endUser != null)
+            converted.addProperty("endUser", fileInfo.endUser);
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
@@ -121,40 +133,16 @@ public class LineUtils {
             this.addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        if (keys.contains("key")) {
-            converted.append(json.get("key")).append(separator);
-            keys.remove("key");
-        }
-        if (keys.contains("hash")) {
-            converted.append(json.get("hash")).append(separator);
-            keys.remove("hash");
-        }
-        if (keys.contains("fsize")) {
-            converted.append(json.get("fsize")).append(separator);
-            keys.remove("fsize");
-        }
-        if (keys.contains("putTime")) {
-            converted.append(json.get("putTime")).append(separator);
-            keys.remove("putTime");
-        }
-        if (keys.contains("mimeType")) {
-            converted.append(json.get("mimeType")).append(separator);
-            keys.remove("mimeType");
-        }
-        if (keys.contains("type")) {
-            converted.append(json.get("type")).append(separator);
-            keys.remove("type");
-        }
-        if (keys.contains("status")) {
-            converted.append(json.get("status")).append(separator);
-            keys.remove("status");
-        }
-        if (keys.contains("endUser")) {
-            converted.append(json.get("endUser")).append(separator);
-            keys.remove("endUser");
-        }
+        fileInfoFields.forEach(key -> {
+            if (keys.contains(key) && !(json.get(key) instanceof JsonNull)) {
+                if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
+                else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
+                else converted.append(json.get(key).getAsString()).append(separator);
+            }
+            keys.remove(key);
+        });
         for (String key : keys) {
-            converted.append(json.get(key)).append(separator);
+            converted.append(json.get(key).getAsString()).append(separator);
         }
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
@@ -167,38 +155,14 @@ public class LineUtils {
             this.addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        if (keys.contains("key")) {
-            converted.addProperty("key", line.get("key"));
-            keys.remove("key");
-        }
-        if (keys.contains("hash")) {
-            converted.addProperty("hash", line.get("hash"));
-            keys.remove("hash");
-        }
-        if (keys.contains("fsize")) {
-            converted.addProperty("fsize", Long.valueOf(line.get("fsize")));
-            keys.remove("fsize");
-        }
-        if (keys.contains("putTime")) {
-            converted.addProperty("putTime", Long.valueOf(line.get("putTime")));
-            keys.remove("putTime");
-        }
-        if (keys.contains("mimeType")) {
-            converted.addProperty("mimeType", line.get("mimeType"));
-            keys.remove("mimeType");
-        }
-        if (keys.contains("type")) {
-            converted.addProperty("type", Integer.valueOf(line.get("type")));
-            keys.remove("type");
-        }
-        if (keys.contains("status")) {
-            converted.addProperty("status", Integer.valueOf(line.get("status")));
-            keys.remove("status");
-        }
-        if (keys.contains("endUser")) {
-            converted.addProperty("endUser", line.get("endUser"));
-            keys.remove("endUser");
-        }
+        fileInfoFields.forEach(key -> {
+            if (keys.contains(key) && line.get(key) != null) {
+                if (longFields.contains(key)) converted.addProperty(key, Long.valueOf(line.get(key)));
+                else if (intFields.contains(key)) converted.addProperty(key, Integer.valueOf(line.get(key)));
+                else converted.addProperty(key, line.get(key));
+            }
+            keys.remove(key);
+        });
         for (String key : keys) {
             converted.addProperty(key, line.get(key));
         }
@@ -214,38 +178,12 @@ public class LineUtils {
             this.addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        if (keys.contains("key")) {
-            converted.append(line.get("key")).append(separator);
-            keys.remove("key");
-        }
-        if (keys.contains("hash")) {
-            converted.append(line.get("hash")).append(separator);
-            keys.remove("hash");
-        }
-        if (keys.contains("fsize")) {
-            converted.append(line.get("fsize")).append(separator);
-            keys.remove("fsize");
-        }
-        if (keys.contains("putTime")) {
-            converted.append(line.get("putTime")).append(separator);
-            keys.remove("putTime");
-        }
-        if (keys.contains("mimeType")) {
-            converted.append(line.get("mimeType")).append(separator);
-            keys.remove("mimeType");
-        }
-        if (keys.contains("type")) {
-            converted.append(line.get("type")).append(separator);
-            keys.remove("type");
-        }
-        if (keys.contains("status")) {
-            converted.append(line.get("status")).append(separator);
-            keys.remove("status");
-        }
-        if (keys.contains("endUser")) {
-            converted.append(line.get("endUser")).append(separator);
-            keys.remove("endUser");
-        }
+        fileInfoFields.forEach(key -> {
+            if (keys.contains(key) && line.get(key) != null) {
+                converted.append(line.get(key)).append(separator);
+            }
+            keys.remove(key);
+        });
         for (String key : keys) {
             converted.append(line.get(key)).append(separator);
         }

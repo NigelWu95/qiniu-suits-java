@@ -26,6 +26,10 @@ public class MapToString implements ITypeConvert<Map<String, String>, String> {
         }
     }
 
+    public String convertToV(Map<String, String> line) throws IOException {
+        return stringFormatter.toFormatString(line);
+    }
+
     public List<String> convertToVList(List<Map<String, String>> lineList) {
         if (lineList == null || lineList.size() == 0) return new ArrayList<>();
         return lineList.stream()

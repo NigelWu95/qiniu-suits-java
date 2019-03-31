@@ -11,15 +11,15 @@ import java.util.Map;
 
 public class QiniuPfop extends Base {
 
-    private OperationManager operationManager;
     private StringMap pfopParams;
     private String fopsIndex;
+    private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
                      String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("pfop", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
         set(pipeline, fopsIndex);
+        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateFop(String bucket, String pipeline, String fopsIndex, String rmPrefix) throws IOException {

@@ -14,11 +14,11 @@ import java.util.Map;
 
 public class MoveFile extends Base {
 
-    private BucketManager bucketManager;
-    private BatchOperations batchOperations;
     private String toBucket;
     private String newKeyIndex;
     private String keyPrefix;
+    private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
@@ -26,10 +26,10 @@ public class MoveFile extends Base {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
                 rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         set(toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix);
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateMove(String bucket, String toBucket, String newKeyIndex, String keyPrefix,

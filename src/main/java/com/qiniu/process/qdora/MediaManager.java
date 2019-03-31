@@ -122,7 +122,7 @@ public class MediaManager {
     }
 
     public String getPfopResultBodyById(String persistentId) throws QiniuException {
-        String url = "http://api.qiniu.com/status/get/prefop?id=" + persistentId;
+        String url = protocol + "://api.qiniu.com/status/get/prefop?id=" + persistentId;
         Response response = client.get(url);
         String pfopResult = response.bodyString();
         if (response.statusCode != 200) throw new QiniuException(response);

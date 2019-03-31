@@ -20,32 +20,26 @@ public class BaseFieldsFilter {
     private List<String> antiKeyRegex;
     private List<String> antiMimeType;
 
-    public void setKeyConditions(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner,
-                                 List<String> keyRegex) {
+    public BaseFieldsFilter(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner, List<String> keyRegex,
+                            List<String> mimeType, long putTimeMin, long putTimeMax, String type, String status) {
         this.keyPrefix = keyPrefix;
         this.keySuffix = keySuffix;
         this.keyInner = keyInner;
         this.keyRegex = keyRegex;
-    }
-
-    public void setAntiKeyConditions(List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
-                                     List<String> antiKeyRegex) {
-        this.antiKeyPrefix = antiKeyPrefix;
-        this.antiKeySuffix = antiKeySuffix;
-        this.antiKeyInner = antiKeyInner;
-        this.antiKeyRegex = antiKeyRegex;
-    }
-
-    public void setMimeTypeConditions(List<String> mimeType, List<String> antiMimeType) {
         this.mimeType = mimeType;
-        this.antiMimeType = antiMimeType;
-    }
-
-    public void setOtherConditions(long putTimeMin, long putTimeMax, String type, String status) {
         this.putTimeMin = putTimeMin;
         this.putTimeMax = putTimeMax;
         this.type = type == null ? "" : type;
         this.status = status == null ? "" : status;
+    }
+
+    public void setAntiConditions(List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
+                                     List<String> antiKeyRegex, List<String> antiMimeType) {
+        this.antiKeyPrefix = antiKeyPrefix;
+        this.antiKeySuffix = antiKeySuffix;
+        this.antiKeyInner = antiKeyInner;
+        this.antiKeyRegex = antiKeyRegex;
+        this.antiMimeType = antiMimeType;
     }
 
     private boolean checkList(List<String> list) {
@@ -53,10 +47,16 @@ public class BaseFieldsFilter {
     }
 
     public boolean isValid() {
-        return (checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
-                checkList(mimeType) || (putTimeMax > putTimeMin && putTimeMin >= 0) || type.matches("[01]") ||
-                status.matches("[01]") || checkList(antiKeyPrefix) || checkList(antiKeySuffix) ||
-                checkList(antiKeyInner) || checkList(antiKeyRegex) || checkList(antiMimeType));
+        return checkKey() || checkMimeType() || checkPutTime() || checkType() || checkStatus();
+    }
+
+    public boolean checkKey() {
+        return checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
+                checkList(antiKeyPrefix) || checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex);
+    }
+
+    public boolean checkMime() {
+        return checkList(mimeType) || checkList(antiMimeType);
     }
 
     public boolean checkKeyPrefix() {
@@ -79,7 +79,7 @@ public class BaseFieldsFilter {
         return putTimeMax > putTimeMin && putTimeMin >= 0;
     }
 
-    public boolean checkMime() {
+    public boolean checkMimeType() {
         return checkList(mimeType);
     }
 
@@ -107,7 +107,7 @@ public class BaseFieldsFilter {
         return checkList(antiKeyRegex);
     }
 
-    public boolean checkAntiMime() {
+    public boolean checkAntiMimeType() {
         return checkList(antiMimeType);
     }
 

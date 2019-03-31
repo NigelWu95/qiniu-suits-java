@@ -10,9 +10,7 @@ public class ProcessUtils {
         add("privateurl");
         add("qhash");
         add("avinfo");
-    }};
-    private static List<String> needMd5Processes = new ArrayList<String>(){{
-        add("asyncfetch");
+        add("exportts");
     }};
     private static List<String> needNewKeyProcesses = new ArrayList<String>(){{
         add("rename");
@@ -54,13 +52,17 @@ public class ProcessUtils {
         add("delete");
         add("stat");
     }};
+//    private static List<String> allProcesses = new ArrayList<String>(){{
+//        addAll(needAuthProcesses);
+//        add("qhash");
+//        add("avinfo");
+//        add("exportts");
+//        add("pfopcmd");
+//        add("pfopresult");
+//    }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
-    }
-
-    public static boolean needMd5(String process) {
-        return needMd5Processes.contains(process);
     }
 
     public static boolean needNewKey(String process) {
