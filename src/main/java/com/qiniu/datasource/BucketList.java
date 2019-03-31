@@ -1,10 +1,10 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.convert.FileInfoToString;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.convert.FileInfoToMap;
-import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.storage.BucketManager;
@@ -118,7 +118,7 @@ public class BucketList implements IDataSource {
     private void export(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
+        ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(saveFormat, saveSeparator, rmFields);
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
@@ -139,7 +139,7 @@ public class BucketList implements IDataSource {
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
             if (saveTotal) {
-                writeList = writeTypeConverter.convertToVList(infoMapList);
+                writeList = writeTypeConverter.convertToVList(fileInfoList);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
                 if (writeTypeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
