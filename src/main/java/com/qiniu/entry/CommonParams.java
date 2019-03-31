@@ -354,7 +354,7 @@ public class CommonParams {
                 }
             }
             if (ProcessUtils.supportListSource(process)) {
-                if (!indexMap.containsKey("key"))
+                if (!indexMap.containsValue("key"))
                     throw new IOException("please check your indexes settings, miss a key index in first position.");
             } else
                 throw new IOException("the process: " + process + " don't support get source line from list.");
@@ -368,7 +368,7 @@ public class CommonParams {
             if (indexMap.size() == 0) {
                 indexMap.put("json".equals(parse) ? "key" : "0", "key");
             }
-            if (ProcessUtils.needUrl(process) && !indexMap.containsKey("key") && !indexMap.containsKey("url"))
+            if (ProcessUtils.needUrl(process) && !indexMap.containsValue("key") && !indexMap.containsValue("url"))
                 throw new IOException("please check your indexes settings, miss a key index in first position or miss" +
                         " url-index parameter which the process: " + process + " need.");
         }
