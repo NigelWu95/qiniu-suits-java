@@ -52,14 +52,12 @@ public class ProcessUtils {
         add("delete");
         add("stat");
     }};
-//    private static List<String> allProcesses = new ArrayList<String>(){{
-//        addAll(needAuthProcesses);
-//        add("qhash");
-//        add("avinfo");
-//        add("exportts");
-//        add("pfopcmd");
-//        add("pfopresult");
-//    }};
+    private static List<String> supportListSourceProcesses = new ArrayList<String>(){{
+        addAll(needAuthProcesses);
+        add("qhash");
+        add("avinfo");
+        add("exportts");
+    }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
@@ -91,5 +89,9 @@ public class ProcessUtils {
 
     public static boolean canBatch(String process) {
         return canBatchProcesses.contains(process);
+    }
+
+    public static boolean supportListSource(String process) {
+        return supportListSourceProcesses.contains(process);
     }
 }

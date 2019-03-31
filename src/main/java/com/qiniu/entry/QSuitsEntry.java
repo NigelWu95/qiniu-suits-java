@@ -338,13 +338,13 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPfopCommand() throws IOException {
+        String avinfoIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
         String configJson = entryParam.getValue("pfop-config");
         String duration = entryParam.getValue("duration", "false");
         duration = commonParams.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false");
         size = commonParams.checked(size, "size", "(true|false)");
-        String avinfoIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
-        return new PfopCommand(configJson, Boolean.valueOf(duration), Boolean.valueOf(size), avinfoIndex, rmPrefix, savePath);
+        return new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile() throws IOException {
