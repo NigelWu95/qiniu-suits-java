@@ -230,25 +230,6 @@ public class CommonParams {
         }
     }
 
-    private void setIndex(String indexName, String index, boolean check) throws IOException {
-        if (indexName != null && !"-1".equals(indexName) && check) {
-            if (indexMap.containsKey(indexName)) {
-                throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
-            }
-            if ("json".equals(parse) || "object".equals(parse)) {
-                indexMap.put(indexName, index);
-            } else if ("tab".equals(parse) || "csv".equals(parse)) {
-                if (indexName.matches("\\d+")) {
-                    indexMap.put(indexName, index);
-                } else {
-                    throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
-                }
-            } else {
-                throw new IOException("the parse type: " + parse + " is unsupported now.");
-            }
-        }
-    }
-
     private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
         if (!"".equals(marker) || "".equals(start)) return marker;
         else {
@@ -327,6 +308,25 @@ public class CommonParams {
         this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
     }
 
+    private void setIndex(String indexName, String index, boolean check) throws IOException {
+        if (indexName != null && !"-1".equals(indexName) && check) {
+            if (indexMap.containsKey(indexName)) {
+                throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
+            }
+            if ("json".equals(parse) || "object".equals(parse)) {
+                indexMap.put(indexName, index);
+            } else if ("tab".equals(parse) || "csv".equals(parse)) {
+                if (indexName.matches("\\d+")) {
+                    indexMap.put(indexName, index);
+                } else {
+                    throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
+                }
+            } else {
+                throw new IOException("the parse type: " + parse + " is unsupported now.");
+            }
+        }
+    }
+
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
         List<String> keys = LineUtils.fileInfoFields;
@@ -341,7 +341,7 @@ public class CommonParams {
         if ("list".equals(source)) {
             // 默认索引
             if (indexMap.size() == 0) {
-                if (process != null) {
+                if (ProcessUtils.supportListSource(process)) {
                     indexMap.put("key", "key");
                     if (baseFieldsFilter.checkMime() || seniorChecker.checkMime()) indexMap.put("mimeType", "mimeType");
                     if (baseFieldsFilter.checkPutTime()) indexMap.put("putTime", "putTime");
@@ -353,6 +353,11 @@ public class CommonParams {
                     }
                 }
             }
+            if (ProcessUtils.supportListSource(process)) {
+                if (!indexMap.containsKey("key"))
+                    throw new IOException("please check your indexes settings, miss a key index in first position.");
+            } else
+                throw new IOException("the process: " + process + " don't support get source line from list.");
         } else if ("file".equals(source)) {
             setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
             setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
@@ -363,6 +368,9 @@ public class CommonParams {
             if (indexMap.size() == 0) {
                 indexMap.put("json".equals(parse) ? "key" : "0", "key");
             }
+            if (ProcessUtils.needUrl(process) && !indexMap.containsKey("key") && !indexMap.containsKey("url"))
+                throw new IOException("please check your indexes settings, miss a key index in first position or miss" +
+                        " url-index parameter which the process: " + process + " need.");
         }
     }
 
