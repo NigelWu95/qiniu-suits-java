@@ -21,6 +21,8 @@ public class FileChecker {
     }};
 
     public FileChecker() {
+        this.algorithm = "md5";
+        this.protocol = "http";
     }
 
     public FileChecker(String algorithm, String protocol) {
@@ -76,6 +78,7 @@ public class FileChecker {
     }
 
     public String getQHashBody(String url) throws QiniuException {
+        if (client == null) this.client = new Client();
         Response response = client.get(url + "?qhash/" + algorithm);
         String qhash = response.bodyString();
         if (response.statusCode != 200) throw new QiniuException(response);
