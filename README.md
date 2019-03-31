@@ -28,7 +28,7 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>4.31</version>
+  <version>4.40</version>
 </dependency>
 ```   
 **务必使用最新版本**
@@ -124,19 +124,23 @@ indexes=0,1,2
 #### 2. 输出结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
 `save-path=` 表示保存结果的文件路径  
-`save-tag=` 保存路径文件名包含的标签，默认为空  
 `save-format=` 结果保存格式（json/tab），默认为 tab  
 `save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
-`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据。如 bucket 的 list 操作需要在列举出结果之后再针对字段
-进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。file 源时
-默认不保存原始输出数据，list 源默认保存原始输出数据。   
-**--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key、hash、fsize、putTime、mimeType、type、status、endUser，可选择去除某些
-字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
-**持久化结果的文件名为 "\<source-name\>\<save-tag\>_success/error_\<order\>.txt"：  
-（1）list 源 =》 "bucketlist\<save-tag\>_success/error_\<order\>.txt"  
-（2）file 源 =》 "fileinput\<save-tag\>_success/error_\<order\>.txt"  
-如果设置了过滤参数，则过滤到的结果文件名为 "filter\<save-tag\>_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>\<save-tag\>_success/error_\<order\>.txt"**  
+`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
+进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。
+**默认情况：**  
+（1）file 源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
+（2）list 源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
+
+*--* 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
+选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
+**持数据源久化结果的文件名为 "\<source-name\>_success/error_\<order\>.txt"：  
+（1）list 源 =》 "bucketlist_success/error_\<order\>.txt"  
+（2）file 源 =》 "fileinput_success/error_\<order\>.txt"  
+如果设置了过滤参数，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
+"\<process\>_success/error_\<order\>.txt"**  
+**process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
+处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息**  
 
 ### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，所有处理结果保存在 save-path 路径下，具体处理过程由处理类型参数指定，如 **process=type/status
@@ -161,6 +165,7 @@ indexes=0,1,2
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
 `process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
 `process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
+`process=exportts` 表示对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。

@@ -169,8 +169,8 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, indexMap, unitLen,
-                prefixesMap, antiPrefixes, prefixLeft, prefixRight, threads, savePath);
+        BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, antiPrefixes, prefixesMap,
+                prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
         bucketList.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
         bucketList.setRetryTimes(retryTimes);
         return bucketList;
