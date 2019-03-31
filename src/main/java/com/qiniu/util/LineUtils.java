@@ -134,12 +134,12 @@ public class LineUtils {
         }};
         if (rmFields != null) keys.removeAll(rmFields);
         fileInfoFields.forEach(key -> {
-            if (keys.contains(key)) {
+            if (keys.contains(key) && !(json.get(key) instanceof JsonNull)) {
                 if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
                 else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
                 else converted.append(json.get(key).getAsString()).append(separator);
-                keys.remove(key);
             }
+            keys.remove(key);
         });
         for (String key : keys) {
             converted.append(json.get(key).getAsString()).append(separator);
@@ -156,12 +156,12 @@ public class LineUtils {
         }};
         if (rmFields != null) keys.removeAll(rmFields);
         fileInfoFields.forEach(key -> {
-            if (keys.contains(key)) {
+            if (keys.contains(key) && line.get(key) != null) {
                 if (longFields.contains(key)) converted.addProperty(key, Long.valueOf(line.get(key)));
                 else if (intFields.contains(key)) converted.addProperty(key, Integer.valueOf(line.get(key)));
                 else converted.addProperty(key, line.get(key));
-                keys.remove(key);
             }
+            keys.remove(key);
         });
         for (String key : keys) {
             converted.addProperty(key, line.get(key));
@@ -179,10 +179,10 @@ public class LineUtils {
         }};
         if (rmFields != null) keys.removeAll(rmFields);
         fileInfoFields.forEach(key -> {
-            if (keys.contains(key)) {
+            if (keys.contains(key) && line.get(key) != null) {
                 converted.append(line.get(key)).append(separator);
-                keys.remove(key);
             }
+            keys.remove(key);
         });
         for (String key : keys) {
             converted.append(line.get(key)).append(separator);
