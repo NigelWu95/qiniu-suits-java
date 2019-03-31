@@ -340,12 +340,18 @@ public class CommonParams {
         if ("list".equals(source)) {
             // 默认索引
             if (indexMap.size() == 0) {
-                indexMap.put("key", "key");
+                if (process != null) {
+                    indexMap.put("key", "key");
+                    if (baseFieldsFilter.checkMime() || seniorChecker.checkMime()) indexMap.put("mimeType", "mimeType");
+                    if (baseFieldsFilter.checkPutTime()) indexMap.put("putTime", "putTime");
+                    if (baseFieldsFilter.checkType()) indexMap.put("type", "type");
+                    if (baseFieldsFilter.checkStatus()) indexMap.put("status", "status");
+                } else {
+                    for (String key : keys) {
+                        indexMap.put(key, key);
+                    }
+                }
             }
-            if (baseFieldsFilter.checkMime() || seniorChecker.checkMime()) indexMap.put("mimeType", "mimeType");
-            if (baseFieldsFilter.checkPutTime()) indexMap.put("putTime", "putTime");
-            if (baseFieldsFilter.checkType()) indexMap.put("type", "type");
-            if (baseFieldsFilter.checkStatus()) indexMap.put("status", "status");
         } else if ("file".equals(source)) {
             setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
             setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
