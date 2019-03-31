@@ -5,6 +5,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.process.Base;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
@@ -14,13 +15,13 @@ import java.util.Map;
 
 public class QueryPfopResult extends Base {
 
-    private MediaManager mediaManager;
     private String pidIndex;
+    private MediaManager mediaManager;
 
-    public QueryPfopResult(String pidIndex, String savePath, int saveIndex) throws IOException {
-        super("pfopresult", "", "", null, null, null, savePath, saveIndex);
-        this.mediaManager = new MediaManager(configuration);
+    public QueryPfopResult(Configuration configuration, String pidIndex, String savePath, int saveIndex) throws IOException {
+        super("pfopresult", "", "", configuration, null, null, savePath, saveIndex);
         set(pidIndex);
+        this.mediaManager = new MediaManager(configuration.clone());
     }
 
     public void updateQuery(String pidIndex) throws IOException {
@@ -32,13 +33,13 @@ public class QueryPfopResult extends Base {
         else this.pidIndex = pidIndex;
     }
 
-    public QueryPfopResult(String persistentIdIndex, String savePath) throws IOException {
-        this(persistentIdIndex, savePath, 0);
+    public QueryPfopResult(Configuration configuration, String persistentIdIndex, String savePath) throws IOException {
+        this(configuration, persistentIdIndex, savePath, 0);
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
-        pfopResult.mediaManager = new MediaManager(configuration);
+        pfopResult.mediaManager = new MediaManager(configuration.clone());
         return pfopResult;
     }
 

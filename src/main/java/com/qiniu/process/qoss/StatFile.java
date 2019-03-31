@@ -20,19 +20,19 @@ import java.util.Map;
 
 public class StatFile extends Base {
 
-    private BucketManager bucketManager;
-    private BatchOperations batchOperations;
     private String format;
     private String separator;
     private ITypeConvert typeConverter;
+    private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
                     String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         set(format, separator);
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateStat(String bucket, String format, String separator, String rmPrefix) throws IOException {

@@ -14,17 +14,17 @@ import java.util.Map;
 
 public class ChangeStatus extends Base {
 
-    private BucketManager bucketManager;
-    private BatchOperations batchOperations;
     private int status;
+    private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                         String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         this.status = status;
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateStatus(String bucket, int status, String rmPrefix) {
