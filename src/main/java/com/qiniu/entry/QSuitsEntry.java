@@ -43,27 +43,27 @@ public class QSuitsEntry {
     private String saveFormat;
     private String saveSeparator;
 
-    public QSuitsEntry(String[] args) throws IOException {
+    public QSuitsEntry(String[] args) throws Exception {
         setEntryParam(args);
         this.commonParams = new CommonParams(entryParam);
         setConfiguration();
         setMembers();
     }
 
-    public QSuitsEntry(IEntryParam entryParam) throws IOException {
+    public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
         this.commonParams = new CommonParams(entryParam);
         setMembers();
     }
 
-    public QSuitsEntry(IEntryParam entryParam, Configuration configuration) throws IOException {
+    public QSuitsEntry(IEntryParam entryParam, Configuration configuration) throws Exception {
         this.entryParam = entryParam;
         this.configuration = configuration;
         this.commonParams = new CommonParams(entryParam);
         setMembers();
     }
 
-    public void UpdateEntry(IEntryParam entryParam) throws IOException {
+    public void UpdateEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
         this.commonParams = new CommonParams(entryParam);
         setConfiguration();
@@ -175,79 +175,16 @@ public class QSuitsEntry {
         return bucketList;
     }
 
-    private String[] splitDateScale(String dateScale) throws IOException {
-        String[] scale;
-        if (dateScale != null && !"".equals(dateScale)) {
-            // 设置的 dateScale 格式应该为 [yyyy-MM-dd HH:mm:ss,yyyy-MM-dd HH:mm:ss]
-            if (dateScale.startsWith("[") && dateScale.endsWith("]")) {
-                scale = dateScale.substring(1, dateScale.length() - 1).split(",");
-            } else if (dateScale.startsWith("[") || dateScale.endsWith("]")) {
-                throw new IOException("please check your date scale, set it as \"[<date1>,<date2>]\".");
-            } else {
-                scale = dateScale.split(",");
-            }
-        } else {
-            scale = new String[]{"", ""};
-        }
-        if (scale.length <= 1) {
-            throw new IOException("please set start and end date, if no start please set is as \"[0,<date>]\"");
-        }
-        return scale;
-    }
-
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
-        String keyPrefix = entryParam.getValue("f-prefix", "");
-        String keySuffix = entryParam.getValue("f-suffix", "");
-        String keyInner = entryParam.getValue("f-inner", "");
-        String keyRegex = entryParam.getValue("f-regex", "");
-        String mimeType = entryParam.getValue("f-mime", "");
-        String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
-        String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
-        String antiKeyInner = entryParam.getValue("f-anti-inner", "");
-        String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
-        String antiMimeType = entryParam.getValue("f-anti-mime", "");
-        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
-        long putTimeMin = commonParams.checkedDatetime(dateScale[0]);
-        long putTimeMax = commonParams.checkedDatetime(dateScale[1]);
-        if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
-            throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
-                    "should earlier then <date2>.");
-        }
-        String type = entryParam.getValue("f-type", null);
-        String status = entryParam.getValue("f-status", null);
-        if (type != null) type = commonParams.checked(type, "f-type", "[01]");
-        if (status != null) status = commonParams.checked(status, "f-status", "[01]");
-
-        List<String> keyPrefixList = commonParams.getFilterList("key", keyPrefix, "prefix");
-        List<String> keySuffixList = commonParams.getFilterList("key", keySuffix, "suffix");
-        List<String> keyInnerList = commonParams.getFilterList("key", keyInner, "inner");
-        List<String> keyRegexList = commonParams.getFilterList("key", keyRegex, "regex");
-        List<String> mimeTypeList = commonParams.getFilterList("mimeType", mimeType, "mime");
-        List<String> antiKeyPrefixList = commonParams.getFilterList("key", antiKeyPrefix, "anti-prefix");
-        List<String> antiKeySuffixList = commonParams.getFilterList("key", antiKeySuffix, "anti-suffix");
-        List<String> antiKeyInnerList = commonParams.getFilterList("key", antiKeyInner, "anti-inner");
-        List<String> antiKeyRegexList = commonParams.getFilterList("key", antiKeyRegex, "anti-regex");
-        List<String> antiMimeTypeList = commonParams.getFilterList("mimeType", antiMimeType, "anti-mime");
-        BaseFieldsFilter baseFieldsFilter = new BaseFieldsFilter();
-        baseFieldsFilter.setKeyConditions(keyPrefixList, keySuffixList, keyInnerList, keyRegexList);
-        baseFieldsFilter.setAntiKeyConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList);
-        baseFieldsFilter.setMimeTypeConditions(mimeTypeList, antiMimeTypeList);
-        baseFieldsFilter.setOtherConditions(putTimeMin, putTimeMax, type, status);
-
-        String checkType = entryParam.getValue("f-check", "");
-        checkType = commonParams.checked(checkType, "f-check", "(|mime)");
-        String checkConfig = entryParam.getValue("f-check-config", "");
-        String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
-        checkRewrite = commonParams.checked(checkRewrite, "f-check-rewrite", "(true|false)");
-        SeniorChecker seniorChecker = new SeniorChecker(checkType, checkConfig, Boolean.valueOf(checkRewrite));
-
-        ILineProcess<Map<String, String>> processor;
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
         if (nextProcessor != null) {
             if (ProcessUtils.canBatch(nextProcessor.getProcessName())) nextProcessor.setBatchSize(batchSize);
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
             nextProcessor.setRetryTimes(retryTimes);
         }
+        ILineProcess<Map<String, String>> processor;
+        BaseFieldsFilter baseFieldsFilter = commonParams.getBaseFieldsFilter();
+        SeniorChecker seniorChecker = commonParams.getSeniorChecker();
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);

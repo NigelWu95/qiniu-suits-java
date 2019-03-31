@@ -20,7 +20,7 @@ public class LineUtils {
         add("status");
     }};
 
-    final static private List<String> fileInfoFields = new ArrayList<String>(){{
+    final static public List<String> fileInfoFields = new ArrayList<String>(){{
         add("key");
         add("hash");
         addAll(longFields);

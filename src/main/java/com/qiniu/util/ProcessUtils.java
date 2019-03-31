@@ -12,9 +12,6 @@ public class ProcessUtils {
         add("avinfo");
         add("exportts");
     }};
-    private static List<String> needMd5Processes = new ArrayList<String>(){{
-        add("asyncfetch");
-    }};
     private static List<String> needNewKeyProcesses = new ArrayList<String>(){{
         add("rename");
         add("copy");
@@ -66,10 +63,6 @@ public class ProcessUtils {
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
-    }
-
-    public static boolean needMd5(String process) {
-        return needMd5Processes.contains(process);
     }
 
     public static boolean needNewKey(String process) {
