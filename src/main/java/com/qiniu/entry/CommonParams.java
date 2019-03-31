@@ -4,13 +4,12 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
 import com.qiniu.interfaces.IEntryParam;
+import com.qiniu.process.filtration.BaseFieldsFilter;
+import com.qiniu.process.filtration.SeniorChecker;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.Auth;
-import com.qiniu.util.DateUtils;
-import com.qiniu.util.ListBucketUtils;
-import com.qiniu.util.ProcessUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -19,12 +18,13 @@ public class CommonParams {
 
     private IEntryParam entryParam;
     private String path;
+    private BaseFieldsFilter baseFieldsFilter;
+    private SeniorChecker seniorChecker;
     private String process;
     private String rmPrefix;
     private String source;
     private String parse;
     private String separator;
-    private HashMap<String, String> indexMap;
     private String accessKey;
     private String secretKey;
     private String bucket;
@@ -42,21 +42,25 @@ public class CommonParams {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
+    private HashMap<String, String> indexMap;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
      * @param entryParam 配置参数入口
      * @throws IOException 获取一些参数失败时抛出的异常
      */
-    public CommonParams(IEntryParam entryParam) throws IOException {
+    public CommonParams(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
         rmPrefix = entryParam.getValue("rm-prefix", null);
         setSource();
+        setBaseFieldsFilter();
+        setSeniorChecker();
         if ("list".equals(source)) {
             setAkSk();
             setBucket();
+            parse = "object";
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
@@ -65,14 +69,16 @@ public class CommonParams {
         } else if ("file".equals(source)) {
             setParse(entryParam.getValue("parse", "tab"));
             setSeparator(entryParam.getValue("separator", null));
+            if (ProcessUtils.needBucket(process)) setBucket();
+            if (ProcessUtils.needAuth(process)) setAkSk();
         }
-        setIndexMap();
+
         setUnitLen(entryParam.getValue("unit-len", "10000"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryTimes(entryParam.getValue("retry-times", "3"));
         setBatchSize(entryParam.getValue("batch-size", "-1"));
         // list 操作时默认保存全部原始文件
-        setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
+        setSaveTotal(entryParam.getValue("save-total", null));
         savePath = entryParam.getValue("save-path", "result");
         saveTag = entryParam.getValue("save-tag", "");
         saveFormat = entryParam.getValue("save-format", "tab");
@@ -81,11 +87,7 @@ public class CommonParams {
         saveSeparator = entryParam.getValue("save-separator", null);
         setSaveSeparator(saveSeparator);
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
-
-        if ("file".equals(source)) {
-            if (ProcessUtils.needBucket(process)) setBucket();
-            if (ProcessUtils.needAuth(process)) setAkSk();
-        }
+        setIndexMap();
     }
 
     private void setSource() throws IOException {
@@ -102,6 +104,54 @@ public class CommonParams {
         if (!source.matches("(list|file)")) {
             throw new IOException("please set the \"source\" conform to regex: (list|file)");
         }
+    }
+
+    private void setBaseFieldsFilter() throws Exception {
+        String keyPrefix = entryParam.getValue("f-prefix", "");
+        String keySuffix = entryParam.getValue("f-suffix", "");
+        String keyInner = entryParam.getValue("f-inner", "");
+        String keyRegex = entryParam.getValue("f-regex", "");
+        String mimeType = entryParam.getValue("f-mime", "");
+        String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
+        String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
+        String antiKeyInner = entryParam.getValue("f-anti-inner", "");
+        String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
+        String antiMimeType = entryParam.getValue("f-anti-mime", "");
+        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
+        long putTimeMin = checkedDatetime(dateScale[0]);
+        long putTimeMax = checkedDatetime(dateScale[1]);
+        if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
+            throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
+                    "should earlier then <date2>.");
+        }
+        String type = entryParam.getValue("f-type", null);
+        String status = entryParam.getValue("f-status", null);
+        if (type != null) type = checked(type, "f-type", "[01]");
+        if (status != null) status = checked(status, "f-status", "[01]");
+
+        List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
+        List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
+        List<String> keyInnerList = getFilterList("key", keyInner, "inner");
+        List<String> keyRegexList = getFilterList("key", keyRegex, "regex");
+        List<String> mimeTypeList = getFilterList("mimeType", mimeType, "mime");
+        List<String> antiKeyPrefixList = getFilterList("key", antiKeyPrefix, "anti-prefix");
+        List<String> antiKeySuffixList = getFilterList("key", antiKeySuffix, "anti-suffix");
+        List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
+        List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
+        List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
+        baseFieldsFilter = new BaseFieldsFilter(keyPrefixList, keySuffixList, keyInnerList, keyRegexList, mimeTypeList,
+                putTimeMin, putTimeMax, type, status);
+        baseFieldsFilter.setAntiConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList,
+                antiMimeTypeList);
+    }
+
+    private void setSeniorChecker() throws IOException {
+        String checkType = entryParam.getValue("f-check", "");
+        checkType = checked(checkType, "f-check", "(|mime)");
+        String checkConfig = entryParam.getValue("f-check-config", "");
+        String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
+        checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        seniorChecker = new SeniorChecker(checkType, checkConfig, Boolean.valueOf(checkRewrite));
     }
 
     private void setAkSk() throws IOException {
@@ -155,6 +205,19 @@ public class CommonParams {
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
+        if (saveTotal == null) {
+            if ("list".equals(source)) {
+                if (process == null) {
+                    saveTotal = "true";
+                } else {
+                    if (baseFieldsFilter.isValid() || seniorChecker.isValid()) saveTotal = "true";
+                    else saveTotal = "false";
+                }
+            } else {
+                if (process != null || baseFieldsFilter.isValid() || seniorChecker.isValid()) saveTotal = "false";
+                else saveTotal = "true";
+            }
+        }
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
     }
 
@@ -172,7 +235,7 @@ public class CommonParams {
             if (indexMap.containsKey(indexName)) {
                 throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
             }
-            if ("json".equals(parse)) {
+            if ("json".equals(parse) || "object".equals(parse)) {
                 indexMap.put(indexName, index);
             } else if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (indexName.matches("\\d+")) {
@@ -183,36 +246,6 @@ public class CommonParams {
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
-        }
-    }
-
-    private void setIndexMap() throws IOException {
-        indexMap = new HashMap<>();
-        List<String> keys = Arrays.asList("key", "hash", "fsize", "putTime", "mimeType", "type", "status", "endUser");
-        if ("list".equals(source)) {
-            for (String key : keys) {
-                indexMap.put(key, key);
-            }
-        } else {
-            setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
-            setIndex(entryParam.getValue("md5-index", null), "md5", ProcessUtils.needMd5(process));
-            setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
-            setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
-            setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
-            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
-
-            List<String> indexList = splitItems(entryParam.getValue("indexes", ""));
-            if (indexList.size() > 8) {
-                throw new IOException("the file info's index length is too long.");
-            } else {
-                for (int i = 0; i < indexList.size(); i++) {
-                    setIndex(indexList.get(i), keys.get(i), true);
-                }
-            }
-        }
-        // 默认索引
-        if (indexMap.size() == 0) {
-            indexMap.put("json".equals(parse) ? "key" : "0", "key");
         }
     }
 
@@ -294,6 +327,49 @@ public class CommonParams {
         this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
     }
 
+    private void setIndexMap() throws IOException {
+        indexMap = new HashMap<>();
+        List<String> keys = LineUtils.fileInfoFields;
+        List<String> indexList = splitItems(entryParam.getValue("indexes", ""));
+        if (indexList.size() > 9) {
+            throw new IOException("the file info's index length is too long.");
+        } else {
+            for (int i = 0; i < indexList.size(); i++) {
+                setIndex(indexList.get(i), keys.get(i), true);
+            }
+        }
+        if ("list".equals(source)) {
+            // 默认索引
+            if (indexMap.size() == 0) {
+                if (process != null) {
+                    indexMap.put("key", "key");
+                    if (baseFieldsFilter.checkMime() || seniorChecker.checkMime()) indexMap.put("mimeType", "mimeType");
+                    if (baseFieldsFilter.checkPutTime()) indexMap.put("putTime", "putTime");
+                    if (baseFieldsFilter.checkType()) indexMap.put("type", "type");
+                    if (baseFieldsFilter.checkStatus()) indexMap.put("status", "status");
+                } else {
+                    for (String key : keys) {
+                        indexMap.put(key, key);
+                    }
+                }
+            }
+        } else if ("file".equals(source)) {
+            setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
+            setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
+            setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
+            setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
+            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
+            // 默认索引
+            if (indexMap.size() == 0) {
+                indexMap.put("json".equals(parse) ? "key" : "0", "key");
+            }
+        }
+    }
+
+    public boolean containIndex(String name) {
+        return indexMap.containsValue(name);
+    }
+
     public String checked(String param, String name, String conditionReg) throws IOException {
         if (param == null || !param.matches(conditionReg))
             throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
@@ -309,6 +385,26 @@ public class CommonParams {
                 throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
             }
         } else return null;
+    }
+
+    public String[] splitDateScale(String dateScale) throws IOException {
+        String[] scale;
+        if (dateScale != null && !"".equals(dateScale)) {
+            // 设置的 dateScale 格式应该为 [yyyy-MM-dd HH:mm:ss,yyyy-MM-dd HH:mm:ss]
+            if (dateScale.startsWith("[") && dateScale.endsWith("]")) {
+                scale = dateScale.substring(1, dateScale.length() - 1).split(",");
+            } else if (dateScale.startsWith("[") || dateScale.endsWith("]")) {
+                throw new IOException("please check your date scale, set it as \"[<date1>,<date2>]\".");
+            } else {
+                scale = dateScale.split(",");
+            }
+        } else {
+            scale = new String[]{"", ""};
+        }
+        if (scale.length <= 1) {
+            throw new IOException("please set start and end date, if no start please set is as \"[0,<date>]\"");
+        }
+        return scale;
     }
 
     public Long checkedDatetime(String datetime) throws Exception {
@@ -334,6 +430,14 @@ public class CommonParams {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public void setBaseFieldsFilter(BaseFieldsFilter baseFieldsFilter) {
+        this.baseFieldsFilter = baseFieldsFilter;
+    }
+
+    public void setSeniorChecker(SeniorChecker seniorChecker) {
+        this.seniorChecker = seniorChecker;
     }
 
     public void setProcess(String process) {
@@ -416,10 +520,6 @@ public class CommonParams {
         this.rmFields = rmFields;
     }
 
-    public boolean containIndex(String name) {
-        return indexMap.containsValue(name);
-    }
-
     public String getPath() {
         return path;
     }
@@ -436,16 +536,20 @@ public class CommonParams {
         return source;
     }
 
+    public BaseFieldsFilter getBaseFieldsFilter() {
+        return baseFieldsFilter;
+    }
+
+    public SeniorChecker getSeniorChecker() {
+        return seniorChecker;
+    }
+
     public String getParse() {
         return parse;
     }
 
     public String getSeparator() {
         return separator;
-    }
-
-    public HashMap<String, String> getIndexMap() {
-        return indexMap;
     }
 
     public String getAccessKey() {
@@ -514,5 +618,9 @@ public class CommonParams {
 
     public List<String> getRmFields() {
         return rmFields;
+    }
+
+    public HashMap<String, String> getIndexMap() {
+        return indexMap;
     }
 }

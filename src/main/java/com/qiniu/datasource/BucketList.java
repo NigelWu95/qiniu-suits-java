@@ -1,10 +1,10 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.convert.FileInfoToString;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.persistence.FileMap;
 import com.qiniu.convert.FileInfoToMap;
-import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.storage.BucketManager;
@@ -30,9 +30,10 @@ public class BucketList implements IDataSource {
     private List<String> prefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
+    private Map<String, String> indexMap;
     private int unitLen;
-    private int retryTimes = 5;
     private int threads;
+    private int retryTimes = 5;
     private String savePath;
     private boolean saveTotal;
     private String saveFormat;
@@ -43,9 +44,9 @@ public class BucketList implements IDataSource {
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public BucketList(String accessKey, String secretKey, Configuration configuration, String bucket, int unitLen,
-                      Map<String, String[]> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
-                      boolean prefixRight, int threads, String savePath) {
+    public BucketList(String accessKey, String secretKey, Configuration configuration, String bucket,
+                      List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft, boolean prefixRight,
+                      Map<String, String> indexMap, int unitLen, int threads, String savePath) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
@@ -56,6 +57,7 @@ public class BucketList implements IDataSource {
         setPrefixes();
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
+        setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
         this.savePath = savePath;
@@ -78,6 +80,17 @@ public class BucketList implements IDataSource {
         this.retryTimes = retryTimes;
     }
 
+    private void setIndexMapWithDefault(Map<String, String> indexMap) {
+        if (indexMap == null || indexMap.size() == 0) {
+            if (this.indexMap == null) this.indexMap = new HashMap<>();
+            for (String fileInfoField : LineUtils.fileInfoFields) {
+                this.indexMap.put(fileInfoField, fileInfoField);
+            }
+        } else {
+            this.indexMap = indexMap;
+        }
+    }
+
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.bucket = commonParams.getBucket();
@@ -86,6 +99,7 @@ public class BucketList implements IDataSource {
         setPrefixes();
         this.prefixLeft = commonParams.getPrefixLeft();
         this.prefixRight = commonParams.getPrefixRight();
+        setIndexMapWithDefault(commonParams.getIndexMap());
         this.unitLen = commonParams.getUnitLen();
         this.retryTimes = commonParams.getRetryTimes();
         this.threads = commonParams.getThreads();
@@ -117,8 +131,8 @@ public class BucketList implements IDataSource {
      */
     private void export(FileLister fileLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap();
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
+        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(indexMap);
+        ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(saveFormat, saveSeparator, rmFields);
         List<FileInfo> fileInfoList;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
@@ -130,7 +144,7 @@ public class BucketList implements IDataSource {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
                 // 每次 check 异常时 retry 会减一，所以在重试次数用尽时（返回的 retry < 0）会抛出异常
                 retry = HttpResponseUtils.checkException(fileLister.exception, retry);
-                if (retry == -1) throw fileLister.exception;
+                if (retry < 0) throw fileLister.exception;
                 if (fileLister.exception.response != null) fileLister.exception.response.close();
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
@@ -139,7 +153,7 @@ public class BucketList implements IDataSource {
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
             if (saveTotal) {
-                writeList = writeTypeConverter.convertToVList(infoMapList);
+                writeList = writeTypeConverter.convertToVList(fileInfoList);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
                 if (writeTypeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
@@ -150,7 +164,7 @@ public class BucketList implements IDataSource {
             } catch (QiniuException e) {
                 // 这里其实逻辑上没有做重试次数的限制，因此 retry > 0，所以不是必须抛出的异常则会跳过，process 本身会保存失败的记录
                 retry = HttpResponseUtils.checkException(e, retry);
-                if (retry == -1) throw e;
+                if (retry < 0) throw e;
             }
         }
     }
@@ -192,7 +206,7 @@ public class BucketList implements IDataSource {
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
                 retry = HttpResponseUtils.checkException(e, retry);
-                if (retry == -1) throw e;
+                if (retry < 0) throw e;
             }
         }
         return fileLister;

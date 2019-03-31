@@ -3,6 +3,7 @@ package com.qiniu.process.qdora;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -10,16 +11,16 @@ import java.util.Map;
 
 public class QueryAvinfo extends Base {
 
-    private MediaManager mediaManager;
     private String domain;
     private String protocol;
     private String urlIndex;
+    private MediaManager mediaManager;
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, String rmPrefix, String savePath, int saveIndex)
-            throws IOException {
-        super("avinfo", "", "", null, null, rmPrefix, savePath, saveIndex);
-        this.mediaManager = new MediaManager(configuration, protocol);
+    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
+                       String savePath, int saveIndex) throws IOException {
+        super("avinfo", "", "", configuration, null, rmPrefix, savePath, saveIndex);
         set(protocol, domain, urlIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public void updateQuery(String protocol, String domain, String urlIndex, String rmPrefix) throws IOException {
@@ -42,13 +43,14 @@ public class QueryAvinfo extends Base {
         }
     }
 
-    public QueryAvinfo(String domain, String protocol, String urlIndex, String rmPrefix, String savePath) throws IOException {
-        this(domain, protocol, urlIndex, rmPrefix, savePath, 0);
+    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
+                       String savePath) throws IOException {
+        this(configuration, domain, protocol, urlIndex, rmPrefix, savePath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(configuration, protocol);
+        queryAvinfo.mediaManager = new MediaManager(configuration.clone(), protocol);
         return queryAvinfo;
     }
 

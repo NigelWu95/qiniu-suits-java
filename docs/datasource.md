@@ -9,15 +9,29 @@
 ```
 source-type=list/file (v.2.11 及以上版本也可以使用 source=list/file，或者不设置该参数)
 path=
-threads=30
+indexes=key,hash,fsize
 unit-len=10000
+threads=30
 ```  
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
 |source-type/source| 字符串 file/list | 选择从[本地路径文件中读取]还是从[七牛空间列举]资源列表|  
 |path| 输入源路径字符串| 资源列表路径，file源时填写本地文件或者目录路径，list源时可填写"qiniu://\<bucket\>"|  
-|threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
+|indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标|  
 |unit-len| 整型数字| 表示一次读取的文件个数（读取或列举长度，默认值 10000），对应与读取文件时每次处理的行数或者列举请求时设置的 limit 参数|  
+|threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
+
+#### # 关于 indexes 索引
+indexes 指输入行中包含的资源元信息字段的映射关系，指定索引的顺序为 key,hash,fsize,putTime,mimeType,type,status,md5,endUser，即存储文件
+的信息字段，顺序固定。  
+**默认情况：**  
+（1）当数据源为file 时，默认情况下，程序只从输入行中读取 key 字段数据，parse=tab/csv 时索引为 0，parse=json 时索引为 "key"，需要指定更多字
+段时可设置为数字:0,1,2,3 等或者 json 的 key 名称列表，长度不超过 9，长度表明取对应顺序的前几个字段，当 parse=tab 时索引必须均为整数，如果输入
+行中本身只包含部分字段，则可以在缺少字段的顺序位置用 -1 索引表示，表示跳过该顺序对应的字段，例如原输入行中不包含 mimeType 和 type 字段，则可以设
+置 indexes =0,1,2,3,-1,-1,6。  
+（2）当数据源为 list 时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 key 的下标，如果存在 process 操作则自动根据
+过滤设置的字段进行添加，无 process 的情况下包含全部下标：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，如过自行设置则字段为
+也为这其中的一个或几个（因为必须和对象的变量名称一致），需要跳过的字段设置为 -1 即可，按照顺序依次解析所有字段  
 
 ### 1. list 源可选参数
 ```
@@ -85,19 +99,11 @@ prefix-right=
 ```
 parse=
 separator=
-indexes=0,1,2
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
 |parse| 字符串 json/tab/csv| 数据行格式，json 表示使用 json 解析，tab 表示使用分隔符（默认 "\t"）分割解析，csv 表示使用 "," 分割解析|  
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
-|indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标，默认只有 key 的下标，parse=tab/csv 时为 "0"，parse=json 时默认为 "key"|  
-
-#### # 关于 indexes 索引
-indexes 指输入行中包含的资源元信息字段的映射关系，指定索引的顺序为 key,hash,fsize,putTime,mimeType,type,status,endUser，默认情况下，程
-序只从输入行中读取 key 字段数据，parse=tab/csv 时索引为 0，parse=json 时索引为 "key"，需要指定更多字段时可设置为数字: 0,1,2,3 等或者 json
-的 key 名称列表，长度不超过 8，长度表明取对应顺序的前几个字段。当 parse-type=tab 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺
-少字段的顺序位置用 -1 索引表示，表示跳过该顺序对应的字段，例如原输入行中不包含 mimeType 和 type 字段，则可以设置 indexes =0,1,2,3,-1,-1,6。  
 
 
 ## 命令行方式

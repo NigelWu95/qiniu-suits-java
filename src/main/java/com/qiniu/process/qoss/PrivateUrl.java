@@ -69,6 +69,7 @@ public class PrivateUrl extends Base {
         return line.get(urlIndex);
     }
 
+    @Override
     protected String singleResult(Map<String, String> line) {
         return auth.privateDownloadUrl(line.get(urlIndex), expires);
     }

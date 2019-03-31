@@ -14,17 +14,17 @@ import java.util.Map;
 
 public class ChangeLifecycle extends Base {
 
-    private BucketManager bucketManager;
-    private BatchOperations batchOperations;
     private int days;
+    private BatchOperations batchOperations;
+    private BucketManager bucketManager;
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                            String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("lifecycle", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        this.batchOperations = new BatchOperations();
         this.days = days;
         this.batchSize = 1000;
+        this.batchOperations = new BatchOperations();
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public void updateLifecycle(String bucket, int days, String rmPrefix) {
