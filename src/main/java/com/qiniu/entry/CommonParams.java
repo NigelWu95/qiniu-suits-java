@@ -77,7 +77,7 @@ public class CommonParams {
         setRetryTimes(entryParam.getValue("retry-times", "3"));
         setBatchSize(entryParam.getValue("batch-size", "-1"));
         // list 操作时默认保存全部原始文件
-        setSaveTotal(entryParam.getValue("save-total", String.valueOf("list".equals(source) || process == null)));
+        setSaveTotal(entryParam.getValue("save-total", null));
         savePath = entryParam.getValue("save-path", "result");
         saveTag = entryParam.getValue("save-tag", "");
         saveFormat = entryParam.getValue("save-format", "tab");
@@ -204,6 +204,19 @@ public class CommonParams {
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
+        if (saveTotal == null) {
+            if ("list".equals(source)) {
+                if (process == null) {
+                    saveTotal = "true";
+                } else {
+                    if (baseFieldsFilter.isValid() || seniorChecker.isValid()) saveTotal = "true";
+                    else saveTotal = "false";
+                }
+            } else {
+                if (process != null || baseFieldsFilter.isValid() || seniorChecker.isValid()) saveTotal = "false";
+                else saveTotal = "true";
+            }
+        }
         this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
     }
 
@@ -327,9 +340,13 @@ public class CommonParams {
         if ("list".equals(source)) {
             // 默认索引
             if (indexMap.size() == 0) {
-                for (String key : keys) {
-                    indexMap.put(key, key);
-                }
+                indexMap.put("key", "key");
+            }
+            if (!saveTotal) {
+                if (baseFieldsFilter.checkMime() || seniorChecker.checkMime()) indexMap.put("mimeType", "mimeType");
+                if (baseFieldsFilter.checkPutTime()) indexMap.put("putTime", "putTime");
+                if (baseFieldsFilter.checkType()) indexMap.put("type", "type");
+                if (baseFieldsFilter.checkStatus()) indexMap.put("status", "status");
             }
         } else if ("file".equals(source)) {
             setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
