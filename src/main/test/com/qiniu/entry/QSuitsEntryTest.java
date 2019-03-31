@@ -18,19 +18,7 @@ public class QSuitsEntryTest {
         Map<String, String> paramsMap = entryParam.getParamsMap();
         String savePath = paramsMap.get("save-path");
         List<String> buckets = new ArrayList<String>(){{
-            add("fhyfhy261");
-            add("fhyfhy262");
-            add("fhyfhy263");
-            add("fhyfhy264");
-            add("fhyfhy265");
-            add("fhyfhy266");
-            add("fhyfhy267");
-            add("fhyfhy268");
-            add("fhyfhy269");
-            add("fhyfhy270");
-            add("fhyfhy271");
-            add("fhyfhy272");
-            add("fhyfhy273");
+            add("fhyfhy298");
         }};
 
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);;
