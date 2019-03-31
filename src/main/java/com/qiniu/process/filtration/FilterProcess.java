@@ -108,7 +108,6 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     public void processLine(List<Map<String, String>> list) throws IOException {
         if (list == null || list.size() == 0) return;
         List<Map<String, String>> filterList = new ArrayList<>();
-        List<String> writeList;
         for (Map<String, String> line : list) {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
@@ -116,11 +115,15 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                 throw new QiniuException(e);
             }
         }
-        writeList = typeConverter.convertToVList(filterList);
-        if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
-        if (typeConverter.getErrorList().size() > 0)
-            fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
-        if (nextProcessor != null) nextProcessor.processLine(filterList);
+        // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。
+        if (nextProcessor == null) {
+            List<String> writeList = typeConverter.convertToVList(filterList);
+            if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
+            if (typeConverter.getErrorList().size() > 0)
+                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+        } else {
+            nextProcessor.processLine(filterList);
+        }
     }
 
     public void closeResource() {
