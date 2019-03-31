@@ -281,6 +281,7 @@ public class QSuitsEntry {
             case "privateurl": processor = getPrivateUrl(); break;
             case "pfopcmd": processor = getPfopCommand(); break;
             case "mirror": processor = getMirrorFile(); break;
+            case "exportts": processor = getExportTs(); break;
         }
         return processor;
     }
@@ -409,5 +410,13 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getMirrorFile() throws IOException {
         return new MirrorFile(accessKey, secretKey, configuration, bucket, rmPrefix, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getExportTs() throws IOException {
+        String domain = entryParam.getValue("domain");
+        String protocol = entryParam.getValue("protocol", "http");
+        protocol = commonParams.checked(protocol, "protocol", "https?");
+        String urlIndex = commonParams.containIndex("url") ? "url" : null;
+        return new ExportTS(configuration, domain, protocol, urlIndex, rmPrefix, savePath);
     }
 }
