@@ -77,8 +77,9 @@ public class M3U8Manager {
             response.close();
             return ret;
         } else {
+            response.close();
             // 说明不是 m3u8 文件
-            throw new IOException("-1, " + m3u8Url + " 's content-type is " + response.contentType() + ", not a m3u8 type.");
+            throw new IOException("0, " + m3u8Url + " 's content-type is " + response.contentType() + ", not a m3u8 type.");
         }
     }
 
