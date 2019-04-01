@@ -9,34 +9,36 @@ public class HttpResponseUtils {
      * 判断异常结果，返回后续处理标志
      * @param e 需要处理的 QiniuException 异常
      * @param times 此次处理失败前的重试次数，如果已经为小于 1 的话则说明没有重试机会
-     * @return 返回重试次数，返回 -2 表示重试次数已用尽，返回 -1 表示该异常应该抛出，返回 0 表示该异常应该记录并跳过，返回大于 0 表示可以进行重试
+     * @return 返回重试次数，返回 -2 表示该异常应该抛出，返回 -1 表示重试次数已用尽，可以记录为待重试信息，返回 0 表示该异常应该记录并跳过，返
+     * 回大于 0 表示可以进行重试
      */
     public static int checkException(QiniuException e, int times) {
         // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
         times--;
         if (e.response != null) {
-            if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614)) {
+            if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614) || e.code() == 579) {
                 // 避免因为某些可忽略的状态码导致程序中断故先处理该异常
                 return 0;
             } else if (e.code() == 631) {
                 // 631 状态码表示空间不存在，则不需要重试抛出异常
-                return -1;
-            } else if (times <= 0) {
                 return -2;
+            } else if (times <= 0) {
+                if (e.code() == 599) return -2; // 如果经过重试之后响应的是 599 状态码则抛出异常
+                else return -1;
             } else if (e.response.needRetry()) {
                 e.response.close();
                 return times;
             } else {
-                return -1;
+                return -2;
             }
         } else {
-            // 这里的 error 信息以 0/-1 开头需要底层自行抛出异常时进行定义
-            if (e.getMessage() != null) {
-                if (e.getMessage().startsWith("0")) return 0;
-                else if (e.getMessage().startsWith("-1")) return -1;
-                else return times;
-            } else if (times <= 0) return -2;
-            else return times; // 请求超时等情况下可能异常中的 response 为空，需要重试
+            if (e.error() != null || e.getMessage() != null) {
+                return 0;
+            } else if (times <= 0) {
+                return -1;
+            } else {
+                return times; // 请求超时等情况下可能异常中的 response 为空，需要重试
+            }
         }
     }
 

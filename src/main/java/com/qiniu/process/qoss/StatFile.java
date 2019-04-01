@@ -65,13 +65,13 @@ public class StatFile extends Base {
             try {
                 statFile.typeConverter = new JsonToString(format, separator, null);
             } catch (IOException e) {
-                throw new CloneNotSupportedException(e.getMessage());
+                throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
             }
         } else {
             try {
                 statFile.typeConverter = new FileInfoToString(format, separator, null);
             } catch (IOException e) {
-                throw new CloneNotSupportedException(e.getMessage());
+                throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
             }
         }
         return statFile;
@@ -134,7 +134,7 @@ public class StatFile extends Base {
         try {
             return (String) typeConverter.convertToV(fileInfo);
         } catch (IOException e) {
-            throw new QiniuException(e);
+            throw new QiniuException(e, e.getMessage());
         }
     }
 }

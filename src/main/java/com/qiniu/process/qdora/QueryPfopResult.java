@@ -61,7 +61,7 @@ public class QueryPfopResult extends Base {
             try {
                 pfopResult = JsonConvertUtils.fromJson(result, PfopResult.class);
             } catch (JsonParseException e) {
-                throw new QiniuException(e);
+                throw new QiniuException(e, e.getMessage());
             }
             List<String> items = new ArrayList<>();
             // 可能有多条转码指令
@@ -72,7 +72,7 @@ public class QueryPfopResult extends Base {
             }
             return String.join("\n", items);
         } else {
-            throw new QiniuException(null, "0, empty_result");
+            throw new QiniuException(null, "empty_result");
         }
     }
 }

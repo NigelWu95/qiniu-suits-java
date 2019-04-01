@@ -116,9 +116,10 @@ public class FileInput implements IDataSource {
                 try {
                     if (processor != null) processor.processLine(infoMapList);
                 } catch (QiniuException e) {
-                    // 这里其实逻辑上没有做重试次数的限制，因此 retry > 0，所以不是必须抛出的异常则会跳过，process 本身会保存失败的记录
-                    retry = HttpResponseUtils.checkException(e, retry);
-                    if (retry < 0) throw e;
+                    // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
+                    // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
+                    retry = HttpResponseUtils.checkException(e, 1);
+                    if (retry == -2) throw e;
                 }
                 srcList.clear();
             }
