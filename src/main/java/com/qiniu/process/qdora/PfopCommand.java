@@ -110,7 +110,7 @@ public class PfopCommand extends Base {
                     items.add(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString());
                 }
             } catch (Exception e) {
-                throw new QiniuException(e, "0, " + e.getMessage());
+                throw new QiniuException(e, e.getMessage());
             }
         }
         return String.join("\n", items);

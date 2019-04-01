@@ -80,10 +80,10 @@ public class QueryHash extends Base {
             try {
                 return JsonConvertUtils.toJson(qhash);
             } catch (JsonParseException e) {
-                throw new QiniuException(e);
+                throw new QiniuException(e, e.getMessage());
             }
         } else {
-            throw new QiniuException(null, "0, empty_result");
+            throw new QiniuException(null, "empty_result");
         }
     }
 }
