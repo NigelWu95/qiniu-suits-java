@@ -76,7 +76,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         try {
             base.fileMap.initDefaultWriters();
         } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
+            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return base;
     }
@@ -186,13 +186,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                             case 0: fileMap.writeError(String.join("\n", processList.stream()
                                     .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                             break;
-                            case -1: fileMap.writeError(String.join("\n", lineList.subList(batchSize * i,
-                                    lineList.size()).stream().map(this::resultInfo)
-                                    .collect(Collectors.toList())) + "\t" + message, false);
-                            case -2: fileMap.writeKeyFile("need_retry", String.join("\n", lineList
+                            case -1: fileMap.writeKeyFile("need_retry", String.join("\n", processList
+                                    .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                            break;
+                            case -2: fileMap.writeError(String.join("\n", lineList
                                     .subList(batchSize * i, lineList.size()).stream()
                                     .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                            throw e; // 小于 0 的情况抛出异常
+                            throw e;
                         }
                     }
                 }
@@ -238,11 +238,10 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     System.out.println(message);
                     switch (retry) {
                         case 0: fileMap.writeError(resultInfo(line) + "\t" + message, false); break;
-                        case -1: fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size()).
-                                stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                        case -2: fileMap.writeKeyFile("need_retry", String.join("\n", lineList.subList(i,
-                                lineList.size()).stream().map(this::resultInfo)
-                                .collect(Collectors.toList())) + "\t" + message, false);
+                        case -1: fileMap.writeKeyFile("need_retry", resultInfo(line) + "\t" + message, false);
+                        break;
+                        case -2: fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size())
+                                .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                         throw e;
                     }
                 }

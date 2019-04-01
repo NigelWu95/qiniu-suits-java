@@ -142,9 +142,9 @@ public class BucketList implements IDataSource {
             fileInfoList = fileLister.next();
             while (fileLister.exception != null) {
                 System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                // 每次 check 异常时 retry 会减一，所以在重试次数用尽时（返回的 retry < 0）会抛出异常
+                // check 异常时 retry 会减一，在重试次数用尽时会返回 -1，如果同时状态码为 599 则会抛出异常，否则 retry 一直为 -1 永远重试
                 retry = HttpResponseUtils.checkException(fileLister.exception, retry);
-                if (retry < 0) throw fileLister.exception;
+                if (retry == -2) throw fileLister.exception;
                 if (fileLister.exception.response != null) fileLister.exception.response.close();
                 fileLister.exception = null;
                 fileInfoList = fileLister.next();
@@ -162,9 +162,9 @@ public class BucketList implements IDataSource {
             try {
                 if (processor != null) processor.processLine(infoMapList);
             } catch (QiniuException e) {
-                // 这里其实逻辑上没有做重试次数的限制，因此 retry > 0，所以不是必须抛出的异常则会跳过，process 本身会保存失败的记录
-                retry = HttpResponseUtils.checkException(e, retry);
-                if (retry < 0) throw e;
+                // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，除非是 process 出现 599 状态码才会抛出异常
+                retry = HttpResponseUtils.checkException(e, 1);
+                if (retry == -2) throw e;
             }
         }
     }
@@ -206,7 +206,7 @@ public class BucketList implements IDataSource {
             } catch (QiniuException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
                 retry = HttpResponseUtils.checkException(e, retry);
-                if (retry < 0) throw e;
+                if (retry == -2) throw e; // 只有当重试次数用尽且响应状态码为 599 时才会抛出异常
             }
         }
         return fileLister;
