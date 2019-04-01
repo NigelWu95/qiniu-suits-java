@@ -14,8 +14,8 @@ public class M3U8Manager {
     private Client client;
     private String protocol;
     final private List<String> m3u8ContentTypes = new ArrayList<String>(){{
-        add("m3u8:application/x-mpegurl");
-        add("m3u8:application/vnd.apple.mpegurl");
+        add("application/x-mpegurl");
+        add("application/vnd.apple.mpegurl");
     }};
 
     public M3U8Manager() {
