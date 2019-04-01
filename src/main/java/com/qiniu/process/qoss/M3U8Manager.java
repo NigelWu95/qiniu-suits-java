@@ -38,7 +38,6 @@ public class M3U8Manager {
     }
 
     private List<VideoTS> getVideoTSList(BufferedReader bufferedReader, String domain) throws IOException {
-
         List<VideoTS> ret = new ArrayList<>();
         String line;
         float seconds = 0;
@@ -53,7 +52,7 @@ public class M3U8Manager {
             }
 
             String url = line.startsWith("http") ? line : protocol + "://" +
-                    (line.startsWith("/") ? domain + line.substring(1) : domain + line);
+                    (line.startsWith("/") ? domain + "/" + line.substring(1) : domain + "/" + line);
             if (line.endsWith(".m3u8")) {
                 List<VideoTS> tsList = getVideoTSListByUrl(url);
                 ret.addAll(tsList);
