@@ -14,8 +14,8 @@ public class M3U8Manager {
     private Client client;
     private String protocol;
     final private List<String> m3u8ContentTypes = new ArrayList<String>(){{
-        add("m3u8:application/x-mpegurl");
-        add("m3u8:application/vnd.apple.mpegurl");
+        add("application/x-mpegurl");
+        add("application/vnd.apple.mpegurl");
     }};
 
     public M3U8Manager() {
@@ -77,6 +77,7 @@ public class M3U8Manager {
             response.close();
             return ret;
         } else {
+            response.close();
             // 说明不是 m3u8 文件
             throw new IOException(m3u8Url + " 's content-type is " + response.contentType() + ", not a m3u8 type.");
         }

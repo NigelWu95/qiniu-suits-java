@@ -72,7 +72,7 @@ public class QueryPfopResult extends Base {
             }
             return String.join("\n", items);
         } else {
-            throw new QiniuException(null, "empty_result");
+            throw new QiniuException(null, "0, empty_result");
         }
     }
 }

@@ -128,6 +128,9 @@ public class FileMap {
     }
 
     public void initReaders(String fileDir) throws IOException {
+        if (fileDir.startsWith("~/")) {
+            fileDir = System.getProperty("user.home") + fileDir.substring(1);
+        }
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
         String fileName;
@@ -152,6 +155,9 @@ public class FileMap {
 
     public void initReader(String filepath) throws IOException {
         if (filepath.endsWith(".txt")) {
+            if (filepath.startsWith("~/")) {
+                filepath = System.getProperty("user.home") + filepath.substring(1);
+            }
             File sourceFile = new File(filepath);
             FileReader fileReader;
             try {
