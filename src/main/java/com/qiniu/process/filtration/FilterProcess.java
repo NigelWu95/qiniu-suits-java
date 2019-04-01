@@ -100,7 +100,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
                 filterProcess.nextProcessor = nextProcessor.clone();
             }
         } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
+            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return filterProcess;
     }
@@ -112,7 +112,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             try {
                 if (filter.doFilter(line)) filterList.add(line);
             } catch (Exception e) {
-                throw new QiniuException(e);
+                throw new QiniuException(e, e.getMessage());
             }
         }
         // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。
