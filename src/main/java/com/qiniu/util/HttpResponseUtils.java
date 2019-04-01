@@ -30,8 +30,10 @@ public class HttpResponseUtils {
                 return -1;
             }
         } else {
-            // 请求超时等情况下可能异常中的 response 为空，需要重试
-            return times;
+            // 这里的 error 信息以 -1 开头需要底层自行抛出异常时进行定义
+            if (e.getMessage().startsWith("-1")) return -1;
+            else if (times <= 0) return -2;
+            else return times; // 请求超时等情况下可能异常中的 response 为空，需要重试
         }
     }
 
