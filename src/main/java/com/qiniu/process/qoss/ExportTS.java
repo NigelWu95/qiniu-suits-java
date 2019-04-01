@@ -78,8 +78,10 @@ public class ExportTS extends Base {
         try {
             return String.join("\n", m3U8Manager.getVideoTSListByUrl(line.get(urlIndex))
                     .stream().map(VideoTS::toString).collect(Collectors.toList()));
+        } catch (QiniuException e) {
+            throw e;
         } catch (IOException e) {
-            throw new QiniuException(e);
+            throw new QiniuException(e, "0, " + e.getMessage());
         }
     }
 }

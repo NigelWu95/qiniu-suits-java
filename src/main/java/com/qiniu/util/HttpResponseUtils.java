@@ -15,8 +15,8 @@ public class HttpResponseUtils {
         // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
         times--;
         if (e.response != null) {
-            if (e.code() == 478 || e.code() == 404 || e.code() == 612 || e.code() == 614) {
-                // 478 状态码表示镜像源返回了非 200 的状态码，避免因为该异常导致程序中断先处理该异常
+            if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614)) {
+                // 避免因为某些可忽略的状态码导致程序中断故先处理该异常
                 return 0;
             } else if (e.code() == 631) {
                 // 631 状态码表示空间不存在，则不需要重试抛出异常
@@ -30,8 +30,11 @@ public class HttpResponseUtils {
                 return -1;
             }
         } else {
-            // 请求超时等情况下可能异常中的 response 为空，需要重试
-            return times;
+            // 这里的 error 信息以 0/-1 开头需要底层自行抛出异常时进行定义
+            if (e.getMessage().startsWith("0")) return 0;
+            else if (e.getMessage().startsWith("-1")) return -1;
+            else if (times <= 0) return -2;
+            else return times; // 请求超时等情况下可能异常中的 response 为空，需要重试
         }
     }
 
