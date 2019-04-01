@@ -31,9 +31,11 @@ public class HttpResponseUtils {
             }
         } else {
             // 这里的 error 信息以 0/-1 开头需要底层自行抛出异常时进行定义
-            if (e.getMessage().startsWith("0")) return 0;
-            else if (e.getMessage().startsWith("-1")) return -1;
-            else if (times <= 0) return -2;
+            if (e.getMessage() != null) {
+                if (e.getMessage().startsWith("0")) return 0;
+                else if (e.getMessage().startsWith("-1")) return -1;
+                else return times;
+            } else if (times <= 0) return -2;
             else return times; // 请求超时等情况下可能异常中的 response 为空，需要重试
         }
     }
