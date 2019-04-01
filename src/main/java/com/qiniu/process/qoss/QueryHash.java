@@ -83,7 +83,7 @@ public class QueryHash extends Base {
                 throw new QiniuException(e);
             }
         } else {
-            throw new QiniuException(null, "empty_result");
+            throw new QiniuException(null, "0, empty_result");
         }
     }
 }
