@@ -81,7 +81,7 @@ public class ExportTS extends Base {
         } catch (QiniuException e) {
             throw e;
         } catch (IOException e) {
-            throw new QiniuException(e, "0, " + e.getMessage());
+            throw new QiniuException(e, e.getMessage());
         }
     }
 }

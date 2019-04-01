@@ -134,7 +134,7 @@ public class StatFile extends Base {
         try {
             return (String) typeConverter.convertToV(fileInfo);
         } catch (IOException e) {
-            throw new QiniuException(e);
+            throw new QiniuException(e, e.getMessage());
         }
     }
 }
