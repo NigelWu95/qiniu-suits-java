@@ -76,7 +76,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         try {
             base.fileMap.initDefaultWriters();
         } catch (IOException e) {
-            throw new CloneNotSupportedException("init writer failed.");
+            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return base;
     }
