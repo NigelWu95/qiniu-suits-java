@@ -27,6 +27,7 @@ public class QueryHash extends Base {
     public void updateQuery(String algorithm, String protocol, String domain, String urlIndex, String rmPrefix)
             throws IOException {
         set(algorithm, protocol, domain, urlIndex);
+        this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
         this.rmPrefix = rmPrefix;
     }
 

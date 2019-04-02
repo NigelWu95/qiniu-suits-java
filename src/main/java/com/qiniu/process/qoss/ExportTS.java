@@ -29,6 +29,7 @@ public class ExportTS extends Base {
     public void updateExport(String domain, String protocol, String urlIndex, String rmPrefix)
             throws IOException {
         set(domain, protocol, urlIndex);
+        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
         this.rmPrefix = rmPrefix;
     }
 

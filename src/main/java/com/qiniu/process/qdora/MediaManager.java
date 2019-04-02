@@ -24,6 +24,7 @@ public class MediaManager {
 
     public MediaManager(Configuration configuration) {
         this.client = new Client(configuration);
+        this.protocol = "http";
     }
 
     public MediaManager(Configuration configuration, String protocol) {

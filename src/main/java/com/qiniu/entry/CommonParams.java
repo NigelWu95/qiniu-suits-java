@@ -311,7 +311,7 @@ public class CommonParams {
     private void setIndex(String indexName, String index, boolean check) throws IOException {
         if (indexName != null && !"-1".equals(indexName) && check) {
             if (indexMap.containsKey(indexName)) {
-                throw new IOException("the value: " + indexName + "is already in map: " + indexMap);
+                throw new IOException("the index: " + indexName + "is already in map: " + indexMap);
             }
             if ("json".equals(parse) || "object".equals(parse)) {
                 indexMap.put(indexName, index);
@@ -357,7 +357,7 @@ public class CommonParams {
                 if (!indexMap.containsValue("key"))
                     throw new IOException("please check your indexes settings, miss a key index in first position.");
             } else if (process != null) {
-                throw new IOException("the process: " + process + " don't support get source line from list.");
+                throw new IOException("the process: " + process + " don't support getting source line from list.");
             }
         } else if ("file".equals(source)) {
             setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));

@@ -308,8 +308,10 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
+        String protocol = entryParam.getValue("protocol", "http");
+        protocol = commonParams.checked(protocol, "protocol", "https?");
         String persistentIdIndex = commonParams.containIndex("pid") ? "pid" : null;
-        return new QueryPfopResult(configuration, persistentIdIndex, savePath);
+        return new QueryPfopResult(configuration, protocol, persistentIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
