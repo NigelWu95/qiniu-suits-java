@@ -353,10 +353,12 @@ public class CommonParams {
                     }
                 }
             }
-            if (ProcessUtils.supportListSource(process) && !indexMap.containsValue("key"))
-                throw new IOException("please check your indexes settings, miss a key index in first position.");
-            else if (process != null)
+            if (ProcessUtils.supportListSource(process)) {
+                if (!indexMap.containsValue("key"))
+                    throw new IOException("please check your indexes settings, miss a key index in first position.");
+            } else if (process != null) {
                 throw new IOException("the process: " + process + " don't support get source line from list.");
+            }
         } else if ("file".equals(source)) {
             setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
             setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
