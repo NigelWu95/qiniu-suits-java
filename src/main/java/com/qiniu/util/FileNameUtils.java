@@ -4,6 +4,14 @@ import java.io.IOException;
 
 public class FileNameUtils {
 
+    public static String realPathWithUserHome(String pathStr) {
+        if (pathStr.startsWith("~" + System.getProperty("file.separator"))) {
+            return System.getProperty("user.home") + pathStr.substring(1);
+        } else {
+            return pathStr;
+        }
+    }
+
     public static String rmPrefix(String prefix, String name) throws IOException {
         if (name == null) throw new IOException("the file name is empty");
         if (prefix == null || "".equals(prefix)) return name;
