@@ -1,5 +1,7 @@
 package com.qiniu.config;
 
+import com.qiniu.util.FileNameUtils;
+
 import java.io.*;
 import java.util.Properties;
 import java.util.Set;
@@ -10,7 +12,7 @@ public class PropertiesFile {
 
     public PropertiesFile(String resourceName) throws IOException {
         InputStream inputStream = null;
-
+        resourceName = FileNameUtils.realPathWithUserHome(resourceName);
         try {
             inputStream = new FileInputStream(resourceName);
             properties = new Properties();
