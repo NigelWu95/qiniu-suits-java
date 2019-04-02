@@ -15,31 +15,36 @@ import java.util.Map;
 
 public class QueryPfopResult extends Base {
 
+    private String protocol;
     private String pidIndex;
     private MediaManager mediaManager;
 
-    public QueryPfopResult(Configuration configuration, String pidIndex, String savePath, int saveIndex) throws IOException {
+    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
+                           int saveIndex) throws IOException {
         super("pfopresult", "", "", configuration, null, null, savePath, saveIndex);
-        set(pidIndex);
-        this.mediaManager = new MediaManager(configuration.clone());
+        set(protocol, persistentIdIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public void updateQuery(String pidIndex) throws IOException {
-        set(pidIndex);
+    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
+        set(protocol, persistentIdIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    private void set(String pidIndex) throws IOException {
+    private void set(String protocol, String pidIndex) throws IOException {
+        this.protocol = protocol;
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
         else this.pidIndex = pidIndex;
     }
 
-    public QueryPfopResult(Configuration configuration, String persistentIdIndex, String savePath) throws IOException {
-        this(configuration, persistentIdIndex, savePath, 0);
+    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
+            throws IOException {
+        this(configuration, protocol, persistentIdIndex, savePath, 0);
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
-        pfopResult.mediaManager = new MediaManager(configuration.clone());
+        pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);
         return pfopResult;
     }
 
@@ -67,8 +72,7 @@ public class QueryPfopResult extends Base {
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
                 // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
-                items.add(line.get(pidIndex) + item.code + "\t" + pfopResult.inputKey + "\t" + item.key + "\t" +
-                        item.cmd + "\t" + "\t" + item.desc + "\t" + item.error);
+                items.add(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item));
             }
             return String.join("\n", items);
         } else {

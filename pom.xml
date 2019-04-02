@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
-    <version>4.70</version>
+    <version>4.71</version>
     <name>qsuits</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>
@@ -33,8 +33,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
     <dependencies>
