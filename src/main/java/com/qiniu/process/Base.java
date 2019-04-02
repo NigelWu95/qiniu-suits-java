@@ -106,9 +106,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
+     *
      * 处理 batchOperations 执行的结果，将输入的文件信息和结果对应地记录下来
      * @param processList batch 操作的资源列表
      * @param result batch 操作之后的响应结果
+     * @return 返回需要进行重试的记录列表
      * @throws IOException 写入结果失败抛出的异常
      */
     protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
