@@ -1,5 +1,7 @@
 package com.qiniu.persistence;
 
+import com.qiniu.util.FileNameUtils;
+
 import java.io.*;
 import java.util.*;
 import java.util.Map.*;
@@ -22,7 +24,7 @@ public class FileMap {
 
     public FileMap(String targetFileDir) {
         this();
-        this.targetFileDir = targetFileDir;
+        this.targetFileDir = FileNameUtils.realPathWithUserHome(targetFileDir);
         this.prefix = "";
         this.suffix = "";
     }
@@ -128,9 +130,7 @@ public class FileMap {
     }
 
     public void initReaders(String fileDir) throws IOException {
-        if (fileDir.startsWith("~/")) {
-            fileDir = System.getProperty("user.home") + fileDir.substring(1);
-        }
+        fileDir = FileNameUtils.realPathWithUserHome(fileDir);
         File sourceDir = new File(fileDir);
         File[] fs = sourceDir.listFiles();
         String fileName;
@@ -155,9 +155,7 @@ public class FileMap {
 
     public void initReader(String filepath) throws IOException {
         if (filepath.endsWith(".txt")) {
-            if (filepath.startsWith("~/")) {
-                filepath = System.getProperty("user.home") + filepath.substring(1);
-            }
+            filepath = FileNameUtils.realPathWithUserHome(filepath);
             File sourceFile = new File(filepath);
             FileReader fileReader;
             try {
