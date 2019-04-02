@@ -2,6 +2,7 @@ package com.qiniu.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.*;
@@ -12,6 +13,7 @@ public class JsonFile {
     private JsonObject jsonObject;
 
     public JsonFile(String resourceFile) throws IOException {
+        resourceFile = FileNameUtils.realPathWithUserHome(resourceFile);
         InputStream inputStream = null;
         try {
             File file = new File(resourceFile);

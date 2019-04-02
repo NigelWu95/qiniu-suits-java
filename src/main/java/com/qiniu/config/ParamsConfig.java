@@ -2,6 +2,7 @@ package com.qiniu.config;
 
 import com.google.gson.JsonObject;
 import com.qiniu.interfaces.IEntryParam;
+import com.qiniu.util.FileNameUtils;
 
 import java.io.*;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ public class ParamsConfig implements IEntryParam {
     }
 
     public ParamsConfig(String resourceName) throws IOException {
-        this(new FileInputStream(resourceName));
+        this(new FileInputStream(FileNameUtils.realPathWithUserHome(resourceName)));
     }
 
     public ParamsConfig(JsonObject jsonObject) throws IOException {
