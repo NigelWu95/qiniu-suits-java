@@ -25,6 +25,7 @@ public class QueryAvinfo extends Base {
 
     public void updateQuery(String protocol, String domain, String urlIndex, String rmPrefix) throws IOException {
         set(protocol, domain, urlIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
         this.rmPrefix = rmPrefix;
     }
 
