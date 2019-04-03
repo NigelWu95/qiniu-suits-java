@@ -6,7 +6,7 @@ import com.qiniu.http.Response;
 public class HttpResponseUtils {
 
     /**
-     * 判断异常结果，返回后续处理标志
+     * 判断 process 产生（不适用于 datasource 读取产生的异常）的异常结果，返回后续处理标志
      * @param e 需要处理的 QiniuException 异常
      * @param times 此次处理失败前的重试次数，如果已经为小于 1 的话则说明没有重试机会
      * @return 返回重试次数，返回 -2 表示该异常应该抛出，返回 -1 表示重试次数已用尽，可以记录为待重试信息，返回 0 表示该异常应该记录并跳过，返
@@ -42,10 +42,11 @@ public class HttpResponseUtils {
         }
     }
 
+    // 检查七牛 API 请求返回的状态码，返回 1 表示成功，返回 0 表示需要重试，返回 -1 表示可以记录错误
     public static int checkStatusCode(int code) {
         if (code == 200) {
             return 1;
-        } else if (code >= 500 && code < 600 && code != 579) {
+        } else if (code <= 0 || (code >= 500 && code < 600 && code != 579)) {
             return 0;
         } else {
             return -1;
