@@ -133,22 +133,27 @@ public class BucketList implements IDataSource {
             throws IOException {
         ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(indexMap);
         ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(saveFormat, saveSeparator, rmFields);
-        List<FileInfo> fileInfoList;
+        List<FileInfo> fileInfoList = null;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
+        int statusCode;
         int retry;
         while (fileLister.hasNext()) {
             retry = retryTimes + 1;
-            fileInfoList = fileLister.next();
-            while (fileLister.exception != null) {
-                System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
-                // check 异常时 retry 会减一，在重试次数用尽时会返回 -1，如果同时状态码为 599 则会抛出异常，否则 retry 一直为 -1 永远重试
-                retry = HttpResponseUtils.checkException(fileLister.exception, retry);
-                if (retry == -2) throw fileLister.exception;
-                if (fileLister.exception.response != null) fileLister.exception.response.close();
-                fileLister.exception = null;
+            while (retry > 0) {
                 fileInfoList = fileLister.next();
+                statusCode = fileLister.getStatusCode();
+                if (fileLister.getError() != null) {
+                    System.out.println("list prefix:" + fileLister.getPrefix() + " retrying...");
+                    retry--;
+                    // 如果状态码检测小于 0 则抛出异常，否则重试，当重试次数为 0 同时状态码为 599 则会抛出异常
+                    if (HttpResponseUtils.checkStatusCode(statusCode) < 0 || (retry == 0 && statusCode == 599))
+                        throw new IOException(fileLister.getError());
+                } else {
+                    retry = 0;
+                }
             }
+
             infoMapList = typeConverter.convertToVList(fileInfoList);
             if (typeConverter.getErrorList().size() > 0)
                 fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);

@@ -23,7 +23,8 @@ public class FileLister implements Iterator<List<FileInfo>> {
     private String delimiter;
     private int limit;
     private List<FileInfo> fileInfoList;
-    public QiniuException exception;
+    private int statusCode;
+    private String error;
 
     public FileLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endKeyPrefix,
                       String delimiter, int limit) throws QiniuException {
@@ -37,13 +38,12 @@ public class FileLister implements Iterator<List<FileInfo>> {
         this.fileInfoList = getListResult(prefix, delimiter, marker, limit);
     }
 
-    public String error() {
-        if (exception != null && exception.response != null) {
-            String error = exception.error();
-            exception.response.close();
-            return error;
-        }
-        return "";
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getError() {
+        return error;
     }
 
     public String getPrefix() {
@@ -138,9 +138,17 @@ public class FileLister implements Iterator<List<FileInfo>> {
                     fileInfoList = getListResult(prefix, delimiter, marker, limit);
                 } while (!checkListValid() && checkMarkerValid());
             }
+            statusCode = 200;
+            error = null;
+        } catch (QiniuException e) {
+            fileInfoList = null;
+            statusCode = e.code();
+            error = LogUtils.getMessage(e);
+            e.response.close();
         } catch (Exception e) {
             fileInfoList = null;
-            exception = new QiniuException(e);
+            statusCode = -1;
+            error = "failed, " + e.getMessage();
         }
         return current;
     }
@@ -149,7 +157,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
     public void remove() {
         this.bucketManager = null;
         this.fileInfoList = null;
-        this.exception = null;
     }
 
     public class ListLine implements Comparable {
@@ -159,7 +166,7 @@ public class FileLister implements Iterator<List<FileInfo>> {
         public String dir = "";
 
         public boolean isDeleted() {
-            return (fileInfo == null && StringUtils.isNullOrEmpty(dir));
+            return (fileInfo == null && (dir == null || "".equals(dir)));
         }
 
         public int compareTo(Object object) {
@@ -206,7 +213,6 @@ public class FileLister implements Iterator<List<FileInfo>> {
             } catch (Exception e) {
                 return null;
             }
-
         }
     }
 }
