@@ -6,15 +6,17 @@ import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
 import com.qiniu.config.PropertiesFile;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class TenListerTest {
+import static org.junit.Assert.*;
 
-    private TenLister tenLister;
+public class TenObjectsListTest {
+
+    private TenObjectsList tenObjectsList;
 
     @Before
     public void init() throws IOException {
@@ -26,45 +28,13 @@ public class TenListerTest {
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         COSClient cosClient = new COSClient(cred, clientConfig);
         String bucket = propertiesFile.getValue("bucket");
-        tenLister = new TenLister(cosClient, bucket, null, null, null, null, 100);
+        tenObjectsList = new TenObjectsList(secretId, secretKey, clientConfig, bucket, null, null,
+                false, false, null, 1000, 10, "../tencent");
+        tenObjectsList.setSaveOptions(true, "tab", "\t", null);
     }
 
     @Test
-    public void testGetStatusCode() {
-        Assert.assertEquals(tenLister.getStatusCode(), 200);
-    }
-
-    @Test
-    public void testGetError() {
-        Assert.assertNull(tenLister.getError());
-    }
-
-    @Test
-    public void testGetCosObjectList() {
-    }
-
-    @Test
-    public void testGetMarker() {
-        System.out.println(tenLister.getMarker());
-    }
-
-    @Test
-    public void testCheckMarkerValid() {
-    }
-
-    @Test
-    public void testCheckListValid() {
-    }
-
-    @Test
-    public void testHasNext() {
-        Assert.assertTrue(tenLister.hasNext());
-    }
-
-    @Test
-    public void testNext() {
-        while (tenLister.hasNext()) {
-            tenLister.next();
-        }
+    public void export() throws Exception {
+        tenObjectsList.export();
     }
 }
