@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class BucketListUtilsTest {
+public class QiniuFilesContainerUtilsTest {
 
     @Test
     public void testCalcMarker() {
