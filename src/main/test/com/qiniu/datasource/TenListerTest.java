@@ -5,14 +5,18 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
+import com.qcloud.cos.utils.*;
 import com.qiniu.config.PropertiesFile;
+import com.qiniu.util.CharactersUtils;
+import org.apache.commons.codec.BinaryDecoder;
+import org.apache.commons.codec.DecoderException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-
-import static org.junit.Assert.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 public class TenListerTest {
 
@@ -28,7 +32,7 @@ public class TenListerTest {
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         COSClient cosClient = new COSClient(cred, clientConfig);
         String bucket = propertiesFile.getValue("bucket");
-        tenLister = new TenLister(cosClient, bucket, null, null, null, null, 1000);
+        tenLister = new TenLister(cosClient, bucket, null, null, null, null, 100);
     }
 
     @Test
@@ -43,6 +47,11 @@ public class TenListerTest {
 
     @Test
     public void testGetCosObjectList() {
+    }
+
+    @Test
+    public void testGetMarker() {
+        System.out.println(tenLister.getMarker());
     }
 
     @Test
