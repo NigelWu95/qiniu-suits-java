@@ -162,7 +162,7 @@ public class QSuitsEntry {
             return getBucketList();
         } else if ("tencent".equals(source)) {
             return getTenObjectsContainer();
-        } else if ("file".equals(source)) {
+        } else if ("local".equals(source)) {
             return getFileInput();
         } else {
             return null;
