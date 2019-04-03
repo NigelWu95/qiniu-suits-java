@@ -5,16 +5,11 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.COSObjectSummary;
-import com.qiniu.common.QiniuException;
-import com.qiniu.convert.FileInfoToMap;
-import com.qiniu.convert.FileInfoToString;
+import com.qiniu.convert.COSObjectToString;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.storage.BucketManager;
-import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -136,11 +131,11 @@ public class TenObjectsList implements IDataSource {
      */
     private void export(TenLister tenLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(indexMap);
-        ITypeConvert<FileInfo, String> writeTypeConverter = new FileInfoToString(saveFormat, saveSeparator, rmFields);
+//        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(indexMap);
+        ITypeConvert<COSObjectSummary, String> writeTypeConverter = new COSObjectToString(saveFormat, saveSeparator, rmFields);
         List<COSObjectSummary> cosObjectSummaries = null;
-        List<Map<String, String>> infoMapList = null;
-        List<String> writeList = new ArrayList<>();
+//        List<Map<String, String>> infoMapList = null;
+        List<String> writeList;
         int statusCode;
         int retry;
         while (tenLister.hasNext()) {
@@ -160,22 +155,22 @@ public class TenObjectsList implements IDataSource {
             }
 
 //            infoMapList = typeConverter.convertToVList(cosObjectSummaries);
-            if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+//            if (typeConverter.getErrorList().size() > 0)
+//                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
             if (saveTotal) {
-//                writeList = writeTypeConverter.convertToVList(cosObjectSummaries);
+                writeList = writeTypeConverter.convertToVList(cosObjectSummaries);
                 if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
                 if (writeTypeConverter.getErrorList().size() > 0)
                     fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-            try {
-                if (processor != null) processor.processLine(infoMapList);
-            } catch (QiniuException e) {
-                // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，除非是 process 出现 599 状态码才会抛出异常
-                retry = HttpResponseUtils.checkException(e, 1);
-                if (retry == -2) throw e;
-            }
+//            try {
+//                if (processor != null) processor.processLine(infoMapList);
+//            } catch (QiniuException e) {
+//                // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，除非是 process 出现 599 状态码才会抛出异常
+//                retry = HttpResponseUtils.checkException(e, 1);
+//                if (retry == -2) throw e;
+//            }
         }
     }
 
@@ -286,7 +281,7 @@ public class TenObjectsList implements IDataSource {
             if (!lastLister.checkMarkerValid()) {
                 // 实际上传过来的 FileLister 在下一个 marker 为空的情况下 FileInfoList 是应该一定包含数据的
                 COSObjectSummary cosObjectSummary = size > 0 ? lastLister.getCosObjectList().get(size -1) : null;
-//                lastLister.setMarker(ListBucketUtils.calcMarker(cosObjectSummary));
+                lastLister.setMarker(cosObjectSummary == null ? null : cosObjectSummary.getKey());
             }
         }
     }
@@ -335,8 +330,7 @@ public class TenObjectsList implements IDataSource {
 
         // 用于下次列举的 marker 实际上是通过此次列举到的最后一个文件信息（包括已经删除的文件）编码出来的，因此通过下一个 marker 可解析出最后一
         // 个文件信息即已经列举到的位置
-        FileInfo nextFileInfo = ListBucketUtils.decodeMarker(tenLister.getMarker());
-        String lastKey = nextFileInfo.key;
+        String lastKey = tenLister.getMarker();
         // 计算出当前列举使用的前缀往前的一个字符，用于下级前缀的检索
         int prefixLen = tenLister.getPrefix().length();
         String point = "";

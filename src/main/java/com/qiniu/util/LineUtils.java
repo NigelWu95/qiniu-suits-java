@@ -3,6 +3,7 @@ package com.qiniu.util;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -106,6 +107,33 @@ public class LineUtils {
 //        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
         if ((rmFields == null || !rmFields.contains("endUser")) && fileInfo.endUser != null)
             converted.append(fileInfo.endUser).append(separator);
+        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
+    public static String toFormatString(COSObjectSummary cosObjectSummary, List<String> rmFields) throws IOException {
+        JsonObject converted = new JsonObject();
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObjectSummary.getKey());
+        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObjectSummary.getETag());
+        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", cosObjectSummary.getSize());
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", cosObjectSummary.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObjectSummary.getStorageClass());
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObjectSummary.getOwner() != null)
+            converted.addProperty("endUser", cosObjectSummary.getOwner().getDisplayName());
+        if (converted.size() == 0) throw new IOException("empty result.");
+        return converted.toString();
+    }
+
+    public static String toFormatString(COSObjectSummary cosObjectSummary, String separator, List<String> rmFields)
+            throws IOException {
+        StringBuilder converted = new StringBuilder();
+        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObjectSummary.getKey()).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObjectSummary.getETag()).append(separator);
+        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObjectSummary.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObjectSummary.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObjectSummary.getStorageClass()).append(separator);
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObjectSummary.getOwner() != null)
+            converted.append(cosObjectSummary.getOwner().getDisplayName()).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
