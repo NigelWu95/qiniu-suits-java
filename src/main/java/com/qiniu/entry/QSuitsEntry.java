@@ -1,10 +1,13 @@
 package com.qiniu.entry;
 
+import com.qcloud.cos.ClientConfig;
+import com.qcloud.cos.region.Region;
 import com.qiniu.common.Zone;
 import com.qiniu.config.ParamsConfig;
-import com.qiniu.datasource.BucketList;
+import com.qiniu.datasource.QiniuFilesContainer;
 import com.qiniu.datasource.FileInput;
 import com.qiniu.datasource.IDataSource;
+import com.qiniu.datasource.TenObjectsContainer;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.filtration.BaseFieldsFilter;
@@ -27,6 +30,7 @@ public class QSuitsEntry {
     private IEntryParam entryParam;
     private CommonParams commonParams;
     private Configuration configuration;
+    private ClientConfig clientConfig;
     private String source;
     private String accessKey;
     private String secretKey;
@@ -47,20 +51,11 @@ public class QSuitsEntry {
     public QSuitsEntry(String[] args) throws Exception {
         setEntryParam(args);
         this.commonParams = new CommonParams(entryParam);
-        setConfiguration();
         setMembers();
     }
 
     public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
-        this.commonParams = new CommonParams(entryParam);
-        setConfiguration();
-        setMembers();
-    }
-
-    public QSuitsEntry(IEntryParam entryParam, Configuration configuration) throws Exception {
-        this.entryParam = entryParam;
-        this.configuration = configuration;
         this.commonParams = new CommonParams(entryParam);
         setMembers();
     }
@@ -68,7 +63,6 @@ public class QSuitsEntry {
     public void UpdateEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
         this.commonParams = new CommonParams(entryParam);
-        setConfiguration();
         setMembers();
     }
 
@@ -77,8 +71,14 @@ public class QSuitsEntry {
         setMembers();
     }
 
-    public void UpdateEntry(Configuration configuration) {
+    public void setConfiguration(Configuration configuration) throws IOException {
+        if (configuration == null) throw new IOException("the configuration can not be null when you set it.");
         this.configuration = configuration;
+    }
+
+    public void setClientConfig(ClientConfig clientConfig) throws IOException {
+        if (clientConfig == null) throw new IOException("the configuration can not be null when you set it.");
+        this.clientConfig = clientConfig;
     }
 
     private void setMembers() {
@@ -137,17 +137,31 @@ public class QSuitsEntry {
         return configuration;
     }
 
-    private void setConfiguration() {
-        this.configuration = new Configuration(Zone.autoZone());
+    private Configuration getDefaultConfiguration() {
+        Configuration configuration = new Configuration(Zone.autoZone());
         // 自定义超时时间
         configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
         configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
         configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "60"));
+        return configuration;
+    }
+
+    public ClientConfig getClientConfig() {
+        return clientConfig;
+    }
+
+    private ClientConfig getDefaultClientConfig() {
+        ClientConfig clientConfig = new ClientConfig(new Region(commonParams.getRegionName()));
+        clientConfig.setConnectionTimeout(Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
+        clientConfig.setSocketTimeout(Integer.valueOf(entryParam.getValue("read-timeout", "120")));
+        return clientConfig;
     }
 
     public IDataSource getDataSource() {
-        if ("list".equals(source)) {
+        if ("qiniu".equals(source)) {
             return getBucketList();
+        } else if ("tencent".equals(source)) {
+            return getTenObjectsContainer();
         } else if ("file".equals(source)) {
             return getFileInput();
         } else {
@@ -165,16 +179,31 @@ public class QSuitsEntry {
         return fileInput;
     }
 
-    public BucketList getBucketList() {
+    public QiniuFilesContainer getBucketList() {
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        BucketList bucketList = new BucketList(accessKey, secretKey, configuration, bucket, antiPrefixes, prefixesMap,
-                prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
-        bucketList.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
-        bucketList.setRetryTimes(retryTimes);
-        return bucketList;
+        if (configuration == null) configuration = getDefaultConfiguration();
+        QiniuFilesContainer qiniuFilesContainer = new QiniuFilesContainer(accessKey, secretKey, configuration, bucket,
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
+        qiniuFilesContainer.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        qiniuFilesContainer.setRetryTimes(retryTimes);
+        return qiniuFilesContainer;
+    }
+
+    public TenObjectsContainer getTenObjectsContainer() {
+        String secretId = commonParams.getSecretId();
+        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        if (clientConfig == null) clientConfig = getDefaultClientConfig();
+        TenObjectsContainer tenObjectsContainer = new TenObjectsContainer(secretId, secretKey, clientConfig, bucket,
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
+        tenObjectsContainer.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        tenObjectsContainer.setRetryTimes(retryTimes);
+        return tenObjectsContainer;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
@@ -203,6 +232,7 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
         ILineProcess<Map<String, String>> processor = null;
+        if (configuration != null) configuration = getDefaultConfiguration();
         switch (process) {
             case "status": processor = getChangeStatus(); break;
             case "type": processor = getChangeType(); break;

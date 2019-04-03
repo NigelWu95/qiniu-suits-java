@@ -10,13 +10,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Map;
 
-import static org.junit.Assert.*;
+public class TenObjectsContainerTest {
 
-public class TenObjectsListTest {
-
-    private TenObjectsList tenObjectsList;
+    private TenObjectsContainer tenObjectsContainer;
 
     @Before
     public void init() throws IOException {
@@ -26,15 +23,14 @@ public class TenObjectsListTest {
         String regionName = propertiesFile.getValue("region");
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
-        COSClient cosClient = new COSClient(cred, clientConfig);
         String bucket = propertiesFile.getValue("bucket");
-        tenObjectsList = new TenObjectsList(secretId, secretKey, clientConfig, bucket, null, null,
+        tenObjectsContainer = new TenObjectsContainer(secretId, secretKey, clientConfig, bucket, null, null,
                 false, false, null, 1000, 10, "../tencent");
-        tenObjectsList.setSaveOptions(true, "tab", "\t", null);
+        tenObjectsContainer.setSaveOptions(true, "tab", "\t", null);
     }
 
     @Test
     public void export() throws Exception {
-        tenObjectsList.export();
+        tenObjectsContainer.export();
     }
 }
