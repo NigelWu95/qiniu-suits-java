@@ -116,6 +116,8 @@ public class TenLister implements Iterator<List<COSObjectSummary>> {
                     cosObjectList = getListResult();
                 } while (!checkListValid() && checkMarkerValid());
             }
+            statusCode = 200;
+            error = null;
         } catch (CosServiceException e) {
             cosObjectList = null;
             statusCode = e.getStatusCode();
