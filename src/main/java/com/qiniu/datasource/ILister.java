@@ -11,6 +11,8 @@ public interface ILister<T extends List<E>, E> {
      */
     boolean hasNext();
 
+    List<E> getObjects();
+
     /**
      * 进行下一次的列表读取
      * @return 返回下一次列表
