@@ -5,6 +5,7 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
+import com.qiniu.common.SuitsException;
 import com.qiniu.config.PropertiesFile;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,16 +31,6 @@ public class TenListerTest {
     }
 
     @Test
-    public void testGetStatusCode() {
-        Assert.assertEquals(tenLister.getStatusCode(), 200);
-    }
-
-    @Test
-    public void testGetError() {
-        Assert.assertNull(tenLister.getError());
-    }
-
-    @Test
     public void testGetCosObjectList() {
     }
 
@@ -62,9 +53,9 @@ public class TenListerTest {
     }
 
     @Test
-    public void testNext() {
+    public void testNext() throws SuitsException {
         while (tenLister.hasNext()) {
-            tenLister.next();
+            tenLister.listForward();
         }
     }
 }
