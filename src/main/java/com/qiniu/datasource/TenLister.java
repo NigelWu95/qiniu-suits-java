@@ -6,23 +6,20 @@ import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
+import com.qiniu.common.SuitsException;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TenLister implements Iterator<List<COSObjectSummary>> {
+public class TenLister implements ILister<List<COSObjectSummary>, COSObjectSummary> {
 
     private COSClient cosClient;
-    private String endKeyPrefix;
+    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
     private ObjectListing objectListing;
     private List<COSObjectSummary> cosObjectList;
-    private int statusCode;
-    private String error;
 
-    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endKeyPrefix,
+    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
                      String delimiter, int max) throws CosClientException {
         this.cosClient = cosClient;
         this.listObjectsRequest = new ListObjectsRequest();
@@ -31,52 +28,53 @@ public class TenLister implements Iterator<List<COSObjectSummary>> {
         listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker(marker);
         listObjectsRequest.setMaxKeys(max);
-        this.endKeyPrefix = endKeyPrefix == null ? "" : endKeyPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
+        this.endPrefix = endPrefix == null ? "" : endPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
         this.cosObjectList = getListResult();
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public String getPrefix() {
-        return listObjectsRequest.getPrefix();
     }
 
     public void setPrefix(String prefix) {
         listObjectsRequest.setPrefix(prefix);
     }
 
-    public String getMarker() {
-        return listObjectsRequest.getMarker();
+    public String getPrefix() {
+        return listObjectsRequest.getPrefix();
     }
 
     public void setMarker(String marker) {
         listObjectsRequest.setMarker(marker);
     }
 
-    public String getEndKeyPrefix() {
-        return endKeyPrefix;
+    public String getMarker() {
+        return listObjectsRequest.getMarker();
     }
 
-    public void setEndKeyPrefix(String endKeyPrefix) {
-        this.endKeyPrefix = endKeyPrefix;
+    @Override
+    public void setEndPrefix(String endKeyPrefix) {
+        this.endPrefix = endKeyPrefix;
     }
 
+    @Override
+    public String getEndPrefix() {
+        return endPrefix;
+    }
+
+    @Override
+    public void setDelimiter(String delimiter) {
+        listObjectsRequest.setDelimiter(delimiter);
+    }
+
+    @Override
     public String getDelimiter() {
         return listObjectsRequest.getDelimiter();
     }
 
-    public int getLimit() {
-        return listObjectsRequest.getMaxKeys();
+    @Override
+    public void setLimit(int limit) {
+        listObjectsRequest.setMaxKeys(limit);
     }
 
-    public List<COSObjectSummary> getCosObjectList() {
-        return cosObjectList;
+    public int getLimit() {
+        return listObjectsRequest.getMaxKeys();
     }
 
     private List<COSObjectSummary> getListResult() throws CosClientException {
@@ -85,55 +83,50 @@ public class TenLister implements Iterator<List<COSObjectSummary>> {
         return objectListing.getObjectSummaries();
     }
 
-    public boolean checkMarkerValid() {
-        return objectListing.getNextMarker() != null && !"".equals(objectListing.getNextMarker());
-    }
+    @Override
+    public void listForward() throws SuitsException {
+        try {
+            List<COSObjectSummary> current;
+            do {
+                current = getListResult();
+            } while (current.size() == 0 && hasNext());
 
-    public boolean checkListValid() {
-        return cosObjectList != null && cosObjectList.size() > 0;
+            if (endPrefix != null && !"".equals(endPrefix)) {
+                cosObjectList = current.stream()
+                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
+                        .collect(Collectors.toList());
+                if (cosObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
+            }
+        } catch (CosServiceException e) {
+            throw new SuitsException(e.getStatusCode(), e.getMessage());
+        } catch (Exception e) {
+            throw new SuitsException(-1, "failed, " + e.getMessage());
+        }
     }
 
     @Override
     public boolean hasNext() {
-        return checkMarkerValid() || checkListValid();
+        return objectListing.getNextMarker() != null && !"".equals(objectListing.getNextMarker());
     }
 
     @Override
-    public List<COSObjectSummary> next() {
-        List<COSObjectSummary> current = cosObjectList == null ? new ArrayList<>() : cosObjectList;
-        if (endKeyPrefix != null && !"".equals(endKeyPrefix)) {
-            int size = current.size();
-            current = current.stream()
-                    .filter(objectSummary -> objectSummary.getKey().compareTo(endKeyPrefix) < 0)
-                    .collect(Collectors.toList());
-            int finalSize = current.size();
-            if (finalSize < size) listObjectsRequest.setMarker(null);
-        }
-        try {
-            if (!checkMarkerValid()) cosObjectList = null;
-            else {
-                do {
-                    cosObjectList = getListResult();
-                } while (!checkListValid() && checkMarkerValid());
-            }
-            statusCode = 200;
-            error = null;
-        } catch (CosServiceException e) {
-            cosObjectList = null;
-            statusCode = e.getStatusCode();
-            error = e.getMessage();
-        } catch (Exception e) {
-            cosObjectList = null;
-            statusCode = -1;
-            error = e.getMessage();
-        }
-        return current;
+    public List<COSObjectSummary> currents() {
+        return cosObjectList;
     }
 
     @Override
-    public void remove() {
+    public COSObjectSummary currentFirst() {
+        return cosObjectList.size() > 0 ? cosObjectList.get(0) : null;
+    }
+
+    @Override
+    public COSObjectSummary currentLast() {
+        return cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
+    }
+
+    @Override
+    public void close() {
         this.cosClient.shutdown();
         this.cosObjectList = null;
-        this.error = null;
     }
 }

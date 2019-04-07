@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
-import java.io.IOException;
+import com.qiniu.common.SuitsException;
+
 import java.util.List;
 
 public interface ILister<T extends List<E>, E> {
@@ -27,7 +28,7 @@ public interface ILister<T extends List<E>, E> {
 
     boolean hasNext();
 
-    void listForward() throws IOException;
+    void listForward() throws SuitsException;
 
     T currents();
 

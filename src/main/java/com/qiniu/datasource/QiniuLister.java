@@ -4,10 +4,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
+import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.LogUtils;
 import com.qiniu.util.StringUtils;
 import com.qiniu.util.UrlSafeBase64;
 
@@ -118,7 +120,7 @@ public class QiniuLister implements ILister<List<FileInfo>, FileInfo> {
     }
 
     @Override
-    public void listForward() throws IOException {
+    public void listForward() throws SuitsException {
         try {
             List<FileInfo> current;
             do {
@@ -132,9 +134,9 @@ public class QiniuLister implements ILister<List<FileInfo>, FileInfo> {
                 if (fileInfoList.size() < current.size()) marker = null;
             }
         } catch (QiniuException e) {
-            throw e;
+            throw new SuitsException(e.code(), LogUtils.getMessage(e));
         } catch (Exception e) {
-            throw new QiniuException(e, "failed, " + e.getMessage());
+            throw new SuitsException(-1, "failed, " + e.getMessage());
         }
     }
 
