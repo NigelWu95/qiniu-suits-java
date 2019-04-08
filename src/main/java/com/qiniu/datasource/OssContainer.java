@@ -314,43 +314,38 @@ public class OssContainer implements IDataSource {
      * @return 根据检索结果得到的下一级列举器列表
      */
     private List<TenLister> nextLevelLister(TenLister tenLister) {
+        String point = "";
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 fileLister 的列表
         List<TenLister> nextLevelList = new ArrayList<>();
         if (!tenLister.hasNext()) {
             nextLevelList.add(tenLister);
             return nextLevelList;
-        }
-
-        // 用于下次列举的 marker 实际上是通过此次列举到的最后一个文件信息（包括已经删除的文件）编码出来的，因此通过下一个 marker 可解析出最后一
-        // 个文件信息即已经列举到的位置
-        String lastKey = tenLister.getMarker();
-        // 计算出当前列举使用的前缀往前的一个字符，用于下级前缀的检索
-        int prefixLen = tenLister.getPrefix().length();
-        String point = "";
-        if (lastKey.length() > prefixLen + 1) point = lastKey.substring(prefixLen, prefixLen + 1);
-        else if (lastKey.length() == prefixLen + 1) point = lastKey.substring(prefixLen);
-
-        // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
-        if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
-            tenLister.setEndPrefix(null);
-            nextLevelList.add(tenLister);
-            return nextLevelList;
-        }
-
-        if (tenLister.currentFirst() != null) {
-            if (!tenLister.currentFirst().getKey().startsWith(tenLister.getPrefix() + point)) {
-                nextLevelList.add(tenLister);
-            } else if (point.compareTo(originPrefixList.get(0)) < 0) {
+        } else if (tenLister.currentLast() != null) {
+            String lastKey = tenLister.currentLast().getKey();
+            int prefixLen = tenLister.getPrefix().length();
+            if (lastKey.length() >= prefixLen + 1) {
+                point = lastKey.substring(prefixLen, prefixLen + 1);
+                // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
+                if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+                    tenLister.setEndPrefix(null);
+                    nextLevelList.add(tenLister);
+                    return nextLevelList;
+                } else if (point.compareTo(originPrefixList.get(0)) < 0) {
+                    tenLister.setEndPrefix(tenLister.getPrefix() + originPrefixList.get(0));
+                    nextLevelList.add(tenLister);
+                } else if (!tenLister.currentFirst().getKey().startsWith(tenLister.getPrefix() + point)) {
+                    tenLister.setEndPrefix(tenLister.getPrefix() + point);
+                    nextLevelList.add(tenLister);
+                }
+            } else {
+                tenLister.setEndPrefix(tenLister.getPrefix() + originPrefixList.get(0));
                 nextLevelList.add(tenLister);
             }
-        } else { // 文件存在删除的情况，fileInfoList 为空
+        } else {
+            tenLister.setEndPrefix(tenLister.getPrefix() + originPrefixList.get(0));
             nextLevelList.add(tenLister);
         }
 
-        if (point.compareTo(originPrefixList.get(0)) < 0) {
-            point = originPrefixList.get(0);
-        }
-        tenLister.setEndPrefix(tenLister.getPrefix() + point);
         List<TenLister> prefixListerList = generateNextList(tenLister.getPrefix(), point);
         if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
         return nextLevelList;
