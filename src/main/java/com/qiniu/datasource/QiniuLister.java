@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class QiniuLister implements ILister<List<FileInfo>, FileInfo> {
+public class QiniuLister implements ILister<FileInfo> {
 
     private BucketManager bucketManager;
     private String bucket;

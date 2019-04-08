@@ -254,7 +254,7 @@ public class CommonParams {
             try {
                 FileInfo markerFileInfo = bucketManager.stat(bucket, start);
                 markerFileInfo.key = start;
-                return ListBucketUtils.calcMarker(markerFileInfo);
+                return OSSListUtils.calcMarker(markerFileInfo);
             } catch (QiniuException e) {
                 if (e.code() == 612) {
                     throw new IOException("start: \"" + start + "\", can not get invalid marker because " + e.error());

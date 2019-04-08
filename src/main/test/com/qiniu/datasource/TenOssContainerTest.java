@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
@@ -11,9 +10,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TenObjectsContainerTest {
+public class TenOssContainerTest {
 
-    private TenObjectsContainer tenObjectsContainer;
+    private TenFilesContainer tenFilesContainer;
 
     @Before
     public void init() throws IOException {
@@ -24,13 +23,13 @@ public class TenObjectsContainerTest {
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         String bucket = propertiesFile.getValue("bucket");
-        tenObjectsContainer = new TenObjectsContainer(secretId, secretKey, clientConfig, bucket, null, null,
+        tenFilesContainer = new TenFilesContainer(secretId, secretKey, clientConfig, bucket, null, null,
                 false, false, null, 1000, 10, "../tencent");
-        tenObjectsContainer.setSaveOptions(true, "tab", "\t", null);
+        tenFilesContainer.setSaveOptions(true, "tab", "\t", null);
     }
 
     @Test
     public void export() throws Exception {
-        tenObjectsContainer.export();
+        tenFilesContainer.export();
     }
 }
