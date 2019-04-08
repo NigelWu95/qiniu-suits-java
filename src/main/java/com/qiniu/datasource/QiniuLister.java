@@ -3,15 +3,13 @@ package com.qiniu.datasource;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.LogUtils;
-import com.qiniu.util.StringUtils;
-import com.qiniu.util.UrlSafeBase64;
+import com.qiniu.util.*;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -156,8 +154,29 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
+    public String currentFirstKey() {
+        FileInfo first = currentLast();
+        return first != null ? first.key : null;
+    }
+
+    @Override
     public FileInfo currentLast() {
-        return fileInfoList.size() > 0 ? fileInfoList.get(fileInfoList.size() - 1) : null;
+        FileInfo last = fileInfoList.size() > 0 ? fileInfoList.get(fileInfoList.size() - 1) : null;
+        if (last == null) {
+            last = OSSListUtils.decodeMarker(marker);
+        }
+        return last;
+    }
+
+    @Override
+    public String currentLastKey() {
+        FileInfo last = currentLast();
+        return last != null ? last.key : null;
+    }
+
+    @Override
+    public void updateMarkerBy(FileInfo object) {
+        marker = OSSListUtils.calcMarker(object);
     }
 
     @Override

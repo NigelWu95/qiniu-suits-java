@@ -120,8 +120,30 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
+    public String currentFirstKey() {
+        COSObjectSummary first = currentFirst();
+        return first != null ? first.getKey() : null;
+    }
+
+    @Override
     public COSObjectSummary currentLast() {
-        return cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
+        COSObjectSummary last = cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
+        if (last == null) {
+            last = new COSObjectSummary();
+            last.setKey(getMarker());
+        }
+        return last;
+    }
+
+    @Override
+    public String currentLastKey() {
+        COSObjectSummary last = currentLast();
+        return last != null ? last.getKey() : null;
+    }
+
+    @Override
+    public void updateMarkerBy(COSObjectSummary object) {
+        listObjectsRequest.setMarker(object.getKey());
     }
 
     @Override
