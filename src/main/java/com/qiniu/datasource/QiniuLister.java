@@ -1,9 +1,8 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
@@ -162,8 +161,12 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public FileInfo currentLast() {
         FileInfo last = fileInfoList.size() > 0 ? fileInfoList.get(fileInfoList.size() - 1) : null;
-        if (last == null) {
-            last = OSSListUtils.decodeMarker(marker);
+        if (last == null && marker != null) {
+            String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));
+            JsonObject jsonObject = new JsonParser().parse(decodedMarker).getAsJsonObject();
+            last = new FileInfo();
+            last.key = jsonObject.get("k").getAsString();
+            last.type = jsonObject.get("c").getAsInt();
         }
         return last;
     }
@@ -176,7 +179,15 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void updateMarkerBy(FileInfo object) {
-        marker = OSSListUtils.calcMarker(object);
+        if (object != null) {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("c", object.type);
+            jsonObject.addProperty("k", object.key);
+            marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
+                    Base64.URL_SAFE | Base64.NO_WRAP);
+        } else {
+            marker = null;
+        }
     }
 
     @Override

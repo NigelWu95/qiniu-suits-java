@@ -7,7 +7,7 @@ import com.qiniu.config.ParamsConfig;
 import com.qiniu.datasource.QiniuFilesContainer;
 import com.qiniu.datasource.FileInput;
 import com.qiniu.datasource.IDataSource;
-import com.qiniu.datasource.TenFilesContainer;
+import com.qiniu.datasource.TenOssContainer;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.filtration.BaseFieldsFilter;
@@ -192,18 +192,18 @@ public class QSuitsEntry {
         return qiniuFilesContainer;
     }
 
-    public TenFilesContainer getTenObjectsContainer() {
+    public TenOssContainer getTenObjectsContainer() {
         String secretId = commonParams.getSecretId();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         if (clientConfig == null) clientConfig = getDefaultClientConfig();
-        TenFilesContainer tenFilesContainer = new TenFilesContainer(secretId, secretKey, clientConfig, bucket,
+        TenOssContainer tenOssContainer = new TenOssContainer(secretId, secretKey, clientConfig, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
-        tenFilesContainer.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
-        tenFilesContainer.setRetryTimes(retryTimes);
-        return tenFilesContainer;
+        tenOssContainer.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        tenOssContainer.setRetryTimes(retryTimes);
+        return tenOssContainer;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
