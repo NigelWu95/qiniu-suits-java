@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public class TenOssContainerTest {
 
-    private TenFilesContainer tenFilesContainer;
+    private TenOssContainer tenOssContainer;
 
     @Before
     public void init() throws IOException {
@@ -23,13 +23,13 @@ public class TenOssContainerTest {
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         String bucket = propertiesFile.getValue("bucket");
-        tenFilesContainer = new TenFilesContainer(secretId, secretKey, clientConfig, bucket, null, null,
+        tenOssContainer = new TenOssContainer(secretId, secretKey, clientConfig, bucket, null, null,
                 false, false, null, 1000, 10, "../tencent");
-        tenFilesContainer.setSaveOptions(true, "tab", "\t", null);
+        tenOssContainer.setSaveOptions(true, "tab", "\t", null);
     }
 
     @Test
     public void export() throws Exception {
-        tenFilesContainer.export();
+        tenOssContainer.export();
     }
 }

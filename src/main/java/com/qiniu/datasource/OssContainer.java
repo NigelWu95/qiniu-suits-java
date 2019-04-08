@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.qcloud.cos.ClientConfig;
 import com.qiniu.common.SuitsException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
@@ -19,35 +18,28 @@ import java.util.stream.Collectors;
 
 public abstract class OssContainer<E> implements IDataSource {
 
-    private String secretId;
-    private String secretKey;
-    private ClientConfig clientConfig;
-    private String bucket;
+    protected String bucket;
     private List<String> antiPrefixes;
     private Map<String, String[]> prefixesMap;
     private List<String> prefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
     private Map<String, String> indexMap;
-    private int unitLen;
+    protected int unitLen;
     private int threads;
-    private int retryTimes = 5;
+    protected int retryTimes = 5;
     private String savePath;
     private boolean saveTotal;
-    private String saveFormat;
-    private String saveSeparator;
-    private List<String> rmFields;
+    protected String saveFormat;
+    protected String saveSeparator;
+    protected List<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public OssContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
-                        List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft, boolean prefixRight,
-                        Map<String, String> indexMap, int unitLen, int threads, String savePath) {
-        this.secretId = secretId;
-        this.secretKey = secretKey;
-        this.clientConfig = clientConfig;
+    public OssContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
+                        boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads, String savePath) {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
@@ -121,11 +113,11 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
-    protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter();
+    protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter() throws IOException;
 
-    protected abstract ITypeConvert<E, String> getNewStringConverter();
+    protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    private void export(ILister<E> lister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
+    public void export(ILister<E> lister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
@@ -173,7 +165,7 @@ public abstract class OssContainer<E> implements IDataSource {
      * @param prefix 配置的前缀参数
      * @return 返回针对该前缀配置的 marker 和 end
      */
-    private String[] getMarkerAndEnd(String prefix) {
+    protected String[] getMarkerAndEnd(String prefix) {
         if (prefixesMap.containsKey(prefix)) {
             String[] mapValue = prefixesMap.get(prefix);
             if (mapValue != null && mapValue.length > 1) {
