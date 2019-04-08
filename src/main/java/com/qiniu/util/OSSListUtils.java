@@ -7,7 +7,7 @@ import com.google.gson.JsonParser;
 import com.qiniu.common.Constants;
 import com.qiniu.storage.model.FileInfo;
 
-public class ListBucketUtils {
+public class OSSListUtils {
 
     public static String calcMarker(FileInfo fileInfo) {
         if (fileInfo == null) return null;

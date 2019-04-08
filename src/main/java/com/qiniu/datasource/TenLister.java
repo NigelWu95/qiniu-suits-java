@@ -11,7 +11,7 @@ import com.qiniu.common.SuitsException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TenLister implements ILister<List<COSObjectSummary>, COSObjectSummary> {
+public class TenLister implements ILister<COSObjectSummary> {
 
     private COSClient cosClient;
     private String endPrefix;

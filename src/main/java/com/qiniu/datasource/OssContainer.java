@@ -5,12 +5,15 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qiniu.common.SuitsException;
 import com.qiniu.convert.COSObjectToString;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileMap;
-import com.qiniu.util.*;
+import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.LineUtils;
+import com.qiniu.util.SystemUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -19,7 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-public class TenObjectsContainer implements IDataSource {
+public class OssContainer implements IDataSource {
 
     private String secretId;
     private String secretKey;
@@ -44,9 +47,9 @@ public class TenObjectsContainer implements IDataSource {
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public TenObjectsContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
-                               List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft, boolean prefixRight,
-                               Map<String, String> indexMap, int unitLen, int threads, String savePath) {
+    public OssContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
+                        List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft, boolean prefixRight,
+                        Map<String, String> indexMap, int unitLen, int threads, String savePath) {
         this.secretId = secretId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
@@ -122,14 +125,9 @@ public class TenObjectsContainer implements IDataSource {
             }
         }
     }
-    /**
-     * 执行列举操作，直到当前的 FileLister 列举结束，并使用 processor 对象执行处理过程
-     * @param tenLister 已经初始化的 TenLister 对象
-     * @param fileMap 用于列举结果持久化的文件对象
-     * @param processor 用于资源处理的处理器对象
-     * @throws IOException 列举出现错误或者持久化错误抛出的异常
-     */
-    private void export(TenLister tenLister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
+
+    private void export(ILister<COSObjectSummary> lister, FileMap fileMap,
+                        ILineProcess<Map<String, String>> processor)
             throws IOException {
 //        ITypeConvert<FileInfo, Map<String, String>> typeConverter = new FileInfoToMap(indexMap);
         ITypeConvert<COSObjectSummary, String> writeTypeConverter = new COSObjectToString(saveFormat, saveSeparator, rmFields);
@@ -138,19 +136,19 @@ public class TenObjectsContainer implements IDataSource {
         List<String> writeList;
         int statusCode;
         int retry;
-        while (tenLister.hasNext()) {
+        while (lister.hasNext()) {
             retry = retryTimes + 1;
             while (retry > 0) {
-                cosObjectSummaries = tenLister.next();
-                statusCode = tenLister.getStatusCode();
-                if (tenLister.getError() != null) {
-                    System.out.println("list prefix:" + tenLister.getPrefix() + " retrying...");
-                    retry--;
-                    // 如果状态码检测小于 0 则抛出异常，否则重试，当重试次数为 0 同时状态码为 599 则会抛出异常
-                    if (HttpResponseUtils.checkStatusCode(statusCode) < 0 || (retry == 0 && statusCode == 599))
-                        throw new IOException(tenLister.getError());
-                } else {
+                cosObjectSummaries = lister.currents();
+                try {
+                    lister.listForward();
                     retry = 0;
+                } catch (SuitsException e) {
+                    System.out.println("list prefix:" + lister.getPrefix() + " retrying...");
+                    retry--;
+                    statusCode = e.getStatusCode();
+                    if (HttpResponseUtils.checkStatusCode(statusCode) < 0 || (retry == 0 && statusCode == 599))
+                        throw new IOException(e.getMessage());
                 }
             }
 
@@ -256,10 +254,10 @@ public class TenObjectsContainer implements IDataSource {
                     recordFileMap.writeKeyFile("result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
-                    tenLister.remove();
+                    tenLister.close();
                 } catch (Exception e) {
                     System.out.println("order " + identifier + ": " + tenLister.getPrefix() + "\tmarker: " +
-                            tenLister.getMarker() + "\tend:" + tenLister.getEndKeyPrefix());
+                            tenLister.getMarker() + "\tend:" + tenLister.getEndPrefix());
                     recordFileMap.closeWriters();
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
@@ -269,18 +267,13 @@ public class TenObjectsContainer implements IDataSource {
         }
     }
 
-    /**
-     * 最后一段 FileLister 修改前缀 prefix 和下一个 marker，该方法是为了确保实际文件名前缀在最大的预定义前缀之后的文件被成功列举
-     * @param lastLister 通过计算得到的所有确定前缀下的列举器列表
-     * @param prefix 计算该列举器列表时所用的前缀
-     */
     private void updateLastLiter(TenLister lastLister, String prefix) {
         if (lastLister != null) {
-            int size = lastLister.getCosObjectList().size();
+            int size = lastLister.currents().size();
             lastLister.setPrefix(prefix);
-            if (!lastLister.checkMarkerValid()) {
+            if (!lastLister.hasNext()) {
                 // 实际上传过来的 FileLister 在下一个 marker 为空的情况下 FileInfoList 是应该一定包含数据的
-                COSObjectSummary cosObjectSummary = size > 0 ? lastLister.getCosObjectList().get(size -1) : null;
+                COSObjectSummary cosObjectSummary = size > 0 ? lastLister.currents().get(size -1) : null;
                 lastLister.setMarker(cosObjectSummary == null ? null : cosObjectSummary.getKey());
             }
         }
@@ -323,7 +316,7 @@ public class TenObjectsContainer implements IDataSource {
     private List<TenLister> nextLevelLister(TenLister tenLister) {
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 fileLister 的列表
         List<TenLister> nextLevelList = new ArrayList<>();
-        if (!tenLister.checkMarkerValid()) {
+        if (!tenLister.hasNext()) {
             nextLevelList.add(tenLister);
             return nextLevelList;
         }
@@ -339,16 +332,13 @@ public class TenObjectsContainer implements IDataSource {
 
         // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
         if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
-            tenLister.setEndKeyPrefix(null);
+            tenLister.setEndPrefix(null);
             nextLevelList.add(tenLister);
             return nextLevelList;
         }
 
-        List<COSObjectSummary> cosObjectSummaries = tenLister.getCosObjectList();
-        if (cosObjectSummaries != null && cosObjectSummaries.size() > 0) {
-            // 如果得到的列表中第一个文件和最后一个文件的下一级前缀是相同的话，说明此次列举只有一个下级前缀，则不需要将此 fileLister
-            // 添加进列表，反之则应该添加之列表中，且根据最后一个文件名下一级前缀来设置 endKeyPrefix
-            if (!cosObjectSummaries.get(0).getKey().startsWith(tenLister.getPrefix() + point)) {
+        if (tenLister.currentFirst() != null) {
+            if (!tenLister.currentFirst().getKey().startsWith(tenLister.getPrefix() + point)) {
                 nextLevelList.add(tenLister);
             } else if (point.compareTo(originPrefixList.get(0)) < 0) {
                 nextLevelList.add(tenLister);
@@ -357,23 +347,15 @@ public class TenObjectsContainer implements IDataSource {
             nextLevelList.add(tenLister);
         }
 
-        // 避免出现字符在预定义前缀字符 ASCII 顺序之前的情况，至少保证结束位置在第一个预定义前缀处，因此前缀检索最小的从第一个预定义前缀开始
         if (point.compareTo(originPrefixList.get(0)) < 0) {
             point = originPrefixList.get(0);
         }
-        // 当前的 fileLister 应该设置 endKeyPrefix 到 point 处，从 point 处开始会进行下一级检索
-        tenLister.setEndKeyPrefix(tenLister.getPrefix() + point);
+        tenLister.setEndPrefix(tenLister.getPrefix() + point);
         List<TenLister> prefixListerList = generateNextList(tenLister.getPrefix(), point);
         if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
         return nextLevelList;
     }
 
-    /**
-     * 根据 startLister（及其 prefix 参数）和有序的前缀列表往前计算下级有效的前缀并得到新的 FileLister 放入线程执行列举
-     * @param lastPrefix startLister 的 prefix 条件下能够得到的 FileLister 列表中最后一个 FileLister 需要更新的前缀
-     * @return 此次计算并执行的 FileLister 个数，用于后续可能继续添加 FileLister 执行，编号需要进行递增
-     * @throws IOException FileLister 列表放入线程执行过程中可能产生的异常
-     */
     private int computeToList(TenLister startLister, String lastPrefix, int alreadyOrder, FileMap recordFileMap)
             throws Exception {
         List<TenLister> tenListerList = nextLevelLister(startLister);
@@ -381,36 +363,24 @@ public class TenObjectsContainer implements IDataSource {
         boolean lastListerUpdated = false;
         TenLister lastLister;
         int nextSize;
-        // 避免重复生成新对象，将 groupedListerMap 放在循环外部
         Map<Boolean, List<TenLister>> groupedListerMap;
         do {
-            // 取出前缀最大的 FileLister，如果其不存在下一个 marker，则不需要继续往下计算前缀，那么这将是整体的最后一个 FileLister，为了保
-            // 证能列举到 lastPrefix 的所有文件，需要对其现有的 prefix 做更新，一般情况下 startLister.getPrefix() 是和 lastPrefix 相
-            // 同的，但是如果初始参数 prefixes 不为空且 prefixRight 为 true 的情况下表示需要列举 prefixes 中最后一个前缀开始的文件之后的
-            // 所有文件，则需要将此 FileLister 更新前缀为 lastPrefix
             if (!lastListerUpdated) {
                 tenListerList.sort(Comparator.comparing(TenLister::getPrefix));
                 lastLister = tenListerList.get(tenListerList.size() - 1);
-                if (lastLister != null && !lastLister.checkMarkerValid()) {
+                if (lastLister != null && !lastLister.hasNext()) {
                     updateLastLiter(lastLister, lastPrefix);
                     execListerList.add(lastLister);
                     lastListerUpdated = true;
-                    // 由于 updateLastLiter 操作会更新 marker，避免下一步操作将 lastLister 再加入检索，将其独立处理，只对其他的进行分组
                     tenListerList = tenListerList.subList(0, tenListerList.size() -1 );
                 }
             }
-            // 给 progressiveList 按照是否有下一个 marker 进行分组，有下个 marker 的对象进一步进行前缀检索查询，没有下个 marker 的对象
-            // 先添加进列表，整个列表 size 达到线程个数时即可放入线程池进行并发列举
-            // 加入 "".equals(fileLister.getEndKeyPrefix()) 过滤的原因是因为经过 nextLevelLister 处理时修改了 endKeyPrefix 的需
-            // 要将其直接放入线程执行不做进一步前缀检索
             groupedListerMap = tenListerList.parallelStream().collect(Collectors.groupingBy(fileLister ->
-                    fileLister.checkMarkerValid() && "".equals(fileLister.getEndKeyPrefix())));
+                    fileLister.hasNext() && "".equals(fileLister.getEndPrefix())));
             if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
-            // 将没有下一个 marker 的 FileLister 先放入线程执行掉
             execInThreads(execListerList, recordFileMap, alreadyOrder);
             alreadyOrder += execListerList.size();
             execListerList.clear();
-            // 有下一个有效 marker 的 FileLister 可以用于继续检索前缀
             if (groupedListerMap.get(true) != null) {
                 Optional<List<TenLister>> listOptional = groupedListerMap.get(true).parallelStream()
                         .map(this::nextLevelLister)
@@ -418,7 +388,7 @@ public class TenObjectsContainer implements IDataSource {
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     tenListerList = listOptional.get();
                     nextSize = (int) tenListerList.parallelStream()
-                            .filter(fileLister -> fileLister.checkMarkerValid() && "".equals(fileLister.getEndKeyPrefix()))
+                            .filter(fileLister -> fileLister.hasNext() && "".equals(fileLister.getEndPrefix()))
                             .count();
                 } else {
                     tenListerList = groupedListerMap.get(true);
@@ -430,7 +400,6 @@ public class TenObjectsContainer implements IDataSource {
             }
         } while (nextSize < threads);
 
-        // 如果没有更新过整体的最后一个 FileLister 则必须对计算得到的列举器列表中最大的一个 FileLister 进行更新
         if (!lastListerUpdated && tenListerList.size() > 0) {
             tenListerList.sort(Comparator.comparing(TenLister::getPrefix));
             lastLister = tenListerList.get(tenListerList.size() - 1);
@@ -441,12 +410,8 @@ public class TenObjectsContainer implements IDataSource {
         return alreadyOrder;
     }
 
-    /**
-     * 启动多线程导出的方法，根据线程数自动执行多线程并发导出
-     * @throws Exception 计算 FileLister 列表失败或者写入失败等情况下的异常
-     */
     public void export() throws Exception {
-        String info = "list bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = "list files from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileMap recordFileMap = new FileMap(savePath);
         executorPool = Executors.newFixedThreadPool(threads);
@@ -459,7 +424,7 @@ public class TenObjectsContainer implements IDataSource {
         } else {
             if (prefixLeft) {
                 TenLister startLister = generateLister("");
-                startLister.setEndKeyPrefix(prefixes.get(0));
+                startLister.setEndPrefix(prefixes.get(0));
                 execInThreads(new ArrayList<TenLister>(){{ add(startLister); }}, recordFileMap, alreadyOrder);
                 alreadyOrder += 1;
             }

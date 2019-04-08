@@ -4,7 +4,7 @@ import com.qiniu.common.SuitsException;
 
 import java.util.List;
 
-public interface ILister<T extends List<E>, E> {
+public interface ILister<E> {
 
     void setPrefix(String prefix);
 
@@ -30,7 +30,7 @@ public interface ILister<T extends List<E>, E> {
 
     void listForward() throws SuitsException;
 
-    T currents();
+    List<E> currents();
 
     E currentFirst();
 
