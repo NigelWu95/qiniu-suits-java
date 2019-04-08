@@ -34,7 +34,13 @@ public interface ILister<E> {
 
     E currentFirst();
 
+    String currentFirstKey();
+
     E currentLast();
+
+    String currentLastKey();
+
+    void updateMarkerBy(E object);
 
     /**
      * 关闭掉使用的资源
