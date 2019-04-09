@@ -1,7 +1,6 @@
 package com.qiniu.datasource;
 
 import com.google.gson.*;
-import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
@@ -28,7 +27,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> fileInfoList;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
-                       String delimiter, int limit) throws IOException {
+                       String delimiter, int limit) throws SuitsException {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
@@ -89,7 +88,7 @@ public class QiniuLister implements ILister<FileInfo> {
         return limit;
     }
 
-    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws IOException {
+    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
@@ -102,9 +101,13 @@ public class QiniuLister implements ILister<FileInfo> {
                 .filter(Objects::nonNull)
                 .sorted(ListLine::compareTo)
                 .collect(Collectors.toList());
-        bufferedReader.close();
-        reader.close();
-        inputStream.close();
+        try {
+            bufferedReader.close();
+            reader.close();
+            inputStream.close();
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
         response.close();
         // 转换成 ListLine 过程中可能出现问题，直接返回空列表，marker 不做修改，返回后则会再次使用同样的 marker 值进行列举
         if (listLines.size() < lines.size()) return new ArrayList<>();

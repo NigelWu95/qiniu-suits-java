@@ -20,7 +20,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private List<COSObjectSummary> cosObjectList;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws CosClientException {
+                     String delimiter, int max) throws SuitsException {
         this.cosClient = cosClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
@@ -29,7 +29,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         listObjectsRequest.setMarker(marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix == null ? "" : endPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
-        this.cosObjectList = getListResult();
+        listForward();
     }
 
     public void setPrefix(String prefix) {
