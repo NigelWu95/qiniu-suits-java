@@ -170,7 +170,8 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parseType = commonParams.getParse();
         String separator = commonParams.getSeparator();
-        FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads);
+        String rmPrefix = commonParams.getRmPrefix();
+        FileInput fileInput = new FileInput(filePath, parseType, separator, rmPrefix, indexMap, unitLen, threads);
         fileInput.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         fileInput.setRetryTimes(retryTimes);
         return fileInput;
