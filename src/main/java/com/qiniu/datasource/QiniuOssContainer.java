@@ -1,8 +1,8 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
-import com.qiniu.convert.FileInfoToMap;
-import com.qiniu.convert.FileInfoToString;
+import com.qiniu.convert.QOSObjToMap;
+import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
@@ -30,12 +30,12 @@ public class QiniuOssContainer extends OssContainer<FileInfo> {
 
     @Override
     protected ITypeConvert<FileInfo, Map<String, String>> getNewMapConverter() {
-        return new FileInfoToMap(indexMap);
+        return new QOSObjToMap(indexMap);
     }
 
     @Override
     protected ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException {
-        return new FileInfoToString(saveFormat, saveSeparator, rmFields);
+        return new QOSObjToString(saveFormat, saveSeparator, rmFields);
     }
 
     @Override

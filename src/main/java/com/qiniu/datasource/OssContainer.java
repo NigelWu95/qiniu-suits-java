@@ -118,6 +118,13 @@ public abstract class OssContainer<E> implements IDataSource {
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
+    /**
+     * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
+     * @param lister 已经初始化的 lister 对象
+     * @param fileMap 用于列举结果持久化的文件对象
+     * @param processor 用于资源处理的处理器对象
+     * @throws IOException 列举出现错误或者持久化错误抛出的异常
+     */
     public void export(ILister<E> lister, FileMap fileMap, ILineProcess<Map<String, String>> processor) throws IOException {
         ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
@@ -126,6 +133,7 @@ public abstract class OssContainer<E> implements IDataSource {
         List<String> writeList;
         int retry;
         boolean goon = true;
+        // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         do {
             objects = lister.currents();
             infoMapList = mapConverter.convertToVList(objects);
@@ -146,6 +154,7 @@ public abstract class OssContainer<E> implements IDataSource {
             retry = retryTimes;
             while (true) {
                 try {
+                    // 如果存在后续则向前列举，否则使循环退出即可
                     if (lister.hasNext()) lister.listForward();
                     else goon = false;
                     break;
@@ -179,6 +188,12 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
+    /**
+     * 生成 prefix 前缀下的列举对象
+     * @param prefix 指定的前缀参数
+     * @return 返回生成的范型列举对象
+     * @throws SuitsException 生成列举对象失败抛出的异常
+     */
     protected abstract ILister<E> generateLister(String prefix) throws SuitsException;
 
     /**
@@ -193,11 +208,18 @@ public abstract class OssContainer<E> implements IDataSource {
         return true;
     }
 
+    /**
+     * 将 ILister<E> 对象列表放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
+     * @param listerList 列举对象集
+     * @param recordFileMap 记录整体进度信息的文件对象
+     * @param order 当前列举对象集的起始序号
+     * @throws Exception 操作失败抛出的异常
+     */
     private void execInThreads(List<ILister<E>> listerList, FileMap recordFileMap, int order) throws Exception {
         for (int j = 0; j < listerList.size(); j++) {
             ILister<E> lister = listerList.get(j);
             // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-            //            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
@@ -226,13 +248,12 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
-    private void updateLastLiter(ILister<E> lastLister, String prefix) {
-        if (lastLister != null) {
-            lastLister.setPrefix(prefix);
-            if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
-        }
-    }
-
+    /**
+     * 根据上层 prefix 和下一级的起始字符串 point（单个字符）以及预定义前缀列表来生成下一级的列举对象集
+     * @param startPrefix 上层起始 prefix
+     * @param point 下一级开始列举位置的单个前缀字符
+     * @return 返回有效的列举对象集
+     */
     private List<ILister<E>> generateNextList(String startPrefix, String point) {
         try {
             // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
@@ -257,34 +278,47 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
+    /**
+     * 从起始的 lister 对象来得到下一级别可并发的列举对象集
+     * @param lister 起始列举对象
+     * @return 下一级别可并发的列举对象集
+     */
     private List<ILister<E>> nextLevelLister(ILister<E> lister) {
         String point = "";
-        // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 fileLister 的列表
         List<ILister<E>> nextLevelList = new ArrayList<>();
+        // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
         if (!lister.hasNext()) {
             nextLevelList.add(lister);
             return nextLevelList;
+        // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象计算后续的前缀
         } else if (lister.currentLast() != null) {
             int prefixLen = lister.getPrefix().length();
             String lastKey = lister.currentLastKey();
-            if (lastKey != null && lastKey.length() >= prefixLen + 1) {
+            // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
+            // endPrefix
+            if (lastKey != null && lastKey.length() > prefixLen) {
                 point = lastKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
                     lister.setEndPrefix(null);
                     nextLevelList.add(lister);
                     return nextLevelList;
+                // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀，并且加入 lister 到返回的列举对象集
                 } else if (point.compareTo(originPrefixList.get(0)) < 0) {
                     lister.setEndPrefix(lister.getPrefix() + originPrefixList.get(0));
                     nextLevelList.add(lister);
+                // 当 point 包含在预定义前缀列表中，如果当前的第一个对象和最后一个对象文件名相同，则不需要加入返回的列举对象集，因为 point 会
+                // 用于下一级前缀和列举对象的检索，反之则设置结束位置到 point 并加入返回的对象集
                 } else if (!lister.currentFirstKey().startsWith(lister.getPrefix() + point)) {
                     lister.setEndPrefix(lister.getPrefix() + point);
                     nextLevelList.add(lister);
                 }
+            // 正常情况下文件对象不为空则其文件名不应为空，假如发生此情况直接将 lister 的结束位置设置到第一个预定义前缀并加入返回的对象集
             } else {
                 lister.setEndPrefix(lister.getPrefix() + originPrefixList.get(0));
                 nextLevelList.add(lister);
             }
+        // 正常情况下存在 next 时最后一个对象不应为空，假如出现此情况时直接将 lister 的结束位置设置到第一个预定义前缀，并加入列举对象集
         } else {
             lister.setEndPrefix(lister.getPrefix() + originPrefixList.get(0));
             nextLevelList.add(lister);
@@ -295,7 +329,16 @@ public abstract class OssContainer<E> implements IDataSource {
         return nextLevelList;
     }
 
-    private int computeToList(ILister<E> startLister, String lastPrefix, int alreadyOrder, FileMap recordFileMap)
+    /**
+     * 根据 startLister 得到可并发的下一级 lister 对象集放入多线程执行列举
+     * @param startLister 已初始化的起始的 lister
+     * @param globalEnd startLister 是否需要列举到全局的结尾处（从该 startLister 开始列举到整个空间结束）
+     * @param alreadyOrder lister 执行的起始序号
+     * @param recordFileMap 记录全局执行结果的文件持久化对象
+     * @return 此次计算并执行到的 lister 序号，用于后续可能继续向线程添加 lister 执行设置起始序号
+     * @throws Exception 下一级 lister 列表计算和多线程执行过程中可能产生的异常
+     */
+    private int computeToList(ILister<E> startLister, boolean globalEnd, int alreadyOrder, FileMap recordFileMap)
             throws Exception {
         List<ILister<E>> listerList = nextLevelLister(startLister);
         List<ILister<E>> execListerList = new ArrayList<>();
@@ -304,22 +347,31 @@ public abstract class OssContainer<E> implements IDataSource {
         int nextSize;
         Map<Boolean, List<ILister<E>>> groupedListerMap;
         do {
+            // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
                 listerList.sort(Comparator.comparing(ILister<E>::getPrefix));
                 lastLister = listerList.get(listerList.size() - 1);
+                // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
                 if (lastLister != null && !lastLister.hasNext()) {
-                    updateLastLiter(lastLister, lastPrefix);
+                    // 全局结尾则设置前缀为空，否则设置前缀为起始值
+                    if (globalEnd) lastLister.setPrefix("");
+                    else lastLister.setPrefix(startLister.getPrefix());
+                    lastLister.updateMarkerBy(lastLister.currentLast());
                     execListerList.add(lastLister);
                     lastListerUpdated = true;
                     listerList = listerList.subList(0, listerList.size() -1 );
                 }
             }
+            // 按照是否存在 next 同时 endPrefix 不为空来进行分组，不存在 next 或者 endPrefix 为 null 时则可以提前放入线程中执行列举，判
+            // 断 endPrefix 是因为在初始化的 lister 中 endPrefix 一定不为 null，如果为 null 说明在计算过程中进行了特殊设置，希望此时的
+            // lister 优先执行掉
             groupedListerMap = listerList.parallelStream().collect(Collectors.groupingBy(fileLister ->
-                    fileLister.hasNext() && "".equals(fileLister.getEndPrefix())));
+                    fileLister.hasNext() && fileLister.getEndPrefix() != null));
             if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
             execInThreads(execListerList, recordFileMap, alreadyOrder);
             alreadyOrder += execListerList.size();
             execListerList.clear();
+            // 对存在 next 且 endPrefix 不为空的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (groupedListerMap.get(true) != null) {
                 Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).parallelStream()
                         .map(this::nextLevelLister)
@@ -327,7 +379,7 @@ public abstract class OssContainer<E> implements IDataSource {
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     listerList = listOptional.get();
                     nextSize = (int) listerList.parallelStream()
-                            .filter(fileLister -> fileLister.hasNext() && "".equals(fileLister.getEndPrefix()))
+                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
                             .count();
                 } else {
                     listerList = groupedListerMap.get(true);
@@ -337,18 +389,25 @@ public abstract class OssContainer<E> implements IDataSource {
                 listerList.clear();
                 break;
             }
-        } while (nextSize < threads);
+        } while (nextSize < threads); // 线程数满足设置值时则不需要再继续检索下一级前缀
 
+        // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
         if (!lastListerUpdated && listerList.size() > 0) {
             listerList.sort(Comparator.comparing(ILister<E>::getPrefix));
             lastLister = listerList.get(listerList.size() - 1);
-            updateLastLiter(lastLister, lastPrefix);
+            if (globalEnd) lastLister.setPrefix("");
+            else lastLister.setPrefix(startLister.getPrefix());
+            if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
         }
         execInThreads(listerList, recordFileMap, alreadyOrder);
         alreadyOrder += listerList.size();
         return alreadyOrder;
     }
 
+    /**
+     * 根据当前参数值创建多线程执行数据源导出工作
+     * @throws Exception 数据源导出时出现错误抛出异常
+     */
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
@@ -359,7 +418,7 @@ public abstract class OssContainer<E> implements IDataSource {
         int alreadyOrder = 0;
         if (prefixes.size() == 0) {
             ILister<E> startLister = generateLister("");
-            computeToList(startLister, "", alreadyOrder, recordFileMap);
+            computeToList(startLister, true, alreadyOrder, recordFileMap);
         } else {
             if (prefixLeft) {
                 ILister<E> startLister = generateLister("");
@@ -369,13 +428,13 @@ public abstract class OssContainer<E> implements IDataSource {
             }
             for (int i = 0; i < prefixes.size() - 1; i++) {
                 ILister<E> startLister = generateLister(prefixes.get(i));
-                alreadyOrder = computeToList(startLister, prefixes.get(i), alreadyOrder, recordFileMap);
+                alreadyOrder = computeToList(startLister, false, alreadyOrder, recordFileMap);
             }
             ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
             if (prefixRight) {
-                computeToList(startLister, "", alreadyOrder, recordFileMap);
+                computeToList(startLister, true, alreadyOrder, recordFileMap);
             } else {
-                computeToList(startLister, prefixes.get(prefixes.size() - 1), alreadyOrder, recordFileMap);
+                computeToList(startLister, false, alreadyOrder, recordFileMap);
             }
         }
         executorPool.shutdown();

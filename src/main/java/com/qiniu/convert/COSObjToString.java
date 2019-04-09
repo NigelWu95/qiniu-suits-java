@@ -1,14 +1,14 @@
 package com.qiniu.convert;
 
-import com.qiniu.storage.model.FileInfo;
+import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.List;
 
-public class QOSObjectToString extends ObjectToString<FileInfo> {
+public class COSObjToString extends ObjectToString<COSObjectSummary> {
 
-    public QOSObjectToString(String format, String separator, List<String> rmFields) throws IOException {
+    public COSObjToString(String format, String separator, List<String> rmFields) throws IOException {
         // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
