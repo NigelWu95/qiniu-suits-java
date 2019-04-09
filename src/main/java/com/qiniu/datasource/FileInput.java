@@ -37,19 +37,19 @@ public class FileInput implements IDataSource {
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int unitLen,
-                     int threads, String savePath) {
+                     int threads) {
         this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
-        this.savePath = savePath;
         this.saveTotal = false; // 默认全记录不保存
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+        this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
         this.saveSeparator = separator;

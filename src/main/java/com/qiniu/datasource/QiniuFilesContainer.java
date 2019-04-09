@@ -46,7 +46,7 @@ public class QiniuFilesContainer implements IDataSource {
 
     public QiniuFilesContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                                List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft, boolean prefixRight,
-                               Map<String, String> indexMap, int unitLen, int threads, String savePath) {
+                               Map<String, String> indexMap, int unitLen, int threads) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
@@ -60,7 +60,6 @@ public class QiniuFilesContainer implements IDataSource {
         setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
-        this.savePath = savePath;
         this.saveTotal = true; // 默认全记录保存
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
@@ -69,7 +68,8 @@ public class QiniuFilesContainer implements IDataSource {
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+        this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
         this.saveSeparator = separator;

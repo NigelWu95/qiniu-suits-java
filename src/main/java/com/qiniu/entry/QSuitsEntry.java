@@ -173,8 +173,8 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parseType = commonParams.getParse();
         String separator = commonParams.getSeparator();
-        FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads, savePath);
-        fileInput.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+        FileInput fileInput = new FileInput(filePath, parseType, separator, indexMap, unitLen, threads);
+        fileInput.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         fileInput.setRetryTimes(retryTimes);
         return fileInput;
     }
@@ -186,8 +186,8 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         if (configuration == null) configuration = getDefaultConfiguration();
         QiniuFilesContainer qiniuFilesContainer = new QiniuFilesContainer(accessKey, secretKey, configuration, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
-        qiniuFilesContainer.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        qiniuFilesContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         qiniuFilesContainer.setRetryTimes(retryTimes);
         return qiniuFilesContainer;
     }
@@ -200,8 +200,8 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         if (clientConfig == null) clientConfig = getDefaultClientConfig();
         TenOssContainer tenOssContainer = new TenOssContainer(secretId, secretKey, clientConfig, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
-        tenOssContainer.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        tenOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         tenOssContainer.setRetryTimes(retryTimes);
         return tenOssContainer;
     }
