@@ -113,31 +113,29 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
-    protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter() throws IOException;
+    protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
     public void export(ILister<E> lister, FileMap fileMap, ILineProcess<Map<String, String>> processor) throws IOException {
         ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
-        List<E> objects = null;
+        List<E> objects;
         List<Map<String, String>> infoMapList;
         List<String> writeList;
-        int statusCode;
         int retry;
         while (lister.hasNext()) {
-            retry = retryTimes + 1;
-            while (retry > 0) {
+            retry = retryTimes;
+            while (true) {
                 objects = lister.currents();
                 try {
                     lister.listForward();
-                    retry = 0;
+                    break;
                 } catch (SuitsException e) {
                     System.out.println("list prefix:" + lister.getPrefix() + " retrying...");
-                    retry--;
-                    statusCode = e.getStatusCode();
-                    if (HttpResponseUtils.checkStatusCode(statusCode) < 0 || (retry == 0 && statusCode == 599))
-                        throw new IOException(e.getMessage());
+                    if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                    else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                    else retry--;
                 }
             }
 
@@ -266,10 +264,10 @@ public abstract class OssContainer<E> implements IDataSource {
         if (!lister.hasNext()) {
             nextLevelList.add(lister);
             return nextLevelList;
-        } else if (lister.currentLastKey() != null) {
-            String lastKey = lister.currentLastKey();
+        } else if (lister.currentLast() != null) {
             int prefixLen = lister.getPrefix().length();
-            if (lastKey.length() >= prefixLen + 1) {
+            String lastKey = lister.currentLastKey();
+            if (lastKey != null && lastKey.length() >= prefixLen + 1) {
                 point = lastKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {

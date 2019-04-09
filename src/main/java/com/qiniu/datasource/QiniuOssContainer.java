@@ -8,6 +8,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -28,7 +29,7 @@ public class QiniuOssContainer extends OssContainer<FileInfo> {
     }
 
     @Override
-    protected ITypeConvert<FileInfo, Map<String, String>> getNewMapConverter() throws IOException {
+    protected ITypeConvert<FileInfo, Map<String, String>> getNewMapConverter() {
         return new FileInfoToMap(indexMap);
     }
 
@@ -39,19 +40,18 @@ public class QiniuOssContainer extends OssContainer<FileInfo> {
 
     @Override
     protected ILister<FileInfo> generateLister(String prefix) throws SuitsException {
-        QiniuLister fileLister;
-        int retry = retryTimes + 1;
+        int retry = retryTimes;
         while (true) {
             try {
-                fileLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()),
-                        bucket, prefix, getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
-                break;
+                String[] markerAndEnd = getMarkerAndEnd(prefix);
+                return new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()),
+                        bucket, prefix, markerAndEnd[0], markerAndEnd[1], null, unitLen);
             } catch (SuitsException e) {
-                System.out.println("list prefix:" + prefix + "\tmay be retrying...");
-//                retry = HttpResponseUtils.checkException(e, retry);
-                if (retry == -2) throw e; // 只有当重试次数用尽且响应状态码为 599 时才会抛出异常
+                System.out.println("list prefix:" + prefix + " retrying...");
+                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                else retry--;
             }
         }
-        return fileLister;
     }
 }
