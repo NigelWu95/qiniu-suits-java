@@ -24,8 +24,8 @@ public class TenOssContainerTest {
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         String bucket = propertiesFile.getValue("bucket");
         tenOssContainer = new TenOssContainer(secretId, secretKey, clientConfig, bucket, null, null,
-                false, false, null, 1000, 10, "../tencent");
-        tenOssContainer.setSaveOptions(true, "tab", "\t", null);
+                false, false, null, 1000, 10);
+        tenOssContainer.setSaveOptions("../tencent", true, "tab", "\t", null);
     }
 
     @Test

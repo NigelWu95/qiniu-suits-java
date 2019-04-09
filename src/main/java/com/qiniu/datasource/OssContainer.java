@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
@@ -124,21 +125,9 @@ public abstract class OssContainer<E> implements IDataSource {
         List<Map<String, String>> infoMapList;
         List<String> writeList;
         int retry;
-        while (lister.hasNext()) {
-            retry = retryTimes;
-            while (true) {
-                objects = lister.currents();
-                try {
-                    lister.listForward();
-                    break;
-                } catch (SuitsException e) {
-                    System.out.println("list prefix:" + lister.getPrefix() + " retrying...");
-                    if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
-                    else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
-                    else retry--;
-                }
-            }
-
+        boolean goon = true;
+        do {
+            objects = lister.currents();
             infoMapList = mapConverter.convertToVList(objects);
             if (mapConverter.getErrorList().size() > 0)
                 fileMap.writeError(String.join("\n", mapConverter.consumeErrorList()), false);
@@ -151,10 +140,23 @@ public abstract class OssContainer<E> implements IDataSource {
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
                 if (processor != null) processor.processLine(infoMapList);
-            } catch (SuitsException e) {
-                if (retry == -2) throw e;
+            } catch (QiniuException e) {
+                if (HttpResponseUtils.checkException(e, 2) < -1) throw e;
             }
-        }
+            retry = retryTimes;
+            while (true) {
+                try {
+                    if (lister.hasNext()) lister.listForward();
+                    else goon = false;
+                    break;
+                } catch (SuitsException e) {
+                    System.out.println("list prefix:" + lister.getPrefix() + " retrying...");
+                    if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                    else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                    else retry--;
+                }
+            }
+        } while (goon);
     }
 
     /**
@@ -193,28 +195,28 @@ public abstract class OssContainer<E> implements IDataSource {
 
     private void execInThreads(List<ILister<E>> listerList, FileMap recordFileMap, int order) throws Exception {
         for (int j = 0; j < listerList.size(); j++) {
-            ILister<E> tenLister = listerList.get(j);
+            ILister<E> lister = listerList.get(j);
             // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
             //            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
-            FileMap fileMap = new FileMap(savePath, "bucketlist", identifier);
+            FileMap fileMap = new FileMap(savePath, "list", identifier);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
-                    String record = "order " + identifier + ": " + tenLister.getPrefix();
+                    String record = "order " + identifier + ": " + lister.getPrefix();
                     recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
-                    export(tenLister, fileMap, lineProcessor);
+                    export(lister, fileMap, lineProcessor);
                     record += "\tsuccessfully done";
                     System.out.println(record);
                     recordFileMap.writeKeyFile("result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
-                    tenLister.close();
+                    lister.close();
                 } catch (Exception e) {
-                    System.out.println("order " + identifier + ": " + tenLister.getPrefix() + "\tmarker: " +
-                            tenLister.getMarker() + "\tend:" + tenLister.getEndPrefix());
+                    System.out.println("order " + identifier + ": " + lister.getPrefix() + "\tmarker: " +
+                            lister.getMarker() + "\tend:" + lister.getEndPrefix());
                     recordFileMap.closeWriters();
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
@@ -232,11 +234,10 @@ public abstract class OssContainer<E> implements IDataSource {
     }
 
     private List<ILister<E>> generateNextList(String startPrefix, String point) {
-        List<ILister<E>> prefixListerList = null;
         try {
             // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
             // java.util.concurrent.RejectedExecutionException: Thread limit exceeded replacing blocked worker
-            prefixListerList = originPrefixList.stream()
+            return originPrefixList.stream()
                     .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
                     .filter(this::checkAntiPrefixes)
                     .map(originPrefix -> {
@@ -248,13 +249,12 @@ public abstract class OssContainer<E> implements IDataSource {
                         }
                         return lister;
                     })
-                    .filter(lister -> lister != null && lister.hasNext())
+                    .filter(lister -> lister != null && lister.currents().size() > 0)
                     .collect(Collectors.toList());
         } catch (Throwable e) {
             SystemUtils.exit(exitBool, e);
+            return null;
         }
-
-        return prefixListerList;
     }
 
     private List<ILister<E>> nextLevelLister(ILister<E> lister) {
@@ -350,7 +350,7 @@ public abstract class OssContainer<E> implements IDataSource {
     }
 
     public void export() throws Exception {
-        String info = "list files from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileMap recordFileMap = new FileMap(savePath);
         executorPool = Executors.newFixedThreadPool(threads);

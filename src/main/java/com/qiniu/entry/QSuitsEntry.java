@@ -4,10 +4,7 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Zone;
 import com.qiniu.config.ParamsConfig;
-import com.qiniu.datasource.QiniuFilesContainer;
-import com.qiniu.datasource.FileInput;
-import com.qiniu.datasource.IDataSource;
-import com.qiniu.datasource.TenOssContainer;
+import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.filtration.BaseFieldsFilter;
@@ -159,7 +156,7 @@ public class QSuitsEntry {
 
     public IDataSource getDataSource() {
         if ("qiniu".equals(source)) {
-            return getBucketList();
+            return getQiniuOssContainer();
         } else if ("tencent".equals(source)) {
             return getTenObjectsContainer();
         } else if ("local".equals(source)) {
@@ -179,17 +176,17 @@ public class QSuitsEntry {
         return fileInput;
     }
 
-    public QiniuFilesContainer getBucketList() {
+    public QiniuOssContainer getQiniuOssContainer() {
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         if (configuration == null) configuration = getDefaultConfiguration();
-        QiniuFilesContainer qiniuFilesContainer = new QiniuFilesContainer(accessKey, secretKey, configuration, bucket,
+        QiniuOssContainer qiniuOssContainer = new QiniuOssContainer(accessKey, secretKey, configuration, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        qiniuFilesContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        qiniuFilesContainer.setRetryTimes(retryTimes);
-        return qiniuFilesContainer;
+        qiniuOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        qiniuOssContainer.setRetryTimes(retryTimes);
+        return qiniuOssContainer;
     }
 
     public TenOssContainer getTenObjectsContainer() {

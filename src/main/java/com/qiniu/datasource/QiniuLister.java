@@ -61,6 +61,13 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        if (endPrefix != null && !"".equals(endPrefix)) {
+            int size = fileInfoList.size();
+            fileInfoList = fileInfoList.stream()
+                    .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
+                    .collect(Collectors.toList());
+            if (fileInfoList.size() < size) marker = null;
+        }
     }
 
     @Override
@@ -132,6 +139,8 @@ public class QiniuLister implements ILister<FileInfo> {
                         .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
                         .collect(Collectors.toList());
                 if (fileInfoList.size() < current.size()) marker = null;
+            } else {
+                fileInfoList = current;
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
@@ -157,7 +166,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public String currentFirstKey() {
-        FileInfo first = currentLast();
+        FileInfo first = currentFirst();
         return first != null ? first.key : null;
     }
 

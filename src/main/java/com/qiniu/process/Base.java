@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public abstract class Base implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final protected String processName;
+    private String processName;
     protected Configuration configuration;
     protected String accessKey;
     protected String secretKey;
