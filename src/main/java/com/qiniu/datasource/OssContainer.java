@@ -173,7 +173,7 @@ public abstract class OssContainer<E> implements IDataSource {
      * @param prefix 配置的前缀参数
      * @return 返回针对该前缀配置的 marker 和 end
      */
-    protected String[] getMarkerAndEnd(String prefix) {
+    private String[] getMarkerAndEnd(String prefix) {
         if (prefixesMap.containsKey(prefix)) {
             String[] mapValue = prefixesMap.get(prefix);
             if (mapValue != null && mapValue.length > 1) {
@@ -194,7 +194,22 @@ public abstract class OssContainer<E> implements IDataSource {
      * @return 返回生成的范型列举对象
      * @throws SuitsException 生成列举对象失败抛出的异常
      */
-    protected abstract ILister<E> generateLister(String prefix) throws SuitsException;
+    protected abstract ILister<E> getLister(String prefix, String marker, String end) throws SuitsException;
+
+    private ILister<E> generateLister(String prefix) throws SuitsException {
+        int retry = retryTimes;
+        while (true) {
+            try {
+                String[] markerAndEnd = getMarkerAndEnd(prefix);
+                return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
+            } catch (SuitsException e) {
+                System.out.println("list prefix:" + prefix + " retrying...");
+                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                else retry--;
+            }
+        }
+    }
 
     /**
      * 检验 prefix 是否在 antiPrefixes 前缀列表中
