@@ -159,7 +159,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     else goon = false;
                     break;
                 } catch (SuitsException e) {
-                    System.out.println("list prefix:" + lister.getPrefix() + " retrying...");
+                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...");
                     if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else retry--;
@@ -380,7 +380,7 @@ public abstract class OssContainer<E> implements IDataSource {
             // 按照是否存在 next 同时 endPrefix 不为空来进行分组，不存在 next 或者 endPrefix 为 null 时则可以提前放入线程中执行列举，判
             // 断 endPrefix 是因为在初始化的 lister 中 endPrefix 一定不为 null，如果为 null 说明在计算过程中进行了特殊设置，希望此时的
             // lister 优先执行掉
-            groupedListerMap = listerList.parallelStream().collect(Collectors.groupingBy(fileLister ->
+            groupedListerMap = listerList.stream().collect(Collectors.groupingBy(fileLister ->
                     fileLister.hasNext() && fileLister.getEndPrefix() != null));
             if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
             execInThreads(execListerList, recordFileMap, alreadyOrder);
@@ -393,7 +393,7 @@ public abstract class OssContainer<E> implements IDataSource {
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     listerList = listOptional.get();
-                    nextSize = (int) listerList.parallelStream()
+                    nextSize = (int) listerList.stream()
                             .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
                             .count();
                 } else {
