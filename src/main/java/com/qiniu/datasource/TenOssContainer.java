@@ -6,6 +6,7 @@ import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.SuitsException;
+import com.qiniu.convert.COSObjectToMap;
 import com.qiniu.convert.COSObjectToString;
 import com.qiniu.interfaces.ITypeConvert;
 
@@ -29,7 +30,7 @@ public class TenOssContainer extends OssContainer<COSObjectSummary> {
 
     @Override
     protected ITypeConvert<COSObjectSummary, Map<String, String>> getNewMapConverter() throws IOException {
-        return null;
+        return new COSObjectToMap(indexMap);
     }
 
     @Override

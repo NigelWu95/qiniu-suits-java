@@ -24,7 +24,7 @@ public abstract class OssContainer<E> implements IDataSource {
     private List<String> prefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
-    private Map<String, String> indexMap;
+    protected Map<String, String> indexMap;
     protected int unitLen;
     private int threads;
     protected int retryTimes = 5;
