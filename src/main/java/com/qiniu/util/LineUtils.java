@@ -52,6 +52,27 @@ public class LineUtils {
         return itemMap;
     }
 
+    public static Map<String, String> getItemMap(COSObjectSummary cosObjectSummary, Map<String, String> indexMap)
+            throws IOException {
+        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary.");
+        Map<String, String> itemMap = new HashMap<>();
+        fileInfoFields.forEach(key -> {
+            if (indexMap.get(key) != null) {
+                switch (key) {
+                    case "key": itemMap.put(indexMap.get(key), cosObjectSummary.getKey()); break;
+                    case "hash": itemMap.put(indexMap.get(key), cosObjectSummary.getETag()); break;
+                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getSize())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getLastModified())); break;
+//                    case "mimeType": itemMap.put(indexMap.get(key), cosObjectSummary.); break;
+                    case "type": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getStorageClass())); break;
+//                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.)); break;
+                    case "endUser": itemMap.put(indexMap.get(key), cosObjectSummary.getOwner().getDisplayName()); break;
+                }
+            }
+        });
+        return itemMap;
+    }
+
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap, boolean force)
             throws IOException {
         if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
