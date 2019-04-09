@@ -51,6 +51,13 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
+        if (endPrefix != null && !"".equals(endPrefix)) {
+            int size = cosObjectList.size();
+            cosObjectList = cosObjectList.stream()
+                    .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
+                    .collect(Collectors.toList());
+            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
+        }
     }
 
     @Override
@@ -96,6 +103,8 @@ public class TenLister implements ILister<COSObjectSummary> {
                         .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
                         .collect(Collectors.toList());
                 if (cosObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
+            } else {
+                cosObjectList = current;
             }
         } catch (CosServiceException e) {
             throw new SuitsException(e.getStatusCode(), e.getMessage());

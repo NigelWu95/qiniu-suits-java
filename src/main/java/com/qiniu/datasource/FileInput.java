@@ -136,7 +136,7 @@ public class FileInput implements IDataSource {
             String order = String.valueOf(i);
             String key = keys.get(i);
             BufferedReader reader = readersMap.get(key);
-            FileMap fileMap = new FileMap(savePath, "fileinput", order);
+            FileMap fileMap = new FileMap(savePath, "input", order);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
@@ -174,7 +174,7 @@ public class FileInput implements IDataSource {
 
         int filesCount = initFileMap.getReaderMap().size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String info = "read files: " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);
