@@ -2,8 +2,8 @@ package com.qiniu.process.qoss;
 
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
-import com.qiniu.convert.FileInfoToString;
 import com.qiniu.convert.JsonToString;
+import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
@@ -49,7 +49,7 @@ public class StatFile extends Base {
             throw new IOException("please check your format for line to map.");
         }
         if (batchSize > 1) typeConverter = new JsonToString(format, separator, null);
-        else typeConverter = new FileInfoToString(format, separator, null);
+        else typeConverter = new QOSObjToString(format, separator, null);
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
@@ -69,7 +69,7 @@ public class StatFile extends Base {
             }
         } else {
             try {
-                statFile.typeConverter = new FileInfoToString(format, separator, null);
+                statFile.typeConverter = new QOSObjToString(format, separator, null);
             } catch (IOException e) {
                 throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
             }
