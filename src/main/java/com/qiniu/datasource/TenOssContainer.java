@@ -4,6 +4,7 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.exception.CosClientException;
+import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.COSObjectToMap;
@@ -21,8 +22,8 @@ public class TenOssContainer extends OssContainer<COSObjectSummary> {
 
     public TenOssContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads, String savePath) {
-        super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads, savePath);
+                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+        super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
@@ -47,7 +48,7 @@ public class TenOssContainer extends OssContainer<COSObjectSummary> {
                 tenLister = new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig),
                         bucket, prefix, getMarkerAndEnd(prefix)[0], getMarkerAndEnd(prefix)[1], null, unitLen);
                 break;
-            } catch (CosClientException e) {
+            } catch (CosServiceException e) {
                 System.out.println("list prefix:" + prefix + "\tmay be retrying...");
 //                retry = HttpResponseUtils.checkException(e, retry);
                 if (retry == -2) throw e; // 只有当重试次数用尽且响应状态码为 599 时才会抛出异常

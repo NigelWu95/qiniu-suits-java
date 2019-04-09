@@ -8,7 +8,7 @@ import java.util.Map;
 
 public interface IDataSource {
 
-    void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields);
+    void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields);
 
     void setProcessor(ILineProcess<Map<String, String>> processor);
 

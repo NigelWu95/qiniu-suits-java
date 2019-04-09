@@ -29,7 +29,7 @@ public abstract class OssContainer<E> implements IDataSource {
     private int threads;
     protected int retryTimes = 5;
     private String savePath;
-    private boolean saveTotal;
+    protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
     protected List<String> rmFields;
@@ -39,7 +39,7 @@ public abstract class OssContainer<E> implements IDataSource {
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public OssContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                        boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads, String savePath) {
+                        boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
@@ -50,7 +50,6 @@ public abstract class OssContainer<E> implements IDataSource {
         setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
-        this.savePath = savePath;
         this.saveTotal = true; // 默认全记录保存
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
@@ -59,7 +58,8 @@ public abstract class OssContainer<E> implements IDataSource {
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+        this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
         this.saveSeparator = separator;
@@ -117,12 +117,11 @@ public abstract class OssContainer<E> implements IDataSource {
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    public void export(ILister<E> lister, FileMap fileMap, ILineProcess<Map<String, String>> processor)
-            throws IOException {
+    public void export(ILister<E> lister, FileMap fileMap, ILineProcess<Map<String, String>> processor) throws IOException {
         ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects = null;
-        List<Map<String, String>> infoMapList = null;
+        List<Map<String, String>> infoMapList;
         List<String> writeList;
         int statusCode;
         int retry;
