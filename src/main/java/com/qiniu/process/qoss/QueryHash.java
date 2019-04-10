@@ -58,23 +58,15 @@ public class QueryHash extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String qhash = fileChecker.getQHashBody(line.get(urlIndex));
+        String url = urlIndex != null ? line.get(urlIndex) :
+                protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        String qhash = fileChecker.getQHashBody(url);
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {

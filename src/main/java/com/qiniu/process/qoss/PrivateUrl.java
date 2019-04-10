@@ -54,22 +54,14 @@ public class PrivateUrl extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) {
-        return auth.privateDownloadUrl(line.get(urlIndex), expires);
+        String url = urlIndex != null ? line.get(urlIndex) :
+                protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        return auth.privateDownloadUrl(url, expires);
     }
 }

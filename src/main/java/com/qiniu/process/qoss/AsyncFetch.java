@@ -92,25 +92,20 @@ public class AsyncFetch extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        } else {
-            line.put("key", URLUtils.getKey(line.get(urlIndex)));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        Response response = fetch(line.get(urlIndex), addPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
-        return line.get(urlIndex) + "\t" + HttpResponseUtils.responseJson(response);
+        try {
+            String url = urlIndex != null ? line.get(urlIndex) :
+                    protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            String key = urlIndex != null ? URLUtils.getKey(url) : line.get("key");
+            Response response = fetch(url, addPrefix + key, line.get(md5Index), line.get("hash"));
+            return line.get(urlIndex) + "\t" + HttpResponseUtils.responseJson(response);
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 }

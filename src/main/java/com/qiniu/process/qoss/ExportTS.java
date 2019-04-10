@@ -4,7 +4,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.VideoTS;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
@@ -58,16 +57,6 @@ public class ExportTS extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
@@ -75,7 +64,9 @@ public class ExportTS extends Base {
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         try {
-            return String.join("\n", m3U8Manager.getVideoTSListByUrl(line.get(urlIndex))
+            String url = urlIndex != null ? line.get(urlIndex) :
+                    protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            return String.join("\n", m3U8Manager.getVideoTSListByUrl(url)
                     .stream().map(VideoTS::toString).collect(Collectors.toList()));
         } catch (QiniuException e) {
             throw e;
