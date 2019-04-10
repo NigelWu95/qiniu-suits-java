@@ -97,9 +97,7 @@ public class PfopCommand extends Base {
             key = line.get("key");
             info = line.get(avinfoIndex);
             try {
-                if (key == null || "".equals(key) || info == null || "".equals(info))
-                    throw new IOException("key or avinfo is empty.");
-                key = FileNameUtils.rmPrefix(rmPrefix, line.get("key"));
+                if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
                 avinfo = mediaManager.getAvinfoByJson(info);
                 if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
                 if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
