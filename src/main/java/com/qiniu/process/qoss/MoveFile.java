@@ -6,6 +6,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -84,10 +85,12 @@ public class MoveFile extends Base {
     synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
+            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+            line.put(newKeyIndex, toKey);
             if (toBucket == null || "".equals(toBucket)) {
-                batchOperations.addRenameOp(bucket, line.get("key"), addPrefix + line.get(newKeyIndex));
+                batchOperations.addRenameOp(bucket, line.get("key"), addPrefix + toKey);
             } else {
-                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, addPrefix + line.get(newKeyIndex));
+                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
             }
         });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
@@ -95,12 +98,12 @@ public class MoveFile extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
+        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+        line.put(newKeyIndex, toKey);
         if (toBucket == null || "".equals(toBucket)) {
-            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"),
-                    addPrefix + line.get(newKeyIndex)));
+            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), addPrefix + toKey));
         } else {
-            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket,
-                    addPrefix + line.get(newKeyIndex)));
+            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, addPrefix + toKey));
         }
     }
 }

@@ -12,10 +12,8 @@ public class FileNameUtils {
         }
     }
 
-    public static String rmPrefix(String prefix, String name) throws IOException {
-        if (name == null) throw new IOException("the file name is empty");
-        if (prefix == null || "".equals(prefix)) return name;
-        if (name.length() < prefix.length()) throw new IOException("the name's length is smaller then prefix to remove");
+    public static String rmPrefix(String prefix, String name) {
+        if (prefix == null || "".equals(prefix) || name.length() < prefix.length()) return name;
         return name.substring(0, prefix.length()).replace(prefix, "") + name.substring(prefix.length());
     }
 
