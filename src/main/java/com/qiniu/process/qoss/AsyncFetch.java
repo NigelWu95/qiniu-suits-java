@@ -15,7 +15,8 @@ public class AsyncFetch extends Base {
     private String domain;
     private String protocol;
     private String urlIndex;
-    private String keyPrefix;
+    private String addPrefix;
+    private String rmPrefix;
     private boolean hasCustomArgs;
     private String host;
     private String md5Index;
@@ -28,10 +29,10 @@ public class AsyncFetch extends Base {
     private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath,
+                      String protocol, String urlIndex, String addPrefix, String savePath,
                       int saveIndex) throws IOException {
-        super("asyncfetch", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        set(domain, protocol, urlIndex, keyPrefix);
+        super("asyncfetch", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        set(domain, protocol, urlIndex, addPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -42,7 +43,7 @@ public class AsyncFetch extends Base {
         this.rmPrefix = rmPrefix;
     }
 
-    private void set(String domain, String protocol, String urlIndex, String keyPrefix) throws IOException {
+    private void set(String domain, String protocol, String urlIndex, String addPrefix) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
@@ -55,14 +56,13 @@ public class AsyncFetch extends Base {
         } else {
             this.urlIndex = urlIndex;
         }
-        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath)
+                      String protocol, String urlIndex, String keyPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, rmPrefix,
-                savePath, 0);
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, savePath, 0);
     }
 
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
@@ -110,7 +110,7 @@ public class AsyncFetch extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        Response response = fetch(line.get(urlIndex), keyPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
+        Response response = fetch(line.get(urlIndex), addPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
         return line.get(urlIndex) + "\t" + HttpResponseUtils.responseJson(response);
     }
 }

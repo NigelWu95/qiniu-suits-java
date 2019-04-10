@@ -16,16 +16,15 @@ public class QiniuPfop extends Base {
     private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("pfop", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+                     String fopsIndex, String savePath, int saveIndex) throws IOException {
+        super("pfop", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         set(pipeline, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateFop(String bucket, String pipeline, String fopsIndex, String rmPrefix) throws IOException {
+    public void updateFop(String bucket, String pipeline, String fopsIndex) throws IOException {
         this.bucket = bucket;
         set(pipeline, fopsIndex);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String pipeline, String fopsIndex) throws IOException {
@@ -35,8 +34,8 @@ public class QiniuPfop extends Base {
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String rmPrefix, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, rmPrefix, savePath, 0);
+                     String fopsIndex, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, savePath, 0);
     }
 
     public QiniuPfop clone() throws CloneNotSupportedException {

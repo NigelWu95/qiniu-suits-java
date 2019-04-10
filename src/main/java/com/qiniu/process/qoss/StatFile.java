@@ -26,19 +26,18 @@ public class StatFile extends Base {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                    String savePath, String format, String separator, int saveIndex) throws IOException {
-        super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator, int saveIndex) throws IOException {
+        super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         set(format, separator);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateStat(String bucket, String format, String separator, String rmPrefix) throws IOException {
+    public void updateStat(String bucket, String format, String separator) throws IOException {
         this.bucket = bucket;
         set(format, separator);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String format, String separator) throws IOException {
@@ -52,9 +51,9 @@ public class StatFile extends Base {
         else typeConverter = new QOSObjToString(format, separator, null);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                    String savePath, String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, format, separator, 0);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
     public StatFile clone() throws CloneNotSupportedException {

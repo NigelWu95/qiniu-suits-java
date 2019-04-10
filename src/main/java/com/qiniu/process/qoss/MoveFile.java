@@ -16,37 +16,38 @@ public class MoveFile extends Base {
 
     private String toBucket;
     private String newKeyIndex;
-    private String keyPrefix;
+    private String addPrefix;
+    private String rmPrefix;
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
+                    String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
-                rmPrefix, savePath, saveIndex);
-        set(toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix);
+                savePath, saveIndex);
+        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateMove(String bucket, String toBucket, String newKeyIndex, String keyPrefix,
+    public void updateMove(String bucket, String toBucket, String newKeyIndex, String addPrefix,
                            boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
         this.bucket = bucket;
-        set(toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix);
-        this.rmPrefix = rmPrefix;
+        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
     }
 
-    private void set(String toBucket, String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix) throws IOException {
+    private void set(String toBucket, String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix)
+            throws IOException {
         this.toBucket = toBucket;
         if (newKeyIndex == null || "".equals(newKeyIndex)) {
             this.newKeyIndex = "key";
             if (toBucket == null || "".equals(toBucket)) {
                 // rename 操作时未设置 new-key 的条件判断
                 if (forceIfOnlyPrefix) {
-                    if (keyPrefix == null || "".equals(keyPrefix))
+                    if (addPrefix == null || "".equals(addPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
                 } else {
                     throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
@@ -56,7 +57,8 @@ public class MoveFile extends Base {
         } else {
             this.newKeyIndex = newKeyIndex;
         }
-        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -83,9 +85,9 @@ public class MoveFile extends Base {
         batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
-                batchOperations.addRenameOp(bucket, line.get("key"), keyPrefix + line.get(newKeyIndex));
+                batchOperations.addRenameOp(bucket, line.get("key"), addPrefix + line.get(newKeyIndex));
             } else {
-                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, keyPrefix + line.get(newKeyIndex));
+                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, addPrefix + line.get(newKeyIndex));
             }
         });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
@@ -95,10 +97,10 @@ public class MoveFile extends Base {
     protected String singleResult(Map<String, String> line) throws QiniuException {
         if (toBucket == null || "".equals(toBucket)) {
             return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"),
-                    keyPrefix + line.get(newKeyIndex)));
+                    addPrefix + line.get(newKeyIndex)));
         } else {
             return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket,
-                    keyPrefix + line.get(newKeyIndex)));
+                    addPrefix + line.get(newKeyIndex)));
         }
     }
 }

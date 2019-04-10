@@ -25,17 +25,16 @@ public class PfopCommand extends Base {
     private ArrayList<JsonObject> pfopConfigs;
     private MediaManager mediaManager;
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix,
-                       String savePath, int saveIndex) throws IOException {
-        super("pfopcmd", "", "", null, null, rmPrefix, savePath, saveIndex);
+    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath,
+                       int saveIndex) throws IOException {
+        super("pfopcmd", "", "", null, null, savePath, saveIndex);
         set(avinfoIndex, jsonPath, hasDuration, hasSize);
         this.mediaManager = new MediaManager();
     }
 
-    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix)
+    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize)
             throws IOException {
         set(avinfoIndex, jsonPath, hasDuration, hasSize);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
@@ -68,7 +67,7 @@ public class PfopCommand extends Base {
 
     public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix,
                        String savePath) throws IOException {
-        this(avinfoIndex, jsonPath, hasDuration, hasSize, rmPrefix, savePath, 0);
+        this(avinfoIndex, jsonPath, hasDuration, hasSize, savePath, 0);
     }
 
     @SuppressWarnings("unchecked")

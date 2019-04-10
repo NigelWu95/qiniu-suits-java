@@ -21,7 +21,7 @@ public class QueryPfopResult extends Base {
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
                            int saveIndex) throws IOException {
-        super("pfopresult", "", "", configuration, null, null, savePath, saveIndex);
+        super("pfopresult", "", "", configuration, null, savePath, saveIndex);
         set(protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
@@ -46,11 +46,6 @@ public class QueryPfopResult extends Base {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
         pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);
         return pfopResult;
-    }
-
-    @Override
-    protected Map<String, String> formatLine(Map<String, String> line) {
-        return line;
     }
 
     @Override

@@ -20,23 +20,22 @@ public class ChangeType extends Base {
     private BucketManager bucketManager;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
-                      String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("type", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+                      String savePath, int saveIndex) throws IOException {
+        super("type", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.type = type;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateType(String bucket, int type, String rmPrefix) {
+    public void updateType(String bucket, int type) {
         this.bucket = bucket;
         this.type = type;
-        this.rmPrefix = rmPrefix;
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
-                      String rmPrefix, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, type, rmPrefix, savePath, 0);
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, type, savePath, 0);
     }
 
     public ChangeType clone() throws CloneNotSupportedException {
