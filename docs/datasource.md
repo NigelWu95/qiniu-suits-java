@@ -99,11 +99,13 @@ prefix-right=
 ```
 parse=
 separator=
+rm-keyPrefix=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
 |parse| 字符串 json/tab/csv| 数据行格式，json 表示使用 json 解析，tab 表示使用分隔符（默认 "\t"）分割解析，csv 表示使用 "," 分割解析|  
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
+|rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 "/" 前缀|  
 
 
 ## 命令行方式

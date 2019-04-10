@@ -12,7 +12,6 @@ pfop-config=
 duration=
 size=
 avinfo-index=
-rm-prefix=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
@@ -21,7 +20,6 @@ rm-prefix=
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
 |avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），必须指定才能进行处理|  
-|rm-prefix| 字符串| 表示将得到输入的原文件名去除存在的指定前缀后再进行指令的生成，用于输入的文件名可能比实际空间的文件名多了前缀的情况|  
 
 #### # pfop-config 配置文件写法如下：
 ```
