@@ -23,7 +23,7 @@ public class FileInput implements IDataSource {
     private String filePath;
     private String parseType;
     private String separator;
-    private String rmPrefix;
+    private String rmKeyPrefix;
     private Map<String, String> indexMap;
     private int unitLen;
     private int threads;
@@ -37,12 +37,12 @@ public class FileInput implements IDataSource {
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public FileInput(String filePath, String parseType, String separator, String rmPrefix, Map<String, String> indexMap,
+    public FileInput(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
                      int unitLen, int threads) {
         this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
-        this.rmPrefix = rmPrefix;
+        this.rmKeyPrefix = rmKeyPrefix;
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
@@ -84,7 +84,7 @@ public class FileInput implements IDataSource {
 
     private void export(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, rmPrefix, indexMap);
+        ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;

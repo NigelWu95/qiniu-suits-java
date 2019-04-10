@@ -6,6 +6,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -63,14 +64,19 @@ public class CopyFile extends Base {
     @Override
     synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
-                addPrefix + line.get(newKeyIndex)));
+        lineList.forEach(line -> {
+            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+            line.put(newKeyIndex, toKey);
+            batchOperations.addCopyOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
+        });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpResponseUtils.getResult(
-                bucketManager.copy(bucket, line.get("key"), toBucket, addPrefix + line.get(newKeyIndex), false));
+        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+        line.put(newKeyIndex, toKey);
+        return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
+                addPrefix + toKey, false));
     }
 }

@@ -21,7 +21,7 @@ public class CommonParams {
     private BaseFieldsFilter baseFieldsFilter;
     private SeniorChecker seniorChecker;
     private String process;
-    private String rmPrefix;
+    private String rmKeyPrefix;
     private String source;
     private String parse;
     private String separator;
@@ -55,7 +55,7 @@ public class CommonParams {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
-        rmPrefix = entryParam.getValue("rm-prefix", null);
+        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
         setBaseFieldsFilter();
         setSeniorChecker();
@@ -472,8 +472,8 @@ public class CommonParams {
         this.process = process;
     }
 
-    public void setRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
+    public void setRmKeyPrefix(String rmKeyPrefix) {
+        this.rmKeyPrefix = rmKeyPrefix;
     }
 
     public void setSource(String source) {
@@ -564,8 +564,8 @@ public class CommonParams {
         return process;
     }
 
-    public String getRmPrefix() {
-        return rmPrefix;
+    public String getRmKeyPrefix() {
+        return rmKeyPrefix;
     }
 
     public String getSource() {
