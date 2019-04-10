@@ -4,7 +4,6 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.VideoTS;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.RequestUtils;
 
@@ -19,18 +18,17 @@ public class ExportTS extends Base {
     private String urlIndex;
     private M3U8Manager m3U8Manager;
 
-    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
-                    String savePath, int saveIndex) throws IOException {
-        super("exportts", "", "", configuration, null, rmPrefix, savePath, saveIndex);
+    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
+                    int saveIndex) throws IOException {
+        super("exportts", "", "", configuration, null, savePath, saveIndex);
         set(domain, protocol, urlIndex);
         this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
     }
 
-    public void updateExport(String domain, String protocol, String urlIndex, String rmPrefix)
+    public void updateExport(String domain, String protocol, String urlIndex)
             throws IOException {
         set(domain, protocol, urlIndex);
         this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String domain, String protocol, String urlIndex) throws IOException {
@@ -48,9 +46,9 @@ public class ExportTS extends Base {
         }
     }
 
-    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
-                    String savePath) throws IOException {
-        this(configuration, domain, protocol, urlIndex, rmPrefix, savePath, 0);
+    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String savePath)
+            throws IOException {
+        this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
     public ExportTS clone() throws CloneNotSupportedException {

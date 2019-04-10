@@ -16,17 +16,16 @@ public class QueryAvinfo extends Base {
     private String urlIndex;
     private MediaManager mediaManager;
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
-                       String savePath, int saveIndex) throws IOException {
-        super("avinfo", "", "", configuration, null, rmPrefix, savePath, saveIndex);
+    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
+                       int saveIndex) throws IOException {
+        super("avinfo", "", "", configuration, null, savePath, saveIndex);
         set(protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public void updateQuery(String protocol, String domain, String urlIndex, String rmPrefix) throws IOException {
+    public void updateQuery(String protocol, String domain, String urlIndex) throws IOException {
         set(protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String protocol, String domain, String urlIndex) throws IOException {
@@ -44,9 +43,9 @@ public class QueryAvinfo extends Base {
         }
     }
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
-                       String savePath) throws IOException {
-        this(configuration, domain, protocol, urlIndex, rmPrefix, savePath, 0);
+    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath)
+            throws IOException {
+        this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {

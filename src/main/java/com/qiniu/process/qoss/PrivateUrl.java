@@ -15,8 +15,8 @@ public class PrivateUrl extends Base {
     private long expires;
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("privateurl", accessKey, secretKey, null, null, rmPrefix, savePath, saveIndex);
+                      String savePath, int saveIndex) throws IOException {
+        super("privateurl", accessKey, secretKey, null, null, savePath, saveIndex);
         this.auth = Auth.create(accessKey, secretKey);
         set(domain, protocol, urlIndex, expires);
     }
@@ -24,7 +24,6 @@ public class PrivateUrl extends Base {
     public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
             throws IOException {
         set(domain, protocol, urlIndex, expires);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String domain, String protocol, String urlIndex, long expires) throws IOException {
@@ -44,8 +43,8 @@ public class PrivateUrl extends Base {
     }
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String rmPrefix, String savePath) throws IOException {
-        this(accessKey, secretKey, domain, protocol, urlIndex, expires, rmPrefix, savePath, 0);
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {

@@ -18,17 +18,16 @@ public class QueryHash extends Base {
     private FileChecker fileChecker;
 
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
-                     String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("qhash", "", "", configuration, null, rmPrefix, savePath, saveIndex);
+                     String savePath, int saveIndex) throws IOException {
+        super("qhash", "", "", configuration, null, savePath, saveIndex);
         set(algorithm, protocol, domain, urlIndex);
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
     }
 
-    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex, String rmPrefix)
+    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex)
             throws IOException {
         set(algorithm, protocol, domain, urlIndex);
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String algorithm, String protocol, String domain, String urlIndex) throws IOException {
@@ -48,8 +47,8 @@ public class QueryHash extends Base {
     }
 
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
-                     String rmPrefix, String savePath) throws IOException {
-        this(configuration, algorithm, protocol, domain, urlIndex, rmPrefix, savePath, 0);
+                     String savePath) throws IOException {
+        this(configuration, algorithm, protocol, domain, urlIndex, savePath, 0);
     }
 
     public QueryHash clone() throws CloneNotSupportedException {

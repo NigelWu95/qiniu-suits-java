@@ -22,7 +22,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected String accessKey;
     protected String secretKey;
     protected String bucket;
-    protected String rmPrefix;
     protected int batchSize;
     protected int retryTimes = 5;
     protected int saveIndex;
@@ -30,7 +29,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected FileMap fileMap;
 
     public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
-                String rmPrefix, String savePath, int saveIndex) throws IOException {
+                String savePath, int saveIndex) throws IOException {
         if (ProcessUtils.needConfiguration(processName) && configuration == null)
             throw new IOException("please set configuration, it can not be null.");
         this.processName = processName;
@@ -38,7 +37,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.bucket = bucket;
-        this.rmPrefix = rmPrefix;
         this.saveIndex = saveIndex;
         this.savePath = savePath;
         this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
@@ -79,11 +77,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return base;
-    }
-
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-        return line;
     }
 
     /**
@@ -156,12 +149,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            try {
-                line = formatLine(line);
-                return true;
-            } catch (IOException e) {
-                errorLineList.add(resultInfo(line) + "\t" + e.getMessage());
+            if (line.get("key") == null) {
+                errorLineList.add(resultInfo(line) + "\tempty key of line.");
                 return false;
+            } else {
+                return true;
             }
         }).collect(Collectors.toList());
         if (errorLineList.size() > 0) fileMap.writeError(String.join("\n", errorLineList), false);
@@ -222,10 +214,8 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         Map<String, String> line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            try {
-                line = formatLine(line);
-            } catch (IOException e) {
-                fileMap.writeError(resultInfo(line) + "\t" + e.getMessage(), false);
+            if (line.get("key") == null) {
+                fileMap.writeError(resultInfo(line) + "\tempty key of line.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会

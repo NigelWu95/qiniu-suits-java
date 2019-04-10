@@ -19,23 +19,22 @@ public class ChangeLifecycle extends Base {
     private BucketManager bucketManager;
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
-                           String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("lifecycle", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+                           String savePath, int saveIndex) throws IOException {
+        super("lifecycle", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.days = days;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateLifecycle(String bucket, int days, String rmPrefix) {
+    public void updateLifecycle(String bucket, int days) {
         this.bucket = bucket;
         this.days = days;
-        this.rmPrefix = rmPrefix;
     }
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
-                           String rmPrefix, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, days, rmPrefix, savePath, 0);
+                           String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, days, savePath, 0);
     }
 
     public ChangeLifecycle clone() throws CloneNotSupportedException {

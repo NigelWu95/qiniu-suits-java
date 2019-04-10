@@ -14,20 +14,19 @@ public class MirrorFile extends Base {
 
     private BucketManager bucketManager;
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                      String savePath, int saveIndex) throws IOException {
-        super("mirror", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                      int saveIndex) throws IOException {
+        super("mirror", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateMirror(String bucket, String rmPrefix) {
+    public void updateMirror(String bucket) {
         this.bucket = bucket;
-        this.rmPrefix = rmPrefix;
     }
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, 0);
     }
 
     public MirrorFile clone() throws CloneNotSupportedException {
