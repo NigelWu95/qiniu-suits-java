@@ -327,10 +327,11 @@ public class CommonParams {
     }
 
     private void setIndex(String indexName, String index, boolean check) throws IOException {
-        if (indexName != null && !"-1".equals(indexName) && check) {
-            if (indexMap.containsKey(indexName)) {
-                throw new IOException("the index: " + indexName + "is already in map: " + indexMap);
-            }
+        if (check && indexMap.containsKey(indexName)) {
+            throw new IOException("index: " + indexName + " is already used by \"" + indexMap.get(indexName)
+                    + "-index=" + indexName + "\"");
+        }
+        if (indexName != null && !"-1".equals(indexName)) {
             if ("json".equals(parse) || "object".equals(parse)) {
                 indexMap.put(indexName, index);
             } else if ("tab".equals(parse) || "csv".equals(parse)) {
@@ -363,13 +364,15 @@ public class CommonParams {
             setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
             setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
             setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
-            // 默认索引
-            if (indexMap.size() == 0) {
-                indexMap.put("json".equals(parse) ? "key" : "0", "key");
+            // 默认索引包含 key
+            if (!indexMap.containsValue("key")) {
+                try {
+                    setIndex("json".equals(parse) ? "key" : "0", "key", true);
+                } catch (IOException e) {
+                    throw new IOException("you need to set indexes with key's index not default value, " +
+                            "because the default key's" + e.getMessage());
+                }
             }
-            if (ProcessUtils.needUrl(process) && !indexMap.containsValue("key") && !indexMap.containsValue("url"))
-                throw new IOException("please check your indexes settings, miss a key index in first position or miss" +
-                        " url-index parameter which the process: " + process + " need.");
         } else {
             // 资源列举情况下设置默认索引
             if (indexMap.size() == 0) {
