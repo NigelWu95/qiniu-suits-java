@@ -8,9 +8,8 @@ import com.qiniu.config.JsonFile;
 import com.qiniu.model.qdora.Avinfo;
 import com.qiniu.model.qdora.VideoStream;
 import com.qiniu.process.Base;
-import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.JsonConvertUtils;
-import com.qiniu.util.UrlSafeBase64;
+import com.qiniu.util.PfopUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -104,28 +103,12 @@ public class PfopCommand extends Base {
                 videoStream = avinfo.getVideoStream();
                 if (videoStream == null) throw new Exception("videoStream is null");
                 if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
-                    items.add(key + "\t" + generateFopCmd(key, pfopConfig) + other.toString());
+                    items.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
                 }
             } catch (Exception e) {
                 throw new QiniuException(e, e.getMessage());
             }
         }
         return String.join("\n", items);
-    }
-
-    private String generateFopCmd(String srcKey, JsonObject pfopJson) throws IOException {
-        String saveAs = pfopJson.get("saveas").getAsString();
-        String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
-        if (saveAsKey.contains("$(key)")) {
-            if (saveAsKey.contains(".")) {
-                String[] nameParts = saveAsKey.split("(\\$\\(key\\)|\\.)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixWithExt(nameParts[0], srcKey, nameParts[1], nameParts[2]);
-            } else {
-                String[] nameParts = saveAsKey.split("\\$\\(key\\)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixKeepExt(nameParts[0], srcKey, nameParts[1]);
-            }
-            saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
-        }
-        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(saveAs);
     }
 }
