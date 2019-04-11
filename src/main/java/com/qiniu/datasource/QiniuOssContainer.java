@@ -28,6 +28,11 @@ public class QiniuOssContainer extends OssContainer<FileInfo> {
     }
 
     @Override
+    public String getSourceName() {
+        return "qiniu";
+    }
+
+    @Override
     protected ITypeConvert<FileInfo, Map<String, String>> getNewMapConverter() {
         return new QOSObjToMap(indexMap);
     }

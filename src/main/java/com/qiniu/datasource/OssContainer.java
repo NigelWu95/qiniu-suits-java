@@ -238,7 +238,7 @@ public abstract class OssContainer<E> implements IDataSource {
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
             String identifier = String.valueOf(j + 1 + order);
-            FileMap fileMap = new FileMap(savePath, "list", identifier);
+            FileMap fileMap = new FileMap(savePath, getSourceName(), identifier);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {

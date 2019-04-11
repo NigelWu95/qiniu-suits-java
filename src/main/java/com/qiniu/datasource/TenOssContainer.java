@@ -28,6 +28,11 @@ public class TenOssContainer extends OssContainer<COSObjectSummary> {
     }
 
     @Override
+    public String getSourceName() {
+        return "tencent";
+    }
+
+    @Override
     protected ITypeConvert<COSObjectSummary, Map<String, String>> getNewMapConverter() {
         return new COSObjToMap(indexMap);
     }

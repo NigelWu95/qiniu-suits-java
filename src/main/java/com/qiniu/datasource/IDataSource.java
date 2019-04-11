@@ -8,6 +8,8 @@ import java.util.Map;
 
 public interface IDataSource {
 
+    String getSourceName();
+
     void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields);
 
     void setProcessor(ILineProcess<Map<String, String>> processor);

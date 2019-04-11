@@ -5,16 +5,16 @@
 七牛云接口使用套件（可以工具形式使用），主要针对七牛云存储资源的批量处理进行功能的封装，提供更为简洁的操作方式。
 基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
 #### **高级功能列表：**
-- [x] 七牛空间文件并发列举，自定义多前缀、列举开始和结束位置、线程数、结果格式和所需字段等  
+- [x] 云存储文件并发列举，自定义多个前缀、列举开始和结束位置、线程数、结果格式和所需字段等，**支持七牛云、腾讯云**  
 <details>
 <summary>并发列举算法描述图：点击查看</summary>
 
-![七牛存储文件并发列举算法](docs/云存储文件并发列举算法.jpg)
+![云存储文件并发列举算法](docs/云存储文件并发列举算法.jpg)
 </details>  
 
-- [x] 七牛空间文件按照字段过滤，按照日期范围、文件名（前缀、后缀、包含）、mime 类型等字段正向及向筛选目标文件  
+- [x] 云存储空间文件按照字段过滤，按照日期范围、文件名（前缀、后缀、包含）、mime 类型等字段正向及向筛选目标文件  
 - [x] 批量进行七牛存储文件的 API 操作，批量删除、复制文件或查询文件信息、异步抓取文件、转码及查询转码结果等等  
-- [x] 检查七牛空间中所有资源文件后缀名 ext 和 mime-type 类型是否对应，过滤异常文件列表  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否对应，过滤异常文件列表  
 - [x] 读取 m3u8 文件 URL 导出 ts URL 列表  
 
 ## 使用介绍
@@ -30,7 +30,7 @@ maven 引入:
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>4.72</version>
+  <version>5.0</version>
 </dependency>
 ```   
 **务必使用最新版本**
@@ -43,47 +43,50 @@ java -jar qsuits-x.x.jar -config=config.txt
 ```
 配置文件中参数可设置形如：  
 ```
-source-type=list (v.2.11 及以上版本也可以使用 source=list，或者不设置该参数)
+source=qiniu
 ak=
 sk=
 bucket=
 ```
-*source-type=list 可选择放置在命令行或者配置文件中*  
+*source=qiniu 可选择放置在命令行或者配置文件中*  
 
 (2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
 resources 文件夹中，文件名为 `qiniu.properties` 或 `.qiniu.properties`，运行命令为：  
 ```
-java -jar qsuits-x.x.jar [-source-type=list]
+java -jar qsuits-x.x.jar [-source=qiniu]
 ```
 *配置参数同上述方式*  
 
 (3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下所有参数可以完全从命令行指定，形式为：  
  **`-<property-name>=<value>`**，如  
 ```
-java -jar qsuits-x.x.jar [-source=list] -ak=<ak> -sk=<sk> -path=<path>
+java -jar qsuits-x.x.jar [-source=qiniu] -ak=<ak> -sk=<sk> -path=<path>
 ```
-*在 v2.11 及以上版本，source 效果与 source-type 相同，也可以不设置该输入参数，由程序自动判断*  
 
 ### 4 数据源
-【说明】**在 v2.11 及以上版本，取消了设置该参数的强制性，可以进行指定，或者使用简化参数名 source=<source>**  
-支持从不同数据源读取到数据进行后续处理, 通过 **source-type** 来指定数据源方式:  
-**source-type=list/file** (命令行方式则指定为 **-source-type=list/file**)  
-`source-type=list` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/list.config)  
-`source-type=file` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/file.config)  
+通过 **source/source-type=** 或者 **path=** 来指定:  
+`source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
+`source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
+**在 v2.11 及以上版本，取消了设置该参数的强制性，可以使用 source/source-type 进行指定，如果不显式指定则根据 path 参数来自动判断：  
+`path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
+`path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
+`path=../<file-path>` 表示从本地文件中读取资源列表  
+当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**  
+
 ##### 常用参数
 ```
-source-type=list/file (v.2.11 及以上版本也可以使用 source=list/file，或者不设置该参数)
+source=qiniu/local  
 path=
 threads=30
 unit-len=10000
 ```  
-##### list 参数：
+##### 云存储文件列举（qiniu/tencent）参数：
 ```
 ak=
 sk=
 bucket=
 ```
-##### file 参数：
+##### 本地文件读取（local）参数：
 ```
 parse=
 separator=
@@ -93,8 +96,8 @@ indexes=0,1,2
 
 ##### *关于并发处理*：  
 ```
-(1) list 源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的加速列举，线程数在配置文件中指定，自动按照线程数检索前缀并执行并发列举。  
-(2) file 源，从本地读取目录下的所有文件，一个文件进入一个线程处理，最大线程数由配置文件指定，与输入文件数之间小的值作为并发数。    
+(1) 云存储数据源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的加速列举，线程数在配置文件中指定，自动按照线程数检索前缀并执行并发列举。  
+(2) 本地文件数据源，从本地读取路径下的所有 .txt 文件，一个文件进入一个线程处理，最大线程数由配置文件指定，与输入文件数之间小的值作为并发数。    
 ```
 **并发处理效果依赖机器性能，由于处理时多线程会同时读取大量的数据列表在内存中（默认的单个列表 size 是 10000，用 unit-len 参数设置），因此会占用较
 大的内存，建议在内存高于 16G 的机器上运行，否则可能内存溢出，程序默认线程数为 30，可以参考机器性能适当提高，通常可以设置1-3百个线程，8CPU32G 的机
@@ -121,7 +124,7 @@ indexes=0,1,2
 `f-check-config` 自定义资源字段规范对应关系列表的配置文件，格式为 json，配置举例：[check-config 配置](../resources/check-config.json)|  
 `f-check-rewrite` 是否完全使用自定义的规范列表进行检查，默认为 false，程序包含的默认字段规范对应关系配置见：[check 默认配置](../resources/check.json)|  
 [filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可
-以直接持久化保存结果，如通过 list/file 源获取列表并过滤后进行保存，并且可设置 save-total=true/false 来选择是否将过滤之前的记录进行完整保存。  
+以直接持久化保存结果，如通过 qiniu 源获取文件列表过滤后进行保存，可设置 save-total=true/false 来选择是否将列举到的完整记录进行保存。  
 
 #### 2. 输出结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
@@ -131,14 +134,14 @@ indexes=0,1,2
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
 进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。
 **默认情况：**  
-（1）file 源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）list 源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
+（1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
+（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
 
 *--* 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
 选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
-**持数据源久化结果的文件名为 "\<source-name\>_success/error_\<order\>.txt"：  
-（1）list 源 =》 "bucketlist_success/error_\<order\>.txt"  
-（2）file 源 =》 "fileinput_success/error_\<order\>.txt"  
+**持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
+（1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
+（2）local 源 =》 "local_success_\<order\>.txt"  
 如果设置了过滤参数，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
 "\<process\>_success/error_\<order\>.txt"**  
 **process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功

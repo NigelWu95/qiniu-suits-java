@@ -49,7 +49,13 @@ public class FileInput implements IDataSource {
         this.saveTotal = false; // 默认全记录不保存
     }
 
+    @Override
+    public String getSourceName() {
+        return "local";
+    }
+
     // 不调用则各参数使用默认值
+    @Override
     public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.savePath = savePath;
         this.saveTotal = saveTotal;
@@ -58,11 +64,13 @@ public class FileInput implements IDataSource {
         this.rmFields = rmFields;
     }
 
+    @Override
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes;
     }
 
     // 通过 commonParams 来更新基本参数
+    @Override
     public void updateSettings(CommonParams commonParams) {
         this.filePath = commonParams.getPath();
         this.parseType = commonParams.getParse();
@@ -78,6 +86,7 @@ public class FileInput implements IDataSource {
         this.rmFields = commonParams.getRmFields();
     }
 
+    @Override
     public void setProcessor(ILineProcess<Map<String, String>> processor) {
         this.processor = processor;
     }
@@ -138,7 +147,7 @@ public class FileInput implements IDataSource {
             String order = String.valueOf(i);
             String key = keys.get(i);
             BufferedReader reader = readersMap.get(key);
-            FileMap fileMap = new FileMap(savePath, "input", order);
+            FileMap fileMap = new FileMap(savePath, getSourceName(), order);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
@@ -165,6 +174,7 @@ public class FileInput implements IDataSource {
         }
     }
 
+    @Override
     public void export() throws Exception {
         FileMap initFileMap = new FileMap(savePath);
         File sourceFile = new File(filePath);
