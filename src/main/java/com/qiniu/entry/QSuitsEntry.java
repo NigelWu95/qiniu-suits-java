@@ -228,7 +228,7 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
         ILineProcess<Map<String, String>> processor = null;
-        if (configuration != null) configuration = getDefaultConfiguration();
+        if (configuration == null) configuration = getDefaultConfiguration();
         switch (process) {
             case "status": processor = getChangeStatus(); break;
             case "type": processor = getChangeType(); break;
