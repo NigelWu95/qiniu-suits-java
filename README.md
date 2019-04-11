@@ -82,7 +82,10 @@ unit-len=10000
 ```  
 ##### 云存储文件列举（qiniu/tencent）参数：
 ```
+# qiniu 需要设置 ak
 ak=
+# tencent 需要设置 sid
+sid=
 sk=
 bucket=
 ```
