@@ -70,25 +70,9 @@ public class QiniuPfop extends Base {
     protected String singleResult(Map<String, String> line) throws QiniuException {
         List<String> resultList = new ArrayList<>();
         for (JsonObject pfopConfig : pfopConfigs) {
-            String cmd = generateFopCmd(line.get("key"), pfopConfig);
+            String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
             resultList.add(line.get("key") + "\t" + cmd + "\t" + operationManager.pfop(bucket, line.get("key"), cmd, pfopParams));
         }
         return String.join("\n", resultList);
-    }
-
-    private String generateFopCmd(String srcKey, JsonObject pfopJson) {
-        String saveAs = pfopJson.get("saveas").getAsString();
-        String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
-        if (saveAsKey.contains("$(key)")) {
-            if (saveAsKey.contains(".")) {
-                String[] nameParts = saveAsKey.split("(\\$\\(key\\)|\\.)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixWithExt(nameParts[0], srcKey, nameParts[1], nameParts[2]);
-            } else {
-                String[] nameParts = saveAsKey.split("\\$\\(key\\)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixKeepExt(nameParts[0], srcKey, nameParts[1]);
-            }
-            saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
-        }
-        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(saveAs);
     }
 }
