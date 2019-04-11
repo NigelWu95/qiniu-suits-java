@@ -1,41 +1,58 @@
 package com.qiniu.process.qdora;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
+import com.qiniu.config.JsonFile;
 import com.qiniu.process.Base;
 import com.qiniu.sdk.OperationManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class QiniuPfop extends Base {
 
     private StringMap pfopParams;
     private String fopsIndex;
+    private ArrayList<JsonObject> pfopConfigs;
     private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String savePath, int saveIndex) throws IOException {
+                     String fopsIndex, String jsonPath, String savePath, int saveIndex) throws IOException {
         super("pfop", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
-        set(pipeline, fopsIndex);
+        set(pipeline, fopsIndex, jsonPath);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateFop(String bucket, String pipeline, String fopsIndex) throws IOException {
+    public void updateFop(String bucket, String pipeline, String fopsIndex, String jsonPath) throws IOException {
         this.bucket = bucket;
-        set(pipeline, fopsIndex);
+        set(pipeline, fopsIndex, jsonPath);
     }
 
-    private void set(String pipeline, String fopsIndex) throws IOException {
+    private void set(String pipeline, String fopsIndex, String jsonPath) throws IOException {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
+        this.pfopConfigs = new ArrayList<>();
+        if (jsonPath == null || "".equals(jsonPath)) return;
+        JsonFile jsonFile = new JsonFile(jsonPath);
+        for (String key : jsonFile.getKeys()) {
+            JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
+            if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
+                throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
+            else if (!jsonObject.get("saveas").getAsString().contains(":"))
+                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
+            jsonObject.addProperty("name", key);
+            this.pfopConfigs.add(jsonObject);
+        }
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, savePath, 0);
+                     String fopsIndex, String jsonPath, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, jsonPath, savePath, 0);
     }
 
     public QiniuPfop clone() throws CloneNotSupportedException {
@@ -51,6 +68,27 @@ public class QiniuPfop extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        return operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
+        List<String> resultList = new ArrayList<>();
+        for (JsonObject pfopConfig : pfopConfigs) {
+            String cmd = generateFopCmd(line.get("key"), pfopConfig);
+            resultList.add(line.get("key") + "\t" + cmd + "\t" + operationManager.pfop(bucket, line.get("key"), cmd, pfopParams));
+        }
+        return String.join("\n", resultList);
+    }
+
+    private String generateFopCmd(String srcKey, JsonObject pfopJson) {
+        String saveAs = pfopJson.get("saveas").getAsString();
+        String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
+        if (saveAsKey.contains("$(key)")) {
+            if (saveAsKey.contains(".")) {
+                String[] nameParts = saveAsKey.split("(\\$\\(key\\)|\\.)");
+                saveAsKey = FileNameUtils.addPrefixAndSuffixWithExt(nameParts[0], srcKey, nameParts[1], nameParts[2]);
+            } else {
+                String[] nameParts = saveAsKey.split("\\$\\(key\\)");
+                saveAsKey = FileNameUtils.addPrefixAndSuffixKeepExt(nameParts[0], srcKey, nameParts[1]);
+            }
+            saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
+        }
+        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(saveAs);
     }
 }

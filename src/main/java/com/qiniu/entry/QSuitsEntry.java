@@ -239,12 +239,12 @@ public class QSuitsEntry {
             case "delete": processor = getDeleteFile(); break;
             case "asyncfetch": processor = getAsyncFetch(); break;
             case "avinfo": processor = getQueryAvinfo(); break;
+            case "pfopcmd": processor = getPfopCommand(); break;
             case "pfop": processor = getPfop(); break;
             case "pfopresult": processor = getPfopResult(); break;
             case "qhash": processor = getQueryHash(); break;
             case "stat": processor = getStatFile(); break;
             case "privateurl": processor = getPrivateUrl(); break;
-            case "pfopcmd": processor = getPfopCommand(); break;
             case "mirror": processor = getMirrorFile(); break;
             case "exportts": processor = getExportTs(); break;
         }
@@ -324,6 +324,17 @@ public class QSuitsEntry {
         return new QueryAvinfo(configuration, domain, protocol, urlIndex, savePath);
     }
 
+    private ILineProcess<Map<String, String>> getPfopCommand() throws IOException {
+        String avinfoIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
+        String configJson = entryParam.getValue("pfop-config");
+        String duration = entryParam.getValue("duration", "false");
+        duration = commonParams.checked(duration, "duration", "(true|false)");
+        String size = entryParam.getValue("size", "false");
+        size = commonParams.checked(size, "size", "(true|false)");
+        String rmPrefix = entryParam.getValue("rm-prefix", null);
+        return new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), rmPrefix, savePath);
+    }
+
     private ILineProcess<Map<String, String>> getPfop() throws IOException {
         String fopsIndex = commonParams.containIndex("fops") ? "fops" : null;
         String forcePublic = entryParam.getValue("force-public", "false");
@@ -332,7 +343,8 @@ public class QSuitsEntry {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
-        return new QiniuPfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, savePath);
+        String configJson = entryParam.getValue("pfop-config", null);
+        return new QiniuPfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, configJson, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
@@ -364,17 +376,6 @@ public class QSuitsEntry {
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
         return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
-    }
-
-    private ILineProcess<Map<String, String>> getPfopCommand() throws IOException {
-        String avinfoIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
-        String configJson = entryParam.getValue("pfop-config");
-        String duration = entryParam.getValue("duration", "false");
-        duration = commonParams.checked(duration, "duration", "(true|false)");
-        String size = entryParam.getValue("size", "false");
-        size = commonParams.checked(size, "size", "(true|false)");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile() throws IOException {
