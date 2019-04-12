@@ -191,6 +191,8 @@ public abstract class OssContainer<E> implements IDataSource {
     /**
      * 生成 prefix 前缀下的列举对象
      * @param prefix 指定的前缀参数
+     * @param marker 指定的列举开始 marker
+     * @param end 指定的列举结束位置（文件名或文件名前缀）
      * @return 返回生成的范型列举对象
      * @throws SuitsException 生成列举对象失败抛出的异常
      */
