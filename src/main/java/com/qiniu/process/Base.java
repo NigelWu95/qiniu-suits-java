@@ -94,7 +94,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @return 返回执行响应信息的字符串
      * @throws QiniuException 执行失败抛出的异常
      */
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         return null;
     }
 
@@ -197,9 +197,9 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * 单个文件进行操作的方法，返回操作的结果字符串，要求子类必须实现该方法，支持单个资源依次请求操作
      * @param line 输入 line
      * @return 操作结果的字符串
-     * @throws QiniuException 操作失败时的返回
+     * @throws IOException 操作失败时的返回
      */
-    abstract protected String singleResult(Map<String, String> line) throws QiniuException;
+    abstract protected String singleResult(Map<String, String> line) throws IOException;
 
     /**
      * 处理 singleProcess 执行的结果，默认情况下直接使用 resultInfo 拼接 result 成一行执行持久化写入，部分 process 可能对结果做进一步判断
