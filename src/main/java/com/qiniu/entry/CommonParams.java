@@ -2,13 +2,10 @@ package com.qiniu.entry;
 
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFieldsFilter;
 import com.qiniu.process.filtration.SeniorChecker;
-import com.qiniu.storage.BucketManager;
-import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 
@@ -248,23 +245,6 @@ public class CommonParams {
             else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
         } else {
             this.saveSeparator = separator;
-        }
-    }
-
-    private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
-        if (!"".equals(marker) || "".equals(start)) return marker;
-        else {
-            try {
-                FileInfo markerFileInfo = bucketManager.stat(bucket, start);
-                markerFileInfo.key = start;
-                return OSSUtils.calcMarker(markerFileInfo);
-            } catch (QiniuException e) {
-                if (e.code() == 612) {
-                    throw new IOException("start: \"" + start + "\", can not get invalid marker because " + e.error());
-                } else {
-                    throw e;
-                }
-            }
         }
     }
 
