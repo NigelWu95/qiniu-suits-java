@@ -36,8 +36,8 @@ public class QiniuPfop extends Base {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
         else this.fopsIndex = fopsIndex;
-        this.pfopConfigs = new ArrayList<>();
         if (jsonPath == null || "".equals(jsonPath)) return;
+        this.pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getKeys()) {
             JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
@@ -73,11 +73,16 @@ public class QiniuPfop extends Base {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        List<String> resultList = new ArrayList<>();
-        for (JsonObject pfopConfig : pfopConfigs) {
-            String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
-            resultList.add(line.get("key") + "\t" + cmd + "\t" + operationManager.pfop(bucket, line.get("key"), cmd, pfopParams));
+        if (pfopConfigs != null) {
+            List<String> resultList = new ArrayList<>();
+            for (JsonObject pfopConfig : pfopConfigs) {
+                String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
+                resultList.add(line.get("key") + "\t" + cmd + "\t" + operationManager.pfop(bucket, line.get("key"), cmd, pfopParams));
+            }
+            return String.join("\n", resultList);
+        } else {
+            return line.get("key") + "\t" + line.get(fopsIndex) + "\t" + operationManager.pfop(bucket, line.get("key"),
+                    line.get(fopsIndex), pfopParams);
         }
-        return String.join("\n", resultList);
     }
 }
