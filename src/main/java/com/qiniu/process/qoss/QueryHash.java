@@ -59,7 +59,7 @@ public class QueryHash extends Base {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(urlIndex);
+        return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     @Override

@@ -37,6 +37,6 @@ public class MirrorFile extends Base {
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         bucketManager.prefetch(bucket, line.get("key"));
-        return line.get("key") + "\t" + "200";
+        return "200"; // 返回当作 200 当作成功的状态码
     }
 }

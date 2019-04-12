@@ -10,6 +10,7 @@ import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +54,10 @@ public class QueryPfopResult extends Base {
         return line.get(pidIndex);
     }
 
+    // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
+    @Override
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {}
+
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
@@ -63,13 +68,27 @@ public class QueryPfopResult extends Base {
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }
-            List<String> items = new ArrayList<>();
-            // 可能有多条转码指令
-            for (Item item : pfopResult.items) {
-                // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
-                items.add(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item));
+            List<String> results = new ArrayList<>();
+            try {
+
+                // 可能有多条转码指令
+                for (Item item : pfopResult.items) {
+                    if (item.code == 0)
+                        fileMap.writeSuccess(pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                    else if (item.code == 3)
+                        fileMap.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
+                                JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                    else if (item.code == 4)
+                        fileMap.writeKeyFile("code_4", item.code + "\t" + line.get(pidIndex) + "\t" +
+                                JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                    else
+                        fileMap.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
+                                JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                }
+            } catch (IOException e) {
+                throw new QiniuException(e, e.getMessage());
             }
-            return String.join("\n", items);
+            return String.join("\n", results);
         } else {
             throw new QiniuException(null, "empty_result");
         }

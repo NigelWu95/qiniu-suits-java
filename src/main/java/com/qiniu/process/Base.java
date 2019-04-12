@@ -99,7 +99,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
-     *
      * 处理 batchOperations 执行的结果，将输入的文件信息和结果对应地记录下来
      * @param processList batch 操作的资源列表
      * @param result batch 操作之后的响应结果
@@ -203,6 +202,17 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     abstract protected String singleResult(Map<String, String> line) throws QiniuException;
 
     /**
+     * 处理 singleProcess 执行的结果，默认情况下直接使用 resultInfo 拼接 result 成一行执行持久化写入，部分 process 可能对结果做进一步判断
+     * 需要重写该方法
+     * @param line 输入的 map 数据
+     * @param result singleResult 的结果字符串
+     * @throws IOException 写入结果失败抛出异常
+     */
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileMap.writeSuccess(resultInfo(line) + "\t" + result, false);
+    }
+
+    /**
      * 对输入的文件信息列表单个进行操作，具体的操作方法取决于 singleResult 方法
      * @param lineList 输入列表
      * @param retryTimes 每一行信息处理时需要的重试次数
@@ -222,7 +232,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             while (retry > 0) {
                 try {
                     result = singleResult(line);
-                    fileMap.writeSuccess(result, false);
+                    parseSingleResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);

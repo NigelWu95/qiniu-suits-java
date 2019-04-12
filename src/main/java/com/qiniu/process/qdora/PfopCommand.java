@@ -83,6 +83,11 @@ public class PfopCommand extends Base {
     }
 
     @Override
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileMap.writeSuccess(result, false);
+    }
+
+    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String key;
         String info;
@@ -90,7 +95,7 @@ public class PfopCommand extends Base {
         StringBuilder other = new StringBuilder();
         VideoStream videoStream;
         List<Integer> scale;
-        List<String> items = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
         for (JsonObject pfopConfig : pfopConfigs) {
             scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
@@ -103,12 +108,12 @@ public class PfopCommand extends Base {
                 videoStream = avinfo.getVideoStream();
                 if (videoStream == null) throw new Exception("videoStream is null");
                 if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
-                    items.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
+                    resultList.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
                 }
             } catch (Exception e) {
                 throw new QiniuException(e, e.getMessage());
             }
         }
-        return String.join("\n", items);
+        return String.join("\n", resultList);
     }
 }

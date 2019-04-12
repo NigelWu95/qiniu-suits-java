@@ -62,6 +62,11 @@ public class ExportTS extends Base {
     }
 
     @Override
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileMap.writeSuccess(result, false);
+    }
+
+    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         try {
             String url = urlIndex != null ? line.get(urlIndex) :
