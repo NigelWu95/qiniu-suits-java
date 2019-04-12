@@ -144,7 +144,7 @@ public class FileInput implements IDataSource {
             // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
             // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-            String order = String.valueOf(i);
+            String order = String.valueOf(i + 1);
             String key = keys.get(i);
             BufferedReader reader = readersMap.get(key);
             FileMap fileMap = new FileMap(savePath, getSourceName(), order);
