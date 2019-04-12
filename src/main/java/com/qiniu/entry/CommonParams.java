@@ -2,12 +2,14 @@ package com.qiniu.entry;
 
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.qiniu.common.Constants;
 import com.qiniu.config.JsonFile;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFieldsFilter;
 import com.qiniu.process.filtration.SeniorChecker;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
+import com.qiniu.util.Base64;
 
 import java.io.IOException;
 import java.util.*;
@@ -262,9 +264,10 @@ public class CommonParams {
                         marker = "";
                     } else {
                         if ("qiniu".equals(source)) {
-                            FileInfo markerFileInfo = new FileInfo();
-                            markerFileInfo.key = jsonCfg.get("start").getAsString();
-                            marker = OSSUtils.calcMarker(markerFileInfo);
+                            JsonObject jsonObject = new JsonObject();
+                            jsonObject.addProperty("k", jsonCfg.get("start").getAsString());
+                            marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
+                                    Base64.URL_SAFE | Base64.NO_WRAP);
                         } else if ("tencent".equals(source)) {
                             marker = jsonCfg.get("start").getAsString();
                         }
