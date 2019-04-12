@@ -82,11 +82,13 @@ unit-len=10000
 ```  
 ##### 云存储文件列举（qiniu/tencent）参数：
 ```
-# qiniu 需要设置 ak
+# qiniu 需要设置 ak、sk
 ak=
-# tencent 需要设置 sid
-sid=
 sk=
+# tencent 需要设置 t-sid、t-sk
+t-sid=
+t-sk=
+
 bucket=
 ```
 ##### 本地文件读取（local）参数：
