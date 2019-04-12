@@ -29,8 +29,8 @@ public class QSuitsEntry {
     private Configuration configuration;
     private ClientConfig clientConfig;
     private String source;
-    private String accessKey;
-    private String secretKey;
+    private String qiniuAccessKey;
+    private String qiniuSecretKey;
     private String bucket;
     private Map<String, String> indexMap;
     private int unitLen;
@@ -79,8 +79,8 @@ public class QSuitsEntry {
 
     private void setMembers() {
         this.source = commonParams.getSource();
-        this.accessKey = commonParams.getAccessKey();
-        this.secretKey = commonParams.getSecretKey();
+        this.qiniuAccessKey = commonParams.getQiniuAccessKey();
+        this.qiniuSecretKey = commonParams.getQiniuSecretKey();
         this.bucket = commonParams.getBucket();
         this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
@@ -181,15 +181,16 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         if (configuration == null) configuration = getDefaultConfiguration();
-        QiniuOssContainer qiniuOssContainer = new QiniuOssContainer(accessKey, secretKey, configuration, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        QiniuOssContainer qiniuOssContainer = new QiniuOssContainer(qiniuAccessKey, qiniuSecretKey, configuration,
+                bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         qiniuOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         qiniuOssContainer.setRetryTimes(retryTimes);
         return qiniuOssContainer;
     }
 
     public TenOssContainer getTenObjectsContainer() {
-        String secretId = commonParams.getSecretId();
+        String secretId = commonParams.getTencentSecretId();
+        String secretKey = commonParams.getTencentSecretKey();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
@@ -253,17 +254,17 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getChangeStatus() throws IOException {
         String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
-        return new ChangeStatus(accessKey, secretKey, configuration, bucket, Integer.valueOf(status), savePath);
+        return new ChangeStatus(qiniuAccessKey, qiniuSecretKey, configuration, bucket, Integer.valueOf(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType() throws IOException {
         String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
-        return new ChangeType(accessKey, secretKey, configuration, bucket, Integer.valueOf(type), savePath);
+        return new ChangeType(qiniuAccessKey, qiniuSecretKey, configuration, bucket, Integer.valueOf(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle() throws IOException {
         String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
-        return new ChangeLifecycle(accessKey, secretKey, configuration, bucket, Integer.valueOf(days), savePath);
+        return new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, configuration, bucket, Integer.valueOf(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
@@ -271,7 +272,8 @@ public class QSuitsEntry {
         String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new CopyFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix, rmPrefix, savePath);
+        return new CopyFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
+                rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
@@ -282,12 +284,12 @@ public class QSuitsEntry {
         String force = entryParam.getValue("prefix-force", null);
         force = commonParams.checked(force, "prefix-force", "(true|false)");
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new MoveFile(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
+        return new MoveFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, toBucket, newKeyIndex, addPrefix,
                 Boolean.valueOf(force), rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
-        return new DeleteFile(accessKey, secretKey, configuration, bucket, savePath);
+        return new DeleteFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, savePath);
     }
 
     private ILineProcess<Map<String, String>> getAsyncFetch() throws IOException {
@@ -306,8 +308,8 @@ public class QSuitsEntry {
         String type = entryParam.getValue("file-type", "0");
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
-        ILineProcess<Map<String, String>> processor = new AsyncFetch(accessKey, secretKey, configuration, toBucket,
-                domain, protocol, urlIndex, addPrefix, savePath);
+        ILineProcess<Map<String, String>> processor = new AsyncFetch(qiniuAccessKey, qiniuSecretKey, configuration,
+                toBucket, domain, protocol, urlIndex, addPrefix, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
@@ -344,7 +346,7 @@ public class QSuitsEntry {
                     " private pipeline, please set the force-public as true.");
         }
         String configJson = entryParam.getValue("pfop-config", null);
-        return new QiniuPfop(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, configJson, savePath);
+        return new QiniuPfop(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pipeline, fopsIndex, configJson, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
@@ -365,7 +367,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getStatFile() throws IOException {
-        return new StatFile(accessKey, secretKey, configuration, bucket, savePath, saveFormat, saveSeparator);
+        return new StatFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, savePath, saveFormat, saveSeparator);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
@@ -375,11 +377,11 @@ public class QSuitsEntry {
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
-        return new PrivateUrl(accessKey, secretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
+        return new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile() throws IOException {
-        return new MirrorFile(accessKey, secretKey, configuration, bucket, savePath);
+        return new MirrorFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, savePath);
     }
 
     private ILineProcess<Map<String, String>> getExportTs() throws IOException {

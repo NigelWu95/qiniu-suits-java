@@ -25,9 +25,10 @@ public class CommonParams {
     private String source;
     private String parse;
     private String separator;
-    private String accessKey;
-    private String secretId;
-    private String secretKey;
+    private String qiniuAccessKey;
+    private String qiniuSecretKey;
+    private String tencentSecretId;
+    private String tencentSecretKey;
     private String bucket;
     private String regionName;
     private Map<String, String[]> prefixesMap;
@@ -64,18 +65,19 @@ public class CommonParams {
             setSeparator(entryParam.getValue("separator", null));
             if (ProcessUtils.needBucket(process)) setBucket();
             if (ProcessUtils.needAuth(process)) {
-                accessKey = entryParam.getValue("ak");
-                secretKey = entryParam.getValue("sk");
+                qiniuAccessKey = entryParam.getValue("ak");
+                qiniuSecretKey = entryParam.getValue("sk");
             }
         } else {
             if ("qiniu".equals(source)) {
-                accessKey = entryParam.getValue("ak");
+                qiniuAccessKey = entryParam.getValue("ak");
+                qiniuSecretKey = entryParam.getValue("sk");
                 regionName = entryParam.getValue("region", "auto");
             } else if ("tencent".equals(source)) {
-                secretId = entryParam.getValue("sid");
+                tencentSecretId = entryParam.getValue("t-sid");
+                tencentSecretKey = entryParam.getValue("t-sk");
                 regionName = entryParam.getValue("region");
             }
-            secretKey = entryParam.getValue("sk");
             setBucket();
             parse = "object";
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
@@ -272,7 +274,7 @@ public class CommonParams {
             JsonObject jsonCfg;
             String marker;
             String end;
-            BucketManager manager = new BucketManager(Auth.create(accessKey, secretKey), new Configuration());
+            BucketManager manager = new BucketManager(Auth.create(qiniuAccessKey, qiniuSecretKey), new Configuration());
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
@@ -487,16 +489,20 @@ public class CommonParams {
         this.indexMap = indexMap;
     }
 
-    public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
+    public void setQiniuAccessKey(String qiniuAccessKey) {
+        this.qiniuAccessKey = qiniuAccessKey;
     }
 
-    public void setSecretId(String secretId) {
-        this.secretId = secretId;
+    public void setQiniuSecretKey(String qiniuSecretKey) {
+        this.qiniuSecretKey = qiniuSecretKey;
     }
 
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
+    public void setTencentSecretId(String tencentSecretId) {
+        this.tencentSecretId = tencentSecretId;
+    }
+
+    public void setTencentSecretKey(String tencentSecretKey) {
+        this.tencentSecretKey = tencentSecretKey;
     }
 
     public void setBucket(String bucket) {
@@ -591,16 +597,20 @@ public class CommonParams {
         return separator;
     }
 
-    public String getAccessKey() {
-        return accessKey;
+    public String getQiniuAccessKey() {
+        return qiniuAccessKey;
     }
 
-    public String getSecretId() {
-        return secretId;
+    public String getQiniuSecretKey() {
+        return qiniuSecretKey;
     }
 
-    public String getSecretKey() {
-        return secretKey;
+    public String getTencentSecretId() {
+        return tencentSecretId;
+    }
+
+    public String getTencentSecretKey() {
+        return tencentSecretKey;
     }
 
     public String getBucket() {
