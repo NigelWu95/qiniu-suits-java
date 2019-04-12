@@ -104,7 +104,7 @@ public class AsyncFetch extends Base {
             String key = FileNameUtils.rmPrefix(rmPrefix, urlIndex != null ? URLUtils.getKey(url) : line.get("key"));
             line.put("key", key);
             Response response = fetch(url, addPrefix +  key, line.get(md5Index), line.get("hash"));
-            return resultInfo(line) + "\t" + HttpResponseUtils.responseJson(response);
+            return HttpResponseUtils.responseJson(response);
         } catch (IOException e) {
             throw new QiniuException(e, e.getMessage());
         }
