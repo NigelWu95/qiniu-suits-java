@@ -1,7 +1,6 @@
 package com.qiniu.process.qdora;
 
 import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
 import com.qiniu.process.Base;
 import com.qiniu.sdk.OperationManager;
@@ -10,7 +9,6 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class QiniuPfop extends Base {
@@ -34,19 +32,21 @@ public class QiniuPfop extends Base {
 
     private void set(String pipeline, String fopsIndex, String jsonPath) throws IOException {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
-        if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex.");
-        else this.fopsIndex = fopsIndex;
-        if (jsonPath == null || "".equals(jsonPath)) return;
-        this.pfopConfigs = new ArrayList<>();
-        JsonFile jsonFile = new JsonFile(jsonPath);
-        for (String key : jsonFile.getKeys()) {
-            JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
-            if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
-                throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
-            else if (!jsonObject.get("saveas").getAsString().contains(":"))
-                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
-            jsonObject.addProperty("name", key);
-            this.pfopConfigs.add(jsonObject);
+        if (jsonPath != null && !"".equals(jsonPath)) {
+            this.pfopConfigs = new ArrayList<>();
+            JsonFile jsonFile = new JsonFile(jsonPath);
+            for (String key : jsonFile.getKeys()) {
+                JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
+                if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
+                    throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
+                else if (!jsonObject.get("saveas").getAsString().contains(":"))
+                    throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
+                jsonObject.addProperty("name", key);
+                this.pfopConfigs.add(jsonObject);
+            }
+        } else {
+            if (fopsIndex == null || "".equals(fopsIndex)) throw new IOException("please set the fopsIndex or pfop-config.");
+            else this.fopsIndex = fopsIndex;
         }
     }
 
@@ -68,21 +68,21 @@ public class QiniuPfop extends Base {
 
     @Override
     protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileMap.writeSuccess(result, false);
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         if (pfopConfigs != null) {
-            List<String> resultList = new ArrayList<>();
             for (JsonObject pfopConfig : pfopConfigs) {
                 String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
-                resultList.add(line.get("key") + "\t" + cmd + "\t" + operationManager.pfop(bucket, line.get("key"), cmd, pfopParams));
+                fileMap.writeKeyFile(pfopConfig.get("name").getAsString(), line.get("key") + "\t" + cmd + "\t" +
+                            operationManager.pfop(bucket, line.get("key"), cmd, pfopParams), false);
             }
-            return String.join("\n", resultList);
+            return null;
         } else {
-            return line.get("key") + "\t" + line.get(fopsIndex) + "\t" + operationManager.pfop(bucket, line.get("key"),
-                    line.get(fopsIndex), pfopParams);
+            fileMap.writeSuccess(line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
+                        operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams), false);
+            return null;
         }
     }
 }
