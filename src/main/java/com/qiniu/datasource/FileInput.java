@@ -23,6 +23,7 @@ public class FileInput implements IDataSource {
     private String filePath;
     private String parseType;
     private String separator;
+    private String rmKeyPrefix;
     private Map<String, String> indexMap;
     private int unitLen;
     private int threads;
@@ -36,31 +37,40 @@ public class FileInput implements IDataSource {
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public FileInput(String filePath, String parseType, String separator, Map<String, String> indexMap, int unitLen,
-                     int threads, String savePath) {
+    public FileInput(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
+                     int unitLen, int threads) {
         this.filePath = filePath;
         this.parseType = parseType;
         this.separator = separator;
+        this.rmKeyPrefix = rmKeyPrefix;
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
-        this.savePath = savePath;
         this.saveTotal = false; // 默认全记录不保存
     }
 
+    @Override
+    public String getSourceName() {
+        return "local";
+    }
+
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String format, String separator, List<String> rmFields) {
+    @Override
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+        this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
     }
 
+    @Override
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes;
     }
 
     // 通过 commonParams 来更新基本参数
+    @Override
     public void updateSettings(CommonParams commonParams) {
         this.filePath = commonParams.getPath();
         this.parseType = commonParams.getParse();
@@ -76,13 +86,14 @@ public class FileInput implements IDataSource {
         this.rmFields = commonParams.getRmFields();
     }
 
+    @Override
     public void setProcessor(ILineProcess<Map<String, String>> processor) {
         this.processor = processor;
     }
 
     private void export(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, indexMap);
+        ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;
@@ -133,10 +144,10 @@ public class FileInput implements IDataSource {
             // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
             // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-            String order = String.valueOf(i);
+            String order = String.valueOf(i + 1);
             String key = keys.get(i);
             BufferedReader reader = readersMap.get(key);
-            FileMap fileMap = new FileMap(savePath, "fileinput", order);
+            FileMap fileMap = new FileMap(savePath, getSourceName(), order);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
@@ -163,6 +174,7 @@ public class FileInput implements IDataSource {
         }
     }
 
+    @Override
     public void export() throws Exception {
         FileMap initFileMap = new FileMap(savePath);
         File sourceFile = new File(filePath);
@@ -174,7 +186,7 @@ public class FileInput implements IDataSource {
 
         int filesCount = initFileMap.getReaderMap().size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String info = "read files: " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BucketListTest {
+public class QiniuOssContainerTest {
 
     @Test
     public void setPrefixesScope() {

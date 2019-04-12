@@ -9,8 +9,6 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class QueryPfopResult extends Base {
@@ -21,7 +19,7 @@ public class QueryPfopResult extends Base {
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
                            int saveIndex) throws IOException {
-        super("pfopresult", "", "", configuration, null, null, savePath, saveIndex);
+        super("pfopresult", "", "", configuration, null, savePath, saveIndex);
         set(protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
@@ -49,17 +47,16 @@ public class QueryPfopResult extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) {
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(pidIndex);
     }
 
+    // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {}
+
+    @Override
+    protected String singleResult(Map<String, String> line) throws IOException {
         String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
@@ -68,13 +65,21 @@ public class QueryPfopResult extends Base {
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }
-            List<String> items = new ArrayList<>();
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
-                // code == 0 时表示转码已经成功，不成功的情况下记录下转码参数和错误方便进行重试
-                items.add(line.get(pidIndex) + "\t" + pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item));
+                if (item.code == 0)
+                    fileMap.writeSuccess(pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                else if (item.code == 3)
+                    fileMap.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
+                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                else if (item.code == 4)
+                    fileMap.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
+                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                else
+                    fileMap.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
+                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
             }
-            return String.join("\n", items);
+            return null;
         } else {
             throw new QiniuException(null, "empty_result");
         }

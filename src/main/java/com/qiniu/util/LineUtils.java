@@ -3,6 +3,7 @@ package com.qiniu.util;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class LineUtils {
     }};
 
     public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
-        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file info.");
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         Map<String, String> itemMap = new HashMap<>();
         fileInfoFields.forEach(key -> {
             if (indexMap.get(key) != null) {
@@ -51,9 +52,30 @@ public class LineUtils {
         return itemMap;
     }
 
+    public static Map<String, String> getItemMap(COSObjectSummary cosObjectSummary, Map<String, String> indexMap)
+            throws IOException {
+        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        Map<String, String> itemMap = new HashMap<>();
+        fileInfoFields.forEach(key -> {
+            if (indexMap.get(key) != null) {
+                switch (key) {
+                    case "key": itemMap.put(indexMap.get(key), cosObjectSummary.getKey()); break;
+                    case "hash": itemMap.put(indexMap.get(key), cosObjectSummary.getETag()); break;
+                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getSize())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getLastModified())); break;
+//                    case "mimeType": itemMap.put(indexMap.get(key), cosObjectSummary.); break;
+                    case "type": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getStorageClass())); break;
+//                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.)); break;
+                    case "endUser": itemMap.put(indexMap.get(key), cosObjectSummary.getOwner().getDisplayName()); break;
+                }
+            }
+        });
+        return itemMap;
+    }
+
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap, boolean force)
             throws IOException {
-        if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
+        if (json == null) throw new IOException("empty JsonObject.");
         Map<String, String> itemMap = new HashMap<>();
         String mapKey;
         for (String key : json.keySet()) {
@@ -71,13 +93,14 @@ public class LineUtils {
 
     public static Map<String, String> getItemMap(String line, Map<String, String> indexMap, boolean force)
             throws IOException {
+        if (line == null) throw new IOException("empty json line.");
         JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
-        return getItemMap(parsed ,indexMap, force);
+        return getItemMap(parsed, indexMap, force);
     }
 
     public static Map<String, String> getItemMap(String line, String separator, Map<String, String> indexMap,
                                                  boolean force) throws IOException {
-        if (indexMap == null || indexMap.size() == 0) throw new IOException("no index map to get.");
+        if (line == null) throw new IOException("empty string line.");
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
         String mapKey;
@@ -95,6 +118,7 @@ public class LineUtils {
     }
 
     public static String toFormatString(FileInfo fileInfo, String separator, List<String> rmFields) throws IOException {
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
@@ -111,6 +135,7 @@ public class LineUtils {
     }
 
     public static String toFormatString(FileInfo fileInfo, List<String> rmFields) throws IOException {
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", fileInfo.hash);
@@ -126,7 +151,37 @@ public class LineUtils {
         return converted.toString();
     }
 
+    public static String toFormatString(COSObjectSummary cosObjectSummary, List<String> rmFields) throws IOException {
+        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        JsonObject converted = new JsonObject();
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObjectSummary.getKey());
+        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObjectSummary.getETag());
+        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", cosObjectSummary.getSize());
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", cosObjectSummary.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObjectSummary.getStorageClass());
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObjectSummary.getOwner() != null)
+            converted.addProperty("endUser", cosObjectSummary.getOwner().getDisplayName());
+        if (converted.size() == 0) throw new IOException("empty result.");
+        return converted.toString();
+    }
+
+    public static String toFormatString(COSObjectSummary cosObjectSummary, String separator, List<String> rmFields)
+            throws IOException {
+        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        StringBuilder converted = new StringBuilder();
+        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObjectSummary.getKey()).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObjectSummary.getETag()).append(separator);
+        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObjectSummary.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObjectSummary.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObjectSummary.getStorageClass()).append(separator);
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObjectSummary.getOwner() != null)
+            converted.append(cosObjectSummary.getOwner().getDisplayName()).append(separator);
+        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
     public static String toFormatString(JsonObject json, String separator, List<String> rmFields) throws IOException {
+        if (json == null) throw new IOException("empty JsonObject.");
         StringBuilder converted = new StringBuilder();
         Set<String> set = json.keySet();
         List<String> keys = new ArrayList<String>(){{
@@ -149,6 +204,7 @@ public class LineUtils {
     }
 
     public static String toFormatString(Map<String, String> line, List<String> rmFields) throws IOException {
+        if (line == null) throw new IOException("empty string map.");
         JsonObject converted = new JsonObject();
         Set<String> set = line.keySet();
         List<String> keys = new ArrayList<String>(){{
@@ -172,6 +228,7 @@ public class LineUtils {
 
     public static String toFormatString(Map<String, String> line, String separator, List<String> rmFields)
             throws IOException {
+        if (line == null) throw new IOException("empty string map.");
         StringBuilder converted = new StringBuilder();
         Set<String> set = line.keySet();
         List<String> keys = new ArrayList<String>(){{

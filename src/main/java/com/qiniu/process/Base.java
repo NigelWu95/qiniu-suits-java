@@ -17,12 +17,11 @@ import java.util.stream.Collectors;
 
 public abstract class Base implements ILineProcess<Map<String, String>>, Cloneable {
 
-    final protected String processName;
+    private String processName;
     protected Configuration configuration;
     protected String accessKey;
     protected String secretKey;
     protected String bucket;
-    protected String rmPrefix;
     protected int batchSize;
     protected int retryTimes = 5;
     protected int saveIndex;
@@ -30,7 +29,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected FileMap fileMap;
 
     public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
-                String rmPrefix, String savePath, int saveIndex) throws IOException {
+                String savePath, int saveIndex) throws IOException {
         if (ProcessUtils.needConfiguration(processName) && configuration == null)
             throw new IOException("please set configuration, it can not be null.");
         this.processName = processName;
@@ -38,7 +37,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.bucket = bucket;
-        this.rmPrefix = rmPrefix;
         this.saveIndex = saveIndex;
         this.savePath = savePath;
         this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
@@ -81,11 +79,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         return base;
     }
 
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-        return line;
-    }
-
     /**
      * 当处理失败的时候应该从 line 中记录哪些关键信息，默认只记录 key，需要子类去重写记录更多信息
      * @param line 输入的 line
@@ -101,12 +94,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @return 返回执行响应信息的字符串
      * @throws QiniuException 执行失败抛出的异常
      */
-    protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         return null;
     }
 
     /**
-     *
      * 处理 batchOperations 执行的结果，将输入的文件信息和结果对应地记录下来
      * @param processList batch 操作的资源列表
      * @param result batch 操作之后的响应结果
@@ -156,12 +148,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            try {
-                line = formatLine(line);
-                return true;
-            } catch (IOException e) {
-                errorLineList.add(resultInfo(line) + "\t" + e.getMessage());
+            if (line.get("key") == null) {
+                errorLineList.add(resultInfo(line) + "\tempty key of line.");
                 return false;
+            } else {
+                return true;
             }
         }).collect(Collectors.toList());
         if (errorLineList.size() > 0) fileMap.writeError(String.join("\n", errorLineList), false);
@@ -206,9 +197,20 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * 单个文件进行操作的方法，返回操作的结果字符串，要求子类必须实现该方法，支持单个资源依次请求操作
      * @param line 输入 line
      * @return 操作结果的字符串
-     * @throws QiniuException 操作失败时的返回
+     * @throws IOException 操作失败时的返回
      */
-    abstract protected String singleResult(Map<String, String> line) throws QiniuException;
+    abstract protected String singleResult(Map<String, String> line) throws IOException;
+
+    /**
+     * 处理 singleProcess 执行的结果，默认情况下直接使用 resultInfo 拼接 result 成一行执行持久化写入，部分 process 可能对结果做进一步判断
+     * 需要重写该方法
+     * @param line 输入的 map 数据
+     * @param result singleResult 的结果字符串
+     * @throws IOException 写入结果失败抛出异常
+     */
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileMap.writeSuccess(resultInfo(line) + "\t" + result, false);
+    }
 
     /**
      * 对输入的文件信息列表单个进行操作，具体的操作方法取决于 singleResult 方法
@@ -222,17 +224,15 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         Map<String, String> line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            try {
-                line = formatLine(line);
-            } catch (IOException e) {
-                fileMap.writeError(resultInfo(line) + "\t" + e.getMessage(), false);
+            if (line.get("key") == null) {
+                fileMap.writeError(resultInfo(line) + "\tempty key of line.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
             while (retry > 0) {
                 try {
                     result = singleResult(line);
-                    fileMap.writeSuccess(result, false);
+                    parseSingleResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);

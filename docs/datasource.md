@@ -7,7 +7,7 @@
 
 ### 公共参数
 ```
-source-type=list/file (v.2.11 及以上版本也可以使用 source=list/file，或者不设置该参数)
+source=qiniu/tencent/local
 path=
 indexes=key,hash,fsize
 unit-len=10000
@@ -15,15 +15,28 @@ threads=30
 ```  
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
-|source-type/source| 字符串 file/list | 选择从[本地路径文件中读取]还是从[七牛空间列举]资源列表|  
-|path| 输入源路径字符串| 资源列表路径，file源时填写本地文件或者目录路径，list源时可填写"qiniu://\<bucket\>"|  
+|source| 字符串 qiniu/tencent/local | 选择从[云存储空间列举]还是从[本地路径文件中读取]资源列表|  
+|path| 输入源路径字符串| 资源列表路径，本地数据源时填写本地文件或者目录路径，云存储数据源时可填写"qiniu://\<bucket\>"、"tencent://\<bucket\>" 等|  
 |indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标|  
 |unit-len| 整型数字| 表示一次读取的文件个数（读取或列举长度，默认值 10000），对应与读取文件时每次处理的行数或者列举请求时设置的 limit 参数|  
 |threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
 
-#### # 关于 indexes 索引
-indexes 指输入行中包含的资源元信息字段的映射关系，指定索引的顺序为 key,hash,fsize,putTime,mimeType,type,status,md5,endUser，即存储文件
-的信息字段，顺序固定。  
+#### # 关于文件信息字段和 indexes 索引
+文件信息字段及顺序定义为：**key,hash,fsize,putTime,mimeType,type,status,md5,endUser**，indexes 指输入行中包含的资源信息字段的索引值，
+索引值的顺序对应上述文件信息字段顺序，即文件信息字段和 indexes 索引字段均默认使用七牛存储文件的字段进行定义，顺序固定，其释义及其他数据源方式对
+应关系如下：  
+|字段名|数据类型及含义 |腾讯云存储资源字段对应关系| 输入行字段对应关系|  
+|-----|------------|---------------------|---------------|  
+|key| 字符串 | 文件名| key| indexes 的第1个索引|  
+|hash| 字符串| 文件哈希值| etag| indexes 的第2个索引|  
+|fsize| 长整型数字| 文件大小，单位 kb| size| indexes 的第3个索引|  
+|putTime| 长整型数字| 时间戳数字| lastModified| indexes 的第4个索引|  
+|mimeType| 字符串| mime 类型，也即 content-type| 无此含义字段| indexes 的第5个索引|  
+|type| 整形数字或者字符串| 资源存储类型| storageClass（字符串）| indexes 的第6个索引|  
+|status| 整形数字| 资源访问状态| 无此含义字段| indexes 的第7个索引|  
+|md5| 字符串| 文件 md5 值| 无| indexes 的第8个索引|  
+|endUser| 字符串| 文件终端标识符| Owner-displayName| indexes 的第9个索引|  
+
 **默认情况：**  
 （1）当数据源为file 时，默认情况下，程序只从输入行中读取 key 字段数据，parse=tab/csv 时索引为 0，parse=json 时索引为 "key"，需要指定更多字
 段时可设置为数字:0,1,2,3 等或者 json 的 key 名称列表，长度不超过 9，长度表明取对应顺序的前几个字段，当 parse=tab 时索引必须均为整数，如果输入
@@ -33,10 +46,12 @@ indexes 指输入行中包含的资源元信息字段的映射关系，指定索
 过滤设置的字段进行添加，无 process 的情况下包含全部下标：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，如过自行设置则字段为
 也为这其中的一个或几个（因为必须和对象的变量名称一致），需要跳过的字段设置为 -1 即可，按照顺序依次解析所有字段  
 
-### 1. list 源可选参数
+### 1. 云存储数据源可选参数
 ```
 ak=
 sk=
+t-sid=
+t-sk=
 bucket=
 marker=
 start=
@@ -48,7 +63,8 @@ prefix-right=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
-|ak、sk|长度 40 的字符串|七牛账号的密钥对字符串，通过七牛控制台个人中心获取|  
+|ak、sk|长度 40 的字符串|七牛云的密钥对字符串，通过七牛控制台个人中心获取|  
+|t-sid、t-sk|字符串|腾讯云的密钥对字符串，通过腾讯控制台 API 密钥管理界面获取|  
 |bucket|字符串| 需要列举的空间名称，通过 "path=qiniu://<bucket>" 来设置的话此参数可不设置，设置则会覆盖 path 中指定的 bucket 值|  
 |threads| 整型数字| 表示并发列举时使用的线程数（默认 30）|  
 |unit-len| 整型数字| 表示每次列举请求列举的文件个数（列举长度，默认值 10000）|  
@@ -95,15 +111,17 @@ prefix-right=
   文件时可使用单线程直接列举：threads=1，文件数较少时若设置并发线程数偏多则会增加额外耗时。v2.11 及以上版本支持的指定*多*前缀参数 prefixes，在
   设置多个前缀时，线程数建议不要超过 200，因为每个前缀都会尝试按照线程数去并发，线程数过高经过多个指定前缀的递进容易造成内存崩溃。  
   
-### 2. file 源可选参数
+### 2. 本地文件数据源可选参数
 ```
 parse=
 separator=
+rm-keyPrefix=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
 |parse| 字符串 json/tab/csv| 数据行格式，json 表示使用 json 解析，tab 表示使用分隔符（默认 "\t"）分割解析，csv 表示使用 "," 分割解析|  
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
+|rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 "/" 前缀|  
 
 
 ## 命令行方式

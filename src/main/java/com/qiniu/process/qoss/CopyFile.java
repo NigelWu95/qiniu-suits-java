@@ -6,6 +6,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 
 import java.io.IOException;
@@ -16,14 +17,15 @@ public class CopyFile extends Base {
 
     private String toBucket;
     private String newKeyIndex;
-    private String keyPrefix;
+    private String addPrefix;
+    private String rmPrefix;
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("copy", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        set(toBucket, newKeyIndex, keyPrefix);
+                    String newKeyIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
+        super("copy", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        set(toBucket, newKeyIndex, addPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
@@ -31,15 +33,15 @@ public class CopyFile extends Base {
 
     public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
         this.bucket = bucket;
-        set(toBucket, newKeyIndex, keyPrefix);
-        this.rmPrefix = rmPrefix;
+        set(toBucket, newKeyIndex, keyPrefix, rmPrefix);
     }
 
-    private void set(String toBucket, String newKeyIndex, String keyPrefix) {
+    private void set(String toBucket, String newKeyIndex, String addPrefix, String rmPrefix) {
         this.toBucket = toBucket;
         // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
         this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
-        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -62,14 +64,19 @@ public class CopyFile extends Base {
     @Override
     synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket,
-                keyPrefix + line.get(newKeyIndex)));
+        lineList.forEach(line -> {
+            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+            line.put(newKeyIndex, toKey);
+            batchOperations.addCopyOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
+        });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpResponseUtils.getResult(
-                bucketManager.copy(bucket, line.get("key"), toBucket, keyPrefix + line.get(newKeyIndex), false));
+        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+        line.put(newKeyIndex, toKey);
+        return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
+                addPrefix + toKey, false));
     }
 }

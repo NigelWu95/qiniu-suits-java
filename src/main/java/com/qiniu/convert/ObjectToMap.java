@@ -2,34 +2,28 @@ package com.qiniu.convert;
 
 import com.qiniu.interfaces.ILineParser;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FileInfoToMap implements ITypeConvert<FileInfo, Map<String, String>> {
+public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
 
-    private ILineParser<FileInfo> lineParser;
+    protected ILineParser<E> lineParser;
     private List<String> errorList = new ArrayList<>();
 
-    public FileInfoToMap(Map<String, String> indexMap) {
-        this.lineParser = line -> LineUtils.getItemMap(line, indexMap);
-    }
-
-    public Map<String, String> convertToV(FileInfo line) throws IOException {
+    public Map<String, String> convertToV(E line) throws IOException {
         return lineParser.getItemMap(line);
     }
 
-    public List<Map<String, String>> convertToVList(List<FileInfo> lineList) {
+    public List<Map<String, String>> convertToVList(List<E> lineList) {
         if (lineList == null || lineList.size() == 0) return new ArrayList<>();
         return lineList.stream()
-                .map(fileInfo -> {
+                .map(line -> {
                     try {
-                        return lineParser.getItemMap(fileInfo);
+                        return lineParser.getItemMap(line);
                     } catch (Exception e) {
-                        errorList.add(String.valueOf(fileInfo) + "\t" + e.getMessage());
+                        errorList.add(String.valueOf(line) + "\t" + e.getMessage());
                         return null;
                     }
                 })

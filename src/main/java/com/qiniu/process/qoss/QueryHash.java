@@ -18,17 +18,16 @@ public class QueryHash extends Base {
     private FileChecker fileChecker;
 
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
-                     String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("qhash", "", "", configuration, null, rmPrefix, savePath, saveIndex);
+                     String savePath, int saveIndex) throws IOException {
+        super("qhash", "", "", configuration, null, savePath, saveIndex);
         set(algorithm, protocol, domain, urlIndex);
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
     }
 
-    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex, String rmPrefix)
+    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex)
             throws IOException {
         set(algorithm, protocol, domain, urlIndex);
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String algorithm, String protocol, String domain, String urlIndex) throws IOException {
@@ -48,8 +47,8 @@ public class QueryHash extends Base {
     }
 
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
-                     String rmPrefix, String savePath) throws IOException {
-        this(configuration, algorithm, protocol, domain, urlIndex, rmPrefix, savePath, 0);
+                     String savePath) throws IOException {
+        this(configuration, algorithm, protocol, domain, urlIndex, savePath, 0);
     }
 
     public QueryHash clone() throws CloneNotSupportedException {
@@ -59,23 +58,15 @@ public class QueryHash extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(urlIndex);
+        return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String qhash = fileChecker.getQHashBody(line.get(urlIndex));
+        String url = urlIndex != null ? line.get(urlIndex) :
+                protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        String qhash = fileChecker.getQHashBody(url);
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
