@@ -1,5 +1,6 @@
 package com.qiniu.entry;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
@@ -256,7 +257,7 @@ public class CommonParams {
             try {
                 FileInfo markerFileInfo = bucketManager.stat(bucket, start);
                 markerFileInfo.key = start;
-                return OSSListUtils.calcMarker(markerFileInfo);
+                return OSSUtils.calcMarker(markerFileInfo);
             } catch (QiniuException e) {
                 if (e.code() == 612) {
                     throw new IOException("start: \"" + start + "\", can not get invalid marker because " + e.error());
@@ -272,12 +273,25 @@ public class CommonParams {
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
-            String marker;
+            String marker = null;
             String end;
-            BucketManager manager = new BucketManager(Auth.create(qiniuAccessKey, qiniuSecretKey), new Configuration());
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
-                marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
+                if (jsonCfg.get("marker") instanceof JsonNull || "".equals(jsonCfg.get("marker").getAsString())) {
+                    if (jsonCfg.get("start") instanceof JsonNull || "".equals(jsonCfg.get("start").getAsString())) {
+                        marker = "";
+                    } else {
+                        if ("qiniu".equals(source)) {
+                            FileInfo markerFileInfo = new FileInfo();
+                            markerFileInfo.key = jsonCfg.get("start").getAsString();
+                            marker = OSSUtils.calcMarker(markerFileInfo);
+                        } else if ("tencent".equals(source)) {
+                            marker = jsonCfg.get("start").getAsString();
+                        }
+                    }
+                } else {
+                    marker = jsonCfg.get("marker").getAsString();
+                }
                 end = jsonCfg.get("end").getAsString();
                 prefixesMap.put(prefix, new String[]{marker, end});
             }
