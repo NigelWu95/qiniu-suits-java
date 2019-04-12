@@ -21,9 +21,22 @@ threads=30
 |unit-len| 整型数字| 表示一次读取的文件个数（读取或列举长度，默认值 10000），对应与读取文件时每次处理的行数或者列举请求时设置的 limit 参数|  
 |threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
 
-#### # 关于 indexes 索引
-indexes 指输入行中包含的资源元信息字段的映射关系，指定索引的顺序为 key,hash,fsize,putTime,mimeType,type,status,md5,endUser，即存储文件
-的信息字段，顺序固定。  
+#### # 关于文件信息字段和 indexes 索引
+文件信息字段及顺序定义为：**key,hash,fsize,putTime,mimeType,type,status,md5,endUser**，indexes 指输入行中包含的资源信息字段的索引值，
+索引值的顺序对应上述文件信息字段顺序，即文件信息字段和 indexes 索引字段均默认使用七牛存储文件的字段进行定义，顺序固定，其释义及其他数据源方式对
+应关系如下：  
+|字段名|数据类型及含义 |腾讯云存储资源字段对应关系| 输入行字段对应关系|  
+|-----|------------|---------------------|---------------|  
+|key| 字符串 | 文件名| key| indexes 的第1个索引|  
+|hash| 字符串| 文件哈希值| etag| indexes 的第2个索引|  
+|fsize| 长整型数字| 文件大小，单位 kb| size| indexes 的第3个索引|  
+|putTime| 长整型数字| 时间戳数字| lastModified| indexes 的第4个索引|  
+|mimeType| 字符串| mime 类型，也即 content-type| 无此含义字段| indexes 的第5个索引|  
+|type| 整形数字或者字符串| 资源存储类型| storageClass（字符串）| indexes 的第6个索引|  
+|status| 整形数字| 资源访问状态| 无此含义字段| indexes 的第7个索引|  
+|md5| 字符串| 文件 md5 值| 无| indexes 的第8个索引|  
+|endUser| 字符串| 文件终端标识符| Owner-displayName| indexes 的第9个索引|  
+
 **默认情况：**  
 （1）当数据源为file 时，默认情况下，程序只从输入行中读取 key 字段数据，parse=tab/csv 时索引为 0，parse=json 时索引为 "key"，需要指定更多字
 段时可设置为数字:0,1,2,3 等或者 json 的 key 名称列表，长度不超过 9，长度表明取对应顺序的前几个字段，当 parse=tab 时索引必须均为整数，如果输入
