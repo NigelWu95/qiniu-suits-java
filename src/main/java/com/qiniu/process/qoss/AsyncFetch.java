@@ -15,7 +15,8 @@ public class AsyncFetch extends Base {
     private String domain;
     private String protocol;
     private String urlIndex;
-    private String keyPrefix;
+    private String addPrefix;
+    private String rmPrefix;
     private boolean hasCustomArgs;
     private String host;
     private String md5Index;
@@ -28,10 +29,10 @@ public class AsyncFetch extends Base {
     private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath,
+                      String protocol, String urlIndex, String addPrefix, String savePath,
                       int saveIndex) throws IOException {
-        super("asyncfetch", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
-        set(domain, protocol, urlIndex, keyPrefix);
+        super("asyncfetch", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        set(domain, protocol, urlIndex, addPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -42,7 +43,7 @@ public class AsyncFetch extends Base {
         this.rmPrefix = rmPrefix;
     }
 
-    private void set(String domain, String protocol, String urlIndex, String keyPrefix) throws IOException {
+    private void set(String domain, String protocol, String urlIndex, String addPrefix) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = null;
             if (domain == null || "".equals(domain)) {
@@ -55,14 +56,13 @@ public class AsyncFetch extends Base {
         } else {
             this.urlIndex = urlIndex;
         }
-        this.keyPrefix = keyPrefix == null ? "" : keyPrefix;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String keyPrefix, String rmPrefix, String savePath)
+                      String protocol, String urlIndex, String keyPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, rmPrefix,
-                savePath, 0);
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, savePath, 0);
     }
 
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
@@ -92,25 +92,21 @@ public class AsyncFetch extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        } else {
-            line.put("key", URLUtils.getKey(line.get(urlIndex)));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        Response response = fetch(line.get(urlIndex), keyPrefix + line.get("key"), line.get(md5Index), line.get("hash"));
-        return line.get(urlIndex) + "\t" + HttpResponseUtils.responseJson(response);
+        try {
+            String url = urlIndex != null ? line.get(urlIndex) :
+                    protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            String key = FileNameUtils.rmPrefix(rmPrefix, urlIndex != null ? URLUtils.getKey(url) : line.get("key"));
+            line.put("key", key);
+            Response response = fetch(url, addPrefix +  key, line.get(md5Index), line.get("hash"));
+            return HttpResponseUtils.responseJson(response);
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 }

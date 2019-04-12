@@ -17,22 +17,21 @@ public class DeleteFile extends Base {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
-    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                      String savePath, int saveIndex) throws IOException {
-        super("delete", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                      int saveIndex) throws IOException {
+        super("delete", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateDelete(String bucket, String rmPrefix) {
+    public void updateDelete(String bucket) {
         this.bucket = bucket;
-        this.rmPrefix = rmPrefix;
     }
 
-    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);
+    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, 0);
     }
 
     public DeleteFile clone() throws CloneNotSupportedException {

@@ -1,17 +1,17 @@
 package com.qiniu.convert;
 
-import com.google.gson.JsonObject;
+import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
 
-public class JsonToString extends ObjectToString<JsonObject> {
+public class COSObjToString extends ObjectToString<COSObjectSummary> {
 
-    public JsonToString(String format, String separator, List<String> rmFields) throws IOException {
+    public COSObjToString(String format, String separator, List<String> rmFields) throws IOException {
         // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
         if ("json".equals(format)) {
-            stringFormatter = JsonObject::toString;
+            stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
         } else if ("csv".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", rmFields);
         } else if ("tab".equals(format)) {

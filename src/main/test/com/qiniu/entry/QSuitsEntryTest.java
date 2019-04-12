@@ -25,10 +25,6 @@ public class QSuitsEntryTest {
         CommonParams commonParams = qSuitsEntry.getCommonParams();
         CopyFile processor = (CopyFile) qSuitsEntry.getProcessor();
         IDataSource dataSource = qSuitsEntry.getDataSource();
-        boolean saveTotal = commonParams.getSaveTotal();
-        String saveFormat = commonParams.getSaveFormat();
-        String saveSeparator = commonParams.getSaveSeparator();
-        List<String> rmFields = commonParams.getRmFields();
 
         // 不断去更改 bucket 做执行
         for (String bucket : buckets) {
@@ -39,7 +35,6 @@ public class QSuitsEntryTest {
                 processor.updateSavePath(savePath + "/" + bucket);
             }
             if (dataSource != null) {
-                dataSource.setSaveOptions(saveTotal, saveFormat, saveSeparator, rmFields);
                 dataSource.updateSettings(commonParams);
                 dataSource.setProcessor(processor);
                 dataSource.export();

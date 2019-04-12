@@ -16,17 +16,16 @@ public class QueryAvinfo extends Base {
     private String urlIndex;
     private MediaManager mediaManager;
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
-                       String savePath, int saveIndex) throws IOException {
-        super("avinfo", "", "", configuration, null, rmPrefix, savePath, saveIndex);
+    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
+                       int saveIndex) throws IOException {
+        super("avinfo", "", "", configuration, null, savePath, saveIndex);
         set(protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public void updateQuery(String protocol, String domain, String urlIndex, String rmPrefix) throws IOException {
+    public void updateQuery(String protocol, String domain, String urlIndex) throws IOException {
         set(protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String protocol, String domain, String urlIndex) throws IOException {
@@ -44,9 +43,9 @@ public class QueryAvinfo extends Base {
         }
     }
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String rmPrefix,
-                       String savePath) throws IOException {
-        this(configuration, domain, protocol, urlIndex, rmPrefix, savePath, 0);
+    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath)
+            throws IOException {
+        this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
@@ -56,22 +55,14 @@ public class QueryAvinfo extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        if (urlIndex == null) {
-            line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")));
-            urlIndex = "url";
-            line.put(urlIndex, protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F"));
-        }
-        return line;
-    }
-
-    @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(urlIndex);
+        return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String avinfo = mediaManager.getAvinfoBody(line.get(urlIndex));
+        String url = urlIndex != null ? line.get(urlIndex) :
+                protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        String avinfo = mediaManager.getAvinfoBody(url);
         if (avinfo != null && !"".equals(avinfo)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {

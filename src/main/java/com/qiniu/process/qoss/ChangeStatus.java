@@ -19,23 +19,22 @@ public class ChangeStatus extends Base {
     private BucketManager bucketManager;
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
-                        String rmPrefix, String savePath, int saveIndex) throws IOException {
-        super("status", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+                        String savePath, int saveIndex) throws IOException {
+        super("status", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.status = status;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateStatus(String bucket, int status, String rmPrefix) {
+    public void updateStatus(String bucket, int status) {
         this.bucket = bucket;
         this.status = status;
-        this.rmPrefix = rmPrefix;
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
-                        String rmPrefix, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, status, rmPrefix, savePath, 0);
+                        String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, status, savePath, 0);
     }
 
     public ChangeStatus clone() throws CloneNotSupportedException {

@@ -2,8 +2,8 @@ package com.qiniu.process.qoss;
 
 import com.google.gson.*;
 import com.qiniu.common.QiniuException;
-import com.qiniu.convert.FileInfoToString;
 import com.qiniu.convert.JsonToString;
+import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
@@ -26,19 +26,18 @@ public class StatFile extends Base {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                    String savePath, String format, String separator, int saveIndex) throws IOException {
-        super("stat", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator, int saveIndex) throws IOException {
+        super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         set(format, separator);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateStat(String bucket, String format, String separator, String rmPrefix) throws IOException {
+    public void updateStat(String bucket, String format, String separator) throws IOException {
         this.bucket = bucket;
         set(format, separator);
-        this.rmPrefix = rmPrefix;
     }
 
     private void set(String format, String separator) throws IOException {
@@ -49,12 +48,12 @@ public class StatFile extends Base {
             throw new IOException("please check your format for line to map.");
         }
         if (batchSize > 1) typeConverter = new JsonToString(format, separator, null);
-        else typeConverter = new FileInfoToString(format, separator, null);
+        else typeConverter = new QOSObjToString(format, separator, null);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                    String savePath, String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, format, separator, 0);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
     public StatFile clone() throws CloneNotSupportedException {
@@ -69,7 +68,7 @@ public class StatFile extends Base {
             }
         } else {
             try {
-                statFile.typeConverter = new FileInfoToString(format, separator, null);
+                statFile.typeConverter = new QOSObjToString(format, separator, null);
             } catch (IOException e) {
                 throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
             }
@@ -124,6 +123,11 @@ public class StatFile extends Base {
             }
         }
         return retryList;
+    }
+
+    @Override
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileMap.writeSuccess(result, false);
     }
 
     @Override

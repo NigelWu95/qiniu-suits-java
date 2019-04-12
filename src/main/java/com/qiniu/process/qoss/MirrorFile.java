@@ -5,7 +5,6 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.FileNameUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -14,20 +13,19 @@ public class MirrorFile extends Base {
 
     private BucketManager bucketManager;
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                      String savePath, int saveIndex) throws IOException {
-        super("mirror", accessKey, secretKey, configuration, bucket, rmPrefix, savePath, saveIndex);
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                      int saveIndex) throws IOException {
+        super("mirror", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateMirror(String bucket, String rmPrefix) {
+    public void updateMirror(String bucket) {
         this.bucket = bucket;
-        this.rmPrefix = rmPrefix;
     }
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String rmPrefix,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, rmPrefix, savePath, 0);
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, 0);
     }
 
     public MirrorFile clone() throws CloneNotSupportedException {
@@ -37,14 +35,8 @@ public class MirrorFile extends Base {
     }
 
     @Override
-    protected Map<String, String> formatLine(Map<String, String> line) throws IOException {
-        line.put("key", FileNameUtils.rmPrefix(rmPrefix, line.get("key")).replaceAll("\\?", "%3F"));
-        return line;
-    }
-
-    @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         bucketManager.prefetch(bucket, line.get("key"));
-        return line.get("key") + "\t" + "200";
+        return "200"; // 返回当作 200 当作成功的状态码
     }
 }

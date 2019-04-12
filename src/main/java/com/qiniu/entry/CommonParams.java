@@ -1,15 +1,15 @@
 package com.qiniu.entry;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuException;
+import com.qiniu.common.Constants;
 import com.qiniu.config.JsonFile;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFieldsFilter;
 import com.qiniu.process.filtration.SeniorChecker;
-import com.qiniu.storage.BucketManager;
-import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
+import com.qiniu.util.Base64;
 
 import java.io.IOException;
 import java.util.*;
@@ -21,13 +21,16 @@ public class CommonParams {
     private BaseFieldsFilter baseFieldsFilter;
     private SeniorChecker seniorChecker;
     private String process;
-    private String rmPrefix;
+    private String rmKeyPrefix;
     private String source;
     private String parse;
     private String separator;
-    private String accessKey;
-    private String secretKey;
+    private String qiniuAccessKey;
+    private String qiniuSecretKey;
+    private String tencentSecretId;
+    private String tencentSecretKey;
     private String bucket;
+    private String regionName;
     private Map<String, String[]> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
@@ -53,12 +56,28 @@ public class CommonParams {
         this.entryParam = entryParam;
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
-        rmPrefix = entryParam.getValue("rm-prefix", null);
+        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
         setBaseFieldsFilter();
         setSeniorChecker();
-        if ("list".equals(source)) {
-            setAkSk();
+        if ("local".equals(source)) {
+            setParse(entryParam.getValue("parse", "tab"));
+            setSeparator(entryParam.getValue("separator", null));
+            if (ProcessUtils.needBucket(process)) setBucket();
+            if (ProcessUtils.needAuth(process)) {
+                qiniuAccessKey = entryParam.getValue("ak");
+                qiniuSecretKey = entryParam.getValue("sk");
+            }
+        } else {
+            if ("qiniu".equals(source)) {
+                qiniuAccessKey = entryParam.getValue("ak");
+                qiniuSecretKey = entryParam.getValue("sk");
+                regionName = entryParam.getValue("region", "auto");
+            } else if ("tencent".equals(source)) {
+                tencentSecretId = entryParam.getValue("t-sid");
+                tencentSecretKey = entryParam.getValue("t-sk");
+                regionName = entryParam.getValue("region");
+            }
             setBucket();
             parse = "object";
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
@@ -66,11 +85,6 @@ public class CommonParams {
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
             setPrefixLeft(entryParam.getValue("prefix-left", "false"));
             setPrefixRight(entryParam.getValue("prefix-right", "false"));
-        } else if ("file".equals(source)) {
-            setParse(entryParam.getValue("parse", "tab"));
-            setSeparator(entryParam.getValue("separator", null));
-            if (ProcessUtils.needBucket(process)) setBucket();
-            if (ProcessUtils.needAuth(process)) setAkSk();
         }
 
         setUnitLen(entryParam.getValue("unit-len", "10000"));
@@ -97,12 +111,16 @@ public class CommonParams {
             try {
                 source = entryParam.getValue("source");
             } catch (IOException e2) {
-                if ("".equals(path) || path.startsWith("qiniu://")) source = "list";
-                else source = "file";
+                if ("".equals(path) || path.startsWith("qiniu://")) source = "qiniu";
+                else if (path.startsWith("tencent://")) source = "tencent";
+                else source = "local";
             }
         }
-        if (!source.matches("(list|file)")) {
-            throw new IOException("please set the \"source\" conform to regex: (list|file)");
+        // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
+        if ("list".equals(source)) source = "qiniu";
+        else if ("file".equals(source)) source = "local";
+        if (!source.matches("(local|qiniu|tencent)")) {
+            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent)");
         }
     }
 
@@ -154,14 +172,16 @@ public class CommonParams {
         seniorChecker = new SeniorChecker(checkType, checkConfig, Boolean.valueOf(checkRewrite));
     }
 
-    private void setAkSk() throws IOException {
-        accessKey = entryParam.getValue("ak");
-        secretKey = entryParam.getValue("sk");
-    }
-
+    /**
+     * 支持从路径方式上解析出 bucket，如果主动设置 bucket 则替换路径中的值
+     * @throws IOException
+     */
     private void setBucket() throws IOException {
         if (path.startsWith("qiniu://")) {
             bucket = path.substring(8);
+            bucket = entryParam.getValue("bucket", bucket);
+        } else if (path.startsWith("tencent://")) {
+            bucket = path.substring(10);
             bucket = entryParam.getValue("bucket", bucket);
         } else {
             bucket = entryParam.getValue("bucket");
@@ -206,7 +226,7 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null) {
-            if ("list".equals(source)) {
+            if (source.matches("(qiniu|tencent)")) {
                 if (process == null) {
                     saveTotal = "true";
                 } else {
@@ -230,34 +250,31 @@ public class CommonParams {
         }
     }
 
-    private String getMarker(String start, String marker, BucketManager bucketManager) throws IOException {
-        if (!"".equals(marker) || "".equals(start)) return marker;
-        else {
-            try {
-                FileInfo markerFileInfo = bucketManager.stat(bucket, start);
-                markerFileInfo.key = start;
-                return ListBucketUtils.calcMarker(markerFileInfo);
-            } catch (QiniuException e) {
-                if (e.code() == 612) {
-                    throw new IOException("start: \"" + start + "\", can not get invalid marker because " + e.error());
-                } else {
-                    throw e;
-                }
-            }
-        }
-    }
-
     private void setPrefixesMap(String prefixConfig, String prefixes) throws IOException {
         prefixesMap = new HashMap<>();
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
-            String marker;
+            String marker = null;
             String end;
-            BucketManager manager = new BucketManager(Auth.create(accessKey, secretKey), new Configuration());
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
-                marker = getMarker(jsonCfg.get("start").getAsString(), jsonCfg.get("marker").getAsString(), manager);
+                if (jsonCfg.get("marker") instanceof JsonNull || "".equals(jsonCfg.get("marker").getAsString())) {
+                    if (jsonCfg.get("start") instanceof JsonNull || "".equals(jsonCfg.get("start").getAsString())) {
+                        marker = "";
+                    } else {
+                        if ("qiniu".equals(source)) {
+                            JsonObject jsonObject = new JsonObject();
+                            jsonObject.addProperty("k", jsonCfg.get("start").getAsString());
+                            marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
+                                    Base64.URL_SAFE | Base64.NO_WRAP);
+                        } else if ("tencent".equals(source)) {
+                            marker = jsonCfg.get("start").getAsString();
+                        }
+                    }
+                } else {
+                    marker = jsonCfg.get("marker").getAsString();
+                }
                 end = jsonCfg.get("end").getAsString();
                 prefixesMap.put(prefix, new String[]{marker, end});
             }
@@ -309,10 +326,11 @@ public class CommonParams {
     }
 
     private void setIndex(String indexName, String index, boolean check) throws IOException {
-        if (indexName != null && !"-1".equals(indexName) && check) {
-            if (indexMap.containsKey(indexName)) {
-                throw new IOException("the index: " + indexName + "is already in map: " + indexMap);
-            }
+        if (check && indexMap.containsKey(indexName)) {
+            throw new IOException("index: " + indexName + " is already used by \"" + indexMap.get(indexName)
+                    + "-index=" + indexName + "\"");
+        }
+        if (indexName != null && !"-1".equals(indexName)) {
             if ("json".equals(parse) || "object".equals(parse)) {
                 indexMap.put(indexName, index);
             } else if ("tab".equals(parse) || "csv".equals(parse)) {
@@ -338,8 +356,24 @@ public class CommonParams {
                 setIndex(indexList.get(i), keys.get(i), true);
             }
         }
-        if ("list".equals(source)) {
-            // 默认索引
+
+        if ("local".equals(source)) {
+            setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
+            setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
+            setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
+            setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
+            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
+            // 默认索引包含 key
+            if (!indexMap.containsValue("key")) {
+                try {
+                    setIndex("json".equals(parse) ? "key" : "0", "key", true);
+                } catch (IOException e) {
+                    throw new IOException("you need to set indexes with key's index not default value, " +
+                            "because the default key's" + e.getMessage());
+                }
+            }
+        } else {
+            // 资源列举情况下设置默认索引
             if (indexMap.size() == 0) {
                 if (ProcessUtils.supportListSource(process)) {
                     indexMap.put("key", "key");
@@ -359,19 +393,6 @@ public class CommonParams {
             } else if (process != null) {
                 throw new IOException("the process: " + process + " don't support getting source line from list.");
             }
-        } else if ("file".equals(source)) {
-            setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
-            setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
-            setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
-            setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
-            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
-            // 默认索引
-            if (indexMap.size() == 0) {
-                indexMap.put("json".equals(parse) ? "key" : "0", "key");
-            }
-            if (ProcessUtils.needUrl(process) && !indexMap.containsValue("key") && !indexMap.containsValue("url"))
-                throw new IOException("please check your indexes settings, miss a key index in first position or miss" +
-                        " url-index parameter which the process: " + process + " need.");
         }
     }
 
@@ -453,8 +474,8 @@ public class CommonParams {
         this.process = process;
     }
 
-    public void setRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
+    public void setRmKeyPrefix(String rmKeyPrefix) {
+        this.rmKeyPrefix = rmKeyPrefix;
     }
 
     public void setSource(String source) {
@@ -465,16 +486,28 @@ public class CommonParams {
         this.indexMap = indexMap;
     }
 
-    public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
+    public void setQiniuAccessKey(String qiniuAccessKey) {
+        this.qiniuAccessKey = qiniuAccessKey;
     }
 
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
+    public void setQiniuSecretKey(String qiniuSecretKey) {
+        this.qiniuSecretKey = qiniuSecretKey;
+    }
+
+    public void setTencentSecretId(String tencentSecretId) {
+        this.tencentSecretId = tencentSecretId;
+    }
+
+    public void setTencentSecretKey(String tencentSecretKey) {
+        this.tencentSecretKey = tencentSecretKey;
     }
 
     public void setBucket(String bucket) {
         this.bucket = bucket;
+    }
+
+    public void setRegionName(String regionName) {
+        this.regionName = regionName;
     }
 
     public void setPrefixesMap(Map<String, String[]> prefixesMap) {
@@ -537,8 +570,8 @@ public class CommonParams {
         return process;
     }
 
-    public String getRmPrefix() {
-        return rmPrefix;
+    public String getRmKeyPrefix() {
+        return rmKeyPrefix;
     }
 
     public String getSource() {
@@ -561,16 +594,28 @@ public class CommonParams {
         return separator;
     }
 
-    public String getAccessKey() {
-        return accessKey;
+    public String getQiniuAccessKey() {
+        return qiniuAccessKey;
     }
 
-    public String getSecretKey() {
-        return secretKey;
+    public String getQiniuSecretKey() {
+        return qiniuSecretKey;
+    }
+
+    public String getTencentSecretId() {
+        return tencentSecretId;
+    }
+
+    public String getTencentSecretKey() {
+        return tencentSecretKey;
     }
 
     public String getBucket() {
         return bucket;
+    }
+
+    public String getRegionName() {
+        return regionName;
     }
 
     public List<String> getAntiPrefixes() {
