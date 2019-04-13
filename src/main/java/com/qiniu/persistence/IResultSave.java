@@ -1,9 +1,8 @@
 package com.qiniu.persistence;
 
 import java.io.*;
-import java.util.HashMap;
 
-public interface IResultSave {
+public interface IResultSave<T> {
 
     void setRetryTimes(int retryTimes);
 
@@ -19,7 +18,7 @@ public interface IResultSave {
 
     void addWriter(String key) throws IOException;
 
-    BufferedWriter getWriter(String key);
+    T getWriter(String key);
 
     void closeWriters();
 
