@@ -14,20 +14,16 @@ public class LocalFileReader implements IReader<BufferedReader> {
     private BufferedReader bufferedReader;
 
     public LocalFileReader(String filepath) throws IOException {
-        if (filepath.endsWith(".txt")) {
-            filepath = FileNameUtils.realPathWithUserHome(filepath);
-            File sourceFile = new File(filepath);
-            FileReader fileReader;
-            try {
-                fileReader = new FileReader(sourceFile);
-            } catch (IOException e) {
-                throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
-            }
-            bufferedReader = new BufferedReader(fileReader);
-            name = sourceFile.getName().substring(0, sourceFile.getName().length() - 4);
-        } else {
-            throw new IOException("please provide the .txt file. The current path you gave is: " + filepath);
+        filepath = FileNameUtils.realPathWithUserHome(filepath);
+        File sourceFile = new File(filepath);
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(sourceFile);
+        } catch (IOException e) {
+            throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
         }
+        name = sourceFile.getName().substring(0, sourceFile.getName().length() - 4);
+        bufferedReader = new BufferedReader(fileReader);
     }
 
     public String getName() {
@@ -38,7 +34,7 @@ public class LocalFileReader implements IReader<BufferedReader> {
         return bufferedReader;
     }
 
-    public String read() throws IOException {
+    public String readLine() throws IOException {
         return bufferedReader.readLine();
     }
 

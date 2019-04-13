@@ -9,7 +9,7 @@ public interface IReader<T> {
 
     T getRealReader();
 
-    String read() throws IOException;
+    String readLine() throws IOException;
 
     Stream<String> lines();
 }

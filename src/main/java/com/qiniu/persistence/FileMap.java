@@ -22,14 +22,14 @@ public class FileMap {
         this.readerMap = new HashMap<>();
     }
 
-    public FileMap(String targetFileDir) {
+    public FileMap(String targetFileDir) throws IOException {
         this();
         this.targetFileDir = FileNameUtils.realPathWithUserHome(targetFileDir);
         this.prefix = "";
         this.suffix = "";
     }
 
-    public FileMap(String targetFileDir, String prefix, String suffix) {
+    public FileMap(String targetFileDir, String prefix, String suffix) throws IOException {
         this(targetFileDir);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;

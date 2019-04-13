@@ -239,12 +239,12 @@ public abstract class OssContainer<E> implements IDataSource {
             // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
             // 持久化结果标识信息
-            String identifier = String.valueOf(j + 1 + order);
-            FileMap fileMap = new FileMap(savePath, getSourceName(), identifier);
+            String newOrder = String.valueOf(j + 1 + order);
+            FileMap fileMap = new FileMap(savePath, getSourceName(), newOrder);
             fileMap.initDefaultWriters();
             executorPool.execute(() -> {
                 try {
-                    String record = "order " + identifier + ": " + lister.getPrefix();
+                    String record = "order " + newOrder + ": " + lister.getPrefix();
                     recordFileMap.writeKeyFile("result", record + "\tlisting...", true);
                     export(lister, fileMap, lineProcessor);
                     record += "\tsuccessfully done";
@@ -254,7 +254,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     if (lineProcessor != null) lineProcessor.closeResource();
                     lister.close();
                 } catch (Exception e) {
-                    System.out.println("order " + identifier + ": " + lister.getPrefix() + "\tmarker: " +
+                    System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                             lister.getMarker() + "\tend:" + lister.getEndPrefix());
                     recordFileMap.closeWriters();
                     fileMap.closeWriters();
