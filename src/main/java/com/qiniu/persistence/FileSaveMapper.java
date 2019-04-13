@@ -5,13 +5,13 @@ import com.qiniu.util.FileNameUtils;
 import java.io.*;
 import java.util.*;
 
-public class FileSaveMapper {
+public class FileSaveMapper implements IResultSave<BufferedWriter> {
 
-    private HashMap<String, BufferedWriter> writerMap = new HashMap<>();
+    private Map<String, BufferedWriter> writerMap = new HashMap<>();
     private String targetFileDir = null;
     private String prefix = "";
     private String suffix = "";
-    private int retryTimes = 3;
+    private int retryTimes = 5;
 
     public FileSaveMapper(String targetFileDir) throws IOException {
         this.targetFileDir = FileNameUtils.realPathWithUserHome(targetFileDir);
@@ -27,7 +27,7 @@ public class FileSaveMapper {
     }
 
     public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
+        this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
     public String getPrefix() {
@@ -118,7 +118,7 @@ public class FileSaveMapper {
         }
     }
 
-    synchronized private boolean notHasWriter(String key) {
+    private boolean notHasWriter(String key) {
         return !writerMap.containsKey(prefix + key + suffix);
     }
 
