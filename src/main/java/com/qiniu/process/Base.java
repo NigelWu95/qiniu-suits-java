@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.persistence.FileMap;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
@@ -26,7 +26,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     protected int retryTimes = 5;
     protected int saveIndex;
     protected String savePath;
-    protected FileMap fileMap;
+    protected FileSaveMapper fileSaveMapper;
 
     public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
                 String savePath, int saveIndex) throws IOException {
@@ -39,8 +39,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         this.bucket = bucket;
         this.saveIndex = saveIndex;
         this.savePath = savePath;
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
-        this.fileMap.initDefaultWriters();
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
     }
 
     public String getProcessName() {
@@ -63,16 +62,14 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
 
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
-        this.fileMap.closeWriters();
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
-        this.fileMap.initDefaultWriters();
+        this.fileSaveMapper.closeWriters();
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
     }
 
     public Base clone() throws CloneNotSupportedException {
         Base base = (Base)super.clone();
-        base.fileMap = new FileMap(savePath, processName, String.valueOf(++saveIndex));
         try {
-            base.fileMap.initDefaultWriters();
+            base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
@@ -122,17 +119,17 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
             if (j < jsonArray.size()) {
                 switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
-                        fileMap.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
                         break;
                     case 0:
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
-                        fileMap.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                        fileSaveMapper.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
                         break;
                 }
             } else {
-                fileMap.writeError(resultInfo(processList.get(j)) + "empty_result", false);
+                fileSaveMapper.writeError(resultInfo(processList.get(j)) + "empty_result", false);
             }
         }
         return retryList;
@@ -155,7 +152,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                 return true;
             }
         }).collect(Collectors.toList());
-        if (errorLineList.size() > 0) fileMap.writeError(String.join("\n", errorLineList), false);
+        if (errorLineList.size() > 0) fileSaveMapper.writeError(String.join("\n", errorLineList), false);
         int times = lineList.size()/batchSize + 1;
         List<Map<String, String>> processList;
         String result;
@@ -176,13 +173,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                         String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                         System.out.println(message);
                         switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
-                            case 0: fileMap.writeError(String.join("\n", processList.stream()
+                            case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
                                     .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                             break;
-                            case -1: fileMap.writeKeyFile("need_retry", String.join("\n", processList
+                            case -1: fileSaveMapper.writeKeyFile("need_retry", String.join("\n", processList
                                     .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                             break;
-                            case -2: fileMap.writeError(String.join("\n", lineList
+                            case -2: fileSaveMapper.writeError(String.join("\n", lineList
                                     .subList(batchSize * i, lineList.size()).stream()
                                     .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                             throw e;
@@ -209,7 +206,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @throws IOException 写入结果失败抛出异常
      */
     protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileMap.writeSuccess(resultInfo(line) + "\t" + result, false);
+        fileSaveMapper.writeSuccess(resultInfo(line) + "\t" + result, false);
     }
 
     /**
@@ -225,7 +222,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
             if (line.get("key") == null) {
-                fileMap.writeError(resultInfo(line) + "\tempty key of line.", false);
+                fileSaveMapper.writeError(resultInfo(line) + "\tempty key of line.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
@@ -239,10 +236,10 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
                     String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
                     System.out.println(message);
                     switch (retry) {
-                        case 0: fileMap.writeError(resultInfo(line) + "\t" + message, false); break;
-                        case -1: fileMap.writeKeyFile("need_retry", resultInfo(line) + "\t" + message, false);
+                        case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
+                        case -1: fileSaveMapper.writeKeyFile("need_retry", resultInfo(line) + "\t" + message, false);
                         break;
-                        case -2: fileMap.writeError(String.join("\n", lineList.subList(i, lineList.size())
+                        case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
                                 .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                         throw e;
                     }
@@ -262,6 +259,6 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     public void closeResource() {
-        fileMap.closeWriters();
+        fileSaveMapper.closeWriters();
     }
 }

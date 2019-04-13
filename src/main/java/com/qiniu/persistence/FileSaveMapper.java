@@ -4,35 +4,26 @@ import com.qiniu.util.FileNameUtils;
 
 import java.io.*;
 import java.util.*;
-import java.util.Map.*;
 
-public class FileMap {
+public class FileSaveMapper {
 
-    private HashMap<String, BufferedWriter> writerMap;
-    private HashMap<String, BufferedReader> readerMap;
-    private Set<String> defaultWriters;
+    private HashMap<String, BufferedWriter> writerMap = new HashMap<>();
     private String targetFileDir = null;
-    private String prefix = null;
-    private String suffix = null;
+    private String prefix = "";
+    private String suffix = "";
     private int retryTimes = 3;
 
-    public FileMap() {
-        this.defaultWriters = Collections.singleton("success");
-        this.writerMap = new HashMap<>();
-        this.readerMap = new HashMap<>();
-    }
-
-    public FileMap(String targetFileDir) throws IOException {
-        this();
+    public FileSaveMapper(String targetFileDir) throws IOException {
         this.targetFileDir = FileNameUtils.realPathWithUserHome(targetFileDir);
-        this.prefix = "";
-        this.suffix = "";
     }
 
-    public FileMap(String targetFileDir, String prefix, String suffix) throws IOException {
+    public FileSaveMapper(String targetFileDir, String prefix, String suffix) throws IOException {
         this(targetFileDir);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
+        for (String targetWriter : Collections.singleton("success")) {
+            addWriter(prefix + targetWriter + suffix);
+        }
     }
 
     public void setRetryTimes(int retryTimes) {
@@ -45,22 +36,6 @@ public class FileMap {
 
     public String getSuffix() {
         return suffix;
-    }
-
-    synchronized public void initDefaultWriters() throws IOException {
-        if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no result file directory.");
-        for (String targetWriter : defaultWriters) {
-            addWriter(prefix + targetWriter + suffix);
-        }
-    }
-
-    public void initDefaultWriters(String targetFileDir, String prefix, String suffix) throws IOException {
-        if (targetFileDir != null && !"".equals(targetFileDir)) this.targetFileDir = targetFileDir;
-        if (prefix != null && !"".equals(prefix)) this.prefix = prefix + "_";
-        else if (this.prefix == null) this.prefix = "";
-        if (suffix != null && !"".equals(suffix)) this.suffix = "_" + suffix;
-        else if (this.suffix == null) this.suffix = "";
-        initDefaultWriters();
     }
 
     private void addWriter(String key) throws IOException {
@@ -121,75 +96,6 @@ public class FileMap {
                     if (retry <= 0) e.printStackTrace();
                 }
             }
-        }
-    }
-
-    public void initReaders(String fileDir) throws IOException {
-        fileDir = FileNameUtils.realPathWithUserHome(fileDir);
-        File sourceDir = new File(fileDir);
-        File[] fs = sourceDir.listFiles();
-        String fileName;
-        String key;
-        BufferedReader reader;
-        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + fileDir);
-        for(File f : fs) {
-            if (!f.isDirectory()) {
-                FileReader fileReader = new FileReader(f.getAbsoluteFile().getPath());
-                reader = new BufferedReader(fileReader);
-                fileName = f.getName();
-                if (fileName.endsWith(".txt")) {
-                    key = fileName.substring(0, fileName.length() - 4);
-                    if (readerMap.containsKey(key)) throw new IOException("the reader: " + key + " is already init.");
-                    readerMap.put(key, reader);
-                }
-            }
-        }
-        if (readerMap.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
-                " path you gave is: " + fileDir);
-    }
-
-    public void initReader(String filepath) throws IOException {
-        if (filepath.endsWith(".txt")) {
-            filepath = FileNameUtils.realPathWithUserHome(filepath);
-            File sourceFile = new File(filepath);
-            FileReader fileReader;
-            try {
-                fileReader = new FileReader(sourceFile);
-            } catch (IOException e) {
-                throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
-            }
-            BufferedReader reader = new BufferedReader(fileReader);
-            String key = sourceFile.getName().substring(0, sourceFile.getName().length() - 4);
-            if (readerMap.containsKey(key)) throw new IOException("the reader: " + key + " is already init.");
-            readerMap.put(key, reader);
-        } else {
-            throw new IOException("please provide the .txt file. The current path you gave is: " + filepath);
-        }
-    }
-
-    public BufferedReader getReader(String key) {
-        return readerMap.get(key);
-    }
-
-    public HashMap<String, BufferedReader> getReaderMap() {
-        return readerMap;
-    }
-
-    synchronized public void closeReaders() {
-        for (Entry<String, BufferedReader> entry : readerMap.entrySet()) {
-            try {
-                if (readerMap.get(entry.getKey()) != null) readerMap.get(entry.getKey()).close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    synchronized public void closeReader(String key) {
-        try {
-            if (readerMap.get(key) != null) readerMap.get(key).close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
