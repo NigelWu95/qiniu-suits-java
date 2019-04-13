@@ -47,11 +47,6 @@ public class FileMap {
         return suffix;
     }
 
-    public void addDefaultWriters(String writer) throws IOException {
-        if (writer == null || "".equals(writer)) throw new IOException("not valid writer.");
-        defaultWriters.add(writer);
-    }
-
     synchronized public void initDefaultWriters() throws IOException {
         if (targetFileDir == null || "".equals(targetFileDir)) throw new IOException("no result file directory.");
         for (String targetWriter : defaultWriters) {
