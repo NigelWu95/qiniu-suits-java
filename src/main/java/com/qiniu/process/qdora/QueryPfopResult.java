@@ -68,15 +68,15 @@ public class QueryPfopResult extends Base {
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
                 if (item.code == 0)
-                    fileMap.writeSuccess(pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                    fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 3)
-                    fileMap.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
+                    fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
                             JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 4)
-                    fileMap.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
+                    fileSaveMapper.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
                             JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
                 else
-                    fileMap.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
+                    fileSaveMapper.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
                             JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
             }
             return null;

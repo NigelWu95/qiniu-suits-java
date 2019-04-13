@@ -103,23 +103,23 @@ public class StatFile extends Base {
                 if (!(jsonObject.get("data") instanceof JsonNull) && jsonObject.get("data") instanceof JsonObject) {
                     data = jsonObject.get("data").getAsJsonObject();
                 } else {
-                    fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                    fileSaveMapper.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
                     continue;
                 }
                 switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         data.addProperty("key", processList.get(j).get("key"));
-                        fileMap.writeSuccess((String) typeConverter.convertToV(data), false);
+                        fileSaveMapper.writeSuccess((String) typeConverter.convertToV(data), false);
                         break;
                     case 0:
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
-                        fileMap.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                        fileSaveMapper.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
                         break;
                 }
             } else {
-                fileMap.writeError(processList.get(j).get("key") + "\tempty stat result", false);
+                fileSaveMapper.writeError(processList.get(j).get("key") + "\tempty stat result", false);
             }
         }
         return retryList;
@@ -127,7 +127,7 @@ public class StatFile extends Base {
 
     @Override
     protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileMap.writeSuccess(result, false);
+        fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override

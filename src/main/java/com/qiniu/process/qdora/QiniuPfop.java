@@ -75,12 +75,12 @@ public class QiniuPfop extends Base {
         if (pfopConfigs != null) {
             for (JsonObject pfopConfig : pfopConfigs) {
                 String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
-                fileMap.writeKeyFile(pfopConfig.get("name").getAsString(), line.get("key") + "\t" + cmd + "\t" +
+                fileSaveMapper.writeKeyFile(pfopConfig.get("name").getAsString(), line.get("key") + "\t" + cmd + "\t" +
                             operationManager.pfop(bucket, line.get("key"), cmd, pfopParams), false);
             }
             return null;
         } else {
-            fileMap.writeSuccess(line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
+            fileSaveMapper.writeSuccess(line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
                         operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams), false);
             return null;
         }

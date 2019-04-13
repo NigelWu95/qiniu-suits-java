@@ -10,14 +10,6 @@ public interface IResultSave<T> {
 
     String getSuffix();
 
-    void addDefaultWriters(String writer) throws IOException;
-
-    void initDefaultWriters() throws IOException;
-
-    void initDefaultWriters(String targetFileDir, String prefix, String suffix) throws IOException;
-
-    void addWriter(String key) throws IOException;
-
     T getWriter(String key);
 
     void closeWriters();
