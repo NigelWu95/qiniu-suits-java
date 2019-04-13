@@ -41,4 +41,13 @@ public class LocalFileReader implements IReader<BufferedReader> {
     public Stream<String> lines() {
         return bufferedReader.lines();
     }
+
+    public void close() {
+        try {
+            bufferedReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            bufferedReader = null;
+        }
+    }
 }

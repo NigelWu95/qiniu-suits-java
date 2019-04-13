@@ -157,6 +157,7 @@ public class FileInput implements IDataSource {
                     recordFileMap.writeKeyFile("result", record, true);
                     fileMap.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
+                    reader.close();
                 } catch (Exception e) {
                     try {
                         System.out.println("order " + newOrder + ": " + reader.getName() + "\tnextLine:" + reader.readLine());

@@ -12,4 +12,6 @@ public interface IReader<T> {
     String readLine() throws IOException;
 
     Stream<String> lines();
+
+    void close();
 }
