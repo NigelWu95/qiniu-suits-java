@@ -80,7 +80,7 @@ public class CommonParams {
                 regionName = entryParam.getValue("region");
             } else if ("aliyun".equals(source)) {
                 aliyunAccessId = entryParam.getValue("ali-id");
-                tencentSecretKey = entryParam.getValue("ali-secret");
+                aliyunAccessSecret = entryParam.getValue("ali-secret");
                 regionName = entryParam.getValue("region");
             }
             setBucket();
@@ -187,6 +187,9 @@ public class CommonParams {
             bucket = path.substring(8);
             bucket = entryParam.getValue("bucket", bucket);
         } else if (path.startsWith("tencent://")) {
+            bucket = path.substring(10);
+            bucket = entryParam.getValue("bucket", bucket);
+        } else if (path.startsWith("aliyun://")) {
             bucket = path.substring(10);
             bucket = entryParam.getValue("bucket", bucket);
         } else {

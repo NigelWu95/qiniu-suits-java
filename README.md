@@ -48,7 +48,6 @@ ak=
 sk=
 bucket=
 ```
-*source=qiniu 可选择放置在命令行或者配置文件中*  
 
 (2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
 resources 文件夹中，文件名为 `qiniu.properties` 或 `.qiniu.properties`，运行命令为：  
