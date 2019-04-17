@@ -7,6 +7,7 @@ import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
+import com.qiniu.Constants.OssStatus;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -108,9 +109,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
                 ossObjectList = current;
             }
         } catch (ClientException e) {
-            throw new SuitsException(-1, e.getMessage());
+            int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
+            throw new SuitsException(code, e.getMessage());
         } catch (ServiceException e) {
-            throw new SuitsException(Integer.valueOf(e.getErrorCode()), e.getMessage());
+            int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
+            throw new SuitsException(code, e.getMessage());
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }
