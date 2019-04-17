@@ -175,6 +175,8 @@ public class QSuitsEntry {
             return getQiniuOssContainer();
         } else if ("tencent".equals(source)) {
             return getTenOssContainer();
+        } else if ("aliyun".equals(source)) {
+            return getAliOssContainer();
         } else if ("local".equals(source)) {
             return getFileInput();
         } else {
@@ -224,7 +226,7 @@ public class QSuitsEntry {
     public AliOssContainer getAliOssContainer() {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
-        String endPoint = "";
+        String endPoint = "http://oss-" + commonParams.getRegionName() + ".aliyuncs.com";
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
