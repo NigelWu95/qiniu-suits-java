@@ -22,7 +22,7 @@ public class FileSaveMapper implements IResultSave<BufferedWriter> {
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
         for (String targetWriter : Collections.singleton("success")) {
-            addWriter(prefix + targetWriter + suffix);
+            addWriter(this.prefix + targetWriter + this.suffix);
         }
     }
 
