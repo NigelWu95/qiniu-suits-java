@@ -156,7 +156,7 @@ public class QSuitsEntry {
         if ("qiniu".equals(source)) {
             return getQiniuOssContainer();
         } else if ("tencent".equals(source)) {
-            return getTenObjectsContainer();
+            return getTenOssContainer();
         } else if ("local".equals(source)) {
             return getFileInput();
         } else {
@@ -188,7 +188,7 @@ public class QSuitsEntry {
         return qiniuOssContainer;
     }
 
-    public TenOssContainer getTenObjectsContainer() {
+    public TenOssContainer getTenOssContainer() {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
@@ -197,6 +197,21 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         if (clientConfig == null) clientConfig = getDefaultClientConfig();
         TenOssContainer tenOssContainer = new TenOssContainer(secretId, secretKey, clientConfig, bucket,
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        tenOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        tenOssContainer.setRetryTimes(retryTimes);
+        return tenOssContainer;
+    }
+
+    public TenOssContainer getAliOssContainer() {
+        String accessId = commonParams.getAliyunAccessId();
+        String accessSecret = commonParams.getAliyunAccessSecret();
+        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        if (clientConfig == null) clientConfig = getDefaultClientConfig();
+        TenOssContainer tenOssContainer = new TenOssContainer(accessId, accessSecret, clientConfig, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         tenOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         tenOssContainer.setRetryTimes(retryTimes);

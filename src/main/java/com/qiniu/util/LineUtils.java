@@ -1,5 +1,6 @@
 package com.qiniu.util;
 
+import com.aliyun.oss.model.OSSObjectSummary;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -52,21 +53,40 @@ public class LineUtils {
         return itemMap;
     }
 
-    public static Map<String, String> getItemMap(COSObjectSummary cosObjectSummary, Map<String, String> indexMap)
+    public static Map<String, String> getItemMap(COSObjectSummary cosObject, Map<String, String> indexMap)
             throws IOException {
-        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         Map<String, String> itemMap = new HashMap<>();
         fileInfoFields.forEach(key -> {
             if (indexMap.get(key) != null) {
                 switch (key) {
-                    case "key": itemMap.put(indexMap.get(key), cosObjectSummary.getKey()); break;
-                    case "hash": itemMap.put(indexMap.get(key), cosObjectSummary.getETag()); break;
-                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getLastModified())); break;
-//                    case "mimeType": itemMap.put(indexMap.get(key), cosObjectSummary.); break;
-                    case "type": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.getStorageClass())); break;
-//                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObjectSummary.)); break;
-                    case "endUser": itemMap.put(indexMap.get(key), cosObjectSummary.getOwner().getDisplayName()); break;
+                    case "key": itemMap.put(indexMap.get(key), cosObject.getKey()); break;
+                    case "hash": itemMap.put(indexMap.get(key), cosObject.getETag()); break;
+                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getSize())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getLastModified())); break;
+//                    case "mimeType": itemMap.put(indexMap.get(key), cosObject.); break;
+                    case "type": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getStorageClass())); break;
+//                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObject.)); break;
+                    case "endUser": itemMap.put(indexMap.get(key), cosObject.getOwner().getDisplayName()); break;
+                }
+            }
+        });
+        return itemMap;
+    }
+
+    public static Map<String, String> getItemMap(OSSObjectSummary ossObject, Map<String, String> indexMap)
+            throws IOException {
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        Map<String, String> itemMap = new HashMap<>();
+        fileInfoFields.forEach(key -> {
+            if (indexMap.get(key) != null) {
+                switch (key) {
+                    case "key": itemMap.put(indexMap.get(key), ossObject.getKey()); break;
+                    case "hash": itemMap.put(indexMap.get(key), ossObject.getETag()); break;
+                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getSize())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getLastModified())); break;
+                    case "type": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getStorageClass())); break;
+                    case "endUser": itemMap.put(indexMap.get(key), ossObject.getOwner().getDisplayName()); break;
                 }
             }
         });
@@ -151,31 +171,60 @@ public class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(COSObjectSummary cosObjectSummary, List<String> rmFields) throws IOException {
-        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+    public static String toFormatString(COSObjectSummary cosObject, List<String> rmFields) throws IOException {
+        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         JsonObject converted = new JsonObject();
-        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObjectSummary.getKey());
-        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObjectSummary.getETag());
-        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", cosObjectSummary.getSize());
-        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", cosObjectSummary.getLastModified().getTime());
-        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObjectSummary.getStorageClass());
-        if ((rmFields == null || !rmFields.contains("endUser")) && cosObjectSummary.getOwner() != null)
-            converted.addProperty("endUser", cosObjectSummary.getOwner().getDisplayName());
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObject.getKey());
+        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObject.getETag());
+        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", cosObject.getSize());
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", cosObject.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObject.getStorageClass());
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
+            converted.addProperty("endUser", cosObject.getOwner().getDisplayName());
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
 
-    public static String toFormatString(COSObjectSummary cosObjectSummary, String separator, List<String> rmFields)
+    public static String toFormatString(COSObjectSummary cosObject, String separator, List<String> rmFields)
             throws IOException {
-        if (cosObjectSummary == null || cosObjectSummary.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
-        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObjectSummary.getKey()).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObjectSummary.getETag()).append(separator);
-        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObjectSummary.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObjectSummary.getLastModified().getTime()).append(separator);
-        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObjectSummary.getStorageClass()).append(separator);
-        if ((rmFields == null || !rmFields.contains("endUser")) && cosObjectSummary.getOwner() != null)
-            converted.append(cosObjectSummary.getOwner().getDisplayName()).append(separator);
+        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
+        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObject.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObject.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
+            converted.append(cosObject.getOwner().getDisplayName()).append(separator);
+        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
+    public static String toFormatString(OSSObjectSummary ossObject, List<String> rmFields) throws IOException {
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        JsonObject converted = new JsonObject();
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
+        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", ossObject.getETag());
+        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", ossObject.getSize());
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", ossObject.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", ossObject.getStorageClass());
+        if ((rmFields == null || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
+            converted.addProperty("endUser", ossObject.getOwner().getDisplayName());
+        if (converted.size() == 0) throw new IOException("empty result.");
+        return converted.toString();
+    }
+
+    public static String toFormatString(OSSObjectSummary cosObject, String separator, List<String> rmFields)
+            throws IOException {
+        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        StringBuilder converted = new StringBuilder();
+        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
+        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObject.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObject.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
+        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
+            converted.append(cosObject.getOwner().getDisplayName()).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }

@@ -51,8 +51,7 @@ threads=30
 ```
 ak=
 sk=
-t-sid=
-t-sk=
+region=
 bucket=
 marker=
 start=
