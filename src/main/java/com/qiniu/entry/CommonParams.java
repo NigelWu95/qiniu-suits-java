@@ -92,7 +92,7 @@ public class CommonParams {
             setPrefixRight(entryParam.getValue("prefix-right", "false"));
         }
 
-        setUnitLen(entryParam.getValue("unit-len", "10000"));
+        setUnitLen(entryParam.getValue("unit-len", "-1"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryTimes(entryParam.getValue("retry-times", "3"));
         setBatchSize(entryParam.getValue("batch-size", "-1"));
@@ -190,7 +190,7 @@ public class CommonParams {
             bucket = path.substring(10);
             bucket = entryParam.getValue("bucket", bucket);
         } else if (path.startsWith("aliyun://")) {
-            bucket = path.substring(10);
+            bucket = path.substring(9);
             bucket = entryParam.getValue("bucket", bucket);
         } else {
             bucket = entryParam.getValue("bucket");
@@ -211,6 +211,10 @@ public class CommonParams {
     }
 
     private void setUnitLen(String unitLen) throws IOException {
+        if ("-1".equals(unitLen)) {
+            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
+            else unitLen = "1000";
+        }
         this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
     }
 
