@@ -27,7 +27,7 @@ public class AliListerTest {
         CredentialsProvider credentialsProvider = new DefaultCredentialProvider(accessKeyId, accessKeySecret);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         OSSClient ossClient = new OSSClient(endpoint, credentialsProvider, clientConfiguration);
-        aliLister = new AliLister(ossClient, bucket, null, null, null, null, 100);
+        aliLister = new AliLister(ossClient, bucket, "p", null, null, null, 10);
     }
 
     @Test

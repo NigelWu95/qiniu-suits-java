@@ -18,7 +18,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private OSSClient ossClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
-    private ObjectListing objectListing;
     private List<OSSObjectSummary> ossObjectList;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix,
@@ -87,7 +86,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     private List<OSSObjectSummary> getListResult() throws OSSException, ClientException {
-        objectListing = ossClient.listObjects(listObjectsRequest);
+        ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
         listObjectsRequest.setMarker(objectListing.getNextMarker());
         return objectListing.getObjectSummaries();
     }
@@ -121,7 +120,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public boolean hasNext() {
-        return objectListing.getNextMarker() != null && !"".equals(objectListing.getNextMarker());
+        return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
     }
 
     @Override
