@@ -16,7 +16,6 @@ public class TenLister implements ILister<COSObjectSummary> {
     private COSClient cosClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
-    private ObjectListing objectListing;
     private List<COSObjectSummary> cosObjectList;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
@@ -85,7 +84,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     private List<COSObjectSummary> getListResult() throws CosClientException {
-        objectListing = cosClient.listObjects(listObjectsRequest);
+        ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
         listObjectsRequest.setMarker(objectListing.getNextMarker());
         return objectListing.getObjectSummaries();
     }
@@ -115,7 +114,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public boolean hasNext() {
-        return objectListing.getNextMarker() != null && !"".equals(objectListing.getNextMarker());
+        return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
     }
 
     @Override
