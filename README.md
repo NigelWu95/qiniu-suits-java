@@ -42,8 +42,8 @@
 </dependency>
 ```  
 **2. 命令行运行 jar**  
-在[Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 下载最新 jar 包，使用命令行参数 [-config=<filepath>] 指定配
-置文件路径，运行命令形如：
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 下载最新 jar 包，使用命令行参数 [-config=<filepath>] 指定
+配置文件路径，运行命令形如：
 ```
 java -jar qsuits-x.x.jar -config=config.txt
 ```  
@@ -65,7 +65,7 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
 `source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
-**在 v2.11 及以上版本，取消了设置该参数的强制性，可以使用 source 进行指定，如果不显式指定则根据 path 参数来自动判断：  
+**在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=../<file-path>` 表示从本地文件中读取资源列表  
@@ -148,15 +148,15 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 （1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
 （2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
 
-*--* 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
-选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
-**持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
+**--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
+选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细配置说明见 [持久化配置](docs/resultsave.md)。  
+**--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
 （2）local 源 =》 "local_success_\<order\>.txt"  
 如果设置了过滤参数，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>_success/error_\<order\>.txt"**  
-**process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
-处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息**  
+"\<process\>_success/error_\<order\>.txt"  
+**--** process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
+处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息  
 
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。
