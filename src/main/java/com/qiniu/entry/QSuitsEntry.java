@@ -226,7 +226,7 @@ public class QSuitsEntry {
     public AliOssContainer getAliOssContainer() {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
-        String endPoint = "http://oss-" + commonParams.getRegionName() + ".aliyuncs.com";
+        String endPoint = "http://" + commonParams.getRegionName() + ".aliyuncs.com";
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
