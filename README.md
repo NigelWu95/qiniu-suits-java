@@ -2,10 +2,10 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-七牛云接口使用套件（可以工具形式使用），主要针对七牛云存储资源的批量处理进行功能的封装，提供更为简洁的操作方式。
-基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
+七牛云接口使用套件（可以工具形式使用：在 release 页面下载 jar 包），列举云存储空间的大量资源列表，同时支持针对大量资源列表进行处理，主要包括对七牛
+云存储资源进行批量处理（增删改查）。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
 #### **高级功能列表：**
-- [x] 云存储文件并发列举，自定义多个前缀、列举开始和结束位置、线程数、结果格式和所需字段等，**支持七牛云、腾讯云**  
+- [x] 云存储文件列举（大量文件并发列举非常高效），支持指定前缀、列举开始文件名或 marker、列举结束文件名（或前缀）、线程数、结果格式和所需字段等，**支持七牛云、腾讯云**  
 <details>
 <summary>并发列举算法描述图：点击查看</summary>
 
@@ -63,10 +63,10 @@ java -jar qsuits-x.x.jar [-source=qiniu] -ak=<ak> -sk=<sk> -path=<path>
 ```
 
 ### 4 数据源
-通过 **source/source-type=** 或者 **path=** 来指定:  
+通过 **source=** 或者 **path=** 来指定:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
 `source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
-**在 v2.11 及以上版本，取消了设置该参数的强制性，可以使用 source/source-type 进行指定，如果不显式指定则根据 path 参数来自动判断：  
+**在 v2.11 及以上版本，取消了设置该参数的强制性，可以使用 source 进行指定，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=../<file-path>` 表示从本地文件中读取资源列表  
