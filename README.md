@@ -4,69 +4,66 @@
 # qiniu-suits (qsuits)
 七牛云接口使用套件（可以工具形式使用：在 release 页面下载 jar 包），列举云存储空间的大量资源列表，同时支持对资源进行处理，主要包括对七牛云存储资源
 进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
-#### **高级功能列表：**
-- [x] 云存储（支持**支持七牛云、腾讯云、阿里云等数据源**）文件列举（大量文件高效并发列举），支持指定前缀、列举开始文件名或 marker、列举结束文件名
+
+### **高级功能列表：**
+- [x] 云存储（支持**支持七牛云、腾讯云、阿里云等[数据源](#4-数据源)**）文件列举（大量文件高效并发列举），支持指定前缀、列举开始文件名或 marker、列举结束文件名
 （或前缀）、线程数、保存格式和所需字段等  
-<details>
-<summary>并发列举算法描述图：点击查看</summary>
-
-![云存储文件并发列举算法](docs/云存储文件并发列举算法.jpg)
-</details>  
-<font face="宋体">宋体</font>
-<font face="黑体" color=red>红色黑体</font>
-<font face="黑体" color=red size=7>7号红色黑体</font>
-
-- [x] 云存储空间文件按照字段过滤，按照日期范围、文件名（前缀、后缀、包含）、mime 类型等字段正向及向筛选目标文件  
-- [x] 批量进行七牛存储文件的 API 操作，批量删除、复制文件或查询文件信息、异步抓取文件、转码及查询转码结果等等  
+- [x] 资源文件[过滤](#1.-过滤器功能)，按照日期范围、文件名（前缀、后缀、包含）、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否对应，过滤异常文件列表  
-- [x] 读取 m3u8 文件 URL 导出 ts URL 列表  
+- [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
+- [x] 修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
+- [x] 修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
+- [x] 删除空间资源 [delete 配置](docs/delete.md)  
+- [x] 复制资源到指定空间 [copy 配置](docs/copy.md)  
+- [x] 移动资源到指定空间 [move 配置](docs/move.md)  
+- [x] 对指定空间的资源进行重命名 [rename 配置](docs/rename.md)  
+- [x] 异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
+- [x] 对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
+- [x] 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
+- [x] 查询空间资源的元信息 [stat 配置](docs/stat.md)  
+- [x] 对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
+- [x] 查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
+- [x] 查询资源的 qhash [qhash 配置](docs/qhash.md)  
+- [x] 对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
+- [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
+- [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 
-## 使用介绍
 ### 1 程序运行过程  
-读取数据源 =》[过滤器 =》] [按指定过程处理数据 =》] 结果持久化  
+读取[数据源](#4-数据源) => [选择[过滤器](#1.-过滤器功能)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](#2.-输出结果持久化)  
 
 ### 2 运行方式  
-(1) 命令行: java -jar qsuits-<x.x>.jar [-config=<config-filepath>]  
-(2) Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能  
-jar 包下载地址：https://search.maven.org/search?q=a:qsuits
-maven 引入:
+**务必使用最新版本**  
+#### 命令行工具运行配置  
+1. 使用命令行参数 [-config=<config-filepath>] 指定配置文件路径，工具运行命令形如：
+```
+java -jar qsuits-x.x.jar -config=config.txt
+```  
+配置文件中可设置形如\<属性名\>=\<属性值\>，每行一个参数：  
+```
+source=qiniu
+bucket=
+ak=
+sk=
+```  
+**备注**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.properties` 或 `resources/.qiniu.properties`，两个文件
+存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
+
+2. 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，如  
+```
+java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
+```  
+#### jar 包依赖  
+Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能，
+jar 包下载地址：https://search.maven.org/search?q=a:qsuits，maven 地址:
 ```
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
   <version>5.0</version>
 </dependency>
-```   
-**务必使用最新版本**
-
-
-### 3 命令行运行配置
-(1) 自定义配置文件路径，使用命令行参数 `-config=<config-filepath>` 指定配置文件路径，命令为：  
-```
-java -jar qsuits-x.x.jar -config=config.txt
-```
-配置文件中参数可设置形如：  
-```
-source=qiniu
-ak=
-sk=
-bucket=
 ```
 
-(2) 可以通过默认路径的配置文件来设置参数值，默认的配置文件需要放置在与 jar 包同路径下的 
-resources 文件夹中，文件名为 `qiniu.properties` 或 `.qiniu.properties`，运行命令为：  
-```
-java -jar qsuits-x.x.jar [-source=qiniu]
-```
-*配置参数同上述方式*  
-
-(3) 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下所有参数可以完全从命令行指定，形式为：  
- **`-<property-name>=<value>`**，如  
-```
-java -jar qsuits-x.x.jar [-source=qiniu] -ak=<ak> -sk=<sk> -path=<path>
-```
-
-### 4 数据源
+### 3 数据源
 通过 **source=** 或者 **path=** 来指定:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
 `source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
@@ -112,7 +109,7 @@ indexes=0,1,2
 器最好不要超过 300 线程，32CPU96G 的机器可以达到 600 线程。unit-len 一般不需要调整，但可视情况而定，如果增加 unit-len 的话，建议设置的线程数
 参考可能的最大线程数相应减小，例如设置 unit-len=20000 的话建议线程数参考最大值减半。**  
 
-#### 1. 过滤器功能
+### 4 过滤器功能
 从数据源输入的数据（针对七牛空间资源）通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型
 等，qsuits 支持通过配置选项设置一些过滤条件，目前支持的过滤条件包含：  
 `f-prefix` 表示**选择**文件名符合该前缀的文件  
@@ -133,27 +130,6 @@ indexes=0,1,2
 `f-check-rewrite` 是否完全使用自定义的规范列表进行检查，默认为 false，程序包含的默认字段规范对应关系配置见：[check 默认配置](../resources/check.json)|  
 [filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可
 以直接持久化保存结果，如通过 qiniu 源获取文件列表过滤后进行保存，可设置 save-total=true/false 来选择是否将列举到的完整记录进行保存。  
-
-#### 2. 输出结果持久化
-对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
-`save-path=` 表示保存结果的文件路径  
-`save-format=` 结果保存格式（json/tab），默认为 tab  
-`save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
-`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
-进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。
-**默认情况：**  
-（1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
-
-*--* 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
-选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
-**持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
-（1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
-（2）local 源 =》 "local_success_\<order\>.txt"  
-如果设置了过滤参数，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>_success/error_\<order\>.txt"**  
-**process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
-处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息**  
 
 ### 5 处理过程
 处理过程表示对由数据源输入的每一条记录进行处理，所有处理结果保存在 save-path 路径下，具体处理过程由处理类型参数指定，如 **process=type/status
@@ -179,6 +155,27 @@ indexes=0,1,2
 `process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
 `process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 `process=exportts` 表示对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
+
+### 5 结果持久化
+对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
+`save-path=` 表示保存结果的文件路径  
+`save-format=` 结果保存格式（json/tab），默认为 tab  
+`save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
+`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
+进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。
+**默认情况：**  
+（1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
+（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
+
+*--* 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
+选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细参数见 [持久化配置](docs/resultsave.md)。  
+**持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
+（1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
+（2）local 源 =》 "local_success_\<order\>.txt"  
+如果设置了过滤参数，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
+"\<process\>_success/error_\<order\>.txt"**  
+**process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
+处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息**  
 
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用 qiniu.properties 时，需要将所有参数设置在该配置文件中。
