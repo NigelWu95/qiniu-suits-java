@@ -6,9 +6,9 @@
 进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
 
 ### **高级功能列表：**
-- [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](#云存储列举(list))，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
-- [x] 资源文件[过滤](#1.-过滤器功能)，按照日期范围、文件名（前缀、后缀、包含）、mime 类型等字段正向及反向筛选目标文件  
-- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否对应，过滤异常文件列表  
+- [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](#云存储列举-list)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 资源文件[过滤](#4-过滤器功能)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配([check](#2.特殊特征匹配过滤))，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 - [x] 修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
 - [x] 修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
@@ -31,9 +31,18 @@
 读取[数据源](#4-数据源) => [选择[过滤器](#1.-过滤器功能)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](#2.-输出结果持久化)  
 
 ### 2 运行方式  
-**务必使用最新版本**  
-#### 命令行工具运行配置  
-1. 使用命令行参数 [-config=<config-filepath>] 指定配置文件路径，工具运行命令形如：
+1. 引入 jar 包依赖（**务必使用最新版本**，[下载 jar 包](https://search.maven.org/search?q=a:qsuits)
+或者[使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），可以重写或新增 processor 接口实现类进行自定义功能  
+maven 地址:
+```
+<dependency>
+  <groupId>com.qiniu</groupId>
+  <artifactId>qsuits</artifactId>
+  <version>5.0</version>
+</dependency>
+```
+  
+2. 命令行运行配置，使用命令行参数 [-config=<config-filepath>] 指定配置文件路径，工具运行命令形如：
 ```
 java -jar qsuits-x.x.jar -config=config.txt
 ```  
@@ -44,26 +53,15 @@ bucket=
 ak=
 sk=
 ```  
-**备注**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.properties` 或 `resources/.qiniu.properties`，两个文件
-存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
-
-2. 直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，如  
+**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.properties` 或 `resources/.qiniu.properties`，
+两个文件存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
+**备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，如  
 ```
 java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 ```  
-#### jar 包依赖  
-Java 工程中，引入 jar 包，可以自定义 processor 接口实现类或者重写实现类来实现自定义功能，
-jar 包下载地址：https://search.maven.org/search?q=a:qsuits，maven 地址:
-```
-<dependency>
-  <groupId>com.qiniu</groupId>
-  <artifactId>qsuits</artifactId>
-  <version>5.0</version>
-</dependency>
-```
 
 ### 3 数据源
-数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
+数据源分为几大类型：云存储列举 list、文件内容读取 file，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
 `source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
 **在 v2.11 及以上版本，取消了设置该参数的强制性，可以使用 source 进行指定，如果不显式指定则根据 path 参数来自动判断：  
@@ -78,7 +76,7 @@ path=
 threads=30
 unit-len=10000
 ```  
-#### 云存储列举(list)  
+#### 云存储列举 list  
 支持从不同的云存储上列举出空间文件，通常云存储空间列举的必须参数为：  
 ```
 <密钥配置>
@@ -100,7 +98,7 @@ ten-secret=
 ali-id=
 ali-secret=
 ```  
-#### 文件内容读取(file)  
+#### 文件内容读取 file   
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：
 ```
 parse=
@@ -111,8 +109,8 @@ indexes=0,1,2
 
 ### 4 过滤器功能
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
-(1)**基本字段过滤**和(2)**特殊特征匹配过滤**  
-##### (1) 基本字段过滤  
+1.**基本字段过滤**和2.**特殊特征匹配过滤**  
+##### 1.基本字段过滤  
 根据设置的字段条件进行筛选，多个条件时需同时满足才保留，若存在记录不包该字段信息时则正向规则下不保留，反正规则下保留，字段包含：
 `f-prefix=` 表示**选择**文件名符合该前缀的文件  
 `f-suffix=` 表示**选择**文件名符合该后缀的文件  
@@ -127,10 +125,10 @@ indexes=0,1,2
 `f-anti-inner=` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex=` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime=` 表示**排除**该 mime 类型的文件  
-##### (2) 特殊特征匹配过滤  
-根据资源的字段关系选择某个特征下的文件，默认的特征配置见：[check 默认配置](../resources/check.json)，目前支持：
-`f-check=mime` 默认配置为 ["ext-mime"]，表示进行**后缀名**和**mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选  
-其他所需参数：
+##### 2.特殊特征匹配过滤  
+根据资源的字段关系选择某个特征下的文件，默认的特征配置见：[check 默认配置](../resources/check.json)，目前支持：  
+`f-check=mime` 表示进行**后缀名**和**mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  
+其他所需参数：  
 `f-check-config` 自定义资源字段规范对应关系列表的配置文件，格式为 json，配置举例：[check-config 配置](../resources/check-config.json)  
 `f-check-rewrite` 是否覆盖默认的特征配置，为 false（默认）表示将自定义的规范对应关系列表和默认的列表进行叠加，否则表示仅使用自定义规范  
 [filter 配置说明](docs/filter.md) 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可
