@@ -6,9 +6,9 @@
 进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
 
 ### **高级功能列表：**
-- [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](#云存储列举-list)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](#list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
 - [x] 资源文件[过滤](#4-过滤器功能)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
-- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配([check](#2.特殊特征匹配过滤))，过滤异常文件列表  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](#2.特殊特征匹配过滤)，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 - [x] 修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
 - [x] 修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
@@ -28,7 +28,7 @@
 - [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 
 ### 1 程序运行过程  
-读取[数据源](#4-数据源) => [选择[过滤器](#1.-过滤器功能)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](#2.-输出结果持久化)  
+读取[数据源](#3-数据源) => [选择[过滤器](#4-过滤器功能)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](#6-结果持久化)  
 
 ### 2 运行方式  
 1. 引入 jar 包依赖（**务必使用最新版本**，[下载 jar 包](https://search.maven.org/search?q=a:qsuits)
@@ -61,7 +61,7 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为几大类型：云存储列举 list、文件内容读取 file，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
+数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
 `source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
 **在 v2.11 及以上版本，取消了设置该参数的强制性，可以使用 source 进行指定，如果不显式指定则根据 path 参数来自动判断：  
@@ -69,43 +69,20 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=../<file-path>` 表示从本地文件中读取资源列表  
 当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**  
-#### 常用公共参数
-```
-source=qiniu/local  
-path=
-threads=30
-unit-len=10000
-```  
-#### 云存储列举 list  
-支持从不同的云存储上列举出空间文件，通常云存储空间列举的必须参数为：  
-```
-<密钥配置>
-bucket=
-region=
-```  
-##### qiniu 对象存储密钥配置  
-```
-ak=
-sk=
-```  
-##### tencent 对象存储 COS 密钥配置  
-```
-ten-id=
-ten-secret=
-```  
-##### aliyun 对象存储 OSS 密钥配置  
-```
-ali-id=
-ali-secret=
-```  
-#### 文件内容读取 file   
-文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：
-```
-parse=
-separator=
-indexes=0,1,2
-```  
-###### 数据源更多参数配置和详细解释及可能涉及的高级用法见：[数据源配置](docs/datasource.md)
+#### list 云存储列举  
+支持从不同的云存储上列举出空间文件，通常云存储空间列举的必须参数包括密钥、空间名(通过 path 或 bucket 设置)及空间所在区域(通过 region 设置)：  
+
+|       list 源     |           密钥字段        |          region 字段         |                  对应关系和描述               |  
+|------------------|--------------------------|-----------------------------|---------------------------------------------|  
+|qiniu 对象存储      |`ak=`<br>`sk=`            |`region=z0/z1/z2/...`可不设置|密钥对应七牛云账号的 AccessKey 和 SecretKey，region 使用简称，参考 https://developer.qiniu.com/kodo/manual/1671/region-endpoint|  
+|tencent 对象存储 COS|`ten-id=`<br>`ten-secret=`|`region=ap-beijing/...`必须设置| 密钥对应腾讯云账号的 SecretId 和 SecretKey，region 使用简称，参考 https://cloud.tencent.com/document/product/436/6224|  
+|aliyun 对象存储 OSS |`ali-id=`<br>`ali-secret=`|`region=oss-cn-hangzhou/...`必须设置| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret，region 使用简称，参考 https://help.aliyun.com/document_detail/31837.html|  
+#### file 文件内容读取  
+文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
+`parse=tab/json` 表示输入行的格式  
+`separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
+`indexes=0,1,2` 表示输入行的字段索引顺序  
+###### 数据源更多参数配置和详细解释及可能涉及的高级用法见：[数据源配置](docs/datasource.md)  
 
 ### 4 过滤器功能
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
@@ -159,7 +136,7 @@ indexes=0,1,2
 `process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 `process=exportts` 表示对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 
-### 5 结果持久化
+### 6 结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
 `save-path=` 表示保存结果的文件路径  
 `save-format=` 结果保存格式（json/tab），默认为 tab  
