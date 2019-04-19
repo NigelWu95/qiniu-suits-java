@@ -73,7 +73,7 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 支持从不同的云存储上列举出空间文件，通常云存储空间列举的必须参数包括密钥、空间名(通过 path 或 bucket 设置)及空间所在区域(通过 region 设置)：  
 
 |list 源|             密钥字段            |          region 字段         |                  对应关系和描述               |  
-|:------|:--------------------------------|:-----------------------------|:---------------------------------------------|  
+|:------:|:--------------------------------:|:-----------------------------:|:---------------------------------------------:|  
 |qiniu|`ak=`<br>`sk=`            |`region=z0/z1/z2/.`<br>可不设置|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region 使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
 |tencent|`ten-id=`<br>`ten-secret=`|`region=ap-beijing/.`<br>必须设置| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region 使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
 |aliyun|`ali-id=`<br>`ali-secret=`|`region=oss-cn-hangzhou/.`<br>必须设置| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region 使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
