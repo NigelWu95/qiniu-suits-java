@@ -3,7 +3,7 @@
 
 # qiniu-suits (qsuits)
 七牛云接口使用套件（可以工具形式使用：在 release 页面下载 jar 包），列举云存储空间的大量资源列表，同时支持对资源进行处理，主要包括对七牛云存储资源
-进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 运行。  
+进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
 
 ### **高级功能列表：**
 - [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](#list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -31,18 +31,19 @@
 读取[数据源](#3-数据源) => [选择[过滤器](#4-过滤器功能)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](#6-结果持久化)  
 
 ### 2 运行方式  
-1. 引入 jar 包依赖（**务必使用最新版本**，[下载 jar 包](https://search.maven.org/search?q=a:qsuits)
-或者[使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），可以重写或新增 processor 接口实现类进行自定义功能  
-maven 地址:
+**1. 程序依赖 jar**  
+引入 jar 包（**务必使用最新版本**，[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者
+[使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），可以重写或新增 processor 接口实现类进行自定义功能，maven:
 ```
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
   <version>5.0</version>
 </dependency>
-```
-  
-2. 命令行运行配置，使用命令行参数 [-config=<config-filepath>] 指定配置文件路径，工具运行命令形如：
+```  
+**2. 命令行运行 jar**  
+在[Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 下载最新 jar 包，使用命令行参数 [-config=<filepath>] 指定配
+置文件路径，运行命令形如：
 ```
 java -jar qsuits-x.x.jar -config=config.txt
 ```  
