@@ -154,8 +154,8 @@ public class QSuitsEntry {
 
     private ClientConfig getDefaultTenClientConfig() {
         ClientConfig clientConfig = new ClientConfig(new Region(commonParams.getRegionName()));
-        clientConfig.setConnectionTimeout(Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
-        clientConfig.setSocketTimeout(Integer.valueOf(entryParam.getValue("read-timeout", "120")));
+        clientConfig.setConnectionTimeout(1000 * Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
+        clientConfig.setSocketTimeout(1000 * Integer.valueOf(entryParam.getValue("read-timeout", "120")));
         return clientConfig;
     }
 
@@ -165,8 +165,8 @@ public class QSuitsEntry {
 
     private ClientConfiguration getDefaultAliClientConfig() {
         ClientConfiguration clientConfig = new ClientConfiguration();
-        clientConfig.setConnectionTimeout(Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
-        clientConfig.setSocketTimeout(Integer.valueOf(entryParam.getValue("read-timeout", "120")));
+        clientConfig.setConnectionTimeout(1000 * Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
+        clientConfig.setSocketTimeout(1000 * Integer.valueOf(entryParam.getValue("read-timeout", "120")));
         return clientConfig;
     }
 
