@@ -41,7 +41,6 @@ public class QSuitsEntry {
     private boolean saveTotal;
     private List<String> rmFields;
     private String process;
-    private int batchSize;
     private int retryTimes;
     private String savePath;
     private String saveFormat;
@@ -96,7 +95,6 @@ public class QSuitsEntry {
         this.saveTotal = commonParams.getSaveTotal();
         this.rmFields = commonParams.getRmFields();
         this.process = commonParams.getProcess();
-        this.batchSize = commonParams.getBatchSize();
         this.retryTimes = commonParams.getRetryTimes();
         this.savePath = commonParams.getSavePath() + commonParams.getSaveTag();
         this.saveFormat = commonParams.getSaveFormat();
@@ -253,7 +251,7 @@ public class QSuitsEntry {
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
         ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
         if (nextProcessor != null) {
-            if (ProcessUtils.canBatch(nextProcessor.getProcessName())) nextProcessor.setBatchSize(batchSize);
+            if (ProcessUtils.canBatch(nextProcessor.getProcessName())) nextProcessor.setBatchSize(commonParams.getBatchSize());
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
             nextProcessor.setRetryTimes(retryTimes);
         }
