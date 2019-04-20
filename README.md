@@ -7,8 +7,8 @@
 
 ### **高级功能列表：**
 - [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
-- [x] 资源文件[过滤](#4-过滤器功能)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
-- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](#2.特殊特征匹配过滤)，过滤异常文件列表  
+- [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 - [x] 修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
 - [x] 修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
@@ -28,7 +28,7 @@
 - [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 
 ### 1 程序运行过程  
-读取[数据源](docs/datasource.md) => [选择[过滤器](#4-过滤器功能)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](#6-结果持久化)  
+读取[数据源](docs/datasource.md) => [选择[过滤器](docs/filter.md)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](docs/resultsave.md)  
 
 ### 2 运行方式  
 **1. 程序依赖 jar**  
@@ -164,10 +164,10 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
 （2）local 源 =》 "local_success_\<order\>.txt"  
-如果设置了过滤参数，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>_success/error_\<order\>.txt"  
+如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
+"\<process\>_success/error_\<order\>.txt"。  
 **--** process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
-处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息  
+处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息。  
 
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。
