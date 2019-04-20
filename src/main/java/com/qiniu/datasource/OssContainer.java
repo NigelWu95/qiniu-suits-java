@@ -161,7 +161,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     else goon = false;
                     break;
                 } catch (SuitsException e) {
-                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...");
+                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
                     if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else retry--;
@@ -207,7 +207,7 @@ public abstract class OssContainer<E> implements IDataSource {
                 String[] markerAndEnd = getMarkerAndEnd(prefix);
                 return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
             } catch (SuitsException e) {
-                System.out.println("list prefix:" + prefix + " retrying...");
+                System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
