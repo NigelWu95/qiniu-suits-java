@@ -63,7 +63,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiMimeType()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
         List<Method> checkMethods = new ArrayList<Method>() {{
-            if ("mime".equals(checker.getCheckName()))
+            if ("ext-mime".equals(checker.getCheckName()))
                 add(checker.getClass().getMethod("checkMimeType", Map.class));
         }};
 
