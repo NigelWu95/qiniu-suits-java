@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
-    <version>5.0</version>
+    <version>5.10</version>
     <name>qsuits</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>
@@ -55,6 +55,12 @@
             <artifactId>gson</artifactId>
             <version>2.8.2</version>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>3.4.2</version>
         </dependency>
 
         <dependency>

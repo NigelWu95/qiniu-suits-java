@@ -1,7 +1,7 @@
 package com.qiniu.process.filtration;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.persistence.FileMap;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ILineFilter;
 import com.qiniu.interfaces.ILineProcess;
@@ -23,7 +23,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
     private String saveSeparator;
     private List<String> rmFields;
     private int saveIndex;
-    private FileMap fileMap;
+    private FileSaveMapper fileSaveMapper;
     private ITypeConvert<Map<String, String>, String> typeConverter;
 
     public FilterProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath,
@@ -36,8 +36,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         this.saveSeparator = saveSeparator;
         this.rmFields = rmFields;
         this.saveIndex = saveIndex;
-        this.fileMap = new FileMap(savePath, processName, String.valueOf(saveIndex));
-        this.fileMap.initDefaultWriters();
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
         this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
     }
 
@@ -64,7 +63,7 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
             if (filter.checkAntiMimeType()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
         }};
         List<Method> checkMethods = new ArrayList<Method>() {{
-            if ("mime".equals(checker.getCheckName()))
+            if ("ext-mime".equals(checker.getCheckName()))
                 add(checker.getClass().getMethod("checkMimeType", Map.class));
         }};
 
@@ -92,9 +91,8 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
 
     public FilterProcess clone() throws CloneNotSupportedException {
         FilterProcess filterProcess = (FilterProcess)super.clone();
-        filterProcess.fileMap = new FileMap(savePath, processName, String.valueOf(++saveIndex));
         try {
-            filterProcess.fileMap.initDefaultWriters();
+            filterProcess.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
             filterProcess.typeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
             if (nextProcessor != null) {
                 filterProcess.nextProcessor = nextProcessor.clone();
@@ -118,16 +116,16 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。
         if (nextProcessor == null) {
             List<String> writeList = typeConverter.convertToVList(filterList);
-            if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
+            if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
             if (typeConverter.getErrorList().size() > 0)
-                fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+                fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
         } else {
             nextProcessor.processLine(filterList);
         }
     }
 
     public void closeResource() {
-        fileMap.closeWriters();
+        fileSaveMapper.closeWriters();
         if (nextProcessor != null) nextProcessor.closeResource();
     }
 }

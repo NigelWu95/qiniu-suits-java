@@ -1,5 +1,6 @@
 package com.qiniu.process.filtration;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -15,7 +16,7 @@ public class SeniorChecker {
     private Set<String> extMimeList;
     private Set<String> extMimeTypeList;
     private static List<String> checkList = new ArrayList<String>(){{
-        add("mime");
+        add("ext-mime");
     }};
 
     public SeniorChecker(String checkName, String configPath, boolean rewrite) throws IOException {
@@ -25,8 +26,9 @@ public class SeniorChecker {
         if (configPath != null && !"".equals(configPath)) {
             JsonFile customJson = new JsonFile(configPath);
             JsonElement jsonElement = customJson.getElement("ext-mime");
-            this.extMimeTypeList = new HashSet<>(JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(),
-                    new TypeToken<List<String>>(){}));
+            if (jsonElement instanceof JsonArray) this.extMimeTypeList = new HashSet<>(
+                    JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(), new TypeToken<List<String>>(){})
+            );
         }
         if (checkMime() && !rewrite) {
             JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
@@ -48,7 +50,7 @@ public class SeniorChecker {
     }
 
     public boolean checkMime() {
-        return "mime".equals(checkName);
+        return "ext-mime".equals(checkName);
     }
 
     public boolean isValid() {

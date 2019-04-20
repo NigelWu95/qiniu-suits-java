@@ -1,8 +1,11 @@
 package com.qiniu.util;
 
+import java.io.IOException;
+
 public class FileNameUtils {
 
-    public static String realPathWithUserHome(String pathStr) {
+    public static String realPathWithUserHome(String pathStr) throws IOException {
+        if (pathStr == null || "".equals(pathStr)) throw new IOException("the path is empty.");
         if (pathStr.startsWith("~" + System.getProperty("file.separator"))) {
             return System.getProperty("user.home") + pathStr.substring(1);
         } else {

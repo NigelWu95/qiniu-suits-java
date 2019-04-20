@@ -7,7 +7,6 @@ import com.qiniu.config.JsonFile;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFieldsFilter;
 import com.qiniu.process.filtration.SeniorChecker;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
 import com.qiniu.util.Base64;
 
@@ -29,6 +28,8 @@ public class CommonParams {
     private String qiniuSecretKey;
     private String tencentSecretId;
     private String tencentSecretKey;
+    private String aliyunAccessId;
+    private String aliyunAccessSecret;
     private String bucket;
     private String regionName;
     private Map<String, String[]> prefixesMap;
@@ -74,8 +75,12 @@ public class CommonParams {
                 qiniuSecretKey = entryParam.getValue("sk");
                 regionName = entryParam.getValue("region", "auto");
             } else if ("tencent".equals(source)) {
-                tencentSecretId = entryParam.getValue("t-sid");
-                tencentSecretKey = entryParam.getValue("t-sk");
+                tencentSecretId = entryParam.getValue("ten-id");
+                tencentSecretKey = entryParam.getValue("ten-secret");
+                regionName = entryParam.getValue("region");
+            } else if ("aliyun".equals(source)) {
+                aliyunAccessId = entryParam.getValue("ali-id");
+                aliyunAccessSecret = entryParam.getValue("ali-secret");
                 regionName = entryParam.getValue("region");
             }
             setBucket();
@@ -87,7 +92,7 @@ public class CommonParams {
             setPrefixRight(entryParam.getValue("prefix-right", "false"));
         }
 
-        setUnitLen(entryParam.getValue("unit-len", "10000"));
+        setUnitLen(entryParam.getValue("unit-len", "-1"));
         setThreads(entryParam.getValue("threads", "30"));
         setRetryTimes(entryParam.getValue("retry-times", "3"));
         setBatchSize(entryParam.getValue("batch-size", "-1"));
@@ -113,14 +118,15 @@ public class CommonParams {
             } catch (IOException e2) {
                 if ("".equals(path) || path.startsWith("qiniu://")) source = "qiniu";
                 else if (path.startsWith("tencent://")) source = "tencent";
+                else if (path.startsWith("aliyun://")) source = "aliyun";
                 else source = "local";
             }
         }
         // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
-        if (!source.matches("(local|qiniu|tencent)")) {
-            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent)");
+        if (!source.matches("(local|qiniu|tencent|aliyun)")) {
+            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
         }
     }
 
@@ -165,7 +171,7 @@ public class CommonParams {
 
     private void setSeniorChecker() throws IOException {
         String checkType = entryParam.getValue("f-check", "");
-        checkType = checked(checkType, "f-check", "(|mime)");
+        checkType = checked(checkType, "f-check", "(|ext-mime)");
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
         checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
@@ -182,6 +188,9 @@ public class CommonParams {
             bucket = entryParam.getValue("bucket", bucket);
         } else if (path.startsWith("tencent://")) {
             bucket = path.substring(10);
+            bucket = entryParam.getValue("bucket", bucket);
+        } else if (path.startsWith("aliyun://")) {
+            bucket = path.substring(9);
             bucket = entryParam.getValue("bucket", bucket);
         } else {
             bucket = entryParam.getValue("bucket");
@@ -202,6 +211,10 @@ public class CommonParams {
     }
 
     private void setUnitLen(String unitLen) throws IOException {
+        if ("-1".equals(unitLen)) {
+            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
+            else unitLen = "1000";
+        }
         this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
     }
 
@@ -226,7 +239,7 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null) {
-            if (source.matches("(qiniu|tencent)")) {
+            if (source.matches("(qiniu|tencent|aliyun)")) {
                 if (process == null) {
                     saveTotal = "true";
                 } else {
@@ -502,6 +515,14 @@ public class CommonParams {
         this.tencentSecretKey = tencentSecretKey;
     }
 
+    public void setAliyunAccessId(String aliyunAccessId) {
+        this.aliyunAccessId = aliyunAccessId;
+    }
+
+    public void setAliyunAccessSecret(String aliyunAccessSecret) {
+        this.aliyunAccessSecret = aliyunAccessSecret;
+    }
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -608,6 +629,14 @@ public class CommonParams {
 
     public String getTencentSecretKey() {
         return tencentSecretKey;
+    }
+
+    public String getAliyunAccessId() {
+        return aliyunAccessId;
+    }
+
+    public String getAliyunAccessSecret() {
+        return aliyunAccessSecret;
     }
 
     public String getBucket() {
