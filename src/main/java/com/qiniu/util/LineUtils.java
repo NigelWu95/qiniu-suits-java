@@ -63,9 +63,9 @@ public class LineUtils {
                     case "key": itemMap.put(indexMap.get(key), cosObject.getKey()); break;
                     case "hash": itemMap.put(indexMap.get(key), cosObject.getETag()); break;
                     case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getLastModified())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getLastModified().getTime())); break;
 //                    case "mimeType": itemMap.put(indexMap.get(key), cosObject.); break;
-                    case "type": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getStorageClass())); break;
+                    case "type": itemMap.put(indexMap.get(key), cosObject.getStorageClass()); break;
 //                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObject.)); break;
                     case "endUser": itemMap.put(indexMap.get(key), cosObject.getOwner().getDisplayName()); break;
                 }
@@ -84,8 +84,8 @@ public class LineUtils {
                     case "key": itemMap.put(indexMap.get(key), ossObject.getKey()); break;
                     case "hash": itemMap.put(indexMap.get(key), ossObject.getETag()); break;
                     case "fsize": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getLastModified())); break;
-                    case "type": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getStorageClass())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getLastModified().getTime())); break;
+                    case "type": itemMap.put(indexMap.get(key), ossObject.getStorageClass()); break;
                     case "endUser": itemMap.put(indexMap.get(key), ossObject.getOwner().getDisplayName()); break;
                 }
             }
