@@ -3,6 +3,7 @@ package com.qiniu.entry;
 import com.aliyun.oss.ClientConfiguration;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
+import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.datasource.*;
@@ -141,10 +142,12 @@ public class QSuitsEntry {
 
     private Configuration getDefaultQiniuConfig() {
         Configuration configuration = new Configuration(Zone.autoZone());
-        // 自定义超时时间
-        configuration.connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
-        configuration.readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
-        configuration.writeTimeout = Integer.valueOf(entryParam.getValue("write-timeout", "60"));
+        if (commonParams.getConnectTimeout() > Constants.CONNECT_TIMEOUT)
+            configuration.connectTimeout = commonParams.getConnectTimeout();
+        if (commonParams.getReadTimeout() > Constants.READ_TIMEOUT)
+            configuration.readTimeout = commonParams.getReadTimeout();
+        if (commonParams.getRequestTimeout() > Constants.WRITE_TIMEOUT)
+            configuration.writeTimeout = commonParams.getRequestTimeout();
         return configuration;
     }
 
@@ -154,8 +157,12 @@ public class QSuitsEntry {
 
     private ClientConfig getDefaultTenClientConfig() {
         ClientConfig clientConfig = new ClientConfig(new Region(commonParams.getRegionName()));
-        clientConfig.setConnectionTimeout(1000 * Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
-        clientConfig.setSocketTimeout(1000 * Integer.valueOf(entryParam.getValue("read-timeout", "120")));
+        if (1000 * commonParams.getConnectTimeout() > clientConfig.getConnectionTimeout())
+            clientConfig.setConnectionTimeout(1000 * commonParams.getConnectTimeout());
+        if (1000 * commonParams.getReadTimeout() > clientConfig.getSocketTimeout())
+            clientConfig.setSocketTimeout(1000 * commonParams.getReadTimeout());
+        if (1000 * commonParams.getRequestTimeout() > clientConfig.getConnectionRequestTimeout())
+            clientConfig.setConnectionRequestTimeout(1000 * commonParams.getRequestTimeout());
         return clientConfig;
     }
 
@@ -165,8 +172,12 @@ public class QSuitsEntry {
 
     private ClientConfiguration getDefaultAliClientConfig() {
         ClientConfiguration clientConfig = new ClientConfiguration();
-        clientConfig.setConnectionTimeout(1000 * Integer.valueOf(entryParam.getValue("connect-timeout", "60")));
-        clientConfig.setSocketTimeout(1000 * Integer.valueOf(entryParam.getValue("read-timeout", "120")));
+        if (1000 * commonParams.getConnectTimeout() > clientConfig.getConnectionTimeout())
+            clientConfig.setConnectionTimeout(1000 * commonParams.getConnectTimeout());
+        if (1000 * commonParams.getReadTimeout() > clientConfig.getSocketTimeout())
+            clientConfig.setSocketTimeout(1000 * commonParams.getReadTimeout());
+        if (1000 * commonParams.getRequestTimeout() > clientConfig.getConnectionRequestTimeout())
+            clientConfig.setConnectionRequestTimeout(1000 * commonParams.getRequestTimeout());
         return clientConfig;
     }
 

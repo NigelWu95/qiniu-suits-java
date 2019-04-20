@@ -16,6 +16,9 @@ import java.util.*;
 public class CommonParams {
 
     private IEntryParam entryParam;
+    private int connectTimeout;
+    private int readTimeout;
+    private int requestTimeout;
     private String path;
     private BaseFieldsFilter baseFieldsFilter;
     private SeniorChecker seniorChecker;
@@ -55,6 +58,9 @@ public class CommonParams {
      */
     public CommonParams(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
+        connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
+        readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
+        requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60"));
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
@@ -471,6 +477,18 @@ public class CommonParams {
         this.entryParam = entryParam;
     }
 
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public void setRequestTimeout(int requestTimeout) {
+        this.requestTimeout = requestTimeout;
+    }
+
     public void setPath(String path) {
         this.path = path;
     }
@@ -581,6 +599,18 @@ public class CommonParams {
 
     public void setRmFields(List<String> rmFields) {
         this.rmFields = rmFields;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public int getRequestTimeout() {
+        return requestTimeout;
     }
 
     public String getPath() {
