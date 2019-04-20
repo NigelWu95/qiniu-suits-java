@@ -43,8 +43,8 @@ public abstract class OssContainer<E> implements IDataSource {
                         boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
-        this.antiPrefixes = antiPrefixes == null ? new ArrayList<>() : antiPrefixes;
-        this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
+        this.antiPrefixes = antiPrefixes;
+        this.prefixesMap = prefixesMap;
         setPrefixes();
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
@@ -111,6 +111,8 @@ public abstract class OssContainer<E> implements IDataSource {
             for (String prefix : prefixesMap.keySet()) {
                 if (checkAntiPrefixes(prefix)) prefixes.add(prefix);
             }
+        } else {
+            prefixesMap = new HashMap<>() ;
         }
     }
 
@@ -219,6 +221,7 @@ public abstract class OssContainer<E> implements IDataSource {
      * @return 检验结果，true 表示 validPrefix 有效不需要剔除
      */
     private boolean checkAntiPrefixes(String validPrefix) {
+        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
         for (String antiPrefix : antiPrefixes) {
             if (validPrefix.startsWith(antiPrefix)) return false;
         }
