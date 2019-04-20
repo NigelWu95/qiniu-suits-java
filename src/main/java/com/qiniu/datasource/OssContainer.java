@@ -274,6 +274,14 @@ public abstract class OssContainer<E> implements IDataSource {
      * @return 返回有效的列举对象集
      */
     private List<ILister<E>> generateNextList(String startPrefix, String point) {
+//        List<ILister<E>> nextList = new ArrayList<>();
+//        for (String prefix : originPrefixList) {
+//            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
+//                ILister<E> lister = generateLister(startPrefix + prefix);
+//                if (lister != null && lister.currents().size() > 0) nextList.add(lister);
+//            }
+//        }
+//        return nextList;
         try {
             // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
             // java.util.concurrent.RejectedExecutionException: Thread limit exceeded replacing blocked worker
@@ -392,7 +400,7 @@ public abstract class OssContainer<E> implements IDataSource {
             execListerList.clear();
             // 对存在 next 且 endPrefix 不为空的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (groupedListerMap.get(true) != null) {
-                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).parallelStream()
+                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
                         .map(this::nextLevelLister)
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
