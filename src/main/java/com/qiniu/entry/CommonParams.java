@@ -171,7 +171,7 @@ public class CommonParams {
 
     private void setSeniorChecker() throws IOException {
         String checkType = entryParam.getValue("f-check", "");
-        checkType = checked(checkType, "f-check", "(|mime)");
+        checkType = checked(checkType, "f-check", "(|ext-mime)");
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
         checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");

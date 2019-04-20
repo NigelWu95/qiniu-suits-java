@@ -6,8 +6,8 @@
 
 ## 配置文件选项
 通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
-`source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
-`source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
+`source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](../templates/qiniu.config)  
+`source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](../templates/local.config)  
 **在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
