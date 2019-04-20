@@ -1,26 +1,28 @@
 package com.qiniu.datasource;
 
-import com.qcloud.cos.COSClient;
-import com.qcloud.cos.exception.CosClientException;
-import com.qcloud.cos.exception.CosServiceException;
-import com.qcloud.cos.model.COSObjectSummary;
-import com.qcloud.cos.model.ListObjectsRequest;
-import com.qcloud.cos.model.ObjectListing;
+import com.aliyun.oss.ClientException;
+import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.OSSException;
+import com.aliyun.oss.ServiceException;
+import com.aliyun.oss.model.ListObjectsRequest;
+import com.aliyun.oss.model.OSSObjectSummary;
+import com.aliyun.oss.model.ObjectListing;
+import com.qiniu.Constants.OssStatus;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TenLister implements ILister<COSObjectSummary> {
+public class AliLister implements ILister<OSSObjectSummary> {
 
-    private COSClient cosClient;
+    private OSSClient ossClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
-    private List<COSObjectSummary> cosObjectList;
+    private List<OSSObjectSummary> ossObjectList;
 
-    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
+    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix,
                      String delimiter, int max) throws SuitsException {
-        this.cosClient = cosClient;
+        this.ossClient = ossClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
@@ -51,11 +53,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
-            int size = cosObjectList.size();
-            cosObjectList = cosObjectList.stream()
+            int size = ossObjectList.size();
+            ossObjectList = ossObjectList.stream()
                     .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
                     .collect(Collectors.toList());
-            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
+            if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
         }
     }
 
@@ -83,8 +85,8 @@ public class TenLister implements ILister<COSObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
-    private List<COSObjectSummary> getListResult() throws CosClientException {
-        ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
+    private List<OSSObjectSummary> getListResult() throws OSSException, ClientException {
+        ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
         listObjectsRequest.setMarker(objectListing.getNextMarker());
         return objectListing.getObjectSummaries();
     }
@@ -92,21 +94,25 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void listForward() throws SuitsException {
         try {
-            List<COSObjectSummary> current;
+            List<OSSObjectSummary> current;
             do {
                 current = getListResult();
             } while (current.size() == 0 && hasNext());
 
             if (endPrefix != null && !"".equals(endPrefix)) {
-                cosObjectList = current.stream()
+                ossObjectList = current.stream()
                         .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
                         .collect(Collectors.toList());
-                if (cosObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
+                if (ossObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
             } else {
-                cosObjectList = current;
+                ossObjectList = current;
             }
-        } catch (CosServiceException e) {
-            throw new SuitsException(e.getStatusCode(), e.getMessage());
+        } catch (ClientException e) {
+            int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
+            throw new SuitsException(code, e.getMessage());
+        } catch (ServiceException e) {
+            int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
+            throw new SuitsException(code, e.getMessage());
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }
@@ -118,26 +124,26 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public List<COSObjectSummary> currents() {
-        return cosObjectList;
+    public List<OSSObjectSummary> currents() {
+        return ossObjectList;
     }
 
     @Override
-    public COSObjectSummary currentFirst() {
-        return cosObjectList.size() > 0 ? cosObjectList.get(0) : null;
+    public OSSObjectSummary currentFirst() {
+        return ossObjectList.size() > 0 ? ossObjectList.get(0) : null;
     }
 
     @Override
     public String currentFirstKey() {
-        COSObjectSummary first = currentFirst();
+        OSSObjectSummary first = currentFirst();
         return first != null ? first.getKey() : null;
     }
 
     @Override
-    public COSObjectSummary currentLast() {
-        COSObjectSummary last = cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
+    public OSSObjectSummary currentLast() {
+        OSSObjectSummary last = ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
         if (last == null) {
-            last = new COSObjectSummary();
+            last = new OSSObjectSummary();
             last.setKey(getMarker());
         }
         return last;
@@ -145,18 +151,18 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public String currentLastKey() {
-        COSObjectSummary last = currentLast();
+        OSSObjectSummary last = currentLast();
         return last != null ? last.getKey() : null;
     }
 
     @Override
-    public void updateMarkerBy(COSObjectSummary object) {
+    public void updateMarkerBy(OSSObjectSummary object) {
         listObjectsRequest.setMarker(object.getKey());
     }
 
     @Override
     public void close() {
-        this.cosClient.shutdown();
-        this.cosObjectList = null;
+        this.ossClient.shutdown();
+        this.ossObjectList = null;
     }
 }

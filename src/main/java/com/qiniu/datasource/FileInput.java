@@ -2,15 +2,15 @@ package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.entry.CommonParams;
-import com.qiniu.persistence.FileMap;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.convert.MapToString;
 import com.qiniu.convert.LineToMap;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.SystemUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -91,7 +91,7 @@ public class FileInput implements IDataSource {
         this.processor = processor;
     }
 
-    private void export(BufferedReader reader, FileMap fileMap, ILineProcess<Map<String, String>> processor)
+    private void export(LocalFileReader reader, FileSaveMapper fileSaveMapper, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
@@ -116,12 +116,12 @@ public class FileInput implements IDataSource {
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 infoMapList = typeConverter.convertToVList(srcList);
                 if (typeConverter.getErrorList().size() > 0)
-                    fileMap.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+                    fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
-                    if (writeList.size() > 0) fileMap.writeSuccess(String.join("\n", writeList), false);
+                    if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
                     if (writeTypeConverter.getErrorList().size() > 0)
-                        fileMap.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
+                        fileSaveMapper.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -137,36 +137,34 @@ public class FileInput implements IDataSource {
         }
     }
 
-    private void execInThreads(FileMap initFileMap) throws Exception {
-        HashMap<String, BufferedReader> readersMap = initFileMap.getReaderMap();
-        List<String> keys = new ArrayList<>(readersMap.keySet());
-        for (int i = 0; i < keys.size(); i++) {
+    private void execInThreads(List<LocalFileReader> readerList, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
+        for (int j = 0; j < readerList.size(); j++) {
+            LocalFileReader reader = readerList.get(j);
             // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
             // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-            String order = String.valueOf(i + 1);
-            String key = keys.get(i);
-            BufferedReader reader = readersMap.get(key);
-            FileMap fileMap = new FileMap(savePath, getSourceName(), order);
-            fileMap.initDefaultWriters();
+            // 持久化结果标识信息
+            String newOrder = String.valueOf(j + 1 + order);
+            FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
             executorPool.execute(() -> {
                 try {
-                    String record = "order " + order + ": " + key;
-                    initFileMap.writeKeyFile("result", record + "\treading...", true);
-                    export(reader, fileMap, lineProcessor);
+                    String record = "order " + newOrder + ": " + reader.getName();
+                    recordFileSaveMapper.writeKeyFile("result", record + "\treading...", true);
+                    export(reader, fileSaveMapper, lineProcessor);
                     record += "\tsuccessfully done";
                     System.out.println(record);
-                    initFileMap.writeKeyFile("result", record, true);
-                    fileMap.closeWriters();
+                    recordFileSaveMapper.writeKeyFile("result", record, true);
+                    fileSaveMapper.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
+                    reader.close();
                 } catch (Exception e) {
                     try {
-                        System.out.println("order " + order + ": " + key + "\tnextLine:" + reader.readLine());
+                        System.out.println("order " + newOrder + ": " + reader.getName() + "\tnextLine:" + reader.readLine());
                     } catch (IOException io) {
                         io.printStackTrace();
                     }
-                    initFileMap.closeWriters();
-                    fileMap.closeWriters();
+                    recordFileSaveMapper.closeWriters();
+                    fileSaveMapper.closeWriters();
                     if (lineProcessor != null) lineProcessor.closeResource();
                     SystemUtils.exit(exitBool, e);
                 }
@@ -176,24 +174,37 @@ public class FileInput implements IDataSource {
 
     @Override
     public void export() throws Exception {
-        FileMap initFileMap = new FileMap(savePath);
-        File sourceFile = new File(filePath);
+        List<LocalFileReader> localFileReaders = new ArrayList<>();
+        File sourceFile = new File(FileNameUtils.realPathWithUserHome(filePath));
         if (sourceFile.isDirectory()) {
-            initFileMap.initReaders(filePath);
+            File[] fs = sourceFile.listFiles();
+            if (fs == null) throw new IOException("The current path you gave may be incorrect: " + filePath);
+            for(File f : fs) {
+                if (!f.isDirectory() && f.getName().endsWith(".txt")) {
+                    localFileReaders.add(new LocalFileReader(f.getAbsoluteFile().getPath()));
+                }
+            }
         } else {
-            initFileMap.initReader(filePath);
+            if (filePath.endsWith(".txt")) {
+                localFileReaders.add(new LocalFileReader(filePath));
+            } else {
+                throw new IOException("please provide the .txt file. The current path you gave is: " + filePath);
+            }
         }
+        if (localFileReaders.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
+                " path you gave is: " + filePath);
 
-        int filesCount = initFileMap.getReaderMap().size();
+        int filesCount = localFileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        FileSaveMapper recordFileSaveMapper = new FileSaveMapper(savePath);
         executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);
-        execInThreads(initFileMap);
+        execInThreads(localFileReaders, recordFileSaveMapper, 0);
         executorPool.shutdown();
         while (!executorPool.isTerminated()) Thread.sleep(1000);
-        initFileMap.closeReaders();
+        recordFileSaveMapper.closeWriters();
         System.out.println(info + " finished");
     }
 }

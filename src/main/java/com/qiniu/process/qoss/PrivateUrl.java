@@ -60,7 +60,7 @@ public class PrivateUrl extends Base {
 
     @Override
     protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileMap.writeSuccess(result, false);
+        fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
