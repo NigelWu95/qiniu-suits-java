@@ -116,6 +116,19 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
+    /**
+     * 检验 prefix 是否在 antiPrefixes 前缀列表中
+     * @param validPrefix 待检验的 prefix
+     * @return 检验结果，true 表示 validPrefix 有效不需要剔除
+     */
+    private boolean checkAntiPrefixes(String validPrefix) {
+        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
+        for (String antiPrefix : antiPrefixes) {
+            if (validPrefix.startsWith(antiPrefix)) return false;
+        }
+        return true;
+    }
+
     protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
@@ -216,93 +229,24 @@ public abstract class OssContainer<E> implements IDataSource {
     }
 
     /**
-     * 检验 prefix 是否在 antiPrefixes 前缀列表中
-     * @param validPrefix 待检验的 prefix
-     * @return 检验结果，true 表示 validPrefix 有效不需要剔除
-     */
-    private boolean checkAntiPrefixes(String validPrefix) {
-        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
-        for (String antiPrefix : antiPrefixes) {
-            if (validPrefix.startsWith(antiPrefix)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * 将 ILister<E> 对象列表放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
-     * @param listerList 列举对象集
-     * @param recordFileSaveMapper 记录整体进度信息的文件对象
-     * @param order 当前列举对象集的起始序号
-     * @throws Exception 操作失败抛出的异常
-     */
-    private void execInThreads(List<ILister<E>> listerList, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
-        for (int j = 0; j < listerList.size(); j++) {
-            ILister<E> lister = listerList.get(j);
-            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-            // 持久化结果标识信息
-            String newOrder = String.valueOf(j + 1 + order);
-            FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
-            executorPool.execute(() -> {
-                try {
-                    String record = "order " + newOrder + ": " + lister.getPrefix();
-                    recordFileSaveMapper.writeKeyFile("result", record + "\tlisting...", true);
-                    export(lister, fileSaveMapper, lineProcessor);
-                    record += "\tsuccessfully done";
-                    System.out.println(record);
-                    recordFileSaveMapper.writeKeyFile("result", record, true);
-                    fileSaveMapper.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    lister.close();
-                } catch (Exception e) {
-                    System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
-                            lister.getMarker() + "\tend:" + lister.getEndPrefix());
-                    recordFileSaveMapper.closeWriters();
-                    fileSaveMapper.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    SystemUtils.exit(exitBool, e);
-                }
-            });
-        }
-    }
-
-    /**
      * 根据上层 prefix 和下一级的起始字符串 point（单个字符）以及预定义前缀列表来生成下一级的列举对象集
      * @param startPrefix 上层起始 prefix
      * @param point 下一级开始列举位置的单个前缀字符
      * @return 返回有效的列举对象集
      */
     private List<ILister<E>> generateNextList(String startPrefix, String point) {
-//        List<ILister<E>> nextList = new ArrayList<>();
-//        for (String prefix : originPrefixList) {
-//            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
-//                ILister<E> lister = generateLister(startPrefix + prefix);
-//                if (lister != null && lister.currents().size() > 0) nextList.add(lister);
-//            }
-//        }
-//        return nextList;
-        try {
-            // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
-            // java.util.concurrent.RejectedExecutionException: Thread limit exceeded replacing blocked worker
-            return originPrefixList.stream()
-                    .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
-                    .filter(this::checkAntiPrefixes)
-                    .map(originPrefix -> {
-                        ILister<E> lister = null;
-                        try {
-                            lister = generateLister(startPrefix + originPrefix);
-                        } catch (IOException e) {
-                            SystemUtils.exit(exitBool, e);
-                        }
-                        return lister;
-                    })
-                    .filter(lister -> lister != null && lister.currents().size() > 0)
-                    .collect(Collectors.toList());
-        } catch (Throwable e) {
-            SystemUtils.exit(exitBool, e);
-            return null;
+        List<ILister<E>> nextList = new ArrayList<>();
+        for (String prefix : originPrefixList) {
+            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
+                try {
+                    ILister<E> lister = generateLister(startPrefix + prefix);
+                    if (lister != null && lister.currents().size() > 0) nextList.add(lister);
+                } catch (IOException e) {
+                    SystemUtils.exit(exitBool, e);
+                }
+            }
         }
+        return nextList;
     }
 
     /**
@@ -354,6 +298,45 @@ public abstract class OssContainer<E> implements IDataSource {
         List<ILister<E>> prefixListerList = generateNextList(lister.getPrefix(), point);
         if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
         return nextLevelList;
+    }
+
+    /**
+     * 将 ILister<E> 对象列表放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
+     * @param listerList 列举对象集
+     * @param recordFileSaveMapper 记录整体进度信息的文件对象
+     * @param order 当前列举对象集的起始序号
+     * @throws Exception 操作失败抛出的异常
+     */
+    private void execInThreads(List<ILister<E>> listerList, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
+        for (int j = 0; j < listerList.size(); j++) {
+            ILister<E> lister = listerList.get(j);
+            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
+            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+            // 持久化结果标识信息
+            String newOrder = String.valueOf(j + 1 + order);
+            FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
+            executorPool.execute(() -> {
+                try {
+                    String record = "order " + newOrder + ": " + lister.getPrefix();
+                    recordFileSaveMapper.writeKeyFile("result", record + "\tlisting...", true);
+                    export(lister, fileSaveMapper, lineProcessor);
+                    record += "\tsuccessfully done";
+                    System.out.println(record);
+                    recordFileSaveMapper.writeKeyFile("result", record, true);
+                    fileSaveMapper.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
+                    lister.close();
+                } catch (Exception e) {
+                    System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
+                            lister.getMarker() + "\tend:" + lister.getEndPrefix());
+                    recordFileSaveMapper.closeWriters();
+                    fileSaveMapper.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
+                    SystemUtils.exit(exitBool, e);
+                }
+            });
+        }
     }
 
     /**
