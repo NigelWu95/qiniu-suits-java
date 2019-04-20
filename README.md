@@ -169,16 +169,22 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 **--** process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
 处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息。  
 
+### 7 超时设置
+多数数据源或者操作涉及网络请求，因此提供超时时间设置，默认的超时时间一般能够满足要求，特殊需要的情况下可以修改各超时时间：  
+`connect-timeout=60` 网络连接超时时间，程序默认 60s  
+`read-timeout=120` socket 读取超时时间，程序默认 120s  
+`request-timeout=60` 网络请求超时时间，程序默认 60s  
+
 ### 补充
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。
-2. 一般情况下，命令行输出异常信息如 socket time 超时为正常现象，程序会自动重试，如：
+2. 一般情况下，命令行输出异常信息如 socket timeout 超时为正常现象，如：
 ```
 list prefix:<prefix> retrying...
 ...
 java.net.SocketTimeoutException: timeout
 ```
-超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
-[ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。
+程序会自动重试，如果比较频繁则可以修改[超时配置](#7-超时设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
+[ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。  
 3. 常见错误信息：  
 （1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
 表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
