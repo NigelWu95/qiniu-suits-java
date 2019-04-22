@@ -12,10 +12,8 @@ import com.qiniu.util.SystemUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -385,31 +383,31 @@ public abstract class OssContainer<E> implements IDataSource {
             execListerList.clear();
             // 对存在 next 且 endPrefix 不为空的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (groupedListerMap.get(true) != null) {
-//                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
-//                        .map(eiLister -> {
-//                            try {
-//                                return nextLevelLister(eiLister);
-//                            } catch (Exception e) {
-//                                throw new RuntimeException(e);
-//                            }
-//                        })
-//                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-//                if (listOptional.isPresent() && listOptional.get().size() > 0) {
-//                    listerList = listOptional.get();
-//                    nextSize = (int) listerList.stream()
-//                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
-//                            .count();
-//                } else {
-//                    listerList = groupedListerMap.get(true);
-//                    break;
-//                }
-
-                List<ILister<E>> finalListerList = new ArrayList<>();
-                for (Future<List<ILister<E>>> listFuture : groupedListerMap.get(true).stream()
-                        .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
-                        .collect(Collectors.toList())) {
-                    finalListerList.addAll(listFuture.get());
+                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
+                        .map(eiLister -> {
+                            try {
+                                return nextLevelLister(eiLister);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+                if (listOptional.isPresent() && listOptional.get().size() > 0) {
+                    listerList = listOptional.get();
+                    nextSize = (int) listerList.stream()
+                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
+                            .count();
+                } else {
+                    listerList = groupedListerMap.get(true);
+                    break;
                 }
+
+//                List<ILister<E>> finalListerList = new ArrayList<>();
+//                for (Future<List<ILister<E>>> listFuture : groupedListerMap.get(true).stream()
+//                        .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
+//                        .collect(Collectors.toList())) {
+//                    finalListerList.addAll(listFuture.get());
+//                }
 //                for (ILister<E> eiLister : groupedListerMap.get(true)) {
 //                    Future<List<ILister<E>>> future = executorPool.submit(() -> nextLevelLister(eiLister));
 //                    finalListerList.addAll(future.get());
@@ -426,15 +424,15 @@ public abstract class OssContainer<E> implements IDataSource {
 //                }
 //                pool.shutdown();
 //                while (!pool.isTerminated()) Thread.sleep(100);
-                if (finalListerList.size() > 0) {
-                    listerList = finalListerList;
-                    nextSize = (int) listerList.stream()
-                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
-                            .count();
-                } else {
-                    listerList = groupedListerMap.get(true);
-                    break;
-                }
+//                if (finalListerList.size() > 0) {
+//                    listerList = finalListerList;
+//                    nextSize = (int) listerList.stream()
+//                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
+//                            .count();
+//                } else {
+//                    listerList = groupedListerMap.get(true);
+//                    break;
+//                }
             } else {
                 listerList.clear();
                 break;
