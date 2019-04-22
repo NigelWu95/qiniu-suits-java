@@ -199,12 +199,16 @@ public class FileInput implements IDataSource {
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileSaveMapper recordFileSaveMapper = new FileSaveMapper(savePath);
-        executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);
-        execInThreads(localFileReaders, recordFileSaveMapper, 0);
-        executorPool.shutdown();
-        while (!executorPool.isTerminated()) Thread.sleep(1000);
-        recordFileSaveMapper.closeWriters();
-        System.out.println(info + " finished");
+        try {
+            executorPool = Executors.newFixedThreadPool(runningThreads);
+            execInThreads(localFileReaders, recordFileSaveMapper, 0);
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) Thread.sleep(1000);
+            recordFileSaveMapper.closeWriters();
+            System.out.println(info + " finished");
+        } catch (Throwable throwable) {
+            SystemUtils.exit(exitBool, throwable);
+        }
     }
 }
