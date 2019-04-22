@@ -6,6 +6,7 @@ import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private COSClient cosClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
@@ -83,6 +85,16 @@ public class TenLister implements ILister<COSObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
+    @Override
+    public void setStraight(boolean straight) {
+        this.straight = straight;
+    }
+
+    @Override
+    public boolean canStraight() {
+        return straight;
+    }
+
     private List<COSObjectSummary> getListResult() throws CosClientException {
         ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
         listObjectsRequest.setMarker(objectListing.getNextMarker());
@@ -115,6 +127,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public boolean hasNext() {
         return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
+    }
+
+    @Override
+    public boolean hasFutureNext() throws SuitsException {
+        return hasNext();
     }
 
     @Override
