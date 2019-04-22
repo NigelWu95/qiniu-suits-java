@@ -24,6 +24,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private String endPrefix;
     private String delimiter;
     private int limit;
+    private boolean straight;
     private List<FileInfo> fileInfoList;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -32,7 +33,7 @@ public class QiniuLister implements ILister<FileInfo> {
         this.bucket = bucket;
         this.prefix = prefix;
         this.marker = marker;
-        this.endPrefix = endPrefix == null ? "" : endPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
+        this.endPrefix = endPrefix;
         this.delimiter = delimiter;
         this.limit = limit;
         listForward();
@@ -93,6 +94,16 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public int getLimit() {
         return limit;
+    }
+
+    @Override
+    public void setStraight(boolean straight) {
+        this.straight = straight;
+    }
+
+    @Override
+    public boolean canStraight() {
+        return straight || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private List<JsonObject> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
@@ -180,6 +191,8 @@ public class QiniuLister implements ILister<FileInfo> {
                 times--;
             }
             return true;
+        } catch (QiniuException e) {
+            throw new SuitsException(e.code(), e.getMessage());
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }

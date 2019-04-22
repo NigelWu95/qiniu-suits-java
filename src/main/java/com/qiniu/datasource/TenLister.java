@@ -17,6 +17,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private COSClient cosClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
@@ -82,6 +83,16 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     public int getLimit() {
         return listObjectsRequest.getMaxKeys();
+    }
+
+    @Override
+    public void setStraight(boolean straight) {
+        this.straight = straight;
+    }
+
+    @Override
+    public boolean canStraight() {
+        return straight;
     }
 
     private List<COSObjectSummary> getListResult() throws CosClientException {
