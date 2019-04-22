@@ -129,9 +129,9 @@ public class QiniuLister implements ILister<FileInfo> {
 
     private List<FileInfo> doList(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
-        JsonObject lastJson = jsonObjects.get(jsonObjects.size() - 1);
+        JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
         try {
-            if (lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
+            if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                 this.marker = lastJson.get("marker").getAsString();
             }
             return jsonObjects.stream().map(jsonObject -> {
@@ -178,11 +178,11 @@ public class QiniuLister implements ILister<FileInfo> {
     public boolean hasFutureNext() throws SuitsException {
         try {
             List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
-            JsonObject lastJson = jsonObjects.get(jsonObjects.size() - 1);
+            JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
             String marker = this.marker;
             int times = 10;
             while (times > 0) {
-                if (lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
+                if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                     marker = lastJson.get("marker").getAsString();
                     if (marker == null || "".equals(marker)) return false;
                 }
