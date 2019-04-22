@@ -116,6 +116,19 @@ public abstract class OssContainer<E> implements IDataSource {
         }
     }
 
+    /**
+     * 检验 prefix 是否在 antiPrefixes 前缀列表中
+     * @param validPrefix 待检验的 prefix
+     * @return 检验结果，true 表示 validPrefix 有效不需要剔除
+     */
+    private boolean checkAntiPrefixes(String validPrefix) {
+        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
+        for (String antiPrefix : antiPrefixes) {
+            if (validPrefix.startsWith(antiPrefix)) return false;
+        }
+        return true;
+    }
+
     protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
@@ -161,7 +174,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     else goon = false;
                     break;
                 } catch (SuitsException e) {
-                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...");
+                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
                     if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else retry--;
@@ -207,63 +220,11 @@ public abstract class OssContainer<E> implements IDataSource {
                 String[] markerAndEnd = getMarkerAndEnd(prefix);
                 return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
             } catch (SuitsException e) {
-                System.out.println("list prefix:" + prefix + " retrying...");
+                System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
             }
-        }
-    }
-
-    /**
-     * 检验 prefix 是否在 antiPrefixes 前缀列表中
-     * @param validPrefix 待检验的 prefix
-     * @return 检验结果，true 表示 validPrefix 有效不需要剔除
-     */
-    private boolean checkAntiPrefixes(String validPrefix) {
-        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
-        for (String antiPrefix : antiPrefixes) {
-            if (validPrefix.startsWith(antiPrefix)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * 将 ILister<E> 对象列表放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
-     * @param listerList 列举对象集
-     * @param recordFileSaveMapper 记录整体进度信息的文件对象
-     * @param order 当前列举对象集的起始序号
-     * @throws Exception 操作失败抛出的异常
-     */
-    private void execInThreads(List<ILister<E>> listerList, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
-        for (int j = 0; j < listerList.size(); j++) {
-            ILister<E> lister = listerList.get(j);
-            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-            // 持久化结果标识信息
-            String newOrder = String.valueOf(j + 1 + order);
-            FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
-            executorPool.execute(() -> {
-                try {
-                    String record = "order " + newOrder + ": " + lister.getPrefix();
-                    recordFileSaveMapper.writeKeyFile("result", record + "\tlisting...", true);
-                    export(lister, fileSaveMapper, lineProcessor);
-                    record += "\tsuccessfully done";
-                    System.out.println(record);
-                    recordFileSaveMapper.writeKeyFile("result", record, true);
-                    fileSaveMapper.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    lister.close();
-                } catch (Exception e) {
-                    System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
-                            lister.getMarker() + "\tend:" + lister.getEndPrefix());
-                    recordFileSaveMapper.closeWriters();
-                    fileSaveMapper.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    SystemUtils.exit(exitBool, e);
-                }
-            });
         }
     }
 
@@ -273,28 +234,19 @@ public abstract class OssContainer<E> implements IDataSource {
      * @param point 下一级开始列举位置的单个前缀字符
      * @return 返回有效的列举对象集
      */
-    private List<ILister<E>> generateNextList(String startPrefix, String point) {
-        try {
-            // 不要使用 parallelStream，因为上层已经使用了 parallel，再使用会导致异常崩溃：
-            // java.util.concurrent.RejectedExecutionException: Thread limit exceeded replacing blocked worker
-            return originPrefixList.stream()
-                    .filter(originPrefix -> originPrefix.compareTo(point) >= 0)
-                    .filter(this::checkAntiPrefixes)
-                    .map(originPrefix -> {
-                        ILister<E> lister = null;
-                        try {
-                            lister = generateLister(startPrefix + originPrefix);
-                        } catch (IOException e) {
-                            SystemUtils.exit(exitBool, e);
-                        }
-                        return lister;
-                    })
-                    .filter(lister -> lister != null && lister.currents().size() > 0)
-                    .collect(Collectors.toList());
-        } catch (Throwable e) {
-            SystemUtils.exit(exitBool, e);
-            return null;
+    private List<ILister<E>> generateNextList(String startPrefix, String point) throws SuitsException {
+        List<ILister<E>> nextList = new ArrayList<>();
+        for (String prefix : originPrefixList) {
+            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
+//                try {
+                    ILister<E> lister = generateLister(startPrefix + prefix);
+                    if (lister != null && lister.currents().size() > 0) nextList.add(lister);
+//                } catch (IOException e) {
+//                    SystemUtils.exit(exitBool, e);
+//                }
+            }
         }
+        return nextList;
     }
 
     /**
@@ -302,7 +254,7 @@ public abstract class OssContainer<E> implements IDataSource {
      * @param lister 起始列举对象
      * @return 下一级别可并发的列举对象集
      */
-    private List<ILister<E>> nextLevelLister(ILister<E> lister) {
+    private List<ILister<E>> nextLevelLister(ILister<E> lister) throws SuitsException {
         String point = "";
         List<ILister<E>> nextLevelList = new ArrayList<>();
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
@@ -349,6 +301,45 @@ public abstract class OssContainer<E> implements IDataSource {
     }
 
     /**
+     * 将 ILister<E> 对象列表放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
+     * @param listerList 列举对象集
+     * @param recordFileSaveMapper 记录整体进度信息的文件对象
+     * @param order 当前列举对象集的起始序号
+     * @throws Exception 操作失败抛出的异常
+     */
+    private void execInThreads(List<ILister<E>> listerList, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
+        for (int j = 0; j < listerList.size(); j++) {
+            ILister<E> lister = listerList.get(j);
+            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
+            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+            // 持久化结果标识信息
+            String newOrder = String.valueOf(j + 1 + order);
+            FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
+            executorPool.execute(() -> {
+                try {
+                    String record = "order " + newOrder + ": " + lister.getPrefix();
+                    recordFileSaveMapper.writeKeyFile("result", record + "\tlisting...", true);
+                    export(lister, fileSaveMapper, lineProcessor);
+                    record += "\tsuccessfully done";
+                    System.out.println(record);
+                    recordFileSaveMapper.writeKeyFile("result", record, true);
+                    fileSaveMapper.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
+                    lister.close();
+                } catch (Exception e) {
+                    System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
+                            lister.getMarker() + "\tend:" + lister.getEndPrefix());
+                    recordFileSaveMapper.closeWriters();
+                    fileSaveMapper.closeWriters();
+                    if (lineProcessor != null) lineProcessor.closeResource();
+                    SystemUtils.exit(exitBool, e);
+                }
+            });
+        }
+    }
+
+    /**
      * 根据 startLister 得到可并发的下一级 lister 对象集放入多线程执行列举
      * @param startLister 已初始化的起始的 lister
      * @param globalEnd startLister 是否需要列举到全局的结尾处（从该 startLister 开始列举到整个空间结束）
@@ -392,8 +383,14 @@ public abstract class OssContainer<E> implements IDataSource {
             execListerList.clear();
             // 对存在 next 且 endPrefix 不为空的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (groupedListerMap.get(true) != null) {
-                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).parallelStream()
-                        .map(this::nextLevelLister)
+                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
+                        .map(eiLister -> {
+                            try {
+                                return nextLevelLister(eiLister);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     listerList = listOptional.get();
@@ -404,6 +401,38 @@ public abstract class OssContainer<E> implements IDataSource {
                     listerList = groupedListerMap.get(true);
                     break;
                 }
+
+//                List<ILister<E>> finalListerList = new ArrayList<>();
+//                for (Future<List<ILister<E>>> listFuture : groupedListerMap.get(true).stream()
+//                        .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
+//                        .collect(Collectors.toList())) {
+//                    finalListerList.addAll(listFuture.get());
+//                }
+//                for (ILister<E> eiLister : groupedListerMap.get(true)) {
+//                    Future<List<ILister<E>>> future = executorPool.submit(() -> nextLevelLister(eiLister));
+//                    finalListerList.addAll(future.get());
+//                }
+//                ExecutorService pool = Executors.newFixedThreadPool(threads);
+//                for (ILister<E> eiLister : groupedListerMap.get(true)) {
+//                    pool.execute(() -> {
+//                        try {
+//                            finalListerList.addAll(nextLevelLister(eiLister));
+//                        } catch (Exception e) {
+//                            SystemUtils.exit(exitBool, e);
+//                        }
+//                    });
+//                }
+//                pool.shutdown();
+//                while (!pool.isTerminated()) Thread.sleep(100);
+//                if (finalListerList.size() > 0) {
+//                    listerList = finalListerList;
+//                    nextSize = (int) listerList.stream()
+//                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
+//                            .count();
+//                } else {
+//                    listerList = groupedListerMap.get(true);
+//                    break;
+//                }
             } else {
                 listerList.clear();
                 break;
@@ -431,34 +460,38 @@ public abstract class OssContainer<E> implements IDataSource {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileSaveMapper recordFileSaveMapper = new FileSaveMapper(savePath);
-        executorPool = Executors.newFixedThreadPool(threads);
-        exitBool = new AtomicBoolean(false);
-        Collections.sort(prefixes);
         int alreadyOrder = 0;
-        if (prefixes.size() == 0) {
-            ILister<E> startLister = generateLister("");
-            computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
-        } else {
-            if (prefixLeft) {
+        exitBool = new AtomicBoolean(false);
+        try {
+            executorPool = Executors.newFixedThreadPool(threads);
+            Collections.sort(prefixes);
+            if (prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
-                startLister.setEndPrefix(prefixes.get(0));
-                execInThreads(new ArrayList<ILister<E>>(){{ add(startLister); }}, recordFileSaveMapper, alreadyOrder);
-                alreadyOrder += 1;
-            }
-            for (int i = 0; i < prefixes.size() - 1; i++) {
-                ILister<E> startLister = generateLister(prefixes.get(i));
-                alreadyOrder = computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
-            }
-            ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
-            if (prefixRight) {
                 computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
             } else {
-                computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                if (prefixLeft) {
+                    ILister<E> startLister = generateLister("");
+                    startLister.setEndPrefix(prefixes.get(0));
+                    execInThreads(new ArrayList<ILister<E>>(){{ add(startLister); }}, recordFileSaveMapper, alreadyOrder);
+                    alreadyOrder += 1;
+                }
+                for (int i = 0; i < prefixes.size() - 1; i++) {
+                    ILister<E> startLister = generateLister(prefixes.get(i));
+                    alreadyOrder = computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                }
+                ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
+                if (prefixRight) {
+                    computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
+                } else {
+                    computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                }
             }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) Thread.sleep(1000);
+            recordFileSaveMapper.closeWriters();
+            System.out.println(info + " finished");
+        } catch (Throwable throwable) {
+            SystemUtils.exit(exitBool, throwable);
         }
-        executorPool.shutdown();
-        while (!executorPool.isTerminated()) Thread.sleep(1000);
-        recordFileSaveMapper.closeWriters();
-        System.out.println(info + " finished");
     }
 }
