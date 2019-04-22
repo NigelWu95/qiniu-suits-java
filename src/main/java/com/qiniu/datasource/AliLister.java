@@ -19,6 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private OSSClient ossClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix,
@@ -84,6 +85,16 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     public int getLimit() {
         return listObjectsRequest.getMaxKeys();
+    }
+
+    @Override
+    public void setStraight(boolean straight) {
+        this.straight = straight;
+    }
+
+    @Override
+    public boolean canStraight() {
+        return straight;
     }
 
     private List<OSSObjectSummary> getListResult() throws OSSException, ClientException {

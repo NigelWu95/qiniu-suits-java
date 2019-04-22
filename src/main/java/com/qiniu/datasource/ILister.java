@@ -27,6 +27,10 @@ public interface ILister<E> {
 
     int getLimit();
 
+    void setStraight(boolean straight);
+
+    boolean canStraight();
+
     void listForward() throws SuitsException;
 
     boolean hasNext();
