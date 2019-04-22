@@ -8,6 +8,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.Constants.OssStatus;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private OSSClient ossClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix,
@@ -85,6 +87,16 @@ public class AliLister implements ILister<OSSObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
+    @Override
+    public void setStraight(boolean straight) {
+        this.straight = straight;
+    }
+
+    @Override
+    public boolean canStraight() {
+        return straight;
+    }
+
     private List<OSSObjectSummary> getListResult() throws OSSException, ClientException {
         ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
         listObjectsRequest.setMarker(objectListing.getNextMarker());
@@ -121,6 +133,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public boolean hasNext() {
         return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
+    }
+
+    @Override
+    public boolean hasFutureNext() throws SuitsException {
+        return hasNext();
     }
 
     @Override

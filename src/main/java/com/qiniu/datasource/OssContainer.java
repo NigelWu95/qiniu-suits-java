@@ -259,6 +259,7 @@ public abstract class OssContainer<E> implements IDataSource {
         List<ILister<E>> nextLevelList = new ArrayList<>();
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
         if (!lister.hasNext()) {
+            lister.setStraight(true);
             nextLevelList.add(lister);
             return nextLevelList;
         // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
@@ -271,7 +272,7 @@ public abstract class OssContainer<E> implements IDataSource {
                 point = lastKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
-                    lister.setEndPrefix(null);
+                    lister.setStraight(true);
                     nextLevelList.add(lister);
                     return nextLevelList;
                 // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀，并且加入 lister 到返回的列举对象集
@@ -375,8 +376,7 @@ public abstract class OssContainer<E> implements IDataSource {
             // 按照是否存在 next 同时 endPrefix 不为空来进行分组，不存在 next 或者 endPrefix 为 null 时则可以提前放入线程中执行列举，判
             // 断 endPrefix 是因为在初始化的 lister 中 endPrefix 一定不为 null，如果为 null 说明在计算过程中进行了特殊设置，希望此时的
             // lister 优先执行掉
-            groupedListerMap = listerList.stream().collect(Collectors.groupingBy(fileLister ->
-                    fileLister.hasNext() && fileLister.getEndPrefix() != null));
+            groupedListerMap = listerList.stream().collect(Collectors.groupingBy(fileLister -> !fileLister.canStraight()));
             if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
             execInThreads(execListerList, recordFileSaveMapper, alreadyOrder);
             alreadyOrder += execListerList.size();
@@ -395,7 +395,7 @@ public abstract class OssContainer<E> implements IDataSource {
                 if (listOptional.isPresent() && listOptional.get().size() > 0) {
                     listerList = listOptional.get();
                     nextSize = (int) listerList.stream()
-                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
+                            .filter(fileLister -> !fileLister.canStraight())
                             .count();
                 } else {
                     listerList = groupedListerMap.get(true);

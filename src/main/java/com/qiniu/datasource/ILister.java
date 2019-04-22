@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -26,9 +27,15 @@ public interface ILister<E> {
 
     int getLimit();
 
-    boolean hasNext();
+    void setStraight(boolean straight);
+
+    boolean canStraight();
 
     void listForward() throws SuitsException;
+
+    boolean hasNext();
+
+    boolean hasFutureNext() throws SuitsException;
 
     List<E> currents();
 
