@@ -164,6 +164,28 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
+    public boolean hasFutureNext() throws SuitsException {
+        try {
+            List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
+            JsonObject lastJson = jsonObjects.get(jsonObjects.size() - 1);
+            String marker = this.marker;
+            int times = 10;
+            while (times > 0) {
+                if (lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
+                    marker = lastJson.get("marker").getAsString();
+                    if (marker == null || "".equals(marker)) return false;
+                }
+                jsonObjects = getListResult(prefix, delimiter, marker, limit);
+                lastJson = jsonObjects.get(jsonObjects.size() - 1);
+                times--;
+            }
+            return true;
+        } catch (Exception e) {
+            throw new SuitsException(-1, "failed, " + e.getMessage());
+        }
+    }
+
+    @Override
     public List<FileInfo> currents() {
         return fileInfoList;
     }
