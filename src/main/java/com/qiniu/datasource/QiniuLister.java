@@ -12,6 +12,7 @@ import com.qiniu.util.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class QiniuLister implements ILister<FileInfo> {
@@ -94,27 +95,16 @@ public class QiniuLister implements ILister<FileInfo> {
         return limit;
     }
 
-    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
+    private List<JsonObject> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
-        List<FileInfo> fileInfoList = new ArrayList<>();
+        List<JsonObject> jsonObjects = new ArrayList<>();
         try {
             String line;
-            JsonObject json = new JsonObject();
-            while (true) {
-                if ((line = bufferedReader.readLine()) != null) {
-                    json = JsonConvertUtils.toJsonObject(line);
-                    if (json.get("item") != null && !(json.get("item") instanceof JsonNull)) {
-                        fileInfoList.add(JsonConvertUtils.fromJson(json.get("item"), FileInfo.class));
-                    }
-                } else {
-                    if (json.get("marker") != null && !(json.get("marker") instanceof JsonNull)) {
-                        this.marker = json.get("marker").getAsString();
-                    }
-                    break;
-                }
+            while ((line = bufferedReader.readLine()) != null) {
+                jsonObjects.add(JsonConvertUtils.toJsonObject(line));
             }
             bufferedReader.close();
             reader.close();
@@ -123,7 +113,26 @@ public class QiniuLister implements ILister<FileInfo> {
         } catch (IOException e) {
             throw new QiniuException(e, e.getMessage());
         }
-        return fileInfoList;
+        return jsonObjects;
+    }
+
+    private List<FileInfo> doList(String prefix, String delimiter, String marker, int limit) throws QiniuException {
+        List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
+        JsonObject lastJson = jsonObjects.get(jsonObjects.size() - 1);
+        try {
+            if (lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
+                this.marker = lastJson.get("marker").getAsString();
+            }
+            return jsonObjects.stream().map(jsonObject -> {
+                if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
+                    return JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class);
+                } else {
+                    return null;
+                }
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 
     @Override
@@ -131,7 +140,7 @@ public class QiniuLister implements ILister<FileInfo> {
         try {
             List<FileInfo> current;
             do {
-                current = getListResult(prefix, delimiter, marker, limit);
+                current = doList(prefix, delimiter, marker, limit);
             } while (current.size() == 0 && hasNext());
 
             if (endPrefix != null && !"".equals(endPrefix)) {
