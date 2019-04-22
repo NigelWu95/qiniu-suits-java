@@ -101,7 +101,7 @@ public class QiniuLister implements ILister<FileInfo> {
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
         List<String> lines = bufferedReader.lines()
-                .filter(line -> !StringUtils.isNullOrEmpty(line))
+                .filter(line -> line != null && !"".equals(line))
                 .collect(Collectors.toList());
         List<ListLine> listLines = lines.stream()
                 .map(line -> new ListLine().fromLine(line))
