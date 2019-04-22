@@ -460,34 +460,38 @@ public abstract class OssContainer<E> implements IDataSource {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         FileSaveMapper recordFileSaveMapper = new FileSaveMapper(savePath);
-        executorPool = Executors.newFixedThreadPool(threads);
-        exitBool = new AtomicBoolean(false);
-        Collections.sort(prefixes);
         int alreadyOrder = 0;
-        if (prefixes.size() == 0) {
-            ILister<E> startLister = generateLister("");
-            computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
-        } else {
-            if (prefixLeft) {
+        exitBool = new AtomicBoolean(false);
+        try {
+            executorPool = Executors.newFixedThreadPool(threads);
+            Collections.sort(prefixes);
+            if (prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
-                startLister.setEndPrefix(prefixes.get(0));
-                execInThreads(new ArrayList<ILister<E>>(){{ add(startLister); }}, recordFileSaveMapper, alreadyOrder);
-                alreadyOrder += 1;
-            }
-            for (int i = 0; i < prefixes.size() - 1; i++) {
-                ILister<E> startLister = generateLister(prefixes.get(i));
-                alreadyOrder = computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
-            }
-            ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
-            if (prefixRight) {
                 computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
             } else {
-                computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                if (prefixLeft) {
+                    ILister<E> startLister = generateLister("");
+                    startLister.setEndPrefix(prefixes.get(0));
+                    execInThreads(new ArrayList<ILister<E>>(){{ add(startLister); }}, recordFileSaveMapper, alreadyOrder);
+                    alreadyOrder += 1;
+                }
+                for (int i = 0; i < prefixes.size() - 1; i++) {
+                    ILister<E> startLister = generateLister(prefixes.get(i));
+                    alreadyOrder = computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                }
+                ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
+                if (prefixRight) {
+                    computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
+                } else {
+                    computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                }
             }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) Thread.sleep(1000);
+            recordFileSaveMapper.closeWriters();
+            System.out.println(info + " finished");
+        } catch (Throwable error) {
+            SystemUtils.exit(exitBool, error);
         }
-        executorPool.shutdown();
-        while (!executorPool.isTerminated()) Thread.sleep(1000);
-        recordFileSaveMapper.closeWriters();
-        System.out.println(info + " finished");
     }
 }
