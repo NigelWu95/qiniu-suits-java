@@ -12,7 +12,6 @@ import com.qiniu.util.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class QiniuLister implements ILister<FileInfo> {
@@ -100,30 +99,31 @@ public class QiniuLister implements ILister<FileInfo> {
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
-        List<String> lines = bufferedReader.lines()
-                .filter(line -> line != null && !"".equals(line))
-                .collect(Collectors.toList());
-        List<ListLine> listLines = lines.stream()
-                .map(line -> new ListLine().fromLine(line))
-                .filter(Objects::nonNull)
-                .sorted(ListLine::compareTo)
-                .collect(Collectors.toList());
+        List<FileInfo> fileInfoList = new ArrayList<>();
         try {
+            String line;
+            JsonObject json = new JsonObject();
+            while (true) {
+                if ((line = bufferedReader.readLine()) != null) {
+                    json = JsonConvertUtils.toJsonObject(line);
+                    if (json.get("item") != null && !(json.get("item") instanceof JsonNull)) {
+                        fileInfoList.add(JsonConvertUtils.fromJson(json.get("item"), FileInfo.class));
+                    }
+                } else {
+                    if (json.get("marker") != null && !(json.get("marker") instanceof JsonNull)) {
+                        this.marker = json.get("marker").getAsString();
+                    }
+                    break;
+                }
+            }
             bufferedReader.close();
             reader.close();
             inputStream.close();
+            response.close();
         } catch (IOException e) {
             throw new QiniuException(e, e.getMessage());
         }
-        response.close();
-        // 转换成 ListLine 过程中可能出现问题，直接返回空列表，marker 不做修改，返回后则会再次使用同样的 marker 值进行列举
-        if (listLines.size() < lines.size()) return new ArrayList<>();
-        List<FileInfo> resultList = listLines.stream()
-                .map(listLine -> listLine.fileInfo)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-        this.marker = listLines.size() > 0 ? listLines.get(listLines.size() - 1).marker : null;
-        return resultList;
+        return fileInfoList;
     }
 
     @Override
@@ -206,60 +206,32 @@ public class QiniuLister implements ILister<FileInfo> {
         fileInfoList = null;
     }
 
-    public class ListLine implements Comparable {
+    public class ListLine {
 
         public FileInfo fileInfo;
-        public String dir = "";
-        public String marker = "";
+        public String dir;
+        public String marker;
+
+        public ListLine(String jsonItemLine) throws JsonSyntaxException, NullPointerException {
+            if (jsonItemLine != null && !"".equals(jsonItemLine)) {
+                JsonObject json = JsonConvertUtils.toJsonObject(jsonItemLine);
+                JsonElement item = json.get("item");
+                JsonElement marker = json.get("marker");
+                JsonElement dir = json.get("dir");
+                if (item != null && !(item instanceof JsonNull)) {
+                    this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
+                }
+                if (marker != null && !(marker instanceof JsonNull)) {
+                    this.marker = marker.getAsString();
+                }
+                if (dir != null && !(dir instanceof JsonNull)) {
+                    this.dir = dir.getAsString();
+                }
+            }
+        }
 
         public boolean isDeleted() {
             return (fileInfo == null && (dir == null || "".equals(dir)));
-        }
-
-        public int compareTo(Object object) {
-            ListLine listLine = (ListLine) object;
-            if (listLine.fileInfo == null && this.fileInfo == null) {
-                return 0;
-            } else if (this.fileInfo == null) {
-                if (!"".equals(marker)) {
-                    String markerJson = new String(UrlSafeBase64.decode(marker));
-                    String key = JsonConvertUtils.fromJson(markerJson, JsonObject.class).get("k").getAsString();
-                    return key.compareTo(listLine.fileInfo.key);
-                }
-                return 1;
-            } else if (listLine.fileInfo == null) {
-                if (!"".equals(listLine.marker)) {
-                    String markerJson = new String(UrlSafeBase64.decode(listLine.marker));
-                    String key = JsonConvertUtils.fromJson(markerJson, JsonObject.class).get("k").getAsString();
-                    return this.fileInfo.key.compareTo(key);
-                }
-                return -1;
-            } else {
-                return this.fileInfo.key.compareTo(listLine.fileInfo.key);
-            }
-        }
-
-        public ListLine fromLine(String line) {
-            try {
-                if (line != null && !"".equals(line)) {
-                    JsonObject json = JsonConvertUtils.toJsonObject(line);
-                    JsonElement item = json.get("item");
-                    JsonElement marker = json.get("marker");
-                    JsonElement dir = json.get("dir");
-                    if (item != null && !(item instanceof JsonNull)) {
-                        this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
-                    }
-                    if (marker != null && !(marker instanceof JsonNull)) {
-                        this.marker = marker.getAsString();
-                    }
-                    if (dir != null && !(dir instanceof JsonNull)) {
-                        this.dir = dir.getAsString();
-                    }
-                }
-                return this;
-            } catch (Exception e) {
-                return null;
-            }
         }
     }
 }
