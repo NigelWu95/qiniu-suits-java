@@ -490,8 +490,8 @@ public abstract class OssContainer<E> implements IDataSource {
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             recordFileSaveMapper.closeWriters();
             System.out.println(info + " finished");
-        } catch (Throwable error) {
-            SystemUtils.exit(exitBool, error);
+        } catch (Throwable throwable) {
+            SystemUtils.exit(exitBool, throwable);
         }
     }
 }
