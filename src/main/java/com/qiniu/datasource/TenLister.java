@@ -6,6 +6,7 @@ import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -115,6 +116,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public boolean hasNext() {
         return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
+    }
+
+    @Override
+    public boolean hasFutureNext() throws SuitsException {
+        return hasNext();
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.Constants.OssStatus;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -121,6 +122,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public boolean hasNext() {
         return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
+    }
+
+    @Override
+    public boolean hasFutureNext() throws SuitsException {
+        return hasNext();
     }
 
     @Override
