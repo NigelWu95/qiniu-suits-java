@@ -205,33 +205,4 @@ public class QiniuLister implements ILister<FileInfo> {
         bucketManager = null;
         fileInfoList = null;
     }
-
-    public class ListLine {
-
-        public FileInfo fileInfo;
-        public String dir;
-        public String marker;
-
-        public ListLine(String jsonItemLine) throws JsonSyntaxException, NullPointerException {
-            if (jsonItemLine != null && !"".equals(jsonItemLine)) {
-                JsonObject json = JsonConvertUtils.toJsonObject(jsonItemLine);
-                JsonElement item = json.get("item");
-                JsonElement marker = json.get("marker");
-                JsonElement dir = json.get("dir");
-                if (item != null && !(item instanceof JsonNull)) {
-                    this.fileInfo = JsonConvertUtils.fromJson(item, FileInfo.class);
-                }
-                if (marker != null && !(marker instanceof JsonNull)) {
-                    this.marker = marker.getAsString();
-                }
-                if (dir != null && !(dir instanceof JsonNull)) {
-                    this.dir = dir.getAsString();
-                }
-            }
-        }
-
-        public boolean isDeleted() {
-            return (fileInfo == null && (dir == null || "".equals(dir)));
-        }
-    }
 }
