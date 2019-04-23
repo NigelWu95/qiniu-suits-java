@@ -270,7 +270,6 @@ public abstract class OssContainer<E> implements IDataSource {
 
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
         if (!futureNext) {
-            lister.setStraight(true);
             nextLevelList.add(lister);
             return nextLevelList;
         // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
