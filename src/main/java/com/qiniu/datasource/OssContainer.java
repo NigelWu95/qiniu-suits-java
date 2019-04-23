@@ -370,8 +370,7 @@ public abstract class OssContainer<E> implements IDataSource {
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
-                listerList.sort(Comparator.comparing(ILister<E>::getPrefix));
-                lastLister = listerList.get(listerList.size() - 1);
+                lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
                 // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
                 if (lastLister != null && !lastLister.hasNext()) {
                     // 全局结尾则设置前缀为空，否则设置前缀为起始值
@@ -415,12 +414,13 @@ public abstract class OssContainer<E> implements IDataSource {
         }
 
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-        if (!lastListerUpdated && listerList.size() > 0) {
-            listerList.sort(Comparator.comparing(ILister<E>::getPrefix));
-            lastLister = listerList.get(listerList.size() - 1);
-            if (globalEnd) lastLister.setPrefix("");
-            else lastLister.setPrefix(startLister.getPrefix());
-            if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+        if (!lastListerUpdated) {
+            lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
+            if (lastLister != null) {
+                if (globalEnd) lastLister.setPrefix("");
+                else lastLister.setPrefix(startLister.getPrefix());
+                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+            }
         }
         execInThreads(listerList, recordFileSaveMapper, alreadyOrder);
         alreadyOrder += listerList.size();
