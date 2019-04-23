@@ -179,8 +179,10 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public boolean hasFutureNext() throws SuitsException {
         if (marker == null) return false;
+        int times = 10;
         List<FileInfo> futureList = fileInfoList;
         while (futureList.size() < 10000) {
+            times--;
             listForward();
             futureList.addAll(fileInfoList);
             if (!hasNext()) {
@@ -192,7 +194,6 @@ public class QiniuLister implements ILister<FileInfo> {
         String marker = this.marker;
         List<JsonObject> jsonObjects;
         JsonObject lastJson;
-        int times = 10;
         while (times > 0) {
             try {
                 jsonObjects = getListResult(prefix, delimiter, marker, limit);
