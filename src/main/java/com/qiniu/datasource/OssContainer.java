@@ -406,8 +406,8 @@ public abstract class OssContainer<E> implements IDataSource {
                     }
 //                    executorPool.shutdown();
 //                    while (!executorPool.isTerminated()) Thread.sleep(100);
-                    nextListerList.clear();
                 }
+                nextListerList.clear();
             } else {
                 listerList.clear();
                 break;
