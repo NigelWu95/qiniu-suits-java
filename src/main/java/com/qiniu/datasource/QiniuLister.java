@@ -66,10 +66,7 @@ public class QiniuLister implements ILister<FileInfo> {
             fileInfoList = fileInfoList.stream()
                     .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
                     .collect(Collectors.toList());
-            if (fileInfoList.size() < size) {
-                marker = null;
-                straight = true;
-            }
+            if (fileInfoList.size() < size) marker = null;
         }
     }
 
@@ -181,6 +178,17 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
+        if (marker == null) return false;
+        List<FileInfo> futureList = fileInfoList;
+        while (futureList.size() < 10000) {
+            listForward();
+            futureList.addAll(fileInfoList);
+            if (!hasNext()) {
+                fileInfoList = futureList;
+                straight = true;
+                return false;
+            }
+        }
         String marker = this.marker;
         List<JsonObject> jsonObjects;
         JsonObject lastJson;
@@ -191,8 +199,12 @@ public class QiniuLister implements ILister<FileInfo> {
                 lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
                 if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                     marker = lastJson.get("marker").getAsString();
-                    if (marker == null || "".equals(marker)) return false;
+                    if (marker == null || "".equals(marker)) {
+                        straight = true;
+                        return false;
+                    }
                 } else {
+                    straight = true;
                     return false;
                 }
                 times--;
