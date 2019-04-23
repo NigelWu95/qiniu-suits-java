@@ -12,7 +12,6 @@ import com.qiniu.util.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class QiniuLister implements ILister<FileInfo> {
@@ -130,22 +129,22 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> doList(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
         JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
+        List<FileInfo> fileInfoList = new ArrayList<>();
         try {
             if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                 this.marker = lastJson.get("marker").getAsString();
             } else {
                 this.marker = null;
             }
-            return jsonObjects.stream().map(jsonObject -> {
+            for (JsonObject jsonObject : jsonObjects) {
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
-                    return JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class);
-                } else {
-                    return null;
+                    fileInfoList.add(JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class));
                 }
-            }).filter(Objects::nonNull).collect(Collectors.toList());
-        } catch (Exception e) {
+            }
+        } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
+        return fileInfoList;
     }
 
     @Override
@@ -166,8 +165,8 @@ public class QiniuLister implements ILister<FileInfo> {
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
-        } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+//        } catch (Exception e) {
+//            throw new SuitsException(-1, "failed, " + e.getMessage());
         }
     }
 
@@ -193,12 +192,8 @@ public class QiniuLister implements ILister<FileInfo> {
                     return false;
                 }
                 times--;
-            } catch (Exception e) {
-                if (e instanceof QiniuException && ((QiniuException) e).code() >= 500) {
-                    throw new SuitsException(((QiniuException) e).code(), e.getMessage());
-                } else {
-                    e.printStackTrace();
-                }
+            } catch (QiniuException e) {
+                if (e.code() >= 500) throw new SuitsException(e.code(), e.getMessage());
             }
         }
         return true;
