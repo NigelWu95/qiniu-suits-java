@@ -366,6 +366,7 @@ public abstract class OssContainer<E> implements IDataSource {
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
         Map<Boolean, List<ILister<E>>> groupedListerMap;
+        List<ILister<E>> nextListerList = new ArrayList<>();
         List<ILister<E>> execListerList = new ArrayList<>();
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
@@ -395,31 +396,17 @@ public abstract class OssContainer<E> implements IDataSource {
                 if (listerList.size() >= threads) {
                     break;
                 } else {
-//                    listerList = listerList.stream()
-//                            .map(eiLister -> {
-//                                try {
-//                                    return nextLevelLister(eiLister);
-//                                } catch (Exception e) {
-//                                    throw new RuntimeException(e);
-//                                }
-//                            })
-//                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
-//                            .get();
-
-                    List<ILister<E>> finalListerList = new ArrayList<>();
+                    nextListerList.clear();
                     for (Future<List<ILister<E>>> listFuture : listerList.stream()
                             .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
                             .collect(Collectors.toList())) {
-                        finalListerList.addAll(listFuture.get());
+                        nextListerList.addAll(listFuture.get());
                     }
-                    listerList = finalListerList;
-                }
-
 //                ExecutorService pool = Executors.newFixedThreadPool(threads);
 //                for (ILister<E> eiLister : listerList) {
 //                    pool.execute(() -> {
 //                        try {
-//                            finalListerList.addAll(nextLevelLister(eiLister));
+//                              nextListerList.addAll(nextLevelLister(eiLister));
 //                        } catch (Exception e) {
 //                            SystemUtils.exit(exitBool, e);
 //                        }
@@ -427,6 +414,8 @@ public abstract class OssContainer<E> implements IDataSource {
 //                }
 //                pool.shutdown();
 //                while (!pool.isTerminated()) Thread.sleep(100);
+                    listerList = nextListerList;
+                }
             } else {
                 listerList.clear();
                 break;
