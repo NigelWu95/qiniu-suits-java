@@ -238,12 +238,8 @@ public abstract class OssContainer<E> implements IDataSource {
         List<ILister<E>> nextList = new ArrayList<>();
         for (String prefix : originPrefixList) {
             if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
-//                try {
-                    ILister<E> lister = generateLister(startPrefix + prefix);
-                    if (lister != null && lister.currents().size() > 0) nextList.add(lister);
-//                } catch (IOException e) {
-//                    SystemUtils.exit(exitBool, e);
-//                }
+                ILister<E> lister = generateLister(startPrefix + prefix);
+                if (lister != null && lister.currents().size() > 0) nextList.add(lister);
             }
         }
         return nextList;
@@ -366,12 +362,12 @@ public abstract class OssContainer<E> implements IDataSource {
     private int computeToList(ILister<E> startLister, boolean globalEnd, int alreadyOrder, FileSaveMapper recordFileSaveMapper)
             throws Exception {
         List<ILister<E>> listerList = nextLevelLister(startLister);
-        List<ILister<E>> execListerList = new ArrayList<>();
+        int nextSize;
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
-        int nextSize;
         Map<Boolean, List<ILister<E>>> groupedListerMap;
-        do {
+        List<ILister<E>> execListerList = new ArrayList<>();
+        while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
                 listerList.sort(Comparator.comparing(ILister<E>::getPrefix));
@@ -382,41 +378,54 @@ public abstract class OssContainer<E> implements IDataSource {
                     if (globalEnd) lastLister.setPrefix("");
                     else lastLister.setPrefix(startLister.getPrefix());
                     lastLister.updateMarkerBy(lastLister.currentLast());
-                    execListerList.add(lastLister);
+                    lastLister.setStraight(true);
                     lastListerUpdated = true;
-                    listerList = listerList.subList(0, listerList.size() -1 );
                 }
             }
-            // 按照是否存在 next 同时 endPrefix 不为空来进行分组，不存在 next 或者 endPrefix 为 null 时则可以提前放入线程中执行列举，判
-            // 断 endPrefix 是因为在初始化的 lister 中 endPrefix 一定不为 null，如果为 null 说明在计算过程中进行了特殊设置，希望此时的
-            // lister 优先执行掉
-            groupedListerMap = listerList.stream().collect(Collectors.groupingBy(fileLister -> !fileLister.canStraight()));
-            if (groupedListerMap.get(false) != null) execListerList.addAll(groupedListerMap.get(false));
+            // 按照 canStraight 来进行分组，将部分不需要向下分级的 lister 提前放入线程中执行列举
+            groupedListerMap = listerList.stream().collect(Collectors.groupingBy(ILister::canStraight));
+            if (groupedListerMap.get(true) != null) execListerList.addAll(groupedListerMap.get(true));
             execInThreads(execListerList, recordFileSaveMapper, alreadyOrder);
             alreadyOrder += execListerList.size();
             execListerList.clear();
-            // 对存在 next 且 endPrefix 不为空的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-            if (groupedListerMap.get(true) != null) {
-                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
-                        .map(eiLister -> {
-                            try {
-                                return nextLevelLister(eiLister);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                if (listOptional.isPresent() && listOptional.get().size() > 0) {
-                    listerList = listOptional.get();
-                    nextSize = (int) listerList.stream()
-                            .filter(fileLister -> !fileLister.canStraight())
-                            .count();
-                } else {
-                    listerList = groupedListerMap.get(true);
+            // 对 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
+            listerList = groupedListerMap.get(false);
+            if (listerList.size() > 0) {
+                // 线程数满足设置值时则不需要再继续检索下一级前缀
+                if (listerList.size() >= threads) {
                     break;
+                } else {
+                    listerList = listerList.stream()
+                            .map(eiLister -> {
+                                try {
+                                    return nextLevelLister(eiLister);
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            })
+                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
+                            .get();
                 }
+//                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
+//                        .map(eiLister -> {
+//                            try {
+//                                return nextLevelLister(eiLister);
+//                            } catch (Exception e) {
+//                                throw new RuntimeException(e);
+//                            }
+//                        })
+//                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+//                if (listOptional.isPresent() && listOptional.get().size() > 0) {
+//                    listerList = listOptional.get();
+//                    nextSize = (int) listerList.stream()
+//                            .filter(fileLister -> !fileLister.canStraight())
+//                            .count();
+//                } else {
+//                    listerList = groupedListerMap.get(true);
+//                    break;
+//                }
 
-//                List<ILister<E>> finalListerList = new ArrayList<>();
+                List<ILister<E>> finalListerList = new ArrayList<>();
 //                for (Future<List<ILister<E>>> listFuture : groupedListerMap.get(true).stream()
 //                        .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
 //                        .collect(Collectors.toList())) {
@@ -444,14 +453,14 @@ public abstract class OssContainer<E> implements IDataSource {
 //                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
 //                            .count();
 //                } else {
-//                    listerList = groupedListerMap.get(true);
+//                    listerList = groupedListerMap.get(false);
 //                    break;
 //                }
             } else {
                 listerList.clear();
                 break;
             }
-        } while (nextSize < threads); // 线程数满足设置值时则不需要再继续检索下一级前缀
+        }
 
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
         if (!lastListerUpdated && listerList.size() > 0) {
