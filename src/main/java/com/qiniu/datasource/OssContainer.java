@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -362,7 +363,6 @@ public abstract class OssContainer<E> implements IDataSource {
     private int computeToList(ILister<E> startLister, boolean globalEnd, int alreadyOrder, FileSaveMapper recordFileSaveMapper)
             throws Exception {
         List<ILister<E>> listerList = nextLevelLister(startLister);
-        int nextSize;
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
         Map<Boolean, List<ILister<E>>> groupedListerMap;
@@ -395,48 +395,28 @@ public abstract class OssContainer<E> implements IDataSource {
                 if (listerList.size() >= threads) {
                     break;
                 } else {
-                    listerList = listerList.stream()
-                            .map(eiLister -> {
-                                try {
-                                    return nextLevelLister(eiLister);
-                                } catch (Exception e) {
-                                    throw new RuntimeException(e);
-                                }
-                            })
-                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
-                            .get();
-                }
-//                Optional<List<ILister<E>>> listOptional = groupedListerMap.get(true).stream()
-//                        .map(eiLister -> {
-//                            try {
-//                                return nextLevelLister(eiLister);
-//                            } catch (Exception e) {
-//                                throw new RuntimeException(e);
-//                            }
-//                        })
-//                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-//                if (listOptional.isPresent() && listOptional.get().size() > 0) {
-//                    listerList = listOptional.get();
-//                    nextSize = (int) listerList.stream()
-//                            .filter(fileLister -> !fileLister.canStraight())
-//                            .count();
-//                } else {
-//                    listerList = groupedListerMap.get(true);
-//                    break;
-//                }
+//                    listerList = listerList.stream()
+//                            .map(eiLister -> {
+//                                try {
+//                                    return nextLevelLister(eiLister);
+//                                } catch (Exception e) {
+//                                    throw new RuntimeException(e);
+//                                }
+//                            })
+//                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
+//                            .get();
 
-                List<ILister<E>> finalListerList = new ArrayList<>();
-//                for (Future<List<ILister<E>>> listFuture : groupedListerMap.get(true).stream()
-//                        .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
-//                        .collect(Collectors.toList())) {
-//                    finalListerList.addAll(listFuture.get());
-//                }
-//                for (ILister<E> eiLister : groupedListerMap.get(true)) {
-//                    Future<List<ILister<E>>> future = executorPool.submit(() -> nextLevelLister(eiLister));
-//                    finalListerList.addAll(future.get());
-//                }
+                    List<ILister<E>> finalListerList = new ArrayList<>();
+                    for (Future<List<ILister<E>>> listFuture : listerList.stream()
+                            .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
+                            .collect(Collectors.toList())) {
+                        finalListerList.addAll(listFuture.get());
+                    }
+                    listerList = finalListerList;
+                }
+
 //                ExecutorService pool = Executors.newFixedThreadPool(threads);
-//                for (ILister<E> eiLister : groupedListerMap.get(true)) {
+//                for (ILister<E> eiLister : listerList) {
 //                    pool.execute(() -> {
 //                        try {
 //                            finalListerList.addAll(nextLevelLister(eiLister));
@@ -447,15 +427,6 @@ public abstract class OssContainer<E> implements IDataSource {
 //                }
 //                pool.shutdown();
 //                while (!pool.isTerminated()) Thread.sleep(100);
-//                if (finalListerList.size() > 0) {
-//                    listerList = finalListerList;
-//                    nextSize = (int) listerList.stream()
-//                            .filter(fileLister -> fileLister.hasNext() && fileLister.getEndPrefix() != null)
-//                            .count();
-//                } else {
-//                    listerList = groupedListerMap.get(false);
-//                    break;
-//                }
             } else {
                 listerList.clear();
                 break;
