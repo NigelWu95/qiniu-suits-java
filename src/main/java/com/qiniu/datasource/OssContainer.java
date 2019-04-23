@@ -365,7 +365,6 @@ public abstract class OssContainer<E> implements IDataSource {
         List<ILister<E>> listerList = nextLevelLister(startLister);
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
-        Map<Boolean, List<ILister<E>>> groupedListerMap;
         List<ILister<E>> nextListerList = new ArrayList<>();
         List<ILister<E>> execListerList = new ArrayList<>();
         while (true) {
@@ -384,37 +383,30 @@ public abstract class OssContainer<E> implements IDataSource {
                 }
             }
             // 按照 canStraight 来进行分组，将部分不需要向下分级的 lister 提前放入线程中执行列举
-            groupedListerMap = listerList.stream().collect(Collectors.groupingBy(ILister::canStraight));
-            if (groupedListerMap.get(true) != null) execListerList.addAll(groupedListerMap.get(true));
+            for (ILister<E> eiLister : listerList) {
+                if (eiLister.canStraight()) execListerList.add(eiLister);
+                else nextListerList.add(eiLister);
+            }
             execInThreads(execListerList, recordFileSaveMapper, alreadyOrder);
             alreadyOrder += execListerList.size();
             execListerList.clear();
             // 对 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-            listerList = groupedListerMap.get(false);
-            if (listerList.size() > 0) {
+            if (nextListerList.size() > 0) {
                 // 线程数满足设置值时则不需要再继续检索下一级前缀
-                if (listerList.size() >= threads) {
+                if (nextListerList.size() >= threads) {
+                    listerList = nextListerList;
                     break;
                 } else {
-                    nextListerList.clear();
-                    for (Future<List<ILister<E>>> listFuture : listerList.stream()
+                    listerList.clear();
+//                    ExecutorService executorPool = Executors.newFixedThreadPool(threads);
+                    for (Future<List<ILister<E>>> listFuture : nextListerList.stream()
                             .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
                             .collect(Collectors.toList())) {
-                        nextListerList.addAll(listFuture.get());
+                        listerList.addAll(listFuture.get());
                     }
-//                ExecutorService pool = Executors.newFixedThreadPool(threads);
-//                for (ILister<E> eiLister : listerList) {
-//                    pool.execute(() -> {
-//                        try {
-//                              nextListerList.addAll(nextLevelLister(eiLister));
-//                        } catch (Exception e) {
-//                            SystemUtils.exit(exitBool, e);
-//                        }
-//                    });
-//                }
-//                pool.shutdown();
-//                while (!pool.isTerminated()) Thread.sleep(100);
-                    listerList = nextListerList;
+//                    executorPool.shutdown();
+//                    while (!executorPool.isTerminated()) Thread.sleep(100);
+                    nextListerList.clear();
                 }
             } else {
                 listerList.clear();
