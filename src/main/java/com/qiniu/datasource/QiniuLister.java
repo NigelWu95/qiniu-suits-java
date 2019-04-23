@@ -133,6 +133,8 @@ public class QiniuLister implements ILister<FileInfo> {
         try {
             if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                 this.marker = lastJson.get("marker").getAsString();
+            } else {
+                this.marker = null;
             }
             return jsonObjects.stream().map(jsonObject -> {
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
@@ -176,26 +178,30 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        try {
-            List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
-            JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
-            String marker = this.marker;
-            int times = 10;
-            while (times > 0) {
+        String marker = this.marker;
+        List<JsonObject> jsonObjects;
+        JsonObject lastJson;
+        int times = 10;
+        while (times > 0) {
+            try {
+                jsonObjects = getListResult(prefix, delimiter, marker, limit);
+                lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
                 if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                     marker = lastJson.get("marker").getAsString();
                     if (marker == null || "".equals(marker)) return false;
+                } else {
+                    return false;
                 }
-                jsonObjects = getListResult(prefix, delimiter, marker, limit);
-                lastJson = jsonObjects.get(jsonObjects.size() - 1);
                 times--;
+            } catch (Exception e) {
+                if (e instanceof QiniuException && ((QiniuException) e).code() >= 500) {
+                    throw new SuitsException(((QiniuException) e).code(), e.getMessage());
+                } else {
+                    e.printStackTrace();
+                }
             }
-            return true;
-        } catch (QiniuException e) {
-            throw new SuitsException(e.code(), e.getMessage());
-        } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
         }
+        return true;
     }
 
     @Override
