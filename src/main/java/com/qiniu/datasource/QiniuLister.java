@@ -31,7 +31,7 @@ public class QiniuLister implements ILister<FileInfo> {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
-        this.marker = marker;
+        this.marker = marker == null ? "" : marker;
         this.endPrefix = endPrefix;
         this.delimiter = delimiter;
         this.limit = limit;
@@ -66,7 +66,10 @@ public class QiniuLister implements ILister<FileInfo> {
             fileInfoList = fileInfoList.stream()
                     .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
                     .collect(Collectors.toList());
-            if (fileInfoList.size() < size) marker = null;
+            if (fileInfoList.size() < size) {
+                marker = null;
+                straight = true;
+            }
         }
     }
 
@@ -150,6 +153,7 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void listForward() throws SuitsException {
         try {
+            if (marker == null) return;
             List<FileInfo> current;
             do {
                 current = doList(prefix, delimiter, marker, limit);
