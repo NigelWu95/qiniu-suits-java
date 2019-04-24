@@ -64,8 +64,8 @@ public class PfopCommand extends Base {
         this.hasSize = hasSize;
     }
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String rmPrefix,
-                       String savePath) throws IOException {
+    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath)
+            throws IOException {
         this(avinfoIndex, jsonPath, hasDuration, hasSize, savePath, 0);
     }
 
