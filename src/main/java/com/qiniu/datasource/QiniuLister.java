@@ -102,7 +102,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean canStraight() {
-        return straight || (endPrefix != null && !"".equals(endPrefix));
+        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private List<JsonObject> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
@@ -196,7 +196,6 @@ public class QiniuLister implements ILister<FileInfo> {
             futureList.addAll(fileInfoList);
             if (!hasNext()) {
                 fileInfoList = futureList;
-                straight = true;
                 return false;
             }
         }
@@ -209,10 +208,7 @@ public class QiniuLister implements ILister<FileInfo> {
                 lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
                 if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                     marker = lastJson.get("marker").getAsString();
-                    if (marker == null || "".equals(marker)) {
-                        straight = true;
-                        return false;
-                    }
+                    if (marker == null || "".equals(marker)) return false;
                 } else {
                     straight = true;
                     return false;
