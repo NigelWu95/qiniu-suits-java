@@ -254,22 +254,23 @@ public abstract class OssContainer<E> implements IDataSource {
     private List<ILister<E>> nextLevelLister(ILister<E> lister) throws SuitsException {
         String point = "";
         List<ILister<E>> nextLevelList = new ArrayList<>();
-        boolean futureNext;
         int retry = retryTimes;
-        while (true) {
-            try {
-                futureNext = lister.hasFutureNext();
-                break;
-            } catch (SuitsException e) {
-                System.out.println("check lister has future next retrying...\n" + e.getMessage());
-                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
-                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
-                else retry--;
-            }
-        }
+//        boolean futureNext;
+//        while (true) {
+//            try {
+//                futureNext = lister.hasFutureNext();
+//                break;
+//            } catch (SuitsException e) {
+//                System.out.println("check lister has future next retrying...\n" + e.getMessage());
+//                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+//                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+//                else retry--;
+//            }
+//        }
 
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
-        if (!futureNext) {
+//        if (!futureNext) {
+        if (!lister.hasNext()) {
             nextLevelList.add(lister);
             return nextLevelList;
         // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象的文件名计算后续的前缀字符

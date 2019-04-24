@@ -151,10 +151,10 @@ public class QiniuLister implements ILister<FileInfo> {
     public void listForward() throws SuitsException {
         try {
             if (marker == null) return;
-            List<FileInfo> current;
-            do {
-                current = doList(prefix, delimiter, marker, limit);
-            } while (current.size() == 0 && hasNext());
+            List<FileInfo> current = doList(prefix, delimiter, marker, limit);
+//            do {
+//                current = doList(prefix, delimiter, marker, limit);
+//            } while (current.size() == 0 && hasNext());
 
             if (endPrefix != null && !"".equals(endPrefix)) {
                 fileInfoList = current.stream()
