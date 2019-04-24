@@ -42,21 +42,7 @@ public class PfopCommand extends Base {
         this.pfopConfigs = new ArrayList<>();
         JsonFile jsonFile = new JsonFile(jsonPath);
         for (String key : jsonFile.getKeys()) {
-            JsonObject jsonObject = jsonFile.getElement(key).getAsJsonObject();
-            List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
-                    new TypeToken<List<Integer>>(){});
-            if (scale.size() < 1) {
-                throw new IOException(jsonPath + " miss the scale field in \"" + key + "\"");
-            } else if (scale.size() == 1) {
-                JsonArray jsonArray = new JsonArray();
-                jsonArray.add(scale.get(0));
-                jsonArray.add(Integer.MAX_VALUE);
-                jsonObject.add("scale", jsonArray);
-            }
-            if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
-                throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
-//            else if (!jsonObject.get("saveas").getAsString().contains(":"))
-//                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
+            JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), true);
             jsonObject.addProperty("name", key);
             this.pfopConfigs.add(jsonObject);
         }
