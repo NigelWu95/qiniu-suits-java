@@ -55,8 +55,8 @@ public class PfopCommand extends Base {
             }
             if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
                 throw new IOException(jsonPath + " miss the \"cmd\" or \"saveas\" fields in \"" + key + "\"");
-            else if (!jsonObject.get("saveas").getAsString().contains(":"))
-                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
+//            else if (!jsonObject.get("saveas").getAsString().contains(":"))
+//                throw new IOException(jsonPath + " miss the <bucket> field of \"saveas\" field in \"" + key + "\"");
             jsonObject.addProperty("name", key);
             this.pfopConfigs.add(jsonObject);
         }

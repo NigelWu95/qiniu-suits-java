@@ -48,7 +48,7 @@ public class FileNameUtils {
         if (name == null) return null;
         String[] names = name.split("\\.");
         if (names.length < 2) {
-            return name + suffix;
+            return name + suffix + "." + ext;
         } else {
             StringBuilder shortName = new StringBuilder();
             for (int i = 0; i < names.length - 1; i++) {
