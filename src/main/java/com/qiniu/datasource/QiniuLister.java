@@ -191,6 +191,7 @@ public class QiniuLister implements ILister<FileInfo> {
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
         while (futureList.size() < 10000) {
+            if (fileInfoList.size() == 0) return true;
             times--;
             listForward();
             futureList.addAll(fileInfoList);

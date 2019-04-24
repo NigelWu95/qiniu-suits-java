@@ -251,26 +251,25 @@ public abstract class OssContainer<E> implements IDataSource {
      * @param lister 起始列举对象
      * @return 下一级别可并发的列举对象集
      */
-    private List<ILister<E>> nextLevelLister(ILister<E> lister) throws SuitsException {
+    private List<ILister<E>> nextLevelLister(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
         String point = "";
         List<ILister<E>> nextLevelList = new ArrayList<>();
         int retry = retryTimes;
-//        boolean futureNext;
-//        while (true) {
-//            try {
-//                futureNext = lister.hasFutureNext();
-//                break;
-//            } catch (SuitsException e) {
-//                System.out.println("check lister has future next retrying...\n" + e.getMessage());
-//                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
-//                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
-//                else retry--;
-//            }
-//        }
-
+        boolean futureNext;
+        while (true) {
+            try {
+                futureNext = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
+                break;
+            } catch (SuitsException e) {
+                System.out.println("check lister has future next retrying...\n" + e.getMessage());
+                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                else retry--;
+            }
+        }
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
-//        if (!futureNext) {
-        if (!lister.hasNext()) {
+        if (!futureNext) {
+//        if (!lister.hasNext()) {
             nextLevelList.add(lister);
             return nextLevelList;
         // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
@@ -292,7 +291,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     nextLevelList.add(lister);
                 // 当 point 包含在预定义前缀列表中，如果当前的第一个对象和最后一个对象文件名相同，则不需要加入返回的列举对象集，因为 point 会
                 // 用于下一级前缀和列举对象的检索，反之则设置结束位置到 point 并加入返回的对象集
-                } else if (!lister.currentFirstKey().startsWith(lister.getPrefix() + point)) {
+                } else if (lister.currentFirstKey() != null && !lister.currentFirstKey().startsWith(lister.getPrefix() + point)) {
                     lister.setEndPrefix(lister.getPrefix() + point);
                     nextLevelList.add(lister);
                 }
@@ -362,7 +361,7 @@ public abstract class OssContainer<E> implements IDataSource {
      */
     private int computeToList(ILister<E> startLister, boolean globalEnd, int alreadyOrder, FileSaveMapper recordFileSaveMapper)
             throws Exception {
-        List<ILister<E>> listerList = nextLevelLister(startLister);
+        List<ILister<E>> listerList = nextLevelLister(startLister, false);
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
         List<ILister<E>> nextListerList = new ArrayList<>();
@@ -399,7 +398,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     listerList.clear();
 //                    ExecutorService executorPool = Executors.newFixedThreadPool(threads);
                     for (Future<List<ILister<E>>> listFuture : nextListerList.stream()
-                            .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister)))
+                            .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister, true)))
                             .collect(Collectors.toList())) {
                         listerList.addAll(listFuture.get());
                     }
