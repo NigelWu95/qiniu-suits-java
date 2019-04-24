@@ -378,8 +378,7 @@ public class QSuitsEntry {
         duration = commonParams.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false");
         size = commonParams.checked(size, "size", "(true|false)");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), rmPrefix, savePath);
+        return new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop() throws IOException {
