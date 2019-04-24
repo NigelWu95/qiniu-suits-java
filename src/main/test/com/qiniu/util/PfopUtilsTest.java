@@ -11,8 +11,45 @@ public class PfopUtilsTest {
     public void testGenerateFopCmd() {
         JsonObject pfopJson = new JsonObject();
         pfopJson.addProperty("cmd", "avthumb/mp4");
-        pfopJson.addProperty("saveas", "temp:$(key)");
-        String saveName = PfopUtils.generateFopCmd("000", pfopJson);
-        System.out.println(saveName);
+        pfopJson.addProperty("saveas", "temp:$(name)");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:.json-$(name)");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:.json-$(name).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:.json-$(name).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000.txt", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:$(name).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:$(name).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000.txt", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:$(name)-.json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:.json-$(key).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:.json-$(key).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000.txt", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:$(key).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:$(key).json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000.txt", pfopJson)));
+
+        pfopJson.addProperty("saveas", "temp:$(key)-.json");
+        System.out.println(decodeFop(PfopUtils.generateFopCmd("000", pfopJson)));
+    }
+
+    public static String decodeFop(String fop) {
+        String[] items = fop.split("saveas/");
+        return new String(UrlSafeBase64.decode(items[1].split("\\|")[0]));
     }
 }

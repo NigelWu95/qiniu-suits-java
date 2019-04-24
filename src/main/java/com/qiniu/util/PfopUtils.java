@@ -37,19 +37,13 @@ public class PfopUtils {
     public static String generateFopCmd(String srcKey, JsonObject pfopJson) {
         String saveAs = pfopJson.get("saveas").getAsString();
         if (saveAs.contains(":")) {
-
-        }
-        String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
-        if (saveAsKey.endsWith("$(key)")) {
-            saveAs = saveAs.replace("$(key)", srcKey);
-        } else if (saveAsKey.startsWith("$(key)"))
-        if (saveAsKey.contains("$(key)")) {
-            if (saveAsKey.contains(".")) {
-                String[] nameParts = saveAsKey.split("(\\$\\(key\\)|\\.)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixWithExt(nameParts[0], srcKey, nameParts[1], nameParts[2]);
-            } else {
-                String[] nameParts = saveAsKey.split("\\$\\(key\\)");
-                saveAsKey = FileNameUtils.addPrefixAndSuffixKeepExt(nameParts[0], srcKey, nameParts[1]);
+            String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
+            if (saveAsKey.contains("$(name)") || saveAsKey.contains("$(ext)")) {
+                String[] items = FileNameUtils.getNameItems(srcKey);
+                saveAsKey = saveAsKey.replace("$(name)", items[0]).replace("$(ext)", items[1]);
+            }
+            if (saveAsKey.contains("$(key)")) {
+                saveAsKey = saveAsKey.replace("$(key)", srcKey);
             }
             saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
         }
