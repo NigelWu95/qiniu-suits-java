@@ -50,7 +50,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker;
+        this.marker = marker == null ? "" : marker;
     }
 
     @Override
@@ -132,7 +132,7 @@ public class QiniuLister implements ILister<FileInfo> {
         List<FileInfo> fileInfoList = new ArrayList<>();
         try {
             if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
-                this.marker = lastJson.get("marker").getAsString();
+                this.marker = "".equals(lastJson.get("marker").getAsString()) ? null : lastJson.get("marker").getAsString();
             } else {
                 this.marker = null;
             }
@@ -187,7 +187,7 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public boolean hasFutureNext() throws SuitsException {
         if (marker == null) return false;
-        int times = 10;
+        int times = 10000 / limit;
         List<FileInfo> futureList = fileInfoList;
         while (futureList.size() < 10000) {
             times--;
