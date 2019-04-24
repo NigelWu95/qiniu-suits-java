@@ -151,18 +151,26 @@ public class QiniuLister implements ILister<FileInfo> {
     public void listForward() throws SuitsException {
         try {
             if (marker == null) return;
-            List<FileInfo> current = doList(prefix, delimiter, marker, limit);
-//            do {
-//                current = doList(prefix, delimiter, marker, limit);
-//            } while (current.size() == 0 && hasNext());
+//            List<FileInfo> current = doList(prefix, delimiter, marker, limit);
+////            do {
+////                current = doList(prefix, delimiter, marker, limit);
+////            } while (current.size() == 0 && hasNext());
+//            if (endPrefix != null && !"".equals(endPrefix)) {
+//                fileInfoList = current.stream()
+//                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
+//                        .collect(Collectors.toList());
+//                if (fileInfoList.size() < current.size()) marker = null;
+//            } else {
+//                fileInfoList = current;
+//            }
 
-            if (endPrefix != null && !"".equals(endPrefix)) {
-                fileInfoList = current.stream()
-                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (fileInfoList.size() < current.size()) marker = null;
-            } else {
-                fileInfoList = current;
+            fileInfoList = doList(prefix, delimiter, marker, limit);
+            int size = fileInfoList.size();
+            if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
+                for (FileInfo fileInfo : fileInfoList) {
+                    if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
+                }
+                if (fileInfoList.size() < size) marker = null;
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
