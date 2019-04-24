@@ -6,7 +6,11 @@
 进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
 
 ### **高级功能列表：**
-- [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效并发[列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+<details><summary>并发列举算法描述图：点击查看</summary>  
+
+![云存储文件并发列举算法](docs/云存储文件并发列举算法.jpg)</details>  
+ 
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
@@ -38,7 +42,7 @@
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>5.20</version>
+  <version>5.21</version>
 </dependency>
 ```  
 **2. 命令行运行 jar**  
