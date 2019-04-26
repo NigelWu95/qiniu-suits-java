@@ -151,26 +151,17 @@ public class QiniuLister implements ILister<FileInfo> {
     public void listForward() throws SuitsException {
         try {
             if (marker == null) return;
-//            List<FileInfo> current = doList(prefix, delimiter, marker, limit);
-////            do {
-////                current = doList(prefix, delimiter, marker, limit);
-////            } while (current.size() == 0 && hasNext());
-//            if (endPrefix != null && !"".equals(endPrefix)) {
-//                fileInfoList = current.stream()
-//                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
-//                        .collect(Collectors.toList());
-//                if (fileInfoList.size() < current.size()) marker = null;
-//            } else {
-//                fileInfoList = current;
-//            }
-
-            fileInfoList = doList(prefix, delimiter, marker, limit);
-            int size = fileInfoList.size();
-            if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
-                for (FileInfo fileInfo : fileInfoList) {
-                    if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
-                }
-                if (fileInfoList.size() < size) marker = null;
+            List<FileInfo> current;
+            do {
+                current = doList(prefix, delimiter, marker, limit);
+            } while (current.size() == 0 && hasNext());
+            if (endPrefix != null && !"".equals(endPrefix)) {
+                fileInfoList = current.stream()
+                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
+                        .collect(Collectors.toList());
+                if (fileInfoList.size() < current.size()) marker = null;
+            } else {
+                fileInfoList = current;
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
@@ -186,39 +177,26 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        if (marker == null) return false;
-        int times = 10000 / limit;
+        int times = 10001 / limit;
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
-        while (futureList.size() < 10000) {
+        while (hasNext() && times > 0 && futureList.size() < 10001) {
             times--;
-            listForward();
-            futureList.addAll(fileInfoList);
-            if (!hasNext()) {
-                fileInfoList = futureList;
-                return false;
-            }
-        }
-        String marker = this.marker;
-        List<JsonObject> jsonObjects;
-        JsonObject lastJson;
-        while (times > 0) {
             try {
-                jsonObjects = getListResult(prefix, delimiter, marker, limit);
-                lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
-                if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
-                    marker = lastJson.get("marker").getAsString();
-                    if (marker == null || "".equals(marker)) return false;
-                } else {
-                    straight = true;
-                    return false;
+                fileInfoList = doList(prefix, delimiter, marker, limit);
+                int size = fileInfoList.size();
+                if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
+                    for (FileInfo fileInfo : fileInfoList)
+                        if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
+                    if (fileInfoList.size() < size) marker = null;
                 }
-                times--;
             } catch (QiniuException e) {
-                if (e.code() >= 500) throw new SuitsException(e.code(), e.getMessage());
+                throw new SuitsException(e.code(), LogUtils.getMessage(e));
             }
+            futureList.addAll(fileInfoList);
         }
-        return true;
+        fileInfoList = futureList;
+        return hasNext();
     }
 
     @Override
