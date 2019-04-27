@@ -6,7 +6,11 @@
 进行批量增/删/改/查。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
 
 ### **高级功能列表：**
-- [x] 云存储(阿里云/腾讯云/七牛云等)大量文件高效并发[列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效并发[列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+<details><summary>并发列举算法描述图：点击查看</summary>  
+
+![云存储文件并发列举算法](docs/云存储文件并发列举算法.jpg)</details>  
+ 
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
@@ -33,16 +37,17 @@
 ### 2 运行方式  
 **1. 程序依赖 jar**  
 引入 jar 包（**务必使用最新版本**，[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者
-[使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），可以重写或新增 processor 接口实现类进行自定义功能，maven:
+[使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)，**maven 仓库中的 jar 包不支持命令行运行，如需命令行工具**
+jar 包，请至 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载），可以重写或新增 processor 接口实现类进行自定义功能，maven:
 ```
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>5.20</version>
+  <version>5.22</version>
 </dependency>
 ```  
 **2. 命令行运行 jar**  
-在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 下载最新 jar 包，使用命令行参数 [-config=<filepath>] 指定
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载最新 jar 包，使用命令行参数 [-config=<filepath>] 指定
 配置文件路径，运行命令形如：
 ```
 java -jar qsuits-x.x.jar -config=config.txt
@@ -56,7 +61,8 @@ sk=
 ```  
 **备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.properties` 或 `resources/.qiniu.properties`，
 两个文件存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
-**备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，如  
+**备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
+数前加上 -**，如  
 ```
 java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 ```  
@@ -97,7 +103,8 @@ path 或 bucket 设置)及空间所在区域(通过 region 设置)：
 `f-mime=` 表示**选择**符合该 mime 类型的文件  
 `f-type=` 表示**选择**符合该存储类型的文件, 为 0（标准存储） 或 1（低频存储）  
 `f-status=` 表示**选择**符合该存储状态的文件, 为 0（启用） 或 1（禁用）  
-`f-date-scale=` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为："2018-08-01 00:00:00"  
+`f-date-scale=` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为：2018-08-01 00:00:00（00:00:00 为默认值可省略），
+  无起始时间则可填 [0,\<date2\>]，无结束时间则可填 [\<date1\>]（省略 , 和 \<date2\>）  
 `f-anti-prefix=` 表示**排除**文件名符合该前缀的文件  
 `f-anti-suffix=` 表示**排除**文件名符合该后缀的文件  
 `f-anti-inner=` 表示**排除**文件名包含该部分字符的文件  

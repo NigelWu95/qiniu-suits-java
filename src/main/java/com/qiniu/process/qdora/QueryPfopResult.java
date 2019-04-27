@@ -68,7 +68,8 @@ public class QueryPfopResult extends Base {
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
                 if (item.code == 0)
-                    fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                    fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + (item.key != null ? item.key + "\t" : "") +
+                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 3)
                     fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
                             JsonConvertUtils.toJsonWithoutUrlEscape(item), false);

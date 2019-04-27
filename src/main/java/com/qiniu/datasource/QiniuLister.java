@@ -12,7 +12,6 @@ import com.qiniu.util.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class QiniuLister implements ILister<FileInfo> {
@@ -32,7 +31,7 @@ public class QiniuLister implements ILister<FileInfo> {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
-        this.marker = marker;
+        this.marker = marker == null ? "" : marker;
         this.endPrefix = endPrefix;
         this.delimiter = delimiter;
         this.limit = limit;
@@ -51,7 +50,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker;
+        this.marker = marker == null ? "" : marker;
     }
 
     @Override
@@ -103,7 +102,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean canStraight() {
-        return straight || (endPrefix != null && !"".equals(endPrefix));
+        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private List<JsonObject> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
@@ -130,30 +129,32 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> doList(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
         JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
+        List<FileInfo> fileInfoList = new ArrayList<>();
         try {
             if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
-                this.marker = lastJson.get("marker").getAsString();
+                this.marker = "".equals(lastJson.get("marker").getAsString()) ? null : lastJson.get("marker").getAsString();
+            } else {
+                this.marker = null;
             }
-            return jsonObjects.stream().map(jsonObject -> {
+            for (JsonObject jsonObject : jsonObjects) {
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
-                    return JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class);
-                } else {
-                    return null;
+                    fileInfoList.add(JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class));
                 }
-            }).filter(Objects::nonNull).collect(Collectors.toList());
-        } catch (Exception e) {
+            }
+        } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
+        return fileInfoList;
     }
 
     @Override
     public void listForward() throws SuitsException {
         try {
+            if (marker == null) return;
             List<FileInfo> current;
             do {
                 current = doList(prefix, delimiter, marker, limit);
             } while (current.size() == 0 && hasNext());
-
             if (endPrefix != null && !"".equals(endPrefix)) {
                 fileInfoList = current.stream()
                         .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
@@ -164,8 +165,8 @@ public class QiniuLister implements ILister<FileInfo> {
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
-        } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+//        } catch (Exception e) {
+//            throw new SuitsException(-1, "failed, " + e.getMessage());
         }
     }
 
@@ -176,26 +177,26 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        try {
-            List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
-            JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
-            String marker = this.marker;
-            int times = 10;
-            while (times > 0) {
-                if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
-                    marker = lastJson.get("marker").getAsString();
-                    if (marker == null || "".equals(marker)) return false;
+        int times = 20000 / limit;
+        times = times > 10 ? 10 : times;
+        List<FileInfo> futureList = fileInfoList;
+        while (hasNext() && times > 0 && futureList.size() < 10001) {
+            times--;
+            try {
+                fileInfoList = doList(prefix, delimiter, marker, limit);
+                int size = fileInfoList.size();
+                if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
+                    for (FileInfo fileInfo : fileInfoList)
+                        if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
+                    if (fileInfoList.size() < size) marker = null;
                 }
-                jsonObjects = getListResult(prefix, delimiter, marker, limit);
-                lastJson = jsonObjects.get(jsonObjects.size() - 1);
-                times--;
+            } catch (QiniuException e) {
+                throw new SuitsException(e.code(), LogUtils.getMessage(e));
             }
-            return true;
-        } catch (QiniuException e) {
-            throw new SuitsException(e.code(), e.getMessage());
-        } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            futureList.addAll(fileInfoList);
         }
+        fileInfoList = futureList;
+        return hasNext();
     }
 
     @Override
