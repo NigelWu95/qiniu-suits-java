@@ -364,9 +364,8 @@ public abstract class OssContainer<E> implements IDataSource {
         ILister<E> lastLister;
         List<ILister<E>> nextListerList = new ArrayList<>();
         List<ILister<E>> execListerList = new ArrayList<>();
-        int nextSize = 0;
+        int nextSize;
         while (true) {
-            if (listerList.size() == nextSize) break;
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
                 lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
@@ -396,19 +395,20 @@ public abstract class OssContainer<E> implements IDataSource {
                     listerList = nextListerList;
                     break;
                 } else {
-//                    listerList.clear();
-                    listerList = nextListerList.parallelStream().map(lister -> {
+                    Optional<List<ILister<E>>> optional = nextListerList.parallelStream().map(lister -> {
                         try {
                             return nextLevelLister(lister, true);
                         } catch (Exception e) {
                             SystemUtils.exit(exitBool, e);
                             return null;
                         }
-                    }).filter(Objects::nonNull).reduce((list1, list2) -> {
-                        list1.addAll(list2); return list1;
-                    }).orElse(nextListerList); // 实际上 nextListerList 进行下一级的列举对象生成时不会返回空列表，假设会产生空列表则
-                    // 赋值为 nextListerList，在下一次循环时会校验此次 listerList 的长度和上一次的 size，如果相同就直接退出循环，不会无
-                    // 限循环计算这一列表了
+                    }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+                    if (optional.isPresent()&& optional.get().size() > 0) {
+                        listerList = optional.get();
+                    } else {
+                        listerList = nextListerList;
+                        break;
+                    }
                 }
                 nextListerList.clear();
             } else {
@@ -417,17 +417,19 @@ public abstract class OssContainer<E> implements IDataSource {
             }
         }
 
-        // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-        if (!lastListerUpdated) {
-            lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
-            if (lastLister != null) {
-                if (globalEnd) lastLister.setPrefix("");
-                else lastLister.setPrefix(startLister.getPrefix());
-                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+        if (listerList.size() > 0) {
+            // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
+            if (!lastListerUpdated) {
+                lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
+                if (lastLister != null) {
+                    if (globalEnd) lastLister.setPrefix("");
+                    else lastLister.setPrefix(startLister.getPrefix());
+                    if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+                }
             }
+            execInThreads(listerList, recordFileSaveMapper, alreadyOrder);
+            alreadyOrder += listerList.size();
         }
-        execInThreads(listerList, recordFileSaveMapper, alreadyOrder);
-        alreadyOrder += listerList.size();
         return alreadyOrder;
     }
 

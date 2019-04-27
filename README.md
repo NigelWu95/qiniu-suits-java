@@ -35,15 +35,18 @@
 读取[数据源](docs/datasource.md) => [选择[过滤器](docs/filter.md)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](docs/resultsave.md)  
 
 ### 2 运行方式  
+#### 关于版本  
+使用时建议直接使用最新版本或者更新到最新版本，x.xx 版为常规版本，x.xx-thin 为降配版，常规版对机器配置要求比较高，降配版可在偏低配置的机器上运行，
+通常 4C8G 以下用降配版。  
 **1. 程序依赖 jar**  
-引入 jar 包（**务必使用最新版本**，[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者
-[使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)，**maven 仓库中的 jar 包不支持命令行运行，如需命令行工具**
-jar 包，请至 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载），可以重写或新增 processor 接口实现类进行自定义功能，maven:
+引入 jar 包（[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者 [使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)，
+**maven 仓库中的 jar 包不支持命令行运行，如需命令行工具** jar 包，请至 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)
+页面下载），可以重写或新增 processor 接口实现类进行自定义功能，maven:
 ```
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>5.22</version>
+  <version>5.23</version>
 </dependency>
 ```  
 **2. 命令行运行 jar**  
