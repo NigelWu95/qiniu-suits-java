@@ -63,10 +63,14 @@ public class QiniuLister implements ILister<FileInfo> {
         this.endPrefix = endPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
             int size = fileInfoList.size();
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
-                    .collect(Collectors.toList());
-            if (fileInfoList.size() < size) marker = null;
+            if (size > 0) {
+                fileInfoList = fileInfoList.stream()
+                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
+                        .collect(Collectors.toList());
+                if (fileInfoList.size() < size) marker = null;
+            } else if (currentLastKey() != null && currentLastKey().startsWith(endPrefix)) {
+                marker = null;
+            }
         }
     }
 
@@ -151,17 +155,24 @@ public class QiniuLister implements ILister<FileInfo> {
     public void listForward() throws SuitsException {
         try {
             if (marker == null) return;
-            List<FileInfo> current;
-            do {
-                current = doList(prefix, delimiter, marker, limit);
-            } while (current.size() == 0 && hasNext());
-            if (endPrefix != null && !"".equals(endPrefix)) {
-                fileInfoList = current.stream()
-                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (fileInfoList.size() < current.size()) marker = null;
-            } else {
-                fileInfoList = current;
+//            List<FileInfo> current;
+//            do {
+//                current = doList(prefix, delimiter, marker, limit);
+//            } while (current.size() == 0 && hasNext());
+//            if (endPrefix != null && !"".equals(endPrefix)) {
+//                fileInfoList = current.stream()
+//                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
+//                        .collect(Collectors.toList());
+//                if (fileInfoList.size() < current.size()) marker = null;
+//            } else {
+//                fileInfoList = current;
+//            }
+            fileInfoList = doList(prefix, delimiter, marker, limit);
+            int size = fileInfoList.size();
+            if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
+                for (FileInfo fileInfo : fileInfoList)
+                    if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
+                if (fileInfoList.size() < size) marker = null;
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
@@ -177,7 +188,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 20000 / limit;
+        int times = 50000 / limit;
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
