@@ -135,7 +135,7 @@ public class QSuitsEntry {
     }
 
     public Configuration getQiniuConfig() {
-        return qiniuConfig;
+        return qiniuConfig == null ? getDefaultQiniuConfig() : qiniuConfig;
     }
 
     private Configuration getDefaultQiniuConfig() {
@@ -150,7 +150,7 @@ public class QSuitsEntry {
     }
 
     public ClientConfig getTenClientConfig() {
-        return tenClientConfig;
+        return tenClientConfig == null ? getDefaultTenClientConfig() : tenClientConfig;
     }
 
     private ClientConfig getDefaultTenClientConfig() {
@@ -165,7 +165,7 @@ public class QSuitsEntry {
     }
 
     public ClientConfiguration getAliClientConfig() {
-        return aliClientConfig;
+        return aliClientConfig == null ? getDefaultAliClientConfig() : aliClientConfig;
     }
 
     private ClientConfiguration getDefaultAliClientConfig() {
