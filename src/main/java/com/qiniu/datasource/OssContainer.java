@@ -14,10 +14,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public abstract class OssContainer<E> implements IDataSource {
 
@@ -367,8 +364,9 @@ public abstract class OssContainer<E> implements IDataSource {
         ILister<E> lastLister;
         List<ILister<E>> nextListerList = new ArrayList<>();
         List<ILister<E>> execListerList = new ArrayList<>();
-        int nextSize;
+        int nextSize = 0;
         while (true) {
+            if (listerList.size() == nextSize) break;
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
                 lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
@@ -408,7 +406,9 @@ public abstract class OssContainer<E> implements IDataSource {
                         }
                     }).filter(Objects::nonNull).reduce((list1, list2) -> {
                         list1.addAll(list2); return list1;
-                    }).get();
+                    }).orElse(nextListerList); // 实际上 nextListerList 进行下一级的列举对象生成时不会返回空列表，假设会产生空列表则
+                    // 赋值为 nextListerList，在下一次循环时会校验此次 listerList 的长度和上一次的 size，如果相同就直接退出循环，不会无
+                    // 限循环计算这一列表了
                 }
                 nextListerList.clear();
             } else {
