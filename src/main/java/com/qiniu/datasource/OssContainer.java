@@ -238,7 +238,7 @@ public abstract class OssContainer<E> implements IDataSource {
         for (String prefix : originPrefixList) {
             if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
                 ILister<E> lister = generateLister(startPrefix + prefix);
-                if (lister != null && lister.currents().size() > 0) nextList.add(lister);
+                if (lister != null) nextList.add(lister);
             }
         }
         return nextList;
@@ -250,8 +250,6 @@ public abstract class OssContainer<E> implements IDataSource {
      * @return 下一级别可并发的列举对象集
      */
     private List<ILister<E>> nextLevelLister(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
-        String point = "";
-        List<ILister<E>> nextLevelList = new ArrayList<>();
         int retry = retryTimes;
         boolean futureNext;
         while (true) {
@@ -265,6 +263,9 @@ public abstract class OssContainer<E> implements IDataSource {
                 else retry--;
             }
         }
+        String startPrefix = lister.getPrefix();;
+        String point = "";
+        List<ILister<E>> nextLevelList = new ArrayList<>();
         // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
         if (!futureNext) {
 //        if (!lister.hasNext()) {
@@ -272,7 +273,7 @@ public abstract class OssContainer<E> implements IDataSource {
             return nextLevelList;
         // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
         } else if (lister.currentLast() != null) {
-            int prefixLen = lister.getPrefix().length();
+            int prefixLen = startPrefix.length();
             String lastKey = lister.currentLastKey();
             // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
             // endPrefix
@@ -285,26 +286,26 @@ public abstract class OssContainer<E> implements IDataSource {
                     return nextLevelList;
                 // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀，并且加入 lister 到返回的列举对象集
                 } else if (point.compareTo(originPrefixList.get(0)) < 0) {
-                    lister.setEndPrefix(lister.getPrefix() + originPrefixList.get(0));
+                    lister.setEndPrefix(startPrefix + originPrefixList.get(0));
                     nextLevelList.add(lister);
-                // 当 point 包含在预定义前缀列表中，如果当前的第一个对象和最后一个对象文件名相同，则不需要加入返回的列举对象集，因为 point 会
-                // 用于下一级前缀和列举对象的检索，反之则设置结束位置到 point 并加入返回的对象集
-                } else if (lister.currentFirstKey() != null && !lister.currentFirstKey().startsWith(lister.getPrefix() + point)) {
-                    lister.setEndPrefix(lister.getPrefix() + point);
+                } else {
+                    if (!prefixesMap.containsKey(startPrefix + point))
+                        prefixesMap.put(startPrefix + point, new String[]{lister.getMarker(), ""});
+                    lister.setEndPrefix(lastKey);
                     nextLevelList.add(lister);
                 }
             // 正常情况下文件对象不为空则其文件名不应为空，假如发生此情况直接将 lister 的结束位置设置到第一个预定义前缀并加入返回的对象集
             } else {
-                lister.setEndPrefix(lister.getPrefix() + originPrefixList.get(0));
+                lister.setEndPrefix(startPrefix + originPrefixList.get(0));
                 nextLevelList.add(lister);
             }
         // 正常情况下存在 next 时最后一个对象不应为空，假如出现此情况时直接将 lister 的结束位置设置到第一个预定义前缀，并加入列举对象集
         } else {
-            lister.setEndPrefix(lister.getPrefix() + originPrefixList.get(0));
+            lister.setEndPrefix(startPrefix + originPrefixList.get(0));
             nextLevelList.add(lister);
         }
 
-        List<ILister<E>> prefixListerList = generateNextList(lister.getPrefix(), point);
+        List<ILister<E>> prefixListerList = generateNextList(startPrefix, point);
         if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
         return nextLevelList;
     }
