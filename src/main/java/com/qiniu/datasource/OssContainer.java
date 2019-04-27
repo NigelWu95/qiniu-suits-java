@@ -395,7 +395,7 @@ public abstract class OssContainer<E> implements IDataSource {
                     listerList = nextListerList;
                     break;
                 } else {
-                    Optional<List<ILister<E>>> optional = nextListerList.stream().map(lister -> {
+                    Optional<List<ILister<E>>> optional = nextListerList.parallelStream().map(lister -> {
                         try {
                             return nextLevelLister(lister, true);
                         } catch (Exception e) {
