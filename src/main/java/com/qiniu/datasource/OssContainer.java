@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class OssContainer<E> implements IDataSource {
@@ -366,6 +367,7 @@ public abstract class OssContainer<E> implements IDataSource {
         ILister<E> lastLister;
         List<ILister<E>> nextListerList = new ArrayList<>();
         List<ILister<E>> execListerList = new ArrayList<>();
+        int nextSize;
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
@@ -388,22 +390,25 @@ public abstract class OssContainer<E> implements IDataSource {
             execInThreads(execListerList, recordFileSaveMapper, alreadyOrder);
             alreadyOrder += execListerList.size();
             execListerList.clear();
+            nextSize = nextListerList.size();
             // 对 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-            if (nextListerList.size() > 0) {
+            if (nextSize > 0) {
                 // 线程数满足设置值时则不需要再继续检索下一级前缀
-                if (nextListerList.size() >= threads) {
+                if (nextSize >= threads) {
                     listerList = nextListerList;
                     break;
                 } else {
-                    listerList.clear();
-//                    ExecutorService executorPool = Executors.newFixedThreadPool(threads);
-                    for (Future<List<ILister<E>>> listFuture : nextListerList.stream()
-                            .map(eiLister -> executorPool.submit(() -> nextLevelLister(eiLister, true)))
-                            .collect(Collectors.toList())) {
-                        listerList.addAll(listFuture.get());
-                    }
-//                    executorPool.shutdown();
-//                    while (!executorPool.isTerminated()) Thread.sleep(100);
+//                    listerList.clear();
+                    listerList = nextListerList.parallelStream().map(lister -> {
+                        try {
+                            return nextLevelLister(lister, true);
+                        } catch (Exception e) {
+                            SystemUtils.exit(exitBool, e);
+                            return null;
+                        }
+                    }).filter(Objects::nonNull).reduce((list1, list2) -> {
+                        list1.addAll(list2); return list1;
+                    }).get();
                 }
                 nextListerList.clear();
             } else {
