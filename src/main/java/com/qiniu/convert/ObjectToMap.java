@@ -31,14 +31,32 @@ public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public List<Map<String, String>> toVList(List<E> lineList) {
+        List<Map<String, String>> mapList = new ArrayList<>();
+        if (lineList != null && lineList.size() > 0) {
+            for (E line : lineList) {
+                try {
+                    mapList.add(lineParser.getItemMap(line));
+                } catch (Exception e) {
+                    errorList.add(String.valueOf(line) + "\t" + e.getMessage());
+                }
+            }
+        }
+        return mapList;
+    }
+
+    public int errorSize() {
+        return errorList.size();
+    }
+
     public List<String> getErrorList() {
         return errorList;
     }
 
     public List<String> consumeErrorList() {
-        List<String> errors = new ArrayList<>();
-        Collections.addAll(errors, new String[errorList.size()]);
-        Collections.copy(errors, errorList);
+        List<String> errors = new ArrayList<>(errorList);
+//        Collections.addAll(errors, new String[errorList.size()]);
+//        Collections.copy(errors, errorList);
         errorList.clear();
         return errors;
     }
