@@ -431,7 +431,8 @@ public class CommonParams {
             if (indexMap == null || indexMap.containsValue(key)) {
                 return splitItems(field);
             } else {
-                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings.");
+                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings." +
+                        " the default indexes setting only contains \"key\"");
             }
         } else return null;
     }
@@ -448,6 +449,10 @@ public class CommonParams {
                 scale = dateScale.split(",");
             }
         } else {
+            if (indexMap != null && indexMap.containsValue("putTime")) {
+                throw new IOException("f-date-scale filter must get the putTime's index in indexes settings." +
+                        " the default indexes setting only contains \"key\".");
+            }
             scale = new String[]{"", ""};
         }
         if (scale.length <= 1) {
