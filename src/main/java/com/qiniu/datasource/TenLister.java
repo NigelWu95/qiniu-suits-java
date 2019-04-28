@@ -54,10 +54,14 @@ public class TenLister implements ILister<COSObjectSummary> {
         this.endPrefix = endKeyPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
             int size = cosObjectList.size();
-            cosObjectList = cosObjectList.stream()
-                    .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-                    .collect(Collectors.toList());
-            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
+            if (size > 0) {
+                cosObjectList = cosObjectList.stream()
+                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
+                        .collect(Collectors.toList());
+                if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
+            } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+                listObjectsRequest.setMarker(null);
+            }
         }
     }
 
@@ -92,7 +96,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public boolean canStraight() {
-        return straight;
+        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private List<COSObjectSummary> getListResult() throws CosClientException {

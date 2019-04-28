@@ -31,7 +31,7 @@ public abstract class ObjectToString<E> implements ITypeConvert<E, String> {
                     }
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public List<String> getErrorList() {

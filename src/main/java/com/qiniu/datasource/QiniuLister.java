@@ -11,6 +11,7 @@ import com.qiniu.util.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,7 +69,7 @@ public class QiniuLister implements ILister<FileInfo> {
                         .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
                         .collect(Collectors.toList());
                 if (fileInfoList.size() < size) marker = null;
-            } else if (currentLastKey() != null && currentLastKey().startsWith(endPrefix)) {
+            } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
                 marker = null;
             }
         }
@@ -134,7 +135,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> doList(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
         JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
-        List<FileInfo> fileInfoList = new ArrayList<>();
+        List<FileInfo> fileInfoList = new LinkedList<>();
         try {
             if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                 this.marker = "".equals(lastJson.get("marker").getAsString()) ? null : lastJson.get("marker").getAsString();
@@ -156,18 +157,6 @@ public class QiniuLister implements ILister<FileInfo> {
     public void listForward() throws SuitsException {
         try {
             if (marker == null) return;
-//            List<FileInfo> current;
-//            do {
-//                current = doList(prefix, delimiter, marker, limit);
-//            } while (current.size() == 0 && hasNext());
-//            if (endPrefix != null && !"".equals(endPrefix)) {
-//                fileInfoList = current.stream()
-//                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
-//                        .collect(Collectors.toList());
-//                if (fileInfoList.size() < current.size()) marker = null;
-//            } else {
-//                fileInfoList = current;
-//            }
             fileInfoList = doList(prefix, delimiter, marker, limit);
             int size = fileInfoList.size();
             if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {

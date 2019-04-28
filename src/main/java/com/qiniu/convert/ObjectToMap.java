@@ -28,7 +28,7 @@ public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
                     }
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public List<String> getErrorList() {
