@@ -22,7 +22,7 @@ public class QiniuListerTest {
         String secretKey = entryParam.getValue("sk");
         String bucket = entryParam.getValue("bucket");
         qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
-                null, null, null, null, 100);
+                null, null, null, null, 10000);
     }
 
     @Test
@@ -30,7 +30,9 @@ public class QiniuListerTest {
         try {
             while (qiniuLister.hasFutureNext()) {
                 System.out.println(true);
+                if (qiniuLister.currents().size() > 0) break;
             }
+            System.out.println("over");
         } catch (SuitsException e) {
             e.printStackTrace();
         }
