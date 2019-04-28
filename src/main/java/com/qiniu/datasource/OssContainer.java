@@ -268,23 +268,6 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     }
 
     /**
-     * 根据上层 prefix 和下一级的起始字符串 point（单个字符）以及预定义前缀列表来生成下一级的列举对象集
-     * @param startPrefix 上层起始 prefix
-     * @param point 下一级开始列举位置的单个前缀字符
-     * @return 返回有效的列举对象集
-     */
-    private List<ILister<E>> generateNextList(String startPrefix, String point) throws SuitsException {
-        List<ILister<E>> nextList = new ArrayList<>();
-        for (String prefix : originPrefixList) {
-            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
-                ILister<E> lister = generateLister(startPrefix + prefix);
-                if (lister != null && lister.currentLast() != null) nextList.add(lister);
-            }
-        }
-        return nextList;
-    }
-
-    /**
      * 从起始的 lister 对象来得到下一级别可并发的列举对象集
      * @param lister 起始列举对象
      * @return 下一级别可并发的列举对象集
@@ -345,8 +328,12 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             nextLevelList.add(lister);
         }
 
-        List<ILister<E>> prefixListerList = generateNextList(startPrefix, point);
-        if (prefixListerList != null) nextLevelList.addAll(prefixListerList);
+        for (String prefix : originPrefixList) {
+            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
+                ILister<E> generated = generateLister(startPrefix + prefix);
+                if (generated != null && generated.currentLast() != null) nextLevelList.add(generated);
+            }
+        }
         return nextLevelList;
     }
 
