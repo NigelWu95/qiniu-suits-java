@@ -1,7 +1,5 @@
 package com.qiniu.interfaces;
 
-import com.qiniu.storage.model.FileInfo;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
