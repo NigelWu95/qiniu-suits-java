@@ -148,17 +148,6 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public COSObjectSummary currentFirst() {
-        return cosObjectList.size() > 0 ? cosObjectList.get(0) : null;
-    }
-
-    @Override
-    public String currentFirstKey() {
-        COSObjectSummary first = currentFirst();
-        return first != null ? first.getKey() : null;
-    }
-
-    @Override
     public COSObjectSummary currentLast() {
         COSObjectSummary last = cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
         if (last == null) {
