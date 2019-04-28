@@ -153,15 +153,15 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                if (stringConverter.getErrorList().size() > 0)
-                    saver.writeError(String.join("\n", stringConverter.consumeErrorList()), false);
+                if (stringConverter.errorSize() > 0)
+                    saver.writeError(String.join("\n", stringConverter.consumeErrors()), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
                 if (processor != null) {
                     infoMapList = mapConverter.convertToVList(objects);
-                    if (mapConverter.getErrorList().size() > 0)
-                        saver.writeError(String.join("\n", mapConverter.consumeErrorList()), false);
+                    if (mapConverter.errorSize() > 0)
+                        saver.writeError(String.join("\n", mapConverter.consumeErrors()), false);
                     processor.processLine(infoMapList);
                 }
             } catch (QiniuException e) {
