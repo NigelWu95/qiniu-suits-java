@@ -150,9 +150,6 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         do {
             objects = lister.currents();
-            infoMapList = mapConverter.convertToVList(objects);
-            if (mapConverter.getErrorList().size() > 0)
-                saver.writeError(String.join("\n", mapConverter.consumeErrorList()), false);
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -161,7 +158,12 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
-                if (processor != null) processor.processLine(infoMapList);
+                if (processor != null) {
+                    infoMapList = mapConverter.convertToVList(objects);
+                    if (mapConverter.getErrorList().size() > 0)
+                        saver.writeError(String.join("\n", mapConverter.consumeErrorList()), false);
+                    processor.processLine(infoMapList);
+                }
             } catch (QiniuException e) {
                 if (HttpResponseUtils.checkException(e, 2) < -1) throw e;
             }
