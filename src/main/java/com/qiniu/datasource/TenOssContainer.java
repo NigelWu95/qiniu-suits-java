@@ -8,11 +8,14 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.COSObjToMap;
 import com.qiniu.convert.COSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
+import com.qiniu.persistence.IResultSave;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class TenOssContainer extends OssContainer<COSObjectSummary> {
+public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWriter> {
 
     private String secretId;
     private String secretKey;
@@ -40,6 +43,11 @@ public class TenOssContainer extends OssContainer<COSObjectSummary> {
     @Override
     protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() throws IOException {
         return new COSObjToString(saveFormat, saveSeparator, rmFields);
+    }
+
+    @Override
+    protected IResultSave<BufferedWriter> getNewResultSaver(String order) throws IOException {
+        return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
     @Override

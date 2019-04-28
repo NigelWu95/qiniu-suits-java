@@ -5,7 +5,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.FileSaveMapper;
+import com.qiniu.persistence.IResultSave;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.LineUtils;
 import com.qiniu.util.SystemUtils;
@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class OssContainer<E> implements IDataSource {
+public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IResultSave<W>> {
 
     protected String bucket;
     private List<String> antiPrefixes;
@@ -28,7 +28,7 @@ public abstract class OssContainer<E> implements IDataSource {
     protected int unitLen;
     private int threads;
     protected int retryTimes = 5;
-    private String savePath;
+    protected String savePath;
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
@@ -135,11 +135,11 @@ public abstract class OssContainer<E> implements IDataSource {
     /**
      * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
      * @param lister 已经初始化的 lister 对象
-     * @param fileSaveMapper 用于列举结果持久化的文件对象
+     * @param saver 用于列举结果持久化的文件对象
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, FileSaveMapper fileSaveMapper, ILineProcess<Map<String, String>> processor) throws IOException {
+    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<Map<String, String>> processor) throws IOException {
         ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects;
@@ -152,12 +152,12 @@ public abstract class OssContainer<E> implements IDataSource {
             objects = lister.currents();
             infoMapList = mapConverter.convertToVList(objects);
             if (mapConverter.getErrorList().size() > 0)
-                fileSaveMapper.writeError(String.join("\n", mapConverter.consumeErrorList()), false);
+                saver.writeError(String.join("\n", mapConverter.consumeErrorList()), false);
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
-                if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
+                if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                 if (stringConverter.getErrorList().size() > 0)
-                    fileSaveMapper.writeError(String.join("\n", stringConverter.consumeErrorList()), false);
+                    saver.writeError(String.join("\n", stringConverter.consumeErrorList()), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
@@ -182,36 +182,38 @@ public abstract class OssContainer<E> implements IDataSource {
         } while (goon);
     }
 
+    protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
+
     /**
      * 将 ILister<E> 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
-     * @param recordFileSaveMapper 记录整体进度信息的文件对象
+     * @param recordSaver 记录整体进度信息的文件对象
      * @param order 当前列举对象集的起始序号
      * @throws Exception 操作失败抛出的异常
      */
-    public void execInThread(ILister<E> lister, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
+    public void execInThread(ILister<E> lister, IResultSave<W> recordSaver, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
-        FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
+        IResultSave<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + lister.getPrefix();
-                recordFileSaveMapper.writeKeyFile("result", record + "\tlisting...", true);
-                export(lister, fileSaveMapper, lineProcessor);
+                recordSaver.writeKeyFile("result", record + "\tlisting...", true);
+                export(lister, saver, lineProcessor);
                 record += "\tsuccessfully done";
                 System.out.println(record);
-                recordFileSaveMapper.writeKeyFile("result", record, true);
-                fileSaveMapper.closeWriters();
+                recordSaver.writeKeyFile("result", record, true);
+                saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 lister.close();
             } catch (Exception e) {
                 System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                         lister.getMarker() + "\tend:" + lister.getEndPrefix());
-                recordFileSaveMapper.closeWriters();
-                fileSaveMapper.closeWriters();
+                recordSaver.closeWriters();
+                saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 SystemUtils.exit(exitBool, e);
             }
@@ -350,12 +352,12 @@ public abstract class OssContainer<E> implements IDataSource {
      * 根据 startLister 得到可并发的下一级 lister 对象集放入多线程执行列举
      * @param startLister 已初始化的起始的 lister
      * @param globalEnd startLister 是否需要列举到全局的结尾处（从该 startLister 开始列举到整个空间结束）
-     * @param alreadyOrder lister 执行的起始序号
-     * @param recordFileSaveMapper 记录全局执行结果的文件持久化对象
+     * @param order lister 执行的起始序号
+     * @param recordSaver 记录全局执行结果的文件持久化对象
      * @return 此次计算并执行到的 lister 序号，用于后续可能继续向线程添加 lister 执行设置起始序号
      * @throws Exception 下一级 lister 列表计算和多线程执行过程中可能产生的异常
      */
-    private int computeToList(ILister<E> startLister, boolean globalEnd, int alreadyOrder, FileSaveMapper recordFileSaveMapper)
+    private int computeToList(ILister<E> startLister, boolean globalEnd, int order, IResultSave<W> recordSaver)
             throws Exception {
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
         boolean lastListerUpdated = false;
@@ -378,7 +380,7 @@ public abstract class OssContainer<E> implements IDataSource {
             }
             // 按照 canStraight 来进行分组，将部分不需要向下分级的 lister 提前放入线程中执行列举
             for (ILister<E> eiLister : listerList) {
-                if (eiLister.canStraight()) execInThread(eiLister, recordFileSaveMapper, alreadyOrder++);
+                if (eiLister.canStraight()) execInThread(eiLister, recordSaver, order++);
                 else nextListerList.add(eiLister);
             }
             nextSize = nextListerList.size();
@@ -422,10 +424,10 @@ public abstract class OssContainer<E> implements IDataSource {
                 }
             }
             for (ILister<E> lister : listerList) {
-                execInThread(lister, recordFileSaveMapper, alreadyOrder++);
+                execInThread(lister, recordSaver, order++);
             }
         }
-        return alreadyOrder;
+        return order;
     }
 
     /**
@@ -435,35 +437,35 @@ public abstract class OssContainer<E> implements IDataSource {
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        FileSaveMapper recordFileSaveMapper = new FileSaveMapper(savePath);
-        int alreadyOrder = 1;
+        IResultSave<W> recordSaver = getNewResultSaver(null);
+        int order = 1;
         exitBool = new AtomicBoolean(false);
         try {
             executorPool = Executors.newFixedThreadPool(threads);
             Collections.sort(prefixes);
             if (prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
-                computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
+                computeToList(startLister, true, order, recordSaver);
             } else {
                 if (prefixLeft) {
                     ILister<E> startLister = generateLister("");
                     startLister.setEndPrefix(prefixes.get(0));
-                    execInThread(startLister, recordFileSaveMapper, alreadyOrder++);
+                    execInThread(startLister, recordSaver, order++);
                 }
                 for (int i = 0; i < prefixes.size() - 1; i++) {
                     ILister<E> startLister = generateLister(prefixes.get(i));
-                    alreadyOrder = computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                    order = computeToList(startLister, false, order, recordSaver);
                 }
                 ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
                 if (prefixRight) {
-                    computeToList(startLister, true, alreadyOrder, recordFileSaveMapper);
+                    computeToList(startLister, true, order, recordSaver);
                 } else {
-                    computeToList(startLister, false, alreadyOrder, recordFileSaveMapper);
+                    computeToList(startLister, false, order, recordSaver);
                 }
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
-            recordFileSaveMapper.closeWriters();
+            recordSaver.closeWriters();
             System.out.println(info + " finished");
         } catch (Throwable throwable) {
             SystemUtils.exit(exitBool, throwable);

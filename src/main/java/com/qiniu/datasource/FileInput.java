@@ -11,6 +11,7 @@ import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.SystemUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -18,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FileInput implements IDataSource {
+public class FileInput implements IDataSource<LocalFileReader, FileSaveMapper> {
 
     private String filePath;
     private String parseType;
