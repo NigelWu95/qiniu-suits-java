@@ -8,11 +8,9 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.Constants.OssStatus;
-import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AliLister implements ILister<OSSObjectSummary> {
 
@@ -119,20 +117,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public void listForward() throws SuitsException {
         try {
-//            List<OSSObjectSummary> current;
-//            do {
-//                current = getListResult();
-//            } while (current.size() == 0 && hasNext());
-//
-//            if (endPrefix != null && !"".equals(endPrefix)) {
-//                ossObjectList = current.stream()
-//                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-//                        .collect(Collectors.toList());
-//                if (ossObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
-//            } else {
-//                ossObjectList = current;
-//            }
-
             ossObjectList = getListResult();
             if (endPrefix != null && !"".equals(endPrefix)) {
                 checkedListWithEnd();
@@ -155,6 +139,26 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
+        int times = 50000 / listObjectsRequest.getMaxKeys();
+        times = times > 10 ? 10 : times;
+        List<OSSObjectSummary> futureList = ossObjectList;
+        while (hasNext() && times > 0 && futureList.size() < 10001) {
+            times--;
+            try {
+                ossObjectList = getListResult();
+                if (endPrefix != null && !"".equals(endPrefix)) {
+                    checkedListWithEnd();
+                }
+            } catch (ClientException e) {
+                int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
+                throw new SuitsException(code, e.getMessage());
+            } catch (ServiceException e) {
+                int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
+                throw new SuitsException(code, e.getMessage());
+            }
+            futureList.addAll(ossObjectList);
+        }
+        ossObjectList = futureList;
         return hasNext();
     }
 

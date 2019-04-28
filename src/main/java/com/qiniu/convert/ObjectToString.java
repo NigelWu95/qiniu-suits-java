@@ -6,7 +6,6 @@ import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class ObjectToString<E> implements ITypeConvert<E, String> {
 

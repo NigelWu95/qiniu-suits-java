@@ -166,8 +166,6 @@ public class QiniuLister implements ILister<FileInfo> {
             if (marker == null) return;
             fileInfoList = doList(prefix, delimiter, marker, limit);
             if (endPrefix != null && !"".equals(endPrefix)) {
-//                for (FileInfo fileInfo : fileInfoList)
-//                    if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
                 checkedListWithEnd();
             }
         } catch (QiniuException e) {
