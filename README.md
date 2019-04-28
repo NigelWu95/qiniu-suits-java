@@ -3,8 +3,8 @@
 
 # qiniu-suits (qsuits)
 七牛云接口使用套件（可以工具形式使用：在 release 页面[下载 jar 包](https://search.maven.org/search?q=a:qsuits)，x.xx-thin 为降配版，
-适用于 4C8G 及以下的机器），列举云存储空间的大量资源列表，同时支持对资源进行处理，主要包括对七牛云存储资源进行批量增/删/改/查。基于 Java 编写，可
-基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
+适用于 4C8G 及以下的机器），并发列举云存储空间的大量资源列表，同时支持对资源进行处理，主要包括对七牛云存储资源进行批量增/删/改/查。基于 Java 编写，
+可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
 
 ### **高级功能列表：**
 - [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效并发[列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -47,7 +47,7 @@
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>5.23</version>
+  <version>5.24</version>
 </dependency>
 ```  
 **2. 命令行运行 jar**  
