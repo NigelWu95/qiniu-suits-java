@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
