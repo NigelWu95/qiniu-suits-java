@@ -56,10 +56,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
         this.endPrefix = endKeyPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
             int size = ossObjectList.size();
-            ossObjectList = ossObjectList.stream()
-                    .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-                    .collect(Collectors.toList());
-            if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
+            if (size > 0) {
+                ossObjectList = ossObjectList.stream()
+                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
+                        .collect(Collectors.toList());
+                if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
+            } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+                listObjectsRequest.setMarker(null);
+            }
         }
     }
 
@@ -94,7 +98,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public boolean canStraight() {
-        return straight;
+        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private List<OSSObjectSummary> getListResult() throws OSSException, ClientException {
@@ -106,18 +110,26 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public void listForward() throws SuitsException {
         try {
-            List<OSSObjectSummary> current;
-            do {
-                current = getListResult();
-            } while (current.size() == 0 && hasNext());
+//            List<OSSObjectSummary> current;
+//            do {
+//                current = getListResult();
+//            } while (current.size() == 0 && hasNext());
+//
+//            if (endPrefix != null && !"".equals(endPrefix)) {
+//                ossObjectList = current.stream()
+//                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
+//                        .collect(Collectors.toList());
+//                if (ossObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
+//            } else {
+//                ossObjectList = current;
+//            }
 
-            if (endPrefix != null && !"".equals(endPrefix)) {
-                ossObjectList = current.stream()
-                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (ossObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
-            } else {
-                ossObjectList = current;
+            ossObjectList = getListResult();
+            int size = ossObjectList.size();
+            if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
+                for (OSSObjectSummary objectSummary : ossObjectList)
+                    if (objectSummary.getKey().compareTo(endPrefix) < 0) ossObjectList.remove(objectSummary);
+                if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
             }
         } catch (ClientException e) {
             int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
