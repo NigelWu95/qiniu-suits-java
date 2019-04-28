@@ -2,9 +2,11 @@ package com.qiniu.convert;
 
 import com.qiniu.interfaces.ILineParser;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
@@ -17,28 +19,16 @@ public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
     }
 
     public List<Map<String, String>> convertToVList(List<E> lineList) {
-        if (lineList == null || lineList.size() == 0) return new ArrayList<>();
-        return lineList.stream()
-                .map(line -> {
-                    try {
-                        return lineParser.getItemMap(line);
-                    } catch (Exception e) {
-                        errorList.add(String.valueOf(line) + "\t" + e.getMessage());
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public List<Map<String, String>> toVList(List<E> lineList) {
         List<Map<String, String>> mapList = new ArrayList<>();
+        int i = 0;
         if (lineList != null && lineList.size() > 0) {
             for (E line : lineList) {
                 try {
+                    i++;
+                    if (i < 10) throw new IOException("test error.");
                     mapList.add(lineParser.getItemMap(line));
                 } catch (Exception e) {
-                    errorList.add(String.valueOf(line) + "\t" + e.getMessage());
+                    errorList.add(JsonConvertUtils.toJson(line) + "\t" + e.getMessage());
                 }
             }
         }
@@ -53,11 +43,19 @@ public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
         return errorList;
     }
 
+    public List<String> consumeErrors() {
+        try {
+            return new ArrayList<>(errorList);
+        } finally {
+            errorList.clear();
+        }
+    }
+
     public List<String> consumeErrorList() {
-        List<String> errors = new ArrayList<>(errorList);
-//        Collections.addAll(errors, new String[errorList.size()]);
-//        Collections.copy(errors, errorList);
-        errorList.clear();
-        return errors;
+        try {
+            return new ArrayList<>(errorList);
+        } finally {
+            errorList.clear();
+        }
     }
 }
