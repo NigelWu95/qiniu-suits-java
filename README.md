@@ -47,7 +47,7 @@
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>5.24</version>
+  <version>5.25</version>
 </dependency>
 ```  
 **2. 命令行运行 jar**  

@@ -364,8 +364,8 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
-        List<ILister<E>> nextListerList = new ArrayList<>();
-        int nextSize;
+        List<ILister<E>> forwardList = new ArrayList<>();
+        Optional<List<ILister<E>>> optional;
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastListerUpdated) {
@@ -383,47 +383,35 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             // 按照 canStraight 来进行分组，将部分不需要向下分级的 lister 提前放入线程中执行列举
             for (ILister<E> eiLister : listerList) {
                 if (eiLister.canStraight()) execInThread(eiLister, recordSaver, order++);
-                else nextListerList.add(eiLister);
+                else forwardList.add(eiLister);
             }
-            nextSize = nextListerList.size();
-            // 对 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-            if (nextSize > 0) {
-                // 线程数满足设置值时则不需要再继续检索下一级前缀
-                if (nextSize >= threads) {
-                    listerList = nextListerList;
-                    break;
-                } else {
-                    Optional<List<ILister<E>>> optional = nextListerList.parallelStream().map(lister -> {
-                        try {
-                            return nextLevelLister(lister, true);
-                        } catch (Exception e) {
-                            SystemUtils.exit(exitBool, e);
-                            return null;
-                        }
-                    }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                    if (optional.isPresent()&& optional.get().size() > 0) {
-                        listerList = optional.get();
-                    } else {
-                        listerList = nextListerList;
-                        break;
+            // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
+            if (forwardList.size() > 0 && forwardList.size() < threads) {
+                optional = forwardList.parallelStream().map(lister -> {
+                    try {
+                        return nextLevelLister(lister, true);
+                    } catch (Exception e) {
+                        SystemUtils.exit(exitBool, e); return null;
                     }
+                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
+                if (optional.isPresent() && optional.get().size() > 0) {
+                    listerList = optional.get();
+                    forwardList.clear();
+                } else {
+                    listerList = forwardList; break;
                 }
-                nextListerList.clear();
             } else {
-                listerList.clear();
-                break;
+                listerList = forwardList; break;
             }
         }
 
         if (listerList.size() > 0) {
             // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
             if (!lastListerUpdated) {
-                lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).orElse(null);
-                if (lastLister != null) {
-                    if (globalEnd) lastLister.setPrefix("");
-                    else lastLister.setPrefix(startLister.getPrefix());
-                    if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
-                }
+                lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+                if (globalEnd) lastLister.setPrefix("");
+                else lastLister.setPrefix(startLister.getPrefix());
+                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
             }
             for (ILister<E> lister : listerList) {
                 execInThread(lister, recordSaver, order++);
