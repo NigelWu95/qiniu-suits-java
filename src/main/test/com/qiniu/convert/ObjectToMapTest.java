@@ -36,9 +36,9 @@ public class ObjectToMapTest {
     @Test
     public void testConvertToVList() {
         List<Map<String, String>> mapList = mapConverter.convertToVList(fileInfoList);
-        System.out.println(mapConverter.getErrorList().size());
+        System.out.println(mapConverter.errorSize());
         System.out.println(mapList);
-        System.out.println(mapConverter.consumeErrorList());
-        System.out.println(mapConverter.getErrorList().size());
+        System.out.println(mapConverter.consumeErrors());
+        System.out.println(mapConverter.errorSize());
     }
 }

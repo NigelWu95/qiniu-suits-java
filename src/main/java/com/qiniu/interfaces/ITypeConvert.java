@@ -10,13 +10,10 @@ public interface ITypeConvert<E, V> {
 
     List<V> convertToVList(List<E> srcList);
 
-    // 获得完整的 errorList，可以多次调用
-    default List<String> getErrorList() {
-        return new ArrayList<>();
-    }
+    int errorSize();
 
-    // 消费者方法，调用后返回列表并清空原列表中
-    default List<String> consumeErrorList() {
+    // 消费者方法，调用后消费错误记录列表
+    default List<String> consumeErrors() {
         return new ArrayList<>();
     }
 }

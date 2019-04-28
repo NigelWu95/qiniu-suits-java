@@ -11,7 +11,6 @@ import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.SystemUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -116,13 +115,13 @@ public class FileInput implements IDataSource<LocalFileReader, FileSaveMapper> {
             if (line != null) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 infoMapList = typeConverter.convertToVList(srcList);
-                if (typeConverter.getErrorList().size() > 0)
-                    fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+                if (typeConverter.errorSize() > 0)
+                    fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrors()), false);
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
                     if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
-                    if (writeTypeConverter.getErrorList().size() > 0)
-                        fileSaveMapper.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
+                    if (writeTypeConverter.errorSize() > 0)
+                        fileSaveMapper.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
