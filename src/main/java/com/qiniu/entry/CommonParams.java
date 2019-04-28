@@ -448,11 +448,11 @@ public class CommonParams {
             } else {
                 scale = dateScale.split(",");
             }
-        } else {
             if (indexMap != null && indexMap.containsValue("putTime")) {
                 throw new IOException("f-date-scale filter must get the putTime's index in indexes settings." +
                         " the default indexes setting only contains \"key\".");
             }
+        } else {
             scale = new String[]{"", ""};
         }
         if (scale.length <= 1) {
