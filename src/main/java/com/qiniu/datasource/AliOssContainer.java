@@ -8,12 +8,15 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.OSSObjToMap;
 import com.qiniu.convert.OSSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
+import com.qiniu.persistence.IResultSave;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AliOssContainer extends OssContainer<OSSObjectSummary> {
+public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWriter> {
 
     private String accessKeyId;
     private String accessKeySecret;
@@ -43,6 +46,11 @@ public class AliOssContainer extends OssContainer<OSSObjectSummary> {
     @Override
     protected ITypeConvert<OSSObjectSummary, String> getNewStringConverter() throws IOException {
         return new OSSObjToString(saveFormat, saveSeparator, rmFields);
+    }
+
+    @Override
+    protected IResultSave<BufferedWriter> getNewResultSaver(String order) throws IOException {
+        return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
     @Override
