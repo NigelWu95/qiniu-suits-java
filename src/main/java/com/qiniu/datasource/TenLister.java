@@ -49,19 +49,26 @@ public class TenLister implements ILister<COSObjectSummary> {
         return listObjectsRequest.getMarker();
     }
 
+    private void checkedListWithEnd() {
+        int size = cosObjectList.size();
+        if (size > 0) {
+            for (int i = 0; i < cosObjectList.size(); i++) {
+                if (cosObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
+                    cosObjectList = cosObjectList.subList(0, i);
+                    break;
+                }
+            }
+            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
+        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+            listObjectsRequest.setMarker(null);
+        }
+    }
+
     @Override
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
-            int size = cosObjectList.size();
-            if (size > 0) {
-                cosObjectList = cosObjectList.stream()
-                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
-            } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-                listObjectsRequest.setMarker(null);
-            }
+            checkedListWithEnd();
         }
     }
 
@@ -108,18 +115,22 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void listForward() throws SuitsException {
         try {
-            List<COSObjectSummary> current;
-            do {
-                current = getListResult();
-            } while (current.size() == 0 && hasNext());
-
+//            List<COSObjectSummary> current;
+//            do {
+//                current = getListResult();
+//            } while (current.size() == 0 && hasNext());
+//
+//            if (endPrefix != null && !"".equals(endPrefix)) {
+//                cosObjectList = current.stream()
+//                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
+//                        .collect(Collectors.toList());
+//                if (cosObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
+//            } else {
+//                cosObjectList = current;
+//            }
+            cosObjectList = getListResult();
             if (endPrefix != null && !"".equals(endPrefix)) {
-                cosObjectList = current.stream()
-                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (cosObjectList.size() < current.size()) listObjectsRequest.setMarker(null);
-            } else {
-                cosObjectList = current;
+                checkedListWithEnd();
             }
         } catch (CosServiceException e) {
             throw new SuitsException(e.getStatusCode(), e.getMessage());

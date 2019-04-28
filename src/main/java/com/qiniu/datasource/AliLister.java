@@ -51,19 +51,28 @@ public class AliLister implements ILister<OSSObjectSummary> {
         return listObjectsRequest.getMarker();
     }
 
+    private void checkedListWithEnd() {
+        int size = ossObjectList.size();
+        if (size > 0) {
+            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
+            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
+            for (int i = 0; i < ossObjectList.size(); i++) {
+                if (ossObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
+                    ossObjectList = ossObjectList.subList(0, i);
+                    break;
+                }
+            }
+            if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
+        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+            listObjectsRequest.setMarker(null);
+        }
+    }
+
     @Override
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
-            int size = ossObjectList.size();
-            if (size > 0) {
-                ossObjectList = ossObjectList.stream()
-                        .filter(objectSummary -> objectSummary.getKey().compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
-            } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-                listObjectsRequest.setMarker(null);
-            }
+            checkedListWithEnd();
         }
     }
 
@@ -125,11 +134,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
 //            }
 
             ossObjectList = getListResult();
-            int size = ossObjectList.size();
-            if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
-                for (OSSObjectSummary objectSummary : ossObjectList)
-                    if (objectSummary.getKey().compareTo(endPrefix) < 0) ossObjectList.remove(objectSummary);
-                if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
+            if (endPrefix != null && !"".equals(endPrefix)) {
+                checkedListWithEnd();
             }
         } catch (ClientException e) {
             int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);

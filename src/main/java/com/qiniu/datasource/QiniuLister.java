@@ -11,9 +11,7 @@ import com.qiniu.util.*;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class QiniuLister implements ILister<FileInfo> {
 
@@ -59,19 +57,28 @@ public class QiniuLister implements ILister<FileInfo> {
         return marker;
     }
 
+    private void checkedListWithEnd() {
+        int size = fileInfoList.size();
+        if (size > 0) {
+            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
+            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
+            for (int i = 0; i < fileInfoList.size(); i++) {
+                if (fileInfoList.get(i).key.compareTo(endPrefix) >= 0) {
+                    fileInfoList = fileInfoList.subList(0, i);
+                    break;
+                }
+            }
+            if (fileInfoList.size() < size) marker = null;
+        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+            marker = null;
+        }
+    }
+
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         if (endPrefix != null && !"".equals(endPrefix)) {
-            int size = fileInfoList.size();
-            if (size > 0) {
-                fileInfoList = fileInfoList.stream()
-                        .filter(fileInfo -> fileInfo.key.compareTo(endPrefix) < 0)
-                        .collect(Collectors.toList());
-                if (fileInfoList.size() < size) marker = null;
-            } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-                marker = null;
-            }
+            checkedListWithEnd();
         }
     }
 
@@ -135,7 +142,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> doList(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         List<JsonObject> jsonObjects = getListResult(prefix, delimiter, marker, limit);
         JsonObject lastJson = jsonObjects.size() > 0 ? jsonObjects.get(jsonObjects.size() - 1) : null;
-        List<FileInfo> fileInfoList = new LinkedList<>();
+        List<FileInfo> fileInfoList = new ArrayList<>();
         try {
             if (lastJson != null && lastJson.get("marker") != null && !(lastJson.get("marker") instanceof JsonNull)) {
                 this.marker = "".equals(lastJson.get("marker").getAsString()) ? null : lastJson.get("marker").getAsString();
@@ -158,11 +165,10 @@ public class QiniuLister implements ILister<FileInfo> {
         try {
             if (marker == null) return;
             fileInfoList = doList(prefix, delimiter, marker, limit);
-            int size = fileInfoList.size();
-            if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
-                for (FileInfo fileInfo : fileInfoList)
-                    if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
-                if (fileInfoList.size() < size) marker = null;
+            if (endPrefix != null && !"".equals(endPrefix)) {
+//                for (FileInfo fileInfo : fileInfoList)
+//                    if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
+                checkedListWithEnd();
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
@@ -185,11 +191,8 @@ public class QiniuLister implements ILister<FileInfo> {
             times--;
             try {
                 fileInfoList = doList(prefix, delimiter, marker, limit);
-                int size = fileInfoList.size();
-                if (size > 0 && endPrefix != null && !"".equals(endPrefix)) {
-                    for (FileInfo fileInfo : fileInfoList)
-                        if (fileInfo.key.compareTo(endPrefix) < 0) fileInfoList.remove(fileInfo);
-                    if (fileInfoList.size() < size) marker = null;
+                if (endPrefix != null && !"".equals(endPrefix)) {
+                    checkedListWithEnd();
                 }
             } catch (QiniuException e) {
                 throw new SuitsException(e.code(), LogUtils.getMessage(e));
