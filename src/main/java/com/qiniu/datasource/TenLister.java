@@ -1,14 +1,10 @@
 package com.qiniu.datasource;
 
-import com.aliyun.oss.ClientException;
-import com.aliyun.oss.ServiceException;
 import com.qcloud.cos.COSClient;
-import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
-import com.qiniu.Constants.OssStatus;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
@@ -30,8 +26,8 @@ public class TenLister implements ILister<COSObjectSummary> {
         listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker(marker);
         listObjectsRequest.setMaxKeys(max);
-        this.endPrefix = endPrefix == null ? "" : endPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
-        listForward();
+        this.endPrefix = endPrefix;
+        doList();
     }
 
     public void setPrefix(String prefix) {
@@ -48,21 +44,6 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     public String getMarker() {
         return listObjectsRequest.getMarker();
-    }
-
-    private void checkedListWithEnd() {
-        int size = cosObjectList.size();
-        if (size > 0) {
-            for (int i = 0; i < cosObjectList.size(); i++) {
-                if (cosObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
-                    cosObjectList = cosObjectList.subList(0, i);
-                    break;
-                }
-            }
-            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-            listObjectsRequest.setMarker(null);
-        }
     }
 
     @Override
@@ -107,16 +88,26 @@ public class TenLister implements ILister<COSObjectSummary> {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    private List<COSObjectSummary> getListResult() throws CosClientException {
-        ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
-        listObjectsRequest.setMarker(objectListing.getNextMarker());
-        return objectListing.getObjectSummaries();
+    private void checkedListWithEnd() {
+        int size = cosObjectList.size();
+        if (size > 0) {
+            for (int i = 0; i < cosObjectList.size(); i++) {
+                if (cosObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
+                    cosObjectList = cosObjectList.subList(0, i);
+                    break;
+                }
+            }
+            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
+        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+            listObjectsRequest.setMarker(null);
+        }
     }
 
-    @Override
-    public void listForward() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
-            cosObjectList = getListResult();
+            ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+            cosObjectList = objectListing.getObjectSummaries();
             if (endPrefix != null && !"".equals(endPrefix)) {
                 checkedListWithEnd();
             }
@@ -125,6 +116,11 @@ public class TenLister implements ILister<COSObjectSummary> {
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }
+    }
+
+    @Override
+    public void listForward() throws SuitsException {
+        if (!hasNext()) return; doList();
     }
 
     @Override
@@ -139,18 +135,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         List<COSObjectSummary> futureList = cosObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
             times--;
-            try {
-                cosObjectList = getListResult();
-                if (endPrefix != null && !"".equals(endPrefix)) {
-                    checkedListWithEnd();
-                }
-            } catch (ClientException e) {
-                int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
-                throw new SuitsException(code, e.getMessage());
-            } catch (ServiceException e) {
-                int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
-                throw new SuitsException(code, e.getMessage());
-            }
+            doList();
             futureList.addAll(cosObjectList);
         }
         cosObjectList = futureList;
