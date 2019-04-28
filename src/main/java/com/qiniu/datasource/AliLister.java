@@ -156,17 +156,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public OSSObjectSummary currentFirst() {
-        return ossObjectList.size() > 0 ? ossObjectList.get(0) : null;
-    }
-
-    @Override
-    public String currentFirstKey() {
-        OSSObjectSummary first = currentFirst();
-        return first != null ? first.getKey() : null;
-    }
-
-    @Override
     public OSSObjectSummary currentLast() {
         OSSObjectSummary last = ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
         if (last == null) {

@@ -156,8 +156,8 @@ public class QiniuLister implements ILister<FileInfo> {
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
-//        } catch (Exception e) {
-//            throw new SuitsException(-1, "failed, " + e.getMessage());
+        } catch (Exception e) {
+            throw new SuitsException(-1, "failed, " + e.getMessage());
         }
     }
 
@@ -188,17 +188,6 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public List<FileInfo> currents() {
         return fileInfoList;
-    }
-
-    @Override
-    public FileInfo currentFirst() {
-        return fileInfoList.size() > 0 ? fileInfoList.get(0) : null;
-    }
-
-    @Override
-    public String currentFirstKey() {
-        FileInfo first = currentFirst();
-        return first != null ? first.key : null;
     }
 
     @Override
