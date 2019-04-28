@@ -2,7 +2,6 @@ package com.qiniu.datasource;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.OSSException;
 import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
@@ -29,8 +28,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
         listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker(marker);
         listObjectsRequest.setMaxKeys(max);
-        this.endPrefix = endPrefix == null ? "" : endPrefix; // 初始值不使用 null，后续设置时可为空，便于判断是否进行过修改
-        listForward();
+        this.endPrefix = endPrefix;
+        doList();
     }
 
     public void setPrefix(String prefix) {
@@ -47,23 +46,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     public String getMarker() {
         return listObjectsRequest.getMarker();
-    }
-
-    private void checkedListWithEnd() {
-        int size = ossObjectList.size();
-        if (size > 0) {
-            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
-            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < ossObjectList.size(); i++) {
-                if (ossObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
-                    ossObjectList = ossObjectList.subList(0, i);
-                    break;
-                }
-            }
-            if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-            listObjectsRequest.setMarker(null);
-        }
     }
 
     @Override
@@ -108,16 +90,28 @@ public class AliLister implements ILister<OSSObjectSummary> {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    private List<OSSObjectSummary> getListResult() throws OSSException, ClientException {
-        ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
-        listObjectsRequest.setMarker(objectListing.getNextMarker());
-        return objectListing.getObjectSummaries();
+    private void checkedListWithEnd() {
+        int size = ossObjectList.size();
+        if (size > 0) {
+            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
+            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
+            for (int i = 0; i < ossObjectList.size(); i++) {
+                if (ossObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
+                    ossObjectList = ossObjectList.subList(0, i);
+                    break;
+                }
+            }
+            if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
+        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
+            listObjectsRequest.setMarker(null);
+        }
     }
 
-    @Override
-    public void listForward() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
-            ossObjectList = getListResult();
+            ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+            ossObjectList = objectListing.getObjectSummaries();
             if (endPrefix != null && !"".equals(endPrefix)) {
                 checkedListWithEnd();
             }
@@ -133,6 +127,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
+    public void listForward() throws SuitsException {
+        if (!hasNext()) return; doList();
+    }
+
+    @Override
     public boolean hasNext() {
         return listObjectsRequest.getMarker() != null && !"".equals(listObjectsRequest.getMarker());
     }
@@ -144,18 +143,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         List<OSSObjectSummary> futureList = ossObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
             times--;
-            try {
-                ossObjectList = getListResult();
-                if (endPrefix != null && !"".equals(endPrefix)) {
-                    checkedListWithEnd();
-                }
-            } catch (ClientException e) {
-                int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
-                throw new SuitsException(code, e.getMessage());
-            } catch (ServiceException e) {
-                int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
-                throw new SuitsException(code, e.getMessage());
-            }
+            doList();
             futureList.addAll(ossObjectList);
         }
         ossObjectList = futureList;
