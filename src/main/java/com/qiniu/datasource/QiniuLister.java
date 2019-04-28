@@ -111,6 +111,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     private List<JsonObject> getListResult(String prefix, String delimiter, String marker, int limit) throws QiniuException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
+        if (response.statusCode != 200) throw new QiniuException(response);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
