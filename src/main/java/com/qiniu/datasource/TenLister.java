@@ -92,7 +92,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         int size = cosObjectList.size();
         if (size > 0) {
             for (int i = 0; i < cosObjectList.size(); i++) {
-                if (cosObjectList.get(i).getKey().compareTo(endPrefix) >= 0) {
+                if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     cosObjectList = cosObjectList.subList(0, i);
                     break;
                 }
