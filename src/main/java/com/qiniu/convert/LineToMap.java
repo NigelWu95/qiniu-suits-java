@@ -6,7 +6,7 @@ import com.qiniu.util.LineUtils;
 import java.io.IOException;
 import java.util.*;
 
-public class LineToMap extends ObjectToMap<String> {
+public class LineToMap extends Converter<String, Map<String, String>> {
 
     public LineToMap(String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap) throws IOException {
         if ("json".equals(parseType)) {
@@ -24,5 +24,10 @@ public class LineToMap extends ObjectToMap<String> {
         String key = itemMap.get("key") != null ? FileNameUtils.rmPrefix(rmKeyPrefix, itemMap.get("key")) : null;
         itemMap.put("key", key);
         return itemMap;
+    }
+
+    @Override
+    public Map<String, String> convertToV(String line) throws IOException {
+        return lineParser.getItemMap(line);
     }
 }

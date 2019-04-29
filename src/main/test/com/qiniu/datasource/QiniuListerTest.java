@@ -2,6 +2,7 @@ package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
 import com.qiniu.config.ParamsConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
@@ -17,10 +18,10 @@ public class QiniuListerTest {
 
     @Before
     public void init() throws IOException {
-        IEntryParam entryParam = new ParamsConfig("resources" + System.getProperty("file.separator") + ".qiniu.properties");
-        String accessKey = entryParam.getValue("ak");
-        String secretKey = entryParam.getValue("sk");
-        String bucket = entryParam.getValue("bucket");
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.qiniu.properties");
+        String accessKey = propertiesFile.getValue("ak");
+        String secretKey = propertiesFile.getValue("sk");
+        String bucket = propertiesFile.getValue("bucket");
         qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
                 null, null, null, null, 10000);
     }

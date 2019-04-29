@@ -6,6 +6,7 @@ import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
 import com.qiniu.config.ParamsConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
@@ -103,7 +104,8 @@ public class QSuitsEntry {
 
     private void setEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
-            add("resources" + System.getProperty("file.separator") + "qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + "qiniu.config");
+            add("resources" + System.getProperty("file.separator") + ".qiniu.config");
             add("resources" + System.getProperty("file.separator") + ".qiniu.properties");
         }};
         boolean paramFromConfig = true;
@@ -123,7 +125,15 @@ public class QSuitsEntry {
             if (configFilePath == null) throw new IOException("there is no config file detected.");
             else paramFromConfig = true;
         }
-        entryParam = paramFromConfig ? new ParamsConfig(configFilePath) : new ParamsConfig(args);
+        if (paramFromConfig) {
+            if (configFilePath.endsWith(".properties")) {
+                entryParam = new ParamsConfig(new PropertiesFile(configFilePath).getProperties());
+            } else {
+                entryParam = new ParamsConfig(configFilePath);
+            }
+        } else {
+            entryParam = new ParamsConfig(args);
+        }
     }
 
     public IEntryParam getEntryParam() {

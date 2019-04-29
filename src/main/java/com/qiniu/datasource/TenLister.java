@@ -113,6 +113,8 @@ public class TenLister implements ILister<COSObjectSummary> {
             }
         } catch (CosServiceException e) {
             throw new SuitsException(e.getStatusCode(), e.getMessage());
+        } catch (NullPointerException e) {
+            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }
@@ -150,7 +152,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public COSObjectSummary currentLast() {
         COSObjectSummary last = cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
-        if (last == null) {
+        if (last == null && hasNext()) {
             last = new COSObjectSummary();
             last.setKey(getMarker());
         }

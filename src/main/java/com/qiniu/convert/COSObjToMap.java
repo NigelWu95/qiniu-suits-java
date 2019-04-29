@@ -3,11 +3,18 @@ package com.qiniu.convert;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.util.LineUtils;
 
+import java.io.IOException;
 import java.util.*;
 
-public class COSObjToMap extends ObjectToMap<COSObjectSummary> {
+public class COSObjToMap extends Converter<COSObjectSummary, Map<String, String>> {
 
     public COSObjToMap(Map<String, String> indexMap) {
-        this.lineParser = line -> LineUtils.getItemMap(line, indexMap);
+        super(indexMap);
     }
+
+    @Override
+    public Map<String, String> convertToV(COSObjectSummary line) throws IOException {
+        return LineUtils.getItemMap(line, indexMap);
+    }
+
 }

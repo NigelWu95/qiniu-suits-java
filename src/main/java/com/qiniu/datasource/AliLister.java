@@ -121,6 +121,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
         } catch (ServiceException e) {
             int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
             throw new SuitsException(code, e.getMessage());
+        } catch (NullPointerException e) {
+            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }
@@ -158,7 +160,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public OSSObjectSummary currentLast() {
         OSSObjectSummary last = ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
-        if (last == null) {
+        if (last == null && hasNext()) {
             last = new OSSObjectSummary();
             last.setKey(getMarker());
         }
