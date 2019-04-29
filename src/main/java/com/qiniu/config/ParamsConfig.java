@@ -13,32 +13,40 @@ public class ParamsConfig implements IEntryParam {
 
     private Map<String, String> paramsMap;
 
-    public ParamsConfig(InputStream inputStream) throws IOException {
+    public ParamsConfig(Properties properties) {
+        paramsMap = new HashMap<>();
+        for (String key : properties.stringPropertyNames()) {
+            paramsMap.put(key, properties.getProperty(key));
+        }
+    }
+
+    public ParamsConfig(String resource) throws IOException {
+        resource = FileNameUtils.realPathWithUserHome(resource);
+        FileReader fileReader = new FileReader(resource);
+        BufferedReader reader = new BufferedReader(fileReader);
+        paramsMap = new HashMap<>();
         try {
-            Properties properties = new Properties();
-            properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
-            paramsMap = new HashMap<>();
-            for (String key : properties.stringPropertyNames()) {
-                paramsMap.put(key, properties.getProperty(key));
+            String line;
+            String[] strings;
+            while ((line = reader.readLine()) != null) {
+                if (!"".equals(line) && !line.startsWith("#") && !line.startsWith("//")) {
+                    strings = splitParam(line);
+                    paramsMap.put(strings[0], strings[1]);
+                }
             }
         } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    inputStream = null;
-                }
+            try {
+                fileReader.close();
+                reader.close();
+            } catch (IOException e) {
+                fileReader = null;
+                reader = null;
             }
         }
     }
 
-    public ParamsConfig(String resourceName) throws IOException {
-        this(new FileInputStream(FileNameUtils.realPathWithUserHome(resourceName)));
-    }
-
     public ParamsConfig(JsonObject jsonObject) throws IOException {
-        if (jsonObject == null || jsonObject.size() == 0)
-            throw new IOException("json is empty.");
+        if (jsonObject == null || jsonObject.size() == 0) throw new IOException("json is empty.");
         paramsMap = new HashMap<>();
         for (String key : jsonObject.keySet()) {
             if (jsonObject.get(key).isJsonNull() || jsonObject.get(key).isJsonPrimitive() ||
@@ -48,8 +56,7 @@ public class ParamsConfig implements IEntryParam {
     }
 
     public ParamsConfig(String[] args) throws IOException {
-        if (args == null || args.length == 0)
-            throw new IOException("args is empty.");
+        if (args == null || args.length == 0) throw new IOException("args is empty.");
         else {
             boolean cmdGoon = false;
             paramsMap = new HashMap<>();
@@ -58,7 +65,9 @@ public class ParamsConfig implements IEntryParam {
                 // 参数命令格式：-<key>=<value>
                 cmdGoon = arg.matches("-.+=.+") || cmdGoon;
                 if (cmdGoon) {
-                    strings = splitParam(arg);
+                    if (!arg.startsWith("-"))
+                        throw new IOException("invalid command param: \"" + arg + "\", not start with \"-\".");
+                    strings = splitParam(arg.substring(1));
                     paramsMap.put(strings[0], strings[1]);
                 }
             }
@@ -71,17 +80,10 @@ public class ParamsConfig implements IEntryParam {
     }
 
     private String[] splitParam(String paramCommand) throws IOException {
-
-        if (!paramCommand.contains("=") || !paramCommand.startsWith("-")) {
-            throw new IOException("there is invalid command param: \"" + paramCommand + "\".");
-        }
-
-        String[] strings = paramCommand.substring(1).split("=");
-        if (strings.length == 1) {
-            // 不允许空值的出现
-            throw new IOException("the \"" + strings[0] + "\" param has no value.");
-        }
-
+        if (!paramCommand.contains("="))
+            throw new IOException("invalid command param: \"" + paramCommand + "\", no value set with \"=\".");
+        String[] strings = paramCommand.split("=");
+        if (strings.length == 1) throw new IOException("the \"" + strings[0] + "\" param has no value."); // 不允许空值的出现
         if (strings[1].matches("(\".*\"|\'.*\')"))
             return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
         return strings;
