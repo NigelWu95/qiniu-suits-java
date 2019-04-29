@@ -47,9 +47,10 @@
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>5.25</version>
+  <version>x.xx</version>
 </dependency>
 ```  
+x.xx 替换成最新版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 **2. 命令行运行 jar**  
 在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载最新 jar 包，使用命令行参数 [-config=<filepath>] 指定
 配置文件路径，运行命令形如：
