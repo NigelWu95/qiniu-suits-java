@@ -38,10 +38,6 @@ public interface ILister<E> {
 
     List<E> currents();
 
-    E currentFirst();
-
-    String currentFirstKey();
-
     E currentLast();
 
     String currentLastKey();

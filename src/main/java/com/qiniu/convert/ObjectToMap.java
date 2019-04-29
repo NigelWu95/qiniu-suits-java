@@ -2,10 +2,10 @@ package com.qiniu.convert;
 
 import com.qiniu.interfaces.ILineParser;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
 
@@ -17,29 +17,28 @@ public class ObjectToMap<E> implements ITypeConvert<E, Map<String, String>> {
     }
 
     public List<Map<String, String>> convertToVList(List<E> lineList) {
-        if (lineList == null || lineList.size() == 0) return new ArrayList<>();
-        return lineList.stream()
-                .map(line -> {
-                    try {
-                        return lineParser.getItemMap(line);
-                    } catch (Exception e) {
-                        errorList.add(String.valueOf(line) + "\t" + e.getMessage());
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        List<Map<String, String>> mapList = new ArrayList<>();
+        if (lineList != null && lineList.size() > 0) {
+            for (E line : lineList) {
+                try {
+                    mapList.add(lineParser.getItemMap(line));
+                } catch (Exception e) {
+                    errorList.add(JsonConvertUtils.toJson(line) + "\t" + e.getMessage());
+                }
+            }
+        }
+        return mapList;
     }
 
-    public List<String> getErrorList() {
-        return errorList;
+    public int errorSize() {
+        return errorList.size();
     }
 
-    public List<String> consumeErrorList() {
-        List<String> errors = new ArrayList<>();
-        Collections.addAll(errors, new String[errorList.size()]);
-        Collections.copy(errors, errorList);
-        errorList.clear();
-        return errors;
+    public List<String> consumeErrors() {
+        try {
+            return new ArrayList<>(errorList);
+        } finally {
+            errorList.clear();
+        }
     }
 }

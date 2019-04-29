@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FileInput implements IDataSource {
+public class FileInput implements IDataSource<LocalFileReader, FileSaveMapper> {
 
     private String filePath;
     private String parseType;
@@ -91,7 +91,7 @@ public class FileInput implements IDataSource {
         this.processor = processor;
     }
 
-    private void export(LocalFileReader reader, FileSaveMapper fileSaveMapper, ILineProcess<Map<String, String>> processor)
+    public void export(LocalFileReader reader, FileSaveMapper fileSaveMapper, ILineProcess<Map<String, String>> processor)
             throws IOException {
         ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
         ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
@@ -115,13 +115,13 @@ public class FileInput implements IDataSource {
             if (line != null) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 infoMapList = typeConverter.convertToVList(srcList);
-                if (typeConverter.getErrorList().size() > 0)
-                    fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+                if (typeConverter.errorSize() > 0)
+                    fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrors()), false);
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(infoMapList);
                     if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
-                    if (writeTypeConverter.getErrorList().size() > 0)
-                        fileSaveMapper.writeError(String.join("\n", writeTypeConverter.consumeErrorList()), false);
+                    if (writeTypeConverter.errorSize() > 0)
+                        fileSaveMapper.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -137,39 +137,36 @@ public class FileInput implements IDataSource {
         }
     }
 
-    private void execInThreads(List<LocalFileReader> readerList, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
-        for (int j = 0; j < readerList.size(); j++) {
-            LocalFileReader reader = readerList.get(j);
-            // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-            // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-            ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-            // 持久化结果标识信息
-            String newOrder = String.valueOf(j + 1 + order);
-            FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
-            executorPool.execute(() -> {
+    public void execInThread(LocalFileReader reader, FileSaveMapper recordFileSaveMapper, int order) throws Exception {
+        // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
+        // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        // 持久化结果标识信息
+        String newOrder = String.valueOf(order);
+        FileSaveMapper fileSaveMapper = new FileSaveMapper(savePath, getSourceName(), newOrder);
+        executorPool.execute(() -> {
+            try {
+                String record = "order " + newOrder + ": " + reader.getName();
+                recordFileSaveMapper.writeKeyFile("result", record + "\treading...", true);
+                export(reader, fileSaveMapper, lineProcessor);
+                record += "\tsuccessfully done";
+                System.out.println(record);
+                recordFileSaveMapper.writeKeyFile("result", record, true);
+                fileSaveMapper.closeWriters();
+                if (lineProcessor != null) lineProcessor.closeResource();
+                reader.close();
+            } catch (Exception e) {
                 try {
-                    String record = "order " + newOrder + ": " + reader.getName();
-                    recordFileSaveMapper.writeKeyFile("result", record + "\treading...", true);
-                    export(reader, fileSaveMapper, lineProcessor);
-                    record += "\tsuccessfully done";
-                    System.out.println(record);
-                    recordFileSaveMapper.writeKeyFile("result", record, true);
-                    fileSaveMapper.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    reader.close();
-                } catch (Exception e) {
-                    try {
-                        System.out.println("order " + newOrder + ": " + reader.getName() + "\tnextLine:" + reader.readLine());
-                    } catch (IOException io) {
-                        io.printStackTrace();
-                    }
-                    recordFileSaveMapper.closeWriters();
-                    fileSaveMapper.closeWriters();
-                    if (lineProcessor != null) lineProcessor.closeResource();
-                    SystemUtils.exit(exitBool, e);
+                    System.out.println("order " + newOrder + ": " + reader.getName() + "\tnextLine:" + reader.readLine());
+                } catch (IOException io) {
+                    io.printStackTrace();
                 }
-            });
-        }
+                recordFileSaveMapper.closeWriters();
+                fileSaveMapper.closeWriters();
+                if (lineProcessor != null) lineProcessor.closeResource();
+                SystemUtils.exit(exitBool, e);
+            }
+        });
     }
 
     @Override
@@ -202,7 +199,10 @@ public class FileInput implements IDataSource {
         exitBool = new AtomicBoolean(false);
         try {
             executorPool = Executors.newFixedThreadPool(runningThreads);
-            execInThreads(localFileReaders, recordFileSaveMapper, 0);
+            int order = 1;
+            for (LocalFileReader localFileReader : localFileReaders) {
+                execInThread(localFileReader, recordFileSaveMapper, order++);
+            }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             recordFileSaveMapper.closeWriters();
