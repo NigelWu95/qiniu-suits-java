@@ -20,31 +20,19 @@ public class TenListerTest {
     @Before
     public void init() throws IOException {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.tencent.properties");
-        String secretId = propertiesFile.getValue("SecretId");
-        String secretKey = propertiesFile.getValue("SecretKey");
+        String secretId = propertiesFile.getValue("ten-id");
+        String secretKey = propertiesFile.getValue("ten-secret");
         String regionName = propertiesFile.getValue("region");
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         COSClient cosClient = new COSClient(cred, clientConfig);
         String bucket = propertiesFile.getValue("bucket");
-        tenLister = new TenLister(cosClient, bucket, null, null, null, null, 10000);
-    }
-
-    @Test
-    public void testGetCosObjectList() {
+        tenLister = new TenLister(cosClient, bucket, null, null, null, null, 1000);
     }
 
     @Test
     public void testGetMarker() {
         System.out.println(tenLister.getMarker());
-    }
-
-    @Test
-    public void testCheckMarkerValid() {
-    }
-
-    @Test
-    public void testCheckListValid() {
     }
 
     @Test

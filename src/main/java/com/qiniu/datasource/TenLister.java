@@ -150,7 +150,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public COSObjectSummary currentLast() {
         COSObjectSummary last = cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
-        if (last == null) {
+        if (last == null && hasNext()) {
             last = new COSObjectSummary();
             last.setKey(getMarker());
         }
