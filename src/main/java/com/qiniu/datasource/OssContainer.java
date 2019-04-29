@@ -187,7 +187,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
 
     /**
-     * 将 ILister<E> 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
+     * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
      * @param recordSaver 记录整体进度信息的文件对象
      * @param order 当前列举对象集的起始序号
