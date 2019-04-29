@@ -10,7 +10,7 @@ public class ParamsConfigTest {
 
     @Test
     public void testGetValueByCommandArgs() throws IOException {
-        String[] args = new String[]{"list", "-a=\"\"", "-ak=\"1\"", "-sk=1", "-bucket=1", "-multi=1", "-max-threads=1", "-f-regex=\"(.*)\\.csv\""};
+        String[] args = new String[]{"list", "-a=\"\"", "-ak=\"1\"", "-sk=1", "-bucket=1", "-multi=1", "-max-threads=1", "-f-regex=9xiu/\\d*\\.jpg"};
         paramsConfig = new ParamsConfig(args);
         System.out.println(paramsConfig.getValue("ak"));
         System.out.println(paramsConfig.getValue("ab", "ab"));
