@@ -1,6 +1,7 @@
 package com.qiniu.convert;
 
 import com.qiniu.config.ParamsConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.datasource.QiniuLister;
 import com.qiniu.entry.QSuitsEntry;
 import com.qiniu.interfaces.IEntryParam;
@@ -22,7 +23,7 @@ public class ObjectToMapTest {
 
     @Before
     public void init() throws Exception {
-        IEntryParam entryParam = new ParamsConfig("resources" + System.getProperty("file.separator") + ".qiniu.properties");
+        IEntryParam entryParam = new ParamsConfig(new PropertiesFile("resources/.qiniu.properties").getProperties());
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
         mapConverter = new QOSObjToMap(qSuitsEntry.getCommonParams().getIndexMap());
         String accessKey = entryParam.getValue("ak");

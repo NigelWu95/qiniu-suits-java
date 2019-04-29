@@ -19,7 +19,7 @@ public class ParamsConfigTest {
 
     @Test
     public void testGetValueByFileProperties() throws IOException {
-        paramsConfig = new ParamsConfig("resources" + System.getProperty("file.separator") + ".qiniu..properties");
+        paramsConfig = new ParamsConfig("resources" + System.getProperty("file.separator") + ".qiniu.config");
         System.out.println(paramsConfig.getValue("no", "no"));
         System.out.println(paramsConfig.getValue("use-https", "true"));
         System.out.println(paramsConfig.getValue("use-https") == null);
