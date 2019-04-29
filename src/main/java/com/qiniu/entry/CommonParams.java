@@ -88,6 +88,7 @@ public class CommonParams {
                 aliyunAccessId = entryParam.getValue("ali-id");
                 aliyunAccessSecret = entryParam.getValue("ali-secret");
                 regionName = entryParam.getValue("region");
+                if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
             }
             setBucket();
             parse = "object";
