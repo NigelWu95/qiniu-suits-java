@@ -88,6 +88,7 @@ public class CommonParams {
                 aliyunAccessId = entryParam.getValue("ali-id");
                 aliyunAccessSecret = entryParam.getValue("ali-secret");
                 regionName = entryParam.getValue("region");
+                if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
             }
             setBucket();
             parse = "object";
@@ -288,6 +289,8 @@ public class CommonParams {
                             marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                                     Base64.URL_SAFE | Base64.NO_WRAP);
                         } else if ("tencent".equals(source)) {
+                            marker = jsonCfg.get("start").getAsString();
+                        } else if ("aliyun".equals(source)) {
                             marker = jsonCfg.get("start").getAsString();
                         }
                     }

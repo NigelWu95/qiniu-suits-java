@@ -187,7 +187,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
 
     /**
-     * 将 ILister<E> 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
+     * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
      * @param recordSaver 记录整体进度信息的文件对象
      * @param order 当前列举对象集的起始序号
@@ -274,10 +274,10 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
      */
     private List<ILister<E>> nextLevelLister(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
         int retry = retryTimes;
-        boolean futureNext;
+        boolean next;
         while (true) {
             try {
-                futureNext = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
+                next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
                 break;
             } catch (SuitsException e) {
                 System.out.println("check lister has future next retrying...\n" + e.getMessage());
@@ -289,13 +289,10 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         String startPrefix = lister.getPrefix();;
         String point = "";
         List<ILister<E>> nextLevelList = new ArrayList<>();
-        // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
-        if (!futureNext) {
-//        if (!lister.hasNext()) {
+        if (!next) { // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
             nextLevelList.add(lister);
             return nextLevelList;
-        // 如果存在 next 且当前获取的最后一个对象不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
-        } else if (lister.currentLast() != null) {
+        } else { // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
             int prefixLen = startPrefix.length();
             String lastKey = lister.currentLastKey();
             // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
@@ -317,15 +314,12 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                     lister.setEndPrefix(lastKey);
                     nextLevelList.add(lister);
                 }
-            // 正常情况下文件对象不为空则其文件名不应为空，假如发生此情况直接将 lister 的结束位置设置到第一个预定义前缀并加入返回的对象集
             } else {
+                // 正常情况下存在 next 时最后一个文件对象不为空且其文件名不应为空，假如发生此情况直接将 lister 的结束位置设置到第一个预定义前
+                // 缀并加入返回的对象集
                 lister.setEndPrefix(startPrefix + originPrefixList.get(0));
                 nextLevelList.add(lister);
             }
-        // 正常情况下存在 next 时最后一个对象不应为空，假如出现此情况时直接将 lister 的结束位置设置到第一个预定义前缀，并加入列举对象集
-        } else {
-            lister.setEndPrefix(startPrefix + originPrefixList.get(0));
-            nextLevelList.add(lister);
         }
 
         for (String prefix : originPrefixList) {

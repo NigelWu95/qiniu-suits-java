@@ -11,19 +11,16 @@ public class PropertiesFile {
     private Properties properties;
 
     public PropertiesFile(String resourceName) throws IOException {
-        InputStream inputStream = null;
         resourceName = FileNameUtils.realPathWithUserHome(resourceName);
+        InputStream inputStream = new FileInputStream(resourceName);
         try {
-            inputStream = new FileInputStream(resourceName);
             properties = new Properties();
             properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
         } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    inputStream = null;
-                }
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                inputStream = null;
             }
         }
     }

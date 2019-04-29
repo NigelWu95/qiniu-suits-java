@@ -63,7 +63,7 @@ bucket=
 ak=
 sk=
 ```  
-**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.properties` 或 `resources/.qiniu.properties`，
+**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.config` 或 `resources/.qiniu.config`，
 两个文件存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
 数前加上 -**，如  
@@ -73,8 +73,9 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 
 ### 3 数据源
 数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
-`source=qiniu` 表示从七牛存储空间列举出资源列表，配置文件示例可参考 [配置模板](templates/qiniu.config)  
-`source=local` 表示从本地文件按行读取资源列表，配置文件示例可参考 [配置模板](templates/local.config)  
+`source=qiniu` 表示从七牛存储空间列举出资源列表  
+`source=local` 表示从本地文件按行读取资源列表  
+配置文件示例可参考 [配置模板](resources/qiniu.config)  
 **在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
@@ -139,7 +140,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 /lifecycle/copy** (命令行方式则指定为 **-process=xxx**) 等，同时 process 操作支持设置公共参数：  
 `retry-times=` 操作失败（可重试的异常情况下，如请求超时）需要进行的重试次数，默认为 5 次  
 `batch-size=` 支持 batch 操作时设置的一次批量操作的文件个数（支持 batch 操作：type/status/lifecycle/delete/copy/move/rename/stat，
-其他操作请勿设置 batchSize 或者设置为 0），当响应结果较多 573 状态码时需要降低 batch-size，或者直接使用非 batch 方式，设置 batch-size=0/1  
+其他操作请勿设置 batchSize 或者设置为 0），当响应结果较多 429/573 状态码时需要降低 batch-size，或者直接使用非 batch 方式：batch-size=0/1  
 **处理操作类型：**  
 `process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 `process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  

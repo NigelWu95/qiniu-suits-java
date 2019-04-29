@@ -6,6 +6,7 @@ import java.util.Map;
 public class OssStatus {
 
     public static Map<String, Integer> aliMap = new HashMap<String, Integer>(){{
+        put("UnknownHost", 400); // 错误的 region 等
         put("AccessDenied", 403);// 拒绝访问
         put("BucketAlreadyExists", 409);// 存储空间已经存在
         put("BucketNotEmpty", 409);// 存储空间非空
