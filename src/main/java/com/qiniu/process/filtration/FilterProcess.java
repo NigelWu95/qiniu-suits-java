@@ -117,8 +117,8 @@ public class FilterProcess implements ILineProcess<Map<String, String>>, Cloneab
         if (nextProcessor == null) {
             List<String> writeList = typeConverter.convertToVList(filterList);
             if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
-            if (typeConverter.getErrorList().size() > 0)
-                fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrorList()), false);
+            if (typeConverter.errorSize() > 0)
+                fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrors()), false);
         } else {
             nextProcessor.processLine(filterList);
         }

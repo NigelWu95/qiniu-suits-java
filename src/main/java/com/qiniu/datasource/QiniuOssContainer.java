@@ -4,15 +4,18 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.QOSObjToMap;
 import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
+import com.qiniu.persistence.IResultSave;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class QiniuOssContainer extends OssContainer<FileInfo> {
+public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter> {
 
     private String accessKey;
     private String secretKey;
@@ -40,6 +43,11 @@ public class QiniuOssContainer extends OssContainer<FileInfo> {
     @Override
     protected ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException {
         return new QOSObjToString(saveFormat, saveSeparator, rmFields);
+    }
+
+    @Override
+    protected IResultSave<BufferedWriter> getNewResultSaver(String order) throws IOException {
+        return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
     @Override
