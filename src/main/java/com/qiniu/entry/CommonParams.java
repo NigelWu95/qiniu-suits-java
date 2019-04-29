@@ -289,6 +289,8 @@ public class CommonParams {
                                     Base64.URL_SAFE | Base64.NO_WRAP);
                         } else if ("tencent".equals(source)) {
                             marker = jsonCfg.get("start").getAsString();
+                        } else if ("aliyun".equals(source)) {
+                            marker = jsonCfg.get("start").getAsString();
                         }
                     }
                 } else {
