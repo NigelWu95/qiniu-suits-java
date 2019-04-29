@@ -156,6 +156,8 @@ public class QiniuLister implements ILister<FileInfo> {
             }
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
+        } catch (NullPointerException e) {
+            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
         } catch (Exception e) {
             throw new SuitsException(-1, "failed, " + e.getMessage());
         }
