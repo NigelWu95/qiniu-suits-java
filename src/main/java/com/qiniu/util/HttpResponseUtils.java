@@ -16,19 +16,19 @@ public class HttpResponseUtils {
         // 处理一次异常返回后的重试次数应该减少一次，并且可用于后续判断是否有重试的必要
         times--;
         if (e.response != null) {
-            if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614) || e.code() == 579) {
+            int code = e.code();
+            e.response.close();
+            if (times <= 0) {
+                if (code == 599) return -2; // 如果经过重试之后响应的是 599 状态码则抛出异常
+                else return -1;
+            }
+            // 429 和 573 为请求过多的状态码，可以进行重试
+            else if (code < 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
+                return times;
+            } else if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614) || e.code() == 579) {
                 // 避免因为某些可忽略的状态码导致程序中断故先处理该异常
                 return 0;
-            } else if (e.code() == 631) {
-                // 631 状态码表示空间不存在，则不需要重试抛出异常
-                return -2;
-            } else if (times <= 0) {
-                if (e.code() == 599) return -2; // 如果经过重试之后响应的是 599 状态码则抛出异常
-                else return -1;
-            } else if (e.response.needRetry()) {
-                e.response.close();
-                return times;
-            } else {
+            } else { // 如 631 状态码表示空间不存在，则不需要重试抛出异常
                 return -2;
             }
         } else {
@@ -46,7 +46,7 @@ public class HttpResponseUtils {
     public static int checkStatusCode(int code) {
         if (code == 200) {
             return 1;
-        } else if (code <= 0 || (code >= 500 && code < 600 && code != 579)) {
+        } else if (code <= 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
             return 0;
         } else {
             return -1;
