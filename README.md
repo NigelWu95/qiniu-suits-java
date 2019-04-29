@@ -140,7 +140,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 /lifecycle/copy** (命令行方式则指定为 **-process=xxx**) 等，同时 process 操作支持设置公共参数：  
 `retry-times=` 操作失败（可重试的异常情况下，如请求超时）需要进行的重试次数，默认为 5 次  
 `batch-size=` 支持 batch 操作时设置的一次批量操作的文件个数（支持 batch 操作：type/status/lifecycle/delete/copy/move/rename/stat，
-其他操作请勿设置 batchSize 或者设置为 0），当响应结果较多 573 状态码时需要降低 batch-size，或者直接使用非 batch 方式，设置 batch-size=0/1  
+其他操作请勿设置 batchSize 或者设置为 0），当响应结果较多 429/573 状态码时需要降低 batch-size，或者直接使用非 batch 方式：batch-size=0/1  
 **处理操作类型：**  
 `process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 `process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
