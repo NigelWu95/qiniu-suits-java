@@ -193,7 +193,7 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public FileInfo currentLast() {
         FileInfo last = fileInfoList.size() > 0 ? fileInfoList.get(fileInfoList.size() - 1) : null;
-        if (last == null && marker != null) {
+        if (last == null && hasNext()) {
             String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));
             JsonObject jsonObject = new JsonParser().parse(decodedMarker).getAsJsonObject();
             last = new FileInfo();
