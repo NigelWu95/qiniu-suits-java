@@ -21,8 +21,8 @@ public class AliListerTest {
     public void init() throws IOException {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.ali.properties");
         String endpoint = propertiesFile.getValue("endpoint");
-        String accessKeyId = propertiesFile.getValue("accessKeyId");
-        String accessKeySecret = propertiesFile.getValue("accessKeySecret");
+        String accessKeyId = propertiesFile.getValue("ali-id");
+        String accessKeySecret = propertiesFile.getValue("ali-secret");
         String bucket = propertiesFile.getValue("bucket");
         CredentialsProvider credentialsProvider = new DefaultCredentialProvider(accessKeyId, accessKeySecret);
         ClientConfiguration clientConfiguration = new ClientConfiguration();

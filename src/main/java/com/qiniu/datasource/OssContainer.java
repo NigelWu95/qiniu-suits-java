@@ -349,6 +349,8 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     private int computeToList(ILister<E> startLister, boolean globalEnd, int order, IResultSave<W> recordSaver)
             throws Exception {
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
+        String startPrefix = startLister.getPrefix();
+        startLister.close();
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
         List<ILister<E>> forwardList = new ArrayList<>();
@@ -361,7 +363,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 if (lastLister != null && !lastLister.hasNext()) {
                     // 全局结尾则设置前缀为空，否则设置前缀为起始值
                     if (globalEnd) lastLister.setPrefix("");
-                    else lastLister.setPrefix(startLister.getPrefix());
+                    else lastLister.setPrefix(startPrefix);
                     lastLister.updateMarkerBy(lastLister.currentLast());
                     lastLister.setStraight(true);
                     lastListerUpdated = true;
@@ -397,7 +399,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             if (!lastListerUpdated) {
                 lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
                 if (globalEnd) lastLister.setPrefix("");
-                else lastLister.setPrefix(startLister.getPrefix());
+                else lastLister.setPrefix(startPrefix);
                 if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
             }
             for (ILister<E> lister : listerList) {
