@@ -203,7 +203,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + lister.getPrefix();
-                recordSaver.writeKeyFile("result", record + "\tlisting...", true);
+                recordSaver.writeKeyFile(".result", record + "\tlisting...", true);
                 export(lister, saver, lineProcessor);
                 record += "\tsuccessfully done";
                 System.out.println(record);
@@ -345,7 +345,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
         boolean lastListerUpdated = false;
         ILister<E> lastLister;
-        List<ILister<E>> forwardList = new ArrayList<>();
+        Iterator<ILister<E>> listerIterator;
         Optional<List<ILister<E>>> optional;
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
@@ -362,13 +362,21 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 }
             }
             // 按照 canStraight 来进行分组，将部分不需要向下分级的 lister 提前放入线程中执行列举
-            for (ILister<E> eiLister : listerList) {
-                if (eiLister.canStraight()) execInThread(eiLister, recordSaver, order++);
-                else forwardList.add(eiLister);
+//            for (ILister<E> eiLister : listerList) {
+//                if (eiLister.canStraight()) execInThread(eiLister, recordSaver, order++);
+//                else forwardList.add(eiLister);
+//            }
+            listerIterator = listerList.iterator();
+            while (listerIterator.hasNext()) {
+                ILister<E> eiLister = listerIterator.next();
+                if(eiLister.canStraight()) {
+                    execInThread(eiLister, recordSaver, order++);
+                    listerIterator.remove();
+                }
             }
             // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-            if (forwardList.size() > 0 && forwardList.size() < threads) {
-                optional = forwardList.parallelStream().map(lister -> {
+            if (listerList.size() > 0 && listerList.size() < threads) {
+                optional = listerList.parallelStream().map(lister -> {
                     try {
                         return nextLevelLister(lister, true);
                     } catch (Exception e) {
@@ -377,12 +385,11 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
                 if (optional.isPresent() && optional.get().size() > 0) {
                     listerList = optional.get();
-                    forwardList.clear();
                 } else {
-                    listerList = forwardList; break;
+                    break;
                 }
             } else {
-                listerList = forwardList; break;
+                break;
             }
         }
 

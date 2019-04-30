@@ -98,8 +98,11 @@ public class TenLister implements ILister<COSObjectSummary> {
                 }
             }
             if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-            listObjectsRequest.setMarker(null);
+        } else {
+            String lastKey = currentLastKey();
+            if (lastKey != null && lastKey.compareTo(endPrefix) >= 0) {
+                listObjectsRequest.setMarker(null);
+            }
         }
     }
 

@@ -102,8 +102,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
                 }
             }
             if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-            listObjectsRequest.setMarker(null);
+        } else {
+            String lastKey = currentLastKey();
+            if (lastKey != null && lastKey.compareTo(endPrefix) >= 0) {
+                listObjectsRequest.setMarker(null);
+            }
         }
     }
 
