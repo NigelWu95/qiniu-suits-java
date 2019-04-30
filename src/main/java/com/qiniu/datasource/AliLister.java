@@ -51,9 +51,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
-        if (endPrefix != null && !"".equals(endPrefix)) {
-            checkedListWithEnd();
-        }
+        checkedListWithEnd();
     }
 
     @Override
@@ -91,18 +89,20 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     private void checkedListWithEnd() {
-        int size = ossObjectList.size();
-        // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
-        // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-        for (int i = 0; i < size; i++) {
-            if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                ossObjectList = ossObjectList.subList(0, i);
-                listObjectsRequest.setMarker(null);
-                return;
+        if (endPrefix != null && !"".equals(endPrefix)) {
+            int size = ossObjectList.size();
+            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
+            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
+            for (int i = 0; i < size; i++) {
+                if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
+                    ossObjectList = ossObjectList.subList(0, i);
+                    listObjectsRequest.setMarker(null);
+                    return;
+                }
             }
+            String lastKey = currentLastKey();
+            if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
-        String lastKey = currentLastKey();
-        if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
 
     }
 
@@ -111,9 +111,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
             ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             ossObjectList = objectListing.getObjectSummaries();
-            if (endPrefix != null && !"".equals(endPrefix)) {
-                checkedListWithEnd();
-            }
+            checkedListWithEnd();
         } catch (ClientException e) {
             int code = OssStatus.aliMap.getOrDefault(e.getErrorCode(), -1);
             throw new SuitsException(code, e.getMessage());
