@@ -92,22 +92,18 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     private void checkedListWithEnd() {
         int size = ossObjectList.size();
-        if (size > 0) {
-            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
-            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < ossObjectList.size(); i++) {
-                if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    ossObjectList = ossObjectList.subList(0, i);
-                    break;
-                }
-            }
-            if (ossObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else {
-            String lastKey = currentLastKey();
-            if (lastKey != null && lastKey.compareTo(endPrefix) >= 0) {
+        // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
+        // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
+        for (int i = 0; i < size; i++) {
+            if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
+                ossObjectList = ossObjectList.subList(0, i);
                 listObjectsRequest.setMarker(null);
+                return;
             }
         }
+        String lastKey = currentLastKey();
+        if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
+
     }
 
     private void doList() throws SuitsException {
