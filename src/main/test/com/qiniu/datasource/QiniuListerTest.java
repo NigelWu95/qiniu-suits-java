@@ -27,10 +27,11 @@ public class QiniuListerTest {
     }
 
     @Test
-    public void testHasFutureNext() {
+    public void testNext() {
         int size = qiniuLister.currents().size();
         try {
-            while (qiniuLister.hasFutureNext()) {
+            while (qiniuLister.hasNext()) {
+                qiniuLister.listForward();
                 size += qiniuLister.currents().size();
             }
             System.out.println("over: " + size);
