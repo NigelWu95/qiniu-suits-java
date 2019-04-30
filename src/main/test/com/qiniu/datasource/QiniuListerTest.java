@@ -28,12 +28,12 @@ public class QiniuListerTest {
 
     @Test
     public void testHasFutureNext() {
+        int size = qiniuLister.currents().size();
         try {
             while (qiniuLister.hasFutureNext()) {
-                System.out.println(true);
-                if (qiniuLister.currents().size() > 0) break;
+                size += qiniuLister.currents().size();
             }
-            System.out.println("over");
+            System.out.println("over: " + size);
         } catch (SuitsException e) {
             e.printStackTrace();
         }
