@@ -105,7 +105,8 @@ public class CommonParams {
         setBatchSize(entryParam.getValue("batch-size", "-1"));
         // list 操作时默认保存全部原始文件
         setSaveTotal(entryParam.getValue("save-total", null));
-        savePath = entryParam.getValue("save-path", "result");
+        savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
+                path.substring(0, path.length() - 1) : path.split("\\.")[0]) + "-result" : bucket);
         saveTag = entryParam.getValue("save-tag", "");
         saveFormat = entryParam.getValue("save-format", "tab");
         // 校验设置的 format 参数
