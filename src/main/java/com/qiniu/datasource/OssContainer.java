@@ -207,7 +207,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 export(lister, saver, lineProcessor);
                 record += "\tsuccessfully done";
                 System.out.println(record);
-                recordSaver.writeKeyFile("result", record, true);
+                recordSaver.writeKeyFile(".result", record, true);
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 lister.close();
