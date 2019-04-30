@@ -90,20 +90,15 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     private void checkedListWithEnd() {
         int size = cosObjectList.size();
-        if (size > 0) {
-            for (int i = 0; i < cosObjectList.size(); i++) {
-                if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    cosObjectList = cosObjectList.subList(0, i);
-                    break;
-                }
-            }
-            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else {
-            String lastKey = currentLastKey();
-            if (lastKey != null && lastKey.compareTo(endPrefix) >= 0) {
+        for (int i = 0; i < size; i++) {
+            if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
+                cosObjectList = cosObjectList.subList(0, i);
                 listObjectsRequest.setMarker(null);
+                return;
             }
         }
+        String lastKey = currentLastKey();
+        if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
     }
 
     private void doList() throws SuitsException {
