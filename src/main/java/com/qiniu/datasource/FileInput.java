@@ -147,11 +147,11 @@ public class FileInput implements IDataSource<LocalFileReader, FileSaveMapper> {
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + reader.getName();
-                recordFileSaveMapper.writeKeyFile("result", record + "\treading...", true);
+                recordFileSaveMapper.writeKeyFile(".result", record + "\treading...", true);
                 export(reader, fileSaveMapper, lineProcessor);
                 record += "\tsuccessfully done";
                 System.out.println(record);
-                recordFileSaveMapper.writeKeyFile("result", record, true);
+                recordFileSaveMapper.writeKeyFile(".result", record, true);
                 fileSaveMapper.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 reader.close();
