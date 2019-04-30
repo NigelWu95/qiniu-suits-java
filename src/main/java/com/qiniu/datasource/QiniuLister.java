@@ -60,9 +60,7 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
-        if (endPrefix != null && !"".equals(endPrefix)) {
-            checkedListWithEnd();
-        }
+        checkedListWithEnd();
     }
 
     @Override
@@ -132,27 +130,27 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     private void checkedListWithEnd() {
-        int size = fileInfoList.size();
-        // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
-        // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-        for (int i = 0; i < size; i++) {
-            if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
-                fileInfoList = fileInfoList.subList(0, i);
-                marker = null;
-                return;
+        if (endPrefix != null && !"".equals(endPrefix)) {
+            int size = fileInfoList.size();
+            // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
+            // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
+            for (int i = 0; i < size; i++) {
+                if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
+                    fileInfoList = fileInfoList.subList(0, i);
+                    marker = null;
+                    return;
+                }
             }
+            // 如果列表的所有元素文件名没有大于 endPrefix 的，则需要判断最后一个元素是否和 endPrefix 存在大于等于关系
+            String lastKey = currentLastKey();
+            if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) marker = null;
         }
-        // 如果列表的所有元素文件名没有大于 endPrefix 的，则需要判断最后一个元素是否和 endPrefix 存在大于等于关系
-        String lastKey = currentLastKey();
-        if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) marker = null;
     }
 
     private void doList() throws SuitsException {
         try {
             fileInfoList = getListResult(prefix, delimiter, marker, limit);
-            if (endPrefix != null && !"".equals(endPrefix)) {
-                checkedListWithEnd();
-            }
+            checkedListWithEnd();
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
         } catch (NullPointerException e) {
