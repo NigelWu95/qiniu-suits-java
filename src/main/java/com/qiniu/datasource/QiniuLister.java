@@ -143,8 +143,11 @@ public class QiniuLister implements ILister<FileInfo> {
                 }
             }
             if (fileInfoList.size() < size) marker = null;
-        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-            marker = null;
+        } else {
+            String lastKey = currentLastKey();
+            if (lastKey != null && lastKey.compareTo(endPrefix) >= 0) {
+                marker = null;
+            }
         }
     }
 
