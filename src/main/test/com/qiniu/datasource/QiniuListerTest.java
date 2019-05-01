@@ -29,14 +29,14 @@ public class QiniuListerTest {
     @Test
     public void testNext() {
         int size = qiniuLister.currents().size();
-        try {
-            while (qiniuLister.hasNext()) {
+        while (qiniuLister.hasNext()) {
+            try {
                 qiniuLister.listForward();
                 size += qiniuLister.currents().size();
+            } catch (SuitsException e) {
+                e.printStackTrace();
             }
-            System.out.println("over: " + size);
-        } catch (SuitsException e) {
-            e.printStackTrace();
         }
+        System.out.println("over: " + size);
     }
 }
