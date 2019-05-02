@@ -342,6 +342,12 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
      */
     private int computeToList(ILister<E> startLister, boolean globalEnd, int order, IResultSave<W> recordSaver)
             throws Exception {
+        if (threads <= 1) {
+            if (globalEnd) startLister.setPrefix("");
+            if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
+            execInThread(startLister, recordSaver, order++);
+            return order;
+        }
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
         AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
         Iterator<ILister<E>> listerIterator;
