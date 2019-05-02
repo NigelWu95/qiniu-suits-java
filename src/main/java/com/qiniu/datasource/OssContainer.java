@@ -349,6 +349,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             return order;
         }
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
+        int[] alreadyOrder = new int[]{order};
         AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
         Iterator<ILister<E>> listerIterator;
         Optional<List<ILister<E>>> optional;
@@ -371,7 +372,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             while (listerIterator.hasNext()) {
                 ILister<E> eiLister = listerIterator.next();
                 if(eiLister.canStraight()) {
-                    execInThread(eiLister, recordSaver, order++);
+                    execInThread(eiLister, recordSaver, alreadyOrder[0]++);
                     listerIterator.remove();
                 }
             }
@@ -379,7 +380,18 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             if (listerList.size() > 0 && listerList.size() < threads) {
                 optional = listerList.parallelStream().map(lister -> {
                     try {
-                        return nextLevelLister(lister, true);
+                        List<ILister<E>> nextList = nextLevelLister(lister, true);
+                        Iterator<ILister<E>> it = nextList.iterator();
+                        int size = nextList.size();
+                        while (it.hasNext() && size > 1) {
+                            size--;
+                            ILister<E> eiLister = it.next();
+                            if(eiLister.canStraight()) {
+                                execInThread(eiLister, recordSaver, alreadyOrder[0]++);
+                                it.remove();
+                            }
+                        }
+                        return nextList;
                     } catch (Exception e) {
                         SystemUtils.exit(exitBool, e); return null;
                     }
@@ -393,7 +405,6 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 break;
             }
         }
-
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
         if (!lastListerUpdated.get()) {
             listerList.stream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
@@ -402,10 +413,8 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 if (!lister.hasNext()) lister.updateMarkerBy(lister.currentLast());
             });
         }
-        for (ILister<E> lister : listerList) {
-            execInThread(lister, recordSaver, order++);
-        }
-        return order;
+        for (ILister<E> lister : listerList) execInThread(lister, recordSaver, alreadyOrder[0]++);
+        return alreadyOrder[0];
     }
 
     /**
