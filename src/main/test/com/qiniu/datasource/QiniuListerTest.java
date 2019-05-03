@@ -27,15 +27,16 @@ public class QiniuListerTest {
     }
 
     @Test
-    public void testHasFutureNext() {
-        try {
-            while (qiniuLister.hasFutureNext()) {
-                System.out.println(true);
-                if (qiniuLister.currents().size() > 0) break;
+    public void testNext() {
+        int size = qiniuLister.currents().size();
+        while (qiniuLister.hasNext()) {
+            try {
+                qiniuLister.listForward();
+                size += qiniuLister.currents().size();
+            } catch (SuitsException e) {
+                e.printStackTrace();
             }
-            System.out.println("over");
-        } catch (SuitsException e) {
-            e.printStackTrace();
         }
+        System.out.println("over: " + size);
     }
 }
