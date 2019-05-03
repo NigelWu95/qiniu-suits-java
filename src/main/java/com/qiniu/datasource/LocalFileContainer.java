@@ -1,5 +1,8 @@
 package com.qiniu.datasource;
 
+import com.qiniu.convert.LineToMap;
+import com.qiniu.convert.MapToString;
+import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultSave;
 
@@ -13,6 +16,16 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     public LocalFileContainer(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
                               int unitLen, int threads) {
         super(filePath, parseType, separator, rmKeyPrefix, indexMap, unitLen, threads);
+    }
+
+    @Override
+    protected ITypeConvert<String, Map<String, String>> getNewMapConverter() throws IOException {
+        return new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
+    }
+
+    @Override
+    protected ITypeConvert<Map<String, String>, String> getNewStringConverter() throws IOException {
+        return new MapToString(saveFormat, saveSeparator, rmFields);
     }
 
     @Override
