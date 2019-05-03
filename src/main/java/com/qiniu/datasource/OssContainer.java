@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IResultSave<W>> {
+public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultSave<W>, T> {
 
     protected String bucket;
     private List<String> antiPrefixes;
@@ -36,7 +36,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private List<String> originPrefixList = new ArrayList<>();
-    private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
+    private ILineProcess<T> processor; // 定义的资源处理器
 
     public OssContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
                         boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
@@ -100,7 +100,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         this.rmFields = commonParams.getRmFields();
     }
 
-    public void setProcessor(ILineProcess<Map<String, String>> processor) {
+    public void setProcessor(ILineProcess<T> processor) {
         this.processor = processor;
     }
 
@@ -128,7 +128,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         return true;
     }
 
-    protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter();
+    protected abstract ITypeConvert<E, T> getNewConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
@@ -139,11 +139,11 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<Map<String, String>> processor) throws IOException {
-        ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
+    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<T> processor) throws IOException {
+        ITypeConvert<E, T> mapConverter = getNewConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects;
-        List<Map<String, String>> infoMapList;
+        List<T> infoMapList;
         List<String> writeList;
         int retry;
         boolean goon = true;
@@ -196,7 +196,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     public void execInThread(ILister<E> lister, IResultSave<W> recordSaver, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
         IResultSave<W> saver = getNewResultSaver(newOrder);

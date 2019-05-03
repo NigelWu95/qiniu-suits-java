@@ -11,7 +11,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter> {
+public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter, Map<String, String>> {
 
     public LocalFileContainer(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
                               int unitLen, int threads) {
@@ -19,7 +19,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     }
 
     @Override
-    protected ITypeConvert<String, Map<String, String>> getNewMapConverter() throws IOException {
+    protected ITypeConvert<String, Map<String, String>> getNewConverter() throws IOException {
         return new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
     }
 

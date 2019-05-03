@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWriter> {
+public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String accessKeyId;
     private String accessKeySecret;
@@ -39,7 +39,7 @@ public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWrit
     }
 
     @Override
-    protected ITypeConvert<OSSObjectSummary, Map<String, String>> getNewMapConverter() {
+    protected ITypeConvert<OSSObjectSummary, Map<String, String>> getNewConverter() {
         return new OSSObjToMap(indexMap);
     }
 
