@@ -2,8 +2,6 @@ package com.qiniu.datasource;
 
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultSave;
 
 import java.io.IOException;
 import java.util.List;
