@@ -49,9 +49,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
-        if (endPrefix != null && !"".equals(endPrefix)) {
-            checkedListWithEnd();
-        }
+        checkedListWithEnd();
     }
 
     @Override
@@ -89,17 +87,17 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     private void checkedListWithEnd() {
-        int size = cosObjectList.size();
-        if (size > 0) {
-            for (int i = 0; i < cosObjectList.size(); i++) {
+        if (endPrefix != null && !"".equals(endPrefix)) {
+            int size = cosObjectList.size();
+            for (int i = 0; i < size; i++) {
                 if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     cosObjectList = cosObjectList.subList(0, i);
-                    break;
+                    listObjectsRequest.setMarker(null);
+                    return;
                 }
             }
-            if (cosObjectList.size() < size) listObjectsRequest.setMarker(null);
-        } else if (currentLastKey() != null && currentLastKey().compareTo(endPrefix) >= 0) {
-            listObjectsRequest.setMarker(null);
+            String lastKey = currentLastKey();
+            if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
     }
 
@@ -108,9 +106,7 @@ public class TenLister implements ILister<COSObjectSummary> {
             ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             cosObjectList = objectListing.getObjectSummaries();
-            if (endPrefix != null && !"".equals(endPrefix)) {
-                checkedListWithEnd();
-            }
+            checkedListWithEnd();
         } catch (CosServiceException e) {
             throw new SuitsException(e.getStatusCode(), e.getMessage());
         } catch (NullPointerException e) {
