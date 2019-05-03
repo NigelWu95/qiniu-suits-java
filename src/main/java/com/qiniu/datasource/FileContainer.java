@@ -1,9 +1,6 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.common.SuitsException;
-import com.qiniu.convert.LineToMap;
-import com.qiniu.convert.MapToString;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
@@ -24,10 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class FileContainer<E, W> implements IDataSource<IReader<E>, IResultSave<W>> {
 
     private String filePath;
-    private String parseType;
-    private String separator;
-    private String rmKeyPrefix;
-    private Map<String, String> indexMap;
+    protected String parseType;
+    protected String separator;
+    protected String rmKeyPrefix;
+    protected Map<String, String> indexMap;
     protected int unitLen;
     private int threads;
     protected int retryTimes = 5;
@@ -85,10 +82,14 @@ public abstract class FileContainer<E, W> implements IDataSource<IReader<E>, IRe
         this.processor = processor;
     }
 
+    protected abstract ITypeConvert<String, Map<String, String>> getNewMapConverter() throws IOException;
+
+    protected abstract ITypeConvert<Map<String, String>, String> getNewStringConverter() throws IOException;
+
     public void export(IReader<E> reader, IResultSave<W> fileSaver, ILineProcess<Map<String, String>> processor)
             throws IOException {
-        ITypeConvert<String, Map<String, String>> typeConverter = new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
+        ITypeConvert<String, Map<String, String>> typeConverter = getNewMapConverter();
+        ITypeConvert<Map<String, String>, String> writeTypeConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
         List<Map<String, String>> infoMapList;
         List<String> writeList;
