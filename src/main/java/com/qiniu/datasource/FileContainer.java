@@ -91,7 +91,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ITypeConvert<String, T> typeConverter = getNewConverter();
         ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
-        List<T> infoMapList;
+        List<T> convertedList;
         List<String> writeList;
         String line = "";
         int retry;
@@ -109,18 +109,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             if (line != null) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
-                infoMapList = typeConverter.convertToVList(srcList);
+                convertedList = typeConverter.convertToVList(srcList);
                 if (typeConverter.errorSize() > 0)
                     fileSaver.writeError(String.join("\n", typeConverter.consumeErrors()), false);
                 if (saveTotal) {
-                    writeList = writeTypeConverter.convertToVList(infoMapList);
+                    writeList = writeTypeConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) fileSaver.writeSuccess(String.join("\n", writeList), false);
                     if (writeTypeConverter.errorSize() > 0)
                         fileSaver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
-                    if (processor != null) processor.processLine(infoMapList);
+                    if (processor != null) processor.processLine(convertedList);
                 } catch (QiniuException e) {
                     // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
                     // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
