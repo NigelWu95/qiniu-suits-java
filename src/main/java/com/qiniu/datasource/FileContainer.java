@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class FileContainer<E, W> implements IDataSource<IReader<E>, IResultSave<W>> {
+public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultSave<W>, T> {
 
     private String filePath;
     protected String parseType;
@@ -35,7 +35,7 @@ public abstract class FileContainer<E, W> implements IDataSource<IReader<E>, IRe
     protected List<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
-    private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
+    private ILineProcess<T> processor; // 定义的资源处理器
 
     public FileContainer(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
                          int unitLen, int threads) {
@@ -78,20 +78,20 @@ public abstract class FileContainer<E, W> implements IDataSource<IReader<E>, IRe
         this.rmFields = commonParams.getRmFields();
     }
 
-    public void setProcessor(ILineProcess<Map<String, String>> processor) {
+    public void setProcessor(ILineProcess<T> processor) {
         this.processor = processor;
     }
 
-    protected abstract ITypeConvert<String, Map<String, String>> getNewMapConverter() throws IOException;
+    protected abstract ITypeConvert<String, T> getNewConverter() throws IOException;
 
-    protected abstract ITypeConvert<Map<String, String>, String> getNewStringConverter() throws IOException;
+    protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    public void export(IReader<E> reader, IResultSave<W> fileSaver, ILineProcess<Map<String, String>> processor)
+    public void export(IReader<E> reader, IResultSave<W> fileSaver, ILineProcess<T> processor)
             throws IOException {
-        ITypeConvert<String, Map<String, String>> typeConverter = getNewMapConverter();
-        ITypeConvert<Map<String, String>, String> writeTypeConverter = getNewStringConverter();
+        ITypeConvert<String, T> typeConverter = getNewConverter();
+        ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
-        List<Map<String, String>> infoMapList;
+        List<T> infoMapList;
         List<String> writeList;
         String line = "";
         int retry;
@@ -137,7 +137,7 @@ public abstract class FileContainer<E, W> implements IDataSource<IReader<E>, IRe
     public void execInThread(IReader<E> reader, IResultSave<W> recordSaver, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
         IResultSave<W> saver = getNewResultSaver(newOrder);
