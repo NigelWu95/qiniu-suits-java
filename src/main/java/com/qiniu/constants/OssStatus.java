@@ -1,4 +1,4 @@
-package com.qiniu.Constants;
+package com.qiniu.constants;
 
 import java.util.HashMap;
 import java.util.Map;

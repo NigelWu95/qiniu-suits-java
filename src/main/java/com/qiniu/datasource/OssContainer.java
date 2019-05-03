@@ -383,6 +383,8 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                         List<ILister<E>> nextList = nextLevelLister(lister, true);
                         Iterator<ILister<E>> it = nextList.iterator();
                         int size = nextList.size();
+                        // 为了更优的列举性能，考虑将每个 prefix 下一级迭代过程中产生的部分 lister 先执行，因为产生的下级列举对象本身是按前
+                        // 缀有序的，故保留最后一个不做执行，用于返回到汇总的列表中判断最后一个列举对象是否需要更新
                         while (it.hasNext() && size > 1) {
                             size--;
                             ILister<E> eiLister = it.next();

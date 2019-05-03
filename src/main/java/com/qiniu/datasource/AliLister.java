@@ -6,7 +6,7 @@ import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
-import com.qiniu.Constants.OssStatus;
+import com.qiniu.constants.OssStatus;
 import com.qiniu.common.SuitsException;
 
 import java.util.List;
