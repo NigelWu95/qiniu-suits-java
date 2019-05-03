@@ -143,7 +143,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         ITypeConvert<E, T> mapConverter = getNewConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects;
-        List<T> infoMapList;
+        List<T> convertedList;
         List<String> writeList;
         int retry;
         boolean goon = true;
@@ -159,10 +159,10 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
                 if (processor != null) {
-                    infoMapList = mapConverter.convertToVList(objects);
+                    convertedList = mapConverter.convertToVList(objects);
                     if (mapConverter.errorSize() > 0)
                         saver.writeError(String.join("\n", mapConverter.consumeErrors()), false);
-                    processor.processLine(infoMapList);
+                    processor.processLine(convertedList);
                 }
             } catch (QiniuException e) {
                 if (HttpResponseUtils.checkException(e, 2) < -1) throw e;
