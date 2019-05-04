@@ -104,9 +104,9 @@ public class QSuitsEntry {
 
     private void setEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
-            add("resources" + System.getProperty("file.separator") + "qiniu.config");
-            add("resources" + System.getProperty("file.separator") + ".qiniu.config");
-            add("resources" + System.getProperty("file.separator") + ".qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + "application.config");
+            add("resources" + System.getProperty("file.separator") + ".application.config");
+            add("resources" + System.getProperty("file.separator") + ".application.properties");
         }};
         boolean paramFromConfig = true;
         if (args != null && args.length > 0) {
