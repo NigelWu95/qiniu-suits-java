@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public abstract class Base implements ILineProcess<Map<String, String>>, Cloneable {
+public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     private String processName;
     protected Configuration configuration;
@@ -77,13 +77,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
     }
 
     /**
-     * 当处理失败的时候应该从 line 中记录哪些关键信息，默认只记录 key，需要子类去重写记录更多信息
+     * 当处理结束应该从 line 中记录哪些关键信息
      * @param line 输入的 line
      * @return 返回需要记录的信息字符串
      */
-    protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
-    }
+    protected abstract String resultInfo(T line);
+
+    protected abstract boolean checkKeyValid(T line, String key);
 
     /**
      * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
@@ -91,7 +91,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @return 返回执行响应信息的字符串
      * @throws QiniuException 执行失败抛出的异常
      */
-    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+    protected String batchResult(List<T> lineList) throws IOException {
         return null;
     }
 
@@ -102,10 +102,10 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @return 返回需要进行重试的记录列表
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
+    protected List<T> parseBatchResult(List<T> processList, String result)
             throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
-        List<Map<String, String>> retryList = new ArrayList<>();
+        List<T> retryList = new ArrayList<>();
         JsonArray jsonArray;
         try {
             jsonArray = JsonConvertUtils.fromJson(result, JsonArray.class);
@@ -141,11 +141,11 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    protected void batchProcess(List<Map<String, String>> lineList, int retryTimes) throws IOException {
+    protected void batchProcess(List<T> lineList, int retryTimes) throws IOException {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            if (line.get("key") == null) {
+            if (checkKeyValid(line, "key")) {
                 errorLineList.add(resultInfo(line) + "\tempty key of line.");
                 return false;
             } else {
@@ -154,7 +154,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
         }).collect(Collectors.toList());
         if (errorLineList.size() > 0) fileSaveMapper.writeError(String.join("\n", errorLineList), false);
         int times = lineList.size()/batchSize + 1;
-        List<Map<String, String>> processList;
+        List<T> processList;
         String result;
         int retry;
         for (int i = 0; i < times; i++) {
@@ -196,7 +196,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @return 操作结果的字符串
      * @throws IOException 操作失败时的返回
      */
-    abstract protected String singleResult(Map<String, String> line) throws IOException;
+    abstract protected String singleResult(T line) throws IOException;
 
     /**
      * 处理 singleProcess 执行的结果，默认情况下直接使用 resultInfo 拼接 result 成一行执行持久化写入，部分 process 可能对结果做进一步判断
@@ -205,7 +205,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param result singleResult 的结果字符串
      * @throws IOException 写入结果失败抛出异常
      */
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    protected void parseSingleResult(T line, String result) throws IOException {
         fileSaveMapper.writeSuccess(resultInfo(line) + "\t" + result, false);
     }
 
@@ -215,13 +215,13 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    protected void singleProcess(List<Map<String, String>> lineList, int retryTimes) throws IOException {
+    protected void singleProcess(List<T> lineList, int retryTimes) throws IOException {
         String result;
         int retry;
-        Map<String, String> line;
+        T line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            if (line.get("key") == null) {
+            if (checkKeyValid(line, "key")) {
                 fileSaveMapper.writeError(resultInfo(line) + "\tempty key of line.", false);
                 continue;
             }
@@ -253,7 +253,7 @@ public abstract class Base implements ILineProcess<Map<String, String>>, Cloneab
      * @param lineList 输入的文件信息列表
      * @throws IOException 处理过程中出现的异常
      */
-    public void processLine(List<Map<String, String>> lineList) throws IOException {
+    public void processLine(List<T> lineList) throws IOException {
         if (batchSize > 1) batchProcess(lineList, retryTimes);
         else singleProcess(lineList, retryTimes);
     }

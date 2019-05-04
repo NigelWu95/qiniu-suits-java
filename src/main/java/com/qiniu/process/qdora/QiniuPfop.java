@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class QiniuPfop extends Base {
+public class QiniuPfop extends Base<Map<String, String>> {
 
     private StringMap pfopParams;
     private String fopsIndex;
@@ -60,6 +60,11 @@ public class QiniuPfop extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(fopsIndex);
+    }
+
+    @Override
+    protected boolean checkKeyValid(Map<String, String> line, String key) {
+        return line.get(key) == null;
     }
 
     @Override
