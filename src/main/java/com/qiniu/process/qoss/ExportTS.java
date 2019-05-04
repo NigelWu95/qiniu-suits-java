@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ExportTS extends Base {
+public class ExportTS extends Base<Map<String, String>> {
 
     private String domain;
     private String protocol;
@@ -59,6 +59,11 @@ public class ExportTS extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
+    }
+
+    @Override
+    protected boolean checkKeyValid(Map<String, String> line, String key) {
+        return line.get(key) == null;
     }
 
     @Override

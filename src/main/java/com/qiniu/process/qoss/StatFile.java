@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class StatFile extends Base {
+public class StatFile extends Base<Map<String, String>> {
 
     private String format;
     private String separator;
@@ -74,6 +74,16 @@ public class StatFile extends Base {
             }
         }
         return statFile;
+    }
+
+    @Override
+    protected String resultInfo(Map<String, String> line) {
+        return line.get("key");
+    }
+
+    @Override
+    protected boolean checkKeyValid(Map<String, String> line, String key) {
+        return line.get(key) == null;
     }
 
     @Override

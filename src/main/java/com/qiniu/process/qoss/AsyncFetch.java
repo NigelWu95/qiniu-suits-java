@@ -10,7 +10,7 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.Map;
 
-public class AsyncFetch extends Base {
+public class AsyncFetch extends Base<Map<String, String>> {
 
     private String domain;
     private String protocol;
@@ -94,6 +94,11 @@ public class AsyncFetch extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(urlIndex);
+    }
+
+    @Override
+    protected boolean checkKeyValid(Map<String, String> line, String key) {
+        return line.get(key) == null;
     }
 
     @Override
