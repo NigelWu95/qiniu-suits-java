@@ -1,11 +1,11 @@
 package com.qiniu.process.filtration;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ILineFilter;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.FileSaveMapper;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -13,21 +13,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
+public class MapProcess implements ILineProcess<Map<String, String>>, Cloneable {
 
     private String processName;
-    private ILineFilter<T> filter;
-    private ILineProcess<T> nextProcessor;
+    private ILineFilter<Map<String, String>> filter;
+    private ILineProcess<Map<String, String>> nextProcessor;
     private String savePath;
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
     private int saveIndex;
     private FileSaveMapper fileSaveMapper;
-    private ITypeConvert<T, String> typeConverter;
+    private ITypeConvert<Map<String, String>, String> typeConverter;
 
-    public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath,
-                         String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
+    public MapProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath,
+                      String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
         this.filter = newFilter(filter, checker);
@@ -37,15 +37,16 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.rmFields = rmFields;
         this.saveIndex = saveIndex;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
-        this.typeConverter = newTypeConverter();
+        this.typeConverter = new MapToString(this.saveFormat, this.saveSeparator, rmFields);
     }
 
-    public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath, String saveFormat,
-                         String saveSeparator, List<String> rmFields) throws Exception {
+    public MapProcess(BaseFieldsFilter filter, SeniorChecker checker, String savePath, String saveFormat,
+                      String saveSeparator, List<String> rmFields) throws Exception {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
-    private ILineFilter<T> newFilter(BaseFilter<T> filter, SeniorFilter<T> checker) throws NoSuchMethodException {
+    private ILineFilter<Map<String, String>> newFilter(BaseFieldsFilter filter, SeniorChecker checker)
+            throws NoSuchMethodException {
         List<Method> filterMethods = new ArrayList<Method>() {{
             if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
             if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
@@ -80,34 +81,32 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         };
     }
 
-    protected abstract ITypeConvert<T, String> newTypeConverter();
-
     public String getProcessName() {
         return this.processName;
     }
 
-    public void setNextProcessor(ILineProcess<T> nextProcessor) {
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
     }
 
-    public FilterProcess clone() throws CloneNotSupportedException {
-        FilterProcess mapFilter = (FilterProcess)super.clone();
+    public MapProcess clone() throws CloneNotSupportedException {
+        MapProcess mapProcess = (MapProcess)super.clone();
         try {
-            mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
-            mapFilter.typeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
+            mapProcess.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
+            mapProcess.typeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
             if (nextProcessor != null) {
-                mapFilter.nextProcessor = nextProcessor.clone();
+                mapProcess.nextProcessor = nextProcessor.clone();
             }
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
-        return mapFilter;
+        return mapProcess;
     }
 
-    public void processLine(List<T> list) throws IOException {
+    public void processLine(List<Map<String, String>> list) throws IOException {
         if (list == null || list.size() == 0) return;
-        List<T> filterList = new ArrayList<>();
-        for (T line : list) {
+        List<Map<String, String>> filterList = new ArrayList<>();
+        for (Map<String, String> line : list) {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
             } catch (Exception e) {
