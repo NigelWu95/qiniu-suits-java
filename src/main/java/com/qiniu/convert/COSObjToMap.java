@@ -8,8 +8,10 @@ import java.util.*;
 
 public class COSObjToMap extends Converter<COSObjectSummary, Map<String, String>> {
 
+    private Map<String, String> indexMap;
+
     public COSObjToMap(Map<String, String> indexMap) {
-        super(indexMap);
+        this.indexMap = indexMap;
     }
 
     @Override
