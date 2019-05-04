@@ -1,13 +1,15 @@
 package com.qiniu.convert;
 
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 public class OSSObjToString extends Converter<OSSObjectSummary, String> {
+
+    private IStringFormat<OSSObjectSummary> stringFormatter;
 
     public OSSObjToString(String format, String separator, List<String> rmFields) throws IOException {
         // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序

@@ -1,5 +1,6 @@
 package com.qiniu.convert;
 
+import com.qiniu.interfaces.ILineParser;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.LineUtils;
 
@@ -7,6 +8,8 @@ import java.io.IOException;
 import java.util.*;
 
 public class LineToMap extends Converter<String, Map<String, String>> {
+
+    private ILineParser<String> lineParser;
 
     public LineToMap(String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap) throws IOException {
         if ("json".equals(parseType)) {
