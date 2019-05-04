@@ -11,7 +11,7 @@ import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.filtration.BaseFieldsFilter;
-import com.qiniu.process.filtration.FilterProcess;
+import com.qiniu.process.filtration.MapProcess;
 import com.qiniu.process.filtration.SeniorChecker;
 import com.qiniu.process.qdora.PfopCommand;
 import com.qiniu.process.qdora.QiniuPfop;
@@ -270,7 +270,7 @@ public class QSuitsEntry {
         SeniorChecker seniorChecker = commonParams.getSeniorChecker();
         if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
-            processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
+            processor = new MapProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
