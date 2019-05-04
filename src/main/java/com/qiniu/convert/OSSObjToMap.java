@@ -8,8 +8,10 @@ import java.util.Map;
 
 public class OSSObjToMap extends Converter<OSSObjectSummary, Map<String, String>> {
 
+    private Map<String, String> indexMap;
+
     public OSSObjToMap(Map<String, String> indexMap) {
-        super(indexMap);
+        this.indexMap = indexMap;
     }
 
     @Override

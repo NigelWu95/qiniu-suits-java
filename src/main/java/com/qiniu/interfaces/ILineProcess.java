@@ -20,7 +20,7 @@ public interface ILineProcess<T> {
 
     void processLine(List<T> list) throws IOException;
 
-    default void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {}
+    default void setNextProcessor(ILineProcess<T> nextProcessor) {}
 
     void closeResource();
 }

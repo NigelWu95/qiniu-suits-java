@@ -8,8 +8,10 @@ import java.util.*;
 
 public class QOSObjToMap extends Converter<FileInfo, Map<String, String>> {
 
+    private Map<String, String> indexMap;
+
     public QOSObjToMap(Map<String, String> indexMap) {
-        super(indexMap);
+        this.indexMap = indexMap;
     }
 
     @Override

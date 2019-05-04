@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class ChangeType extends Base {
+public class ChangeType extends Base<Map<String, String>> {
 
     private int type;
     private BatchOperations batchOperations;
@@ -43,6 +43,16 @@ public class ChangeType extends Base {
         changeType.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         if (batchSize > 1) changeType.batchOperations = new BatchOperations();
         return changeType;
+    }
+
+    @Override
+    protected String resultInfo(Map<String, String> line) {
+        return line.get("key");
+    }
+
+    @Override
+    protected boolean checkKeyValid(Map<String, String> line, String key) {
+        return line.get(key) == null;
     }
 
     @Override

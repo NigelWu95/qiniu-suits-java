@@ -15,7 +15,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter> {
+public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter, Map<String, String>> {
 
     private String accessKey;
     private String secretKey;
@@ -36,7 +36,7 @@ public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter> {
     }
 
     @Override
-    protected ITypeConvert<FileInfo, Map<String, String>> getNewMapConverter() {
+    protected ITypeConvert<FileInfo, Map<String, String>> getNewConverter() {
         return new QOSObjToMap(indexMap);
     }
 

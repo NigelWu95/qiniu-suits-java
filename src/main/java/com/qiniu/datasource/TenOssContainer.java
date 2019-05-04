@@ -15,7 +15,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWriter> {
+public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String secretId;
     private String secretKey;
@@ -36,7 +36,7 @@ public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWrit
     }
 
     @Override
-    protected ITypeConvert<COSObjectSummary, Map<String, String>> getNewMapConverter() {
+    protected ITypeConvert<COSObjectSummary, Map<String, String>> getNewConverter() {
         return new COSObjToMap(indexMap);
     }
 
