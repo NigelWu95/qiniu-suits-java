@@ -14,7 +14,7 @@ public class QSuitsEntryTest {
 
     @Test
     public void testEntry() throws Exception {
-        IEntryParam entryParam = new ParamsConfig("resources/.qiniu.config");
+        IEntryParam entryParam = new ParamsConfig("resources/.application.config");
         Map<String, String> paramsMap = entryParam.getParamsMap();
         String savePath = paramsMap.get("save-path");
         List<String> buckets = new ArrayList<String>(){{
