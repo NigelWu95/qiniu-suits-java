@@ -5,19 +5,18 @@ import com.qiniu.interfaces.ILineProcess;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
-public interface IDataSource<T, S> {
+public interface IDataSource<R, S, T> {
 
     String getSourceName();
 
     void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields);
 
-    void setProcessor(ILineProcess<Map<String, String>> processor);
+    void setProcessor(ILineProcess<T> processor);
 
-    void export(T source, S saver, ILineProcess<Map<String, String>> processor) throws IOException;
+    void export(R source, S saver, ILineProcess<T> processor) throws IOException;
 
-    void execInThread(T source, S saver, int order) throws Exception;
+    void execInThread(R source, int order) throws Exception;
 
     void export() throws Exception;
 

@@ -18,7 +18,7 @@ public class QiniuListerTest {
 
     @Before
     public void init() throws IOException {
-        PropertiesFile propertiesFile = new PropertiesFile("resources/.qiniu.properties");
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");

@@ -104,9 +104,9 @@ public class QSuitsEntry {
 
     private void setEntryParam(String[] args) throws IOException {
         List<String> configFiles = new ArrayList<String>(){{
-            add("resources" + System.getProperty("file.separator") + "qiniu.config");
-            add("resources" + System.getProperty("file.separator") + ".qiniu.config");
-            add("resources" + System.getProperty("file.separator") + ".qiniu.properties");
+            add("resources" + System.getProperty("file.separator") + "application.config");
+            add("resources" + System.getProperty("file.separator") + ".application.config");
+            add("resources" + System.getProperty("file.separator") + ".application.properties");
         }};
         boolean paramFromConfig = true;
         if (args != null && args.length > 0) {
@@ -197,21 +197,21 @@ public class QSuitsEntry {
         } else if ("aliyun".equals(source)) {
             return getAliOssContainer();
         } else if ("local".equals(source)) {
-            return getFileInput();
+            return getLocalFileContainer();
         } else {
             return null;
         }
     }
 
-    public FileInput getFileInput() {
+    public LocalFileContainer getLocalFileContainer() {
         String filePath = commonParams.getPath();
         String parseType = commonParams.getParse();
         String separator = commonParams.getSeparator();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        FileInput fileInput = new FileInput(filePath, parseType, separator, rmKeyPrefix, indexMap, unitLen, threads);
-        fileInput.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        fileInput.setRetryTimes(retryTimes);
-        return fileInput;
+        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parseType, separator, rmKeyPrefix, indexMap, unitLen, threads);
+        localFileContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        localFileContainer.setRetryTimes(retryTimes);
+        return localFileContainer;
     }
 
     public QiniuOssContainer getQiniuOssContainer() {

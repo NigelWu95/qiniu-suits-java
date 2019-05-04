@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IResultSave<W>> {
+public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultSave<W>, T> {
 
     protected String bucket;
     private List<String> antiPrefixes;
@@ -36,7 +36,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private List<String> originPrefixList = new ArrayList<>();
-    private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
+    private ILineProcess<T> processor; // 定义的资源处理器
 
     public OssContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
                         boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
@@ -100,7 +100,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         this.rmFields = commonParams.getRmFields();
     }
 
-    public void setProcessor(ILineProcess<Map<String, String>> processor) {
+    public void setProcessor(ILineProcess<T> processor) {
         this.processor = processor;
     }
 
@@ -128,7 +128,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
         return true;
     }
 
-    protected abstract ITypeConvert<E, Map<String, String>> getNewMapConverter();
+    protected abstract ITypeConvert<E, T> getNewConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
@@ -139,11 +139,11 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<Map<String, String>> processor) throws IOException {
-        ITypeConvert<E, Map<String, String>> mapConverter = getNewMapConverter();
+    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<T> processor) throws IOException {
+        ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects;
-        List<Map<String, String>> infoMapList;
+        List<T> convertedList;
         List<String> writeList;
         int retry;
         boolean goon = true;
@@ -159,10 +159,10 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
                 if (processor != null) {
-                    infoMapList = mapConverter.convertToVList(objects);
-                    if (mapConverter.errorSize() > 0)
-                        saver.writeError(String.join("\n", mapConverter.consumeErrors()), false);
-                    processor.processLine(infoMapList);
+                    convertedList = converter.convertToVList(objects);
+                    if (converter.errorSize() > 0)
+                        saver.writeError(String.join("\n", converter.consumeErrors()), false);
+                    processor.processLine(convertedList);
                 }
             } catch (QiniuException e) {
                 if (HttpResponseUtils.checkException(e, 2) < -1) throw e;
@@ -189,32 +189,28 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     /**
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
-     * @param recordSaver 记录整体进度信息的文件对象
      * @param order 当前列举对象集的起始序号
      * @throws Exception 操作失败抛出的异常
      */
-    public void execInThread(ILister<E> lister, IResultSave<W> recordSaver, int order) throws Exception {
+    public void execInThread(ILister<E> lister, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
         IResultSave<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + lister.getPrefix();
-                recordSaver.writeKeyFile(".result", record + "\tlisting...", true);
                 export(lister, saver, lineProcessor);
                 record += "\tsuccessfully done";
                 System.out.println(record);
-                recordSaver.writeKeyFile(".result", record, true);
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 lister.close();
             } catch (Exception e) {
                 System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                         lister.getMarker() + "\tend:" + lister.getEndPrefix());
-                recordSaver.closeWriters();
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 SystemUtils.exit(exitBool, e);
@@ -336,16 +332,15 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
      * @param startLister 已初始化的起始的 lister
      * @param globalEnd startLister 是否需要列举到全局的结尾处（从该 startLister 开始列举到整个空间结束）
      * @param order lister 执行的起始序号
-     * @param recordSaver 记录全局执行结果的文件持久化对象
      * @return 此次计算并执行到的 lister 序号，用于后续可能继续向线程添加 lister 执行设置起始序号
      * @throws Exception 下一级 lister 列表计算和多线程执行过程中可能产生的异常
      */
-    private int computeToList(ILister<E> startLister, boolean globalEnd, int order, IResultSave<W> recordSaver)
+    private int computeToList(ILister<E> startLister, boolean globalEnd, int order)
             throws Exception {
         if (threads <= 1) {
             if (globalEnd) startLister.setPrefix("");
             if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
-            execInThread(startLister, recordSaver, order++);
+            execInThread(startLister, order++);
             return order;
         }
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
@@ -372,7 +367,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             while (listerIterator.hasNext()) {
                 ILister<E> eiLister = listerIterator.next();
                 if(eiLister.canStraight()) {
-                    execInThread(eiLister, recordSaver, alreadyOrder[0]++);
+                    execInThread(eiLister, alreadyOrder[0]++);
                     listerIterator.remove();
                 }
             }
@@ -389,7 +384,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                             size--;
                             ILister<E> eiLister = it.next();
                             if(eiLister.canStraight()) {
-                                execInThread(eiLister, recordSaver, alreadyOrder[0]++);
+                                execInThread(eiLister, alreadyOrder[0]++);
                                 it.remove();
                             }
                         }
@@ -415,7 +410,7 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
                 if (!lister.hasNext()) lister.updateMarkerBy(lister.currentLast());
             });
         }
-        for (ILister<E> lister : listerList) execInThread(lister, recordSaver, alreadyOrder[0]++);
+        for (ILister<E> lister : listerList) execInThread(lister, alreadyOrder[0]++);
         return alreadyOrder[0];
     }
 
@@ -426,7 +421,6 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        IResultSave<W> recordSaver = getNewResultSaver(null);
         int order = 1;
         exitBool = new AtomicBoolean(false);
         try {
@@ -434,27 +428,26 @@ public abstract class OssContainer<E, W> implements IDataSource<ILister<E>, IRes
             Collections.sort(prefixes);
             if (prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
-                computeToList(startLister, true, order, recordSaver);
+                computeToList(startLister, true, order);
             } else {
                 if (prefixLeft) {
                     ILister<E> startLister = generateLister("");
                     startLister.setEndPrefix(prefixes.get(0));
-                    execInThread(startLister, recordSaver, order++);
+                    execInThread(startLister, order++);
                 }
                 for (int i = 0; i < prefixes.size() - 1; i++) {
                     ILister<E> startLister = generateLister(prefixes.get(i));
-                    order = computeToList(startLister, false, order, recordSaver);
+                    order = computeToList(startLister, false, order);
                 }
                 ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
                 if (prefixRight) {
-                    computeToList(startLister, true, order, recordSaver);
+                    computeToList(startLister, true, order);
                 } else {
-                    computeToList(startLister, false, order, recordSaver);
+                    computeToList(startLister, false, order);
                 }
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
-            recordSaver.closeWriters();
             System.out.println(info + " finished");
         } catch (Throwable throwable) {
             SystemUtils.exit(exitBool, throwable);

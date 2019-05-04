@@ -23,7 +23,7 @@ public class ObjectToMapTest {
 
     @Before
     public void init() throws Exception {
-        IEntryParam entryParam = new ParamsConfig(new PropertiesFile("resources/.qiniu.properties").getProperties());
+        IEntryParam entryParam = new ParamsConfig(new PropertiesFile("resources/.application.properties").getProperties());
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
         mapConverter = new QOSObjToMap(qSuitsEntry.getCommonParams().getIndexMap());
         String accessKey = entryParam.getValue("ak");

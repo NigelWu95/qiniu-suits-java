@@ -1,12 +1,15 @@
 package com.qiniu.convert;
 
 import com.google.gson.JsonObject;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.*;
 
 public class JsonToString extends Converter<JsonObject, String> {
+
+    private IStringFormat<JsonObject> stringFormatter;
 
     public JsonToString(String format, String separator, List<String> rmFields) throws IOException {
         // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序

@@ -2,9 +2,9 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-七牛云接口使用套件（可以工具形式使用：在 release 页面[下载 jar 包](https://search.maven.org/search?q=a:qsuits)，x.xx-thin 为降配版，
-适用于 4C8G 及以下的机器），**并发列举**云存储空间的大量资源列表，同时支持对资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/改/查/迁移
-/转码等。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
+七牛云接口使用套件（可以工具形式使用：在 release 页面[下载最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases)，
+x.xx-thin 为降配版，适用于 4C8G 及以下的机器），**并发列举**云存储空间的大量资源列表，同时支持对资源列表并发进行批量处理，主要包括对七牛云存储资
+源进行增/删/改/查/迁移/转码等。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
 - [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效[并发列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -60,7 +60,7 @@ bucket=
 ak=
 sk=
 ```  
-**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/qiniu.config` 或 `resources/.qiniu.config`，
+**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/application.config` 或 `resources/.application.config`，
 两个文件存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
 数前加上 -**，如  
@@ -72,7 +72,7 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表  
 `source=local` 表示从本地文件按行读取资源列表  
-配置文件示例可参考 [配置模板](resources/qiniu.config)  
+配置文件示例可参考 [配置模板](resources/application.config)  
 **在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
@@ -198,6 +198,6 @@ java.net.SocketTimeoutException: timeout
 （1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
 表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
 （2）java.lang.OutOfMemoryError: unable to create new native thread   
-与（1）类似，内存溢出导致无法继续创建更多线程。  
+与（1）类似，内存溢出导致无法继续创建更多线程或对象。  
 （3）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
 请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  
