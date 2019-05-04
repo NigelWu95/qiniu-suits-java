@@ -16,7 +16,7 @@ public interface IDataSource<R, S, T> {
 
     void export(R source, S saver, ILineProcess<T> processor) throws IOException;
 
-    void execInThread(R source, S saver, int order) throws Exception;
+    void execInThread(R source, int order) throws Exception;
 
     void export() throws Exception;
 
