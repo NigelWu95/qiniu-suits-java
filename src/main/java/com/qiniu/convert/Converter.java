@@ -1,36 +1,15 @@
 package com.qiniu.convert;
 
-import com.qiniu.interfaces.ILineParser;
-import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.util.JsonConvertUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public abstract class Converter<E, T> implements ITypeConvert<E, T> {
 
-    protected Map<String, String> indexMap;
-    protected ILineParser<E> lineParser;
-    protected IStringFormat<E> stringFormatter;
     private List<String> errorList = new ArrayList<>();
-
-    Converter() {
-    }
-
-    Converter(Map<String, String> indexMap) {
-        this.indexMap = indexMap;
-    }
-
-    Converter(ILineParser<E> lineParser) {
-        this.lineParser = lineParser;
-    }
-
-    Converter(IStringFormat<E> stringFormatter) {
-        this.stringFormatter = stringFormatter;
-    }
 
     public abstract T convertToV(E line) throws IOException;
 
