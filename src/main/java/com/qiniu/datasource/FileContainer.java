@@ -134,7 +134,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
 
-    public void execInThread(IReader<E> reader, IResultSave<W> recordSaver, int order) throws Exception {
+    public void execInThread(IReader<E> reader, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
         ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
@@ -144,11 +144,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + reader.getName();
-                recordSaver.writeKeyFile(".result", record + "\treading...", true);
                 export(reader, saver, lineProcessor);
                 record += "\tsuccessfully done";
                 System.out.println(record);
-                recordSaver.writeKeyFile(".result", record, true);
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 reader.close();
@@ -158,7 +156,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 } catch (IOException io) {
                     io.printStackTrace();
                 }
-                recordSaver.closeWriters();
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 SystemUtils.exit(exitBool, e);
@@ -193,17 +190,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        IResultSave<W> recordSaver = getNewResultSaver(null);
         exitBool = new AtomicBoolean(false);
         try {
             executorPool = Executors.newFixedThreadPool(runningThreads);
             int order = 1;
             for (IReader<E> fileReader : fileReaders) {
-                execInThread(fileReader, recordSaver, order++);
+                execInThread(fileReader, order++);
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
-            recordSaver.closeWriters();
             System.out.println(info + " finished");
         } catch (Throwable throwable) {
             SystemUtils.exit(exitBool, throwable);
