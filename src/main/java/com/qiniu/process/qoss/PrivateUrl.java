@@ -6,7 +6,7 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.Map;
 
-public class PrivateUrl extends Base {
+public class PrivateUrl extends Base<Map<String, String>> {
 
     private Auth auth;
     private String domain;
@@ -56,6 +56,11 @@ public class PrivateUrl extends Base {
     @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
+    }
+
+    @Override
+    protected boolean checkKeyValid(Map<String, String> line, String key) {
+        return line.get(key) == null;
     }
 
     @Override
