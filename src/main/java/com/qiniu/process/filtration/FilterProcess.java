@@ -8,7 +8,6 @@ import com.qiniu.persistence.FileSaveMapper;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,11 +24,11 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
 
-    public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath,
+    public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
                          String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
-        this.filter = newFilter(filter, checker);
+        this.filter = newFilter(baseFilter, seniorFilter);
         this.savePath = savePath;
         this.saveFormat = saveFormat;
         this.saveSeparator = saveSeparator;
@@ -44,24 +43,23 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
-    @SuppressWarnings("unchecked")
-    private ILineFilter<T> newFilter(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter) throws NoSuchMethodException {
-        Class<T> clazz = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    public ILineFilter<T> newFilter(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter) throws NoSuchMethodException {
         List<Method> filterMethods = new ArrayList<Method>() {{
             if (baseFilter != null) {
-                if (baseFilter.checkKey()) add(baseFilter.getClass().getMethod("filterKey", clazz));
-                if (baseFilter.checkMimeType()) add(baseFilter.getClass().getMethod("filterMimeType", clazz));
-                if (baseFilter.checkPutTime()) add(baseFilter.getClass().getMethod("filterPutTime", clazz));
-                if (baseFilter.checkType()) add(baseFilter.getClass().getMethod("filterType", clazz));
-                if (baseFilter.checkStatus()) add(baseFilter.getClass().getMethod("filterStatus", clazz));
+                Class<?> clazz = baseFilter.getClass();
+                if (baseFilter.checkKeyCon()) add(clazz.getMethod("filterKey", Object.class));
+                if (baseFilter.checkMimeTypeCon()) add(clazz.getMethod("filterMimeType", Object.class));
+                if (baseFilter.checkPutTimeCon()) add(clazz.getMethod("filterPutTime", Object.class));
+                if (baseFilter.checkTypeCon()) add(clazz.getMethod("filterType", Object.class));
+                if (baseFilter.checkStatusCon()) add(clazz.getMethod("filterStatus", Object.class));
             }
         }};
         List<Method> checkMethods = new ArrayList<Method>() {{
             if (seniorFilter != null) {
-                if (seniorFilter.checkExtMime()) add(seniorFilter.getClass().getMethod("checkMimeType", clazz));
+                Class<?> clazz = seniorFilter.getClass();
+                if (seniorFilter.checkExtMime()) add(clazz.getMethod("checkMimeType", Object.class));
             }
         }};
-
         return line -> {
             boolean result;
             for (Method method : filterMethods) {
