@@ -109,6 +109,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
             if (url == null || "".equals(url)) {
                 key = line.get("key").replaceAll("\\?", "%3F");
                 url = protocol + "://" + domain + "/" + key;
+                line.put(urlIndex, url);
             } else {
                 key = FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
