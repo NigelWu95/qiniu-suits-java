@@ -8,12 +8,12 @@
 通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表  
 `source=local` 表示从本地文件按行读取资源列表  
-配置文件示例可参考 [配置模板](../resources/application.config)  
+如果使用 `source` 参数则无需再进行数据源的自动判断且需要显式指定 `bucket` 参数  
 **在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=../<file-path>` 表示从本地文件中读取资源列表  
-当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**  
+当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**，配置文件示例可参考 [配置模板](../resources/application.config)  
 
 ### 1 公共参数
 ```
@@ -63,12 +63,14 @@ parse=tab/json
 separator=\t
 # 文件内容读取资源列表时一般可能需要设置 indexes 参数（默认只包含 key 字段的解析）
 indexes=
+add-keyPrefix=
 rm-keyPrefix=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
 |parse| 字符串 json/tab/csv| 数据行格式，json 表示使用 json 解析，tab 表示使用分隔符（默认 "\t"）分割解析，csv 表示使用 "," 分割解析|  
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
+|add-keyPrefix| 字符串|将解析出的 key 字段加上指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 少了前缀的情况，补上前缀才能获取到资源|  
 |rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 "/" 前缀|  
 
 ### 3 list 云存储列举  
