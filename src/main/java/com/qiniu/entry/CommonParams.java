@@ -421,10 +421,15 @@ public class CommonParams {
             if (indexMap.size() == 0) {
                 if (ProcessUtils.supportListSource(process)) {
                     indexMap.put("key", "key");
-                    if (baseFilter.checkMimeType() || seniorFilter.checkExtMime()) indexMap.put("mimeType", "mimeType");
-                    if (baseFilter.checkPutTime()) indexMap.put("putTime", "putTime");
-                    if (baseFilter.checkType()) indexMap.put("type", "type");
-                    if (baseFilter.checkStatus()) indexMap.put("status", "status");
+                    if (baseFilter != null) {
+                        if (baseFilter.checkMimeTypeCon()) indexMap.put("mimeType", "mimeType");
+                        if (baseFilter.checkPutTimeCon()) indexMap.put("putTime", "putTime");
+                        if (baseFilter.checkTypeCon()) indexMap.put("type", "type");
+                        if (baseFilter.checkStatusCon()) indexMap.put("status", "status");
+                    }
+                    if (seniorFilter != null) {
+                        if (seniorFilter.checkExtMime()) indexMap.put("mimeType", "mimeType");
+                    }
                 } else {
                     for (String key : keys) {
                         indexMap.put(key, key);

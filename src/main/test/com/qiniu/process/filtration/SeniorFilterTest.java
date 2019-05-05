@@ -5,32 +5,38 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
-public class SeniorCheckerTest {
+public class SeniorFilterTest {
 
-    private SeniorChecker seniorChecker;
+    private SeniorFilter<Map<String, String>> seniorFilter;
 
     @Test
     @Before
     public void init() throws IOException {
-        seniorChecker = new SeniorChecker("mime", "resources/.check.json", false);
+        seniorFilter = new SeniorFilter<Map<String, String>>("mime", "resources/.check.json", false) {
+            @Override
+            protected String valueFrom(Map<String, String> item, String key) {
+                return item.get(key);
+            }
+        };
     }
 
     @Test
     public void testCheckMimeType() {
-        System.out.println(seniorChecker.checkMimeType(
+        System.out.println(seniorFilter.checkMimeType(
                 new HashMap<String, String>(){{
                     put("key", "tset.mp4");
                     put("mimeType", "text/html");
                 }}
         ));
-        System.out.println(seniorChecker.checkMimeType(
+        System.out.println(seniorFilter.checkMimeType(
                 new HashMap<String, String>(){{
                     put("key", "test.mp4");
                     put("mimeType", "video/mp4");
                 }}
         ));
-        System.out.println(seniorChecker.checkMimeType(
+        System.out.println(seniorFilter.checkMimeType(
                 new HashMap<String, String>(){{
                     put("key", "test.mp5");
                     put("mimeType", "video/mp5");
