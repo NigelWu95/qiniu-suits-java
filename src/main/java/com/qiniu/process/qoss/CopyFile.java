@@ -58,7 +58,7 @@ public class CopyFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(newKeyIndex);
+        return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
@@ -70,18 +70,26 @@ public class CopyFile extends Base<Map<String, String>> {
     synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-            line.put(newKeyIndex, toKey);
-            batchOperations.addCopyOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
+            try {
+                String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                line.put("to-key", addPrefix + toKey);
+                batchOperations.addCopyOp(bucket, line.get("key"), toBucket, line.get("to-key"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-        line.put(newKeyIndex, toKey);
-        return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
-                addPrefix + toKey, false));
+        try {
+            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+            line.put("to-key", addPrefix + toKey);
+            return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
+                    line.get("to-key"), false));
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 }

@@ -78,7 +78,7 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(newKeyIndex);
+        return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
@@ -90,12 +90,16 @@ public class MoveFile extends Base<Map<String, String>> {
     synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-            line.put(newKeyIndex, toKey);
-            if (toBucket == null || "".equals(toBucket)) {
-                batchOperations.addRenameOp(bucket, line.get("key"), addPrefix + toKey);
-            } else {
-                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
+            try {
+                String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+                line.put("to-key", toKey);
+                if (toBucket == null || "".equals(toBucket)) {
+                    batchOperations.addRenameOp(bucket, line.get("key"), addPrefix + toKey);
+                } else {
+                    batchOperations.addMoveOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
@@ -103,12 +107,16 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-        line.put(newKeyIndex, toKey);
-        if (toBucket == null || "".equals(toBucket)) {
-            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), addPrefix + toKey));
-        } else {
-            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, addPrefix + toKey));
+        try {
+            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+            line.put("to-key", toKey);
+            if (toBucket == null || "".equals(toBucket)) {
+                return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
+            } else {
+                return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
+            }
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
         }
     }
 }
