@@ -23,7 +23,7 @@ public class LineToMap extends Converter<String, Map<String, String>> {
         }
     }
 
-    private Map<String, String> process(String rmKeyPrefix, Map<String, String> itemMap) {
+    private Map<String, String> process(String rmKeyPrefix, Map<String, String> itemMap) throws IOException {
         String key = itemMap.get("key") != null ? FileNameUtils.rmPrefix(rmKeyPrefix, itemMap.get("key")) : null;
         itemMap.put("key", key);
         return itemMap;
