@@ -1,7 +1,6 @@
 package com.qiniu.process.filtration;
 
 import com.qiniu.common.QiniuException;
-import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ILineFilter;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
@@ -9,22 +8,22 @@ import com.qiniu.persistence.FileSaveMapper;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
-    private String processName;
-    private ILineFilter<T> filter;
-    private ILineProcess<T> nextProcessor;
-    private String savePath;
-    private String saveFormat;
-    private String saveSeparator;
-    private List<String> rmFields;
-    private int saveIndex;
-    private FileSaveMapper fileSaveMapper;
-    private ITypeConvert<T, String> typeConverter;
+    protected String processName;
+    protected ILineFilter<T> filter;
+    protected ILineProcess<T> nextProcessor;
+    protected String savePath;
+    protected String saveFormat;
+    protected String saveSeparator;
+    protected List<String> rmFields;
+    protected int saveIndex;
+    protected FileSaveMapper fileSaveMapper;
+    protected ITypeConvert<T, String> typeConverter;
 
     public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath,
                          String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
@@ -45,42 +44,39 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
-    private ILineFilter<T> newFilter(BaseFilter<T> filter, SeniorFilter<T> checker) throws NoSuchMethodException {
+    @SuppressWarnings("unchecked")
+    private ILineFilter<T> newFilter(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter) throws NoSuchMethodException {
+        Class<T> clazz = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
         List<Method> filterMethods = new ArrayList<Method>() {{
-            if (filter.checkKeyPrefix()) add(filter.getClass().getMethod("filterKeyPrefix", Map.class));
-            if (filter.checkKeySuffix()) add(filter.getClass().getMethod("filterKeySuffix", Map.class));
-            if (filter.checkKeyInner()) add(filter.getClass().getMethod("filterKeyInner", Map.class));
-            if (filter.checkKeyRegex()) add(filter.getClass().getMethod("filterKeyRegex", Map.class));
-            if (filter.checkPutTime()) add(filter.getClass().getMethod("filterPutTime", Map.class));
-            if (filter.checkMimeType()) add(filter.getClass().getMethod("filterMimeType", Map.class));
-            if (filter.checkType()) add(filter.getClass().getMethod("filterType", Map.class));
-            if (filter.checkStatus()) add(filter.getClass().getMethod("filterStatus", Map.class));
-            if (filter.checkAntiKeyPrefix()) add(filter.getClass().getMethod("filterAntiKeyPrefix", Map.class));
-            if (filter.checkAntiKeySuffix()) add(filter.getClass().getMethod("filterAntiKeySuffix", Map.class));
-            if (filter.checkAntiKeyInner()) add(filter.getClass().getMethod("filterAntiKeyInner", Map.class));
-            if (filter.checkAntiKeyRegex()) add(filter.getClass().getMethod("filterAntiKeyRegex", Map.class));
-            if (filter.checkAntiMimeType()) add(filter.getClass().getMethod("filterAntiMimeType", Map.class));
+            if (baseFilter != null) {
+                if (baseFilter.checkKey()) add(baseFilter.getClass().getMethod("filterKey", clazz));
+                if (baseFilter.checkMimeType()) add(baseFilter.getClass().getMethod("filterMimeType", clazz));
+                if (baseFilter.checkPutTime()) add(baseFilter.getClass().getMethod("filterPutTime", clazz));
+                if (baseFilter.checkType()) add(baseFilter.getClass().getMethod("filterType", clazz));
+                if (baseFilter.checkStatus()) add(baseFilter.getClass().getMethod("filterStatus", clazz));
+            }
         }};
         List<Method> checkMethods = new ArrayList<Method>() {{
-            if ("ext-mime".equals(checker.getCheckName()))
-                add(checker.getClass().getMethod("checkMimeType", Map.class));
+            if (seniorFilter != null) {
+                if (seniorFilter.checkExtMime()) add(seniorFilter.getClass().getMethod("checkMimeType", clazz));
+            }
         }};
 
         return line -> {
             boolean result;
             for (Method method : filterMethods) {
-                result = (boolean) method.invoke(filter, line);
+                result = (boolean) method.invoke(baseFilter, line);
                 if (!result) return false;
             }
             for (Method method : checkMethods) {
-                result = (boolean) method.invoke(checker, line);
+                result = (boolean) method.invoke(seniorFilter, line);
                 if (!result) return false;
             }
             return true;
         };
     }
 
-    protected abstract ITypeConvert<T, String> newTypeConverter();
+    protected abstract ITypeConvert<T, String> newTypeConverter() throws IOException;
 
     public String getProcessName() {
         return this.processName;
@@ -90,11 +86,12 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.nextProcessor = nextProcessor;
     }
 
-    public FilterProcess clone() throws CloneNotSupportedException {
-        FilterProcess mapFilter = (FilterProcess)super.clone();
+    @SuppressWarnings("unchecked")
+    public FilterProcess<T> clone() throws CloneNotSupportedException {
+        FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
         try {
             mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
-            mapFilter.typeConverter = new MapToString(saveFormat, saveSeparator, rmFields);
+            mapFilter.typeConverter = newTypeConverter();
             if (nextProcessor != null) {
                 mapFilter.nextProcessor = nextProcessor.clone();
             }
