@@ -20,6 +20,7 @@ public abstract class SeniorFilter<T> {
     }};
 
     public SeniorFilter(String checkName, String configPath, boolean rewrite) throws IOException {
+        if (!checkList.contains(checkName)) throw new IOException("unsupported check operation: " + checkName);
         this.checkName = checkName;
         this.extMimeList = new HashSet<>();
         this.extMimeTypeList = new HashSet<>();
@@ -30,7 +31,7 @@ public abstract class SeniorFilter<T> {
                     JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(), new TypeToken<List<String>>(){})
             );
         }
-        if (checkMime() && !rewrite) {
+        if (checkExtMime() && !rewrite) {
             JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
             JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
             List<String> defaultList = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
@@ -45,28 +46,21 @@ public abstract class SeniorFilter<T> {
         }
     }
 
-    public String getCheckName() {
-        return checkName;
-    }
-
-    public boolean checkMime() {
+    public boolean checkExtMime() {
         return "ext-mime".equals(checkName);
-    }
-
-    public boolean isValid() {
-        return checkList.contains(checkName);
     }
 
     public List<T> checkMimeType(List<T> lineList) {
         String key;
         List<T> filteredList = new ArrayList<>();
         for (T line : lineList) {
+            if (line == null) continue;
             key = valueFrom(line, "key");
             if (key != null && key.contains(".")) {
                 String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mimeType");
                 if (extMimeList.parallelStream().anyMatch(extMime ->
                         finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
-                    break;
+                    continue;
                 }
                 if (extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
                         finalKeyMimePair.equalsIgnoreCase(extMime))) {
@@ -78,7 +72,7 @@ public abstract class SeniorFilter<T> {
     }
 
     public boolean checkMimeType(T line) {
-        if (valueFrom(line, "key") != null && valueFrom(line, "key").contains(".")) {
+        if (line != null && valueFrom(line, "key") != null && valueFrom(line, "key").contains(".")) {
             String finalKeyMimePair = valueFrom(line, "key").substring(valueFrom(line, "key")
                     .lastIndexOf(".") + 1) + ":" + valueFrom(line, "mimeType");
             if (extMimeList.parallelStream().anyMatch(extMime ->

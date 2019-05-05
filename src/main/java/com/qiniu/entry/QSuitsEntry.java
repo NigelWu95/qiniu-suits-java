@@ -10,9 +10,7 @@ import com.qiniu.config.PropertiesFile;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.process.filtration.BaseFieldsFilter;
-import com.qiniu.process.filtration.MapProcess;
-import com.qiniu.process.filtration.SeniorChecker;
+import com.qiniu.process.filtration.*;
 import com.qiniu.process.qdora.PfopCommand;
 import com.qiniu.process.qdora.QiniuPfop;
 import com.qiniu.process.qdora.QueryAvinfo;
@@ -266,11 +264,11 @@ public class QSuitsEntry {
             nextProcessor.setRetryTimes(retryTimes);
         }
         ILineProcess<Map<String, String>> processor;
-        BaseFieldsFilter baseFieldsFilter = commonParams.getBaseFieldsFilter();
-        SeniorChecker seniorChecker = commonParams.getSeniorChecker();
-        if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
+        BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
+        SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
+        if (baseFilter != null || seniorFilter != null) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
-            processor = new MapProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
+            processor = new MapProcess(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields);
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {

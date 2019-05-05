@@ -65,8 +65,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
     }
 
-    public Base clone() throws CloneNotSupportedException {
-        Base base = (Base)super.clone();
+    @SuppressWarnings("unchecked")
+    public Base<T> clone() throws CloneNotSupportedException {
+        Base<T> base = (Base<T>)super.clone();
         try {
             base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
         } catch (IOException e) {
