@@ -74,9 +74,13 @@ public class ExportTS extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
+        if (url == null || "".equals(url)) {
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            line.put(urlIndex, url);
+        }
         try {
-            if (url == null || "".equals(url)) url =  protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
-            return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream().map(VideoTS::toString).collect(Collectors.toList()));
+            return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream()
+                    .map(VideoTS::toString).collect(Collectors.toList()));
         } catch (QiniuException e) {
             throw e;
         } catch (IOException e) {

@@ -66,7 +66,10 @@ public class QueryAvinfo extends Base<Map<String, String>> {
 
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
-        if (url == null || "".equals(url)) url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        if (url == null || "".equals(url)) {
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            line.put(urlIndex, url);
+        }
         String avinfo = mediaManager.getAvinfoBody(url);
         if (avinfo != null && !"".equals(avinfo)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
