@@ -38,7 +38,7 @@ public abstract class BaseFilter<T> {
         this.putTimeMax = putTimeMax;
         this.type = type == null ? "" : type;
         this.status = status == null ? "" : status;
-        if (!checkKey() && !checkMimeType() && !checkPutTime() && !checkType() && !checkStatus())
+        if (!checkKeyCon() && !checkMimeTypeCon() && !checkPutTimeCon() && !checkTypeCon() && !checkStatusCon())
             throw new IOException("all conditions are invalid.");
     }
 
@@ -46,24 +46,24 @@ public abstract class BaseFilter<T> {
         return list != null && list.size() != 0;
     }
 
-    public boolean checkKey() {
+    public boolean checkKeyCon() {
         return checkList(keyPrefix) || checkList(keySuffix) || checkList(keyInner) || checkList(keyRegex) ||
                 checkList(antiKeyPrefix) || checkList(antiKeySuffix) || checkList(antiKeyInner) || checkList(antiKeyRegex);
     }
 
-    public boolean checkMimeType() {
+    public boolean checkMimeTypeCon() {
         return checkList(mimeType) || checkList(antiMimeType);
     }
 
-    public boolean checkPutTime() {
+    public boolean checkPutTimeCon() {
         return putTimeMax > putTimeMin && putTimeMin >= 0;
     }
 
-    public boolean checkType() {
+    public boolean checkTypeCon() {
         return "0".equals(type) || "1".equals(type);
     }
 
-    public boolean checkStatus() {
+    public boolean checkStatusCon() {
         return "0".equals(status) || "1".equals(status);
     }
 
@@ -71,14 +71,37 @@ public abstract class BaseFilter<T> {
         if (checkItem(item, "key")) {
             return false;
         } else {
-            return (keyPrefix == null || keyPrefix.stream().anyMatch(prefix -> valueFrom(item, "key").startsWith(prefix)))
-                    && (keySuffix == null || keySuffix.stream().anyMatch(suffix -> valueFrom(item, "key").endsWith(suffix)))
-                    && (keyInner == null || keyInner.stream().anyMatch(inner -> valueFrom(item, "key").contains(inner)))
-                    && (keyRegex == null || keyRegex.stream().anyMatch(regex -> valueFrom(item, "key").matches(regex)))
-                    && (antiKeyPrefix == null || antiKeyPrefix.stream().noneMatch(prefix -> valueFrom(item, "key").startsWith(prefix)))
-                    && (antiKeySuffix == null || antiKeySuffix.stream().noneMatch(suffix -> valueFrom(item, "key").endsWith(suffix)))
-                    && (antiKeyInner == null || antiKeyInner.stream().noneMatch(inner -> valueFrom(item, "key").contains(inner)))
-                    && (antiKeyRegex == null || antiKeyRegex.stream().noneMatch(regex -> valueFrom(item, "key").matches(regex)));
+            boolean result = false;
+            if (keyPrefix != null) {
+                result = keyPrefix.stream().anyMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
+                if (result) return true;
+            }
+            if (keySuffix != null) {
+                result = keySuffix.stream().anyMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
+                if (result) return true;
+            }
+            if (keyInner != null) {
+                result = keyInner.stream().anyMatch(inner -> valueFrom(item, "key").contains(inner));
+                if (result) return true;
+            }
+            if (keyRegex != null) {
+                result = keyRegex.stream().anyMatch(regex -> valueFrom(item, "key").matches(regex));
+                if (result) return true;
+            }
+            if (antiKeyPrefix != null) {
+                result = antiKeyPrefix.stream().noneMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
+                if (result) return true;
+            }
+            if (antiKeySuffix != null) {
+                result = antiKeySuffix.stream().noneMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
+                if (result) return true;
+            }
+            if (antiKeyInner != null) {
+                result = antiKeyInner.stream().noneMatch(inner -> valueFrom(item, "key").contains(inner));
+                if (result) return true;
+            }
+            if (antiKeyRegex != null) result = antiKeyRegex.stream().noneMatch(regex -> valueFrom(item, "key").matches(regex));
+            return result;
         }
     }
 
