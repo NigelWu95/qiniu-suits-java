@@ -98,7 +98,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     @Override
     protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") == null;
+        return line.get("key") != null;
     }
 
     @Override
