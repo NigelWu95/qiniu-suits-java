@@ -61,7 +61,7 @@ public class QueryAvinfo extends Base<Map<String, String>> {
 
     @Override
     protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") == null;
+        return line.get("key") != null;
     }
 
     protected String singleResult(Map<String, String> line) throws QiniuException {
