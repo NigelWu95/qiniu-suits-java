@@ -101,8 +101,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 返回需要进行重试的记录列表
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected List<T> parseBatchResult(List<T> processList, String result)
-            throws IOException {
+    protected List<T> parseBatchResult(List<T> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = new ArrayList<>();
         JsonArray jsonArray;
@@ -144,7 +143,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            if (validCheck(line)) {
+            if (!validCheck(line)) {
                 errorLineList.add(resultInfo(line) + "\tempty target key's value in line.");
                 return false;
             } else {
@@ -220,7 +219,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         T line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            if (validCheck(line)) {
+            if (!validCheck(line)) {
                 fileSaveMapper.writeError(resultInfo(line) + "\tempty target key's value in line.", false);
                 continue;
             }
