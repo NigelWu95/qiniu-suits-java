@@ -33,7 +33,7 @@ public class QueryHash extends Base<Map<String, String>> {
     private void set(String algorithm, String protocol, String domain, String urlIndex) throws IOException {
         this.algorithm = algorithm;
         if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = null;
+            this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and urlIndex.");
             } else {
@@ -69,8 +69,8 @@ public class QueryHash extends Base<Map<String, String>> {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
-        String url = urlIndex != null ? line.get(urlIndex) :
-                protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        String url =  line.get(urlIndex);
+        if (url == null || "".equals(url)) url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
         String qhash = fileChecker.getQHashBody(url);
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
