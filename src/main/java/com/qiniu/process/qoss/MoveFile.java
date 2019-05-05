@@ -1,6 +1,5 @@
 package com.qiniu.process.qoss;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -78,37 +77,40 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(newKeyIndex);
+        return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
-    protected boolean checkKeyValid(Map<String, String> line, String key) {
-        return line.get(key) == null;
+    protected boolean validCheck(Map<String, String> line) {
+        if (line.get("key") == null) return false;
+        try {
+            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
+            line.put("to-key", addPrefix + toKey);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
-            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-            line.put(newKeyIndex, toKey);
             if (toBucket == null || "".equals(toBucket)) {
-                batchOperations.addRenameOp(bucket, line.get("key"), addPrefix + toKey);
+                batchOperations.addRenameOp(bucket, line.get("key"), line.get("to-key"));
             } else {
-                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
+                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, line.get("to-key"));
             }
         });
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-        line.put(newKeyIndex, toKey);
+    protected String singleResult(Map<String, String> line) throws IOException {
         if (toBucket == null || "".equals(toBucket)) {
-            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), addPrefix + toKey));
+            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
         } else {
-            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, addPrefix + toKey));
+            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
         }
     }
 }

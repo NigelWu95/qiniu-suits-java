@@ -4,6 +4,7 @@
 对空间中的资源请求 pfop 持久化数据处理。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)
 
 ## 配置文件选项
+**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 配置参数
 ```
@@ -19,8 +20,8 @@ force-public=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=pfop| 数据处理时设置为pfop| 表示数据处理操作|  
-|ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源方式为 list 时无需再设置|  
-|bucket| 字符串| 操作的资源原空间，当数据源为 list 时无需再设置|  
+|ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源为 qiniu 时无需再设置|  
+|bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |pipeline| 字符串| 进行持久化数据处理的队列名称|  
 |force-public| true/false| 是否强制使用共有队列（会有性能影响）|  
 |fops-index| 字符串| 转码命令索引（下标），pfop 操作时指定，明确指定文件名对应的转码命令，建议命令中携带 saveas 重命名指令否则使用默认名|  

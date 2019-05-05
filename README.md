@@ -72,12 +72,12 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表  
 `source=local` 表示从本地文件按行读取资源列表  
-配置文件示例可参考 [配置模板](resources/application.config)  
+如果使用 `source` 参数则无需再进行数据源的自动判断且需要显式指定 `bucket` 参数  
 **在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=../<file-path>` 表示从本地文件中读取资源列表  
-当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**  
+当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**，配置文件示例可参考 [配置模板](resources/application.config)  
 #### list 云存储列举  
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 30，1 亿以内文件可以不增加线程，通常云存储空间列举的必须参数包括密钥、空间名(通过
 path 或 bucket 设置)及空间所在区域(通过 region 设置)：  

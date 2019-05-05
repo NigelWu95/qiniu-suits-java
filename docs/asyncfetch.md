@@ -4,8 +4,9 @@
 对文件列表进行异步抓取保存到目标空间。参考：[七牛异步第三方资源抓取](https://developer.qiniu.com/kodo/api/4097/asynch-fetch)  
 
 ## 配置文件选项
+**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
-### 配置参数
+### 功能配置参数
 ```
 process=asyncfetch
 ak=
@@ -28,9 +29,9 @@ ignore-same-key=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process| 异步抓取时设置为asyncfetch | 表示异步 fetch 操作|  
-|ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源方式为 list 时无需再设置|  
+|ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源为 qiniu 时无需再设置|  
 |to-bucket|字符串| 保存抓取结果的空间名|  
-|domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当数据源方式为 file 且指定 url-index 时无需设置|  
+|domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当数据源为云存储且指定 url-index 时无需设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  

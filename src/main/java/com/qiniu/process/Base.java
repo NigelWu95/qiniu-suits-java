@@ -12,7 +12,6 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
@@ -66,8 +65,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
     }
 
-    public Base clone() throws CloneNotSupportedException {
-        Base base = (Base)super.clone();
+    @SuppressWarnings("unchecked")
+    public Base<T> clone() throws CloneNotSupportedException {
+        Base<T> base = (Base<T>)super.clone();
         try {
             base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
         } catch (IOException e) {
@@ -83,7 +83,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     protected abstract String resultInfo(T line);
 
-    protected abstract boolean checkKeyValid(T line, String key);
+    protected abstract boolean validCheck(T line);
 
     /**
      * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
@@ -102,8 +102,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 返回需要进行重试的记录列表
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected List<T> parseBatchResult(List<T> processList, String result)
-            throws IOException {
+    protected List<T> parseBatchResult(List<T> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = new ArrayList<>();
         JsonArray jsonArray;
@@ -145,8 +144,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            if (checkKeyValid(line, "key")) {
-                errorLineList.add(resultInfo(line) + "\tempty key of line.");
+            if (!validCheck(line)) {
+                errorLineList.add(resultInfo(line) + "\tempty target key's value in line.");
                 return false;
             } else {
                 return true;
@@ -221,8 +220,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         T line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            if (checkKeyValid(line, "key")) {
-                fileSaveMapper.writeError(resultInfo(line) + "\tempty key of line.", false);
+            if (!validCheck(line)) {
+                fileSaveMapper.writeError(resultInfo(line) + "\tempty target key's value in line.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会

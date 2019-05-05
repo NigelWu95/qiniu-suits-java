@@ -10,7 +10,7 @@ import com.qiniu.util.JsonConvertUtils;
 import java.io.IOException;
 import java.util.*;
 
-public class SeniorChecker {
+public abstract class SeniorFilter<T> {
 
     final private String checkName;
     private Set<String> extMimeList;
@@ -19,7 +19,8 @@ public class SeniorChecker {
         add("ext-mime");
     }};
 
-    public SeniorChecker(String checkName, String configPath, boolean rewrite) throws IOException {
+    public SeniorFilter(String checkName, String configPath, boolean rewrite) throws IOException {
+        if (!checkList.contains(checkName)) throw new IOException("unsupported check operation: " + checkName);
         this.checkName = checkName;
         this.extMimeList = new HashSet<>();
         this.extMimeTypeList = new HashSet<>();
@@ -30,7 +31,7 @@ public class SeniorChecker {
                     JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(), new TypeToken<List<String>>(){})
             );
         }
-        if (checkMime() && !rewrite) {
+        if (checkExtMime() && !rewrite) {
             JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
             JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
             List<String> defaultList = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
@@ -45,28 +46,21 @@ public class SeniorChecker {
         }
     }
 
-    public String getCheckName() {
-        return checkName;
-    }
-
-    public boolean checkMime() {
+    public boolean checkExtMime() {
         return "ext-mime".equals(checkName);
     }
 
-    public boolean isValid() {
-        return checkList.contains(checkName);
-    }
-
-    public List<Map<String, String>> checkMimeType(List<Map<String, String>> lineList) {
+    public List<T> checkMimeType(List<T> lineList) {
         String key;
-        List<Map<String, String>> filteredList = new ArrayList<>();
-        for (Map<String, String> line : lineList) {
-            key = line.get("key");
+        List<T> filteredList = new ArrayList<>();
+        for (T line : lineList) {
+            if (line == null) continue;
+            key = valueFrom(line, "key");
             if (key != null && key.contains(".")) {
-                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + line.get("mimeType");
+                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mimeType");
                 if (extMimeList.parallelStream().anyMatch(extMime ->
                         finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
-                    break;
+                    continue;
                 }
                 if (extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
                         finalKeyMimePair.equalsIgnoreCase(extMime))) {
@@ -77,10 +71,10 @@ public class SeniorChecker {
         return filteredList;
     }
 
-    public boolean checkMimeType(Map<String, String> line) {
-        if (line.get("key") != null && line.get("key").contains(".")) {
-            String finalKeyMimePair = line.get("key").substring(line.get("key").lastIndexOf(".") + 1) +
-                    ":" + line.get("mimeType");
+    public boolean checkMimeType(T line) {
+        if (line != null && valueFrom(line, "key") != null && valueFrom(line, "key").contains(".")) {
+            String finalKeyMimePair = valueFrom(line, "key").substring(valueFrom(line, "key")
+                    .lastIndexOf(".") + 1) + ":" + valueFrom(line, "mimeType");
             if (extMimeList.parallelStream().anyMatch(extMime ->
                     finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                 return false;
@@ -90,4 +84,6 @@ public class SeniorChecker {
         }
         return false;
     }
+
+    protected abstract String valueFrom(T item, String key);
 }

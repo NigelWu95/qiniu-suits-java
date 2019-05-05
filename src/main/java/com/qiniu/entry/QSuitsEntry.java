@@ -10,13 +10,8 @@ import com.qiniu.config.PropertiesFile;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.process.filtration.BaseFieldsFilter;
-import com.qiniu.process.filtration.FilterProcess;
-import com.qiniu.process.filtration.SeniorChecker;
-import com.qiniu.process.qdora.PfopCommand;
-import com.qiniu.process.qdora.QiniuPfop;
-import com.qiniu.process.qdora.QueryAvinfo;
-import com.qiniu.process.qdora.QueryPfopResult;
+import com.qiniu.process.filtration.*;
+import com.qiniu.process.qdora.*;
 import com.qiniu.process.qoss.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.ProcessUtils;
@@ -205,10 +200,12 @@ public class QSuitsEntry {
 
     public LocalFileContainer getLocalFileContainer() {
         String filePath = commonParams.getPath();
-        String parseType = commonParams.getParse();
+        String parseFormat = commonParams.getParse();
         String separator = commonParams.getSeparator();
+        String addKeyPrefix = commonParams.getRmKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parseType, separator, rmKeyPrefix, indexMap, unitLen, threads);
+        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parseFormat, separator, addKeyPrefix,
+                rmKeyPrefix, indexMap, unitLen, threads);
         localFileContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;
@@ -266,11 +263,11 @@ public class QSuitsEntry {
             nextProcessor.setRetryTimes(retryTimes);
         }
         ILineProcess<Map<String, String>> processor;
-        BaseFieldsFilter baseFieldsFilter = commonParams.getBaseFieldsFilter();
-        SeniorChecker seniorChecker = commonParams.getSeniorChecker();
-        if (baseFieldsFilter.isValid() || seniorChecker.isValid()) {
+        BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
+        SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
+        if (baseFilter != null || seniorFilter != null) {
             List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
-            processor = new FilterProcess(baseFieldsFilter, seniorChecker, savePath, saveFormat, saveSeparator, rmFields);
+            processor = new MapProcess(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields);
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
