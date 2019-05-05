@@ -74,31 +74,31 @@ public abstract class BaseFilter<T> {
             boolean result = false;
             if (keyPrefix != null) {
                 result = keyPrefix.stream().anyMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
-                if (result) return true;
+                if (!result) return false;
             }
             if (keySuffix != null) {
                 result = keySuffix.stream().anyMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
-                if (result) return true;
+                if (!result) return false;
             }
             if (keyInner != null) {
                 result = keyInner.stream().anyMatch(inner -> valueFrom(item, "key").contains(inner));
-                if (result) return true;
+                if (!result) return false;
             }
             if (keyRegex != null) {
                 result = keyRegex.stream().anyMatch(regex -> valueFrom(item, "key").matches(regex));
-                if (result) return true;
+                if (!result) return false;
             }
             if (antiKeyPrefix != null) {
                 result = antiKeyPrefix.stream().noneMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
-                if (result) return true;
+                if (!result) return false;
             }
             if (antiKeySuffix != null) {
                 result = antiKeySuffix.stream().noneMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
-                if (result) return true;
+                if (!result) return false;
             }
             if (antiKeyInner != null) {
                 result = antiKeyInner.stream().noneMatch(inner -> valueFrom(item, "key").contains(inner));
-                if (result) return true;
+                if (!result) return false;
             }
             if (antiKeyRegex != null) result = antiKeyRegex.stream().noneMatch(regex -> valueFrom(item, "key").matches(regex));
             return result;
