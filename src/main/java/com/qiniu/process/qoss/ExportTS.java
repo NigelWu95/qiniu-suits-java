@@ -32,7 +32,7 @@ public class ExportTS extends Base<Map<String, String>> {
 
     private void set(String domain, String protocol, String urlIndex) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = null;
+            this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and urlIndex.");
             } else {
@@ -73,11 +73,10 @@ public class ExportTS extends Base<Map<String, String>> {
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
+        String url = line.get(urlIndex);
         try {
-            String url = urlIndex != null ? line.get(urlIndex) :
-                    protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
-            return String.join("\n", m3U8Manager.getVideoTSListByUrl(url)
-                    .stream().map(VideoTS::toString).collect(Collectors.toList()));
+            if (url == null || "".equals(url)) url =  protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream().map(VideoTS::toString).collect(Collectors.toList()));
         } catch (QiniuException e) {
             throw e;
         } catch (IOException e) {
