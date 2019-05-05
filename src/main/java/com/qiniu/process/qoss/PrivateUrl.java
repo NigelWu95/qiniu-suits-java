@@ -72,7 +72,10 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
-        if (url == null || "".equals(url)) url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        if (url == null || "".equals(url)) {
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            line.put(urlIndex, url);
+        }
         try {
             return auth.privateDownloadUrl(url, expires);
         } catch (Exception e) {

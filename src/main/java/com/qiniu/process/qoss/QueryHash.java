@@ -70,7 +70,10 @@ public class QueryHash extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String url =  line.get(urlIndex);
-        if (url == null || "".equals(url)) url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+        if (url == null || "".equals(url)) {
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            line.put(urlIndex, url);
+        }
         String qhash = fileChecker.getQHashBody(url);
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
