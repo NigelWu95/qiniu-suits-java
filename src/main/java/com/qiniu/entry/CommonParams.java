@@ -23,6 +23,7 @@ public class CommonParams {
     private BaseFilter<Map<String, String>> baseFilter;
     private SeniorFilter<Map<String, String>> seniorFilter;
     private String process;
+    private String addKeyPrefix;
     private String rmKeyPrefix;
     private String source;
     private String parse;
@@ -63,6 +64,7 @@ public class CommonParams {
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60"));
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", null);
+        addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
         setBaseFilter();
@@ -70,17 +72,13 @@ public class CommonParams {
         if ("local".equals(source)) {
             setParse(entryParam.getValue("parse", "tab"));
             setSeparator(entryParam.getValue("separator", null));
-            if (ProcessUtils.needBucket(process)) setBucket();
+            if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket");
             if (ProcessUtils.needAuth(process)) {
                 qiniuAccessKey = entryParam.getValue("ak");
                 qiniuSecretKey = entryParam.getValue("sk");
             }
         } else {
-            if ("qiniu".equals(source)) {
-                qiniuAccessKey = entryParam.getValue("ak");
-                qiniuSecretKey = entryParam.getValue("sk");
-                regionName = entryParam.getValue("region", "auto");
-            } else if ("tencent".equals(source)) {
+            if ("tencent".equals(source)) {
                 tencentSecretId = entryParam.getValue("ten-id");
                 tencentSecretKey = entryParam.getValue("ten-secret");
                 regionName = entryParam.getValue("region");
@@ -89,6 +87,10 @@ public class CommonParams {
                 aliyunAccessSecret = entryParam.getValue("ali-secret");
                 regionName = entryParam.getValue("region");
                 if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
+            } else {
+                qiniuAccessKey = entryParam.getValue("ak");
+                qiniuSecretKey = entryParam.getValue("sk");
+                regionName = entryParam.getValue("region", "auto");
             }
             setBucket();
             parse = "object";
@@ -212,13 +214,13 @@ public class CommonParams {
      * @throws IOException 解析 bucket 参数失败抛出异常
      */
     private void setBucket() throws IOException {
-        if (path.startsWith("qiniu://")) {
+        if ("qiniu".equals(source) && path.startsWith("qiniu://")) {
             bucket = path.substring(8);
             bucket = entryParam.getValue("bucket", bucket);
-        } else if (path.startsWith("tencent://")) {
+        } else if ("tencent".equals(source) && path.startsWith("tencent://")) {
             bucket = path.substring(10);
             bucket = entryParam.getValue("bucket", bucket);
-        } else if (path.startsWith("aliyun://")) {
+        } else if ("aliyun".equals(source) && path.startsWith("aliyun://")) {
             bucket = path.substring(9);
             bucket = entryParam.getValue("bucket", bucket);
         } else {
@@ -540,6 +542,10 @@ public class CommonParams {
         this.process = process;
     }
 
+    public void setAddKeyPrefix(String addKeyPrefix) {
+        this.addKeyPrefix = addKeyPrefix;
+    }
+
     public void setRmKeyPrefix(String rmKeyPrefix) {
         this.rmKeyPrefix = rmKeyPrefix;
     }
@@ -654,6 +660,10 @@ public class CommonParams {
 
     public String getProcess() {
         return process;
+    }
+
+    public String getAddKeyPrefix() {
+        return addKeyPrefix;
     }
 
     public String getRmKeyPrefix() {
