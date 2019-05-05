@@ -45,7 +45,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     private void set(String domain, String protocol, String urlIndex, String addPrefix) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = null;
+            this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and urlIndex.");
             } else {
@@ -97,21 +97,26 @@ public class AsyncFetch extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean checkKeyValid(Map<String, String> line, String key) {
-        return line.get(key) == null;
+    protected boolean validCheck(Map<String, String> line) {
+        return line.get("key") == null;
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
+        String url = line.get(urlIndex);
         try {
-            String url = urlIndex != null ? line.get(urlIndex) :
-                    protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
-            String key = FileNameUtils.rmPrefix(rmPrefix, urlIndex != null ? URLUtils.getKey(url) : line.get("key"));
-            line.put("key", key);
-            Response response = fetch(url, addPrefix +  key, line.get(md5Index), line.get("hash"));
-            return HttpResponseUtils.responseJson(response);
-        } catch (IOException e) {
+            String key;
+            if (url == null || "".equals(url)) {
+                key = line.get("key").replaceAll("\\?", "%3F");
+                url = protocol + "://" + domain + "/" + key;
+            } else {
+                key = FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+            }
+            line.put("key", addPrefix + key);
+        } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
+        Response response = fetch(url, line.get("key"), line.get(md5Index), line.get("hash"));
+        return HttpResponseUtils.responseJson(response);
     }
 }
