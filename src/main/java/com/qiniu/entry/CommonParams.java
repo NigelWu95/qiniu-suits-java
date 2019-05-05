@@ -5,8 +5,8 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.Constants;
 import com.qiniu.config.JsonFile;
 import com.qiniu.interfaces.IEntryParam;
-import com.qiniu.process.filtration.BaseFieldsFilter;
-import com.qiniu.process.filtration.SeniorChecker;
+import com.qiniu.process.filtration.BaseFilter;
+import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
 import com.qiniu.util.Base64;
 
@@ -20,8 +20,8 @@ public class CommonParams {
     private int readTimeout;
     private int requestTimeout;
     private String path;
-    private BaseFieldsFilter baseFieldsFilter;
-    private SeniorChecker seniorChecker;
+    private BaseFilter<Map<String, String>> baseFilter;
+    private SeniorFilter<Map<String, String>> seniorFilter;
     private String process;
     private String rmKeyPrefix;
     private String source;
@@ -65,8 +65,8 @@ public class CommonParams {
         process = entryParam.getValue("process", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
-        setBaseFieldsFilter();
-        setSeniorChecker();
+        setBaseFilter();
+        setSeniorFilter();
         if ("local".equals(source)) {
             setParse(entryParam.getValue("parse", "tab"));
             setSeparator(entryParam.getValue("separator", null));
@@ -138,7 +138,7 @@ public class CommonParams {
         }
     }
 
-    private void setBaseFieldsFilter() throws Exception {
+    private void setBaseFilter() throws Exception {
         String keyPrefix = entryParam.getValue("f-prefix", "");
         String keySuffix = entryParam.getValue("f-suffix", "");
         String keyInner = entryParam.getValue("f-inner", "");
@@ -171,24 +171,45 @@ public class CommonParams {
         List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
         List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
         List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
-        baseFieldsFilter = new BaseFieldsFilter(keyPrefixList, keySuffixList, keyInnerList, keyRegexList, mimeTypeList,
-                putTimeMin, putTimeMax, type, status);
-        baseFieldsFilter.setAntiConditions(antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList,
-                antiMimeTypeList);
+        try {
+            baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
+                    antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
+                    putTimeMin, putTimeMax, type, status) {
+                @Override
+                protected boolean checkItem(Map<String, String> item, String key) {
+                    return item == null || item.get(key) == null;
+                }
+                @Override
+                protected String valueFrom(Map<String, String> item, String key) {
+                    return item.get(key);
+                }
+            };
+        } catch (IOException e) {
+            baseFilter = null;
+        }
     }
 
-    private void setSeniorChecker() throws IOException {
+    private void setSeniorFilter() throws IOException {
         String checkType = entryParam.getValue("f-check", "");
         checkType = checked(checkType, "f-check", "(|ext-mime)");
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
         checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
-        seniorChecker = new SeniorChecker(checkType, checkConfig, Boolean.valueOf(checkRewrite));
+        try {
+            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
+                @Override
+                protected String valueFrom(Map<String, String> item, String key) {
+                    return item.get(key);
+                }
+            };
+        } catch (IOException e) {
+            seniorFilter = null;
+        }
     }
 
     /**
      * 支持从路径方式上解析出 bucket，如果主动设置 bucket 则替换路径中的值
-     * @throws IOException
+     * @throws IOException 解析 bucket 参数失败抛出异常
      */
     private void setBucket() throws IOException {
         if (path.startsWith("qiniu://")) {
@@ -251,11 +272,11 @@ public class CommonParams {
                 if (process == null) {
                     saveTotal = "true";
                 } else {
-                    if (baseFieldsFilter.isValid() || seniorChecker.isValid()) saveTotal = "true";
+                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
                     else saveTotal = "false";
                 }
             } else {
-                if (process != null || baseFieldsFilter.isValid() || seniorChecker.isValid()) saveTotal = "false";
+                if (process != null || baseFilter != null || seniorFilter != null) saveTotal = "false";
                 else saveTotal = "true";
             }
         }
@@ -400,10 +421,10 @@ public class CommonParams {
             if (indexMap.size() == 0) {
                 if (ProcessUtils.supportListSource(process)) {
                     indexMap.put("key", "key");
-                    if (baseFieldsFilter.checkMime() || seniorChecker.checkMime()) indexMap.put("mimeType", "mimeType");
-                    if (baseFieldsFilter.checkPutTime()) indexMap.put("putTime", "putTime");
-                    if (baseFieldsFilter.checkType()) indexMap.put("type", "type");
-                    if (baseFieldsFilter.checkStatus()) indexMap.put("status", "status");
+                    if (baseFilter.checkMimeType() || seniorFilter.checkExtMime()) indexMap.put("mimeType", "mimeType");
+                    if (baseFilter.checkPutTime()) indexMap.put("putTime", "putTime");
+                    if (baseFilter.checkType()) indexMap.put("type", "type");
+                    if (baseFilter.checkStatus()) indexMap.put("status", "status");
                 } else {
                     for (String key : keys) {
                         indexMap.put(key, key);
@@ -502,12 +523,12 @@ public class CommonParams {
         this.path = path;
     }
 
-    public void setBaseFieldsFilter(BaseFieldsFilter baseFieldsFilter) {
-        this.baseFieldsFilter = baseFieldsFilter;
+    public void setBaseFilter(BaseFilter<Map<String, String>> baseFilter) {
+        this.baseFilter = baseFilter;
     }
 
-    public void setSeniorChecker(SeniorChecker seniorChecker) {
-        this.seniorChecker = seniorChecker;
+    public void setSeniorFilter(SeniorFilter<Map<String, String>> seniorFilter) {
+        this.seniorFilter = seniorFilter;
     }
 
     public void setProcess(String process) {
@@ -638,12 +659,12 @@ public class CommonParams {
         return source;
     }
 
-    public BaseFieldsFilter getBaseFieldsFilter() {
-        return baseFieldsFilter;
+    public BaseFilter<Map<String, String>> getBaseFilter() {
+        return baseFilter;
     }
 
-    public SeniorChecker getSeniorChecker() {
-        return seniorChecker;
+    public SeniorFilter<Map<String, String>> getSeniorFilter() {
+        return seniorFilter;
     }
 
     public String getParse() {
