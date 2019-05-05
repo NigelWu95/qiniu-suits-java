@@ -63,8 +63,8 @@ public class QueryHash extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean checkKeyValid(Map<String, String> line, String key) {
-        return line.get(key) == null;
+    protected boolean validCheck(Map<String, String> line) {
+        return line.get("key") == null;
     }
 
     @Override
