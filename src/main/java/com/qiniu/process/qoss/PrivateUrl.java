@@ -1,5 +1,6 @@
 package com.qiniu.process.qoss;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;
 
@@ -28,7 +29,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     private void set(String domain, String protocol, String urlIndex, long expires) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = null;
+            this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and urlIndex.");
             } else {
@@ -59,8 +60,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean checkKeyValid(Map<String, String> line, String key) {
-        return line.get(key) == null;
+    protected boolean validCheck(Map<String, String> line) {
+        return line.get("key") != null;
     }
 
     @Override
@@ -69,9 +70,16 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) {
-        String url = urlIndex != null ? line.get(urlIndex) :
-                protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
-        return auth.privateDownloadUrl(url, expires);
+    protected String singleResult(Map<String, String> line) throws QiniuException {
+        String url = line.get(urlIndex);
+        if (url == null || "".equals(url)) {
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            line.put(urlIndex, url);
+        }
+        try {
+            return auth.privateDownloadUrl(url, expires);
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 }

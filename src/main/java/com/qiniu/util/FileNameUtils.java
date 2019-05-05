@@ -13,7 +13,8 @@ public class FileNameUtils {
         }
     }
 
-    public static String rmPrefix(String prefix, String name) {
+    public static String rmPrefix(String prefix, String name) throws IOException {
+        if (name == null) throw new IOException("empty name.");
         if (prefix == null || "".equals(prefix) || name.length() < prefix.length()) return name;
         return name.substring(0, prefix.length()).replace(prefix, "") + name.substring(prefix.length());
     }

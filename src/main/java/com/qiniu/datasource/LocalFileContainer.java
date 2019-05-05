@@ -13,14 +13,14 @@ import java.util.*;
 
 public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter, Map<String, String>> {
 
-    public LocalFileContainer(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
-                              int unitLen, int threads) {
-        super(filePath, parseType, separator, rmKeyPrefix, indexMap, unitLen, threads);
+    public LocalFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
+                              String rmKeyPrefix, Map<String, String> indexMap, int unitLen, int threads) {
+        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap, unitLen, threads);
     }
 
     @Override
     protected ITypeConvert<String, Map<String, String>> getNewConverter() throws IOException {
-        return new LineToMap(parseType, separator, rmKeyPrefix, indexMap);
+        return new LineToMap(parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
     @Override

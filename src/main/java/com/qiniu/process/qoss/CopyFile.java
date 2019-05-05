@@ -1,6 +1,5 @@
 package com.qiniu.process.qoss;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -58,30 +57,31 @@ public class CopyFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(newKeyIndex);
+        return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
-    protected boolean checkKeyValid(Map<String, String> line, String key) {
-        return line.get(key) == null;
-    }
-
-    @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        batchOperations.clearOps();
-        lineList.forEach(line -> {
+    protected boolean validCheck(Map<String, String> line) {
+        if (line.get("key") == null) return false;
+        try {
             String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-            line.put(newKeyIndex, toKey);
-            batchOperations.addCopyOp(bucket, line.get("key"), toBucket, addPrefix + toKey);
-        });
+            line.put("to-key", addPrefix + toKey);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    @Override
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+        batchOperations.clearOps();
+        lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket, line.get("to-key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
-        line.put(newKeyIndex, toKey);
+    protected String singleResult(Map<String, String> line) throws IOException {
         return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
-                addPrefix + toKey, false));
+                line.get("to-key"), false));
     }
 }
