@@ -21,8 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultSave<W>, T> {
 
     private String filePath;
-    protected String parseType;
+    protected String parseFormat;
     protected String separator;
+    protected String addKeyPrefix;
     protected String rmKeyPrefix;
     protected Map<String, String> indexMap;
     protected int unitLen;
@@ -37,11 +38,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<T> processor; // 定义的资源处理器
 
-    public FileContainer(String filePath, String parseType, String separator, String rmKeyPrefix, Map<String, String> indexMap,
-                         int unitLen, int threads) {
+    public FileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix, String rmKeyPrefix,
+                         Map<String, String> indexMap, int unitLen, int threads) {
         this.filePath = filePath;
-        this.parseType = parseType;
+        this.parseFormat = parseFormat;
         this.separator = separator;
+        this.addKeyPrefix = addKeyPrefix;
         this.rmKeyPrefix = rmKeyPrefix;
         this.indexMap = indexMap;
         this.unitLen = unitLen;
@@ -65,8 +67,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.filePath = commonParams.getPath();
-        this.parseType = commonParams.getParse();
+        this.parseFormat = commonParams.getParse();
         this.separator = commonParams.getSeparator();
+        this.addKeyPrefix = commonParams.getAddKeyPrefix();
+        this.rmKeyPrefix = commonParams.getRmKeyPrefix();
         this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
         this.threads = commonParams.getThreads();

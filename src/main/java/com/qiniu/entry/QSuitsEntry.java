@@ -200,10 +200,12 @@ public class QSuitsEntry {
 
     public LocalFileContainer getLocalFileContainer() {
         String filePath = commonParams.getPath();
-        String parseType = commonParams.getParse();
+        String parseFormat = commonParams.getParse();
         String separator = commonParams.getSeparator();
+        String addKeyPrefix = commonParams.getRmKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parseType, separator, rmKeyPrefix, indexMap, unitLen, threads);
+        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parseFormat, separator, addKeyPrefix,
+                rmKeyPrefix, indexMap, unitLen, threads);
         localFileContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;
