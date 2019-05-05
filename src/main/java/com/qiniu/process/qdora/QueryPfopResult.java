@@ -52,8 +52,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean checkKeyValid(Map<String, String> line, String key) {
-        return line.get(key) == null;
+    protected boolean validCheck(Map<String, String> line) {
+        return line.get("key") == null;
     }
 
     // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
