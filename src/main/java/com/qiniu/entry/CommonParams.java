@@ -271,14 +271,14 @@ public class CommonParams {
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
             if (source.matches("(qiniu|tencent|aliyun)")) {
-                if (process == null) {
+                if (process == null || "".equals(process)) {
                     saveTotal = "true";
                 } else {
                     if (baseFilter != null || seniorFilter != null) saveTotal = "true";
                     else saveTotal = "false";
                 }
             } else {
-                if (process != null || baseFilter != null || seniorFilter != null) saveTotal = "false";
+                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
                 else saveTotal = "true";
             }
         }
