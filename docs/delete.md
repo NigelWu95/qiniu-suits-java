@@ -8,7 +8,7 @@
 
 ### 配置参数
 ```
-process=delete  
+process=delete
 ak=
 sk=
 bucket=

@@ -8,6 +8,7 @@
 
 ### 配置参数
 ```
+process=rename
 ak=
 sk=
 bucket= 
