@@ -17,7 +17,7 @@ public class SeniorFilterTest {
         seniorFilter = new SeniorFilter<Map<String, String>>("mime", "resources/.check.json", false) {
             @Override
             protected String valueFrom(Map<String, String> item, String key) {
-                return item.get(key);
+                return item != null ? item.get(key) : null;
             }
         };
     }
