@@ -6,6 +6,7 @@ import java.util.Map;
 
 public class EntryMain {
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.getProcessor();

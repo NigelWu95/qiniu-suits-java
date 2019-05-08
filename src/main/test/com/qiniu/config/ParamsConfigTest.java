@@ -19,9 +19,10 @@ public class ParamsConfigTest {
 
     @Test
     public void testGetValueByFileProperties() throws IOException {
-        paramsConfig = new ParamsConfig("resources" + System.getProperty("file.separator") + ".application.config");
+        paramsConfig = new ParamsConfig("resources" + System.getProperty("file.separator") + ".application.properties");
         try {
-            System.out.println(paramsConfig.getValue("process"));
+            String process = paramsConfig.getValue("process");
+            System.out.println(process.length());
         } catch (Exception e) {
             e.printStackTrace();
         }
