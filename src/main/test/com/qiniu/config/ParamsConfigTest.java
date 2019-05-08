@@ -19,11 +19,30 @@ public class ParamsConfigTest {
 
     @Test
     public void testGetValueByFileProperties() throws IOException {
-        paramsConfig = new ParamsConfig("resources" + System.getProperty("file.separator") + ".application.config");
+        paramsConfig = new ParamsConfig("resources" + System.getProperty("file.separator") + ".application.properties");
+        try {
+            String process = paramsConfig.getValue("process");
+            System.out.println(process.length());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            System.out.println(paramsConfig.getValue("no"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.out.println(paramsConfig.getValue("no", "no"));
         System.out.println(paramsConfig.getValue("use-https", "true"));
-        System.out.println(paramsConfig.getValue("use-https") == null);
-        System.out.println(paramsConfig.getValue("use-https").equals(""));
-        System.out.println(paramsConfig.getValue("no"));
+        try {
+            System.out.println(paramsConfig.getValue("use-https") == null);
+            System.out.println(paramsConfig.getValue("use-https").equals(""));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            System.out.println(paramsConfig.getValue("use-https").equals(""));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

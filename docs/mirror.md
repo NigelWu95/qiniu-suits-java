@@ -8,7 +8,7 @@
 
 ### 配置参数
 ```
-process=mirror  
+process=mirror
 ak=
 sk=
 bucket=
