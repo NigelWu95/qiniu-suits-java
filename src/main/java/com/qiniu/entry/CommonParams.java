@@ -224,7 +224,7 @@ public class CommonParams {
             bucket = path.substring(9);
             bucket = entryParam.getValue("bucket", bucket).trim();
         } else {
-            bucket = entryParam.getValue("bucket");
+            bucket = entryParam.getValue("bucket").trim();
         }
     }
 
