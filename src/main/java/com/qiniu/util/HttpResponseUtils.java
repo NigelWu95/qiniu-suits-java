@@ -3,7 +3,7 @@ package com.qiniu.util;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 
-public class HttpResponseUtils {
+public final class HttpResponseUtils {
 
     /**
      * 判断 process 产生（不适用于 datasource 读取产生的异常）的异常结果，返回后续处理标志

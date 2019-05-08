@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
-public class CharactersUtils {
+public final class CharactersUtils {
 
     public static String[] parseStringToHexArray(String originString) {
 

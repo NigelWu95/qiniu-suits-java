@@ -8,7 +8,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class M3U8Utils {
+public final class M3U8Utils {
 
     public static void merge(List<VideoTS> tsList, String url, String targetFileDir) throws IOException {
         File fileDir = new File(targetFileDir);
