@@ -59,72 +59,72 @@ public class CommonParams {
      */
     public CommonParams(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
-        connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60"));
-        readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120"));
-        requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60"));
+        connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60").trim());
+        readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
+        requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         path = entryParam.getValue("path", "");
-        process = entryParam.getValue("process", null);
+        process = entryParam.getValue("process", "").trim();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
         setBaseFilter();
         setSeniorFilter();
         if ("local".equals(source)) {
-            setParse(entryParam.getValue("parse", "tab"));
+            setParse(entryParam.getValue("parse", "tab").trim());
             setSeparator(entryParam.getValue("separator", null));
-            if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket");
+            if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
             if (ProcessUtils.needAuth(process)) {
-                qiniuAccessKey = entryParam.getValue("ak");
-                qiniuSecretKey = entryParam.getValue("sk");
+                qiniuAccessKey = entryParam.getValue("ak").trim();
+                qiniuSecretKey = entryParam.getValue("sk").trim();
             }
         } else {
             if ("tencent".equals(source)) {
-                tencentSecretId = entryParam.getValue("ten-id");
-                tencentSecretKey = entryParam.getValue("ten-secret");
-                regionName = entryParam.getValue("region");
+                tencentSecretId = entryParam.getValue("ten-id").trim();
+                tencentSecretKey = entryParam.getValue("ten-secret").trim();
+                regionName = entryParam.getValue("region").trim();
             } else if ("aliyun".equals(source)) {
-                aliyunAccessId = entryParam.getValue("ali-id");
-                aliyunAccessSecret = entryParam.getValue("ali-secret");
-                regionName = entryParam.getValue("region");
+                aliyunAccessId = entryParam.getValue("ali-id").trim();
+                aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+                regionName = entryParam.getValue("region").trim();
                 if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
             } else {
-                qiniuAccessKey = entryParam.getValue("ak");
-                qiniuSecretKey = entryParam.getValue("sk");
-                regionName = entryParam.getValue("region", "auto");
+                qiniuAccessKey = entryParam.getValue("ak").trim();
+                qiniuSecretKey = entryParam.getValue("sk").trim();
+                regionName = entryParam.getValue("region", "auto").trim();
             }
             setBucket();
             parse = "object";
             antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
-            setPrefixLeft(entryParam.getValue("prefix-left", "false"));
-            setPrefixRight(entryParam.getValue("prefix-right", "false"));
+            setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
+            setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         }
 
-        setUnitLen(entryParam.getValue("unit-len", "-1"));
-        setThreads(entryParam.getValue("threads", "30"));
-        setRetryTimes(entryParam.getValue("retry-times", "3"));
-        setBatchSize(entryParam.getValue("batch-size", "-1"));
+        setUnitLen(entryParam.getValue("unit-len", "-1").trim());
+        setThreads(entryParam.getValue("threads", "30").trim());
+        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
+        setBatchSize(entryParam.getValue("batch-size", "-1").trim());
         // list 操作时默认保存全部原始文件
-        setSaveTotal(entryParam.getValue("save-total", null));
+        setSaveTotal(entryParam.getValue("save-total", "").trim());
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
-                path.substring(0, path.length() - 1) : path.split("\\.")[0]) + "-result" : bucket);
-        saveTag = entryParam.getValue("save-tag", "");
-        saveFormat = entryParam.getValue("save-format", "tab");
+                path.substring(0, path.length() - 1) : path) + "-result" : bucket);
+        saveTag = entryParam.getValue("save-tag", "").trim();
+        saveFormat = entryParam.getValue("save-format", "tab").trim();
         // 校验设置的 format 参数
         saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
         saveSeparator = entryParam.getValue("save-separator", null);
         setSaveSeparator(saveSeparator);
-        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
+        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
         setIndexMap();
     }
 
     private void setSource() throws IOException {
         try {
-            source = entryParam.getValue("source-type");
+            source = entryParam.getValue("source-type").trim();
         } catch (IOException e1) {
             try {
-                source = entryParam.getValue("source");
+                source = entryParam.getValue("source").trim();
             } catch (IOException e2) {
                 if ("".equals(path) || path.startsWith("qiniu://")) source = "qiniu";
                 else if (path.startsWith("tencent://")) source = "tencent";
@@ -151,17 +151,17 @@ public class CommonParams {
         String antiKeyInner = entryParam.getValue("f-anti-inner", "");
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
-        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", null));
+        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", "").trim());
         long putTimeMin = checkedDatetime(dateScale[0]);
         long putTimeMax = checkedDatetime(dateScale[1]);
         if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
             throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
                     "should earlier then <date2>.");
         }
-        String type = entryParam.getValue("f-type", null);
-        String status = entryParam.getValue("f-status", null);
-        if (type != null) type = checked(type, "f-type", "[01]");
-        if (status != null) status = checked(status, "f-status", "[01]");
+        String type = entryParam.getValue("f-type", "").trim();
+        String status = entryParam.getValue("f-status", "").trim();
+        if (!"".equals(type)) type = checked(type, "f-type", "[01]");
+        if (!"".equals(status)) status = checked(status, "f-status", "[01]");
 
         List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
         List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
@@ -192,10 +192,10 @@ public class CommonParams {
     }
 
     private void setSeniorFilter() throws IOException {
-        String checkType = entryParam.getValue("f-check", "");
-        checkType = checked(checkType, "f-check", "(|ext-mime)");
+        String checkType = entryParam.getValue("f-check", "").trim();
+        checkType = checked(checkType, "f-check", "(|ext-mime)").trim();
         String checkConfig = entryParam.getValue("f-check-config", "");
-        String checkRewrite = entryParam.getValue("f-check-rewrite", "false");
+        String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
         checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
         try {
             seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
@@ -216,13 +216,13 @@ public class CommonParams {
     private void setBucket() throws IOException {
         if ("qiniu".equals(source) && path.startsWith("qiniu://")) {
             bucket = path.substring(8);
-            bucket = entryParam.getValue("bucket", bucket);
+            bucket = entryParam.getValue("bucket", bucket).trim();
         } else if ("tencent".equals(source) && path.startsWith("tencent://")) {
             bucket = path.substring(10);
-            bucket = entryParam.getValue("bucket", bucket);
+            bucket = entryParam.getValue("bucket", bucket).trim();
         } else if ("aliyun".equals(source) && path.startsWith("aliyun://")) {
             bucket = path.substring(9);
-            bucket = entryParam.getValue("bucket", bucket);
+            bucket = entryParam.getValue("bucket", bucket).trim();
         } else {
             bucket = entryParam.getValue("bucket");
         }
@@ -269,16 +269,16 @@ public class CommonParams {
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
-        if (saveTotal == null) {
+        if (saveTotal == null || "".equals(saveTotal)) {
             if (source.matches("(qiniu|tencent|aliyun)")) {
-                if (process == null) {
+                if (process == null || "".equals(process)) {
                     saveTotal = "true";
                 } else {
                     if (baseFilter != null || seniorFilter != null) saveTotal = "true";
                     else saveTotal = "false";
                 }
             } else {
-                if (process != null || baseFilter != null || seniorFilter != null) saveTotal = "false";
+                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
                 else saveTotal = "true";
             }
         }
@@ -337,7 +337,7 @@ public class CommonParams {
     public List<String> splitItems(String paramLine) {
         List<String> itemList = new ArrayList<>();
         String[] items = new String[]{};
-        if (!"".equals(paramLine) && paramLine != null) {
+        if (paramLine != null && !"".equals(paramLine)) {
             // 指定前缀包含 "," 号时需要用转义符解决
             if (paramLine.contains("\\,")) {
                 String[] elements = paramLine.split("\\\\,");
@@ -371,19 +371,18 @@ public class CommonParams {
         this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
     }
 
-    private void setIndex(String indexName, String index, boolean check) throws IOException {
-        if (check && indexMap.containsKey(indexName)) {
-            throw new IOException("index: " + indexName + " is already used by \"" + indexMap.get(indexName)
-                    + "-index=" + indexName + "\"");
+    private void setIndex(String index, String indexName, boolean check) throws IOException {
+        if (check && indexMap.containsKey(index)) {
+            throw new IOException("index: " + index + " is already used by \"" + indexMap.get(index) + "-index=" + index + "\"");
         }
-        if (indexName != null && !"-1".equals(indexName)) {
+        if (index != null && !"".equals(index) && !"-1".equals(index)) {
             if ("json".equals(parse) || "object".equals(parse)) {
-                indexMap.put(indexName, index);
+                indexMap.put(index, indexName);
             } else if ("tab".equals(parse) || "csv".equals(parse)) {
-                if (indexName.matches("\\d+")) {
-                    indexMap.put(indexName, index);
+                if (index.matches("\\d+")) {
+                    indexMap.put(index, indexName);
                 } else {
-                    throw new IOException("incorrect " + index + "-index: " + indexName + ", it should be a number.");
+                    throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
@@ -394,7 +393,7 @@ public class CommonParams {
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
         List<String> keys = LineUtils.fileInfoFields;
-        List<String> indexList = splitItems(entryParam.getValue("indexes", ""));
+        List<String> indexList = splitItems(entryParam.getValue("indexes", "").trim());
         if (indexList.size() > 9) {
             throw new IOException("the file info's index length is too long.");
         } else {
@@ -404,11 +403,11 @@ public class CommonParams {
         }
 
         if ("local".equals(source)) {
-            setIndex(entryParam.getValue("url-index", null), "url", ProcessUtils.needUrl(process));
-            setIndex(entryParam.getValue("newKey-index", null), "newKey", ProcessUtils.needNewKey(process));
-            setIndex(entryParam.getValue("fops-index", null), "fops", ProcessUtils.needFops(process));
-            setIndex(entryParam.getValue("persistentId-index", null), "pid", ProcessUtils.needPid(process));
-            setIndex(entryParam.getValue("avinfo-index", null), "avinfo", ProcessUtils.needAvinfo(process));
+            setIndex(entryParam.getValue("url-index", "").trim(), "url", ProcessUtils.needUrl(process));
+            setIndex(entryParam.getValue("newKey-index", "").trim(), "newKey", ProcessUtils.needNewKey(process));
+            setIndex(entryParam.getValue("fops-index", "").trim(), "fops", ProcessUtils.needFops(process));
+            setIndex(entryParam.getValue("persistentId-index", "").trim(), "pid", ProcessUtils.needPid(process));
+            setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo", ProcessUtils.needAvinfo(process));
             // 默认索引包含 key
             if (!indexMap.containsValue("key")) {
                 try {
@@ -441,7 +440,7 @@ public class CommonParams {
             if (ProcessUtils.supportListSource(process)) {
                 if (!indexMap.containsValue("key"))
                     throw new IOException("please check your indexes settings, miss a key index in first position.");
-            } else if (process != null) {
+            } else if (process != null && !"".equals(process)) {
                 throw new IOException("the process: " + process + " don't support getting source line from list.");
             }
         }

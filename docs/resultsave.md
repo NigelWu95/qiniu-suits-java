@@ -25,10 +25,11 @@ rm-fields=
 
 **默认情况：**  
 （1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
+（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。  
+（3）默认保存结果的路径（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录  
 
 **--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
-选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细配置说明见 [持久化配置](docs/resultsave.md)。  
+选择去除某些字段，每一行信息以 json 格式保存在 save-path 下。详细配置说明见 [持久化配置](docs/resultsave.md)。  
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
 （2）local 源 =》 "local_success_\<order\>.txt"  

@@ -2,9 +2,9 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-七牛云接口使用套件（可以工具形式使用：在 release 页面[下载最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases)，
-x.xx-thin 为降配版，适用于 4C8G 及以下的机器），**并发列举**云存储空间的大量资源列表，同时支持对资源列表并发进行批量处理，主要包括对七牛云存储资
-源进行增/删/改/查/迁移/转码等。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
+云存储 API (base-qiniu)套件（可以工具形式使用：在 release 页面[下载最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases)，
+x.xx-thin 为降配版，适用于 4C8G 及以下的机器），能够**并发列举**云存储空间的大量资源列表，同时支持对资源列表并发进行批量处理，主要包括对七牛云存
+储资源进行增/删/改/查/迁移/转码等。基于 Java 编写，可基于 JDK（8 及以上）环境在命令行或 IDE 等情况下运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
 - [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效[并发列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -166,10 +166,11 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。
 **默认情况：**  
 （1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。   
+（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。  
+（3）默认保存结果的路径（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录  
 
 **--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
-选择去除某些字段，每一行信息以 json 格式保存在 ./result 路径（当前路径下新建 result 文件夹）下。详细配置说明见 [持久化配置](docs/resultsave.md)。  
+选择去除某些字段，每一行信息以 json 格式保存在 save-path 路径下。详细配置说明见 [持久化配置](docs/resultsave.md)。  
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
 （2）local 源 =》 "local_success_\<order\>.txt"  
