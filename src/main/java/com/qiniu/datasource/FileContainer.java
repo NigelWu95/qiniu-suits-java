@@ -174,7 +174,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         File sourceFile = new File(FileNameUtils.realPathWithUserHome(filePath));
         if (sourceFile.isDirectory()) {
             File[] fs = sourceFile.listFiles();
-            if (fs == null) throw new IOException("The current path you gave may be incorrect: " + filePath);
+            if (fs == null) throw new IOException("The current path you gave may be incorrect: \"" + filePath + "\"");
             for(File f : fs) {
                 if (!f.isDirectory() && f.getName().endsWith(".txt")) {
                     fileReaders.add(getReader(f.getAbsoluteFile().getPath()));
@@ -184,7 +184,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             if (filePath.endsWith(".txt")) {
                 fileReaders.add(getReader(filePath));
             } else {
-                throw new IOException("please provide the .txt file. The current path you gave is: " + filePath);
+                throw new IOException("please provide the .txt file. The current path you gave is: \"" + filePath + "\"");
             }
         }
         if (fileReaders.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
