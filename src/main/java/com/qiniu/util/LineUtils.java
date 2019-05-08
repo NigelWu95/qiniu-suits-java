@@ -10,7 +10,7 @@ import com.qiniu.storage.model.FileInfo;
 import java.io.IOException;
 import java.util.*;
 
-public class LineUtils {
+public final class LineUtils {
 
     final static private List<String> longFields = new ArrayList<String>(){{
         add("fsize");
