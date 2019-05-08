@@ -201,7 +201,7 @@ public class CommonParams {
             seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
                 @Override
                 protected String valueFrom(Map<String, String> item, String key) {
-                    return item.get(key);
+                    return item != null ? item.get(key) : null;
                 }
             };
         } catch (IOException e) {
