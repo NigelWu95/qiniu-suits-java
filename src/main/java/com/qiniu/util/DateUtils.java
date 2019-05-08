@@ -30,7 +30,7 @@ public final class DateUtils {
         return (breakpoint > parseDateToStamp(timeString)) == isBiggerThan;
     }
 
-    public static Long parseYYYYMMDDHHMMSSdatetime(String datetime) throws ParseException {
+    public static Long parseYYYYMMDDHHMMSSDatetime(String datetime) throws ParseException {
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return sd.parse(datetime).getTime();
     }
@@ -62,12 +62,23 @@ public final class DateUtils {
         return sd.parse(greenwichMeanTime).getTime();
     }
 
-    public static String[] getCurrentDatetime() {
+    public static String getCurrentDatetime() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return df.format(new Date()).split(" ");
+        return df.format(new Date());
     }
 
     public static Long getNow() {
         return new Date().getTime();
+    }
+
+    public static String timeStamp2Date(String seconds,String format) {
+        if(seconds == null || seconds.isEmpty() || seconds.equals("null")) {
+            return "";
+        }
+        if(format == null || format.isEmpty()){
+            format = "yyyy-MM-dd HH:mm:ss";
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        return sdf.format(new Date(Long.valueOf(seconds+"000")));
     }
 }
