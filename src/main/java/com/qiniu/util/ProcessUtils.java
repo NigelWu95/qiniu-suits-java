@@ -3,7 +3,7 @@ package com.qiniu.util;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProcessUtils {
+public final class ProcessUtils {
 
     private static List<String> needUrlProcesses = new ArrayList<String>(){{
         add("asyncfetch");

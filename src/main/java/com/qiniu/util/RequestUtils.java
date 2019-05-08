@@ -6,9 +6,9 @@ import java.util.List;
 
 import static okhttp3.Dns.SYSTEM;
 
-public class RequestUtils {
+public final class RequestUtils {
 
-    public static String checkHost(String domain) throws UnknownHostException {
+    public static String lookUpFirstIpFromHost(String domain) throws UnknownHostException {
         if (domain == null || "".equals(domain)) throw new UnknownHostException("the hostname is empty.");
         List<InetAddress> inetAddresses = SYSTEM.lookup(domain);
         return inetAddresses.get(0).getHostAddress();

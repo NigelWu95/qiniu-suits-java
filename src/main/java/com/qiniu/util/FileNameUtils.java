@@ -2,7 +2,7 @@ package com.qiniu.util;
 
 import java.io.IOException;
 
-public class FileNameUtils {
+public final class FileNameUtils {
 
     public static String realPathWithUserHome(String pathStr) throws IOException {
         if (pathStr == null || "".equals(pathStr)) throw new IOException("the path is empty.");
