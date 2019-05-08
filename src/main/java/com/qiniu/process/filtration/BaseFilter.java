@@ -71,36 +71,37 @@ public abstract class BaseFilter<T> {
         if (checkItem(item, "key")) {
             return false;
         } else {
+            String key = valueFrom(item, "key");
             boolean result = false;
             if (keyPrefix != null) {
-                result = keyPrefix.stream().anyMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
+                result = keyPrefix.stream().anyMatch(key::startsWith);
                 if (!result) return false;
             }
             if (keySuffix != null) {
-                result = keySuffix.stream().anyMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
+                result = keySuffix.stream().anyMatch(key::endsWith);
                 if (!result) return false;
             }
             if (keyInner != null) {
-                result = keyInner.stream().anyMatch(inner -> valueFrom(item, "key").contains(inner));
+                result = keyInner.stream().anyMatch(key::contains);
                 if (!result) return false;
             }
             if (keyRegex != null) {
-                result = keyRegex.stream().anyMatch(regex -> valueFrom(item, "key").matches(regex));
+                result = keyRegex.stream().anyMatch(key::matches);
                 if (!result) return false;
             }
             if (antiKeyPrefix != null) {
-                result = antiKeyPrefix.stream().noneMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
+                result = antiKeyPrefix.stream().noneMatch(key::startsWith);
                 if (!result) return false;
             }
             if (antiKeySuffix != null) {
-                result = antiKeySuffix.stream().noneMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
+                result = antiKeySuffix.stream().noneMatch(key::endsWith);
                 if (!result) return false;
             }
             if (antiKeyInner != null) {
-                result = antiKeyInner.stream().noneMatch(inner -> valueFrom(item, "key").contains(inner));
+                result = antiKeyInner.stream().noneMatch(key::contains);
                 if (!result) return false;
             }
-            if (antiKeyRegex != null) result = antiKeyRegex.stream().noneMatch(regex -> valueFrom(item, "key").matches(regex));
+            if (antiKeyRegex != null) result = antiKeyRegex.stream().noneMatch(key::matches);
             return result;
         }
     }
@@ -109,14 +110,18 @@ public abstract class BaseFilter<T> {
         if (checkItem(item, "mimeType")) {
             return false;
         } else {
-            return (mimeType == null || mimeType.stream().anyMatch(mimeType -> valueFrom(item, "mimeType").contains(mimeType)))
-                    && (antiMimeType == null || antiMimeType.stream().noneMatch(mimeType -> valueFrom(item, "mimeType").contains(mimeType)));
+            String mType = valueFrom(item, "mimeType");
+            return (mimeType == null || mimeType.stream().anyMatch(mType::contains))
+                    && (antiMimeType == null || antiMimeType.stream().noneMatch(mType::contains));
         }
     }
 
     public boolean filterPutTime(T item) {
         if (checkItem(item, "putTime")) return false;
-        else return Long.valueOf(valueFrom(item, "putTime")) <= putTimeMax && putTimeMin <= Long.valueOf(valueFrom(item, "putTime"));
+        else {
+            long putTime = Long.valueOf(valueFrom(item, "putTime"));
+            return putTime <= putTimeMax && putTimeMin <= putTime;
+        }
     }
 
     public boolean filterType(T item) {
