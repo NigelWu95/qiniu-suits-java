@@ -440,7 +440,7 @@ public class CommonParams {
             if (ProcessUtils.supportListSource(process)) {
                 if (!indexMap.containsValue("key"))
                     throw new IOException("please check your indexes settings, miss a key index in first position.");
-            } else if (process != null) {
+            } else if (process != null && !"".equals(process)) {
                 throw new IOException("the process: " + process + " don't support getting source line from list.");
             }
         }
