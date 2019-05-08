@@ -315,7 +315,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle() throws IOException {
-        String days = commonParams.checked(entryParam.getValue("days"), "days", "[01]");
+        String days = commonParams.checked(entryParam.getValue("days"), "days", "\\d");
         return new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(days), savePath);
     }
 

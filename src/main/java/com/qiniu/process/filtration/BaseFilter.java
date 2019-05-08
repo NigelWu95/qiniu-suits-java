@@ -60,11 +60,11 @@ public abstract class BaseFilter<T> {
     }
 
     public boolean checkTypeCon() {
-        return "0".equals(type) || "1".equals(type);
+        return type != null && !"".equals(type);
     }
 
     public boolean checkStatusCon() {
-        return "0".equals(status) || "1".equals(status);
+        return status != null && !"".equals(status);
     }
 
     public boolean filterKey(T item) {
