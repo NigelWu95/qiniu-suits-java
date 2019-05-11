@@ -21,8 +21,6 @@ public class CommonParams {
     private int readTimeout;
     private int requestTimeout;
     private String path;
-    private BaseFilter<Map<String, String>> baseFilter;
-    private SeniorFilter<Map<String, String>> seniorFilter;
     private String process;
     private String addKeyPrefix;
     private String rmKeyPrefix;
@@ -51,6 +49,8 @@ public class CommonParams {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
+    private BaseFilter<Map<String, String>> baseFilter;
+    private SeniorFilter<Map<String, String>> seniorFilter;
     private HashMap<String, String> indexMap;
 
     /**
@@ -68,8 +68,6 @@ public class CommonParams {
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
-        setBaseFilter();
-        setSeniorFilter();
         if ("local".equals(source)) {
             setParse(entryParam.getValue("parse", "tab").trim());
             setSeparator(entryParam.getValue("separator", null));
@@ -117,6 +115,8 @@ public class CommonParams {
         saveSeparator = entryParam.getValue("save-separator", null);
         setSaveSeparator(saveSeparator);
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
+        setBaseFilter();
+        setSeniorFilter();
         setIndexMap();
     }
 
@@ -138,75 +138,6 @@ public class CommonParams {
         else if ("file".equals(source)) source = "local";
         if (!source.matches("(local|qiniu|tencent|aliyun)")) {
             throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
-        }
-    }
-
-    private void setBaseFilter() throws Exception {
-        String keyPrefix = entryParam.getValue("f-prefix", "");
-        String keySuffix = entryParam.getValue("f-suffix", "");
-        String keyInner = entryParam.getValue("f-inner", "");
-        String keyRegex = entryParam.getValue("f-regex", "");
-        String mimeType = entryParam.getValue("f-mime", "");
-        String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
-        String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
-        String antiKeyInner = entryParam.getValue("f-anti-inner", "");
-        String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
-        String antiMimeType = entryParam.getValue("f-anti-mime", "");
-        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", "").trim());
-        LocalDateTime putTimeMin = checkedDatetime(dateScale[0]);
-        LocalDateTime putTimeMax = checkedDatetime(dateScale[1]);
-        if (putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) <= 0) {
-            throw new IOException("please set date scale to make first as start date, second as end date, <date1> " +
-                    "should earlier then <date2>.");
-        }
-        String type = entryParam.getValue("f-type", "").trim();
-        String status = entryParam.getValue("f-status", "").trim();
-        if (!"".equals(type)) type = checked(type, "f-type", "[01]");
-        if (!"".equals(status)) status = checked(status, "f-status", "[01]");
-
-        List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
-        List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
-        List<String> keyInnerList = getFilterList("key", keyInner, "inner");
-        List<String> keyRegexList = getFilterList("key", keyRegex, "regex");
-        List<String> mimeTypeList = getFilterList("mimeType", mimeType, "mime");
-        List<String> antiKeyPrefixList = getFilterList("key", antiKeyPrefix, "anti-prefix");
-        List<String> antiKeySuffixList = getFilterList("key", antiKeySuffix, "anti-suffix");
-        List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
-        List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
-        List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
-        try {
-            baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
-                    antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
-                    putTimeMin, putTimeMax, type, status) {
-                @Override
-                protected boolean checkItem(Map<String, String> item, String key) {
-                    return item == null || item.get(key) == null;
-                }
-                @Override
-                protected String valueFrom(Map<String, String> item, String key) {
-                    return item.get(key);
-                }
-            };
-        } catch (IOException e) {
-            baseFilter = null;
-        }
-    }
-
-    private void setSeniorFilter() throws IOException {
-        String checkType = entryParam.getValue("f-check", "").trim();
-        checkType = checked(checkType, "f-check", "(|ext-mime)").trim();
-        String checkConfig = entryParam.getValue("f-check-config", "");
-        String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
-        checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
-        try {
-            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
-                @Override
-                protected String valueFrom(Map<String, String> item, String key) {
-                    return item != null ? item.get(key) : null;
-                }
-            };
-        } catch (IOException e) {
-            seniorFilter = null;
         }
     }
 
@@ -372,85 +303,6 @@ public class CommonParams {
         this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
     }
 
-    private void setIndex(String index, String indexName, boolean check) throws IOException {
-        if (check && indexMap.containsKey(index)) {
-            throw new IOException("index: " + index + " is already used by \"" + indexMap.get(index) + "-index=" + index + "\"");
-        }
-        if (index != null && !"".equals(index) && !"-1".equals(index)) {
-            if ("json".equals(parse) || "object".equals(parse)) {
-                indexMap.put(index, indexName);
-            } else if ("tab".equals(parse) || "csv".equals(parse)) {
-                if (index.matches("\\d+")) {
-                    indexMap.put(index, indexName);
-                } else {
-                    throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
-                }
-            } else {
-                throw new IOException("the parse type: " + parse + " is unsupported now.");
-            }
-        }
-    }
-
-    private void setIndexMap() throws IOException {
-        indexMap = new HashMap<>();
-        List<String> keys = LineUtils.fileInfoFields;
-        List<String> indexList = splitItems(entryParam.getValue("indexes", "").trim());
-        if (indexList.size() > 9) {
-            throw new IOException("the file info's index length is too long.");
-        } else {
-            for (int i = 0; i < indexList.size(); i++) {
-                setIndex(indexList.get(i), keys.get(i), true);
-            }
-        }
-
-        if ("local".equals(source)) {
-            setIndex(entryParam.getValue("url-index", "").trim(), "url", ProcessUtils.needUrl(process));
-            setIndex(entryParam.getValue("newKey-index", "").trim(), "newKey", ProcessUtils.needNewKey(process));
-            setIndex(entryParam.getValue("fops-index", "").trim(), "fops", ProcessUtils.needFops(process));
-            setIndex(entryParam.getValue("persistentId-index", "").trim(), "pid", ProcessUtils.needPid(process));
-            setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo", ProcessUtils.needAvinfo(process));
-            // 默认索引包含 key
-            if (!indexMap.containsValue("key")) {
-                try {
-                    setIndex("json".equals(parse) ? "key" : "0", "key", true);
-                } catch (IOException e) {
-                    throw new IOException("you need to set indexes with key's index not default value, " +
-                            "because the default key's" + e.getMessage());
-                }
-            }
-        } else {
-            // 资源列举情况下设置默认索引
-            if (indexMap.size() == 0) {
-                if (ProcessUtils.supportListSource(process)) {
-                    indexMap.put("key", "key");
-                    if (baseFilter != null) {
-                        if (baseFilter.checkMimeTypeCon()) indexMap.put("mimeType", "mimeType");
-                        if (baseFilter.checkPutTimeCon()) indexMap.put("putTime", "putTime");
-                        if (baseFilter.checkTypeCon()) indexMap.put("type", "type");
-                        if (baseFilter.checkStatusCon()) indexMap.put("status", "status");
-                    }
-                    if (seniorFilter != null) {
-                        if (seniorFilter.checkExtMime()) indexMap.put("mimeType", "mimeType");
-                    }
-                } else {
-                    for (String key : keys) {
-                        indexMap.put(key, key);
-                    }
-                }
-            }
-            if (ProcessUtils.supportListSource(process)) {
-                if (!indexMap.containsValue("key"))
-                    throw new IOException("please check your indexes settings, miss a key index in first position.");
-            } else if (process != null && !"".equals(process)) {
-                throw new IOException("the process: " + process + " don't support getting source line from list.");
-            }
-        }
-    }
-
-    public boolean containIndex(String name) {
-        return indexMap.containsValue(name);
-    }
-
     public String checked(String param, String name, String conditionReg) throws IOException {
         if (param == null || !param.matches(conditionReg))
             throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
@@ -515,6 +367,158 @@ public class CommonParams {
             throw new IOException("f-date-scale filter must get the putTime's index.");
         }
         return dateTime;
+    }
+
+    private void setBaseFilter() throws Exception {
+        String keyPrefix = entryParam.getValue("f-prefix", "");
+        String keySuffix = entryParam.getValue("f-suffix", "");
+        String keyInner = entryParam.getValue("f-inner", "");
+        String keyRegex = entryParam.getValue("f-regex", "");
+        String mimeType = entryParam.getValue("f-mime", "");
+        String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
+        String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
+        String antiKeyInner = entryParam.getValue("f-anti-inner", "");
+        String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
+        String antiMimeType = entryParam.getValue("f-anti-mime", "");
+        String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", "").trim());
+        LocalDateTime putTimeMin = checkedDatetime(dateScale[0]);
+        LocalDateTime putTimeMax = checkedDatetime(dateScale[1]);
+        if (putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) <= 0) {
+            throw new IOException("please set date scale to make first as start date, second as end date, <date1> " +
+                    "should earlier then <date2>.");
+        }
+        String type = entryParam.getValue("f-type", "").trim();
+        String status = entryParam.getValue("f-status", "").trim();
+        if (!"".equals(type)) type = checked(type, "f-type", "[01]");
+        if (!"".equals(status)) status = checked(status, "f-status", "[01]");
+
+        List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
+        List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
+        List<String> keyInnerList = getFilterList("key", keyInner, "inner");
+        List<String> keyRegexList = getFilterList("key", keyRegex, "regex");
+        List<String> mimeTypeList = getFilterList("mimeType", mimeType, "mime");
+        List<String> antiKeyPrefixList = getFilterList("key", antiKeyPrefix, "anti-prefix");
+        List<String> antiKeySuffixList = getFilterList("key", antiKeySuffix, "anti-suffix");
+        List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
+        List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
+        List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
+        try {
+            baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
+                    antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
+                    putTimeMin, putTimeMax, type, status) {
+                @Override
+                protected boolean checkItem(Map<String, String> item, String key) {
+                    return item == null || item.get(key) == null;
+                }
+                @Override
+                protected String valueFrom(Map<String, String> item, String key) {
+                    return item.get(key);
+                }
+            };
+        } catch (IOException e) {
+            baseFilter = null;
+        }
+    }
+
+    private void setSeniorFilter() throws IOException {
+        String checkType = entryParam.getValue("f-check", "").trim();
+        checkType = checked(checkType, "f-check", "(|ext-mime)").trim();
+        String checkConfig = entryParam.getValue("f-check-config", "");
+        String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
+        checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        try {
+            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
+                @Override
+                protected String valueFrom(Map<String, String> item, String key) {
+                    return item != null ? item.get(key) : null;
+                }
+            };
+        } catch (IOException e) {
+            seniorFilter = null;
+        }
+    }
+
+    private void setIndex(String index, String indexName, boolean check) throws IOException {
+        if (check && indexMap.containsKey(index)) {
+            throw new IOException("index: " + index + " is already used by \"" + indexMap.get(index) + "-index=" + index + "\"");
+        }
+        if (index != null && !"".equals(index) && !"-1".equals(index)) {
+            if ("json".equals(parse) || "object".equals(parse)) {
+                indexMap.put(index, indexName);
+            } else if ("tab".equals(parse) || "csv".equals(parse)) {
+                if (index.matches("\\d+")) {
+                    indexMap.put(index, indexName);
+                } else {
+                    throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
+                }
+            } else {
+                throw new IOException("the parse type: " + parse + " is unsupported now.");
+            }
+        }
+    }
+
+    private void setIndexMap() throws IOException {
+        indexMap = new HashMap<>();
+        List<String> keys = LineUtils.fileInfoFields;
+        List<String> indexList = splitItems(entryParam.getValue("indexes", "").trim());
+        if (indexList.size() > 9) {
+            throw new IOException("the file info's index length is too long.");
+        } else {
+            for (int i = 0; i < indexList.size(); i++) {
+                setIndex(indexList.get(i), keys.get(i), true);
+            }
+        }
+
+        if ("local".equals(source)) {
+            setIndex(entryParam.getValue("url-index", "").trim(), "url", ProcessUtils.needUrl(process));
+            setIndex(entryParam.getValue("newKey-index", "").trim(), "newKey", ProcessUtils.needNewKey(process));
+            setIndex(entryParam.getValue("fops-index", "").trim(), "fops", ProcessUtils.needFops(process));
+            setIndex(entryParam.getValue("persistentId-index", "").trim(), "pid", ProcessUtils.needPid(process));
+            setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo", ProcessUtils.needAvinfo(process));
+            // 默认索引包含 key
+            if (!indexMap.containsValue("key")) {
+                try {
+                    setIndex("json".equals(parse) ? "key" : "0", "key", true);
+                } catch (IOException e) {
+                    throw new IOException("you need to set indexes with key's index not default value, " +
+                            "because the default key's" + e.getMessage());
+                }
+            }
+        } else {
+            // 资源列举情况下设置默认索引
+            if (indexMap.size() == 0) {
+                indexMap.put("key", "key");
+            }
+            if (ProcessUtils.supportListSource(process)) {
+                if (!indexMap.containsValue("key"))
+                    throw new IOException("please check your indexes settings, miss a key index in first position.");
+            } else if (process != null && !"".equals(process)) {
+                throw new IOException("the process: " + process + " don't support getting source line from list.");
+            }
+        }
+        if (baseFilter != null) {
+            if (baseFilter.checkMimeTypeCon()) {
+                indexMap.put("mimeType", "mimeType");
+            }
+            if (baseFilter.checkPutTimeCon()) {
+                indexMap.put("putTime", "putTime");
+            }
+            if (baseFilter.checkTypeCon()) {
+                indexMap.put("type", "type");
+            }
+            if (baseFilter.checkStatusCon()) {
+                indexMap.put("status", "status");
+            }
+        }
+        if (seniorFilter != null) {
+            if (seniorFilter.checkExtMime()) {
+                indexMap.put("mimeType", "mimeType");
+            }
+        }
+    }
+
+    public boolean containIndex(String name) {
+        return indexMap.containsValue(name);
     }
 
     public void setEntryParam(IEntryParam entryParam) {
