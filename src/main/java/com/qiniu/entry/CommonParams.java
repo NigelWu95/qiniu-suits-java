@@ -4,6 +4,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.Constants;
 import com.qiniu.config.JsonFile;
+import com.qiniu.constants.DataSourceDef;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
@@ -20,11 +21,9 @@ public class CommonParams {
     private int connectTimeout;
     private int readTimeout;
     private int requestTimeout;
-    private String path;
-    private String process;
-    private String addKeyPrefix;
-    private String rmKeyPrefix;
     private String source;
+    private String process;
+    private String path;
     private String parse;
     private String separator;
     private String qiniuAccessKey;
@@ -39,6 +38,8 @@ public class CommonParams {
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
+    private String addKeyPrefix;
+    private String rmKeyPrefix;
     private int unitLen;
     private int threads;
     private int batchSize;
@@ -65,11 +66,9 @@ public class CommonParams {
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", "").trim();
-        addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
-        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setSource();
         if ("local".equals(source)) {
-            setParse(entryParam.getValue("parse", "tab").trim());
+            parse = checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", null));
             if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
             if (ProcessUtils.needAuth(process)) {
@@ -100,11 +99,12 @@ public class CommonParams {
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         }
 
+        addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
+        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
         setThreads(entryParam.getValue("threads", "30").trim());
-        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
-        // list 操作时默认保存全部原始文件
+        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
@@ -118,6 +118,12 @@ public class CommonParams {
         setBaseFilter();
         setSeniorFilter();
         setIndexMap();
+    }
+
+    public String checked(String param, String name, String conditionReg) throws IOException {
+        if (param == null || !param.matches(conditionReg))
+            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
+        else return param;
     }
 
     private void setSource() throws IOException {
@@ -138,6 +144,9 @@ public class CommonParams {
         else if ("file".equals(source)) source = "local";
         if (!source.matches("(local|qiniu|tencent|aliyun)")) {
             throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
+        }
+        if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+            throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
     }
 
@@ -160,69 +169,12 @@ public class CommonParams {
         }
     }
 
-    private void setParse(String parse) throws IOException {
-        this.parse = checked(parse, "parse", "(csv|tab|json)");
-    }
-
     private void setSeparator(String separator) {
         if (separator == null) {
             if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
         } else {
             this.separator = separator;
-        }
-    }
-
-    private void setUnitLen(String unitLen) throws IOException {
-        if ("-1".equals(unitLen)) {
-            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
-            else unitLen = "1000";
-        }
-        this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
-    }
-
-    private void setThreads(String threads) throws IOException {
-        this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
-    }
-
-    private void setBatchSize(String batchSize) throws IOException {
-        if ("-1".equals(batchSize)) {
-            if (ProcessUtils.canBatch(process)) {
-                batchSize = "stat".equals(process) ? "100" : "1000";
-            } else {
-                batchSize = "0";
-            }
-        }
-        this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
-    }
-
-    private void setRetryTimes(String retryTimes) throws IOException {
-        this.retryTimes = Integer.valueOf(checked(retryTimes, "retry-times", "\\d+"));
-    }
-
-    private void setSaveTotal(String saveTotal) throws IOException {
-        if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun)")) {
-                if (process == null || "".equals(process)) {
-                    saveTotal = "true";
-                } else {
-                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
-                    else saveTotal = "false";
-                }
-            } else {
-                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
-                else saveTotal = "true";
-            }
-        }
-        this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
-    }
-
-    private void setSaveSeparator(String separator) {
-        if (separator == null) {
-            if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
-            else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
-        } else {
-            this.saveSeparator = separator;
         }
     }
 
@@ -303,22 +255,57 @@ public class CommonParams {
         this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
     }
 
-    public String checked(String param, String name, String conditionReg) throws IOException {
-        if (param == null || !param.matches(conditionReg))
-            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
-        else return param;
+    private void setUnitLen(String unitLen) throws IOException {
+        if ("-1".equals(unitLen)) {
+            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
+            else unitLen = "1000";
+        }
+        this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
     }
 
-    public List<String> getFilterList(String key, String field, String name)
-            throws IOException {
-        if (!"".equals(field)) {
-            if (indexMap == null || indexMap.containsValue(key)) {
-                return splitItems(field);
+    private void setThreads(String threads) throws IOException {
+        this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
+    }
+
+    private void setBatchSize(String batchSize) throws IOException {
+        if ("-1".equals(batchSize)) {
+            if (ProcessUtils.canBatch(process)) {
+                batchSize = "stat".equals(process) ? "100" : "1000";
             } else {
-                throw new IOException("f-" + name + " filter must get the " + key + "'s index in indexes settings." +
-                        " the default indexes setting only contains \"key\"");
+                batchSize = "0";
             }
-        } else return null;
+        }
+        this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
+    }
+
+    private void setRetryTimes(String retryTimes) throws IOException {
+        this.retryTimes = Integer.valueOf(checked(retryTimes, "retry-times", "\\d+"));
+    }
+
+    private void setSaveTotal(String saveTotal) throws IOException {
+        if (saveTotal == null || "".equals(saveTotal)) {
+            if (source.matches("(qiniu|tencent|aliyun)")) {
+                if (process == null || "".equals(process)) {
+                    saveTotal = "true";
+                } else {
+                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
+                    else saveTotal = "false";
+                }
+            } else {
+                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
+                else saveTotal = "true";
+            }
+        }
+        this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
+    }
+
+    private void setSaveSeparator(String separator) {
+        if (separator == null) {
+            if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
+            else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
+        } else {
+            this.saveSeparator = separator;
+        }
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -331,10 +318,6 @@ public class CommonParams {
                 throw new IOException("please check your date scale, set it as \"[<date1>,<date2>]\".");
             } else {
                 scale = dateScale.split(",");
-            }
-            if (indexMap != null && !indexMap.containsValue("putTime")) {
-                throw new IOException("f-date-scale filter must get the putTime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
             }
         } else {
             scale = new String[]{null, null};
@@ -363,9 +346,6 @@ public class CommonParams {
         } else {
             throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
         }
-        if (dateTime != null && indexMap != null && !indexMap.containsValue("putTime")) {
-            throw new IOException("f-date-scale filter must get the putTime's index.");
-        }
         return dateTime;
     }
 
@@ -392,16 +372,16 @@ public class CommonParams {
         if (!"".equals(type)) type = checked(type, "f-type", "[01]");
         if (!"".equals(status)) status = checked(status, "f-status", "[01]");
 
-        List<String> keyPrefixList = getFilterList("key", keyPrefix, "prefix");
-        List<String> keySuffixList = getFilterList("key", keySuffix, "suffix");
-        List<String> keyInnerList = getFilterList("key", keyInner, "inner");
-        List<String> keyRegexList = getFilterList("key", keyRegex, "regex");
-        List<String> mimeTypeList = getFilterList("mimeType", mimeType, "mime");
-        List<String> antiKeyPrefixList = getFilterList("key", antiKeyPrefix, "anti-prefix");
-        List<String> antiKeySuffixList = getFilterList("key", antiKeySuffix, "anti-suffix");
-        List<String> antiKeyInnerList = getFilterList("key", antiKeyInner, "anti-inner");
-        List<String> antiKeyRegexList = getFilterList("key", antiKeyRegex, "anti-regex");
-        List<String> antiMimeTypeList = getFilterList("mimeType", antiMimeType, "anti-mime");
+        List<String> keyPrefixList = splitItems(keyPrefix);
+        List<String> keySuffixList = splitItems(keySuffix);
+        List<String> keyInnerList = splitItems(keyInner);
+        List<String> keyRegexList = splitItems(keyRegex);
+        List<String> mimeTypeList = splitItems(mimeType);
+        List<String> antiKeyPrefixList = splitItems(antiKeyPrefix);
+        List<String> antiKeySuffixList = splitItems(antiKeySuffix);
+        List<String> antiKeyInnerList = splitItems(antiKeyInner);
+        List<String> antiKeyRegexList = splitItems(antiKeyRegex);
+        List<String> antiMimeTypeList = splitItems(antiMimeType);
         try {
             baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
                     antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
@@ -469,7 +449,7 @@ public class CommonParams {
             }
         }
 
-        if ("local".equals(source)) {
+        if (DataSourceDef.fileSource.contains(source)) {
             setIndex(entryParam.getValue("url-index", "").trim(), "url", ProcessUtils.needUrl(process));
             setIndex(entryParam.getValue("newKey-index", "").trim(), "newKey", ProcessUtils.needNewKey(process));
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops", ProcessUtils.needFops(process));
@@ -484,35 +464,42 @@ public class CommonParams {
                             "because the default key's" + e.getMessage());
                 }
             }
-        } else {
+        } else if (DataSourceDef.ossListSource.contains(source)) {
             // 资源列举情况下设置默认索引
-            if (indexMap.size() == 0) {
-                indexMap.put("key", "key");
-            }
-            if (ProcessUtils.supportListSource(process)) {
-                if (!indexMap.containsValue("key"))
-                    throw new IOException("please check your indexes settings, miss a key index in first position.");
-            } else if (process != null && !"".equals(process)) {
-                throw new IOException("the process: " + process + " don't support getting source line from list.");
-            }
+            if (indexMap.size() == 0 || !indexMap.containsValue("key")) indexMap.put("key", "key");
         }
+        boolean sourceFromList = DataSourceDef.ossListSource.contains(source);
         if (baseFilter != null) {
+            if (baseFilter.checkKeyCon()) {
+                if (sourceFromList) indexMap.put("key", "key");
+                else throw new IOException("f-key-x filter must get the key's index in indexes settings.");
+            }
             if (baseFilter.checkMimeTypeCon()) {
-                indexMap.put("mimeType", "mimeType");
+                if (sourceFromList) indexMap.put("mimeType", "mimeType");
+                else throw new IOException("f-mime filter must get the mimeType's index in indexes settings," +
+                        " the default indexes setting only contains \"key\".");
             }
             if (baseFilter.checkPutTimeCon()) {
-                indexMap.put("putTime", "putTime");
+                if (sourceFromList) indexMap.put("putTime", "putTime");
+                else throw new IOException("f-date-scale filter must get the putTime's index in indexes settings," +
+                        " the default indexes setting only contains \"key\".");
             }
             if (baseFilter.checkTypeCon()) {
-                indexMap.put("type", "type");
+                if (sourceFromList) indexMap.put("type", "type");
+                else throw new IOException("f-type filter must get the type's index in indexes settings," +
+                        " the default indexes setting only contains \"key\".");
             }
             if (baseFilter.checkStatusCon()) {
-                indexMap.put("status", "status");
+                if (sourceFromList) indexMap.put("status", "status");
+                else throw new IOException("f-status filter must get the status's index in indexes settings," +
+                        " the default indexes setting only contains \"key\".");
             }
         }
         if (seniorFilter != null) {
             if (seniorFilter.checkExtMime()) {
-                indexMap.put("mimeType", "mimeType");
+                if (sourceFromList) indexMap.put("mimeType", "mimeType");
+                else throw new IOException("f-mime filter must get the mimeType's index in indexes settings," +
+                        " the default indexes setting only contains \"key\".");
             }
         }
     }
