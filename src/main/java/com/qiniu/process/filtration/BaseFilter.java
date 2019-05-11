@@ -57,7 +57,6 @@ public abstract class BaseFilter<T> {
     }
 
     public boolean checkPutTimeCon() {
-
         return putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) > 0;
     }
 
