@@ -2,20 +2,24 @@ package com.qiniu.util;
 
 import org.junit.Test;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.Date;
+import java.util.TimeZone;
 
-public class DateUtilsTest {
+public class DatetimeUtilsTest {
 
     @Test
-    public void timeStamp2Date() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
+    public void newDateTimeApi() throws ParseException {
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
+        SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
         long timeStamp = 1515730332000L;
         Date date = new Date(timeStamp);
-        System.out.println(sdf.format(date));
-        System.out.println(sdf.format(1515730332000d));
+        System.out.println(sdf1.format(date));
+        System.out.println(sdf2.format(date));
         System.out.println(LocalDateTime.parse("2018-01-01T12:12:12.999750909"));
+//        System.out.println(LocalDateTime.parse("2018-07-19T02:41:06.990395202Z"));
         System.out.println(Instant.ofEpochSecond(10000));
         System.out.println(Instant.parse("2018-01-01T12:12:12.999Z").getNano());
         System.out.println(Instant.parse("2018-01-01T12:12:12.999Z").getEpochSecond());
@@ -34,5 +38,11 @@ public class DateUtilsTest {
         System.out.println(Instant.now().getNano());
         System.out.println(Instant.ofEpochMilli(1557497974473333L));
         System.out.println(Long.MAX_VALUE);
+        System.out.println(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
+        System.out.println(date.toInstant().atOffset(ZoneOffset.of("+8")).toLocalDateTime());
+        System.out.println(ZoneOffset.UTC);
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        System.out.println(df.parse("2014-08-23T09:20:05Z").toString());
     }
 }
