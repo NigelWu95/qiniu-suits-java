@@ -11,6 +11,7 @@ import com.qiniu.util.*;
 import com.qiniu.util.Base64;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class CommonParams {
@@ -152,10 +153,10 @@ public class CommonParams {
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
         String antiMimeType = entryParam.getValue("f-anti-mime", "");
         String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", "").trim());
-        long putTimeMin = checkedDatetime(dateScale[0]);
-        long putTimeMax = checkedDatetime(dateScale[1]);
-        if (putTimeMax != 0 && putTimeMax <= putTimeMin ) {
-            throw new IOException("please set date scale to make first as start date, next as end date, <date1> " +
+        LocalDateTime putTimeMin = checkedDatetime(dateScale[0]);
+        LocalDateTime putTimeMax = checkedDatetime(dateScale[1]);
+        if (putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) <= 0) {
+            throw new IOException("please set date scale to make first as start date, second as end date, <date1> " +
                     "should earlier then <date2>.");
         }
         String type = entryParam.getValue("f-type", "").trim();
@@ -479,34 +480,41 @@ public class CommonParams {
             } else {
                 scale = dateScale.split(",");
             }
-            if (indexMap != null && indexMap.containsValue("putTime")) {
-                throw new IOException("f-date-scale filter must get the putTime's index in indexes settings." +
+            if (indexMap != null && !indexMap.containsValue("putTime")) {
+                throw new IOException("f-date-scale filter must get the putTime's index in indexes settings," +
                         " the default indexes setting only contains \"key\".");
             }
         } else {
-            scale = new String[]{"", ""};
+            scale = new String[]{null, null};
         }
         if (scale.length <= 1) {
-            throw new IOException("please set start and end date, if no start please set is as \"[0,<date>]\"");
+            throw new IOException("please set start and end date, if no start please set is as \"[0,<date>]\", or " +
+                    "no end please set it as \"[<date>,now/max]\"");
         }
         return scale;
     }
 
-    public Long checkedDatetime(String datetime) throws Exception {
-        long time;
-        if (datetime == null ||datetime.matches("(|0)")) {
-            time = 0L;
+    public LocalDateTime checkedDatetime(String datetime) throws Exception {
+        LocalDateTime dateTime;
+        if (datetime == null) {
+            dateTime = null;
+        } else if (datetime.matches("(|0)")) {
+            dateTime = LocalDateTime.MIN;
+        } else if (datetime.equals("now")) {
+            dateTime = LocalDateTime.now();
+        } else if (datetime.equals("max")) {
+            dateTime = LocalDateTime.MAX;
         } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
-            time = DatetimeUtils.parseYYYYMMDDHHMMSSDatetime(datetime);
+            dateTime = LocalDateTime.parse(datetime.replace(" ", "T"));
         } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            time = DatetimeUtils.parseYYYYMMDDHHMMSSDatetime(datetime + " 00:00:00");
+            dateTime = LocalDateTime.parse(datetime + "T00:00:00");
         } else {
             throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
         }
-        if (time > 0L && indexMap != null && !indexMap.containsValue("putTime")) {
-            throw new IOException("f-date filter must get the putTime's index.");
+        if (dateTime != null && indexMap != null && !indexMap.containsValue("putTime")) {
+            throw new IOException("f-date-scale filter must get the putTime's index.");
         }
-        return time * 10000;
+        return dateTime;
     }
 
     public void setEntryParam(IEntryParam entryParam) {
