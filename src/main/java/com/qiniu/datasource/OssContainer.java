@@ -335,8 +335,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
      * @return 此次计算并执行到的 lister 序号，用于后续可能继续向线程添加 lister 执行设置起始序号
      * @throws Exception 下一级 lister 列表计算和多线程执行过程中可能产生的异常
      */
-    private int computeToList(ILister<E> startLister, boolean globalEnd, int order)
-            throws Exception {
+    private int computeToList(ILister<E> startLister, boolean globalEnd, int order) throws Exception {
         if (threads <= 1) {
             if (globalEnd) startLister.setPrefix("");
             if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());

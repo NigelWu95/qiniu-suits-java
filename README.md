@@ -69,11 +69,11 @@ java -jar qsuits-x.x.jar [-source=qiniu] -bucket=<path> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为几大类型：云存储列举(list)、文件内容读取(file)，通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
+数据源分为几大类型：云存储列举(list)、文件内容读取(file)，可以通过 **source=** 来指定数据源，例如:  
 `source=qiniu` 表示从七牛存储空间列举出资源列表  
 `source=local` 表示从本地文件按行读取资源列表  
-如果使用 `source` 参数则无需再进行数据源的自动判断且需要显式指定 `bucket` 参数  
-**在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
+如果使用 `source` 参数则需要显式指定 `bucket` 或者 `path` 参数来指明具体的数据源地址  
+**在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定 source 则根据 path 参数来自动判断：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=../<file-path>` 表示从本地文件中读取资源列表  
