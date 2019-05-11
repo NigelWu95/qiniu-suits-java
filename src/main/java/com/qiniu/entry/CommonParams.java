@@ -256,7 +256,7 @@ public class CommonParams {
     }
 
     private void setUnitLen(String unitLen) throws IOException {
-        if ("-1".equals(unitLen)) {
+        if (unitLen.startsWith("-")) {
             if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
             else unitLen = "1000";
         }
@@ -268,7 +268,7 @@ public class CommonParams {
     }
 
     private void setBatchSize(String batchSize) throws IOException {
-        if ("-1".equals(batchSize)) {
+        if (batchSize.startsWith("-")) {
             if (ProcessUtils.canBatch(process)) {
                 batchSize = "stat".equals(process) ? "100" : "1000";
             } else {
@@ -472,7 +472,7 @@ public class CommonParams {
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon()) {
                 if (sourceFromList) indexMap.put("key", "key");
-                else throw new IOException("f-key-x filter must get the key's index in indexes settings.");
+                else throw new IOException("f-key-[x] filter must get the key's index in indexes settings.");
             }
             if (baseFilter.checkMimeTypeCon()) {
                 if (sourceFromList) indexMap.put("mimeType", "mimeType");
