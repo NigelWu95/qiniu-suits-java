@@ -1,6 +1,7 @@
 package com.qiniu.process.filtration;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public abstract class BaseFilter<T> {
@@ -9,8 +10,8 @@ public abstract class BaseFilter<T> {
     private List<String> keySuffix;
     private List<String> keyInner;
     private List<String> keyRegex;
-    private long putTimeMin;
-    private long putTimeMax;
+    private LocalDateTime putTimeMin;
+    private LocalDateTime putTimeMax;
     private List<String> mimeType;
     private String type;
     private String status;
@@ -22,8 +23,8 @@ public abstract class BaseFilter<T> {
 
     public BaseFilter(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner, List<String> keyRegex,
                       List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
-                      List<String> antiKeyRegex, List<String> mimeType, List<String> antiMimeType, long putTimeMin,
-                      long putTimeMax, String type, String status) throws IOException {
+                      List<String> antiKeyRegex, List<String> mimeType, List<String> antiMimeType, LocalDateTime putTimeMin,
+                      LocalDateTime putTimeMax, String type, String status) throws IOException {
         this.keyPrefix = keyPrefix;
         this.keySuffix = keySuffix;
         this.keyInner = keyInner;
@@ -56,7 +57,8 @@ public abstract class BaseFilter<T> {
     }
 
     public boolean checkPutTimeCon() {
-        return putTimeMax > putTimeMin && putTimeMin >= 0;
+
+        return putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) > 0;
     }
 
     public boolean checkTypeCon() {
@@ -119,8 +121,8 @@ public abstract class BaseFilter<T> {
     public boolean filterPutTime(T item) {
         if (checkItem(item, "putTime")) return false;
         else {
-            long putTime = Long.valueOf(valueFrom(item, "putTime"));
-            return putTime <= putTimeMax && putTimeMin <= putTime;
+            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "putTime"));
+            return localDateTime.compareTo(putTimeMax) <= 0 && localDateTime.compareTo(putTimeMin) >= 0;
         }
     }
 
