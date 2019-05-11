@@ -8,6 +8,9 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 public final class LineUtils {
@@ -41,7 +44,9 @@ public final class LineUtils {
                     case "key": itemMap.put(indexMap.get(key), fileInfo.key); break;
                     case "hash": itemMap.put(indexMap.get(key), fileInfo.hash); break;
                     case "fsize": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.fsize)); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.putTime)); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(LocalDateTime.ofInstant(Instant.
+                                    ofEpochSecond(0, fileInfo.putTime * 100),
+                                    ZoneId.systemDefault()))); break;
                     case "mimeType": itemMap.put(indexMap.get(key), fileInfo.mimeType); break;
                     case "type": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.type)); break;
                     case "status": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.status)); break;
@@ -63,7 +68,8 @@ public final class LineUtils {
                     case "key": itemMap.put(indexMap.get(key), cosObject.getKey()); break;
                     case "hash": itemMap.put(indexMap.get(key), cosObject.getETag()); break;
                     case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getLastModified().getTime())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(LocalDateTime.ofInstant(
+                            cosObject.getLastModified().toInstant(), ZoneId.systemDefault()))); break;
 //                    case "mimeType": itemMap.put(indexMap.get(key), cosObject.); break;
                     case "type": itemMap.put(indexMap.get(key), cosObject.getStorageClass()); break;
 //                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObject.)); break;
@@ -84,7 +90,8 @@ public final class LineUtils {
                     case "key": itemMap.put(indexMap.get(key), ossObject.getKey()); break;
                     case "hash": itemMap.put(indexMap.get(key), ossObject.getETag()); break;
                     case "fsize": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getLastModified().getTime())); break;
+                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(LocalDateTime.ofInstant(
+                            ossObject.getLastModified().toInstant(), ZoneId.systemDefault()))); break;
                     case "type": itemMap.put(indexMap.get(key), ossObject.getStorageClass()); break;
                     case "endUser": itemMap.put(indexMap.get(key), ossObject.getOwner().getDisplayName()); break;
                 }
