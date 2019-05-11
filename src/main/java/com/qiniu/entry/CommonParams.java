@@ -497,9 +497,9 @@ public class CommonParams {
         if (datetime == null ||datetime.matches("(|0)")) {
             time = 0L;
         } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
-            time = DateUtils.parseYYYYMMDDHHMMSSDatetime(datetime);
+            time = DatetimeUtils.parseYYYYMMDDHHMMSSDatetime(datetime);
         } else if (datetime.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            time = DateUtils.parseYYYYMMDDHHMMSSDatetime(datetime + " 00:00:00");
+            time = DatetimeUtils.parseYYYYMMDDHHMMSSDatetime(datetime + " 00:00:00");
         } else {
             throw new IOException("please check your datetime string format, set it as \"yyyy-MM-dd HH:mm:ss\".");
         }
