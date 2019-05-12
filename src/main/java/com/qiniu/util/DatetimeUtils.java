@@ -2,6 +2,10 @@ package com.qiniu.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -24,6 +28,9 @@ public final class DatetimeUtils {
     public final static Pattern pattern_YYYY_MM_DDTHH_MM_SS_SSS_X = Pattern.compile(
             "^[\\d]{4}-[\\d]{2}-[\\d]{2}T[\\d]{2}:[\\d]{2}:[\\d]{2}\\.[\\d]{1,3}\\+[\\d]{2}(:[\\d]{2}|)$");
 
+    // java8 time api
+    public static ZoneId defaultZoneId = ZoneId.systemDefault();
+
     public static Date parseToDate(String dateTime) throws ParseException {
         if (pattern_YYYY_MM_DD_HH_MM_SS_SSS.matcher(dateTime).matches()) {
             return sdf_YYYY_MM_DD_HH_MM_SS_SSS.parse(dateTime);
@@ -36,7 +43,36 @@ public final class DatetimeUtils {
         }
     }
 
-    public static String parseToTimeString(long timeStamp) {
-        return new Date(timeStamp).toString();
+    public static String stringOf(Date date) {
+        return sdf_YYYY_MMTdd_HH_MM_SS_SSS.format(date);
+    }
+
+    public static String stringOf(Date date, SimpleDateFormat sdf) {
+        if (sdf == null) return sdf_YYYY_MMTdd_HH_MM_SS_SSS.format(date);
+        else return sdf.format(date);
+    }
+
+    // java8 time api
+
+    public static String stringOf(long epochSecond) {
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), defaultZoneId).toString();
+    }
+
+    public static String stringOf(long timeStamp, long accuracy) {
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(0, timeStamp * 10^9 / accuracy),
+                defaultZoneId).toString();
+    }
+
+    public static String stringOf(long timeStamp, long accuracy, DateTimeFormatter dateTimeFormatter) {
+        if (dateTimeFormatter == null) {
+            return stringOf(timeStamp, accuracy);
+        } else {
+            return dateTimeFormatter.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(0,
+                    timeStamp * 10^9 / accuracy), defaultZoneId));
+        }
+    }
+
+    public static String stringOf(Instant instant) {
+        return LocalDateTime.ofInstant(instant, defaultZoneId).toString();
     }
 }
