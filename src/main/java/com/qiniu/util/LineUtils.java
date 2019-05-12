@@ -221,17 +221,17 @@ public final class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(OSSObjectSummary cosObject, String separator, List<String> rmFields)
+    public static String toFormatString(OSSObjectSummary ossObject, String separator, List<String> rmFields)
             throws IOException {
-        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
-        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
-        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObject.getLastModified().getTime()).append(separator);
-        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
-        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
-            converted.append(cosObject.getOwner().getDisplayName()).append(separator);
+        if (rmFields == null || !rmFields.contains("key")) converted.append(ossObject.getKey()).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(ossObject.getETag()).append(separator);
+        if (rmFields == null || !rmFields.contains("fsize")) converted.append(ossObject.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(ossObject.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
+        if ((rmFields == null || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
+            converted.append(ossObject.getOwner().getDisplayName()).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
