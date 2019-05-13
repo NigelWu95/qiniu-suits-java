@@ -57,6 +57,7 @@ public final class ProcessUtils {
         add("qhash");
         add("avinfo");
         add("exportts");
+        add("filter");
     }};
     private static List<String> needConfigurationProcesses = new ArrayList<String>(){{
         addAll(needBucketProcesses);
