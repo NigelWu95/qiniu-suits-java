@@ -188,6 +188,7 @@ public class CommonParams {
             String marker = null;
             String end;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
+                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 if (jsonCfg.get("marker") instanceof JsonNull || "".equals(jsonCfg.get("marker").getAsString())) {
                     if (jsonCfg.get("start") instanceof JsonNull || "".equals(jsonCfg.get("start").getAsString())) {

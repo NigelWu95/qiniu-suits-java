@@ -43,7 +43,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
-        this.prefixesMap = prefixesMap;
+        this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
         setPrefixes();
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
@@ -83,21 +83,22 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
 
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
-        this.bucket = commonParams.getBucket();
-        this.antiPrefixes = commonParams.getAntiPrefixes();
-        this.prefixesMap = commonParams.getPrefixesMap();
+        bucket = commonParams.getBucket();
+        antiPrefixes = commonParams.getAntiPrefixes();
+        prefixesMap = commonParams.getPrefixesMap();
+        if (prefixesMap == null) prefixesMap = new HashMap<>();
         setPrefixes();
-        this.prefixLeft = commonParams.getPrefixLeft();
-        this.prefixRight = commonParams.getPrefixRight();
+        prefixLeft = commonParams.getPrefixLeft();
+        prefixRight = commonParams.getPrefixRight();
         setIndexMapWithDefault(commonParams.getIndexMap());
-        this.unitLen = commonParams.getUnitLen();
-        this.retryTimes = commonParams.getRetryTimes();
-        this.threads = commonParams.getThreads();
-        this.savePath = commonParams.getSavePath();
-        this.saveTotal = commonParams.getSaveTotal();
-        this.saveFormat = commonParams.getSaveFormat();
-        this.saveSeparator = commonParams.getSaveSeparator();
-        this.rmFields = commonParams.getRmFields();
+        unitLen = commonParams.getUnitLen();
+        retryTimes = commonParams.getRetryTimes();
+        threads = commonParams.getThreads();
+        savePath = commonParams.getSavePath();
+        saveTotal = commonParams.getSaveTotal();
+        saveFormat = commonParams.getSaveFormat();
+        saveSeparator = commonParams.getSaveSeparator();
+        rmFields = commonParams.getRmFields();
     }
 
     public void setProcessor(ILineProcess<T> processor) {
@@ -105,25 +106,22 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     }
 
     private void setPrefixes() {
-        this.prefixes = new ArrayList<>();
-        if (prefixesMap != null) {
-            for (String prefix : prefixesMap.keySet()) {
-                if (checkAntiPrefixes(prefix)) prefixes.add(prefix);
-            }
-        } else {
-            prefixesMap = new HashMap<>() ;
+        prefixes = new ArrayList<>();
+        for (String prefix : prefixesMap.keySet()) {
+            if (checkPrefix(prefix)) prefixes.add(prefix);
         }
     }
 
     /**
-     * 检验 prefix 是否在 antiPrefixes 前缀列表中
-     * @param validPrefix 待检验的 prefix
-     * @return 检验结果，true 表示 validPrefix 有效不需要剔除
+     * 检验 prefix 是否有效，在 antiPrefixes 前缀列表中或者为空均无效
+     * @param prefix 待检验的 prefix
+     * @return 检验结果，true 表示 prefix 有效不需要剔除
      */
-    private boolean checkAntiPrefixes(String validPrefix) {
+    private boolean checkPrefix(String prefix) {
+        if (prefix == null || "".equals(prefix)) return false;
         if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
         for (String antiPrefix : antiPrefixes) {
-            if (validPrefix.startsWith(antiPrefix)) return false;
+            if (prefix.startsWith(antiPrefix)) return false;
         }
         return true;
     }
@@ -250,9 +248,9 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
 
     private ILister<E> generateLister(String prefix) throws SuitsException {
         int retry = retryTimes;
+        String[] markerAndEnd = getMarkerAndEnd(prefix);
         while (true) {
             try {
-                String[] markerAndEnd = getMarkerAndEnd(prefix);
                 return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
@@ -282,7 +280,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 else retry--;
             }
         }
-        String startPrefix = lister.getPrefix();;
+        String startPrefix = lister.getPrefix();
         String point = "";
         List<ILister<E>> nextLevelList = new ArrayList<>();
         if (!next) { // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
@@ -319,7 +317,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         }
 
         for (String prefix : originPrefixList) {
-            if (prefix.compareTo(point) >= 0 && checkAntiPrefixes(prefix)) {
+            if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                 ILister<E> generated = generateLister(startPrefix + prefix);
                 if (generated != null && generated.currentLast() != null) nextLevelList.add(generated);
             }
@@ -372,7 +370,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }
             // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (listerList.size() > 0 && listerList.size() < threads) {
-                optional = listerList.stream().map(lister -> {
+                optional = listerList.parallelStream().map(lister -> {
                     try {
                         List<ILister<E>> nextList = nextLevelLister(lister, true);
                         Iterator<ILister<E>> it = nextList.iterator();
@@ -424,11 +422,11 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         exitBool = new AtomicBoolean(false);
         try {
             executorPool = Executors.newFixedThreadPool(threads);
-            Collections.sort(prefixes);
-            if (prefixes.size() == 0) {
+            if (prefixes == null || prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
                 computeToList(startLister, true, order);
             } else {
+                Collections.sort(prefixes);
                 if (prefixLeft) {
                     ILister<E> startLister = generateLister("");
                     startLister.setEndPrefix(prefixes.get(0));
