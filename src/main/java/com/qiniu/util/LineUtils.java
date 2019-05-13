@@ -8,9 +8,6 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 
 public final class LineUtils {
@@ -181,7 +178,8 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObject.getKey());
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObject.getETag());
         if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", cosObject.getSize());
-        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", cosObject.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime",
+                DatetimeUtils.stringOf(cosObject.getLastModified()));
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObject.getStorageClass());
         if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
             converted.addProperty("endUser", cosObject.getOwner().getDisplayName());
@@ -196,7 +194,8 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
         if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObject.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(
+                DatetimeUtils.stringOf(cosObject.getLastModified())).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
         if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
             converted.append(cosObject.getOwner().getDisplayName()).append(separator);
@@ -210,7 +209,8 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", ossObject.getETag());
         if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", ossObject.getSize());
-        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", ossObject.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime",
+                DatetimeUtils.stringOf(ossObject.getLastModified()));
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", ossObject.getStorageClass());
         if ((rmFields == null || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
             converted.addProperty("endUser", ossObject.getOwner().getDisplayName());
@@ -225,7 +225,8 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("key")) converted.append(ossObject.getKey()).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(ossObject.getETag()).append(separator);
         if (rmFields == null || !rmFields.contains("fsize")) converted.append(ossObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(ossObject.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("putTime")) converted.append(
+                DatetimeUtils.stringOf(ossObject.getLastModified())).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
         if ((rmFields == null || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
             converted.append(ossObject.getOwner().getDisplayName()).append(separator);
