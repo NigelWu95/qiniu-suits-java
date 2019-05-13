@@ -63,6 +63,10 @@ public final class DatetimeUtils {
                 defaultZoneId).toString();
     }
 
+    public static LocalDateTime stringOf(String datetime) {
+        return LocalDateTime.parse(datetime);
+    }
+
     public static String stringOf(long timeStamp, long accuracy, DateTimeFormatter dateTimeFormatter) {
         if (dateTimeFormatter == null) {
             return stringOf(timeStamp, accuracy);
