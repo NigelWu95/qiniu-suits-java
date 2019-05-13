@@ -40,19 +40,19 @@ public class CommonParams {
     private boolean prefixRight;
     private String addKeyPrefix;
     private String rmKeyPrefix;
+    private BaseFilter<Map<String, String>> baseFilter;
+    private SeniorFilter<Map<String, String>> seniorFilter;
+    private HashMap<String, String> indexMap;
     private int unitLen;
     private int threads;
     private int batchSize;
     private int retryTimes;
     private boolean saveTotal;
+    private List<String> rmFields;
     private String savePath;
     private String saveTag;
     private String saveFormat;
     private String saveSeparator;
-    private List<String> rmFields;
-    private BaseFilter<Map<String, String>> baseFilter;
-    private SeniorFilter<Map<String, String>> seniorFilter;
-    private HashMap<String, String> indexMap;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -101,11 +101,15 @@ public class CommonParams {
 
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
+        setBaseFilter();
+        setSeniorFilter();
+        setIndexMap();
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
         setThreads(entryParam.getValue("threads", "30").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
+        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
         saveTag = entryParam.getValue("save-tag", "").trim();
@@ -114,10 +118,6 @@ public class CommonParams {
         saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
         saveSeparator = entryParam.getValue("save-separator", null);
         setSaveSeparator(saveSeparator);
-        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
-        setBaseFilter();
-        setSeniorFilter();
-        setIndexMap();
     }
 
     public String checked(String param, String name, String conditionReg) throws IOException {
@@ -145,8 +145,10 @@ public class CommonParams {
         if (!source.matches("(local|qiniu|tencent|aliyun)")) {
             throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
         }
-        if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
-            throw new IOException("the process: " + process + " don't support getting source line from list.");
+        if (process != null && !"".equals(process)) {
+            if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+                throw new IOException("the process: " + process + " don't support getting source line from list.");
+            }
         }
     }
 
@@ -253,59 +255,6 @@ public class CommonParams {
 
     private void setPrefixRight(String prefixRight) throws IOException {
         this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
-    }
-
-    private void setUnitLen(String unitLen) throws IOException {
-        if (unitLen.startsWith("-")) {
-            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
-            else unitLen = "1000";
-        }
-        this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
-    }
-
-    private void setThreads(String threads) throws IOException {
-        this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
-    }
-
-    private void setBatchSize(String batchSize) throws IOException {
-        if (batchSize.startsWith("-")) {
-            if (ProcessUtils.canBatch(process)) {
-                batchSize = "stat".equals(process) ? "100" : "1000";
-            } else {
-                batchSize = "0";
-            }
-        }
-        this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
-    }
-
-    private void setRetryTimes(String retryTimes) throws IOException {
-        this.retryTimes = Integer.valueOf(checked(retryTimes, "retry-times", "\\d+"));
-    }
-
-    private void setSaveTotal(String saveTotal) throws IOException {
-        if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun)")) {
-                if (process == null || "".equals(process)) {
-                    saveTotal = "true";
-                } else {
-                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
-                    else saveTotal = "false";
-                }
-            } else {
-                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
-                else saveTotal = "true";
-            }
-        }
-        this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
-    }
-
-    private void setSaveSeparator(String separator) {
-        if (separator == null) {
-            if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
-            else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
-        } else {
-            this.saveSeparator = separator;
-        }
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -501,6 +450,59 @@ public class CommonParams {
                 else throw new IOException("f-mime filter must get the mimeType's index in indexes settings," +
                         " the default indexes setting only contains \"key\".");
             }
+        }
+    }
+
+    private void setUnitLen(String unitLen) throws IOException {
+        if (unitLen.startsWith("-")) {
+            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
+            else unitLen = "1000";
+        }
+        this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
+    }
+
+    private void setThreads(String threads) throws IOException {
+        this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
+    }
+
+    private void setBatchSize(String batchSize) throws IOException {
+        if (batchSize.startsWith("-")) {
+            if (ProcessUtils.canBatch(process)) {
+                batchSize = "stat".equals(process) ? "100" : "1000";
+            } else {
+                batchSize = "0";
+            }
+        }
+        this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
+    }
+
+    private void setRetryTimes(String retryTimes) throws IOException {
+        this.retryTimes = Integer.valueOf(checked(retryTimes, "retry-times", "\\d+"));
+    }
+
+    private void setSaveTotal(String saveTotal) throws IOException {
+        if (saveTotal == null || "".equals(saveTotal)) {
+            if (source.matches("(qiniu|tencent|aliyun)")) {
+                if (process == null || "".equals(process)) {
+                    saveTotal = "true";
+                } else {
+                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
+                    else saveTotal = "false";
+                }
+            } else {
+                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
+                else saveTotal = "true";
+            }
+        }
+        this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
+    }
+
+    private void setSaveSeparator(String separator) {
+        if (separator == null) {
+            if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
+            else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
+        } else {
+            this.saveSeparator = separator;
         }
     }
 

@@ -372,7 +372,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }
             // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (listerList.size() > 0 && listerList.size() < threads) {
-                optional = listerList.parallelStream().map(lister -> {
+                optional = listerList.stream().map(lister -> {
                     try {
                         List<ILister<E>> nextList = nextLevelLister(lister, true);
                         Iterator<ILister<E>> it = nextList.iterator();
