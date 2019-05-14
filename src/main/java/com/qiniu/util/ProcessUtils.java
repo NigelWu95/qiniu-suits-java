@@ -13,8 +13,8 @@ public final class ProcessUtils {
         add("exportts");
     }};
     private static List<String> needNewKeyProcesses = new ArrayList<String>(){{
-        add("rename");
         add("copy");
+        add("rename");
     }};
     private static List<String> needFopsProcesses = new ArrayList<String>(){{
         add("pfop");
@@ -25,20 +25,20 @@ public final class ProcessUtils {
     private static List<String> needAvinfoProcesses = new ArrayList<String>(){{
         add("pfopcmd");
     }};
-    private static List<String> needBucketProcesses = new ArrayList<String>(){{
+    private static List<String> needBucketAnKeyProcesses = new ArrayList<String>(){{
         add("status");
         add("type");
         add("lifecycle");
-        add("copy");
-        add("move");
-        add("rename");
+        add("mirror");
         add("delete");
+        add("copy");
+        add("rename");
+        add("move");
         add("pfop");
         add("stat");
-        add("mirror");
     }};
     private static List<String> needAuthProcesses = new ArrayList<String>(){{
-        addAll(needBucketProcesses);
+        addAll(needBucketAnKeyProcesses);
         add("asyncfetch");
         add("privateurl");
     }};
@@ -60,7 +60,7 @@ public final class ProcessUtils {
         add("filter");
     }};
     private static List<String> needConfigurationProcesses = new ArrayList<String>(){{
-        addAll(needBucketProcesses);
+        addAll(needBucketAnKeyProcesses);
         addAll(needPidProcesses);
         add("asyncfetch");
         add("qhash");
@@ -88,8 +88,8 @@ public final class ProcessUtils {
         return needAvinfoProcesses.contains(process);
     }
 
-    public static boolean needBucket(String process) {
-        return needBucketProcesses.contains(process);
+    public static boolean needBucketAndKey(String process) {
+        return needBucketAnKeyProcesses.contains(process);
     }
 
     public static boolean needAuth(String process) {

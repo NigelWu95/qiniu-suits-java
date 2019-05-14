@@ -25,7 +25,8 @@ public final class LineUtils {
     final static public List<String> fileInfoFields = new ArrayList<String>(){{
         add("key");
         add("hash");
-        addAll(longFields);
+        add("size");
+//        addAll(longFields);
         add("datetime");
         add("mime");
         addAll(intFields);
