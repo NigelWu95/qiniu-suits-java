@@ -6,10 +6,8 @@ public class ParamsUtils {
 
     public final static String[] escapes = new String[]{",", "\\", ":", "="};
 
-    public static List<String> escapeSplit(String paramLine, char delimiter, String[] escaped, boolean replace) {
-        List<String> splitList = new ArrayList<>();
-        if (paramLine == null || "".equals(paramLine)) return splitList;
-
+    public static String[] escapeSplit(String paramLine, char delimiter, String[] escaped, boolean replace) {
+        if (paramLine == null || "".equals(paramLine)) return new String[0];
         Map<String, String> escapeMap = new HashMap<>();
         for (String s : escaped) {
             if (paramLine.contains("\\" + s)) {
@@ -23,31 +21,30 @@ public class ParamsUtils {
         }
 
         String[] elements = paramLine.split(String.valueOf(delimiter));
-        for (String element : elements) {
+        for (int i = 0; i < elements.length; i++) {
             for (String key : escapeMap.keySet()) {
-                if (element.contains(key)) {
-                    if (replace) element = element.replace(key, escapeMap.get(key));
-                    else element = element.replace(key, "\\" + escapeMap.get(key));
+                if (elements[i].contains(key)) {
+                    if (replace) elements[i] = elements[i].replace(key, escapeMap.get(key));
+                    else elements[i] = elements[i].replace(key, "\\" + escapeMap.get(key));
                 }
             }
-            splitList.add(element);
         }
-        return splitList;
+        return elements;
     }
 
-    public static List<String> escapeSplit(String paramLine, char delimiter) {
+    public static String[] escapeSplit(String paramLine, char delimiter) {
         return escapeSplit(paramLine, delimiter, escapes, true);
     }
 
-    public static List<String> escapeSplit(String paramLine, char delimiter, boolean replace) {
+    public static String[] escapeSplit(String paramLine, char delimiter, boolean replace) {
         return escapeSplit(paramLine, delimiter, escapes, replace);
     }
 
-    public static List<String> escapeSplit(String paramLine) {
+    public static String[] escapeSplit(String paramLine) {
         return escapeSplit(paramLine, ',', escapes, true);
     }
 
-    public static List<String> escapeSplit(String paramLine, boolean replace) {
+    public static String[] escapeSplit(String paramLine, boolean replace) {
         return escapeSplit(paramLine, ',', escapes, replace);
     }
 }
