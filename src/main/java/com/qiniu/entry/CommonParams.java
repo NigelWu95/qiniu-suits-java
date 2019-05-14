@@ -367,13 +367,14 @@ public class CommonParams {
             useDefault = true;
         } else if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
-            String[] strings = indexes.split(",");
-            for (int i = 0; i < strings.length; i++) {
-                if (strings[i].matches(".+:.+")) {
-                    String[] keyIndex = strings[i].split(":");
-                    indexMap.put(keyIndex[1], keyIndex[0]);
+            List<String> strings = ParamsUtils.escapeSplit(indexes, false);
+            for (int i = 0; i < strings.size(); i++) {
+                if (strings.get(i).matches(".+:.+")) {
+                    List<String> keyIndex = ParamsUtils.escapeSplit(strings.get(i), ':');
+                    if (keyIndex.size() != 2) throw new IOException("incorrect key:index pattern: " + strings.get(i));
+                    indexMap.put(keyIndex.get(1), keyIndex.get(0));
                 } else {
-                    indexMap.put(strings[i], keys.get(i));
+                    indexMap.put(strings.get(i), keys.get(i));
                 }
             }
         } else if (indexes.startsWith("[") || indexes.endsWith("]")) {
