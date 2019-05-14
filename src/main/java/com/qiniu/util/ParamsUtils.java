@@ -4,6 +4,8 @@ import java.util.*;
 
 public class ParamsUtils {
 
+    public final static String[] escapes = new String[]{",", "\\", ":", "="};
+
     public static List<String> escapeSplit(String paramLine, char delimiter, String[] escaped) {
         List<String> splitList = new ArrayList<>();
         if (paramLine == null || "".equals(paramLine)) return splitList;
@@ -28,5 +30,13 @@ public class ParamsUtils {
             splitList.add(element);
         }
         return splitList;
+    }
+
+    public static List<String> escapeSplit(String paramLine, char delimiter) {
+        return escapeSplit(paramLine, delimiter, escapes);
+    }
+
+    public static List<String> escapeSplit(String paramLine) {
+        return escapeSplit(paramLine, ',', escapes);
     }
 }
