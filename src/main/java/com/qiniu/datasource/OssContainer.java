@@ -319,7 +319,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         for (String prefix : originPrefixList) {
             if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                 ILister<E> generated = generateLister(startPrefix + prefix);
-                if (generated != null && generated.currentLast() != null) nextLevelList.add(generated);
+                if (generated != null && (generated.hasNext() || generated.currents().size() > 0)) nextLevelList.add(generated);
             }
         }
         return nextLevelList;
