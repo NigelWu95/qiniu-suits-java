@@ -82,8 +82,12 @@ public class ParamsConfig implements IEntryParam {
     private String[] splitParam(String paramCommand) throws IOException {
         if (!paramCommand.contains("="))
             throw new IOException("invalid command param: \"" + paramCommand + "\", no value set with \"=\".");
-        String[] strings = paramCommand.split("=");
-        if (strings.length == 1) throw new IOException("the \"" + strings[0] + "\" param has no value."); // 不允许空值的出现
+        String[] strings = new String[2];
+        int position = paramCommand.indexOf("=");
+        if (position + 1 == paramCommand.length())
+            throw new IOException("the \"" + paramCommand + "\" param has no value."); // 不允许空值的出现
+        strings[0] = paramCommand.substring(0, position);
+        strings[1] = paramCommand.substring(position + 1);
         if (strings[1].matches("(\".*\"|\'.*\')"))
             return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
         return strings;
