@@ -13,9 +13,10 @@ public class CommonParamsTest {
 
     @Test
     public void test() throws Exception {
-        String[] args = new String[]{"-source=local", "-indexes=[key:key,1,2,time:time]","-f-prefix=fragments"
+        String[] args = new String[]{"-source=local", "-indexes=[key:key,1,2,time:time]"
+                ,"-f-prefix=fragments,abc,\\,a"
+//                ,"-f-mime=video"
                 };
-//                ,"-f-mime=video"};
         IEntryParam entryParam = new ParamsConfig(args);
         CommonParams commonParams = new CommonParams(entryParam);
         Map<String,String> map = commonParams.getIndexMap();
