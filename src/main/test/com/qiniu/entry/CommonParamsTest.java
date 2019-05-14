@@ -13,7 +13,10 @@ public class CommonParamsTest {
 
     @Test
     public void test() throws Exception {
-        String[] args = new String[]{"-source=local", "-indexes=[key:key,1,2,time:time]"
+        String[] args = new String[]{"-source=local"
+                , "-indexes=[key:key,1,2,time:time]"
+                , "-indexes=[key:key,1,2,time:time,a:\\:b]"
+//                , "-indexes=[key:key,1,2,time:time,a:\\:b:c]"
                 ,"-f-prefix=fragments,abc,\\,a"
 //                ,"-f-mime=video"
                 };
