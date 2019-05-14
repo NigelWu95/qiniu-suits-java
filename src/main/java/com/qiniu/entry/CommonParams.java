@@ -92,7 +92,7 @@ public class CommonParams {
             }
             setBucket();
             parse = "object";
-            antiPrefixes = splitItems(entryParam.getValue("anti-prefixes", ""));
+            antiPrefixes = ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", ""));
             String prefixes = entryParam.getValue("prefixes", "");
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
             setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
@@ -212,35 +212,13 @@ public class CommonParams {
                 prefixesMap.put(prefix, new String[]{marker, end});
             }
         } else {
-            List<String> prefixList = splitItems(prefixes);
+            List<String> prefixList = ParamsUtils.escapeSplit(prefixes);
             for (String prefix : prefixList) {
                 // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
                 prefixesMap.remove(prefix);
                 prefixesMap.put(prefix, new String[]{"", ""});
             }
         }
-    }
-
-    public List<String> splitItems(String paramLine) {
-        List<String> splitList = new ArrayList<>();
-        String tempReplace = "_____";
-        if (paramLine != null && !"".equals(paramLine)) {
-            // 指定的参数本身包含 "," 号时需要用转义符解决
-            if (paramLine.contains("\\,")) {
-                while (paramLine.contains(tempReplace)) {
-                    tempReplace += "_";
-                }
-                paramLine = paramLine.replace("\\,", tempReplace);
-                String[] elements = paramLine.split(",");
-                for (String element : elements) {
-                    if (element.contains(tempReplace)) splitList.add(element.replace(tempReplace, ","));
-                    else splitList.add(element);
-                }
-            } else {
-                for (String s : paramLine.split(",")) splitList.add(s);
-            }
-        }
-        return splitList;
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
@@ -315,16 +293,16 @@ public class CommonParams {
         if (!"".equals(type)) type = checked(type, "f-type", "[01]");
         if (!"".equals(status)) status = checked(status, "f-status", "[01]");
 
-        List<String> keyPrefixList = splitItems(keyPrefix);
-        List<String> keySuffixList = splitItems(keySuffix);
-        List<String> keyInnerList = splitItems(keyInner);
-        List<String> keyRegexList = splitItems(keyRegex);
-        List<String> mimeTypeList = splitItems(mimeType);
-        List<String> antiKeyPrefixList = splitItems(antiKeyPrefix);
-        List<String> antiKeySuffixList = splitItems(antiKeySuffix);
-        List<String> antiKeyInnerList = splitItems(antiKeyInner);
-        List<String> antiKeyRegexList = splitItems(antiKeyRegex);
-        List<String> antiMimeTypeList = splitItems(antiMimeType);
+        List<String> keyPrefixList = ParamsUtils.escapeSplit(keyPrefix);
+        List<String> keySuffixList = ParamsUtils.escapeSplit(keySuffix);
+        List<String> keyInnerList = ParamsUtils.escapeSplit(keyInner);
+        List<String> keyRegexList = ParamsUtils.escapeSplit(keyRegex);
+        List<String> mimeTypeList = ParamsUtils.escapeSplit(mimeType);
+        List<String> antiKeyPrefixList = ParamsUtils.escapeSplit(antiKeyPrefix);
+        List<String> antiKeySuffixList = ParamsUtils.escapeSplit(antiKeySuffix);
+        List<String> antiKeyInnerList = ParamsUtils.escapeSplit(antiKeyInner);
+        List<String> antiKeyRegexList = ParamsUtils.escapeSplit(antiKeyRegex);
+        List<String> antiMimeTypeList = ParamsUtils.escapeSplit(antiMimeType);
         try {
             baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
                     antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
@@ -401,7 +379,7 @@ public class CommonParams {
         } else if (indexes.startsWith("[") || indexes.endsWith("]")) {
             throw new IOException("please check your indexes, set it as \"[key1:index1,key2:index2,...]\".");
         } else {
-            List<String> indexList = splitItems(indexes);
+            List<String> indexList = ParamsUtils.escapeSplit(indexes);
             if (indexList.size() > 9) {
                 throw new IOException("the file info's index length is too long.");
             } else {
