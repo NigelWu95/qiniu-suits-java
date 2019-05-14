@@ -12,19 +12,19 @@ public class ParamsUtilsTest {
     public void testEscapeSplit() {
         String paramLine = "fragments,abc,\\,a";
         String[] escapes = new String[]{","};
-        List<String> strings = ParamsUtils.escapeSplit(paramLine, ',', escapes);
+        List<String> strings = ParamsUtils.escapeSplit(paramLine, ',', escapes, true);
         System.out.println(strings);
         paramLine += "\\\\b";
         escapes = new String[]{",", "\\"};
-        strings = ParamsUtils.escapeSplit(paramLine, ',', escapes);
+        strings = ParamsUtils.escapeSplit(paramLine, ',', escapes, true);
         System.out.println(strings);
         paramLine += "\\:";
         escapes = new String[]{",", "\\", ":"};
-        strings = ParamsUtils.escapeSplit(paramLine, ',', escapes);
+        strings = ParamsUtils.escapeSplit(paramLine, ',', escapes, true);
         System.out.println(strings);
         paramLine += "\\=";
         escapes = new String[]{",", "\\", ":", "="};
-        strings = ParamsUtils.escapeSplit(paramLine, ',', escapes);
+        strings = ParamsUtils.escapeSplit(paramLine, ',', escapes, true);
         System.out.println(strings);
     }
 }
