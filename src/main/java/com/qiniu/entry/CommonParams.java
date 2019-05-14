@@ -222,32 +222,25 @@ public class CommonParams {
     }
 
     public List<String> splitItems(String paramLine) {
-        List<String> itemList = new ArrayList<>();
-        String[] items = new String[]{};
+        List<String> splitList = new ArrayList<>();
+        String tempReplace = "_____";
         if (paramLine != null && !"".equals(paramLine)) {
             // 指定的参数本身包含 "," 号时需要用转义符解决
             if (paramLine.contains("\\,")) {
-                String[] elements = paramLine.split("\\\\,");
-                String[] items1 = elements[0].split(",");
-                if (elements.length > 1) {
-                    String[] items2 = elements[1].split(",");
-                    items = new String[items1.length + items2.length + 1];
-                    System.arraycopy(items1, 0, items, 0, items1.length);
-                    items[items1.length] = "";
-                    System.arraycopy(items2, 0, items, items1.length + 1, items2.length + 1);
-                } else {
-                    items = new String[items1.length];
-                    System.arraycopy(items1, 0, items, 0, items1.length);
+                while (paramLine.contains(tempReplace)) {
+                    tempReplace += "_";
+                }
+                paramLine = paramLine.replace("\\,", tempReplace);
+                String[] elements = paramLine.split(",");
+                for (String element : elements) {
+                    if (element.contains(tempReplace)) splitList.add(element.replace(tempReplace, ","));
+                    else splitList.add(element);
                 }
             } else {
-                items = paramLine.split(",");
+                for (String s : paramLine.split(",")) splitList.add(s);
             }
         }
-        // itemList 不能去重，因为要用于解析 indexes 设置，可能存在同时使用多个 "-1" 来跳过某些字段
-        for (String item : items) {
-            if (!"".equals(item)) itemList.add(item);
-        }
-        return itemList;
+        return splitList;
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
