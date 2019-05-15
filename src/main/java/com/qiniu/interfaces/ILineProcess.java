@@ -19,5 +19,9 @@ public interface ILineProcess<T> {
 
     default void setNextProcessor(ILineProcess<T> nextProcessor) {}
 
+    default ILineProcess<T> getNextProcessor() {
+        return null;
+    }
+
     void closeResource();
 }
