@@ -74,53 +74,53 @@ public abstract class BaseFilter<T> {
         } else {
             String key = valueFrom(item, "key");
             boolean result = false;
-            if (keyPrefix != null) {
+            if (checkList(keyPrefix)) {
                 result = keyPrefix.stream().anyMatch(key::startsWith);
                 if (!result) return false;
             }
-            if (keySuffix != null) {
+            if (checkList(keySuffix)) {
                 result = keySuffix.stream().anyMatch(key::endsWith);
                 if (!result) return false;
             }
-            if (keyInner != null) {
+            if (checkList(keyInner)) {
                 result = keyInner.stream().anyMatch(key::contains);
                 if (!result) return false;
             }
-            if (keyRegex != null) {
+            if (checkList(keyRegex)) {
                 result = keyRegex.stream().anyMatch(key::matches);
                 if (!result) return false;
             }
-            if (antiKeyPrefix != null) {
+            if (checkList(antiKeyPrefix)) {
                 result = antiKeyPrefix.stream().noneMatch(key::startsWith);
                 if (!result) return false;
             }
-            if (antiKeySuffix != null) {
+            if (checkList(antiKeySuffix)) {
                 result = antiKeySuffix.stream().noneMatch(key::endsWith);
                 if (!result) return false;
             }
-            if (antiKeyInner != null) {
+            if (checkList(antiKeyInner)) {
                 result = antiKeyInner.stream().noneMatch(key::contains);
                 if (!result) return false;
             }
-            if (antiKeyRegex != null) result = antiKeyRegex.stream().noneMatch(key::matches);
+            if (checkList(antiKeyRegex)) result = antiKeyRegex.stream().noneMatch(key::matches);
             return result;
         }
     }
 
     public boolean filterMimeType(T item) {
-        if (checkItem(item, "mimeType")) {
+        if (checkItem(item, "mime")) {
             return false;
         } else {
-            String mType = valueFrom(item, "mimeType");
-            return (mimeType == null || mimeType.stream().anyMatch(mType::contains))
-                    && (antiMimeType == null || antiMimeType.stream().noneMatch(mType::contains));
+            String mType = valueFrom(item, "mime");
+            return (checkList(mimeType) || mimeType.stream().anyMatch(mType::contains))
+                    && (checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains));
         }
     }
 
     public boolean filterPutTime(T item) {
-        if (checkItem(item, "putTime")) return false;
+        if (checkItem(item, "datetime")) return false;
         else {
-            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "putTime"));
+            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "datetime"));
             return localDateTime.compareTo(putTimeMax) <= 0 && localDateTime.compareTo(putTimeMin) >= 0;
         }
     }

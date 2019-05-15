@@ -18,7 +18,7 @@ public final class LineUtils {
     }};
 
     final static private List<String> intFields = new ArrayList<String>(){{
-        add("type");
+//        add("type");
         add("status");
     }};
 
@@ -29,6 +29,7 @@ public final class LineUtils {
 //        addAll(longFields);
         add("datetime");
         add("mime");
+        add("type");
         addAll(intFields);
         add("md5");
         add("owner");
