@@ -38,22 +38,21 @@ public final class LineUtils {
     public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         Map<String, String> itemMap = new HashMap<>();
-        fileInfoFields.forEach(key -> {
-            if (indexMap.get(key) != null) {
-                switch (key) {
-                    case "key": itemMap.put(indexMap.get(key), fileInfo.key); break;
-                    case "hash": itemMap.put(indexMap.get(key), fileInfo.hash); break;
-                    case "size": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.fsize)); break;
-                    case "datetime": itemMap.put(indexMap.get(key), DatetimeUtils.stringOf(fileInfo.putTime,
+        for (String index : indexMap.keySet()) {
+            if (fileInfoFields.contains(index)) {
+                switch (index) {
+                    case "key": itemMap.put(indexMap.get(index), fileInfo.key); break;
+                    case "hash": itemMap.put(indexMap.get(index), fileInfo.hash); break;
+                    case "size": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
+                    case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime,
                             10000000)); break;
-                    case "mime": itemMap.put(indexMap.get(key), fileInfo.mimeType); break;
-                    case "type": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.type)); break;
-                    case "status": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.status)); break;
-//                    case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
-                    case "owner": itemMap.put(indexMap.get(key), fileInfo.endUser); break;
+                    case "mime": itemMap.put(indexMap.get(index), fileInfo.mimeType); break;
+                    case "type": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
+                    case "status": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
+                    case "owner": itemMap.put(indexMap.get(index), fileInfo.endUser); break;
                 }
             }
-        });
+        }
         return itemMap;
     }
 
@@ -61,20 +60,18 @@ public final class LineUtils {
             throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         Map<String, String> itemMap = new HashMap<>();
-        fileInfoFields.forEach(key -> {
-            if (indexMap.get(key) != null) {
-                switch (key) {
-                    case "key": itemMap.put(indexMap.get(key), cosObject.getKey()); break;
-                    case "hash": itemMap.put(indexMap.get(key), cosObject.getETag()); break;
-                    case "size": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getSize())); break;
-                    case "datetime": itemMap.put(indexMap.get(key), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
-//                    case "mime": itemMap.put(indexMap.get(key), cosObject.); break;
-                    case "type": itemMap.put(indexMap.get(key), cosObject.getStorageClass()); break;
-//                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObject.)); break;
-                    case "owner": itemMap.put(indexMap.get(key), cosObject.getOwner().getDisplayName()); break;
+        for (String index : indexMap.keySet()) {
+            if (fileInfoFields.contains(index)) {
+                switch (index) {
+                    case "key": itemMap.put(indexMap.get(index), cosObject.getKey()); break;
+                    case "hash": itemMap.put(indexMap.get(index), cosObject.getETag()); break;
+                    case "size": itemMap.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
+                    case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                    case "type": itemMap.put(indexMap.get(index), cosObject.getStorageClass()); break;
+                    case "owner": itemMap.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
                 }
             }
-        });
+        }
         return itemMap;
     }
 
@@ -82,18 +79,18 @@ public final class LineUtils {
             throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         Map<String, String> itemMap = new HashMap<>();
-        fileInfoFields.forEach(key -> {
-            if (indexMap.get(key) != null) {
-                switch (key) {
-                    case "key": itemMap.put(indexMap.get(key), ossObject.getKey()); break;
-                    case "hash": itemMap.put(indexMap.get(key), ossObject.getETag()); break;
-                    case "size": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getSize())); break;
-                    case "datetime": itemMap.put(indexMap.get(key), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
-                    case "type": itemMap.put(indexMap.get(key), ossObject.getStorageClass()); break;
-                    case "owner": itemMap.put(indexMap.get(key), ossObject.getOwner().getDisplayName()); break;
+        for (String index : indexMap.keySet()) {
+            if (fileInfoFields.contains(index)) {
+                switch (index) {
+                    case "key": itemMap.put(indexMap.get(index), ossObject.getKey()); break;
+                    case "hash": itemMap.put(indexMap.get(index), ossObject.getETag()); break;
+                    case "size": itemMap.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
+                    case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                    case "type": itemMap.put(indexMap.get(index), ossObject.getStorageClass()); break;
+                    case "owner": itemMap.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
                 }
             }
-        });
+        }
         return itemMap;
     }
 
@@ -101,13 +98,8 @@ public final class LineUtils {
             throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         Map<String, String> itemMap = new HashMap<>();
-        String mapKey;
-        for (String key : json.keySet()) {
-            mapKey = indexMap.get(key);
-            if (mapKey != null) {
-                if (json.get(key) instanceof JsonNull) itemMap.put(mapKey, null);
-                else itemMap.put(mapKey, json.get(key).getAsString());
-            }
+        for (String index : indexMap.keySet()) {
+            if (json.has(index)) itemMap.put(indexMap.get(index), json.get(index).getAsString());
         }
         // 是否需要强制转换，即使字段数没有达到 indexMap 的要求
         if (!force && itemMap.size() < indexMap.size())
@@ -127,13 +119,10 @@ public final class LineUtils {
         if (line == null) throw new IOException("empty string line.");
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
-        String mapKey;
-        for (int i = 0; i < items.length; i++) {
-            mapKey = indexMap.get(String.valueOf(i));
-            if (mapKey != null) {
-                if (items[i] == null) itemMap.put(mapKey, null);
-                else itemMap.put(mapKey, items[i]);
-            }
+        int position;
+        for (String index : indexMap.keySet()) {
+            position = Integer.valueOf(index);
+            if (items.length > position) itemMap.put(indexMap.get(index), items[position]);
         }
         // 是否需要强制转换，即使字段数没有达到 indexMap 的要求
         if (!force && itemMap.size() < indexMap.size())
