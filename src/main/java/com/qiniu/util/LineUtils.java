@@ -10,26 +10,29 @@ import com.qiniu.storage.model.FileInfo;
 import java.io.IOException;
 import java.util.*;
 
-public class LineUtils {
+public final class LineUtils {
 
     final static private List<String> longFields = new ArrayList<String>(){{
-        add("fsize");
-        add("putTime");
+        add("size");
+        add("timestamp");
     }};
 
     final static private List<String> intFields = new ArrayList<String>(){{
-        add("type");
+//        add("type");
         add("status");
     }};
 
     final static public List<String> fileInfoFields = new ArrayList<String>(){{
         add("key");
         add("hash");
-        addAll(longFields);
-        add("mimeType");
+        add("size");
+//        addAll(longFields);
+        add("datetime");
+        add("mime");
+        add("type");
         addAll(intFields);
         add("md5");
-        add("endUser");
+        add("owner");
     }};
 
     public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
@@ -40,13 +43,14 @@ public class LineUtils {
                 switch (key) {
                     case "key": itemMap.put(indexMap.get(key), fileInfo.key); break;
                     case "hash": itemMap.put(indexMap.get(key), fileInfo.hash); break;
-                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.fsize)); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.putTime)); break;
-                    case "mimeType": itemMap.put(indexMap.get(key), fileInfo.mimeType); break;
+                    case "size": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.fsize)); break;
+                    case "datetime": itemMap.put(indexMap.get(key), DatetimeUtils.stringOf(fileInfo.putTime,
+                            10000000)); break;
+                    case "mime": itemMap.put(indexMap.get(key), fileInfo.mimeType); break;
                     case "type": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.type)); break;
                     case "status": itemMap.put(indexMap.get(key), String.valueOf(fileInfo.status)); break;
 //                    case "md5": itemMap.put(key, String.valueOf(fileInfo.md5)); break;
-                    case "endUser": itemMap.put(indexMap.get(key), fileInfo.endUser); break;
+                    case "owner": itemMap.put(indexMap.get(key), fileInfo.endUser); break;
                 }
             }
         });
@@ -62,12 +66,12 @@ public class LineUtils {
                 switch (key) {
                     case "key": itemMap.put(indexMap.get(key), cosObject.getKey()); break;
                     case "hash": itemMap.put(indexMap.get(key), cosObject.getETag()); break;
-                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getLastModified().getTime())); break;
-//                    case "mimeType": itemMap.put(indexMap.get(key), cosObject.); break;
+                    case "size": itemMap.put(indexMap.get(key), String.valueOf(cosObject.getSize())); break;
+                    case "datetime": itemMap.put(indexMap.get(key), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+//                    case "mime": itemMap.put(indexMap.get(key), cosObject.); break;
                     case "type": itemMap.put(indexMap.get(key), cosObject.getStorageClass()); break;
 //                    case "status": itemMap.put(indexMap.get(key), String.valueOf(cosObject.)); break;
-                    case "endUser": itemMap.put(indexMap.get(key), cosObject.getOwner().getDisplayName()); break;
+                    case "owner": itemMap.put(indexMap.get(key), cosObject.getOwner().getDisplayName()); break;
                 }
             }
         });
@@ -83,10 +87,10 @@ public class LineUtils {
                 switch (key) {
                     case "key": itemMap.put(indexMap.get(key), ossObject.getKey()); break;
                     case "hash": itemMap.put(indexMap.get(key), ossObject.getETag()); break;
-                    case "fsize": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getSize())); break;
-                    case "putTime": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getLastModified().getTime())); break;
+                    case "size": itemMap.put(indexMap.get(key), String.valueOf(ossObject.getSize())); break;
+                    case "datetime": itemMap.put(indexMap.get(key), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                     case "type": itemMap.put(indexMap.get(key), ossObject.getStorageClass()); break;
-                    case "endUser": itemMap.put(indexMap.get(key), ossObject.getOwner().getDisplayName()); break;
+                    case "owner": itemMap.put(indexMap.get(key), ossObject.getOwner().getDisplayName()); break;
                 }
             }
         });
@@ -142,13 +146,14 @@ public class LineUtils {
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
-        if (rmFields == null || !rmFields.contains("fsize")) converted.append(fileInfo.fsize).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(fileInfo.putTime).append(separator);
-        if (rmFields == null || !rmFields.contains("mimeType")) converted.append(fileInfo.mimeType).append(separator);
+        if (rmFields == null || !rmFields.contains("size")) converted.append(fileInfo.fsize).append(separator);
+        if (rmFields == null || !rmFields.contains("datetime")) converted.append(
+                DatetimeUtils.stringOf(fileInfo.putTime, 10000000)).append(separator);
+        if (rmFields == null || !rmFields.contains("mime")) converted.append(fileInfo.mimeType).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
 //        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
-        if ((rmFields == null || !rmFields.contains("endUser")) && fileInfo.endUser != null)
+        if ((rmFields == null || !rmFields.contains("owner")) && fileInfo.endUser != null)
             converted.append(fileInfo.endUser).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
@@ -159,14 +164,15 @@ public class LineUtils {
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", fileInfo.hash);
-        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", fileInfo.fsize);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", fileInfo.putTime);
-        if (rmFields == null || !rmFields.contains("mimeType")) converted.addProperty("mimeType", fileInfo.mimeType);
+        if (rmFields == null || !rmFields.contains("size")) converted.addProperty("size", fileInfo.fsize);
+        if (rmFields == null || !rmFields.contains("datetime")) converted.addProperty("datetime",
+                DatetimeUtils.stringOf(fileInfo.putTime, 10000000));
+        if (rmFields == null || !rmFields.contains("mime")) converted.addProperty("mime", fileInfo.mimeType);
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", fileInfo.type);
         if (rmFields == null || !rmFields.contains("status")) converted.addProperty("status", fileInfo.status);
 //        if (rmFields == null || !rmFields.contains("md5")) converted.addProperty("md5", fileInfo.md5);
-        if ((rmFields == null || !rmFields.contains("endUser")) && fileInfo.endUser != null)
-            converted.addProperty("endUser", fileInfo.endUser);
+        if ((rmFields == null || !rmFields.contains("owner")) && fileInfo.endUser != null)
+            converted.addProperty("owner", fileInfo.endUser);
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
@@ -176,11 +182,12 @@ public class LineUtils {
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObject.getKey());
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObject.getETag());
-        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", cosObject.getSize());
-        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", cosObject.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("size")) converted.addProperty("size", cosObject.getSize());
+        if (rmFields == null || !rmFields.contains("datetime")) converted.addProperty("datetime",
+                DatetimeUtils.stringOf(cosObject.getLastModified()));
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObject.getStorageClass());
-        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
-            converted.addProperty("endUser", cosObject.getOwner().getDisplayName());
+        if ((rmFields == null || !rmFields.contains("owner")) && cosObject.getOwner() != null)
+            converted.addProperty("owner", cosObject.getOwner().getDisplayName());
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
@@ -191,10 +198,11 @@ public class LineUtils {
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
-        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObject.getLastModified().getTime()).append(separator);
+        if (rmFields == null || !rmFields.contains("size")) converted.append(cosObject.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("datetime")) converted.append(
+                DatetimeUtils.stringOf(cosObject.getLastModified())).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
-        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
+        if ((rmFields == null || !rmFields.contains("owner")) && cosObject.getOwner() != null)
             converted.append(cosObject.getOwner().getDisplayName()).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
@@ -205,26 +213,28 @@ public class LineUtils {
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", ossObject.getETag());
-        if (rmFields == null || !rmFields.contains("fsize")) converted.addProperty("fsize", ossObject.getSize());
-        if (rmFields == null || !rmFields.contains("putTime")) converted.addProperty("putTime", ossObject.getLastModified().getTime());
+        if (rmFields == null || !rmFields.contains("size")) converted.addProperty("size", ossObject.getSize());
+        if (rmFields == null || !rmFields.contains("datetime")) converted.addProperty("datetime",
+                DatetimeUtils.stringOf(ossObject.getLastModified()));
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", ossObject.getStorageClass());
-        if ((rmFields == null || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
-            converted.addProperty("endUser", ossObject.getOwner().getDisplayName());
+        if ((rmFields == null || !rmFields.contains("owner")) && ossObject.getOwner() != null)
+            converted.addProperty("owner", ossObject.getOwner().getDisplayName());
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
 
-    public static String toFormatString(OSSObjectSummary cosObject, String separator, List<String> rmFields)
+    public static String toFormatString(OSSObjectSummary ossObject, String separator, List<String> rmFields)
             throws IOException {
-        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
-        if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
-        if (rmFields == null || !rmFields.contains("fsize")) converted.append(cosObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("putTime")) converted.append(cosObject.getLastModified().getTime()).append(separator);
-        if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
-        if ((rmFields == null || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
-            converted.append(cosObject.getOwner().getDisplayName()).append(separator);
+        if (rmFields == null || !rmFields.contains("key")) converted.append(ossObject.getKey()).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(ossObject.getETag()).append(separator);
+        if (rmFields == null || !rmFields.contains("size")) converted.append(ossObject.getSize()).append(separator);
+        if (rmFields == null || !rmFields.contains("datetime")) converted.append(
+                DatetimeUtils.stringOf(ossObject.getLastModified())).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
+        if ((rmFields == null || !rmFields.contains("owner")) && ossObject.getOwner() != null)
+            converted.append(ossObject.getOwner().getDisplayName()).append(separator);
         if (converted.length() < separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
@@ -234,7 +244,7 @@ public class LineUtils {
         StringBuilder converted = new StringBuilder();
         Set<String> set = json.keySet();
         List<String> keys = new ArrayList<String>(){{
-            this.addAll(set);
+            addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
         fileInfoFields.forEach(key -> {
@@ -257,7 +267,7 @@ public class LineUtils {
         JsonObject converted = new JsonObject();
         Set<String> set = line.keySet();
         List<String> keys = new ArrayList<String>(){{
-            this.addAll(set);
+            addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
         fileInfoFields.forEach(key -> {
@@ -281,12 +291,14 @@ public class LineUtils {
         StringBuilder converted = new StringBuilder();
         Set<String> set = line.keySet();
         List<String> keys = new ArrayList<String>(){{
-            this.addAll(set);
+            addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
         fileInfoFields.forEach(key -> {
             if (keys.contains(key) && line.get(key) != null) {
-                converted.append(line.get(key)).append(separator);
+                if (longFields.contains(key)) converted.append(Long.valueOf(line.get(key))).append(separator);
+                else if (intFields.contains(key)) converted.append(Integer.valueOf(line.get(key))).append(separator);
+                else converted.append(line.get(key)).append(separator);
             }
             keys.remove(key);
         });

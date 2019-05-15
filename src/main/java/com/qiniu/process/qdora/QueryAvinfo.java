@@ -34,7 +34,7 @@ public class QueryAvinfo extends Base<Map<String, String>> {
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and urlIndex.");
             } else {
-                RequestUtils.checkHost(domain);
+                RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
                 this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }

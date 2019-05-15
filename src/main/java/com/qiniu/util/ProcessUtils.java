@@ -3,7 +3,7 @@ package com.qiniu.util;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProcessUtils {
+public final class ProcessUtils {
 
     private static List<String> needUrlProcesses = new ArrayList<String>(){{
         add("asyncfetch");
@@ -13,8 +13,8 @@ public class ProcessUtils {
         add("exportts");
     }};
     private static List<String> needNewKeyProcesses = new ArrayList<String>(){{
-        add("rename");
         add("copy");
+        add("rename");
     }};
     private static List<String> needFopsProcesses = new ArrayList<String>(){{
         add("pfop");
@@ -25,20 +25,20 @@ public class ProcessUtils {
     private static List<String> needAvinfoProcesses = new ArrayList<String>(){{
         add("pfopcmd");
     }};
-    private static List<String> needBucketProcesses = new ArrayList<String>(){{
+    private static List<String> needBucketAnKeyProcesses = new ArrayList<String>(){{
         add("status");
         add("type");
         add("lifecycle");
-        add("copy");
-        add("move");
-        add("rename");
+        add("mirror");
         add("delete");
+        add("copy");
+        add("rename");
+        add("move");
         add("pfop");
         add("stat");
-        add("mirror");
     }};
     private static List<String> needAuthProcesses = new ArrayList<String>(){{
-        addAll(needBucketProcesses);
+        addAll(needBucketAnKeyProcesses);
         add("asyncfetch");
         add("privateurl");
     }};
@@ -57,9 +57,10 @@ public class ProcessUtils {
         add("qhash");
         add("avinfo");
         add("exportts");
+        add("filter");
     }};
     private static List<String> needConfigurationProcesses = new ArrayList<String>(){{
-        addAll(needBucketProcesses);
+        addAll(needBucketAnKeyProcesses);
         addAll(needPidProcesses);
         add("asyncfetch");
         add("qhash");
@@ -87,8 +88,8 @@ public class ProcessUtils {
         return needAvinfoProcesses.contains(process);
     }
 
-    public static boolean needBucket(String process) {
-        return needBucketProcesses.contains(process);
+    public static boolean needBucketAndKey(String process) {
+        return needBucketAnKeyProcesses.contains(process);
     }
 
     public static boolean needAuth(String process) {
