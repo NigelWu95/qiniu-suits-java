@@ -413,9 +413,8 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
 
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
-     * @throws Exception 数据源导出时出现错误抛出异常
      */
-    public void export() throws Exception {
+    public void export() {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         int order = 1;
