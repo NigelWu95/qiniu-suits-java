@@ -1,6 +1,7 @@
 package com.qiniu.process.filtration;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public abstract class BaseFilter<T> {
@@ -9,8 +10,8 @@ public abstract class BaseFilter<T> {
     private List<String> keySuffix;
     private List<String> keyInner;
     private List<String> keyRegex;
-    private long putTimeMin;
-    private long putTimeMax;
+    private LocalDateTime putTimeMin;
+    private LocalDateTime putTimeMax;
     private List<String> mimeType;
     private String type;
     private String status;
@@ -22,8 +23,8 @@ public abstract class BaseFilter<T> {
 
     public BaseFilter(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner, List<String> keyRegex,
                       List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
-                      List<String> antiKeyRegex, List<String> mimeType, List<String> antiMimeType, long putTimeMin,
-                      long putTimeMax, String type, String status) throws IOException {
+                      List<String> antiKeyRegex, List<String> mimeType, List<String> antiMimeType, LocalDateTime putTimeMin,
+                      LocalDateTime putTimeMax, String type, String status) throws IOException {
         this.keyPrefix = keyPrefix;
         this.keySuffix = keySuffix;
         this.keyInner = keyInner;
@@ -56,67 +57,72 @@ public abstract class BaseFilter<T> {
     }
 
     public boolean checkPutTimeCon() {
-        return putTimeMax > putTimeMin && putTimeMin >= 0;
+        return putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) > 0;
     }
 
     public boolean checkTypeCon() {
-        return "0".equals(type) || "1".equals(type);
+        return type != null && !"".equals(type);
     }
 
     public boolean checkStatusCon() {
-        return "0".equals(status) || "1".equals(status);
+        return status != null && !"".equals(status);
     }
 
     public boolean filterKey(T item) {
         if (checkItem(item, "key")) {
             return false;
         } else {
+            String key = valueFrom(item, "key");
             boolean result = false;
-            if (keyPrefix != null) {
-                result = keyPrefix.stream().anyMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
+            if (checkList(keyPrefix)) {
+                result = keyPrefix.stream().anyMatch(key::startsWith);
                 if (!result) return false;
             }
-            if (keySuffix != null) {
-                result = keySuffix.stream().anyMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
+            if (checkList(keySuffix)) {
+                result = keySuffix.stream().anyMatch(key::endsWith);
                 if (!result) return false;
             }
-            if (keyInner != null) {
-                result = keyInner.stream().anyMatch(inner -> valueFrom(item, "key").contains(inner));
+            if (checkList(keyInner)) {
+                result = keyInner.stream().anyMatch(key::contains);
                 if (!result) return false;
             }
-            if (keyRegex != null) {
-                result = keyRegex.stream().anyMatch(regex -> valueFrom(item, "key").matches(regex));
+            if (checkList(keyRegex)) {
+                result = keyRegex.stream().anyMatch(key::matches);
                 if (!result) return false;
             }
-            if (antiKeyPrefix != null) {
-                result = antiKeyPrefix.stream().noneMatch(prefix -> valueFrom(item, "key").startsWith(prefix));
+            if (checkList(antiKeyPrefix)) {
+                result = antiKeyPrefix.stream().noneMatch(key::startsWith);
                 if (!result) return false;
             }
-            if (antiKeySuffix != null) {
-                result = antiKeySuffix.stream().noneMatch(suffix -> valueFrom(item, "key").endsWith(suffix));
+            if (checkList(antiKeySuffix)) {
+                result = antiKeySuffix.stream().noneMatch(key::endsWith);
                 if (!result) return false;
             }
-            if (antiKeyInner != null) {
-                result = antiKeyInner.stream().noneMatch(inner -> valueFrom(item, "key").contains(inner));
+            if (checkList(antiKeyInner)) {
+                result = antiKeyInner.stream().noneMatch(key::contains);
                 if (!result) return false;
             }
-            if (antiKeyRegex != null) result = antiKeyRegex.stream().noneMatch(regex -> valueFrom(item, "key").matches(regex));
+            if (checkList(antiKeyRegex)) result = antiKeyRegex.stream().noneMatch(key::matches);
             return result;
         }
     }
 
     public boolean filterMimeType(T item) {
-        if (checkItem(item, "mimeType")) {
+        if (checkItem(item, "mime")) {
             return false;
         } else {
-            return (mimeType == null || mimeType.stream().anyMatch(mimeType -> valueFrom(item, "mimeType").contains(mimeType)))
-                    && (antiMimeType == null || antiMimeType.stream().noneMatch(mimeType -> valueFrom(item, "mimeType").contains(mimeType)));
+            String mType = valueFrom(item, "mime");
+            return (checkList(mimeType) || mimeType.stream().anyMatch(mType::contains))
+                    && (checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains));
         }
     }
 
     public boolean filterPutTime(T item) {
-        if (checkItem(item, "putTime")) return false;
-        else return Long.valueOf(valueFrom(item, "putTime")) <= putTimeMax && putTimeMin <= Long.valueOf(valueFrom(item, "putTime"));
+        if (checkItem(item, "datetime")) return false;
+        else {
+            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "datetime"));
+            return localDateTime.compareTo(putTimeMax) <= 0 && localDateTime.compareTo(putTimeMin) >= 0;
+        }
     }
 
     public boolean filterType(T item) {

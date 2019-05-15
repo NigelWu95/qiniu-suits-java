@@ -31,31 +31,41 @@ threads=30
 |unit-len| 整型数字| 表示一次读取的文件个数（读取或列举长度，不同数据源有不同默认值），对应与读取文件时每次处理的行数或者列举请求时设置的 limit 参数|  
 |threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
 
-#### # 关于文件信息字段和 indexes 索引
-文件信息字段及顺序定义为：**key,hash,fsize,putTime,mimeType,type,status,md5,endUser**，indexes 指输入行中包含的资源信息字段的索引值，
-索引值的顺序对应上述文件信息字段顺序，即文件信息字段和 indexes 索引字段均默认使用七牛存储文件的字段进行定义，顺序固定，其释义及其他数据源方式对
-应关系如下：  
+#### # 关于文件信息字段  
+文件信息字段及顺序定义为：**key,hash,size,datetime,mime,type,status,md5,owner** (indexes 的默认字段及顺序即使用该字段列表)，默认使用七
+牛存储文件的信息字段进行定义，顺序固定，其释义及其他数据源方式对应关系如下：  
 
-|字段名|数据类型及含义 |腾讯云存储资源字段对应关系| 输入行字段对应关系|  
-|-----|------------|---------------------|---------------|  
-|key| 字符串，文件名| key| indexes 的第1个索引|  
-|hash| 字符串，文件哈希值| etag| indexes 的第2个索引|  
-|fsize| 长整型数字，文件大小，单位 kb| size| indexes 的第3个索引|  
-|putTime| 长整型数字，时间戳数字| lastModified| indexes 的第4个索引|  
-|mimeType| 字符串，mime 类型，也即 content-type| 无此含义字段| indexes 的第5个索引|  
-|type| 整形数字或者字符串，资源存储类型| storageClass（字符串）| indexes 的第6个索引|  
-|status| 整形数字，资源访问状态| 无此含义字段| indexes 的第7个索引|  
-|md5| 字符串，文件 md5 值| 无| indexes 的第8个索引|  
-|endUser| 字符串，文件终端标识符| Owner-displayName| indexes 的第9个索引|  
+|字段名|数据类型及含义| 输入行字段 |七牛云存储资源字段 |腾讯/阿里云存储资源字段|  
+|-----|-----------|----------|---------------|---------------|  
+|key| 字符串，文件名| indexes 的第1个索引| key| key|  
+|hash| 字符串，文件哈希值| indexes 的第2个索引| hash| etag|  
+|size| 长整型数字，文件大小，单位 kb| indexes 的第3个索引| fsize| size|  
+|datetime| 日期时间，格式需为 yyyy-MM-dd'T'HH:mm:ss.SSS（支持到纳秒精确度）| indexes 的第4个索引| putTime| lastModified|  
+|mime| 字符串，mime 类型，也即 content-type| indexes 的第5个索引| mimeType| 无此含义字段|  
+|type| 整形数字或者字符串，资源存储类型| indexes 的第6个索引| type| storageClass（字符串）|  
+|status| 整形数字，资源访问状态| indexes 的第7个索引| status| 无此含义字段|  
+|md5| 字符串，文件 md5 值| indexes 的第8个索引| md5| 无此含义字段|  
+|owner| 字符串，文件终端标识符| indexes 的第9个索引| endUser| Owner-displayName|  
 
+#### # 关于 indexes 索引 
+`indexes` 是一个配置字段映射关系的参数，即规定用于从输入行中取出所需字段的索引名及映射到目标对象的字段名，程序会解析每一个键值对构成索引表，参数格式
+为 `[key1:index1,key2:index2,key3:index3,...]`，例如，输入行以分隔符分割得到字符串数据其中包含三个字段，分别表示<文件名>、<文件大小>、<时间>，
+那么可以设置 `indexes=[key:0,size:1,datetime:2]`，如输入行是包含 key,size,datetime 等字段的 json，则可以设置
+`indexes=[key:key,size:key,datetime:datetime]`，表示目标对象字段需要 key,size,datetime，且从输入行中进行解析的索引分别为
+key,size:key,datetime。因此 `indexes` 可以设置多个键值对，每个键值对都表示程序中字段与输入行中索引的对应关系，即`<key>:<index>`。`<key>`
+即为表示实际含义的对象字段名，`<index>` 可以为数字或字符串，即将输入行按照一种格式解析后可以读取对象字段值的索引，为数字时表示输入行可分隔为 value
+数组，采用数组下标的方式读取目标值，为字符串时可以是 json 行的原始字段名。  
+事实上，`indexes` 还有一种默认设置方式，即默认包含 9 个字段：**key,hash,size,datetime,mime,type,status,md5,owner**，只需要按顺序设置 9 
+个字段的索引即可，此时可以不需要中括号 []，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 hash，以此类推，或者输入行为 json 
+时如 `indexes=key,hash,size,datetime,mime,type` 表示从这些字段依次取出 key,hash,size,datetime,mime,type 这些值。  
 **默认情况：**  
-（1）当数据源为 [file](#2-file-文件内容读取) 类型时，默认情况下，程序只从输入行中读取 key 字段数据，parse=tab/csv 时索引为 0，parse=json
-时索引为 "key"，需要指定更多字段时可设置为数字列表:0,1,2,3,... 或者 json 的 key 名称列表，长度不超过 9，长度表明取对应顺序的前几个字段，当
-parse=tab 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 -1 索引表示，表示跳过该顺序对应的字段，例如原输入行中不
-包含 mimeType 和 type 字段，则可以设置 indexes=0,1,2,3,-1,-1,6。  
-（2）当数据源为 [list](#3-list-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 key 的下标，如果
-存在 process 操作则自动保留 key 字段或者根据过滤条件的字段进行添加，否则包含全部下标：key,hash,fsize,putTime,mimeType,type,status,md5,
-endUser，如自行设置字段应为为这其中的一个或几个（因为必须和对象的变量名称一致），需要跳过的字段设置为 -1 即可，按照顺序依次解析所有字段。  
+（1）当数据源为 [file](#2-file-文件内容读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
+`0`，输入格式为 `json` 时索引只有 `key`，需要指定更多字段时可按照[indexes 规范](##-关于-indexes-索引)设置，例如为数字列表:`0,1,2,3,...`
+或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式为 `tab/csv` 时索引必须均为整数，如
+果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入行中不包含 mime 字段，则可以设置
+`indexes=0,1,2,3,-1,5`。  
+（2）当数据源为 [list](#3-list-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 `key` 的下标，如
+果存在 process 操作则自动保留 `key` 字段或者根据过滤条件的字段进行添加，也可按照[indexes 规范](##-关于-indexes-索引)自行设置。  
 
 ### 2 file 文件内容读取
 ```
@@ -68,10 +78,10 @@ rm-keyPrefix=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
-|parse| 字符串 json/tab/csv| 数据行格式，json 表示使用 json 解析，tab 表示使用分隔符（默认 "\t"）分割解析，csv 表示使用 "," 分割解析|  
+|parse| 字符串 json/tab/csv| 数据行格式，json 表示使用 json 解析，tab 表示使用分隔符（默认 `\t`）分割解析，csv 表示使用 `,` 分割解析|  
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
 |add-keyPrefix| 字符串|将解析出的 key 字段加上指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 少了前缀的情况，补上前缀才能获取到资源|  
-|rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 "/" 前缀|  
+|rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 `/` 前缀|  
 
 ### 3 list 云存储列举  
 ```
@@ -100,9 +110,9 @@ prefix-right=
 |<密钥配置>|字符串|密钥对字符串|  
 |region|字符串|存储区域|
 |bucket|字符串| 需要列举的空间名称，通过 "path=qiniu://<bucket>" 来设置的话此参数可不设置，设置则会覆盖 path 中指定的 bucket 值|  
-|prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表，如果需要表示 "," 作为前缀的话需要加双转义符表示为 "\\,"|  
+|prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表，如果前缀本身包含 `,\=` 等特殊字符则需要加转义符，如 `\,`|  
 |prefix-config| 字符串| 该选项用于设置列举前缀的[配置文件](#prefix-config-配置)路径，配置文件格式为 json|
-|anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，"," 同样需要双转义符|  
+|anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
 

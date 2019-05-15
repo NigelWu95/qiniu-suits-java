@@ -2,7 +2,7 @@ package com.qiniu.util;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SystemUtils {
+public final class SystemUtils {
 
     /**
      * 程序退出方法，用于在多线程情况下某个线程出现异常时退出程序，如果同时多个线程抛出异常则通过 exitBool 来判断是否已经执行过退出程序，故只输出

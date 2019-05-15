@@ -2,7 +2,7 @@ package com.qiniu.util;
 
 import com.qiniu.common.QiniuException;
 
-public class LogUtils {
+public final class LogUtils {
 
     /**
      * 取出异常中的信息
