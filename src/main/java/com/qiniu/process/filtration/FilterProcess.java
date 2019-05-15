@@ -84,6 +84,10 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.nextProcessor = nextProcessor;
     }
 
+    public ILineProcess<T> getNextProcessor() {
+        return nextProcessor;
+    }
+
     @SuppressWarnings("unchecked")
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
