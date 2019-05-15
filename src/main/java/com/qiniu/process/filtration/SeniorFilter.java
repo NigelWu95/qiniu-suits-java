@@ -56,7 +56,7 @@ public abstract class SeniorFilter<T> {
         for (T line : lineList) {
             key = valueFrom(line, "key");
             if (key != null && key.contains(".")) {
-                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mimeType");
+                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
                 if (extMimeList.parallelStream().anyMatch(extMime ->
                         finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                     continue;
@@ -73,7 +73,7 @@ public abstract class SeniorFilter<T> {
     public boolean checkMimeType(T line) {
         String key = valueFrom(line, "key");
         if (line != null && key != null && key.contains(".")) {
-            String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mimeType");
+            String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
             if (extMimeList.parallelStream().anyMatch(extMime ->
                     finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                 return false;
