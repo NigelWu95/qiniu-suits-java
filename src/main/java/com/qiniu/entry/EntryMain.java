@@ -7,11 +7,13 @@ import java.util.Scanner;
 
 public class EntryMain {
 
+    public static boolean process_verify = true;
+
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.getProcessor();
-        if (processor != null) {
+        if (process_verify && processor != null) {
             String process = processor.getProcessName();
             if (processor.getNextProcessor() != null) {
                 process += " and " + processor.getNextProcessor().getProcessName();
