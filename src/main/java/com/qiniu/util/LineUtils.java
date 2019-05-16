@@ -39,18 +39,18 @@ public final class LineUtils {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
-            if (fileInfoFields.contains(index)) {
-                switch (index) {
-                    case "key": itemMap.put(indexMap.get(index), fileInfo.key); break;
-                    case "hash": itemMap.put(indexMap.get(index), fileInfo.hash); break;
-                    case "size": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
-                    case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime,
-                            10000000)); break;
-                    case "mime": itemMap.put(indexMap.get(index), fileInfo.mimeType); break;
-                    case "type": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
-                    case "status": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
-                    case "owner": itemMap.put(indexMap.get(index), fileInfo.endUser); break;
-                }
+            if (!fileInfoFields.contains(index)) {
+                throw new IOException("the index: " + index + " can't be found.");
+            }
+            switch (index) {
+                case "key": itemMap.put(indexMap.get(index), fileInfo.key); break;
+                case "hash": itemMap.put(indexMap.get(index), fileInfo.hash); break;
+                case "size": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
+                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "mime": itemMap.put(indexMap.get(index), fileInfo.mimeType); break;
+                case "type": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
+                case "status": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
+                case "owner": itemMap.put(indexMap.get(index), fileInfo.endUser); break;
             }
         }
         return itemMap;
@@ -61,15 +61,16 @@ public final class LineUtils {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
-            if (fileInfoFields.contains(index)) {
-                switch (index) {
-                    case "key": itemMap.put(indexMap.get(index), cosObject.getKey()); break;
-                    case "hash": itemMap.put(indexMap.get(index), cosObject.getETag()); break;
-                    case "size": itemMap.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
-                    case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
-                    case "type": itemMap.put(indexMap.get(index), cosObject.getStorageClass()); break;
-                    case "owner": itemMap.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
-                }
+            if (!fileInfoFields.contains(index)) {
+                throw new IOException("the index: " + index + " can't be found.");
+            }
+            switch (index) {
+                case "key": itemMap.put(indexMap.get(index), cosObject.getKey()); break;
+                case "hash": itemMap.put(indexMap.get(index), cosObject.getETag()); break;
+                case "size": itemMap.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
+                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "type": itemMap.put(indexMap.get(index), cosObject.getStorageClass()); break;
+                case "owner": itemMap.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
             }
         }
         return itemMap;
@@ -80,42 +81,40 @@ public final class LineUtils {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
-            if (fileInfoFields.contains(index)) {
-                switch (index) {
-                    case "key": itemMap.put(indexMap.get(index), ossObject.getKey()); break;
-                    case "hash": itemMap.put(indexMap.get(index), ossObject.getETag()); break;
-                    case "size": itemMap.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
-                    case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
-                    case "type": itemMap.put(indexMap.get(index), ossObject.getStorageClass()); break;
-                    case "owner": itemMap.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
-                }
+            if (!fileInfoFields.contains(index)) {
+                throw new IOException("the index: " + index + " can't be found.");
+            }
+            switch (index) {
+                case "key": itemMap.put(indexMap.get(index), ossObject.getKey()); break;
+                case "hash": itemMap.put(indexMap.get(index), ossObject.getETag()); break;
+                case "size": itemMap.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
+                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "type": itemMap.put(indexMap.get(index), ossObject.getStorageClass()); break;
+                case "owner": itemMap.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
             }
         }
         return itemMap;
     }
 
-    public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap, boolean force)
+    public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap)
             throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
             if (json.has(index)) itemMap.put(indexMap.get(index), json.get(index).getAsString());
+            else throw new IOException("the index: " + index + " can't be found.");
         }
-        // 是否需要强制转换，即使字段数没有达到 indexMap 的要求
-        if (!force && itemMap.size() < indexMap.size())
-            throw new IOException("no enough indexes in line. The parameter indexes may have incorrect order or name.");
         return itemMap;
     }
 
-    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap, boolean force)
+    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap)
             throws IOException {
         if (line == null) throw new IOException("empty json line.");
         JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
-        return getItemMap(parsed, indexMap, force);
+        return getItemMap(parsed, indexMap);
     }
 
-    public static Map<String, String> getItemMap(String line, String separator, Map<String, String> indexMap,
-                                                 boolean force) throws IOException {
+    public static Map<String, String> getItemMap(String line, String separator, Map<String, String> indexMap) throws IOException {
         if (line == null) throw new IOException("empty string line.");
         String[] items = line.split(separator);
         Map<String, String> itemMap = new HashMap<>();
@@ -123,10 +122,8 @@ public final class LineUtils {
         for (String index : indexMap.keySet()) {
             position = Integer.valueOf(index);
             if (items.length > position) itemMap.put(indexMap.get(index), items[position]);
+            else throw new IOException("the index: " + index + " can't be found.");
         }
-        // 是否需要强制转换，即使字段数没有达到 indexMap 的要求
-        if (!force && itemMap.size() < indexMap.size())
-            throw new IOException("no enough indexes in line. The parameter indexes may have incorrect order or name.");
         return itemMap;
     }
 
