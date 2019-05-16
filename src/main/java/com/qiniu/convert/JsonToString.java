@@ -12,7 +12,7 @@ public class JsonToString extends Converter<JsonObject, String> {
     private IStringFormat<JsonObject> stringFormatter;
 
     public JsonToString(String format, String separator, List<String> rmFields) throws IOException {
-        // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
+        if (separator == null || separator.isEmpty()) throw new IOException("separator can not be empty.");
         if ("json".equals(format)) {
             stringFormatter = JsonObject::toString;
         } else if ("csv".equals(format)) {

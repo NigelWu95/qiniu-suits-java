@@ -46,7 +46,6 @@ public class LocalFileReader implements IReader<BufferedReader> {
         try {
             bufferedReader.close();
         } catch (IOException e) {
-            e.printStackTrace();
             bufferedReader = null;
         }
     }

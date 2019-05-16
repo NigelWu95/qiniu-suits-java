@@ -90,8 +90,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    public void export(IReader<E> reader, IResultSave<W> fileSaver, ILineProcess<T> processor)
-            throws IOException {
+    public void export(IReader<E> reader, IResultSave<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
@@ -111,16 +110,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     if (retry == 0) throw e;
                 }
             }
-            if (line != null) srcList.add(line);
+            if (line != null && !"".equals(line)) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 convertedList = converter.convertToVList(srcList);
                 if (converter.errorSize() > 0)
-                    fileSaver.writeError(String.join("\n", converter.consumeErrors()), false);
+                    saver.writeError(String.join("\n", converter.consumeErrors()), false);
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(convertedList);
-                    if (writeList.size() > 0) fileSaver.writeSuccess(String.join("\n", writeList), false);
+                    if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (writeTypeConverter.errorSize() > 0)
-                        fileSaver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
+                        saver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -194,9 +193,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);
         try {
-            executorPool = Executors.newFixedThreadPool(runningThreads);
             int order = 1;
             for (IReader<E> fileReader : fileReaders) {
                 execInThread(fileReader, order++);

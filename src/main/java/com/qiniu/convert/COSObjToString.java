@@ -12,7 +12,7 @@ public class COSObjToString extends Converter<COSObjectSummary, String> {
     private IStringFormat<COSObjectSummary> stringFormatter;
 
     public COSObjToString(String format, String separator, List<String> rmFields) throws IOException {
-        // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
+        if (separator == null || separator.isEmpty()) throw new IOException("separator can not be empty.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
         } else if ("csv".equals(format)) {
