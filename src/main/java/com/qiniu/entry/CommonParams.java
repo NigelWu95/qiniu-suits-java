@@ -69,7 +69,7 @@ public class CommonParams {
         setSource();
         if ("local".equals(source)) {
             parse = checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
-            setSeparator(entryParam.getValue("separator", null));
+            setSeparator(entryParam.getValue("separator", ""));
             if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
             if (ProcessUtils.needAuth(process)) {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
@@ -175,6 +175,7 @@ public class CommonParams {
         if (separator == null) {
             if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
+            else this.separator = ".";
         } else {
             this.separator = separator;
         }

@@ -12,15 +12,18 @@ public interface IDataSource<R, S, T> {
 
     void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields);
 
-    void setProcessor(ILineProcess<T> processor);
+    void updateSettings(CommonParams commonParams);
 
     void export(R source, S saver, ILineProcess<T> processor) throws IOException;
 
-    void execInThread(R source, int order) throws Exception;
+    // 直接使用 export(source, saver, processor) 方法时可以不设置 processor
+    default void setProcessor(ILineProcess<T> processor) {}
 
-    void export() throws Exception;
+    // 将 source 按照 order 顺序放入线程池进行读取操作，由子类创建线程池在多线程情况下使用并实现
+    default void execInThread(R source, int order) throws Exception {}
 
-    void setRetryTimes(int retryTimes);
+    // 根据成员变量参数直接多线程处理数据源，由子类创建线程池在需要多线程情况下使用并实现
+    default void export() throws Exception {}
 
-    void updateSettings(CommonParams commonParams);
+    default void setRetryTimes(int retryTimes) {}
 }

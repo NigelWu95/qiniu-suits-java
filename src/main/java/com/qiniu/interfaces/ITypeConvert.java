@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface ITypeConvert<E, V> {
+public interface ITypeConvert<E, T> {
 
-    V convertToV(E line) throws IOException;
+    T convertToV(E line) throws IOException;
 
-    List<V> convertToVList(List<E> srcList);
+    List<T> convertToVList(List<E> srcList);
 
     int errorSize();
 
