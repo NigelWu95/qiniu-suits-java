@@ -47,21 +47,21 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get(pidIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {}
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {}
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws IOException {
         String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
