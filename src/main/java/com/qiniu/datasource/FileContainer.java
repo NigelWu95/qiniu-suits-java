@@ -4,7 +4,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.IResultSave;
+import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.SystemUtils;
@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultSave<W>, T> {
+public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
     private String filePath;
     protected String parseFormat;
@@ -90,7 +90,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    public void export(IReader<E> reader, IResultSave<W> saver, ILineProcess<T> processor) throws IOException {
+    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
@@ -135,7 +135,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
-    protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
     public void execInThread(IReader<E> reader, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
@@ -143,7 +143,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
-        IResultSave<W> saver = getNewResultSaver(newOrder);
+        IResultOutput<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + reader.getName();
