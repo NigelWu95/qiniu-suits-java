@@ -45,24 +45,24 @@ public class ChangeStatus extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
         return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    public String singleResult(Map<String, String> line) throws QiniuException {
         return HttpResponseUtils.getResult(bucketManager.changeStatus(bucket, line.get("key"), status));
     }
 }

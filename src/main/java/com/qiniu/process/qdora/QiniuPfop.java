@@ -58,21 +58,21 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(fopsIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws IOException {
         if (pfopConfigs != null) {
             for (JsonObject pfopConfig : pfopConfigs) {
                 String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
