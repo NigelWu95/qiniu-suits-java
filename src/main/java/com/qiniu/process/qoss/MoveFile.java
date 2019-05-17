@@ -76,12 +76,12 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         if (line.get("key") == null) return false;
         try {
             String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
@@ -93,7 +93,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+    synchronized public String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
@@ -106,7 +106,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws IOException {
         if (toBucket == null || "".equals(toBucket)) {
             return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
         } else {
