@@ -5,7 +5,7 @@ import com.qiniu.util.FileNameUtils;
 import java.io.*;
 import java.util.*;
 
-public class FileSaveMapper implements IResultSave<BufferedWriter> {
+public class FileSaveMapper implements IResultOutput<BufferedWriter> {
 
     private Map<String, BufferedWriter> writerMap = new HashMap<>();
     private String targetFileDir = null;

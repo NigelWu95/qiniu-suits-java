@@ -2,7 +2,7 @@ package com.qiniu.persistence;
 
 import java.io.*;
 
-public interface IResultSave<T> {
+public interface IResultOutput<T> {
 
     void setRetryTimes(int retryTimes);
 

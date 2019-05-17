@@ -5,7 +5,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.IResultSave;
+import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.HttpResponseUtils;
 import com.qiniu.util.LineUtils;
 import com.qiniu.util.SystemUtils;
@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultSave<W>, T> {
+public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
     private List<String> antiPrefixes;
@@ -137,7 +137,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<T> processor) throws IOException {
+    public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects;
@@ -182,7 +182,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         } while (goon);
     }
 
-    protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
     /**
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
@@ -196,7 +196,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
-        IResultSave<W> saver = getNewResultSaver(newOrder);
+        IResultOutput<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + lister.getPrefix();
