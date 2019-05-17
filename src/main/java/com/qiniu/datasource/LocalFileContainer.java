@@ -4,7 +4,7 @@ import com.qiniu.convert.LineToMap;
 import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultSave;
+import com.qiniu.persistence.IResultOutput;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -34,7 +34,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     }
 
     @Override
-    protected IResultSave<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

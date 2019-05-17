@@ -5,7 +5,7 @@ import com.qiniu.convert.QOSObjToMap;
 import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultSave;
+import com.qiniu.persistence.IResultOutput;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
@@ -46,7 +46,7 @@ public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter, Ma
     }
 
     @Override
-    protected IResultSave<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
