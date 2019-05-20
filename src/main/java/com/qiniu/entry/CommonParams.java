@@ -116,7 +116,7 @@ public class CommonParams {
         saveFormat = entryParam.getValue("save-format", "tab").trim();
         // 校验设置的 format 参数
         saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
-        saveSeparator = entryParam.getValue("save-separator", null);
+        saveSeparator = entryParam.getValue("save-separator", "");
         setSaveSeparator(saveSeparator);
     }
 
@@ -172,10 +172,10 @@ public class CommonParams {
     }
 
     private void setSeparator(String separator) {
-        if (separator == null) {
+        if (separator == null || separator.isEmpty()) {
             if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
-            else this.separator = ".";
+            else this.separator = " ";
         } else {
             this.separator = separator;
         }
@@ -495,9 +495,10 @@ public class CommonParams {
     }
 
     private void setSaveSeparator(String separator) {
-        if (separator == null) {
+        if (separator == null || separator.isEmpty()) {
             if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
             else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
+            else this.saveSeparator = " ";
         } else {
             this.saveSeparator = separator;
         }
