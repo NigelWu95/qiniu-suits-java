@@ -12,7 +12,7 @@ public class OSSObjToString extends Converter<OSSObjectSummary, String> {
     private IStringFormat<OSSObjectSummary> stringFormatter;
 
     public OSSObjToString(String format, String separator, List<String> rmFields) throws IOException {
-        if (separator == null || separator.isEmpty()) throw new IOException("separator can not be empty.");
+        if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
         } else if ("csv".equals(format)) {

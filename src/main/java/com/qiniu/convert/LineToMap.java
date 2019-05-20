@@ -13,7 +13,7 @@ public class LineToMap extends Converter<String, Map<String, String>> {
 
     public LineToMap(String parseType, String separator, String addKeyPrefix, String rmKeyPrefix, Map<String, String> indexMap)
             throws IOException {
-        if (separator == null || separator.isEmpty()) throw new IOException("separator can not be empty.");
+        if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(parseType)) {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getItemMap(line, indexMap));
         } else if ("csv".equals(parseType)) {

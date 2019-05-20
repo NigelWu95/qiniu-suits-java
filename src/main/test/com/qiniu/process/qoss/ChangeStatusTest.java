@@ -21,14 +21,16 @@ public class ChangeStatusTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        String bucket = propertiesFile.getValue("bucket");
+        String bucket =
+                "note-video";
+//                propertiesFile.getValue("bucket");
         changeStatus = new ChangeStatus(accessKey, secretKey, new Configuration(), bucket, 1, "../xhs.txt");
     }
 
     @Test
     public void singleResult() {
         Map<String, String> map = new HashMap<String, String>(){{
-            put("key", "f3aae9d7-3dcd-7bb0-951a-30bba0b70dc3.html");
+            put("key", "post/d6649026-952b-9f20-a542-29554f9f952d.html");
         }};
         try {
             String result = changeStatus.singleResult(map);

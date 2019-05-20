@@ -12,7 +12,7 @@ public class JsonToString extends Converter<JsonObject, String> {
     private IStringFormat<JsonObject> stringFormatter;
 
     public JsonToString(String format, String separator, List<String> rmFields) throws IOException {
-        if (separator == null || separator.isEmpty()) throw new IOException("separator can not be empty.");
+        if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = JsonObject::toString;
         } else if ("csv".equals(format)) {
