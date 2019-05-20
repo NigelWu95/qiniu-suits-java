@@ -402,7 +402,9 @@ public class CommonParams {
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
         boolean sourceFromList = DataSourceDef.ossListSource.contains(source);
-        if (useDefault && ProcessUtils.needBucketAndKey(process)) { // 默认索引包含 key
+        if (useDefault && (ProcessUtils.needBucketAndKey(process) ||
+                (baseFilter != null && baseFilter.checkKeyCon()) ||
+                (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
             if (DataSourceDef.fileSource.contains(source)) {
                 try {
                     setIndex("json".equals(parse) ? "key" : "0", "key");
@@ -418,34 +420,35 @@ public class CommonParams {
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault && sourceFromList) indexMap.put("key", "key");
-                else throw new IOException("f-key-[x] filter must get the key's index in indexes settings.");
+                else throw new IOException("f-[x] filter for file key must get the key's index in indexes settings.");
             }
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
                 if (useDefault && sourceFromList) indexMap.put("mime", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
             }
             if (baseFilter.checkPutTimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault && sourceFromList) indexMap.put("datetime", "datetime");
-                else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
             }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
                 if (useDefault && sourceFromList) indexMap.put("type", "type");
-                else throw new IOException("f-type filter must get the type's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-type filter must get the type's index in indexes settings.");
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
                 if (useDefault && sourceFromList) indexMap.put("status", "status");
-                else throw new IOException("f-status filter must get the status's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-status filter must get the status's index in indexes settings.");
             }
         }
         if (seniorFilter != null) {
-            if (seniorFilter.checkExtMime() && !indexMap.containsValue("mime")) {
-                if (useDefault && sourceFromList) indexMap.put("mime", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+            if (seniorFilter.checkExtMime()) {
+                if (!indexMap.containsValue("key")) {
+                    if (useDefault && sourceFromList) indexMap.put("key", "key");
+                    else throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
+                }
+                if (!indexMap.containsValue("mime")) {
+                    if (useDefault && sourceFromList) indexMap.put("mime", "mime");
+                    else throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
+                }
             }
         }
     }
