@@ -181,7 +181,7 @@ public final class LineUtils {
         return itemMap;
     }
 
-    public static String toFormatString(FileInfo fileInfo, List<String> rmFields) throws IOException {
+    public static String toFormatString(FileInfo fileInfo, Set<String> rmFields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
@@ -202,7 +202,7 @@ public final class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(FileInfo fileInfo, String separator, List<String> rmFields) throws IOException {
+    public static String toFormatString(FileInfo fileInfo, String separator, Set<String> rmFields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
@@ -223,7 +223,7 @@ public final class LineUtils {
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
-    public static String toFormatString(COSObjectSummary cosObject, List<String> rmFields) throws IOException {
+    public static String toFormatString(COSObjectSummary cosObject, Set<String> rmFields) throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObject.getKey());
@@ -240,7 +240,7 @@ public final class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(COSObjectSummary cosObject, String separator, List<String> rmFields)
+    public static String toFormatString(COSObjectSummary cosObject, String separator, Set<String> rmFields)
             throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
@@ -258,7 +258,7 @@ public final class LineUtils {
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
-    public static String toFormatString(OSSObjectSummary ossObject, List<String> rmFields) throws IOException {
+    public static String toFormatString(OSSObjectSummary ossObject, Set<String> rmFields) throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
@@ -275,7 +275,7 @@ public final class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(OSSObjectSummary ossObject, String separator, List<String> rmFields)
+    public static String toFormatString(OSSObjectSummary ossObject, String separator, Set<String> rmFields)
             throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
@@ -293,7 +293,7 @@ public final class LineUtils {
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
-    public static String toFormatString(Map<String, String> line, List<String> rmFields) throws IOException {
+    public static String toFormatString(Map<String, String> line, Set<String> rmFields) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         JsonObject converted = new JsonObject();
         Set<String> set = line.keySet();
@@ -314,7 +314,7 @@ public final class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(Map<String, String> line, String separator, List<String> rmFields) throws IOException {
+    public static String toFormatString(Map<String, String> line, String separator, Set<String> rmFields) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         StringBuilder converted = new StringBuilder();
         Set<String> set = line.keySet();
@@ -335,7 +335,7 @@ public final class LineUtils {
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
-    public static String toFormatString(JsonObject json, String separator, List<String> rmFields) throws IOException {
+    public static String toFormatString(JsonObject json, String separator, Set<String> rmFields) throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         StringBuilder converted = new StringBuilder();
         Set<String> set = json.keySet();

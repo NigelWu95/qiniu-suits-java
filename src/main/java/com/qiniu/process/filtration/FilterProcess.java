@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
@@ -19,13 +20,13 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected String saveFormat;
     protected String saveSeparator;
-    protected List<String> rmFields;
+    protected Set<String> rmFields;
     protected int saveIndex;
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
 
     public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
-                         String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
+                         String saveFormat, String saveSeparator, Set<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
         this.filter = newFilter(baseFilter, seniorFilter);
@@ -39,7 +40,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
 
     public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath, String saveFormat,
-                         String saveSeparator, List<String> rmFields) throws Exception {
+                         String saveSeparator, Set<String> rmFields) throws Exception {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 

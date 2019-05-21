@@ -7,17 +7,18 @@ import com.qiniu.persistence.FileSaveMapper;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MapProcess extends FilterProcess<Map<String, String>> {
 
     public MapProcess(BaseFilter<Map<String, String>> baseFilter, SeniorFilter<Map<String, String>> seniorFilter,
-                      String savePath, String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
+                      String savePath, String saveFormat, String saveSeparator, Set<String> rmFields, int saveIndex)
             throws Exception {
         super(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields, saveIndex);
     }
 
     public MapProcess(BaseFilter<Map<String, String>> baseFilter, SeniorFilter<Map<String, String>> seniorFilter,
-                      String savePath, String saveFormat, String saveSeparator, List<String> rmFields) throws Exception {
+                      String savePath, String saveFormat, String saveSeparator, Set<String> rmFields) throws Exception {
         this(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 

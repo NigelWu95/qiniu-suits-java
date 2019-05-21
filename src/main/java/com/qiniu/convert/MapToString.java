@@ -10,7 +10,7 @@ public class MapToString extends Converter<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
 
-    public MapToString(String format, String separator, List<String> rmFields) throws IOException {
+    public MapToString(String format, String separator, Set<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
