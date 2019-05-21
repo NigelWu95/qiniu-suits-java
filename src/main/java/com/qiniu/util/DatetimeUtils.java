@@ -58,21 +58,40 @@ public final class DatetimeUtils {
         return LocalDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), defaultZoneId).toString();
     }
 
-    public static String stringOf(long timeStamp, long accuracy) {
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(0,
-                timeStamp * (1000000000L / accuracy)), defaultZoneId).toString();
+    /**
+     * 将 timeStamp 根据精确度转换为 dateTimeFormatter 格式的时间日期字符串
+     * @param timestamp 时间戳
+     * @param accuracy 秒数小数点之后精确度，纳秒倍数，如百纳秒时间戳精确度为 10_000_000L
+     * @return 返回格式化的日期字符串
+     */
+    public static String stringOf(long timestamp, long accuracy) {
+        return datetimeOf(timestamp, accuracy).toString();
     }
 
-    public static LocalDateTime stringOf(String datetime) {
-        return LocalDateTime.parse(datetime);
+    public static LocalDateTime datetimeOf(long timestamp, long accuracy) {
+        long ratio = 1000_000_000L / accuracy;
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(Math.floorDiv(timestamp, accuracy),
+                Math.floorMod(timestamp, accuracy) * ratio), defaultZoneId);
     }
 
-    public static String stringOf(long timeStamp, long accuracy, DateTimeFormatter dateTimeFormatter) {
+    public static LocalDateTime datetimeOf(long timestamp) {
+        return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
+    }
+
+    /**
+     * 将 timeStamp 根据精确度转换为 "yyyy-MM-DD'T'HH:MM:SS.SSS" 格式的时间日期字符串
+     * @param timestamp 时间戳
+     * @param accuracy 秒数小数点之后精确度，纳秒倍数，如百纳秒时间戳精确度为 10_000_000L
+     * @param dateTimeFormatter 时间日期格式
+     * @return 返回格式化的日期字符串
+     */
+    public static String stringOf(long timestamp, long accuracy, DateTimeFormatter dateTimeFormatter) {
         if (dateTimeFormatter == null) {
-            return stringOf(timeStamp, accuracy);
+            return stringOf(timestamp, accuracy);
         } else {
-            return dateTimeFormatter.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(0,
-                    timeStamp * (1000000000L / accuracy)), defaultZoneId));
+            long ratio = 1000_000_000L / accuracy;
+            return dateTimeFormatter.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(Math.floorDiv(timestamp, accuracy),
+                    Math.floorMod(timestamp, accuracy) * ratio), defaultZoneId));
         }
     }
 
