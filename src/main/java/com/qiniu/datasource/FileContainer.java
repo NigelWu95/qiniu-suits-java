@@ -6,7 +6,7 @@ import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.SystemUtils;
 
 import java.io.File;
@@ -127,7 +127,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 } catch (QiniuException e) {
                     // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
                     // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
-                    retry = HttpResponseUtils.checkException(e, 1);
+                    retry = HttpRespUtils.checkException(e, 1);
                     if (retry == -2) throw e;
                 }
                 srcList.clear();

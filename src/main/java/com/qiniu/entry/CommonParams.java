@@ -198,7 +198,7 @@ public class CommonParams {
                         if ("qiniu".equals(source)) {
                             JsonObject jsonObject = new JsonObject();
                             jsonObject.addProperty("k", jsonCfg.get("start").getAsString());
-                            marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
+                            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                                     Base64.URL_SAFE | Base64.NO_WRAP);
                         } else if ("tencent".equals(source)) {
                             marker = jsonCfg.get("start").getAsString();

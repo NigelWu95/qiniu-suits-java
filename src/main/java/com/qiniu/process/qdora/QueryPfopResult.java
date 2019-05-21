@@ -6,7 +6,7 @@ import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -66,7 +66,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
             try {
-                pfopResult = JsonConvertUtils.fromJson(result, PfopResult.class);
+                pfopResult = JsonUtils.fromJson(result, PfopResult.class);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }
@@ -74,16 +74,16 @@ public class QueryPfopResult extends Base<Map<String, String>> {
             for (Item item : pfopResult.items) {
                 if (item.code == 0)
                     fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + (item.key != null ? item.key + "\t" : "") +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 3)
                     fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 4)
                     fileSaveMapper.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else
                     fileSaveMapper.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
             }
             return null;
         } else {

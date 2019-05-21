@@ -107,7 +107,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         List<T> retryList = new ArrayList<>();
         JsonArray jsonArray;
         try {
-            jsonArray = JsonConvertUtils.fromJson(result, JsonArray.class);
+            jsonArray = JsonUtils.fromJson(result, JsonArray.class);
         } catch (JsonParseException e) {
             throw new IOException("parse to json array error.");
         }
@@ -116,7 +116,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             jsonObject = jsonArray.get(j).getAsJsonObject();
             // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录，否则结果记录为空
             if (j < jsonArray.size()) {
-                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
                         break;
@@ -168,7 +168,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         processList = parseBatchResult(processList, result);
                         retry = 0;
                     } catch (QiniuException e) {
-                        retry = HttpResponseUtils.checkException(e, retry);
+                        retry = HttpRespUtils.checkException(e, retry);
                         String message = LogUtils.getMessage(e);
                         System.out.println(message);
                         switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
@@ -231,7 +231,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     parseSingleResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.checkException(e, retry);
+                    retry = HttpRespUtils.checkException(e, retry);
                     String message = LogUtils.getMessage(e);
                     System.out.println(message);
                     switch (retry) {

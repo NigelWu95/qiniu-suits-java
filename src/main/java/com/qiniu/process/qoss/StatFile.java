@@ -11,7 +11,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ public class StatFile extends Base<Map<String, String>> {
     synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
@@ -116,7 +116,7 @@ public class StatFile extends Base<Map<String, String>> {
                     fileSaveMapper.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
                     continue;
                 }
-                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         data.addProperty("key", processList.get(j).get("key"));
                         fileSaveMapper.writeSuccess((String) typeConverter.convertToV(data), false);

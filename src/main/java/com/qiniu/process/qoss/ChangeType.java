@@ -7,7 +7,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,12 +60,12 @@ public class ChangeType extends Base<Map<String, String>> {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON :
                 StorageType.INFREQUENCY, line.get("key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpResponseUtils.getResult(bucketManager.changeType(bucket, line.get("key"), type == 0 ?
+        return HttpRespUtils.getResult(bucketManager.changeType(bucket, line.get("key"), type == 0 ?
                 StorageType.COMMON : StorageType.INFREQUENCY));
     }
 }
