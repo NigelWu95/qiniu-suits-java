@@ -15,6 +15,8 @@ public interface ILineProcess<T> {
 
     default void updateSavePath(String savePath) throws IOException {}
 
+    String processLine(T line) throws IOException;
+
     void processLine(List<T> list) throws IOException;
 
     default void setNextProcessor(ILineProcess<T> nextProcessor) {}

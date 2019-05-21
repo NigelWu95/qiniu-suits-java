@@ -24,6 +24,6 @@ public final class LogUtils {
                 ex.printStackTrace();
             }
         }
-        return message;
+        return message.replaceAll("\n", "\t");
     }
 }
