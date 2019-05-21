@@ -11,6 +11,11 @@ import java.util.*;
 
 public final class LineUtils {
 
+    final static private Set<String> hashFields = new HashSet<String>(){{
+        add("hash");
+        add("etag");
+    }};
+
     final static private Set<String> timeFields = new HashSet<String>(){{
         add("datetime");
         add("timestamp");
@@ -44,11 +49,11 @@ public final class LineUtils {
 
     final static public Set<String> fileInfoFields = new HashSet<String>(){{
         add("key");
-        add("hash");
-        add("md5");
         add("type");
+        add("md5");
         addAll(intFields);
         addAll(longFields);
+        addAll(hashFields);
         addAll(timeFields);
         addAll(mimeFields);
         addAll(ownerFields);
@@ -63,7 +68,9 @@ public final class LineUtils {
             }
             switch (index) {
                 case "key": itemMap.put(indexMap.get(index), fileInfo.key); break;
-                case "hash": itemMap.put(indexMap.get(index), fileInfo.hash); break;
+                case "hash":
+                case "etag":
+                    itemMap.put(indexMap.get(index), fileInfo.hash); break;
                 case "size":
                 case "fsize":
                     itemMap.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
@@ -95,7 +102,9 @@ public final class LineUtils {
             }
             switch (index) {
                 case "key": itemMap.put(indexMap.get(index), cosObject.getKey()); break;
-                case "hash": itemMap.put(indexMap.get(index), cosObject.getETag()); break;
+                case "hash":
+                case "etag":
+                    itemMap.put(indexMap.get(index), cosObject.getETag()); break;
                 case "size":
                 case "fsize":
                     itemMap.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
@@ -123,7 +132,9 @@ public final class LineUtils {
             }
             switch (index) {
                 case "key": itemMap.put(indexMap.get(index), ossObject.getKey()); break;
-                case "hash": itemMap.put(indexMap.get(index), ossObject.getETag()); break;
+                case "hash":
+                case "etag":
+                    itemMap.put(indexMap.get(index), ossObject.getETag()); break;
                 case "size":
                 case "fsize":
                     itemMap.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
@@ -141,8 +152,7 @@ public final class LineUtils {
         return itemMap;
     }
 
-    public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap)
-            throws IOException {
+    public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap) throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
@@ -152,8 +162,7 @@ public final class LineUtils {
         return itemMap;
     }
 
-    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap)
-            throws IOException {
+    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap) throws IOException {
         if (line == null) throw new IOException("empty json line.");
         JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
         return getItemMap(parsed, indexMap);
@@ -176,7 +185,8 @@ public final class LineUtils {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
-        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", fileInfo.hash);
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("hash", fileInfo.hash);
         if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("size", fileInfo.fsize);
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
@@ -196,7 +206,8 @@ public final class LineUtils {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.append(fileInfo.hash).append(separator);
         if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.append(fileInfo.fsize).append(separator);
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
@@ -216,7 +227,8 @@ public final class LineUtils {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObject.getKey());
-        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObject.getETag());
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("hash", cosObject.getETag());
         if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("size", cosObject.getSize());
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
@@ -233,7 +245,8 @@ public final class LineUtils {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.append(cosObject.getETag()).append(separator);
         if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.append(cosObject.getSize()).append(separator);
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
@@ -249,7 +262,8 @@ public final class LineUtils {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
-        if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", ossObject.getETag());
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("hash", ossObject.getETag());
         if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("size", ossObject.getSize());
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
@@ -266,7 +280,8 @@ public final class LineUtils {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(ossObject.getKey()).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(ossObject.getETag()).append(separator);
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.append(ossObject.getETag()).append(separator);
         if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.append(ossObject.getSize()).append(separator);
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
@@ -299,8 +314,7 @@ public final class LineUtils {
         return converted.toString();
     }
 
-    public static String toFormatString(Map<String, String> line, String separator, List<String> rmFields)
-            throws IOException {
+    public static String toFormatString(Map<String, String> line, String separator, List<String> rmFields) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         StringBuilder converted = new StringBuilder();
         Set<String> set = line.keySet();
