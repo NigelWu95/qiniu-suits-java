@@ -110,6 +110,7 @@ public class CommonParams {
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
         rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
+        if (rmFields.size() == 0) rmFields = null;
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
         saveTag = entryParam.getValue("save-tag", "").trim();
