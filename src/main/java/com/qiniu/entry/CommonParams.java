@@ -361,7 +361,7 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        List<String> keys = LineUtils.fileInfoFields;
+        List<String> keys = new ArrayList<>(LineUtils.fileInfoFields);
         boolean useDefault = false;
         String indexes = entryParam.getValue("indexes", "").trim();
         if ("".equals(indexes)) {
@@ -426,7 +426,7 @@ public class CommonParams {
                 if (useDefault && sourceFromList) indexMap.put("mime", "mime");
                 else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
             }
-            if (baseFilter.checkPutTimeCon() && !indexMap.containsValue("datetime")) {
+            if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault && sourceFromList) indexMap.put("datetime", "datetime");
                 else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
             }

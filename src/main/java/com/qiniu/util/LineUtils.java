@@ -1,7 +1,6 @@
 package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.qcloud.cos.model.COSObjectSummary;
@@ -12,28 +11,47 @@ import java.util.*;
 
 public final class LineUtils {
 
-    final static private List<String> longFields = new ArrayList<String>(){{
-        add("size");
-        add("fsize");
+    final static private Set<String> timeFields = new HashSet<String>(){{
+        add("datetime");
         add("timestamp");
         add("putTime");
     }};
 
-    final static private List<String> intFields = new ArrayList<String>(){{
+    final static private Set<String> sizeFields = new HashSet<String>(){{
+        add("size");
+        add("fsize");
+    }};
+
+    final static private Set<String> mimeFields = new HashSet<String>(){{
+        add("mime");
+        add("mimeType");
+    }};
+
+    final static private Set<String> ownerFields = new HashSet<String>(){{
+        add("owner");
+        add("endUser");
+    }};
+
+    final static private Set<String> intFields = new HashSet<String>(){{
         add("status");
     }};
 
-    final static public List<String> fileInfoFields = new ArrayList<String>(){{
+    final static private Set<String> longFields = new HashSet<String>(){{
+        add("timestamp");
+        add("putTime");
+        addAll(sizeFields);
+    }};
+
+    final static public Set<String> fileInfoFields = new HashSet<String>(){{
         add("key");
         add("hash");
-        addAll(longFields);
-        add("mime");
-        add("mimeType");
+        add("md5");
         add("type");
         addAll(intFields);
-        add("md5");
-        add("owner");
-        add("endUser");
+        addAll(longFields);
+        addAll(timeFields);
+        addAll(mimeFields);
+        addAll(ownerFields);
     }};
 
     public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
@@ -50,8 +68,10 @@ public final class LineUtils {
                 case "fsize":
                     itemMap.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
                 case "datetime":
-                case "putTime":
                     itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "timestamp":
+                case "putTime":
+                    itemMap.put(indexMap.get(index), String.valueOf(fileInfo.putTime)); break;
                 case "mime":
                 case "mimeType":
                     itemMap.put(indexMap.get(index), fileInfo.mimeType); break;
@@ -80,8 +100,10 @@ public final class LineUtils {
                 case "fsize":
                     itemMap.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
                 case "datetime":
-                case "putTime":
                     itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime":
+                    itemMap.put(indexMap.get(index), String.valueOf(cosObject.getLastModified().getTime())); break;
                 case "type": itemMap.put(indexMap.get(index), cosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser":
@@ -106,8 +128,10 @@ public final class LineUtils {
                 case "fsize":
                     itemMap.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
                 case "datetime":
-                case "putTime":
                     itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime":
+                    itemMap.put(indexMap.get(index), String.valueOf(ossObject.getLastModified().getTime())); break;
                 case "type": itemMap.put(indexMap.get(index), ossObject.getStorageClass()); break;
                 case "owner":
                 case "endUser":
@@ -153,16 +177,16 @@ public final class LineUtils {
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileInfo.key);
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", fileInfo.hash);
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("size", fileInfo.fsize);
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("datetime", DatetimeUtils.stringOf(fileInfo.putTime, 10000000));
-        if (rmFields == null || !rmFields.contains("mime") || !rmFields.contains("mimeType"))
+        if (rmFields == null || mimeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("mime", fileInfo.mimeType);
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", fileInfo.type);
         if (rmFields == null || !rmFields.contains("status")) converted.addProperty("status", fileInfo.status);
 //        if (rmFields == null || !rmFields.contains("md5")) converted.addProperty("md5", fileInfo.md5);
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && fileInfo.endUser != null)
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && fileInfo.endUser != null)
             converted.addProperty("owner", fileInfo.endUser);
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
@@ -173,16 +197,16 @@ public final class LineUtils {
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.append(fileInfo.fsize).append(separator);
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.append(DatetimeUtils.stringOf(fileInfo.putTime, 10000000)).append(separator);
-        if (rmFields == null || !rmFields.contains("mime") || !rmFields.contains("mimeType"))
+        if (rmFields == null || mimeFields.stream().noneMatch(rmFields::contains))
             converted.append(fileInfo.mimeType).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
         if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
 //        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && fileInfo.endUser != null)
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && fileInfo.endUser != null)
             converted.append(fileInfo.endUser).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
@@ -193,12 +217,12 @@ public final class LineUtils {
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", cosObject.getKey());
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", cosObject.getETag());
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("size", cosObject.getSize());
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("datetime", DatetimeUtils.stringOf(cosObject.getLastModified()));
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", cosObject.getStorageClass());
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && cosObject.getOwner() != null)
             converted.addProperty("owner", cosObject.getOwner().getDisplayName());
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
@@ -210,12 +234,12 @@ public final class LineUtils {
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(cosObject.getKey()).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(cosObject.getETag()).append(separator);
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.append(cosObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.append(DatetimeUtils.stringOf(cosObject.getLastModified())).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && cosObject.getOwner() != null)
             converted.append(cosObject.getOwner().getDisplayName()).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
@@ -226,12 +250,12 @@ public final class LineUtils {
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
         if (rmFields == null || !rmFields.contains("hash")) converted.addProperty("hash", ossObject.getETag());
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("size", ossObject.getSize());
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("datetime", DatetimeUtils.stringOf(ossObject.getLastModified()));
         if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", ossObject.getStorageClass());
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && ossObject.getOwner() != null)
             converted.addProperty("owner", ossObject.getOwner().getDisplayName());
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
@@ -243,12 +267,12 @@ public final class LineUtils {
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(ossObject.getKey()).append(separator);
         if (rmFields == null || !rmFields.contains("hash")) converted.append(ossObject.getETag()).append(separator);
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
             converted.append(ossObject.getSize()).append(separator);
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.append(DatetimeUtils.stringOf(ossObject.getLastModified())).append(separator);
         if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && ossObject.getOwner() != null)
             converted.append(ossObject.getOwner().getDisplayName()).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();

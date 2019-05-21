@@ -72,7 +72,7 @@ public final class DatetimeUtils {
             return stringOf(timeStamp, accuracy);
         } else {
             return dateTimeFormatter.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(0,
-                    timeStamp * 10^9 / accuracy), defaultZoneId));
+                    timeStamp * (1000000000L / accuracy)), defaultZoneId));
         }
     }
 
