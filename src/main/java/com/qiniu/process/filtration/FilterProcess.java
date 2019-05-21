@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
@@ -50,7 +49,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
                 Class<?> clazz = baseFilter.getClass();
                 if (baseFilter.checkKeyCon()) add(clazz.getMethod("filterKey", Object.class));
                 if (baseFilter.checkMimeTypeCon()) add(clazz.getMethod("filterMimeType", Object.class));
-                if (baseFilter.checkPutTimeCon()) add(clazz.getMethod("filterPutTime", Object.class));
+                if (baseFilter.checkDatetimeCon()) add(clazz.getMethod("filterDatetime", Object.class));
                 if (baseFilter.checkTypeCon()) add(clazz.getMethod("filterType", Object.class));
                 if (baseFilter.checkStatusCon()) add(clazz.getMethod("filterStatus", Object.class));
             }
