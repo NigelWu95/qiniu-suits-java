@@ -5,7 +5,7 @@ import com.qiniu.convert.LineToMap;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class ScannerSource {
                     try {
                         System.out.println(processor.processLine(converted));
                     } catch (QiniuException e) {
-                        retry = HttpResponseUtils.checkException(e, 1);
+                        retry = HttpRespUtils.checkException(e, 1);
                         if (retry == -2) throw e;
                         else System.out.println(LogUtils.getMessage(e));
                     }

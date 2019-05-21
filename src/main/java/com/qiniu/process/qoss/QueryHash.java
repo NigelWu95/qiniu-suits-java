@@ -78,7 +78,7 @@ public class QueryHash extends Base<Map<String, String>> {
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
-                return JsonConvertUtils.toJson(qhash);
+                return JsonUtils.toJson(qhash);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }

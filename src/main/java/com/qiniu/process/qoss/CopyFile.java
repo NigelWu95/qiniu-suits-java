@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -76,12 +76,12 @@ public class CopyFile extends Base<Map<String, String>> {
     synchronized public String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket, line.get("to-key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
-        return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
+        return HttpRespUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
                 line.get("to-key"), false));
     }
 }

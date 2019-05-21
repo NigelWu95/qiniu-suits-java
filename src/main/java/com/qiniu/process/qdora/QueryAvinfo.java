@@ -74,7 +74,7 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         if (avinfo != null && !"".equals(avinfo)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
-                return JsonConvertUtils.toJson(avinfo);
+                return JsonUtils.toJson(avinfo);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }

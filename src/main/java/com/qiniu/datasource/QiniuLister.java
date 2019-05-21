@@ -109,9 +109,9 @@ public class QiniuLister implements ILister<FileInfo> {
             String line;
             JsonObject jsonObject = null;
             while ((line = bufferedReader.readLine()) != null) {
-                jsonObject = JsonConvertUtils.toJsonObject(line);
+                jsonObject = JsonUtils.toJsonObject(line);
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
-                    fileInfoList.add(JsonConvertUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                    fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
                 }
             }
             if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
@@ -212,7 +212,7 @@ public class QiniuLister implements ILister<FileInfo> {
         if (object != null) {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("k", object.key);
-            marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
+            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                     Base64.URL_SAFE | Base64.NO_WRAP);
         } else {
             marker = null;

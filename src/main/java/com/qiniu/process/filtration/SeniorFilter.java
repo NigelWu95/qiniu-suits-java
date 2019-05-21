@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.qiniu.config.JsonFile;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -28,20 +28,20 @@ public abstract class SeniorFilter<T> {
             JsonFile customJson = new JsonFile(configPath);
             JsonElement jsonElement = customJson.getElement("ext-mime");
             if (jsonElement instanceof JsonArray) this.extMimeTypeList = new HashSet<>(
-                    JsonConvertUtils.fromJsonArray(jsonElement.getAsJsonArray(), new TypeToken<List<String>>(){})
+                    JsonUtils.fromJsonArray(jsonElement.getAsJsonArray(), new TypeToken<List<String>>(){})
             );
         }
         if (checkExtMime() && !rewrite) {
             JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
             JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
-            List<String> defaultList = JsonConvertUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
+            List<String> defaultList = JsonUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
                     new TypeToken<List<String>>(){});
-            defaultList.addAll(JsonConvertUtils.fromJsonArray(extMime.get("audio").getAsJsonArray(),
+            defaultList.addAll(JsonUtils.fromJsonArray(extMime.get("audio").getAsJsonArray(),
                     new TypeToken<List<String>>(){}));
-            defaultList.addAll(JsonConvertUtils.fromJsonArray(extMime.get("video").getAsJsonArray(),
+            defaultList.addAll(JsonUtils.fromJsonArray(extMime.get("video").getAsJsonArray(),
                     new TypeToken<List<String>>(){}));
             this.extMimeList.addAll(defaultList);
-            this.extMimeTypeList.addAll(JsonConvertUtils.fromJsonArray(extMime.get("other").getAsJsonArray(),
+            this.extMimeTypeList.addAll(JsonUtils.fromJsonArray(extMime.get("other").getAsJsonArray(),
                     new TypeToken<List<String>>(){}));
         }
     }
