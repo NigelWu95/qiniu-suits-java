@@ -11,7 +11,7 @@ public class JsonToString extends Converter<JsonObject, String> {
 
     private IStringFormat<JsonObject> stringFormatter;
 
-    public JsonToString(String format, String separator, List<String> rmFields) throws IOException {
+    public JsonToString(String format, String separator, Set<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = JsonObject::toString;
