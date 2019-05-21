@@ -22,12 +22,12 @@ public class StatFileTest {
         String bucket =
                 "note-video";
 //                propertiesFile.getValue("bucket");
-        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "../xhs.txt", "tab", "\t");
+        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "../xhs", "tab", "\t");
     }
     @Test
     public void testSingleResult() {
         Map<String, String> map = new HashMap<String, String>(){{
-            put("key", "bf86388c-3c84-d238-d6da-46924b6e4c17.html");
+            put("key", "4969afce9276446daa97be8a199cffd2.html");
         }};
         try {
             String result = statFile.singleResult(map);

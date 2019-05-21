@@ -169,14 +169,12 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `save-format=` 结果保存格式（json/tab），默认为 tab  
 `save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
-进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。
+进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。  
 **默认情况：**  
 （1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
 （2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。  
-（3）默认保存结果的路径（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录  
-
-**--** 所有持久化参数均为可选参数，未设置的情况下保留所有字段：key,hash,fsize,putTime,mimeType,type,status,md5,endUser，可通过rm-fields
-选择去除某些字段，每一行信息以 json 格式保存在 save-path 路径下。详细配置说明见 [持久化配置](docs/resultsave.md)。  
+（3）保存结果的路径 **（save-path）默认使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
+详细配置说明见 [持久化配置](docs/resultsave.md)。  
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
 （2）local 源 =》 "local_success_\<order\>.txt"  
@@ -184,6 +182,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 "\<process\>_success/error_\<order\>.txt"。  
 **--** process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
 处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息。  
+**--** rm-fields 可选择去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式保存在 save-path 的文件中。  
 
 ### 7 超时设置
 多数数据源或者操作涉及网络请求，因此提供超时时间设置，默认的超时时间一般能够满足要求，特殊需要的情况下可以修改各超时时间：  
