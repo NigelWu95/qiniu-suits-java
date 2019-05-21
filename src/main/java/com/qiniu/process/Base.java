@@ -169,7 +169,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         retry = 0;
                     } catch (QiniuException e) {
                         retry = HttpResponseUtils.checkException(e, retry);
-                        String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
+                        String message = LogUtils.getMessage(e);
                         System.out.println(message);
                         switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
                             case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
@@ -232,7 +232,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     retry = 0;
                 } catch (QiniuException e) {
                     retry = HttpResponseUtils.checkException(e, retry);
-                    String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
+                    String message = LogUtils.getMessage(e);
                     System.out.println(message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
@@ -247,8 +247,12 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         }
     }
 
+    public String processLine(T line) throws IOException {
+        return singleResult(line);
+    }
+
     /**
-     * 公开的操作调用方入口，通过判断 batch size 来决定调用哪个方法
+     * 公开的操作调用方法入口，通过判断 batch size 来决定调用哪个方法
      * @param lineList 输入的文件信息列表
      * @throws IOException 处理过程中出现的异常
      */

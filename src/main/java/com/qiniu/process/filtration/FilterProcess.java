@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
@@ -101,6 +102,15 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return mapFilter;
+    }
+
+    public String processLine(T line) throws IOException {
+        try {
+            if (filter.doFilter(line)) return String.valueOf(true);
+            else return  "false";
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 
     public void processLine(List<T> list) throws IOException {

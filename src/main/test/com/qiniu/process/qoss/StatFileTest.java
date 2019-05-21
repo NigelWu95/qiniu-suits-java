@@ -10,11 +10,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+public class StatFileTest {
 
-public class ChangeStatusTest {
-
-    private ChangeStatus changeStatus;
+    private StatFile statFile;
 
     @Before
     public void init() throws IOException {
@@ -24,16 +22,15 @@ public class ChangeStatusTest {
         String bucket =
                 "note-video";
 //                propertiesFile.getValue("bucket");
-        changeStatus = new ChangeStatus(accessKey, secretKey, new Configuration(), bucket, 1, "../xhs.txt");
+        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "../xhs.txt", "tab", "\t");
     }
-
     @Test
     public void testSingleResult() {
         Map<String, String> map = new HashMap<String, String>(){{
-            put("key", "post/d6649026-952b-9f20-a542-29554f9f952d.html");
+            put("key", "bf86388c-3c84-d238-d6da-46924b6e4c17.html");
         }};
         try {
-            String result = changeStatus.singleResult(map);
+            String result = statFile.singleResult(map);
             System.out.println(result);
         } catch (QiniuException e) {
             e.printStackTrace();

@@ -59,8 +59,8 @@ public final class DatetimeUtils {
     }
 
     public static String stringOf(long timeStamp, long accuracy) {
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(0, timeStamp * 10^9 / accuracy),
-                defaultZoneId).toString();
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(0,
+                timeStamp * (1000000000L / accuracy)), defaultZoneId).toString();
     }
 
     public static LocalDateTime stringOf(String datetime) {
