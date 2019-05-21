@@ -360,7 +360,7 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        List<String> keys = new ArrayList<>(LineUtils.fileInfoFields);
+        List<String> keys = Arrays.asList("key,hash,size,datetime,mime,type,status,owner".split(","));
         boolean useDefault = false;
         String indexes = entryParam.getValue("indexes", "").trim();
         if ("".equals(indexes)) {
