@@ -345,6 +345,8 @@ public final class LineUtils {
         if (rmFields != null) keys.removeAll(rmFields);
         for (String key : keys) {
             if (fileInfoFields.contains(key)) {
+                if ("putTime".equals(key)) converted.append(DatetimeUtils.datetimeOf(json.get(key).getAsLong()))
+                        .append(separator); else
                 if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
                 else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
                 else converted.append(json.get(key).getAsString()).append(separator);

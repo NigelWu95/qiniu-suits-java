@@ -58,6 +58,10 @@ public final class DatetimeUtils {
         return LocalDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), defaultZoneId).toString();
     }
 
+    public static String stringOf(Instant instant) {
+        return LocalDateTime.ofInstant(instant, defaultZoneId).toString();
+    }
+
     /**
      * 将 timeStamp 根据精确度转换为 dateTimeFormatter 格式的时间日期字符串
      * @param timestamp 时间戳
@@ -66,16 +70,6 @@ public final class DatetimeUtils {
      */
     public static String stringOf(long timestamp, long accuracy) {
         return datetimeOf(timestamp, accuracy).toString();
-    }
-
-    public static LocalDateTime datetimeOf(long timestamp, long accuracy) {
-        long ratio = 1000_000_000L / accuracy;
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(Math.floorDiv(timestamp, accuracy),
-                Math.floorMod(timestamp, accuracy) * ratio), defaultZoneId);
-    }
-
-    public static LocalDateTime datetimeOf(long timestamp) {
-        return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
     }
 
     /**
@@ -95,7 +89,13 @@ public final class DatetimeUtils {
         }
     }
 
-    public static String stringOf(Instant instant) {
-        return LocalDateTime.ofInstant(instant, defaultZoneId).toString();
+    public static LocalDateTime datetimeOf(long timestamp, long accuracy) {
+        long ratio = 1000_000_000L / accuracy;
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(Math.floorDiv(timestamp, accuracy),
+                Math.floorMod(timestamp, accuracy) * ratio), defaultZoneId);
+    }
+
+    public static LocalDateTime datetimeOf(long timestamp) {
+        return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
     }
 }
