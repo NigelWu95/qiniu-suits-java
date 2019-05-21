@@ -24,7 +24,7 @@ public class ChangeStatusTest {
         String bucket =
                 "note-video";
 //                propertiesFile.getValue("bucket");
-        changeStatus = new ChangeStatus(accessKey, secretKey, new Configuration(), bucket, 1, "../xhs.txt");
+        changeStatus = new ChangeStatus(accessKey, secretKey, new Configuration(), bucket, 1, "../xhs");
     }
 
     @Test
