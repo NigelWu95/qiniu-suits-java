@@ -148,26 +148,6 @@ public final class LineUtils {
         return itemMap;
     }
 
-    public static String toFormatString(FileInfo fileInfo, String separator, List<String> rmFields) throws IOException {
-        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
-        StringBuilder converted = new StringBuilder();
-        if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
-        if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
-        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
-            converted.append(fileInfo.fsize).append(separator);
-        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
-            converted.append(DatetimeUtils.stringOf(fileInfo.putTime, 10000000)).append(separator);
-        if (rmFields == null || !rmFields.contains("mime") || !rmFields.contains("mimeType"))
-            converted.append(fileInfo.mimeType).append(separator);
-        if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
-        if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
-//        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
-        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && fileInfo.endUser != null)
-            converted.append(fileInfo.endUser).append(separator);
-        if (converted.length() < separator.length()) throw new IOException("empty result.");
-        return converted.deleteCharAt(converted.length() - separator.length()).toString();
-    }
-
     public static String toFormatString(FileInfo fileInfo, List<String> rmFields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         JsonObject converted = new JsonObject();
@@ -186,6 +166,26 @@ public final class LineUtils {
             converted.addProperty("owner", fileInfo.endUser);
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
+    }
+
+    public static String toFormatString(FileInfo fileInfo, String separator, List<String> rmFields) throws IOException {
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
+        StringBuilder converted = new StringBuilder();
+        if (rmFields == null || !rmFields.contains("key")) converted.append(fileInfo.key).append(separator);
+        if (rmFields == null || !rmFields.contains("hash")) converted.append(fileInfo.hash).append(separator);
+        if (rmFields == null || !rmFields.contains("size") || !rmFields.contains("fsize"))
+            converted.append(fileInfo.fsize).append(separator);
+        if (rmFields == null || !rmFields.contains("datetime") || !rmFields.contains("putTime"))
+            converted.append(DatetimeUtils.stringOf(fileInfo.putTime, 10000000)).append(separator);
+        if (rmFields == null || !rmFields.contains("mime") || !rmFields.contains("mimeType"))
+            converted.append(fileInfo.mimeType).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(fileInfo.type).append(separator);
+        if (rmFields == null || !rmFields.contains("status")) converted.append(fileInfo.status).append(separator);
+//        if (rmFields == null || !rmFields.contains("md5")) converted.append(fileInfo.md5).append(separator);
+        if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && fileInfo.endUser != null)
+            converted.append(fileInfo.endUser).append(separator);
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
     public static String toFormatString(COSObjectSummary cosObject, List<String> rmFields) throws IOException {
@@ -217,7 +217,7 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.append(cosObject.getStorageClass()).append(separator);
         if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && cosObject.getOwner() != null)
             converted.append(cosObject.getOwner().getDisplayName()).append(separator);
-        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
@@ -250,37 +250,7 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
         if ((rmFields == null || !rmFields.contains("owner") || !rmFields.contains("endUser")) && ossObject.getOwner() != null)
             converted.append(ossObject.getOwner().getDisplayName()).append(separator);
-        if (converted.length() < separator.length()) throw new IOException("empty result.");
-        return converted.deleteCharAt(converted.length() - separator.length()).toString();
-    }
-
-    public static String toFormatString(JsonObject json, String separator, List<String> rmFields) throws IOException {
-        if (json == null) throw new IOException("empty JsonObject.");
-        StringBuilder converted = new StringBuilder();
-        Set<String> set = json.keySet();
-        List<String> keys = new ArrayList<String>(){{
-            addAll(set);
-        }};
-        if (rmFields != null) keys.removeAll(rmFields);
-//        for (String key : json.keySet()) {
-//            if (fileInfoFields.contains(key)) {
-//                if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
-//            }
-//            if (json.has(index)) itemMap.put(indexMap.get(index), json.get(index).getAsString());
-//            else throw new IOException("the index: " + index + " can't be found.");
-//        }
-        fileInfoFields.forEach(key -> {
-            if (keys.contains(key) && !(json.get(key) instanceof JsonNull)) {
-                if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
-                else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
-                else converted.append(json.get(key).getAsString()).append(separator);
-            }
-            keys.remove(key);
-        });
-        for (String key : keys) {
-            converted.append(json.get(key).getAsString()).append(separator);
-        }
-        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
@@ -292,16 +262,14 @@ public final class LineUtils {
             addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        fileInfoFields.forEach(key -> {
-            if (keys.contains(key) && line.get(key) != null) {
+        for (String key : keys) {
+            if (fileInfoFields.contains(key)) {
                 if (longFields.contains(key)) converted.addProperty(key, Long.valueOf(line.get(key)));
                 else if (intFields.contains(key)) converted.addProperty(key, Integer.valueOf(line.get(key)));
                 else converted.addProperty(key, line.get(key));
+            } else {
+                converted.addProperty(key, line.get(key));
             }
-            keys.remove(key);
-        });
-        for (String key : keys) {
-            converted.addProperty(key, line.get(key));
         }
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
@@ -316,18 +284,37 @@ public final class LineUtils {
             addAll(set);
         }};
         if (rmFields != null) keys.removeAll(rmFields);
-        fileInfoFields.forEach(key -> {
-            if (keys.contains(key) && line.get(key) != null) {
+        for (String key : keys) {
+            if (fileInfoFields.contains(key)) {
                 if (longFields.contains(key)) converted.append(Long.valueOf(line.get(key))).append(separator);
                 else if (intFields.contains(key)) converted.append(Integer.valueOf(line.get(key))).append(separator);
                 else converted.append(line.get(key)).append(separator);
+            } else {
+                converted.append(line.get(key)).append(separator);
             }
-            keys.remove(key);
-        });
-        for (String key : keys) {
-            converted.append(line.get(key)).append(separator);
         }
-        if (converted.length() < separator.length()) throw new IOException("empty result.");
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
+    public static String toFormatString(JsonObject json, String separator, List<String> rmFields) throws IOException {
+        if (json == null) throw new IOException("empty JsonObject.");
+        StringBuilder converted = new StringBuilder();
+        Set<String> set = json.keySet();
+        List<String> keys = new ArrayList<String>(){{
+            addAll(set);
+        }};
+        if (rmFields != null) keys.removeAll(rmFields);
+        for (String key : keys) {
+            if (fileInfoFields.contains(key)) {
+                if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
+                else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
+                else converted.append(json.get(key).getAsString()).append(separator);
+            } else {
+                converted.append(json.get(key)).append(separator);
+            }
+        }
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 }
