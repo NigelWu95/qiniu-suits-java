@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +34,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
-    protected List<String> rmFields;
+    protected Set<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<T> processor; // 定义的资源处理器
@@ -52,7 +53,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
         this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;

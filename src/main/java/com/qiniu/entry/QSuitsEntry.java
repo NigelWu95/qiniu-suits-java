@@ -35,12 +35,12 @@ public class QSuitsEntry {
     private int unitLen;
     private int threads;
     private boolean saveTotal;
-    private List<String> rmFields;
     private String process;
     private int retryTimes;
     private String savePath;
     private String saveFormat;
     private String saveSeparator;
+    private Set<String> rmFields;
 
     public QSuitsEntry(String[] args) throws Exception {
         setEntryParam(args);
@@ -266,7 +266,6 @@ public class QSuitsEntry {
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         if (baseFilter != null || seniorFilter != null) {
-            List<String> rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").split(","));
             processor = new MapProcess(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields);
             processor.setNextProcessor(nextProcessor);
         } else {

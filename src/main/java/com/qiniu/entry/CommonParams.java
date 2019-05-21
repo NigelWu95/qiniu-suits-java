@@ -48,11 +48,11 @@ public class CommonParams {
     private int batchSize;
     private int retryTimes;
     private boolean saveTotal;
-    private List<String> rmFields;
     private String savePath;
     private String saveTag;
     private String saveFormat;
     private String saveSeparator;
+    private Set<String> rmFields;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -109,16 +109,14 @@ public class CommonParams {
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
-        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
-        if (rmFields.size() == 0) rmFields = null;
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
         // 校验设置的 format 参数
         saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
-        saveSeparator = entryParam.getValue("save-separator", "");
-        setSaveSeparator(saveSeparator);
+        setSaveSeparator(entryParam.getValue("save-separator", ""));
+        setRmFields(entryParam.getValue("rm-fields", "").trim());
     }
 
     public String checked(String param, String name, String conditionReg) throws IOException {
@@ -508,6 +506,15 @@ public class CommonParams {
         }
     }
 
+    private void setRmFields(String param) {
+        String[] fields = param.split(",");
+        if (fields.length == 0) rmFields = null;
+        else {
+            rmFields = new HashSet<>();
+            Collections.addAll(rmFields, fields);
+        }
+    }
+
     public boolean containIndex(String name) {
         return indexMap.containsValue(name);
     }
@@ -640,7 +647,7 @@ public class CommonParams {
         this.saveFormat = saveFormat;
     }
 
-    public void setRmFields(List<String> rmFields) {
+    public void setRmFields(Set<String> rmFields) {
         this.rmFields = rmFields;
     }
 
@@ -776,7 +783,7 @@ public class CommonParams {
         return saveSeparator;
     }
 
-    public List<String> getRmFields() {
+    public Set<String> getRmFields() {
         return rmFields;
     }
 

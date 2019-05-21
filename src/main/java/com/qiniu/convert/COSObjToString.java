@@ -6,12 +6,13 @@ import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 public class COSObjToString extends Converter<COSObjectSummary, String> {
 
     private IStringFormat<COSObjectSummary> stringFormatter;
 
-    public COSObjToString(String format, String separator, List<String> rmFields) throws IOException {
+    public COSObjToString(String format, String separator, Set<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
