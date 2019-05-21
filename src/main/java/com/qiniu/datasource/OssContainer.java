@@ -6,7 +6,7 @@ import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LineUtils;
 import com.qiniu.util.SystemUtils;
 
@@ -163,7 +163,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     processor.processLine(convertedList);
                 }
             } catch (QiniuException e) {
-                if (HttpResponseUtils.checkException(e, 2) < -1) throw e;
+                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
             }
             retry = retryTimes;
             while (true) {
@@ -174,7 +174,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
-                    if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                    if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else retry--;
                 }
@@ -254,7 +254,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
-                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
             }
@@ -275,7 +275,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 break;
             } catch (SuitsException e) {
                 System.out.println("check lister has future next retrying...\n" + e.getMessage());
-                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
             }

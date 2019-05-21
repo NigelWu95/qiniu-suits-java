@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -102,15 +102,15 @@ public class MoveFile extends Base<Map<String, String>> {
                 batchOperations.addMoveOp(bucket, line.get("key"), toBucket, line.get("to-key"));
             }
         });
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
         if (toBucket == null || "".equals(toBucket)) {
-            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
+            return HttpRespUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
         } else {
-            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
+            return HttpRespUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
         }
     }
 }

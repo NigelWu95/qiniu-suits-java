@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,11 +58,11 @@ public class ChangeStatus extends Base<Map<String, String>> {
     synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpResponseUtils.getResult(bucketManager.changeStatus(bucket, line.get("key"), status));
+        return HttpRespUtils.getResult(bucketManager.changeStatus(bucket, line.get("key"), status));
     }
 }

@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.util.List;
 
-public final class JsonConvertUtils {
+public final class JsonUtils {
 
     private static Gson gson = new Gson();
     private static Gson escapeGson = new GsonBuilder().disableHtmlEscaping().create();
@@ -24,11 +24,15 @@ public final class JsonConvertUtils {
     }
 
     public static String toJson(String jsonData) {
-        return jsonParser.parse(jsonData).toString();
+        return jsonParser.parse(jsonData).getAsString();
     }
 
     public static String toJson(Object srcObject) {
         return gson.toJson(srcObject);
+    }
+
+    public static String toString(JsonElement jsonElement) {
+        return gson.fromJson(jsonElement, String.class);
     }
 
     public static String toJsonWithoutUrlEscape(Object srcObject) {

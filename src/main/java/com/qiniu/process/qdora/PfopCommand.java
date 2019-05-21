@@ -7,7 +7,7 @@ import com.qiniu.config.JsonFile;
 import com.qiniu.model.qdora.Avinfo;
 import com.qiniu.model.qdora.VideoStream;
 import com.qiniu.process.Base;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 import com.qiniu.util.PfopUtils;
 
 import java.io.IOException;
@@ -87,7 +87,7 @@ public class PfopCommand extends Base<Map<String, String>> {
         List<Integer> scale;
         List<String> resultList = new ArrayList<>();
         for (JsonObject pfopConfig : pfopConfigs) {
-            scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
+            scale = JsonUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
             info = line.get(avinfoIndex);
             try {

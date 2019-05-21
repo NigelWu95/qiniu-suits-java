@@ -311,7 +311,7 @@ public final class LineUtils {
                 else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
                 else converted.append(json.get(key).getAsString()).append(separator);
             } else {
-                converted.append(json.get(key)).append(separator);
+                converted.append(JsonUtils.toString(json.get(key))).append(separator);
             }
         }
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
