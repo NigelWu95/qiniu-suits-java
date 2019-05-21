@@ -156,7 +156,7 @@ public final class LineUtils {
         if (json == null) throw new IOException("empty JsonObject.");
         Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
-            if (json.has(index)) itemMap.put(indexMap.get(index), json.get(index).getAsString());
+            if (json.has(index)) itemMap.put(indexMap.get(index), JsonUtils.toString(json.get(index)));
             else throw new IOException("the index: " + index + " can't be found.");
         }
         return itemMap;
