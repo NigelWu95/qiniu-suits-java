@@ -26,8 +26,10 @@ public class StatFile extends Base<Map<String, String>> {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String format,
+                    String separator) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket);
+        set(format, separator);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 

@@ -198,6 +198,14 @@ public class QSuitsEntry {
         }
     }
 
+    public ScannerSource getScannerSource() {
+        String parseFormat = commonParams.getParse();
+        String separator = commonParams.getSeparator();
+        String addKeyPrefix = commonParams.getRmKeyPrefix();
+        String rmKeyPrefix = commonParams.getRmKeyPrefix();
+        return new ScannerSource(parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+    }
+
     public LocalFileContainer getLocalFileContainer() {
         String filePath = commonParams.getPath();
         String parseFormat = commonParams.getParse();
@@ -256,7 +264,7 @@ public class QSuitsEntry {
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
-        ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor();
+        ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor(false);
         if (nextProcessor != null) {
             if (ProcessUtils.canBatch(nextProcessor.getProcessName())) nextProcessor.setBatchSize(commonParams.getBatchSize());
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数，filter 操作不需要重试
@@ -278,56 +286,61 @@ public class QSuitsEntry {
         return processor;
     }
 
-    private ILineProcess<Map<String, String>> whichNextProcessor() throws Exception {
+    public ILineProcess<Map<String, String>> whichNextProcessor(boolean single) throws Exception {
         ILineProcess<Map<String, String>> processor = null;
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         switch (process) {
-            case "status": processor = getChangeStatus(); break;
-            case "type": processor = getChangeType(); break;
-            case "lifecycle": processor = getChangeLifecycle(); break;
-            case "copy": processor = getCopyFile(); break;
+            case "status": processor = getChangeStatus(single); break;
+            case "type": processor = getChangeType(single); break;
+            case "lifecycle": processor = getChangeLifecycle(single); break;
+            case "copy": processor = getCopyFile(single); break;
             case "move":
-            case "rename": processor = getMoveFile(); break;
-            case "delete": processor = getDeleteFile(); break;
-            case "asyncfetch": processor = getAsyncFetch(); break;
-            case "avinfo": processor = getQueryAvinfo(); break;
-            case "pfopcmd": processor = getPfopCommand(); break;
-            case "pfop": processor = getPfop(); break;
-            case "pfopresult": processor = getPfopResult(); break;
-            case "qhash": processor = getQueryHash(); break;
-            case "stat": processor = getStatFile(); break;
-            case "privateurl": processor = getPrivateUrl(); break;
-            case "mirror": processor = getMirrorFile(); break;
-            case "exportts": processor = getExportTs(); break;
+            case "rename": processor = getMoveFile(single); break;
+            case "delete": processor = getDeleteFile(single); break;
+            case "asyncfetch": processor = getAsyncFetch(single); break;
+            case "avinfo": processor = getQueryAvinfo(single); break;
+            case "pfopcmd": processor = getPfopCommand(single); break;
+            case "pfop": processor = getPfop(single); break;
+            case "pfopresult": processor = getPfopResult(single); break;
+            case "qhash": processor = getQueryHash(single); break;
+            case "stat": processor = getStatFile(single); break;
+            case "privateurl": processor = getPrivateUrl(single); break;
+            case "mirror": processor = getMirrorFile(single); break;
+            case "exportts": processor = getExportTs(single); break;
         }
         return processor;
     }
 
-    private ILineProcess<Map<String, String>> getChangeStatus() throws IOException {
+    private ILineProcess<Map<String, String>> getChangeStatus(boolean single) throws IOException {
         String status = commonParams.checked(entryParam.getValue("status"), "status", "[01]");
-        return new ChangeStatus(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(status), savePath);
+        return single ? new ChangeStatus(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(status))
+                : new ChangeStatus(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(status), savePath);
     }
 
-    private ILineProcess<Map<String, String>> getChangeType() throws IOException {
+    private ILineProcess<Map<String, String>> getChangeType(boolean single) throws IOException {
         String type = commonParams.checked(entryParam.getValue("type"), "type", "[01]");
-        return new ChangeType(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(type), savePath);
+        return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(type))
+                : new ChangeType(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(type), savePath);
     }
 
-    private ILineProcess<Map<String, String>> getChangeLifecycle() throws IOException {
+    private ILineProcess<Map<String, String>> getChangeLifecycle(boolean single) throws IOException {
         String days = commonParams.checked(entryParam.getValue("days"), "days", "\\d");
-        return new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(days), savePath);
+        return single ? new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(days))
+                : new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(days), savePath);
     }
 
-    private ILineProcess<Map<String, String>> getCopyFile() throws IOException {
+    private ILineProcess<Map<String, String>> getCopyFile(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket");
         String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+        return single ? new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+                rmPrefix)
+                : new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
                 rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getMoveFile() throws IOException {
+    private ILineProcess<Map<String, String>> getMoveFile(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket", null);
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
         String newKeyIndex = commonParams.containIndex("newKey") ? "newKey" : null;
@@ -335,15 +348,18 @@ public class QSuitsEntry {
         String force = entryParam.getValue("prefix-force", null);
         force = commonParams.checked(force, "prefix-force", "(true|false)");
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+        return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+                Boolean.valueOf(force), rmPrefix)
+                : new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
                 Boolean.valueOf(force), rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getDeleteFile() throws IOException {
-        return new DeleteFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath);
+    private ILineProcess<Map<String, String>> getDeleteFile(boolean single) throws IOException {
+        return single ? new DeleteFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket)
+                : new DeleteFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getAsyncFetch() throws IOException {
+    private ILineProcess<Map<String, String>> getAsyncFetch(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket");
         String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
@@ -359,8 +375,10 @@ public class QSuitsEntry {
         String type = entryParam.getValue("file-type", "0");
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = commonParams.checked(ignore, "ignore-same-key", "(true|false)");
-        ILineProcess<Map<String, String>> processor = new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
-                toBucket, domain, protocol, urlIndex, addPrefix, savePath);
+        ILineProcess<Map<String, String>> processor = single ? new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
+                toBucket, domain, protocol, urlIndex, addPrefix)
+                : new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig, toBucket, domain, protocol, urlIndex,
+                addPrefix, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
@@ -369,25 +387,27 @@ public class QSuitsEntry {
         return processor;
     }
 
-    private ILineProcess<Map<String, String>> getQueryAvinfo() throws IOException {
+    private ILineProcess<Map<String, String>> getQueryAvinfo(boolean single) throws IOException {
         String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        return new QueryAvinfo(qiniuConfig, domain, protocol, urlIndex, savePath);
+        return single ? new QueryAvinfo(qiniuConfig, domain, protocol, urlIndex)
+                : new QueryAvinfo(qiniuConfig, domain, protocol, urlIndex, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getPfopCommand() throws IOException {
+    private ILineProcess<Map<String, String>> getPfopCommand(boolean single) throws IOException {
         String avinfoIndex = commonParams.containIndex("avinfo") ? "avinfo" : null;
         String configJson = entryParam.getValue("pfop-config");
         String duration = entryParam.getValue("duration", "false");
         duration = commonParams.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false");
         size = commonParams.checked(size, "size", "(true|false)");
-        return new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
+        return single ? new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size))
+                : new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
     }
 
-    private ILineProcess<Map<String, String>> getPfop() throws IOException {
+    private ILineProcess<Map<String, String>> getPfop(boolean single) throws IOException {
         String fopsIndex = commonParams.containIndex("fops") ? "fops" : null;
         String forcePublic = entryParam.getValue("force-public", "false");
         String pipeline = entryParam.getValue("pipeline", null);
@@ -396,49 +416,56 @@ public class QSuitsEntry {
                     " private pipeline, please set the force-public as true.");
         }
         String configJson = entryParam.getValue("pfop-config", null);
-        return new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, fopsIndex, configJson, savePath);
+        return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, fopsIndex, configJson)
+                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, fopsIndex, configJson, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getPfopResult() throws IOException {
+    private ILineProcess<Map<String, String>> getPfopResult(boolean single) throws IOException {
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String persistentIdIndex = commonParams.containIndex("pid") ? "pid" : null;
-        return new QueryPfopResult(qiniuConfig, protocol, persistentIdIndex, savePath);
+        return single ? new QueryPfopResult(qiniuConfig, protocol, persistentIdIndex)
+                : new QueryPfopResult(qiniuConfig, protocol, persistentIdIndex, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getQueryHash() throws IOException {
+    private ILineProcess<Map<String, String>> getQueryHash(boolean single) throws IOException {
         String domain = entryParam.getValue("domain", null);
         String algorithm = entryParam.getValue("algorithm", "md5");
         algorithm = commonParams.checked(algorithm, "algorithm", "(md5|sha1)");
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        return new QueryHash(qiniuConfig, algorithm, protocol, domain, urlIndex, savePath);
+        return single ? new QueryHash(qiniuConfig, algorithm, protocol, domain, urlIndex)
+                : new QueryHash(qiniuConfig, algorithm, protocol, domain, urlIndex, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getStatFile() throws IOException {
-        return new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath, saveFormat, saveSeparator);
+    private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
+        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, saveFormat, saveSeparator)
+                : new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath, saveFormat, saveSeparator);
     }
 
-    private ILineProcess<Map<String, String>> getPrivateUrl() throws IOException {
+    private ILineProcess<Map<String, String>> getPrivateUrl(boolean single) throws IOException {
         String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
         String expires = entryParam.getValue("expires", "3600");
         expires = commonParams.checked(expires, "expires", "[1-9]\\d*");
-        return new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
+        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires))
+                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
     }
 
-    private ILineProcess<Map<String, String>> getMirrorFile() throws IOException {
-        return new MirrorFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath);
+    private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
+        return single ? new MirrorFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket)
+                : new MirrorFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getExportTs() throws IOException {
+    private ILineProcess<Map<String, String>> getExportTs(boolean single) throws IOException {
         String domain = entryParam.getValue("domain", null);
         String protocol = entryParam.getValue("protocol", "http");
         protocol = commonParams.checked(protocol, "protocol", "https?");
         String urlIndex = commonParams.containIndex("url") ? "url" : null;
-        return new ExportTS(qiniuConfig, domain, protocol, urlIndex, savePath);
+        return single ? new ExportTS(qiniuConfig, domain, protocol, urlIndex)
+                : new ExportTS(qiniuConfig, domain, protocol, urlIndex, savePath);
     }
 }

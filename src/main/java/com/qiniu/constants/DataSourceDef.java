@@ -1,7 +1,7 @@
 package com.qiniu.constants;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DataSourceDef {
 
@@ -10,13 +10,13 @@ public class DataSourceDef {
     public static String ALIYUN = "aliyun";
     public static String LOCAL = "local";
 
-    public static List<String> ossListSource = new ArrayList<String>(){{
+    public static Set<String> ossListSource = new HashSet<String>(){{
         add(QINIU);
         add(TENCENT);
         add(ALIYUN);
     }};
 
-    public static List<String> fileSource = new ArrayList<String>(){{
+    public static Set<String> fileSource = new HashSet<String>(){{
         add(LOCAL);
     }};
 }
