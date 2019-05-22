@@ -4,9 +4,9 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.IResultSave;
+import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.SystemUtils;
 
 import java.io.File;
@@ -14,11 +14,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultSave<W>, T> {
+public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
     private String filePath;
     protected String parseFormat;
@@ -33,7 +34,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
-    protected List<String> rmFields;
+    protected Set<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<T> processor; // 定义的资源处理器
@@ -52,7 +53,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
         this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
@@ -90,8 +91,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    public void export(IReader<E> reader, IResultSave<W> fileSaver, ILineProcess<T> processor)
-            throws IOException {
+    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
@@ -111,16 +111,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     if (retry == 0) throw e;
                 }
             }
-            if (line != null) srcList.add(line);
+            if (line != null && !"".equals(line)) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 convertedList = converter.convertToVList(srcList);
                 if (converter.errorSize() > 0)
-                    fileSaver.writeError(String.join("\n", converter.consumeErrors()), false);
+                    saver.writeError(String.join("\n", converter.consumeErrors()), false);
                 if (saveTotal) {
                     writeList = writeTypeConverter.convertToVList(convertedList);
-                    if (writeList.size() > 0) fileSaver.writeSuccess(String.join("\n", writeList), false);
+                    if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (writeTypeConverter.errorSize() > 0)
-                        fileSaver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
+                        saver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -128,7 +128,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 } catch (QiniuException e) {
                     // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
                     // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
-                    retry = HttpResponseUtils.checkException(e, 1);
+                    retry = HttpRespUtils.checkException(e, 1);
                     if (retry == -2) throw e;
                 }
                 srcList.clear();
@@ -136,7 +136,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
-    protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
     public void execInThread(IReader<E> reader, int order) throws Exception {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
@@ -144,7 +144,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
-        IResultSave<W> saver = getNewResultSaver(newOrder);
+        IResultOutput<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + reader.getName();
@@ -194,9 +194,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        executorPool = Executors.newFixedThreadPool(runningThreads);
         exitBool = new AtomicBoolean(false);
         try {
-            executorPool = Executors.newFixedThreadPool(runningThreads);
             int order = 1;
             for (IReader<E> fileReader : fileReaders) {
                 execInThread(fileReader, order++);

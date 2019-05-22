@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,6 +22,14 @@ public class MoveFile extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        // 目标 bucket 为空时规定为 rename 操作
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket);
+        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
+    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
@@ -33,10 +41,11 @@ public class MoveFile extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateMove(String bucket, String toBucket, String newKeyIndex, String addPrefix,
-                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
-        this.bucket = bucket;
-        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
+                savePath, 0);
     }
 
     private void set(String toBucket, String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix)
@@ -61,11 +70,10 @@ public class MoveFile extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
-    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
-            throws IOException {
-        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
-                savePath, 0);
+    public void updateMove(String bucket, String toBucket, String newKeyIndex, String addPrefix,
+                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
     }
 
     public MoveFile clone() throws CloneNotSupportedException {
@@ -76,12 +84,12 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         if (line.get("key") == null) return false;
         try {
             String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
@@ -93,7 +101,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+    synchronized public String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
@@ -102,15 +110,15 @@ public class MoveFile extends Base<Map<String, String>> {
                 batchOperations.addMoveOp(bucket, line.get("key"), toBucket, line.get("to-key"));
             }
         });
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws IOException {
         if (toBucket == null || "".equals(toBucket)) {
-            return HttpResponseUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
+            return HttpRespUtils.getResult(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
         } else {
-            return HttpResponseUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
+            return HttpRespUtils.getResult(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
         }
     }
 }

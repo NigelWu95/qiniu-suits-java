@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
@@ -19,13 +20,13 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected String saveFormat;
     protected String saveSeparator;
-    protected List<String> rmFields;
+    protected Set<String> rmFields;
     protected int saveIndex;
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
 
     public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
-                         String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
+                         String saveFormat, String saveSeparator, Set<String> rmFields, int saveIndex)
             throws Exception {
         this.processName = "filter";
         this.filter = newFilter(baseFilter, seniorFilter);
@@ -39,7 +40,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
 
     public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath, String saveFormat,
-                         String saveSeparator, List<String> rmFields) throws Exception {
+                         String saveSeparator, Set<String> rmFields) throws Exception {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
@@ -49,7 +50,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
                 Class<?> clazz = baseFilter.getClass();
                 if (baseFilter.checkKeyCon()) add(clazz.getMethod("filterKey", Object.class));
                 if (baseFilter.checkMimeTypeCon()) add(clazz.getMethod("filterMimeType", Object.class));
-                if (baseFilter.checkPutTimeCon()) add(clazz.getMethod("filterPutTime", Object.class));
+                if (baseFilter.checkDatetimeCon()) add(clazz.getMethod("filterDatetime", Object.class));
                 if (baseFilter.checkTypeCon()) add(clazz.getMethod("filterType", Object.class));
                 if (baseFilter.checkStatusCon()) add(clazz.getMethod("filterStatus", Object.class));
             }
@@ -84,6 +85,10 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.nextProcessor = nextProcessor;
     }
 
+    public ILineProcess<T> getNextProcessor() {
+        return nextProcessor;
+    }
+
     @SuppressWarnings("unchecked")
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
@@ -97,6 +102,15 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return mapFilter;
+    }
+
+    public String processLine(T line) throws IOException {
+        try {
+            if (filter.doFilter(line)) return String.valueOf(true);
+            else return  "false";
+        } catch (Exception e) {
+            throw new QiniuException(e, e.getMessage());
+        }
     }
 
     public void processLine(List<T> list) throws IOException {

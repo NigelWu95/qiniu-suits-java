@@ -17,6 +17,12 @@ public class ExportTS extends Base<Map<String, String>> {
     private String urlIndex;
     private M3U8Manager m3U8Manager;
 
+    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex) throws IOException {
+        super("exportts", "", "", configuration, null);
+        set(domain, protocol, urlIndex);
+        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
+    }
+
     public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
                     int saveIndex) throws IOException {
         super("exportts", "", "", configuration, null, savePath, saveIndex);
@@ -24,10 +30,9 @@ public class ExportTS extends Base<Map<String, String>> {
         this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
     }
 
-    public void updateExport(String domain, String protocol, String urlIndex)
+    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String savePath)
             throws IOException {
-        set(domain, protocol, urlIndex);
-        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
+        this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
     private void set(String domain, String protocol, String urlIndex) throws IOException {
@@ -45,9 +50,10 @@ public class ExportTS extends Base<Map<String, String>> {
         }
     }
 
-    public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String savePath)
+    public void updateExport(String domain, String protocol, String urlIndex)
             throws IOException {
-        this(configuration, domain, protocol, urlIndex, savePath, 0);
+        set(domain, protocol, urlIndex);
+        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
     }
 
     public ExportTS clone() throws CloneNotSupportedException {
@@ -57,22 +63,22 @@ public class ExportTS extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
         fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");

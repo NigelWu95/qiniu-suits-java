@@ -19,15 +19,22 @@ public class QiniuPfop extends Base<Map<String, String>> {
     private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String fopsIndex, String jsonPath) throws IOException {
+        super("pfop", accessKey, secretKey, configuration, bucket);
+        set(pipeline, fopsIndex, jsonPath);
+        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
                      String fopsIndex, String jsonPath, String savePath, int saveIndex) throws IOException {
         super("pfop", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         set(pipeline, fopsIndex, jsonPath);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateFop(String bucket, String pipeline, String fopsIndex, String jsonPath) throws IOException {
-        this.bucket = bucket;
-        set(pipeline, fopsIndex, jsonPath);
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String fopsIndex, String jsonPath, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, jsonPath, savePath, 0);
     }
 
     private void set(String pipeline, String fopsIndex, String jsonPath) throws IOException {
@@ -46,9 +53,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
         }
     }
 
-    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String fopsIndex, String jsonPath, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, pipeline, fopsIndex, jsonPath, savePath, 0);
+    public void updateFop(String bucket, String pipeline, String fopsIndex, String jsonPath) throws IOException {
+        this.bucket = bucket;
+        set(pipeline, fopsIndex, jsonPath);
     }
 
     public QiniuPfop clone() throws CloneNotSupportedException {
@@ -58,21 +65,21 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(fopsIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws IOException {
         if (pfopConfigs != null) {
             for (JsonObject pfopConfig : pfopConfigs) {
                 String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);

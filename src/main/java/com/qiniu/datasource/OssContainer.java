@@ -5,8 +5,8 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.IResultSave;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LineUtils;
 import com.qiniu.util.SystemUtils;
 
@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultSave<W>, T> {
+public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
     private List<String> antiPrefixes;
@@ -32,7 +32,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
-    protected List<String> rmFields;
+    protected Set<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private List<String> originPrefixList = new ArrayList<>();
@@ -58,7 +58,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
         this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
@@ -137,7 +137,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, IResultSave<W> saver, ILineProcess<T> processor) throws IOException {
+    public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
         List<E> objects;
@@ -163,7 +163,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     processor.processLine(convertedList);
                 }
             } catch (QiniuException e) {
-                if (HttpResponseUtils.checkException(e, 2) < -1) throw e;
+                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
             }
             retry = retryTimes;
             while (true) {
@@ -174,7 +174,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
-                    if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                    if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else retry--;
                 }
@@ -182,7 +182,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         } while (goon);
     }
 
-    protected abstract IResultSave<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
     /**
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
@@ -196,7 +196,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
-        IResultSave<W> saver = getNewResultSaver(newOrder);
+        IResultOutput<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
             try {
                 String record = "order " + newOrder + ": " + lister.getPrefix();
@@ -254,7 +254,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
-                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
             }
@@ -275,7 +275,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 break;
             } catch (SuitsException e) {
                 System.out.println("check lister has future next retrying...\n" + e.getMessage());
-                if (HttpResponseUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
             }
@@ -413,15 +413,14 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
 
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
-     * @throws Exception 数据源导出时出现错误抛出异常
      */
-    public void export() throws Exception {
+    public void export() {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         int order = 1;
+        executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         try {
-            executorPool = Executors.newFixedThreadPool(threads);
             if (prefixes == null || prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
                 computeToList(startLister, true, order);

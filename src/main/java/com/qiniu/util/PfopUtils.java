@@ -11,7 +11,7 @@ public final class PfopUtils {
 
     public static JsonObject checkPfopJson(JsonObject jsonObject, boolean scaleCheck) throws IOException {
         if (scaleCheck) {
-            List<Integer> scale = JsonConvertUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
+            List<Integer> scale = JsonUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});
             if (scale.size() < 1) {
                 throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");

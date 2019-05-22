@@ -7,7 +7,7 @@ import com.qiniu.config.JsonFile;
 import com.qiniu.model.qdora.Avinfo;
 import com.qiniu.model.qdora.VideoStream;
 import com.qiniu.process.Base;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 import com.qiniu.util.PfopUtils;
 
 import java.io.IOException;
@@ -23,6 +23,12 @@ public class PfopCommand extends Base<Map<String, String>> {
     private ArrayList<JsonObject> pfopConfigs;
     private MediaManager mediaManager;
 
+    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
+        super("pfopcmd", "", "", null, null);
+        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        this.mediaManager = new MediaManager();
+    }
+
     public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath,
                        int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, null, savePath, saveIndex);
@@ -30,9 +36,9 @@ public class PfopCommand extends Base<Map<String, String>> {
         this.mediaManager = new MediaManager();
     }
 
-    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize)
+    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath)
             throws IOException {
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        this(avinfoIndex, jsonPath, hasDuration, hasSize, savePath, 0);
     }
 
     private void set(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
@@ -49,9 +55,9 @@ public class PfopCommand extends Base<Map<String, String>> {
         this.hasSize = hasSize;
     }
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath)
+    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize)
             throws IOException {
-        this(avinfoIndex, jsonPath, hasDuration, hasSize, savePath, 0);
+        set(avinfoIndex, jsonPath, hasDuration, hasSize);
     }
 
     @SuppressWarnings("unchecked")
@@ -63,22 +69,22 @@ public class PfopCommand extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(avinfoIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
         fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    public String singleResult(Map<String, String> line) throws QiniuException {
         String key;
         String info;
         Avinfo avinfo;
@@ -87,7 +93,7 @@ public class PfopCommand extends Base<Map<String, String>> {
         List<Integer> scale;
         List<String> resultList = new ArrayList<>();
         for (JsonObject pfopConfig : pfopConfigs) {
-            scale = JsonConvertUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
+            scale = JsonUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
             info = line.get(avinfoIndex);
             try {

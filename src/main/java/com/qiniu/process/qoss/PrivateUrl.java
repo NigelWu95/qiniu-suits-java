@@ -22,9 +22,16 @@ public class PrivateUrl extends Base<Map<String, String>> {
         set(domain, protocol, urlIndex, expires);
     }
 
-    public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires)
             throws IOException {
+        super("privateurl", accessKey, secretKey, null, null);
+        this.auth = Auth.create(accessKey, secretKey);
         set(domain, protocol, urlIndex, expires);
+    }
+
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
     }
 
     private void set(String domain, String protocol, String urlIndex, long expires) throws IOException {
@@ -43,9 +50,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expires = expires == 0L ? 3600 : expires;
     }
 
-    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
+    public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
+            throws IOException {
+        set(domain, protocol, urlIndex, expires);
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {
@@ -55,22 +62,22 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
         fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");

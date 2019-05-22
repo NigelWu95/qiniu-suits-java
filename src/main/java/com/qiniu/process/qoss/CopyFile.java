@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,25 +22,19 @@ public class CopyFile extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String addPrefix, String rmPrefix) throws IOException {
+        super("copy", accessKey, secretKey, configuration, bucket);
+        set(toBucket, newKeyIndex, addPrefix, rmPrefix);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
+    public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         set(toBucket, newKeyIndex, addPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-    }
-
-    public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
-        this.bucket = bucket;
-        set(toBucket, newKeyIndex, keyPrefix, rmPrefix);
-    }
-
-    private void set(String toBucket, String newKeyIndex, String addPrefix, String rmPrefix) {
-        this.toBucket = toBucket;
-        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
-        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
-        this.addPrefix = addPrefix == null ? "" : addPrefix;
-        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -55,13 +49,26 @@ public class CopyFile extends Base<Map<String, String>> {
         return copyFile;
     }
 
+    private void set(String toBucket, String newKeyIndex, String addPrefix, String rmPrefix) {
+        this.toBucket = toBucket;
+        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
+        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
+    }
+
+    public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
+        this.bucket = bucket;
+        set(toBucket, newKeyIndex, keyPrefix, rmPrefix);
+    }
+
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get("to-key");
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         if (line.get("key") == null) return false;
         try {
             String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(newKeyIndex));
@@ -73,15 +80,15 @@ public class CopyFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+    synchronized public String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket, line.get("to-key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
-        return HttpResponseUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
+    public String singleResult(Map<String, String> line) throws IOException {
+        return HttpRespUtils.getResult(bucketManager.copy(bucket, line.get("key"), toBucket,
                 line.get("to-key"), false));
     }
 }

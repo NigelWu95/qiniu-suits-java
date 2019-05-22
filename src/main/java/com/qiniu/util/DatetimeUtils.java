@@ -58,25 +58,45 @@ public final class DatetimeUtils {
         return LocalDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), defaultZoneId).toString();
     }
 
-    public static String stringOf(long timeStamp, long accuracy) {
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(0, timeStamp * 10^9 / accuracy),
-                defaultZoneId).toString();
+    public static String stringOf(Instant instant) {
+        return LocalDateTime.ofInstant(instant, defaultZoneId).toString();
     }
 
-    public static LocalDateTime stringOf(String datetime) {
-        return LocalDateTime.parse(datetime);
+    /**
+     * 将 timeStamp 根据精确度转换为 dateTimeFormatter 格式的时间日期字符串
+     * @param timestamp 时间戳
+     * @param accuracy 秒数小数点之后精确度，纳秒倍数，如百纳秒时间戳精确度为 10_000_000L
+     * @return 返回格式化的日期字符串
+     */
+    public static String stringOf(long timestamp, long accuracy) {
+        return datetimeOf(timestamp, accuracy).toString();
     }
 
-    public static String stringOf(long timeStamp, long accuracy, DateTimeFormatter dateTimeFormatter) {
+    /**
+     * 将 timeStamp 根据精确度转换为 "yyyy-MM-DD'T'HH:MM:SS.SSS" 格式的时间日期字符串
+     * @param timestamp 时间戳
+     * @param accuracy 秒数小数点之后精确度，纳秒倍数，如百纳秒时间戳精确度为 10_000_000L
+     * @param dateTimeFormatter 时间日期格式
+     * @return 返回格式化的日期字符串
+     */
+    public static String stringOf(long timestamp, long accuracy, DateTimeFormatter dateTimeFormatter) {
         if (dateTimeFormatter == null) {
-            return stringOf(timeStamp, accuracy);
+            return stringOf(timestamp, accuracy);
         } else {
-            return dateTimeFormatter.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(0,
-                    timeStamp * 10^9 / accuracy), defaultZoneId));
+            long ratio = 1000_000_000L / accuracy;
+            return dateTimeFormatter.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(Math.floorDiv(timestamp, accuracy),
+                    Math.floorMod(timestamp, accuracy) * ratio), defaultZoneId));
         }
     }
 
-    public static String stringOf(Instant instant) {
-        return LocalDateTime.ofInstant(instant, defaultZoneId).toString();
+    public static LocalDateTime datetimeOf(long timestamp, long accuracy) {
+        long ratio = 1000_000_000L / accuracy;
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(Math.floorDiv(timestamp, accuracy),
+                Math.floorMod(timestamp, accuracy) * ratio), defaultZoneId);
+    }
+
+    // 注意：该方法根据时间戳的长度自动判断精度，如 10 位的时间戳精度为秒，13 位的时间戳精度位毫秒，19 位的时间戳精度为纳秒
+    public static LocalDateTime datetimeOf(long timestamp) {
+        return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
     }
 }
