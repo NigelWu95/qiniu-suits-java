@@ -22,6 +22,14 @@ public class MoveFile extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        // 目标 bucket 为空时规定为 rename 操作
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket);
+        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
+    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
@@ -33,10 +41,11 @@ public class MoveFile extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateMove(String bucket, String toBucket, String newKeyIndex, String addPrefix,
-                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
-        this.bucket = bucket;
-        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
+                savePath, 0);
     }
 
     private void set(String toBucket, String newKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix)
@@ -61,11 +70,10 @@ public class MoveFile extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
-    public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String newKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
-            throws IOException {
-        this(accessKey, secretKey, configuration, bucket, toBucket, newKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
-                savePath, 0);
+    public void updateMove(String bucket, String toBucket, String newKeyIndex, String addPrefix,
+                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        this.bucket = bucket;
+        set(toBucket, newKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
     }
 
     public MoveFile clone() throws CloneNotSupportedException {

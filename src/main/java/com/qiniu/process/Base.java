@@ -27,8 +27,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
-                String savePath, int saveIndex) throws IOException {
+    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket)
+            throws IOException {
         if (ProcessUtils.needConfiguration(processName) && configuration == null)
             throw new IOException("please set configuration, it can not be null.");
         this.processName = processName;
@@ -36,6 +36,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.bucket = bucket;
+    }
+
+    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
+                String savePath, int saveIndex) throws IOException {
+        this(processName, accessKey, secretKey, configuration, bucket);
         this.saveIndex = saveIndex;
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));

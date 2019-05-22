@@ -17,6 +17,11 @@ public class DeleteFile extends Base<Map<String, String>> {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
+    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
+        super("delete", accessKey, secretKey, configuration, bucket);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
                       int saveIndex) throws IOException {
         super("delete", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
@@ -25,13 +30,13 @@ public class DeleteFile extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateDelete(String bucket) {
-        this.bucket = bucket;
-    }
-
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
             throws IOException {
         this(accessKey, secretKey, configuration, bucket, savePath, 0);
+    }
+
+    public void updateDelete(String bucket) {
+        this.bucket = bucket;
     }
 
     public DeleteFile clone() throws CloneNotSupportedException {

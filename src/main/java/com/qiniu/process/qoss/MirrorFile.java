@@ -19,13 +19,18 @@ public class MirrorFile extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateMirror(String bucket) {
-        this.bucket = bucket;
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
+        super("mirror", accessKey, secretKey, configuration, bucket);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
             throws IOException {
         this(accessKey, secretKey, configuration, bucket, savePath, 0);
+    }
+
+    public void updateMirror(String bucket) {
+        this.bucket = bucket;
     }
 
     public MirrorFile clone() throws CloneNotSupportedException {

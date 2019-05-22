@@ -22,9 +22,16 @@ public class PrivateUrl extends Base<Map<String, String>> {
         set(domain, protocol, urlIndex, expires);
     }
 
-    public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires)
             throws IOException {
+        super("privateurl", accessKey, secretKey, null, null);
+        this.auth = Auth.create(accessKey, secretKey);
         set(domain, protocol, urlIndex, expires);
+    }
+
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
+                      String savePath) throws IOException {
+        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
     }
 
     private void set(String domain, String protocol, String urlIndex, long expires) throws IOException {
@@ -43,9 +50,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expires = expires == 0L ? 3600 : expires;
     }
 
-    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, domain, protocol, urlIndex, expires, savePath, 0);
+    public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
+            throws IOException {
+        set(domain, protocol, urlIndex, expires);
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {
