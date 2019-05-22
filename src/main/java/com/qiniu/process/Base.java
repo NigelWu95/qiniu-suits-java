@@ -267,6 +267,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     }
 
     public void closeResource() {
-        fileSaveMapper.closeWriters();
+        if (fileSaveMapper != null) fileSaveMapper.closeWriters();
     }
 }
