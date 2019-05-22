@@ -7,7 +7,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +19,12 @@ public class ChangeType extends Base<Map<String, String>> {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
+    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type) throws IOException {
+        super("type", accessKey, secretKey, configuration, bucket);
+        this.type = type;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String savePath, int saveIndex) throws IOException {
         super("type", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
@@ -28,14 +34,14 @@ public class ChangeType extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateType(String bucket, int type) {
-        this.bucket = bucket;
-        this.type = type;
-    }
-
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, type, savePath, 0);
+    }
+
+    public void updateType(String bucket, int type) {
+        this.bucket = bucket;
+        this.type = type;
     }
 
     public ChangeType clone() throws CloneNotSupportedException {
@@ -46,26 +52,26 @@ public class ChangeType extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON :
                 StorageType.INFREQUENCY, line.get("key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpResponseUtils.getResult(bucketManager.changeType(bucket, line.get("key"), type == 0 ?
+    public String singleResult(Map<String, String> line) throws QiniuException {
+        return HttpRespUtils.getResult(bucketManager.changeType(bucket, line.get("key"), type == 0 ?
                 StorageType.COMMON : StorageType.INFREQUENCY));
     }
 }

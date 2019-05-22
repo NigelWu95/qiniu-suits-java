@@ -11,7 +11,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpResponseUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +26,11 @@ public class StatFile extends Base<Map<String, String>> {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
+        super("stat", accessKey, secretKey, configuration, bucket);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+    }
+
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
                     String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
@@ -35,9 +40,9 @@ public class StatFile extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateStat(String bucket, String format, String separator) throws IOException {
-        this.bucket = bucket;
-        set(format, separator);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
     private void set(String format, String separator) throws IOException {
@@ -51,9 +56,9 @@ public class StatFile extends Base<Map<String, String>> {
         else typeConverter = new QOSObjToString(format, separator, null);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
+    public void updateStat(String bucket, String format, String separator) throws IOException {
+        this.bucket = bucket;
+        set(format, separator);
     }
 
     public StatFile clone() throws CloneNotSupportedException {
@@ -77,20 +82,20 @@ public class StatFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
-        return HttpResponseUtils.getResult(bucketManager.batch(batchOperations));
+        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
@@ -116,7 +121,7 @@ public class StatFile extends Base<Map<String, String>> {
                     fileSaveMapper.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
                     continue;
                 }
-                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         data.addProperty("key", processList.get(j).get("key"));
                         fileSaveMapper.writeSuccess((String) typeConverter.convertToV(data), false);
@@ -136,13 +141,13 @@ public class StatFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
         fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    public String singleResult(Map<String, String> line) throws QiniuException {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
         try {

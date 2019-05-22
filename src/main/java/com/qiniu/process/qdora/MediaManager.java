@@ -6,7 +6,7 @@ import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.qdora.*;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 
 public class MediaManager {
 
@@ -42,7 +42,7 @@ public class MediaManager {
 
     public Avinfo getAvinfoByJson(String avinfoJson) throws QiniuException {
         try {
-            JsonObject jsonObject = JsonConvertUtils.fromJson(avinfoJson, JsonObject.class);
+            JsonObject jsonObject = JsonUtils.fromJson(avinfoJson, JsonObject.class);
             return getAvinfoByJson(jsonObject);
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
@@ -52,14 +52,14 @@ public class MediaManager {
     public Avinfo getAvinfoByJson(JsonObject avinfoJson) throws QiniuException {
         Avinfo avinfo = new Avinfo();
         try {
-            avinfo.setFormat(JsonConvertUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
+            avinfo.setFormat(JsonUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
             JsonElement element = avinfoJson.get("streams");
             JsonArray streams = element.getAsJsonArray();
             for (JsonElement stream : streams) {
                 JsonElement typeElement = stream.getAsJsonObject().get("codec_type");
                 String type = (typeElement == null || typeElement instanceof JsonNull) ? "" : typeElement.getAsString();
-                if ("video".equals(type)) avinfo.setVideoStream(JsonConvertUtils.fromJson(stream, VideoStream.class));
-                if ("audio".equals(type)) avinfo.setAudioStream(JsonConvertUtils.fromJson(stream, AudioStream.class));
+                if ("video".equals(type)) avinfo.setVideoStream(JsonUtils.fromJson(stream, VideoStream.class));
+                if ("audio".equals(type)) avinfo.setAudioStream(JsonUtils.fromJson(stream, AudioStream.class));
             }
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
@@ -98,7 +98,7 @@ public class MediaManager {
     public QueryPfopResult getPfopResultByJson(String pfopResultJson) throws QiniuException {
         QueryPfopResult pfopResult;
         try {
-            pfopResult = JsonConvertUtils.fromJson(pfopResultJson, QueryPfopResult.class);
+            pfopResult = JsonUtils.fromJson(pfopResultJson, QueryPfopResult.class);
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
@@ -108,7 +108,7 @@ public class MediaManager {
     public QueryPfopResult getPfopResultByJson(JsonObject pfopResultJson) throws QiniuException {
         QueryPfopResult QueryPfopResult;
         try {
-            QueryPfopResult = JsonConvertUtils.fromJson(pfopResultJson, QueryPfopResult.class);
+            QueryPfopResult = JsonUtils.fromJson(pfopResultJson, QueryPfopResult.class);
         } catch (JsonParseException e) {
             throw new QiniuException(e, e.getMessage());
         }
@@ -116,7 +116,7 @@ public class MediaManager {
     }
 
     public QueryPfopResult getPfopResultById(String persistentId) throws QiniuException {
-        JsonObject pfopResultJson = JsonConvertUtils.toJsonObject(getPfopResultBodyById(persistentId));
+        JsonObject pfopResultJson = JsonUtils.toJsonObject(getPfopResultBodyById(persistentId));
         JsonElement jsonElement = pfopResultJson.get("reqid");
         if (jsonElement == null || jsonElement instanceof JsonNull) {
             throw new QiniuException(null, "body error.");

@@ -9,7 +9,7 @@ import com.qiniu.convert.OSSObjToMap;
 import com.qiniu.convert.OSSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultSave;
+import com.qiniu.persistence.IResultOutput;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWrit
     }
 
     @Override
-    protected IResultSave<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

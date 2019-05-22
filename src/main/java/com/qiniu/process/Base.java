@@ -27,8 +27,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
-                String savePath, int saveIndex) throws IOException {
+    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket)
+            throws IOException {
         if (ProcessUtils.needConfiguration(processName) && configuration == null)
             throw new IOException("please set configuration, it can not be null.");
         this.processName = processName;
@@ -36,6 +36,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.bucket = bucket;
+    }
+
+    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
+                String savePath, int saveIndex) throws IOException {
+        this(processName, accessKey, secretKey, configuration, bucket);
         this.saveIndex = saveIndex;
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
@@ -81,9 +86,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @param line 输入的 line
      * @return 返回需要记录的信息字符串
      */
-    protected abstract String resultInfo(T line);
+    public abstract String resultInfo(T line);
 
-    protected abstract boolean validCheck(T line);
+    public abstract boolean validCheck(T line);
 
     /**
      * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
@@ -91,7 +96,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 返回执行响应信息的字符串
      * @throws QiniuException 执行失败抛出的异常
      */
-    protected String batchResult(List<T> lineList) throws IOException {
+    public String batchResult(List<T> lineList) throws IOException {
         return null;
     }
 
@@ -102,12 +107,12 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 返回需要进行重试的记录列表
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected List<T> parseBatchResult(List<T> processList, String result) throws IOException {
+    public List<T> parseBatchResult(List<T> processList, String result) throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = new ArrayList<>();
         JsonArray jsonArray;
         try {
-            jsonArray = JsonConvertUtils.fromJson(result, JsonArray.class);
+            jsonArray = JsonUtils.fromJson(result, JsonArray.class);
         } catch (JsonParseException e) {
             throw new IOException("parse to json array error.");
         }
@@ -116,7 +121,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             jsonObject = jsonArray.get(j).getAsJsonObject();
             // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录，否则结果记录为空
             if (j < jsonArray.size()) {
-                switch (HttpResponseUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
                         break;
@@ -140,7 +145,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    protected void batchProcess(List<T> lineList, int retryTimes) throws IOException {
+    public void batchProcess(List<T> lineList, int retryTimes) throws IOException {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
@@ -168,8 +173,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         processList = parseBatchResult(processList, result);
                         retry = 0;
                     } catch (QiniuException e) {
-                        retry = HttpResponseUtils.checkException(e, retry);
-                        String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
+                        retry = HttpRespUtils.checkException(e, retry);
+                        String message = LogUtils.getMessage(e);
                         System.out.println(message);
                         switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
                             case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
@@ -195,7 +200,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 操作结果的字符串
      * @throws IOException 操作失败时的返回
      */
-    abstract protected String singleResult(T line) throws IOException;
+    abstract public String singleResult(T line) throws IOException;
 
     /**
      * 处理 singleProcess 执行的结果，默认情况下直接使用 resultInfo 拼接 result 成一行执行持久化写入，部分 process 可能对结果做进一步判断
@@ -204,7 +209,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @param result singleResult 的结果字符串
      * @throws IOException 写入结果失败抛出异常
      */
-    protected void parseSingleResult(T line, String result) throws IOException {
+    public void parseSingleResult(T line, String result) throws IOException {
         fileSaveMapper.writeSuccess(resultInfo(line) + "\t" + result, false);
     }
 
@@ -214,7 +219,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    protected void singleProcess(List<T> lineList, int retryTimes) throws IOException {
+    public void singleProcess(List<T> lineList, int retryTimes) throws IOException {
         String result;
         int retry;
         T line;
@@ -231,8 +236,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     parseSingleResult(line, result);
                     retry = 0;
                 } catch (QiniuException e) {
-                    retry = HttpResponseUtils.checkException(e, retry);
-                    String message = LogUtils.getMessage(e).replaceAll("\n", "\t");
+                    retry = HttpRespUtils.checkException(e, retry);
+                    String message = LogUtils.getMessage(e);
                     System.out.println(message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
@@ -247,8 +252,12 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         }
     }
 
+    public String processLine(T line) throws IOException {
+        return singleResult(line);
+    }
+
     /**
-     * 公开的操作调用方入口，通过判断 batch size 来决定调用哪个方法
+     * 公开的操作调用方法入口，通过判断 batch size 来决定调用哪个方法
      * @param lineList 输入的文件信息列表
      * @throws IOException 处理过程中出现的异常
      */

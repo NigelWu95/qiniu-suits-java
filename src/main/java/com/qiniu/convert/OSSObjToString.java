@@ -6,13 +6,14 @@ import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 public class OSSObjToString extends Converter<OSSObjectSummary, String> {
 
     private IStringFormat<OSSObjectSummary> stringFormatter;
 
-    public OSSObjToString(String format, String separator, List<String> rmFields) throws IOException {
-        // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
+    public OSSObjToString(String format, String separator, Set<String> rmFields) throws IOException {
+        if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
         } else if ("csv".equals(format)) {

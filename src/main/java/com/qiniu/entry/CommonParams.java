@@ -48,11 +48,11 @@ public class CommonParams {
     private int batchSize;
     private int retryTimes;
     private boolean saveTotal;
-    private List<String> rmFields;
     private String savePath;
     private String saveTag;
     private String saveFormat;
     private String saveSeparator;
+    private Set<String> rmFields;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -69,7 +69,7 @@ public class CommonParams {
         setSource();
         if ("local".equals(source)) {
             parse = checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
-            setSeparator(entryParam.getValue("separator", null));
+            setSeparator(entryParam.getValue("separator", ""));
             if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
             if (ProcessUtils.needAuth(process)) {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
@@ -109,15 +109,14 @@ public class CommonParams {
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
-        rmFields = Arrays.asList(entryParam.getValue("rm-fields", "").trim().split(","));
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
         // 校验设置的 format 参数
         saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
-        saveSeparator = entryParam.getValue("save-separator", null);
-        setSaveSeparator(saveSeparator);
+        setSaveSeparator(entryParam.getValue("save-separator", ""));
+        setRmFields(entryParam.getValue("rm-fields", "").trim());
     }
 
     public String checked(String param, String name, String conditionReg) throws IOException {
@@ -172,9 +171,10 @@ public class CommonParams {
     }
 
     private void setSeparator(String separator) {
-        if (separator == null) {
+        if (separator == null || separator.isEmpty()) {
             if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
+            else this.separator = " ";
         } else {
             this.separator = separator;
         }
@@ -197,7 +197,7 @@ public class CommonParams {
                         if ("qiniu".equals(source)) {
                             JsonObject jsonObject = new JsonObject();
                             jsonObject.addProperty("k", jsonCfg.get("start").getAsString());
-                            marker = Base64.encodeToString(JsonConvertUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
+                            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                                     Base64.URL_SAFE | Base64.NO_WRAP);
                         } else if ("tencent".equals(source)) {
                             marker = jsonCfg.get("start").getAsString();
@@ -360,7 +360,7 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        List<String> keys = LineUtils.fileInfoFields;
+        List<String> keys = Arrays.asList("key,hash,size,datetime,mime,type,status,md5,owner".split(","));
         boolean useDefault = false;
         String indexes = entryParam.getValue("indexes", "").trim();
         if ("".equals(indexes)) {
@@ -401,7 +401,9 @@ public class CommonParams {
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
         boolean sourceFromList = DataSourceDef.ossListSource.contains(source);
-        if (useDefault && ProcessUtils.needBucketAndKey(process)) { // 默认索引包含 key
+        if (useDefault && (ProcessUtils.needBucketAndKey(process) ||
+                (baseFilter != null && baseFilter.checkKeyCon()) ||
+                (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
             if (DataSourceDef.fileSource.contains(source)) {
                 try {
                     setIndex("json".equals(parse) ? "key" : "0", "key");
@@ -417,34 +419,35 @@ public class CommonParams {
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault && sourceFromList) indexMap.put("key", "key");
-                else throw new IOException("f-key-[x] filter must get the key's index in indexes settings.");
+                else throw new IOException("f-[x] filter for file key must get the key's index in indexes settings.");
             }
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
                 if (useDefault && sourceFromList) indexMap.put("mime", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
             }
-            if (baseFilter.checkPutTimeCon() && !indexMap.containsValue("datetime")) {
+            if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault && sourceFromList) indexMap.put("datetime", "datetime");
-                else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
             }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
                 if (useDefault && sourceFromList) indexMap.put("type", "type");
-                else throw new IOException("f-type filter must get the type's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-type filter must get the type's index in indexes settings.");
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
                 if (useDefault && sourceFromList) indexMap.put("status", "status");
-                else throw new IOException("f-status filter must get the status's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+                else throw new IOException("f-status filter must get the status's index in indexes settings.");
             }
         }
         if (seniorFilter != null) {
-            if (seniorFilter.checkExtMime() && !indexMap.containsValue("mime")) {
-                if (useDefault && sourceFromList) indexMap.put("mime", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings," +
-                        " the default indexes setting only contains \"key\".");
+            if (seniorFilter.checkExtMime()) {
+                if (!indexMap.containsValue("key")) {
+                    if (useDefault && sourceFromList) indexMap.put("key", "key");
+                    else throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
+                }
+                if (!indexMap.containsValue("mime")) {
+                    if (useDefault && sourceFromList) indexMap.put("mime", "mime");
+                    else throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
+                }
             }
         }
     }
@@ -494,11 +497,21 @@ public class CommonParams {
     }
 
     private void setSaveSeparator(String separator) {
-        if (separator == null) {
+        if (separator == null || separator.isEmpty()) {
             if ("tab".equals(saveFormat)) this.saveSeparator = "\t";
             else if ("csv".equals(saveFormat)) this.saveSeparator = ",";
+            else this.saveSeparator = " ";
         } else {
             this.saveSeparator = separator;
+        }
+    }
+
+    private void setRmFields(String param) {
+        String[] fields = param.split(",");
+        if (fields.length == 0) rmFields = null;
+        else {
+            rmFields = new HashSet<>();
+            Collections.addAll(rmFields, fields);
         }
     }
 
@@ -634,7 +647,7 @@ public class CommonParams {
         this.saveFormat = saveFormat;
     }
 
-    public void setRmFields(List<String> rmFields) {
+    public void setRmFields(Set<String> rmFields) {
         this.rmFields = rmFields;
     }
 
@@ -770,7 +783,7 @@ public class CommonParams {
         return saveSeparator;
     }
 
-    public List<String> getRmFields() {
+    public Set<String> getRmFields() {
         return rmFields;
     }
 

@@ -6,7 +6,7 @@ import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -17,6 +17,12 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     private String pidIndex;
     private MediaManager mediaManager;
 
+    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex) throws IOException {
+        super("pfopresult", "", "", configuration, null);
+        set(protocol, persistentIdIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+    }
+
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
                            int saveIndex) throws IOException {
         super("pfopresult", "", "", configuration, null, savePath, saveIndex);
@@ -24,9 +30,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
-        set(protocol, persistentIdIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
+            throws IOException {
+        this(configuration, protocol, persistentIdIndex, savePath, 0);
     }
 
     private void set(String protocol, String pidIndex) throws IOException {
@@ -35,9 +41,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         else this.pidIndex = pidIndex;
     }
 
-    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
-            throws IOException {
-        this(configuration, protocol, persistentIdIndex, savePath, 0);
+    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
+        set(protocol, persistentIdIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
@@ -47,26 +53,26 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String resultInfo(Map<String, String> line) {
+    public String resultInfo(Map<String, String> line) {
         return line.get(pidIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
+    public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 
     // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {}
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {}
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws IOException {
         String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
             try {
-                pfopResult = JsonConvertUtils.fromJson(result, PfopResult.class);
+                pfopResult = JsonUtils.fromJson(result, PfopResult.class);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }
@@ -74,16 +80,16 @@ public class QueryPfopResult extends Base<Map<String, String>> {
             for (Item item : pfopResult.items) {
                 if (item.code == 0)
                     fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + (item.key != null ? item.key + "\t" : "") +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 3)
                     fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 4)
                     fileSaveMapper.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else
                     fileSaveMapper.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonConvertUtils.toJsonWithoutUrlEscape(item), false);
+                            JsonUtils.toJsonWithoutUrlEscape(item), false);
             }
             return null;
         } else {

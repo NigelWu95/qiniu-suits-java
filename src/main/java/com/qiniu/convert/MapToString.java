@@ -10,8 +10,8 @@ public class MapToString extends Converter<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
 
-    public MapToString(String format, String separator, List<String> rmFields) throws IOException {
-        // 将 file info 的字段逐一进行获取是为了控制输出字段的顺序
+    public MapToString(String format, String separator, Set<String> rmFields) throws IOException {
+        if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
         } else if ("csv".equals(format)) {

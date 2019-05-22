@@ -3,7 +3,7 @@ package com.qiniu.config;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.qiniu.util.FileNameUtils;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 
 import java.io.*;
 import java.util.Set;
@@ -29,7 +29,7 @@ public class JsonFile {
             while((line = bufferedReader.readLine()) != null) {
                 stringBuilder.append(line);
             }
-            jsonObject = JsonConvertUtils.toJsonObject(stringBuilder.toString());
+            jsonObject = JsonUtils.toJsonObject(stringBuilder.toString());
         } catch (Exception e) {
             throw new IOException("load " + resourceFile + " json config failed, " + e.getMessage());
         } finally {

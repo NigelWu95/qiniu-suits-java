@@ -10,8 +10,8 @@ public abstract class BaseFilter<T> {
     private List<String> keySuffix;
     private List<String> keyInner;
     private List<String> keyRegex;
-    private LocalDateTime putTimeMin;
-    private LocalDateTime putTimeMax;
+    private LocalDateTime datetimeMin;
+    private LocalDateTime datetimeMax;
     private List<String> mimeType;
     private String type;
     private String status;
@@ -35,11 +35,11 @@ public abstract class BaseFilter<T> {
         this.antiKeyRegex = antiKeyRegex;
         this.mimeType = mimeType;
         this.antiMimeType = antiMimeType;
-        this.putTimeMin = putTimeMin;
-        this.putTimeMax = putTimeMax;
+        this.datetimeMin = putTimeMin;
+        this.datetimeMax = putTimeMax;
         this.type = type == null ? "" : type;
         this.status = status == null ? "" : status;
-        if (!checkKeyCon() && !checkMimeTypeCon() && !checkPutTimeCon() && !checkTypeCon() && !checkStatusCon())
+        if (!checkKeyCon() && !checkMimeTypeCon() && !checkDatetimeCon() && !checkTypeCon() && !checkStatusCon())
             throw new IOException("all conditions are invalid.");
     }
 
@@ -56,8 +56,8 @@ public abstract class BaseFilter<T> {
         return checkList(mimeType) || checkList(antiMimeType);
     }
 
-    public boolean checkPutTimeCon() {
-        return putTimeMin != null && putTimeMax != null && putTimeMax.compareTo(putTimeMin) > 0;
+    public boolean checkDatetimeCon() {
+        return datetimeMin != null && datetimeMax != null && datetimeMax.compareTo(datetimeMin) > 0;
     }
 
     public boolean checkTypeCon() {
@@ -117,11 +117,11 @@ public abstract class BaseFilter<T> {
         }
     }
 
-    public boolean filterPutTime(T item) {
+    public boolean filterDatetime(T item) {
         if (checkItem(item, "datetime")) return false;
         else {
             LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "datetime"));
-            return localDateTime.compareTo(putTimeMax) <= 0 && localDateTime.compareTo(putTimeMin) >= 0;
+            return localDateTime.compareTo(datetimeMax) <= 0 && localDateTime.compareTo(datetimeMin) >= 0;
         }
     }
 

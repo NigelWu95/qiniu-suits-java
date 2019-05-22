@@ -1,7 +1,7 @@
 package com.qiniu.convert;
 
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.util.JsonConvertUtils;
+import com.qiniu.util.JsonUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public abstract class Converter<E, T> implements ITypeConvert<E, T> {
                 try {
                     mapList.add(convertToV(line));
                 } catch (Exception e) {
-                    errorList.add(JsonConvertUtils.toJson(line) + "\t" + e.getMessage());
+                    errorList.add(JsonUtils.toJson(line) + "\t" + e.getMessage());
                 }
             }
         }
