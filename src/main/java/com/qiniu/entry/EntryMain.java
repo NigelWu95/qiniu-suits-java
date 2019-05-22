@@ -14,7 +14,6 @@ public class EntryMain {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        args = new String[]{"-s","-process=stat","-bucket=temp","-ak=2-4Tf_7Gaa91wtpGGHCZF6C3Dp1xZbzvnhGw6NDJ","-sk=HR6hVM8AVIaF_4PGEVrSTq92H-D9Q41yfDV2HfvZ"};
         boolean single = false;
         for (int i = 0; i < args.length; i++) {
             if (args[i].matches("-(S|s|single)")) {

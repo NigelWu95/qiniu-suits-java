@@ -407,7 +407,7 @@ public class CommonParams {
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
         boolean sourceFromList = DataSourceDef.ossListSource.contains(source);
-        if (useDefault && (ProcessUtils.needBucketAndKey(process) ||
+        if (useDefault && (indexMap.size() == 0 || ProcessUtils.needBucketAndKey(process) ||
                 (baseFilter != null && baseFilter.checkKeyCon()) ||
                 (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
             if (DataSourceDef.fileSource.contains(source) || "terminal".equals(source)) {
