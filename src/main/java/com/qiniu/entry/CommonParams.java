@@ -67,7 +67,7 @@ public class CommonParams {
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", "").trim();
         setSource();
-        if ("local".equals(source)) {
+        if (source.matches("(local|terminal)")) {
             parse = checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
             if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
@@ -126,6 +126,12 @@ public class CommonParams {
     }
 
     private void setSource() throws IOException {
+        if (entryParam.getValue("S",
+                entryParam.getValue("s",
+                        entryParam.getValue("single", ""))).trim().equals("true")) {
+            source = "terminal";
+            return;
+        }
         try {
             source = entryParam.getValue("source-type").trim();
         } catch (IOException e1) {
@@ -404,7 +410,7 @@ public class CommonParams {
         if (useDefault && (ProcessUtils.needBucketAndKey(process) ||
                 (baseFilter != null && baseFilter.checkKeyCon()) ||
                 (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
-            if (DataSourceDef.fileSource.contains(source)) {
+            if (DataSourceDef.fileSource.contains(source) || "terminal".equals(source)) {
                 try {
                     setIndex("json".equals(parse) ? "key" : "0", "key");
                 } catch (IOException e) {

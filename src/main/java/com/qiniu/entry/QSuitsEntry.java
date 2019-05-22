@@ -198,6 +198,14 @@ public class QSuitsEntry {
         }
     }
 
+    public ScannerSource getScannerSource() {
+        String parseFormat = commonParams.getParse();
+        String separator = commonParams.getSeparator();
+        String addKeyPrefix = commonParams.getRmKeyPrefix();
+        String rmKeyPrefix = commonParams.getRmKeyPrefix();
+        return new ScannerSource(parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+    }
+
     public LocalFileContainer getLocalFileContainer() {
         String filePath = commonParams.getPath();
         String parseFormat = commonParams.getParse();
@@ -432,7 +440,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
-        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket)
+        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, saveFormat, saveSeparator)
                 : new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath, saveFormat, saveSeparator);
     }
 
