@@ -1,6 +1,7 @@
 package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.qcloud.cos.model.COSObjectSummary;
@@ -11,51 +12,52 @@ import java.util.*;
 
 public final class LineUtils {
 
-    final static private Set<String> hashFields = new HashSet<String>(){{
+    // 为了保证字段按照设置的顺序来读取，故使用 ArrayList
+    final static private List<String> hashFields = new ArrayList<String>(){{
         add("hash");
         add("etag");
     }};
 
-    final static private Set<String> timeFields = new HashSet<String>(){{
+    final static private List<String> timeFields = new ArrayList<String>(){{
         add("datetime");
         add("timestamp");
         add("putTime");
     }};
 
-    final static private Set<String> sizeFields = new HashSet<String>(){{
+    final static private List<String> sizeFields = new ArrayList<String>(){{
         add("size");
         add("fsize");
     }};
 
-    final static private Set<String> mimeFields = new HashSet<String>(){{
+    final static private List<String> mimeFields = new ArrayList<String>(){{
         add("mime");
         add("mimeType");
     }};
 
-    final static private Set<String> ownerFields = new HashSet<String>(){{
+    final static private List<String> ownerFields = new ArrayList<String>(){{
         add("owner");
         add("endUser");
     }};
 
-    final static private Set<String> intFields = new HashSet<String>(){{
+    final static private List<String> intFields = new ArrayList<String>(){{
         add("status");
     }};
 
-    final static private Set<String> longFields = new HashSet<String>(){{
+    final static private List<String> longFields = new ArrayList<String>(){{
+        addAll(sizeFields);
         add("timestamp");
         add("putTime");
-        addAll(sizeFields);
     }};
 
-    final static public Set<String> fileInfoFields = new HashSet<String>(){{
+    final static public List<String> fileInfoFields = new ArrayList<String>(){{
         add("key");
-        add("type");
-        add("md5");
-        addAll(intFields);
-        addAll(longFields);
         addAll(hashFields);
+        addAll(sizeFields);
         addAll(timeFields);
         addAll(mimeFields);
+        add("type");
+        addAll(intFields);
+        add("md5");
         addAll(ownerFields);
     }};
 
@@ -293,23 +295,22 @@ public final class LineUtils {
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
 
+    // 以下的 format 方法中先通过 fileInfoFields.foreach 来匹配是由于需要保证输出结果按照字段顺序排列
+
     public static String toFormatString(Map<String, String> line, Set<String> rmFields) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         JsonObject converted = new JsonObject();
-        Set<String> set = line.keySet();
-        List<String> keys = new ArrayList<String>(){{
-            addAll(set);
-        }};
-        if (rmFields != null) keys.removeAll(rmFields);
-        for (String key : keys) {
-            if (fileInfoFields.contains(key)) {
+        Set<String> keySet = line.keySet();
+        if (rmFields != null) keySet.removeAll(rmFields);
+        fileInfoFields.forEach(key -> {
+            if (keySet.contains(key) && line.get(key) != null) {
                 if (longFields.contains(key)) converted.addProperty(key, Long.valueOf(line.get(key)));
                 else if (intFields.contains(key)) converted.addProperty(key, Integer.valueOf(line.get(key)));
                 else converted.addProperty(key, line.get(key));
-            } else {
-                converted.addProperty(key, line.get(key));
             }
-        }
+            keySet.remove(key);
+        });
+        for (String key : keySet) converted.addProperty(key, line.get(key));
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
@@ -317,20 +318,17 @@ public final class LineUtils {
     public static String toFormatString(Map<String, String> line, String separator, Set<String> rmFields) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         StringBuilder converted = new StringBuilder();
-        Set<String> set = line.keySet();
-        List<String> keys = new ArrayList<String>(){{
-            addAll(set);
-        }};
-        if (rmFields != null) keys.removeAll(rmFields);
-        for (String key : keys) {
-            if (fileInfoFields.contains(key)) {
+        Set<String> keySet = line.keySet();
+        if (rmFields != null) keySet.removeAll(rmFields);
+        fileInfoFields.forEach(key -> {
+            if (keySet.contains(key) && line.get(key) != null) {
                 if (longFields.contains(key)) converted.append(Long.valueOf(line.get(key))).append(separator);
                 else if (intFields.contains(key)) converted.append(Integer.valueOf(line.get(key))).append(separator);
                 else converted.append(line.get(key)).append(separator);
-            } else {
-                converted.append(line.get(key)).append(separator);
             }
-        }
+            keySet.remove(key);
+        });
+        for (String key : keySet) converted.append(line.get(key)).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
@@ -338,22 +336,17 @@ public final class LineUtils {
     public static String toFormatString(JsonObject json, String separator, Set<String> rmFields) throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         StringBuilder converted = new StringBuilder();
-        Set<String> set = json.keySet();
-        List<String> keys = new ArrayList<String>(){{
-            addAll(set);
-        }};
-        if (rmFields != null) keys.removeAll(rmFields);
-        for (String key : keys) {
-            if (fileInfoFields.contains(key)) {
-                if ("putTime".equals(key)) converted.append(DatetimeUtils.datetimeOf(json.get(key).getAsLong()))
-                        .append(separator); else
+        Set<String> keySet = json.keySet();
+        if (rmFields != null) keySet.removeAll(rmFields);
+        fileInfoFields.forEach(key -> {
+            if (keySet.contains(key) && !(json.get(key) instanceof JsonNull)) {
                 if (longFields.contains(key)) converted.append(json.get(key).getAsLong()).append(separator);
                 else if (intFields.contains(key)) converted.append(json.get(key).getAsInt()).append(separator);
                 else converted.append(json.get(key).getAsString()).append(separator);
-            } else {
-                converted.append(JsonUtils.toString(json.get(key))).append(separator);
             }
-        }
+            keySet.remove(key);
+        });
+        for (String key : keySet) converted.append(JsonUtils.toString(json.get(key))).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
