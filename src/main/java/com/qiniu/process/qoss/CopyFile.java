@@ -22,25 +22,19 @@ public class CopyFile extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
+                    String newKeyIndex, String addPrefix, String rmPrefix) throws IOException {
+        super("copy", accessKey, secretKey, configuration, bucket);
+        set(toBucket, newKeyIndex, addPrefix, rmPrefix);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+    }
+
+    public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String newKeyIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
         set(toBucket, newKeyIndex, addPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-    }
-
-    public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
-        this.bucket = bucket;
-        set(toBucket, newKeyIndex, keyPrefix, rmPrefix);
-    }
-
-    private void set(String toBucket, String newKeyIndex, String addPrefix, String rmPrefix) {
-        this.toBucket = toBucket;
-        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
-        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
-        this.addPrefix = addPrefix == null ? "" : addPrefix;
-        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -53,6 +47,19 @@ public class CopyFile extends Base<Map<String, String>> {
         copyFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         if (batchSize > 1) copyFile.batchOperations = new BatchOperations();
         return copyFile;
+    }
+
+    private void set(String toBucket, String newKeyIndex, String addPrefix, String rmPrefix) {
+        this.toBucket = toBucket;
+        // 没有传入的 newKeyIndex 参数的话直接设置为默认的 "key"
+        this.newKeyIndex = newKeyIndex == null || "".equals(newKeyIndex) ? "key" : newKeyIndex;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
+    }
+
+    public void updateCopy(String bucket, String toBucket, String newKeyIndex, String keyPrefix, String rmPrefix) {
+        this.bucket = bucket;
+        set(toBucket, newKeyIndex, keyPrefix, rmPrefix);
     }
 
     @Override

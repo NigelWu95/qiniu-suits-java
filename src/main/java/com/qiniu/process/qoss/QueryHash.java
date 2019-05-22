@@ -17,6 +17,13 @@ public class QueryHash extends Base<Map<String, String>> {
     private String urlIndex;
     private FileChecker fileChecker;
 
+    public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex)
+            throws IOException {
+        super("qhash", "", "", configuration, null);
+        set(algorithm, protocol, domain, urlIndex);
+        this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
+    }
+
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
                      String savePath, int saveIndex) throws IOException {
         super("qhash", "", "", configuration, null, savePath, saveIndex);
@@ -24,10 +31,9 @@ public class QueryHash extends Base<Map<String, String>> {
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
     }
 
-    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex)
-            throws IOException {
-        set(algorithm, protocol, domain, urlIndex);
-        this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
+    public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
+                     String savePath) throws IOException {
+        this(configuration, algorithm, protocol, domain, urlIndex, savePath, 0);
     }
 
     private void set(String algorithm, String protocol, String domain, String urlIndex) throws IOException {
@@ -46,9 +52,10 @@ public class QueryHash extends Base<Map<String, String>> {
         }
     }
 
-    public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
-                     String savePath) throws IOException {
-        this(configuration, algorithm, protocol, domain, urlIndex, savePath, 0);
+    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex)
+            throws IOException {
+        set(algorithm, protocol, domain, urlIndex);
+        this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
     }
 
     public QueryHash clone() throws CloneNotSupportedException {

@@ -17,6 +17,12 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     private String pidIndex;
     private MediaManager mediaManager;
 
+    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex) throws IOException {
+        super("pfopresult", "", "", configuration, null);
+        set(protocol, persistentIdIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+    }
+
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
                            int saveIndex) throws IOException {
         super("pfopresult", "", "", configuration, null, savePath, saveIndex);
@@ -24,9 +30,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
-        set(protocol, persistentIdIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
+            throws IOException {
+        this(configuration, protocol, persistentIdIndex, savePath, 0);
     }
 
     private void set(String protocol, String pidIndex) throws IOException {
@@ -35,9 +41,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         else this.pidIndex = pidIndex;
     }
 
-    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
-            throws IOException {
-        this(configuration, protocol, persistentIdIndex, savePath, 0);
+    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
+        set(protocol, persistentIdIndex);
+        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {

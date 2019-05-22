@@ -26,6 +26,11 @@ public class StatFile extends Base<Map<String, String>> {
     private BatchOperations batchOperations;
     private BucketManager bucketManager;
 
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
+        super("stat", accessKey, secretKey, configuration, bucket);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+    }
+
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
                     String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
@@ -35,9 +40,9 @@ public class StatFile extends Base<Map<String, String>> {
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public void updateStat(String bucket, String format, String separator) throws IOException {
-        this.bucket = bucket;
-        set(format, separator);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
     private void set(String format, String separator) throws IOException {
@@ -51,9 +56,9 @@ public class StatFile extends Base<Map<String, String>> {
         else typeConverter = new QOSObjToString(format, separator, null);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
+    public void updateStat(String bucket, String format, String separator) throws IOException {
+        this.bucket = bucket;
+        set(format, separator);
     }
 
     public StatFile clone() throws CloneNotSupportedException {
