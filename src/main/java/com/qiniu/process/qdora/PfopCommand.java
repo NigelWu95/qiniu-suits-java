@@ -20,7 +20,7 @@ public class PfopCommand extends Base<Map<String, String>> {
     private boolean hasDuration;
     private boolean hasSize;
     private String avinfoIndex;
-    private ArrayList<JsonObject> pfopConfigs;
+    private List<JsonObject> pfopConfigs;
     private MediaManager mediaManager;
 
     public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
@@ -29,10 +29,23 @@ public class PfopCommand extends Base<Map<String, String>> {
         this.mediaManager = new MediaManager();
     }
 
+    public PfopCommand(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize) throws IOException {
+        super("pfopcmd", "", "", null, null);
+        set(avinfoIndex, pfopConfigs, hasDuration, hasSize);
+        this.mediaManager = new MediaManager();
+    }
+
     public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath,
                        int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, null, savePath, saveIndex);
         set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        this.mediaManager = new MediaManager();
+    }
+
+    public PfopCommand(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize, String savePath,
+                       int saveIndex) throws IOException {
+        super("pfopcmd", "", "", null, null, savePath, saveIndex);
+        set(avinfoIndex, pfopConfigs, hasDuration, hasSize);
         this.mediaManager = new MediaManager();
     }
 
@@ -55,6 +68,14 @@ public class PfopCommand extends Base<Map<String, String>> {
         this.hasSize = hasSize;
     }
 
+    private void set(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize) throws IOException {
+        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
+        else this.avinfoIndex = avinfoIndex;
+        this.pfopConfigs = pfopConfigs;
+        this.hasDuration = hasDuration;
+        this.hasSize = hasSize;
+    }
+
     public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize)
             throws IOException {
         set(avinfoIndex, jsonPath, hasDuration, hasSize);
@@ -64,7 +85,6 @@ public class PfopCommand extends Base<Map<String, String>> {
     public PfopCommand clone() throws CloneNotSupportedException {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
         pfopCommand.mediaManager = new MediaManager();
-        pfopCommand.pfopConfigs = (ArrayList<JsonObject>) pfopConfigs.clone();
         return pfopCommand;
     }
 
