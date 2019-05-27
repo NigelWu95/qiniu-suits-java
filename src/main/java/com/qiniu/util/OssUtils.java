@@ -1,13 +1,25 @@
 package com.qiniu.util;
 
+import com.aliyun.oss.ClientConfiguration;
+import com.aliyun.oss.ClientException;
+import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.OSSException;
+import com.aliyun.oss.common.auth.CredentialsProvider;
+import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.qcloud.cos.COSClient;
+import com.qcloud.cos.ClientConfig;
+import com.qcloud.cos.auth.BasicCOSCredentials;
+import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.storage.model.FileInfo;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OssUtils {
@@ -92,5 +104,33 @@ public class OssUtils {
 
     public static String decodeTenCosMarker(String marker) {
         return marker;
+    }
+
+    public static String getAliOssRegion(String accessKeyId, String accessKeySecret, String bucket) throws IOException {
+        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(accessKeyId, accessKeySecret);
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        OSSClient ossClient = new OSSClient("oss-cn-shanghai.aliyuncs.com", credentialsProvider, clientConfiguration);
+        try {
+            return ossClient.getBucketLocation(bucket);
+        } catch (OSSException | ClientException e) {
+            throw new IOException(e.getMessage(), e);
+        }
+//        OSSClient ossClient = new OSSClient("oss.aliyuncs.com", credentialsProvider, clientConfiguration);
+//        List<com.aliyun.oss.model.Bucket> list = ossClient.listBuckets();
+//        for (com.aliyun.oss.model.Bucket eachBucket : list) {
+//            if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
+//        }
+//        throw new IOException("can not find this bucket.");
+    }
+
+    public static String getTenCosRegion(String secretId, String secretKey, String bucket) throws IOException {
+        COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
+        ClientConfig clientConfig = new ClientConfig();
+        COSClient cosClient = new COSClient(cred, clientConfig);
+        List<com.qcloud.cos.model.Bucket> list = cosClient.listBuckets();
+        for (com.qcloud.cos.model.Bucket eachBucket : list) {
+            if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
+        }
+        throw new IOException("can not find this bucket.");
     }
 }
