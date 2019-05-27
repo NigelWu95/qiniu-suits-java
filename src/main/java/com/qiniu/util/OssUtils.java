@@ -15,6 +15,7 @@ import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
+import com.qiniu.common.Zone;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -104,6 +105,26 @@ public class OssUtils {
 
     public static String decodeTenCosMarker(String marker) {
         return marker;
+    }
+
+    public static Zone getQiniuRegion(String regionName) {
+        switch (regionName) {
+            case "z0":
+            case "huadong": return Zone.huadong();
+            case "z1":
+            case "huabei": return Zone.huabei();
+            case "z2":
+            case "huanan": return Zone.huanan();
+            case "na0":
+            case "beimei": return Zone.beimei();
+            case "as0":
+            case "xinjiapo": return Zone.xinjiapo();
+            case "qvm-z0":
+            case "qvm-huadong": return Zone.qvmHuadong();
+            case "qvm-z1":
+            case "qvm-huabei": return Zone.qvmHuabei();
+            default: return Zone.autoZone();
+        }
     }
 
     public static String getAliOssRegion(String accessKeyId, String accessKeySecret, String bucket) throws IOException {

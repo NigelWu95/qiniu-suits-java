@@ -77,17 +77,14 @@ public class CommonParams {
             if ("tencent".equals(source)) {
                 tencentSecretId = entryParam.getValue("ten-id").trim();
                 tencentSecretKey = entryParam.getValue("ten-secret").trim();
-                regionName = entryParam.getValue("region").trim();
             } else if ("aliyun".equals(source)) {
                 aliyunAccessId = entryParam.getValue("ali-id").trim();
                 aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
-                regionName = entryParam.getValue("region").trim();
-                if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
             } else {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
-                regionName = entryParam.getValue("region", "auto").trim();
             }
+            regionName = entryParam.getValue("region", "").trim();
             setBucket();
             parse = "object";
             antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
