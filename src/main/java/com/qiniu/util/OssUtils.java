@@ -116,6 +116,7 @@ public class OssUtils {
             throw new IOException(e.getMessage(), e);
         }
 //        OSSClient ossClient = new OSSClient("oss.aliyuncs.com", credentialsProvider, clientConfiguration);
+//        // 阿里 oss sdk listBuckets 能迭代列举出所有空间
 //        List<com.aliyun.oss.model.Bucket> list = ossClient.listBuckets();
 //        for (com.aliyun.oss.model.Bucket eachBucket : list) {
 //            if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
@@ -127,6 +128,7 @@ public class OssUtils {
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig();
         COSClient cosClient = new COSClient(cred, clientConfig);
+        // 腾讯 cos sdk listBuckets 不进行分页列举，账号空间个数上限为 200，可一次性列举完
         List<com.qcloud.cos.model.Bucket> list = cosClient.listBuckets();
         for (com.qcloud.cos.model.Bucket eachBucket : list) {
             if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
