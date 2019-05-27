@@ -2,14 +2,12 @@ package com.qiniu.entry;
 
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.qiniu.common.Constants;
 import com.qiniu.config.JsonFile;
 import com.qiniu.constants.DataSourceDef;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
-import com.qiniu.util.Base64;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
