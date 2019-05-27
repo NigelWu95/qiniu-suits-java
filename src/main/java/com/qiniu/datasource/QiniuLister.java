@@ -208,8 +208,6 @@ public class QiniuLister implements ILister<FileInfo> {
             jsonObject.addProperty("k", object.key);
             marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                     Base64.URL_SAFE | Base64.NO_WRAP);
-        } else {
-            marker = null;
         }
     }
 
