@@ -164,7 +164,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
-        listObjectsRequest.setMarker(object.getKey());
+        if (object != null) listObjectsRequest.setMarker(object.getKey());
     }
 
     @Override
