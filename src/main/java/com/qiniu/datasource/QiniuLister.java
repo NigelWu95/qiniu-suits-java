@@ -142,8 +142,8 @@ public class QiniuLister implements ILister<FileInfo> {
                 }
             }
             // 如果列表的所有元素文件名没有大于 endPrefix 的，则需要判断最后一个元素是否和 endPrefix 存在大于等于关系
-            String lastKey = currentLastKey();
-            if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) marker = null;
+            String endKey = currentEndKey();
+            if (endKey == null || endKey.compareTo(endPrefix) >= 0) marker = null;
         }
     }
 
@@ -195,15 +195,9 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public String currentLastKey() {
-        FileInfo last = null;
-        if (hasNext()) {
-            String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));
-            JsonObject jsonObject = new JsonParser().parse(decodedMarker).getAsJsonObject();
-            last = new FileInfo();
-            last.key = jsonObject.get("k").getAsString();
-        }
-        if (last == null) last = currentLast();
+    public String currentEndKey() {
+        if (hasNext()) return OssUtils.decodeQiniuMarker(marker);
+        FileInfo last = currentLast();
         return last != null ? last.key : null;
     }
 
@@ -214,8 +208,6 @@ public class QiniuLister implements ILister<FileInfo> {
             jsonObject.addProperty("k", object.key);
             marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                     Base64.URL_SAFE | Base64.NO_WRAP);
-        } else {
-            marker = null;
         }
     }
 

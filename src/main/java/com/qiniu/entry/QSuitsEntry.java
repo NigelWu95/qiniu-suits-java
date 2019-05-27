@@ -14,6 +14,7 @@ import com.qiniu.process.filtration.*;
 import com.qiniu.process.qdora.*;
 import com.qiniu.process.qoss.*;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.OssUtils;
 import com.qiniu.util.ProcessUtils;
 
 import java.io.File;
@@ -30,6 +31,7 @@ public class QSuitsEntry {
     private String source;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
+    private String regionName;
     private String bucket;
     private Map<String, String> indexMap;
     private int unitLen;
@@ -85,6 +87,7 @@ public class QSuitsEntry {
         this.qiniuAccessKey = commonParams.getQiniuAccessKey();
         this.qiniuSecretKey = commonParams.getQiniuSecretKey();
         this.bucket = commonParams.getBucket();
+        this.regionName = commonParams.getRegionName();
         this.indexMap = commonParams.getIndexMap();
         this.unitLen = commonParams.getUnitLen();
         this.threads = commonParams.getThreads();
@@ -144,7 +147,8 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig() {
-        Configuration configuration = new Configuration(Zone.autoZone());
+        Zone zone = OssUtils.getQiniuRegion(regionName);
+        Configuration configuration = new Configuration(zone);
         if (commonParams.getConnectTimeout() > Constants.CONNECT_TIMEOUT)
             configuration.connectTimeout = commonParams.getConnectTimeout();
         if (commonParams.getReadTimeout() > Constants.READ_TIMEOUT)
@@ -154,12 +158,14 @@ public class QSuitsEntry {
         return configuration;
     }
 
-    public ClientConfig getTenClientConfig() {
+    public ClientConfig getTenClientConfig() throws IOException {
         return tenClientConfig == null ? getDefaultTenClientConfig() : tenClientConfig;
     }
 
-    private ClientConfig getDefaultTenClientConfig() {
-        ClientConfig clientConfig = new ClientConfig(new Region(commonParams.getRegionName()));
+    private ClientConfig getDefaultTenClientConfig() throws IOException {
+        if (regionName == null || "".equals(regionName)) regionName = OssUtils.getTenCosRegion(
+                commonParams.getTencentSecretId(), commonParams.getTencentSecretKey(), bucket);
+        ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         if (1000 * commonParams.getConnectTimeout() > clientConfig.getConnectionTimeout())
             clientConfig.setConnectionTimeout(1000 * commonParams.getConnectTimeout());
         if (1000 * commonParams.getReadTimeout() > clientConfig.getSocketTimeout())
@@ -184,7 +190,7 @@ public class QSuitsEntry {
         return clientConfig;
     }
 
-    public IDataSource getDataSource() {
+    public IDataSource getDataSource() throws IOException {
         if ("qiniu".equals(source)) {
             return getQiniuOssContainer();
         } else if ("tencent".equals(source)) {
@@ -232,7 +238,7 @@ public class QSuitsEntry {
         return qiniuOssContainer;
     }
 
-    public TenOssContainer getTenOssContainer() {
+    public TenOssContainer getTenOssContainer() throws IOException {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
@@ -247,10 +253,17 @@ public class QSuitsEntry {
         return tenOssContainer;
     }
 
-    public AliOssContainer getAliOssContainer() {
+    public AliOssContainer getAliOssContainer() throws IOException {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
-        String endPoint = "http://" + commonParams.getRegionName() + ".aliyuncs.com";
+        String endPoint;
+        if (regionName == null || "".equals(regionName)) regionName = OssUtils.getAliOssRegion(accessId, accessSecret, bucket);
+        if (regionName.matches("https?://.+")) {
+            endPoint = regionName;
+        } else {
+            if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
+            endPoint = "http://" + regionName + ".aliyuncs.com";
+        }
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
