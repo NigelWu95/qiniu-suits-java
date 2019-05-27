@@ -288,7 +288,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             return nextLevelList;
         } else { // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
             int prefixLen = startPrefix.length();
-            String lastKey = lister.currentLastKey();
+            String lastKey = lister.currentEndKey();
             // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
             // endPrefix
             if (lastKey != null && lastKey.length() > prefixLen) {
