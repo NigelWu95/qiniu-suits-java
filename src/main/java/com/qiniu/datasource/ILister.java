@@ -40,7 +40,7 @@ public interface ILister<E> {
 
     E currentLast();
 
-    String currentLastKey();
+    String currentEndKey();
 
     void updateMarkerBy(E object);
 

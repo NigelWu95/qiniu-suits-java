@@ -96,8 +96,8 @@ public class TenLister implements ILister<COSObjectSummary> {
                     return;
                 }
             }
-            String lastKey = currentLastKey();
-            if (lastKey == null || lastKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
+            String endKey = currentEndKey();
+            if (endKey == null || endKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
     }
 
@@ -151,7 +151,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public String currentLastKey() {
+    public String currentEndKey() {
 //        COSObjectSummary last = null;
         if (hasNext()) {
 //            last = new COSObjectSummary();
@@ -164,7 +164,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
-        listObjectsRequest.setMarker(object.getKey());
+        if (object != null) listObjectsRequest.setMarker(object.getKey());
     }
 
     @Override

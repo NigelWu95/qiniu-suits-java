@@ -2,14 +2,12 @@ package com.qiniu.entry;
 
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.qiniu.common.Constants;
 import com.qiniu.config.JsonFile;
 import com.qiniu.constants.DataSourceDef;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
-import com.qiniu.util.Base64;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -79,17 +77,14 @@ public class CommonParams {
             if ("tencent".equals(source)) {
                 tencentSecretId = entryParam.getValue("ten-id").trim();
                 tencentSecretKey = entryParam.getValue("ten-secret").trim();
-                regionName = entryParam.getValue("region").trim();
             } else if ("aliyun".equals(source)) {
                 aliyunAccessId = entryParam.getValue("ali-id").trim();
                 aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
-                regionName = entryParam.getValue("region").trim();
-                if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
             } else {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
-                regionName = entryParam.getValue("region", "auto").trim();
             }
+            regionName = entryParam.getValue("region", "").trim();
             setBucket();
             parse = "object";
             antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
@@ -201,14 +196,11 @@ public class CommonParams {
                         marker = "";
                     } else {
                         if ("qiniu".equals(source)) {
-                            JsonObject jsonObject = new JsonObject();
-                            jsonObject.addProperty("k", jsonCfg.get("start").getAsString());
-                            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
-                                    Base64.URL_SAFE | Base64.NO_WRAP);
+                            marker = OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString());
                         } else if ("tencent".equals(source)) {
-                            marker = jsonCfg.get("start").getAsString();
+                            marker = OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString());
                         } else if ("aliyun".equals(source)) {
-                            marker = jsonCfg.get("start").getAsString();
+                            marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
                         }
                     }
                 } else {
