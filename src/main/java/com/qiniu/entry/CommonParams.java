@@ -201,14 +201,11 @@ public class CommonParams {
                         marker = "";
                     } else {
                         if ("qiniu".equals(source)) {
-                            JsonObject jsonObject = new JsonObject();
-                            jsonObject.addProperty("k", jsonCfg.get("start").getAsString());
-                            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
-                                    Base64.URL_SAFE | Base64.NO_WRAP);
+                            marker = OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString());
                         } else if ("tencent".equals(source)) {
-                            marker = jsonCfg.get("start").getAsString();
+                            marker = OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString());
                         } else if ("aliyun".equals(source)) {
-                            marker = jsonCfg.get("start").getAsString();
+                            marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
                         }
                     }
                 } else {
