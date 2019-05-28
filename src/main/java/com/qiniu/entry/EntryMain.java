@@ -14,16 +14,16 @@ public class EntryMain {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        boolean single = false;
+        boolean interactive = false;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].matches("-(S|s|single)")) {
-                args[i] = "-s=true";
-                single = true;
+            if (args[i].matches("-(i|-interactive)")) {
+                args[i] = "-interactive=true";
+                interactive = true;
             }
         }
         QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
         ILineProcess<Map<String, String>> processor;
-        if (single) {
+        if (interactive) {
             processor = qSuitsEntry.whichNextProcessor(true);
             if (processor == null) throw new IOException("no process defined.");
             ScannerSource scannerSource = qSuitsEntry.getScannerSource();
