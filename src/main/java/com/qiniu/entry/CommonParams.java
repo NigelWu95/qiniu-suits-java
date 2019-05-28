@@ -114,6 +114,10 @@ public class CommonParams {
         setRmFields(entryParam.getValue("rm-fields", "").trim());
     }
 
+    public CommonParams(Map<String, String> paramsMap) {
+
+    }
+
     public String checked(String param, String name, String conditionReg) throws IOException {
         if (param == null || !param.matches(conditionReg))
             throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
@@ -121,9 +125,7 @@ public class CommonParams {
     }
 
     private void setSource() throws IOException {
-        if (entryParam.getValue("S",
-                entryParam.getValue("s",
-                        entryParam.getValue("single", ""))).trim().equals("true")) {
+        if (entryParam.getValue("interactive", "").trim().equals("true")) {
             source = "terminal";
             return;
         }
