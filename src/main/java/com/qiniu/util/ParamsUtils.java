@@ -131,4 +131,10 @@ public class ParamsUtils {
             return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
         return strings;
     }
+
+    public static String checked(String param, String name, String conditionReg) throws IOException {
+        if (param == null || !param.matches(conditionReg))
+            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
+        else return param;
+    }
 }

@@ -5,6 +5,10 @@ import java.util.Map;
 
 public interface IEntryParam {
 
+    void addParams(Map<String, String> paramsMap);
+
+    void addParam(String key, String value);
+
     /**
      * 获取属性值，判断是否存在相应的 key，要求不存在或 value 为空则抛出异常
      * @param key 属性名

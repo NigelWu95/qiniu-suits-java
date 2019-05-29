@@ -1,8 +1,12 @@
 package com.qiniu.entry;
 
+import com.qiniu.convert.LineToMap;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.ScannerSource;
+import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.util.ParamsUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,15 +19,27 @@ public class EntryMain {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         boolean interactive = false;
+        boolean single = false;
         for (int i = 0; i < args.length; i++) {
             if (args[i].matches("-(i|-interactive)")) {
                 args[i] = "-interactive=true";
                 interactive = true;
+            } else if (args[i].matches("-line=.?")) {
+                single = true;
             }
         }
-        QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
+        QSuitsEntry qSuitsEntry = single ? new QSuitsEntry(ParamsUtils.toParamsMap(args)) : new QSuitsEntry(args);
         ILineProcess<Map<String, String>> processor;
-        if (interactive) {
+        if (single) {
+            processor = qSuitsEntry.whichNextProcessor(true);
+            if (processor == null) throw new IOException("no process defined.");
+            String line = qSuitsEntry.getEntryParam().getValue("line");
+            CommonParams commonParams = qSuitsEntry.getCommonParams();
+            ITypeConvert<String, Map<String, String>> converter = new LineToMap(commonParams.getParse(),
+                    commonParams.getSeparator(), commonParams.getAddKeyPrefix(), commonParams.getRmKeyPrefix(),
+                    commonParams.getIndexMap());
+            System.out.println(processor.processLine(converter.convertToV(line)));
+        } else if (interactive) {
             processor = qSuitsEntry.whichNextProcessor(true);
             if (processor == null) throw new IOException("no process defined.");
             ScannerSource scannerSource = qSuitsEntry.getScannerSource();
