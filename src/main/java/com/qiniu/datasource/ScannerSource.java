@@ -14,15 +14,15 @@ import java.util.Scanner;
 
 public class ScannerSource {
 
-    protected String parseFormat;
+    protected String parse;
     protected String separator;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
     protected Map<String, String> indexMap;
 
-    public ScannerSource(String parseFormat, String separator, String addKeyPrefix, String rmKeyPrefix,
+    public ScannerSource(String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                           Map<String, String> indexMap) {
-        this.parseFormat = parseFormat;
+        this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
         this.rmKeyPrefix = rmKeyPrefix;
@@ -31,7 +31,7 @@ public class ScannerSource {
 
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
-        this.parseFormat = commonParams.getParse();
+        this.parse = commonParams.getParse();
         this.separator = commonParams.getSeparator();
         this.addKeyPrefix = commonParams.getAddKeyPrefix();
         this.rmKeyPrefix = commonParams.getRmKeyPrefix();
@@ -39,7 +39,7 @@ public class ScannerSource {
     }
 
     public void export(Scanner scanner, ILineProcess<Map<String, String >> processor) throws IOException {
-        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parseFormat, separator, addKeyPrefix,
+        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap);
         String line;
         Map<String, String> converted;
