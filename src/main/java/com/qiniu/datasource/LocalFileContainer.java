@@ -20,7 +20,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
 
     @Override
     protected ITypeConvert<String, Map<String, String>> getNewConverter() throws IOException {
-        return new LineToMap(parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+        return new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
     @Override

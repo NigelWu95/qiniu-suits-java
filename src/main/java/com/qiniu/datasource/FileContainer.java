@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
     private String filePath;
-    protected String parseFormat;
+    protected String parse;
     protected String separator;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
@@ -39,10 +39,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<T> processor; // 定义的资源处理器
 
-    public FileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix, String rmKeyPrefix,
+    public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> indexMap, int unitLen, int threads) {
         this.filePath = filePath;
-        this.parseFormat = parseFormat;
+        this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
         this.rmKeyPrefix = rmKeyPrefix;
@@ -68,7 +68,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.filePath = commonParams.getPath();
-        this.parseFormat = commonParams.getParse();
+        this.parse = commonParams.getParse();
         this.separator = commonParams.getSeparator();
         this.addKeyPrefix = commonParams.getAddKeyPrefix();
         this.rmKeyPrefix = commonParams.getRmKeyPrefix();
