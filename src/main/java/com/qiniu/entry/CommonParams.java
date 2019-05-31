@@ -140,23 +140,41 @@ public class CommonParams {
         String line = entryParam.getValue("line");
         mapLine = converter.convertToV(line);
         switch (process) {
-//            case "status": processor = getChangeStatus(single); break;
-//            case "type": processor = getChangeType(single); break;
-//            case "lifecycle": processor = getChangeLifecycle(single); break;
-//            case "copy": processor = getCopyFile(single); break;
-//            case "move":
-//            case "rename": processor = getMoveFile(single); break;
-//            case "delete": processor = getDeleteFile(single); break;
-//            case "asyncfetch": processor = getAsyncFetch(single); break;
-//            case "avinfo": processor = getQueryAvinfo(single); break;
-//            case "pfopcmd": indexMap.put(); break;
-//            case "pfop": processor = getPfop(single); break;
-//            case "pfopresult": processor = getPfopResult(single); break;
-//            case "qhash": processor = getQueryHash(single); break;
-//            case "stat": processor = getStatFile(single); break;
-//            case "privateurl": processor = getPrivateUrl(single); break;
-//            case "mirror": processor = getMirrorFile(single); break;
-//            case "exportts": processor = getExportTs(single); break;
+            case "copy":
+            case "move":
+            case "rename":
+                String newKey = entryParam.getValue("to-key", null);
+                if (newKey != null) {
+                    indexMap.put("newKey", "newKey");
+                    mapLine.put("newKey", newKey);
+                }
+                break;
+            case "asyncfetch":
+            case "avinfo":
+            case "qhash":
+            case "privateurl":
+            case "exportts":
+                String url = entryParam.getValue("url", null);
+                if (url != null) {
+                    indexMap.put("url", "url");
+                    mapLine.put("url", url);
+                }
+                break;
+            case "pfopcmd":
+            case "pfop":
+                String fops = entryParam.getValue("fops", null);
+                if (fops != null) {
+                    indexMap.put("fops", "fops");
+                    mapLine.put("fops", fops);
+                }
+                break;
+            case "pfopresult":
+                String pid = entryParam.getValue("persistentId", null);
+                if (pid != null) {
+                    indexMap.put("pid", "pid");
+                    mapLine.put("pid", pid);
+                }
+                break;
         }
     }
 

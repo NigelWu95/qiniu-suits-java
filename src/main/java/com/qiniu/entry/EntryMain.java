@@ -32,12 +32,8 @@ public class EntryMain {
         if (single) {
             processor = qSuitsEntry.whichNextProcessor(true);
             if (processor == null) throw new IOException("no process defined.");
-            String line = qSuitsEntry.getEntryParam().getValue("line");
             CommonParams commonParams = qSuitsEntry.getCommonParams();
-            ITypeConvert<String, Map<String, String>> converter = new LineToMap(commonParams.getParse(),
-                    commonParams.getSeparator(), commonParams.getAddKeyPrefix(), commonParams.getRmKeyPrefix(),
-                    commonParams.getIndexMap());
-            System.out.println(processor.processLine(converter.convertToV(line)));
+            System.out.println(processor.processLine(commonParams.getMapLine()));
         } else if (interactive) {
             processor = qSuitsEntry.whichNextProcessor(true);
             if (processor == null) throw new IOException("no process defined.");
