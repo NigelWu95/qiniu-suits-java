@@ -40,11 +40,11 @@ public class QiniuPfop extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, pipeline, pfopJsonPath, pfopConfigs, fopsIndex, savePath, 0);
     }
 
-    private void set(String pipeline, String jsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
+    private void set(String pipeline, String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
-        if (jsonPath != null && !"".equals(jsonPath)) {
+        if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
             this.pfopConfigs = new ArrayList<>();
-            JsonFile jsonFile = new JsonFile(jsonPath);
+            JsonFile jsonFile = new JsonFile(pfopJsonPath);
             for (String key : jsonFile.getKeys()) {
                 JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), false);
                 jsonObject.addProperty("name", key);
@@ -55,7 +55,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         } else if (fopsIndex != null && !"".equals(fopsIndex)) {
             this.fopsIndex = fopsIndex;
         } else {
-            throw new IOException("please set the pfop-config or fopsIndex or fops.");
+            throw new IOException("please set the pfop-config or fopsIndex.");
         }
     }
 
