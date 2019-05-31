@@ -434,16 +434,19 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPfop(boolean single) throws IOException {
-        String fopsIndex = indexMap.containsValue("fops") ? "fops" : null;
-        String forcePublic = entryParam.getValue("force-public", "false");
         String pipeline = entryParam.getValue("pipeline", null);
+        String forcePublic = entryParam.getValue("force-public", "false");
         if (pipeline == null && !"true".equals(forcePublic)) {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
         String configJson = entryParam.getValue("pfop-config", null);
-        return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, fopsIndex, configJson)
-                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, fopsIndex, configJson, savePath);
+        String fopsIndex = indexMap.containsValue("fops") ? "fops" : null;
+        String fops = entryParam.getValue("fops", null);
+        return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
+                null, fopsIndex, fops)
+                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
+                null, fopsIndex, fops, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult(boolean single) throws IOException {
