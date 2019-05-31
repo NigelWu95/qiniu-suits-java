@@ -5,7 +5,9 @@ import com.google.gson.JsonObject;
 import com.qiniu.config.JsonFile;
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.constants.DataSourceDef;
+import com.qiniu.convert.LineToMap;
 import com.qiniu.interfaces.IEntryParam;
+import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
@@ -52,6 +54,7 @@ public class CommonParams {
     private String saveFormat;
     private String saveSeparator;
     private Set<String> rmFields;
+    private Map<String, String> mapLine;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -66,6 +69,7 @@ public class CommonParams {
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", "").trim();
         setSource();
+        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         if (source.matches("(local|terminal)")) {
             parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
@@ -103,7 +107,6 @@ public class CommonParams {
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
         setThreads(entryParam.getValue("threads", "30").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
-        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
@@ -122,15 +125,39 @@ public class CommonParams {
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         process = entryParam.getValue("process", "").trim();
         source = "terminal";
+        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
         setSeparator(entryParam.getValue("separator", ""));
+        addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
+        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
         if (ProcessUtils.needAuth(process)) {
             qiniuAccessKey = entryParam.getValue("ak").trim();
             qiniuSecretKey = entryParam.getValue("sk").trim();
         }
         setIndexMap();
-        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
+        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+        String line = entryParam.getValue("line");
+        mapLine = converter.convertToV(line);
+        switch (process) {
+//            case "status": processor = getChangeStatus(single); break;
+//            case "type": processor = getChangeType(single); break;
+//            case "lifecycle": processor = getChangeLifecycle(single); break;
+//            case "copy": processor = getCopyFile(single); break;
+//            case "move":
+//            case "rename": processor = getMoveFile(single); break;
+//            case "delete": processor = getDeleteFile(single); break;
+//            case "asyncfetch": processor = getAsyncFetch(single); break;
+//            case "avinfo": processor = getQueryAvinfo(single); break;
+//            case "pfopcmd": indexMap.put(); break;
+//            case "pfop": processor = getPfop(single); break;
+//            case "pfopresult": processor = getPfopResult(single); break;
+//            case "qhash": processor = getQueryHash(single); break;
+//            case "stat": processor = getStatFile(single); break;
+//            case "privateurl": processor = getPrivateUrl(single); break;
+//            case "mirror": processor = getMirrorFile(single); break;
+//            case "exportts": processor = getExportTs(single); break;
+        }
     }
 
     private void setSource() throws IOException {
@@ -544,32 +571,20 @@ public class CommonParams {
         this.path = path;
     }
 
-    public void setBaseFilter(BaseFilter<Map<String, String>> baseFilter) {
-        this.baseFilter = baseFilter;
-    }
-
-    public void setSeniorFilter(SeniorFilter<Map<String, String>> seniorFilter) {
-        this.seniorFilter = seniorFilter;
-    }
-
     public void setProcess(String process) {
         this.process = process;
-    }
-
-    public void setAddKeyPrefix(String addKeyPrefix) {
-        this.addKeyPrefix = addKeyPrefix;
-    }
-
-    public void setRmKeyPrefix(String rmKeyPrefix) {
-        this.rmKeyPrefix = rmKeyPrefix;
     }
 
     public void setSource(String source) {
         this.source = source;
     }
 
-    public void setIndexMap(HashMap<String, String> indexMap) {
-        this.indexMap = indexMap;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes;
+    }
+
+    public void setParse(String parse) {
+        this.parse = parse;
     }
 
     public void setQiniuAccessKey(String qiniuAccessKey) {
@@ -620,6 +635,26 @@ public class CommonParams {
         this.prefixRight = prefixRight;
     }
 
+    public void setAddKeyPrefix(String addKeyPrefix) {
+        this.addKeyPrefix = addKeyPrefix;
+    }
+
+    public void setRmKeyPrefix(String rmKeyPrefix) {
+        this.rmKeyPrefix = rmKeyPrefix;
+    }
+
+    public void setBaseFilter(BaseFilter<Map<String, String>> baseFilter) {
+        this.baseFilter = baseFilter;
+    }
+
+    public void setSeniorFilter(SeniorFilter<Map<String, String>> seniorFilter) {
+        this.seniorFilter = seniorFilter;
+    }
+
+    public void setIndexMap(HashMap<String, String> indexMap) {
+        this.indexMap = indexMap;
+    }
+
     public void setUnitLen(int unitLen) {
         this.unitLen = unitLen;
     }
@@ -630,10 +665,6 @@ public class CommonParams {
 
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes;
     }
 
     public void setSaveTotal(boolean saveTotal) {
@@ -656,6 +687,10 @@ public class CommonParams {
         this.rmFields = rmFields;
     }
 
+    public void setMapLine(Map<String, String> mapLine) {
+        this.mapLine = mapLine;
+    }
+
     public int getConnectTimeout() {
         return connectTimeout;
     }
@@ -676,24 +711,12 @@ public class CommonParams {
         return process;
     }
 
-    public String getAddKeyPrefix() {
-        return addKeyPrefix;
-    }
-
-    public String getRmKeyPrefix() {
-        return rmKeyPrefix;
-    }
-
     public String getSource() {
         return source;
     }
 
-    public BaseFilter<Map<String, String>> getBaseFilter() {
-        return baseFilter;
-    }
-
-    public SeniorFilter<Map<String, String>> getSeniorFilter() {
-        return seniorFilter;
+    public int getRetryTimes() {
+        return retryTimes;
     }
 
     public String getParse() {
@@ -740,6 +763,10 @@ public class CommonParams {
         return antiPrefixes;
     }
 
+    public Map<String, String[]> getPrefixesMap() {
+        return prefixesMap;
+    }
+
     public boolean getPrefixLeft() {
         return prefixLeft;
     }
@@ -748,8 +775,24 @@ public class CommonParams {
         return prefixRight;
     }
 
-    public Map<String, String[]> getPrefixesMap() {
-        return prefixesMap;
+    public String getAddKeyPrefix() {
+        return addKeyPrefix;
+    }
+
+    public String getRmKeyPrefix() {
+        return rmKeyPrefix;
+    }
+
+    public BaseFilter<Map<String, String>> getBaseFilter() {
+        return baseFilter;
+    }
+
+    public SeniorFilter<Map<String, String>> getSeniorFilter() {
+        return seniorFilter;
+    }
+
+    public HashMap<String, String> getIndexMap() {
+        return indexMap;
     }
 
     public int getUnitLen() {
@@ -762,10 +805,6 @@ public class CommonParams {
 
     public int getBatchSize() {
         return batchSize;
-    }
-
-    public int getRetryTimes() {
-        return retryTimes;
     }
 
     public Boolean getSaveTotal() {
@@ -792,7 +831,7 @@ public class CommonParams {
         return rmFields;
     }
 
-    public HashMap<String, String> getIndexMap() {
-        return indexMap;
+    public Map<String, String> getMapLine() {
+        return mapLine;
     }
 }

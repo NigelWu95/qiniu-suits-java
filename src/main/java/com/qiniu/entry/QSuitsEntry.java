@@ -424,13 +424,13 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getPfopCommand(boolean single) throws IOException {
         String avinfoIndex = indexMap.containsValue("avinfo") ? "avinfo" : null;
-        String configJson = entryParam.getValue("pfop-config");
         String duration = entryParam.getValue("duration", "false");
         duration = ParamsUtils.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false");
         size = ParamsUtils.checked(size, "size", "(true|false)");
-        return single ? new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size))
-                : new PfopCommand(avinfoIndex, configJson, Boolean.valueOf(duration), Boolean.valueOf(size), savePath);
+        String configJson = entryParam.getValue("pfop-config");
+        return single ? new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson, null)
+                : new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson, null, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop(boolean single) throws IOException {
@@ -442,11 +442,10 @@ public class QSuitsEntry {
         }
         String configJson = entryParam.getValue("pfop-config", null);
         String fopsIndex = indexMap.containsValue("fops") ? "fops" : null;
-        String fops = entryParam.getValue("fops", null);
         return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
-                null, fopsIndex, fops)
+                null, fopsIndex)
                 : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
-                null, fopsIndex, fops, savePath);
+                null, fopsIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult(boolean single) throws IOException {

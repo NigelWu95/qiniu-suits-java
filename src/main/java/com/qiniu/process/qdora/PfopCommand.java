@@ -23,62 +23,49 @@ public class PfopCommand extends Base<Map<String, String>> {
     private List<JsonObject> pfopConfigs;
     private MediaManager mediaManager;
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
+    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                       List<JsonObject> pfopConfigs) throws IOException {
         super("pfopcmd", "", "", null, null);
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
         this.mediaManager = new MediaManager();
     }
 
-    public PfopCommand(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize) throws IOException {
-        super("pfopcmd", "", "", null, null);
-        set(avinfoIndex, pfopConfigs, hasDuration, hasSize);
-        this.mediaManager = new MediaManager();
-    }
-
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath,
-                       int saveIndex) throws IOException {
+    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                       List<JsonObject> pfopConfigs, String savePath, int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, null, savePath, saveIndex);
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
         this.mediaManager = new MediaManager();
     }
 
-    public PfopCommand(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize, String savePath,
-                       int saveIndex) throws IOException {
-        super("pfopcmd", "", "", null, null, savePath, saveIndex);
-        set(avinfoIndex, pfopConfigs, hasDuration, hasSize);
-        this.mediaManager = new MediaManager();
+    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                       List<JsonObject> pfopConfigs, String savePath) throws IOException {
+        this(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs, savePath, 0);
     }
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath)
-            throws IOException {
-        this(avinfoIndex, jsonPath, hasDuration, hasSize, savePath, 0);
-    }
-
-    private void set(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
+    private void set(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                     List<JsonObject> pfopConfigs) throws IOException {
         if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
         else this.avinfoIndex = avinfoIndex;
-        this.pfopConfigs = new ArrayList<>();
-        JsonFile jsonFile = new JsonFile(jsonPath);
-        for (String key : jsonFile.getKeys()) {
-            JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), true);
-            jsonObject.addProperty("name", key);
-            this.pfopConfigs.add(jsonObject);
+        this.hasDuration = hasDuration;
+        this.hasSize = hasSize;
+        if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
+            this.pfopConfigs = new ArrayList<>();
+            JsonFile jsonFile = new JsonFile(pfopJsonPath);
+            for (String key : jsonFile.getKeys()) {
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), false);
+                jsonObject.addProperty("name", key);
+                this.pfopConfigs.add(jsonObject);
+            }
+        } else if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            this.pfopConfigs = pfopConfigs;
+        } else {
+            throw new IOException("please set the pfop-config or fopsIndex or fops.");
         }
-        this.hasDuration = hasDuration;
-        this.hasSize = hasSize;
     }
 
-    private void set(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize) throws IOException {
-        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
-        else this.avinfoIndex = avinfoIndex;
-        this.pfopConfigs = pfopConfigs;
-        this.hasDuration = hasDuration;
-        this.hasSize = hasSize;
-    }
-
-    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize)
-            throws IOException {
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+    public void updateCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                              List<JsonObject> pfopConfigs) throws IOException {
+        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
     }
 
     @SuppressWarnings("unchecked")
