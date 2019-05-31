@@ -45,7 +45,8 @@ public class ScannerSource {
         Map<String, String> converted;
         boolean quit = false;
         int retry;
-        while (!quit) { // scanner.hasNext() 不能读取空行，不能勇于判断
+        while (!quit) { // scanner.hasNext() 不能读取空行，不能用于判断
+            System.out.println("please input line data to process: ");
             line = scanner.nextLine();
             quit = line == null || line.isEmpty();
             if (!quit) {
