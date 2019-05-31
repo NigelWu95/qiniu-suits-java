@@ -1,8 +1,9 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qdora;
 
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
+import com.qiniu.process.qoss.FileChecker;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
