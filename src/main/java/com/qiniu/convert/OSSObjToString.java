@@ -5,7 +5,6 @@ import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 public class OSSObjToString extends Converter<OSSObjectSummary, String> {
