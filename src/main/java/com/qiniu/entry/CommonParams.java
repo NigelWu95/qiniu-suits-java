@@ -55,6 +55,7 @@ public class CommonParams {
     private String saveSeparator;
     private Set<String> rmFields;
     private Map<String, String> mapLine;
+    private List<JsonObject> pfopConfigs;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -160,12 +161,25 @@ public class CommonParams {
                     mapLine.put("url", url);
                 }
                 break;
-            case "pfopcmd":
             case "pfop":
+            case "pfopcmd":
                 String fops = entryParam.getValue("fops", null);
-                if (fops != null) {
+                String cmd = entryParam.getValue("cmd", null);
+                if (fops != null && !"".equals(fops)) {
                     indexMap.put("fops", "fops");
                     mapLine.put("fops", fops);
+                } else if (cmd != null && !"".equals(cmd)) {
+                    JsonObject pfopJson = new JsonObject();
+                    pfopJson.addProperty("cmd", cmd);
+                    String saveas = entryParam.getValue("saveas");
+                    pfopJson.addProperty("saveas", saveas);
+                    if ("pfopcmd".equals(process)) {
+                        String scale = entryParam.getValue("scale");
+                        pfopJson.addProperty("scale", scale);
+                    }
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("name", cmd.split("/")[0]);
+                    pfopConfigs.add(jsonObject);
                 }
                 break;
             case "pfopresult":
@@ -709,6 +723,10 @@ public class CommonParams {
         this.mapLine = mapLine;
     }
 
+    public void setPfopConfigs(List<JsonObject> pfopConfigs) {
+        this.pfopConfigs = pfopConfigs;
+    }
+
     public int getConnectTimeout() {
         return connectTimeout;
     }
@@ -851,5 +869,9 @@ public class CommonParams {
 
     public Map<String, String> getMapLine() {
         return mapLine;
+    }
+
+    public List<JsonObject> getPfopConfigs() {
+        return pfopConfigs;
     }
 }
