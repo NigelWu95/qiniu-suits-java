@@ -1,6 +1,7 @@
 package com.qiniu.entry;
 
 import com.aliyun.oss.ClientConfiguration;
+import com.google.gson.JsonObject;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
@@ -430,8 +431,11 @@ public class QSuitsEntry {
         String size = entryParam.getValue("size", "false");
         size = ParamsUtils.checked(size, "size", "(true|false)");
         String configJson = entryParam.getValue("pfop-config");
-        return single ? new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson, null)
-                : new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson, null, savePath);
+        List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
+        return single ? new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
+                pfopConfigs)
+                : new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson, pfopConfigs,
+                savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop(boolean single) throws IOException {
@@ -442,11 +446,12 @@ public class QSuitsEntry {
                     " private pipeline, please set the force-public as true.");
         }
         String configJson = entryParam.getValue("pfop-config", null);
+        List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         String fopsIndex = indexMap.containsValue("fops") ? "fops" : null;
         return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
-                null, fopsIndex)
-                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
-                null, fopsIndex, savePath);
+                pfopConfigs, fopsIndex)
+                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson, pfopConfigs,
+                fopsIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult(boolean single) throws IOException {

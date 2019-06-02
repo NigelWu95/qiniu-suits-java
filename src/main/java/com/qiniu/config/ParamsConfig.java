@@ -49,7 +49,7 @@ public class ParamsConfig implements IEntryParam {
      */
     public String getValue(String key) throws IOException {
         if (paramsMap == null || "".equals(paramsMap.getOrDefault(key, ""))) {
-            throw new IOException("not set \"" + key + "\" parameter.");
+            throw new IOException("not set \"" + key + "\" parameter value.");
         } else {
             return paramsMap.get(key);
         }

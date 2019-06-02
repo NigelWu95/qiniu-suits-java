@@ -1,10 +1,8 @@
 package com.qiniu.entry;
 
-import com.qiniu.convert.LineToMap;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.ScannerSource;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.util.ParamsUtils;
 
 import java.io.IOException;
