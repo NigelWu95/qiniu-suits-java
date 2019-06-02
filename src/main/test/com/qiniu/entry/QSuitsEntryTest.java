@@ -52,7 +52,7 @@ public class QSuitsEntryTest {
 //                , "-parse=json"
                 , "-bucket=ts-work"
 //                , "-process=delete"
-                , "-process=stat"
+//                , "-process=stat"
 //                , "-process=type"
 //                , "-type=1"
 //                , "-process=status"
@@ -65,6 +65,15 @@ public class QSuitsEntryTest {
 //                , "-prefix-force=true"
 //                , "-add-prefix=a/"
                 , "-to-key=0000021-ret"
+//                , "-process=pfop"
+                , "-force-public=true"
+                , "-process=pfopcmd"
+                , "-scale=[999,1999]"
+                , "-avinfo-index=1"
+//                , "-fops=avthumb/mp4"
+                , "-cmd=avthumb/mp4"
+                , "-saveas=temp:$(key)"
+//                , "-pfop-config=resources/pfopcmd.json"
         };
         QSuitsEntry qSuitsEntry = new QSuitsEntry(ParamsUtils.toParamsMap(args));
         ILineProcess<Map<String, String>> processor;

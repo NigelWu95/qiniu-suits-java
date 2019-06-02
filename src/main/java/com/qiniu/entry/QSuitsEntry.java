@@ -430,7 +430,7 @@ public class QSuitsEntry {
         duration = ParamsUtils.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false");
         size = ParamsUtils.checked(size, "size", "(true|false)");
-        String configJson = entryParam.getValue("pfop-config");
+        String configJson = entryParam.getValue("pfop-config", null);
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         return single ? new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
                 pfopConfigs)
