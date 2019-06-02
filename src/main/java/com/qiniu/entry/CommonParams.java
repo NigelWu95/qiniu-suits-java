@@ -1,5 +1,6 @@
 package com.qiniu.entry;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.config.JsonFile;
@@ -197,7 +198,13 @@ public class CommonParams {
                     pfopJson.addProperty("saveas", saveas);
                     if ("pfopcmd".equals(process)) {
                         String scale = entryParam.getValue("scale");
-                        pfopJson.addProperty("scale", scale);
+                        if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
+                                "like \"[num1,num2]\"");
+                        String[] scales = scale.substring(1, scale.length() - 1).split(",");
+                        JsonArray jsonArray = new JsonArray();
+                        jsonArray.add(scales[0]);
+                        if (scales.length > 1) jsonArray.add(scales[1]);
+                        pfopJson.add("scale", jsonArray);
                     }
                     pfopJson.addProperty("name", cmd.split("/")[0]);
                     pfopConfigs = new ArrayList<JsonObject>(){{
