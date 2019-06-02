@@ -82,7 +82,8 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) {
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileSaveMapper.writeKeyFile(line.get("file"), line.get("result"), false);
     }
 
     @Override
@@ -91,12 +92,13 @@ public class QiniuPfop extends Base<Map<String, String>> {
             for (JsonObject pfopConfig : pfopConfigs) {
                 String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
                 String pid = operationManager.pfop(bucket, line.get("key"), cmd, pfopParams);
-                fileSaveMapper.writeKeyFile(pfopConfig.get("name").getAsString(), line.get("key") + "\t" + cmd + "\t" +
-                            pid, false);
+                line.put("file", pfopConfig.get("name").getAsString());
+                line.put("result", line.get("key") + "\t" + cmd + "\t" + pid);
             }
         } else {
-            fileSaveMapper.writeSuccess(line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
-                        operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams), false);
+            line.put("file", "success");
+            line.put("result", line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
+                        operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams));
         }
         return null;
     }
