@@ -52,7 +52,7 @@ public class StatFile extends Base<Map<String, String>> {
         if ("csv".equals(format) || "tab".equals(format)) {
             this.separator = "csv".equals(format) ? "," : separator;
         } else if (!"json".equals(this.format)) {
-            throw new IOException("please check your format for line to map.");
+            throw new IOException("please check your format for converting result string.");
         }
         if (batchSize > 1) typeConverter = new JsonToString(format, separator, null);
         else typeConverter = new QOSObjToString(format, separator, null);

@@ -373,7 +373,7 @@ public class QSuitsEntry {
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
         String newKeyIndex = indexMap.containsValue("newKey") ? "newKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
-        String force = entryParam.getValue("prefix-force", null);
+        String force = entryParam.getValue("prefix-force", "false");
         force = ParamsUtils.checked(force, "prefix-force", "(true|false)");
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,

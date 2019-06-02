@@ -208,6 +208,13 @@ public class CommonParams {
                     mapLine.put("pid", pid);
                 }
                 break;
+            case "stat":
+                saveFormat = entryParam.getValue("save-format", "tab").trim();
+                // 校验设置的 format 参数
+                saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+                setSaveSeparator(entryParam.getValue("save-separator", ""));
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
         }

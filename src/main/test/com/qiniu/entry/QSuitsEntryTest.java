@@ -34,16 +34,37 @@ public class QSuitsEntryTest {
     @Test
     public void testEntry2() throws Exception {
         String[] args = new String[]{
-//                "-line=\"ashdfasd\""
-//                ,
-                "-key=\"121231\""
-                , "-process=privateurl"
-                , "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg"
-                , "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"
-//                , "-url=http://test.qiniuts.com/test.gif"
-                , "-domain=www.nigel.net.cn"
+                "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg",
+                "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"
+                , "-domain=xxx.com"
+//                , "-line=\"ashdfasd\""
+                , "-key=\"0000021-result\""
+//                , "-process=exportts"
+//                , "-url=http://xxx.com/1618060907DD4B1FA72E50491C08B356.m3u8"
+//                , "-process=privateurl"
+//                , "-url=http://xxx.com/test.gif"
+//                , "-process=avinfo"
+//                , "-process=qhash"
+//                , "-process=asyncfetch"
+                , "-to-bucket=ts-work"
+//                , "-url=http://p3l1d5mx4.bkt.clouddn.com/1080P/%E8%B6%85%E6%B8%85%E9%87%91%E6%B5%B7%E6%B9%96%E7%BE%8E%E6%99%AF.mp4"
 //                , "-url-index=ghl"
 //                , "-parse=json"
+                , "-bucket=ts-work"
+//                , "-process=delete"
+                , "-process=stat"
+//                , "-process=type"
+//                , "-type=1"
+//                , "-process=status"
+//                , "-status=1"
+//                , "-process=lifecycle"
+//                , "-days=1"
+//                , "-process=copy"
+//                , "-process=move"
+//                , "-process=rename"
+//                , "-prefix-force=true"
+//                , "-add-prefix=a/"
+                , "-to-key=0000021-ret"
         };
         QSuitsEntry qSuitsEntry = new QSuitsEntry(ParamsUtils.toParamsMap(args));
         ILineProcess<Map<String, String>> processor;
