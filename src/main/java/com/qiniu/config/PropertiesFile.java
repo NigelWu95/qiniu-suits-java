@@ -37,7 +37,7 @@ public class PropertiesFile {
      */
     public String getValue(String key) throws IOException {
         if ("".equals(properties.getProperty(key, ""))) {
-            throw new IOException("not set \"" + key + "\" param.");
+            throw new IOException("not set \"" + key + "\" parameter value.");
         } else {
             return properties.getProperty(key);
         }
