@@ -79,8 +79,26 @@ public class QSuitsEntryTest {
         QSuitsEntry qSuitsEntry = new QSuitsEntry(ParamsUtils.toParamsMap(args));
         ILineProcess<Map<String, String>> processor;
         processor = qSuitsEntry.whichNextProcessor(true);
-        if (processor == null) throw new IOException("no process defined.");
         CommonParams commonParams = qSuitsEntry.getCommonParams();
         System.out.println(processor.processLine(commonParams.getMapLine()));
+    }
+
+    @Test
+    public void testEntry3() throws Exception {
+        String[] args = new String[]{
+                "-interactive=true",
+                "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg",
+                "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"
+//                , "-process=private"
+                , "-process=pfop"
+                , "-bucket=temp"
+                , "-force-public=true"
+                , "-pfop-config=resources/pfop.json"
+        };
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
+        ILineProcess<Map<String, String>> processor = qSuitsEntry.whichNextProcessor(true);
+        ScannerSource scannerSource = qSuitsEntry.getScannerSource();
+        Scanner scanner = new Scanner(System.in);
+        scannerSource.export(scanner, processor);
     }
 }

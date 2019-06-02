@@ -22,7 +22,7 @@ public class JsonFile {
             } else {
                 inputStream = new FileInputStream(file);
             }
-
+            if (inputStream == null) throw new IOException(resourceFile + "may be not exists.");
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             StringBuilder stringBuilder = new StringBuilder();
             String line;
