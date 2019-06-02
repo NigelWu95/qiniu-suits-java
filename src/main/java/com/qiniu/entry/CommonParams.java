@@ -124,7 +124,7 @@ public class CommonParams {
         connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60").trim());
         readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
-        process = entryParam.getValue("process", "").trim();
+        process = entryParam.getValue("process").trim();
         source = "terminal";
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
@@ -138,12 +138,22 @@ public class CommonParams {
         }
         setIndexMap();
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
-        String line = entryParam.getValue("line");
-        mapLine = converter.convertToV(line);
+        String line = entryParam.getValue("line", null);
+        boolean fromLine = line != null && !"".equals(line);
+        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine) {
+            throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
+        }
+        if (fromLine) {
+            mapLine = converter.convertToV(line);
+            fromLine = mapLine.containsKey("key");
+        } else {
+            mapLine = new HashMap<>();
+        }
         switch (process) {
             case "copy":
             case "move":
             case "rename":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String newKey = entryParam.getValue("to-key", null);
                 if (newKey != null) {
                     indexMap.put("newKey", "newKey");
@@ -159,10 +169,19 @@ public class CommonParams {
                 if (url != null) {
                     indexMap.put("url", "url");
                     mapLine.put("url", url);
+                } else {
+                    entryParam.getValue("domain");
+                    if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 }
                 break;
             case "pfop":
             case "pfopcmd":
+                if ("pfopcmd".equals(process)) {
+                    indexMap.put("avinfo", "avinfo");
+                    mapLine.put("avinfo", entryParam.getValue("avinfo"));
+                } else if ("pfop".equals(process)) {
+                    if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                }
                 String fops = entryParam.getValue("fops", null);
                 String cmd = entryParam.getValue("cmd", null);
                 if (fops != null && !"".equals(fops)) {
@@ -188,6 +207,8 @@ public class CommonParams {
                     indexMap.put("pid", "pid");
                     mapLine.put("pid", pid);
                 }
+                break;
+            default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
         }
     }
