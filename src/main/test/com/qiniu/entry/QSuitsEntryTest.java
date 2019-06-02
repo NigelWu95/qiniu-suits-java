@@ -34,7 +34,9 @@ public class QSuitsEntryTest {
     @Test
     public void testEntry2() throws Exception {
         String[] args = new String[]{
-                "-line=\"ashdfasd\""
+//                "-line=\"ashdfasd\""
+//                ,
+                "-key=\"121231\""
                 , "-process=privateurl"
                 , "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg"
                 , "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"

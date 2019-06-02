@@ -21,7 +21,8 @@ public class EntryMain {
             if (args[i].matches("-(i|-interactive)")) {
                 args[i] = "-interactive=true";
                 interactive = true;
-            } else if (args[i].matches("-line=.?")) {
+            } else if (args[i].matches("-(s|-single|line=.?)")) {
+                args[i] = "-single=true";
                 single = true;
             }
         }
