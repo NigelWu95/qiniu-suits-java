@@ -52,6 +52,8 @@ public class MediaManager {
     public Avinfo getAvinfoByJson(JsonObject avinfoJson) throws QiniuException {
         Avinfo avinfo = new Avinfo();
         try {
+            if (!avinfoJson.has("format") || !avinfoJson.has("streams"))
+                throw new QiniuException(null, avinfoJson + " may be not a invalid avinfo string.");
             avinfo.setFormat(JsonUtils.fromJson(avinfoJson.getAsJsonObject("format"), Format.class));
             JsonElement element = avinfoJson.get("streams");
             JsonArray streams = element.getAsJsonArray();
