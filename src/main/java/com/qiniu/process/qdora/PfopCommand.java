@@ -52,7 +52,7 @@ public class PfopCommand extends Base<Map<String, String>> {
             this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
             for (String key : jsonFile.getKeys()) {
-                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), false);
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), true);
                 jsonObject.addProperty("name", key);
                 this.pfopConfigs.add(jsonObject);
             }
