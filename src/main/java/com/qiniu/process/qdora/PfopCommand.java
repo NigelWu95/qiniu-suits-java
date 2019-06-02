@@ -59,7 +59,7 @@ public class PfopCommand extends Base<Map<String, String>> {
         } else if (pfopConfigs != null && pfopConfigs.size() > 0) {
             this.pfopConfigs = pfopConfigs;
         } else {
-            throw new IOException("please set the pfop-config or fopsIndex or fops.");
+            throw new IOException("please set the pfop-config.");
         }
     }
 

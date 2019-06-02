@@ -90,8 +90,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             for (JsonObject pfopConfig : pfopConfigs) {
                 String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
+                String pid = operationManager.pfop(bucket, line.get("key"), cmd, pfopParams);
                 fileSaveMapper.writeKeyFile(pfopConfig.get("name").getAsString(), line.get("key") + "\t" + cmd + "\t" +
-                            operationManager.pfop(bucket, line.get("key"), cmd, pfopParams), false);
+                            pid, false);
             }
         } else {
             fileSaveMapper.writeSuccess(line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
