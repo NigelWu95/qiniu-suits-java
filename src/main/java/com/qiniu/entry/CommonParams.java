@@ -183,9 +183,8 @@ public class CommonParams {
                         indexMap.put("avinfo", "avinfo");
                         mapLine.put("avinfo", avinfo);
                     }
-                } else if ("pfop".equals(process)) {
-                    if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 }
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", null);
                 String cmd = entryParam.getValue("cmd", null);
                 if (fops != null && !"".equals(fops)) {
@@ -202,8 +201,13 @@ public class CommonParams {
                                 "like \"[num1,num2]\"");
                         String[] scales = scale.substring(1, scale.length() - 1).split(",");
                         JsonArray jsonArray = new JsonArray();
-                        jsonArray.add(scales[0]);
-                        if (scales.length > 1) jsonArray.add(scales[1]);
+                        if (scales.length > 1) {
+                            jsonArray.add(scales[0]);
+                            jsonArray.add(scales[1]);
+                        } else {
+                            jsonArray.add(0);
+                            jsonArray.add(scales[0]);
+                        }
                         pfopJson.add("scale", jsonArray);
                     }
                     pfopJson.addProperty("name", cmd.split("/")[0]);
