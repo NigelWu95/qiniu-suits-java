@@ -64,7 +64,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {}
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        fileSaveMapper.writeKeyFile(line.get("file"), line.get("result"), false);
+    }
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
@@ -78,18 +80,20 @@ public class QueryPfopResult extends Base<Map<String, String>> {
             }
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
-                if (item.code == 0)
-                    fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + (item.key != null ? item.key + "\t" : "") +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
-                else if (item.code == 3)
-                    fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
-                else if (item.code == 4)
-                    fileSaveMapper.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
-                else
-                    fileSaveMapper.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
+                if (item.code == 0) {
+                    line.put("file", "success");
+                    line.put("result", pfopResult.inputKey + "\t" + (item.key != null ? item.key + "\t" : "") +
+                            JsonUtils.toJsonWithoutUrlEscape(item));
+                } else if (item.code == 3) {
+                    line.put("file", "error");
+                    line.put("result", pfopResult.inputKey + "\t" + item.cmd + "\t" + JsonUtils.toJsonWithoutUrlEscape(item));
+                } else if (item.code == 4) {
+                    line.put("file", "waiting");
+                    line.put("result", item.code + "\t" + line.get(pidIndex) + "\t" + JsonUtils.toJsonWithoutUrlEscape(item));
+                } else {
+                    line.put("file", "notify_failed");
+                    line.put("result", item.code + "\t" + line.get(pidIndex) + "\t" + JsonUtils.toJsonWithoutUrlEscape(item));
+                }
             }
             return null;
         } else {
