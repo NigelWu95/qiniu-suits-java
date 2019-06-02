@@ -11,10 +11,12 @@ public final class PfopUtils {
 
     public static JsonObject checkPfopJson(JsonObject jsonObject, boolean scaleCheck) throws IOException {
         if (scaleCheck) {
+            if (!jsonObject.has("scale"))
+                throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");
             List<Integer> scale = JsonUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});
             if (scale.size() < 1) {
-                throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");
+                throw new IOException("the json-config's \"scale\" field is empty in \"" + jsonObject + "\".");
             } else if (scale.size() == 1) {
                 JsonArray jsonArray = new JsonArray();
                 jsonArray.add(scale.get(0));
