@@ -207,8 +207,8 @@ public class CommonParams {
                             jsonArray.add(scales[0]);
                             jsonArray.add(scales[1]);
                         } else {
-                            jsonArray.add(0);
                             jsonArray.add(scales[0]);
+                            jsonArray.add(Integer.MAX_VALUE);
                         }
                         pfopJson.add("scale", jsonArray);
                     }

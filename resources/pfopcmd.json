@@ -8,5 +8,18 @@
     "scale":[1280],
     "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
     "saveas":"bucket:$(key)F1080"
-  }
+  },
+  "pfop":{},
+  "pfopcmd":{},
+  "":{},
+  "pfop":[
+    {
+      "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
+      "saveas":"bucket:$(key)F720.mp4"
+    },
+    {
+      "cmd":"avsmart/mp4",
+      "saveas":"bucket:$(key)-avsmart.mp4"
+    }
+  ]
 }

@@ -17,25 +17,33 @@ avinfo-index=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=pfopcmd| 该操作设置为pfopcmd| 表示根据 avinfo 生成音视频转码指令|  
-|pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径，配置文件格式为 json，用于设置多个转码条件和指令，配置举例：[pfop-config 配置](../resources/pfopcmd.json)|  
+|pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，[配置写法](##-pfop-config-配置文件内容写法如下：)|  
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
 |avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），必须指定才能进行处理|  
 
-#### # pfop-config 配置文件写法如下：
+#### # pfop-config 配置文件内容写法如下：
 ```
 {
-  "F720":{
-    "scale":[1000,1279],
-    "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-    "saveas":"bucket:$(key)F720.mp4"
-  }
+  "pfopcmd":[
+    {
+      "scale":[1000,1280],
+      "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
+      "saveas":"bucket:$(key)F720.mp4"
+    },
+    {
+      "scale":[1280],
+      "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
+      "saveas":"bucket:$(key)F1080"
+    }
+  ]
 }
-```
+```  
+如上所示，pfopcmd 操作的配置名称为 "pfopcmd"，配置项为 json array，可参见 [pfop-config 配置](../resources/process.json)  
 |必须选项|含义|  
 |-----|-----|  
 |key|上述配置文件中的 F720 为转码项名称，设置为 json key，key 不可重复，重复情况下后者会覆盖前者|  
-|scale| 表示 width 的范围，只设置了一个值则表示目标范围大于该值，程序根据 avinfo 判断宽度范围在此区间，才针对文件名生成转码指令，否则跳过|  
+|scale| 表示视频分辨率 width 的范围，只设置了一个值则表示目标范围大于该值，程序根据 avinfo 判断宽度范围对在此区间的文件生成转码指令|  
 |cmd| 需要指定的转码指令 |  
 |saveas| 转码结果另存的格式，写法为：<bucket>:<key>，其中 <key> 支持[魔法变量](#魔法变量)|  
 
