@@ -1,5 +1,7 @@
 package com.qiniu.process.qdora;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.qiniu.config.JsonFile;
 import com.qiniu.process.Base;
@@ -45,9 +47,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
         if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
             this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
-            for (String key : jsonFile.getKeys()) {
-                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), false);
-                jsonObject.addProperty("name", key);
+            JsonArray array = jsonFile.getElement("pfop").getAsJsonArray();
+            for (JsonElement jsonElement : array) {
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
                 this.pfopConfigs.add(jsonObject);
             }
         } else if (pfopConfigs != null && pfopConfigs.size() > 0) {
@@ -73,7 +75,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
 
     @Override
     public String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(fopsIndex);
+        return line.get("key");
     }
 
     @Override
@@ -82,24 +84,20 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeKeyFile(line.get("file"), line.get("result"), false);
-    }
-
-    @Override
     public String singleResult(Map<String, String> line) throws IOException {
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            StringBuilder cmdBuilder = new StringBuilder();
+            String key = line.get("key");
             for (JsonObject pfopConfig : pfopConfigs) {
-                String cmd = PfopUtils.generateFopCmd(line.get("key"), pfopConfig);
-                String pid = operationManager.pfop(bucket, line.get("key"), cmd, pfopParams);
-                line.put("file", pfopConfig.get("name").getAsString());
-                line.put("result", line.get("key") + "\t" + cmd + "\t" + pid);
+                cmdBuilder.append(pfopConfig.get("cmd").getAsString())
+                        .append("|saveas/")
+                        .append(UrlSafeBase64.encodeToString(PfopUtils.generateFopSaveAs(key, pfopConfig)))
+                        .append(";");
             }
+            cmdBuilder.deleteCharAt(cmdBuilder.length() - 1);
+            return operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams);
         } else {
-            line.put("file", "success");
-            line.put("result", line.get("key") + "\t" + line.get(fopsIndex) + "\t" +
-                        operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams));
+            return operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
         }
-        return null;
     }
 }

@@ -69,7 +69,7 @@ public class QSuitsEntryTest {
 //                , "-fops=avthumb/mp4"
                 , "-cmd=avthumb/mp4"
                 , "-saveas=temp:$(key)"
-//                , "-pfop-config=resources/pfopcmd.json"
+//                , "-pfop-config=resources/process.json"
         };
         QSuitsEntry qSuitsEntry = new QSuitsEntry(ParamsUtils.toParamsMap(args));
         ILineProcess<Map<String, String>> processor;
@@ -85,9 +85,11 @@ public class QSuitsEntryTest {
                 "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg",
                 "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"
 //                , "-process=private"
-                , "-process=pfopcmd"
-                , "-avinfo-index=1"
-                , "-pfop-config=resources/pfopcmd.json"
+                , "-process=pfop"
+                , "-force-public=true"
+                , "-bucket=temp"
+//                , "-avinfo-index=1"
+                , "-pfop-config=resources/process.json"
         };
         QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.whichNextProcessor(true);
