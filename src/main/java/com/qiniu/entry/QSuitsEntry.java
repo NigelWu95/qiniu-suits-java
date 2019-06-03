@@ -219,12 +219,12 @@ public class QSuitsEntry {
         }
     }
 
-    public ScannerSource getScannerSource() {
+    public InputSource getScannerSource() {
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getRmKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        return new ScannerSource(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+        return new InputSource(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
     public LocalFileContainer getLocalFileContainer() {
