@@ -62,6 +62,7 @@ public class InputSource {
                 if (processor != null) {
                     converted = converter.convertToV(line);
                     try {
+                        processor.validCheck(converted);
                         System.out.println(processor.processLine(converted));
                     } catch (QiniuException e) {
                         retry = HttpRespUtils.checkException(e, 1);
