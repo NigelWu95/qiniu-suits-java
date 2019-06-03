@@ -1,5 +1,7 @@
 package com.qiniu.process.qdora;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.qiniu.common.QiniuException;
@@ -51,9 +53,9 @@ public class PfopCommand extends Base<Map<String, String>> {
         if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
             this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
-            for (String key : jsonFile.getKeys()) {
-                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), true);
-                jsonObject.addProperty("name", key);
+            JsonArray array = jsonFile.getElement("pfopcmd").getAsJsonArray();
+            for (JsonElement jsonElement : array) {
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), true);
                 this.pfopConfigs.add(jsonObject);
             }
         } else if (pfopConfigs != null && pfopConfigs.size() > 0) {
@@ -109,7 +111,7 @@ public class PfopCommand extends Base<Map<String, String>> {
                 if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
                 if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
                 videoStream = avinfo.getVideoStream();
-                if (videoStream == null) throw new Exception("videoStream is null");
+                if (videoStream == null) throw new Exception("videoStream is null.");
                 if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
                     resultList.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
                 }

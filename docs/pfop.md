@@ -25,7 +25,7 @@ force-public=
 |pipeline| 字符串| 进行持久化数据处理的队列名称|  
 |force-public| true/false| 是否强制使用共有队列（会有性能影响）|  
 |fops-index| 字符串| 转码命令索引（下标），pfop 操作时指定，明确指定文件名对应的转码命令，建议命令中携带 saveas 重命名指令否则使用默认名|  
-|pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径，该配置会覆盖 fops-index 设置的转码命令，配置文件格式为 json，用于设置多个转码条件和指令，配置举例：[pfop-config 配置](../resources/pfop.json)|  
+|pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径，该配置会覆盖 fops-index 设置的转码命令，配置文件格式为 json，用于设置多个转码条件和指令，配置举例：[pfop-config 配置](../resources/process.json)|  
 
 #### 关于 fops-index
 指定输入行中对应转码的命令字段下标，不设置为则无法进行解析。由于转码必须参数包含 key 和 fops，因此输入行中也必须包含 key 字段的值，使用 indexes 
