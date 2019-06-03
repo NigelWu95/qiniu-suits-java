@@ -37,6 +37,10 @@ public final class PfopUtils {
     }
 
     public static String generateFopCmd(String srcKey, JsonObject pfopJson) {
+        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(generateFopSaveAs(srcKey, pfopJson));
+    }
+
+    public static String generateFopSaveAs(String srcKey, JsonObject pfopJson) {
         String saveAs = pfopJson.get("saveas").getAsString();
         if (saveAs.contains(":")) {
             String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
@@ -49,6 +53,6 @@ public final class PfopUtils {
             }
             saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
         }
-        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(saveAs);
+        return saveAs;
     }
 }
