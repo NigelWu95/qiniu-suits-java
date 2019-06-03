@@ -1,7 +1,7 @@
 package com.qiniu.entry;
 
 import com.qiniu.datasource.IDataSource;
-import com.qiniu.datasource.ScannerSource;
+import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.util.ParamsUtils;
 
@@ -14,6 +14,19 @@ public class EntryMain {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
+//        args = new String[]{
+//                "-interactive=true",
+//                "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg",
+//                "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"
+////                , "-process=private"
+//                , "-process=pfopcmd"
+//                , "-avinfo-index=1"
+//                , "-pfop-config=resources/pfopcmd.json"
+//        };
+//        QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
+//        ILineProcess<Map<String, String>> processor = qSuitsEntry.whichNextProcessor(true);
+//        InputSource inputSource = qSuitsEntry.getScannerSource();
+//        inputSource.export(System.in, processor);
         boolean single = false;
         boolean interactive = false;
         for (int i = 0; i < args.length; i++) {
@@ -35,9 +48,8 @@ public class EntryMain {
         } else if (interactive) {
             qSuitsEntry = new QSuitsEntry(args);
             processor = qSuitsEntry.whichNextProcessor(true);
-            ScannerSource scannerSource = qSuitsEntry.getScannerSource();
-            Scanner scanner = new Scanner(System.in);
-            scannerSource.export(scanner, processor);
+            InputSource inputSource = qSuitsEntry.getScannerSource();
+            inputSource.export(System.in, processor);
         } else {
             qSuitsEntry = new QSuitsEntry(args);
             processor = qSuitsEntry.getProcessor();

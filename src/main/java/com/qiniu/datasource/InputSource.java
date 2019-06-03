@@ -9,10 +9,11 @@ import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
-import java.util.Scanner;
 
-public class ScannerSource {
+public class InputSource {
 
     protected String parse;
     protected String separator;
@@ -20,8 +21,8 @@ public class ScannerSource {
     protected String rmKeyPrefix;
     protected Map<String, String> indexMap;
 
-    public ScannerSource(String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
-                          Map<String, String> indexMap) {
+    public InputSource(String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
+                       Map<String, String> indexMap) {
         this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
@@ -38,17 +39,25 @@ public class ScannerSource {
         this.indexMap = commonParams.getIndexMap();
     }
 
-    public void export(Scanner scanner, ILineProcess<Map<String, String >> processor) throws IOException {
+    public void export(InputStream inputStream, ILineProcess<Map<String, String >> processor) throws IOException {
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap);
+        InputStreamReader reader = new InputStreamReader(inputStream);
+        StringBuilder stringBuilder = new StringBuilder();
+        int t;
         String line;
         Map<String, String> converted;
         boolean quit = false;
         int retry;
-        while (!quit) { // scanner.hasNext() 不能读取空行，不能用于判断
+        while (!quit) {
             System.out.println("please input line data to process: ");
-            line = scanner.nextLine();
-            quit = line == null || line.isEmpty();
+            while ((t = reader.read()) != -1) {
+                if(t == '\n') break;
+                stringBuilder.append((char)t);
+            }
+            line = stringBuilder.toString();
+            stringBuilder.delete(0, stringBuilder.length());
+            quit = line.isEmpty();
             if (!quit) {
                 if (processor != null) {
                     converted = converter.convertToV(line);
