@@ -1,17 +1,22 @@
-# 交互式命令行
+# 单行命令模式
 
 ## 简介
-针对 process 功能提供的交互式命令行运行方式，输入初始条件参数后进行交互模式，每输入一行数据则根据初始参数来执行一次 process 并输出结果，然后可进行
-下一次的数据输入，直到无数据输入按下【回车】键时则退出。【此功能不需要数据源配置】
+针对 process 功能提供的单行命令模式，为需要对单个资源执行一次操作提供方便，程序生命周期只有一次，从输入行指定 process 及 data 参数，直接执行并输
+出结果。【此功能不需要数据源配置】
 
 ## 使用方式
-#### 交互式命令行指令 -i/--interactive
-在指定 process 和对应所需参数的情况下加上 `-i` 或者 `--interactive` 则进入交互模式，后续输入的每一行数据将根据初始参数来执行 process 操作，
-输入的参数与各 process 提供的参数用法一致，具体可参见 process 的文档。如：
-`java -jar qsuits.jar -i -process=privateurl -ak=ajkhsfgd -sk=akjdhsdfg -url-index=0`
+#### 单行模式指令 -s/--single/-line=\<data-line\>
+在指定 process 的情况下加上 `-s` 或者 `--single` 则表示使用单行模式，会直接执行 process 操作，因此必须包含该 process 所需的最少参数（兼容各 
+process 提供的参数用法，具体可参见 process 的文档）包括要处理的 data 参数，如 key 或 url 等。
 
-## process 举例
-###### 1 由于命令行作为输入读取时字符串长度存在限制，不支持很长的数据信息输入，如 avinfo 信息可能超过限制的长度，因此不建议在交互模式下进行 pfopcmd 的操作
+### process 用法
+###### 1 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](pfopcmd.md)  
+```
+➜ ~ java -jar qsuits-6.20.jar \
+> -process=pfopcmd \
+> -scale=[999] \
+> -avinfo={\"streams\":[{\"index\":0,\"codec_name\":\"h264\",\"codec_long_name\":\"H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10\",\"profile\":\"Main\",\"codec_type\":\"video\",\"codec_time_base\":\"1/50\",\"codec_tag_string\":\"avc1\",\"codec_tag\":\"0x31637661\",\"width\":1920,\"height\":1080,\"coded_width\":1920,\"coded_height\":1088,\"has_b_frames\":2,\"pix_fmt\":\"yuv420p\",\"level\":40,\"chroma_location\":\"left\",\"refs\":1,\"is_avc\":\"true\",\"nal_length_size\":\"4\",\"r_frame_rate\":\"25/1\",\"avg_frame_rate\":\"25/1\",\"time_base\":\"1/12800\",\"start_pts\":0,\"start_time\":\"0.000000\",\"duration_ts\":2506240,\"duration\":\"195.800000\",\"bit_rate\":\"4829438\",\"bits_per_raw_sample\":\"8\",\"nb_frames\":\"4895\",\"disposition\":{\"default\":1,\"dub\":0,\"original\":0,\"comment\":0,\"lyrics\":0,\"karaoke\":0,\"forced\":0,\"hearing_impaired\":0,\"visual_impaired\":0,\"clean_effects\":0,\"attached_pic\":0,\"timed_thumbnails\":0},\"tags\":{\"language\":\"und\",\"handler_name\":\"VideoHandler\"}},{\"index\":1,\"codec_name\":\"aac\",\"codec_long_name\":\"AAC (Advanced Audio Coding)\",\"profile\":\"LC\",\"codec_type\":\"audio\",\"codec_time_base\":\"1/48000\",\"codec_tag_string\":\"mp4a\",\"codec_tag\":\"0x6134706d\",\"sample_fmt\":\"s16p\",\"sample_rate\":\"48000\",\"channels\":2,\"channel_layout\":\"stereo\",\"bits_per_sample\":0,\"r_frame_rate\":\"0/0\",\"avg_frame_rate\":\"0/0\",\"time_base\":\"1/48000\",\"start_pts\":0,\"start_time\":\"0.000000\",\"duration_ts\":9399264,\"duration\":\"195.818000\",\"bit_rate\":\"128006\",\"max_bit_rate\":\"128006\",\"nb_frames\":\"9181\",\"disposition\":{\"default\":1,\"dub\":0,\"original\":0,\"comment\":0,\"lyrics\":0,\"karaoke\":0,\"forced\":0,\"hearing_impaired\":0,\"visual_impaired\":0,\"clean_effects\":0,\"attached_pic\":0,\"timed_thumbnails\":0},\"tags\":{\"language\":\"und\",\"handler_name\":\"SoundHandler\"}}],\"format\":{\"nb_streams\":2,\"nb_programs\":0,\"format_name\":\"mov,mp4,m4a,3gp,3g2,mj2\",\"format_long_name\":\"QuickTime / MOV\",\"start_time\":\"0.000000\",\"duration\":\"195.852000\",\"size\":\"121481511\",\"bit_rate\":\"4962175\",\"probe_score\":100,\"tags\":{\"major_brand\":\"isom\",\"minor_version\":\"512\",\"compatible_brands\":\"isomiso2avc1mp41\",\"encoder\":\"Lavf56.18.101\"}}}        
+```
 ###### 2 对空间资源执行 pfop 请求 [pfop 配置](pfop.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -i -process=pfop -ak=ajkhsfgd -sk=akjdhsdfg -bucket=temp -force-public=true -fops-index=1

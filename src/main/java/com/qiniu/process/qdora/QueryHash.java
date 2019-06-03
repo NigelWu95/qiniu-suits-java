@@ -42,7 +42,7 @@ public class QueryHash extends Base<Map<String, String>> {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
-                throw new IOException("please set one of domain and urlIndex.");
+                throw new IOException("please set one of domain and url-index.");
             } else {
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;

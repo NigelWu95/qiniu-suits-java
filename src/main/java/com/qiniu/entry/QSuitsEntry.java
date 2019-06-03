@@ -359,26 +359,26 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getCopyFile(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket");
-        String newKeyIndex = indexMap.containsValue("newKey") ? "newKey" : null;
+        String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return single ? new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+        return single ? new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, toKeyIndex, addPrefix,
                 rmPrefix)
-                : new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+                : new CopyFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, toKeyIndex, addPrefix,
                 rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket", null);
         if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
-        String newKeyIndex = indexMap.containsValue("newKey") ? "newKey" : null;
+        String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String force = entryParam.getValue("prefix-force", "false");
         force = ParamsUtils.checked(force, "prefix-force", "(true|false)");
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+        return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, toKeyIndex, addPrefix,
                 Boolean.valueOf(force), rmPrefix)
-                : new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, newKeyIndex, addPrefix,
+                : new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, toKeyIndex, addPrefix,
                 Boolean.valueOf(force), rmPrefix, savePath);
     }
 

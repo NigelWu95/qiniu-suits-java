@@ -57,7 +57,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         } else if (fopsIndex != null && !"".equals(fopsIndex)) {
             this.fopsIndex = fopsIndex;
         } else {
-            throw new IOException("please set the pfop-config or fopsIndex.");
+            throw new IOException("please set the pfop-config or fops-index.");
         }
     }
 
