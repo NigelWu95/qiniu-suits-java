@@ -70,6 +70,6 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpRespUtils.getResult(bucketManager.changeStatus(bucket, line.get("key"), status));
+        return HttpRespUtils.getResultWithCode(bucketManager.changeStatus(bucket, line.get("key"), status));
     }
 }
