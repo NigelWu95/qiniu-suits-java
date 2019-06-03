@@ -2,18 +2,13 @@ package com.qiniu.entry;
 
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.datasource.IDataSource;
-import com.qiniu.datasource.ScannerSource;
+import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.process.qoss.CopyFile;
 import com.qiniu.util.ParamsUtils;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 public class QSuitsEntryTest {
 
@@ -90,15 +85,13 @@ public class QSuitsEntryTest {
                 "-ak=ksjadasfdljdhsjaksdfdjfgksjdsasdfsghfhfg",
                 "-sk=adsjkfadsfdgfhgjjhfgdfdfsdgfhgfdsrtyhvgh"
 //                , "-process=private"
-                , "-process=pfop"
-                , "-bucket=temp"
-                , "-force-public=true"
-                , "-pfop-config=resources/pfop.json"
+                , "-process=pfopcmd"
+                , "-avinfo-index=1"
+                , "-pfop-config=resources/pfopcmd.json"
         };
         QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.whichNextProcessor(true);
-        ScannerSource scannerSource = qSuitsEntry.getScannerSource();
-        Scanner scanner = new Scanner(System.in);
-        scannerSource.export(scanner, processor);
+        InputSource inputSource = qSuitsEntry.getScannerSource();
+        inputSource.export(System.in, processor);
     }
 }
