@@ -31,6 +31,7 @@ public class EntryMain {
             qSuitsEntry = new QSuitsEntry(ParamsUtils.toParamsMap(args));
             processor = qSuitsEntry.whichNextProcessor(true);
             CommonParams commonParams = qSuitsEntry.getCommonParams();
+            processor.validCheck(commonParams.getMapLine());
             System.out.println(processor.processLine(commonParams.getMapLine()));
         } else if (interactive) {
             qSuitsEntry = new QSuitsEntry(args);

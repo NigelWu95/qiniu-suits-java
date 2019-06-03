@@ -106,7 +106,7 @@ public class ParamsUtils {
             String[] strings;
             for (String arg : args) {
                 // 参数命令格式：-<key>=<value>
-                cmdGoon = arg.matches("-.+=.+") || cmdGoon;
+                cmdGoon = arg.matches("^-.+=.+$") || cmdGoon;
                 if (cmdGoon) {
                     if (!arg.startsWith("-"))
                         throw new IOException("invalid command param: \"" + arg + "\", not start with \"-\".");
@@ -127,7 +127,7 @@ public class ParamsUtils {
             throw new IOException("the \"" + paramCommand + "\" param has no value."); // 不允许空值的出现
         strings[0] = paramCommand.substring(0, position);
         strings[1] = paramCommand.substring(position + 1);
-        if (strings[1].matches("(\".*\"|\'.*\')"))
+        if (strings[1].matches("(^\".*\"$|^\'.*\'$)"))
             return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
         return strings;
     }

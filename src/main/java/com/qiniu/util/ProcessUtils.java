@@ -12,8 +12,9 @@ public final class ProcessUtils {
         add("avinfo");
         add("exportts");
     }};
-    private static Set<String> needNewKeyProcesses = new HashSet<String>(){{
+    private static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
+        add("move");
         add("rename");
     }};
     private static Set<String> needFopsProcesses = new HashSet<String>(){{
@@ -70,7 +71,7 @@ public final class ProcessUtils {
 
     private static Set<String> processes = new HashSet<String>(){{
         addAll(needUrlProcesses);
-        addAll(needNewKeyProcesses);
+        addAll(needToKeyProcesses);
         addAll(needFopsProcesses);
         addAll(needPidProcesses);
         addAll(needAvinfoProcesses);
@@ -82,8 +83,8 @@ public final class ProcessUtils {
         return needUrlProcesses.contains(process);
     }
 
-    public static boolean needNewKey(String process) {
-        return needNewKeyProcesses.contains(process);
+    public static boolean needToKey(String process) {
+        return needToKeyProcesses.contains(process);
     }
 
     public static boolean needFops(String process) {
