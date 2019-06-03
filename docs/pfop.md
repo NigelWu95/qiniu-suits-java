@@ -25,25 +25,28 @@ force-public=
 |pipeline| 字符串| 进行持久化数据处理的队列名称|  
 |force-public| true/false| 是否强制使用共有队列（会有性能影响）|  
 |fops-index| 字符串| 转码命令索引（下标），pfop 操作时指定，明确指定文件名对应的转码命令，建议命令中携带 saveas 重命名指令否则使用默认名|  
-|pfop-config| 文件路径字符串| 进行转码和另存规则设置的配置文件路径，该配置会覆盖 fops-index 设置的转码命令，配置文件格式为 json，用于设置多个转码条件和指令，配置举例：[pfop-config 配置](../resources/process.json)|  
+|pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，该配置会覆盖 fops-index 设置的转码命令，[配置写法](##-pfop-config-配置文件内容写法如下：)|  
 
 #### 关于 fops-index
 指定输入行中对应转码的命令字段下标，不设置为则无法进行解析。由于转码必须参数包含 key 和 fops，因此输入行中也必须包含 key 字段的值，使用 indexes 
 参数设置 key 下标，同时 key 下标不能与 fops 下标相同。  
 
-#### # pfop-config 配置文件写法如下：
+#### # pfop-config 配置文件内容写法如下：
 ```
 {
-  "F720":{
-    "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-    "saveas":"bucket:$(key)F720.mp4"
-  },
-  "avsmart":{
-    "cmd":"avsmart/mp4",
-    "saveas":"bucket:$(key)-avsmart.mp4"
-  }
+  "pfop":[
+    {
+      "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
+      "saveas":"bucket:$(key)F720.mp4"
+    },
+    {
+      "cmd":"avsmart/mp4",
+      "saveas":"bucket:$(key)-avsmart.mp4"
+    }
+  ]
 }
-```
+```  
+如上所示，pfop 操作的配置名称为 "pfop"，配置项为 json array，可参见 [pfop-config 配置](../resources/process.json)  
 |必须选项|含义|  
 |-----|-----|  
 |key|上述配置文件中的 "F720" 为转码项名称，设置为 json key，key 不可重复，重复情况下后者会覆盖前者|  
