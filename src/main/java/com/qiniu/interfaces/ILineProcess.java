@@ -2,6 +2,7 @@ package com.qiniu.interfaces;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface ILineProcess<T> {
 
@@ -14,6 +15,8 @@ public interface ILineProcess<T> {
     default void setRetryTimes(int retryTimes) {}
 
     default void updateSavePath(String savePath) throws IOException {}
+
+    boolean validCheck(Map<String, String> line);
 
     String processLine(T line) throws IOException;
 
