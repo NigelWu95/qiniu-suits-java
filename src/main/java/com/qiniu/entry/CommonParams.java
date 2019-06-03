@@ -179,16 +179,10 @@ public class CommonParams {
                 break;
             case "pfop":
             case "pfopcmd":
-                if ("pfopcmd".equals(process)) {
-                    String avinfo = entryParam.getValue("avinfo", null);
-                    if (avinfo != null) {
-                        indexMap.put("avinfo", "avinfo");
-                        mapLine.put("avinfo", avinfo);
-                    }
-                }
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", null);
-                String cmd = entryParam.getValue("cmd", null);
+                String cmd = indexMap.containsValue("avinfo") ? entryParam.getValue("cmd", null)
+                        : entryParam.getValue("cmd");
                 if (fops != null && !"".equals(fops)) {
                     indexMap.put("fops", "fops");
                     mapLine.put("fops", fops);
@@ -215,6 +209,13 @@ public class CommonParams {
                     pfopConfigs = new ArrayList<JsonObject>(){{
                         add(pfopJson);
                     }};
+                }
+                if ("pfopcmd".equals(process)) {
+                    String avinfo = entryParam.getValue("avinfo", null);
+                    if (avinfo != null) {
+                        indexMap.put("avinfo", "avinfo");
+                        mapLine.put("avinfo", avinfo);
+                    }
                 }
                 break;
             case "pfopresult":
