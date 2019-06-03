@@ -157,10 +157,10 @@ public class CommonParams {
             case "move":
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                String newKey = entryParam.getValue("to-key", null);
-                if (newKey != null) {
-                    indexMap.put("newKey", "newKey");
-                    mapLine.put("newKey", newKey);
+                String toKey = entryParam.getValue("to-key", null);
+                if (toKey != null) {
+                    indexMap.put("toKey", "toKey");
+                    mapLine.put("toKey", toKey);
                 }
                 break;
             case "asyncfetch":
@@ -207,12 +207,11 @@ public class CommonParams {
                             jsonArray.add(scales[0]);
                             jsonArray.add(scales[1]);
                         } else {
-                            jsonArray.add(scales[0]);
+                            jsonArray.add(Integer.valueOf(scales[0]));
                             jsonArray.add(Integer.MAX_VALUE);
                         }
                         pfopJson.add("scale", jsonArray);
                     }
-                    pfopJson.addProperty("name", cmd.split("/")[0]);
                     pfopConfigs = new ArrayList<JsonObject>(){{
                         add(pfopJson);
                     }};
@@ -504,12 +503,12 @@ public class CommonParams {
         }
         if (ProcessUtils.needUrl(process))
             setIndex(entryParam.getValue("url-index", "").trim(), "url");
-        if (ProcessUtils.needNewKey(process))
-            setIndex(entryParam.getValue("newKey-index", "").trim(), "newKey");
+        if (ProcessUtils.needToKey(process))
+            setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
         if (ProcessUtils.needFops(process))
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
         if (ProcessUtils.needPid(process))
-            setIndex(entryParam.getValue("persistentId-index", "").trim(), "pid");
+            setIndex(entryParam.getValue("pid-index", "").trim(), "pid");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 

@@ -46,7 +46,7 @@ public class PfopCommand extends Base<Map<String, String>> {
 
     private void set(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
                      List<JsonObject> pfopConfigs) throws IOException {
-        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
+        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfo-index.");
         else this.avinfoIndex = avinfoIndex;
         this.hasDuration = hasDuration;
         this.hasSize = hasSize;

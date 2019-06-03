@@ -59,7 +59,7 @@ public class MoveFile extends Base<Map<String, String>> {
                     if (addPrefix == null || "".equals(addPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
                 } else {
-                    throw new IOException("there is no newKey index, if you only want to add prefix for renaming, " +
+                    throw new IOException("there is no to-key index, if you only want to add prefix for renaming, " +
                             "please set the \"prefix-force\" as true.");
                 }
             }
