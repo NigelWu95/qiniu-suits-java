@@ -168,8 +168,8 @@ public class CommonParams {
             case "qhash":
             case "privateurl":
             case "exportts":
-                String url = entryParam.getValue("url", null);
-                if (url != null) {
+                String url = entryParam.getValue("url", "").trim();
+                if (!"".equals(url)) {
                     indexMap.put("url", "url");
                     mapLine.put("url", url);
                 } else {
@@ -178,21 +178,26 @@ public class CommonParams {
                 }
                 break;
             case "pfop":
-            case "pfopcmd":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                String fops = entryParam.getValue("fops", null);
-                String cmd = indexMap.containsValue("avinfo") ? entryParam.getValue("cmd", null)
-                        : entryParam.getValue("cmd");
-                if (fops != null && !"".equals(fops)) {
+                String fops = entryParam.getValue("fops", "").trim();
+                if (!"".equals(fops)) {
                     indexMap.put("fops", "fops");
                     mapLine.put("fops", fops);
-                } else if (cmd != null && !"".equals(cmd)) {
+                }
+            case "pfopcmd":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                String avinfo = entryParam.getValue("avinfo", "").trim();
+                if (!"".equals(avinfo)) {
+                    indexMap.put("avinfo", "avinfo");
+                    mapLine.put("avinfo", avinfo);
+                }
+                String cmd = entryParam.getValue("cmd", "").trim();
+                if (!"".equals(cmd)) {
                     JsonObject pfopJson = new JsonObject();
                     pfopJson.addProperty("cmd", cmd);
                     String saveas = entryParam.getValue("saveas");
                     pfopJson.addProperty("saveas", saveas);
                     if ("pfopcmd".equals(process)) {
-                        String scale = entryParam.getValue("scale");
+                        String scale = entryParam.getValue("scale").trim();
                         if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
                                 "like \"[num1,num2]\"");
                         String[] scales = scale.substring(1, scale.length() - 1).split(",");
@@ -210,17 +215,10 @@ public class CommonParams {
                         add(pfopJson);
                     }};
                 }
-                if ("pfopcmd".equals(process)) {
-                    String avinfo = entryParam.getValue("avinfo", null);
-                    if (avinfo != null) {
-                        indexMap.put("avinfo", "avinfo");
-                        mapLine.put("avinfo", avinfo);
-                    }
-                }
                 break;
             case "pfopresult":
-                String pid = entryParam.getValue("persistentId", null);
-                if (pid != null) {
+                String pid = entryParam.getValue("pid", entryParam.getValue("persistentId", "")).trim();
+                if (!"".equals(pid)) {
                     indexMap.put("pid", "pid");
                     mapLine.put("pid", pid);
                 }
@@ -509,7 +507,8 @@ public class CommonParams {
         if (ProcessUtils.needFops(process))
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
         if (ProcessUtils.needPid(process))
-            setIndex(entryParam.getValue("pid-index", "").trim(), "pid");
+            setIndex(entryParam.getValue("pid-index", entryParam.getValue("persistentId-index",
+                    "")).trim(), "pid");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
