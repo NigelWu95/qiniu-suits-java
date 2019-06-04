@@ -18,15 +18,15 @@ public class EntryMain {
         boolean single = false;
         boolean interactive = false;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].matches("-(s|-single|line=.?)")) {
+            if (args[i].matches("-f")) {
+                args[i] = "-verify=false";
+                process_verify = false;
+            } else if (args[i].matches("-(s|-single|-single=true|line=.?)")) {
                 args[i] = "-single=true";
                 single = true;
-            } else if (args[i].matches("-(i|-interactive)")) {
+            } else if (args[i].matches("-(i|-interactive|-interactive=true)")) {
                 args[i] = "-interactive=true";
                 interactive = true;
-            } else if (args[i].matches("-f")) {
-                args[i] = "-f=false";
-                process_verify = false;
             }
         }
         QSuitsEntry qSuitsEntry = single ? new QSuitsEntry(ParamsUtils.toParamsMap(args)) : new QSuitsEntry(args);
