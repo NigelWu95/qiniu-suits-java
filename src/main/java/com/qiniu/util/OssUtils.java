@@ -108,6 +108,7 @@ public class OssUtils {
     }
 
     public static Zone getQiniuRegion(String regionName) {
+        if (regionName == null) return Zone.autoZone();
         switch (regionName) {
             case "z0":
             case "huadong": return Zone.huadong();

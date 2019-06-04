@@ -37,7 +37,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     private void set(String protocol, String pidIndex) throws IOException {
         this.protocol = protocol;
-        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentIdIndex.");
+        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentId-index.");
         else this.pidIndex = pidIndex;
     }
 
@@ -64,11 +64,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {}
-
-    @Override
-    public String singleResult(Map<String, String> line) throws IOException {
-        String result = mediaManager.getPfopResultBodyById(line.get(pidIndex));
+    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
             try {
@@ -89,11 +85,15 @@ public class QueryPfopResult extends Base<Map<String, String>> {
                             JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else
                     fileSaveMapper.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
+                        JsonUtils.toJsonWithoutUrlEscape(item), false);
             }
-            return null;
         } else {
             throw new QiniuException(null, "empty_result");
         }
+    }
+
+    @Override
+    public String singleResult(Map<String, String> line) throws IOException {
+        return mediaManager.getPfopResultBodyById(line.get(pidIndex));
     }
 }

@@ -52,7 +52,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
-                throw new IOException("please set one of domain and urlIndex.");
+                throw new IOException("please set one of domain and url-index.");
             } else {
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
@@ -124,6 +124,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
             throw new QiniuException(e, e.getMessage());
         }
         Response response = fetch(url, line.get("key"), line.get(md5Index), line.get("hash"));
-        return HttpRespUtils.responseJson(response);
+        return response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }
 }

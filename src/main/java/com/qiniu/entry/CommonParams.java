@@ -1,10 +1,14 @@
 package com.qiniu.entry;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.config.JsonFile;
+import com.qiniu.config.ParamsConfig;
 import com.qiniu.constants.DataSourceDef;
+import com.qiniu.convert.LineToMap;
 import com.qiniu.interfaces.IEntryParam;
+import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
@@ -51,6 +55,8 @@ public class CommonParams {
     private String saveFormat;
     private String saveSeparator;
     private Set<String> rmFields;
+    private Map<String, String> mapLine;
+    private List<JsonObject> pfopConfigs;
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -64,15 +70,12 @@ public class CommonParams {
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         path = entryParam.getValue("path", "");
         process = entryParam.getValue("process", "").trim();
+        if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
         setSource();
+        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         if (source.matches("(local|terminal)")) {
-            parse = checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
+            parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
-            if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
-            if (ProcessUtils.needAuth(process)) {
-                qiniuAccessKey = entryParam.getValue("ak").trim();
-                qiniuSecretKey = entryParam.getValue("sk").trim();
-            }
         } else {
             if ("tencent".equals(source)) {
                 tencentSecretId = entryParam.getValue("ten-id").trim();
@@ -94,6 +97,11 @@ public class CommonParams {
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         }
 
+        if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
+        if (ProcessUtils.needAuth(process)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
+        }
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setBaseFilter();
@@ -102,28 +110,133 @@ public class CommonParams {
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
         setThreads(entryParam.getValue("threads", "30").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
-        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
         // 校验设置的 format 参数
-        saveFormat = checked(saveFormat, "save-format", "(csv|tab|json)");
+        saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
         setSaveSeparator(entryParam.getValue("save-separator", ""));
         setRmFields(entryParam.getValue("rm-fields", "").trim());
     }
 
-    public String checked(String param, String name, String conditionReg) throws IOException {
-        if (param == null || !param.matches(conditionReg))
-            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
-        else return param;
+    public CommonParams(Map<String, String> paramsMap) throws IOException {
+        this.entryParam = new ParamsConfig(paramsMap);
+        connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60").trim());
+        readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
+        requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
+        process = entryParam.getValue("process").trim();
+        if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
+        source = "terminal";
+        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
+        parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
+        setSeparator(entryParam.getValue("separator", ""));
+        addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
+        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
+        if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
+        if (ProcessUtils.needAuth(process)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
+        }
+        setIndexMap();
+        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+        String line = entryParam.getValue("line", null);
+        boolean fromLine = line != null && !"".equals(line);
+        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine) {
+            throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
+        }
+        if (fromLine) {
+            mapLine = converter.convertToV(line);
+            fromLine = mapLine.containsKey("key");
+        } else {
+            mapLine = new HashMap<>();
+        }
+        switch (process) {
+            case "copy":
+            case "move":
+            case "rename":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                String toKey = entryParam.getValue("to-key", null);
+                if (toKey != null) {
+                    indexMap.put("toKey", "toKey");
+                    mapLine.put("toKey", toKey);
+                }
+                break;
+            case "asyncfetch":
+            case "avinfo":
+            case "qhash":
+            case "privateurl":
+            case "exportts":
+                String url = entryParam.getValue("url", "").trim();
+                if (!"".equals(url)) {
+                    indexMap.put("url", "url");
+                    mapLine.put("url", url);
+                } else {
+                    entryParam.getValue("domain");
+                    if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                }
+                break;
+            case "pfop":
+                String fops = entryParam.getValue("fops", "").trim();
+                if (!"".equals(fops)) {
+                    indexMap.put("fops", "fops");
+                    mapLine.put("fops", fops);
+                }
+            case "pfopcmd":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                String avinfo = entryParam.getValue("avinfo", "").trim();
+                if (!"".equals(avinfo)) {
+                    indexMap.put("avinfo", "avinfo");
+                    mapLine.put("avinfo", avinfo);
+                }
+                String cmd = entryParam.getValue("cmd", "").trim();
+                if (!"".equals(cmd)) {
+                    JsonObject pfopJson = new JsonObject();
+                    pfopJson.addProperty("cmd", cmd);
+                    String saveas = entryParam.getValue("saveas");
+                    pfopJson.addProperty("saveas", saveas);
+                    if ("pfopcmd".equals(process)) {
+                        String scale = entryParam.getValue("scale").trim();
+                        if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
+                                "like \"[num1,num2]\"");
+                        String[] scales = scale.substring(1, scale.length() - 1).split(",");
+                        JsonArray jsonArray = new JsonArray();
+                        if (scales.length > 1) {
+                            jsonArray.add(scales[0]);
+                            jsonArray.add(scales[1]);
+                        } else {
+                            jsonArray.add(Integer.valueOf(scales[0]));
+                            jsonArray.add(Integer.MAX_VALUE);
+                        }
+                        pfopJson.add("scale", jsonArray);
+                    }
+                    pfopConfigs = new ArrayList<JsonObject>(){{
+                        add(pfopJson);
+                    }};
+                }
+                break;
+            case "pfopresult":
+                String pid = entryParam.getValue("pid", entryParam.getValue("persistentId", "")).trim();
+                if (!"".equals(pid)) {
+                    indexMap.put("pid", "pid");
+                    mapLine.put("pid", pid);
+                }
+                break;
+            case "stat":
+                saveFormat = entryParam.getValue("save-format", "tab").trim();
+                // 校验设置的 format 参数
+                saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+                setSaveSeparator(entryParam.getValue("save-separator", ""));
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                break;
+            default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                break;
+        }
     }
 
     private void setSource() throws IOException {
-        if (entryParam.getValue("S",
-                entryParam.getValue("s",
-                        entryParam.getValue("single", ""))).trim().equals("true")) {
+        if (entryParam.getValue("interactive", "").trim().equals("true")) {
             source = "terminal";
             return;
         }
@@ -220,11 +333,11 @@ public class CommonParams {
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
-        this.prefixLeft = Boolean.valueOf(checked(prefixLeft, "prefix-left", "(true|false)"));
+        this.prefixLeft = Boolean.valueOf(ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)"));
     }
 
     private void setPrefixRight(String prefixRight) throws IOException {
-        this.prefixRight = Boolean.valueOf(checked(prefixRight, "prefix-right", "(true|false)"));
+        this.prefixRight = Boolean.valueOf(ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)"));
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -288,8 +401,8 @@ public class CommonParams {
         }
         String type = entryParam.getValue("f-type", "").trim();
         String status = entryParam.getValue("f-status", "").trim();
-        if (!"".equals(type)) type = checked(type, "f-type", "[01]");
-        if (!"".equals(status)) status = checked(status, "f-status", "[01]");
+        if (!"".equals(type)) type = ParamsUtils.checked(type, "f-type", "[01]");
+        if (!"".equals(status)) status = ParamsUtils.checked(status, "f-status", "[01]");
 
         List<String> keyPrefixList = Arrays.asList(ParamsUtils.escapeSplit(keyPrefix));
         List<String> keySuffixList = Arrays.asList(ParamsUtils.escapeSplit(keySuffix));
@@ -321,10 +434,10 @@ public class CommonParams {
 
     private void setSeniorFilter() throws IOException {
         String checkType = entryParam.getValue("f-check", "").trim();
-        checkType = checked(checkType, "f-check", "(|ext-mime)").trim();
+        checkType = ParamsUtils.checked(checkType, "f-check", "(|ext-mime)").trim();
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
-        checkRewrite = checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        checkRewrite = ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
         try {
             seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
                 @Override
@@ -389,12 +502,13 @@ public class CommonParams {
         }
         if (ProcessUtils.needUrl(process))
             setIndex(entryParam.getValue("url-index", "").trim(), "url");
-        if (ProcessUtils.needNewKey(process))
-            setIndex(entryParam.getValue("newKey-index", "").trim(), "newKey");
+        if (ProcessUtils.needToKey(process))
+            setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
         if (ProcessUtils.needFops(process))
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
         if (ProcessUtils.needPid(process))
-            setIndex(entryParam.getValue("persistentId-index", "").trim(), "pid");
+            setIndex(entryParam.getValue("pid-index", entryParam.getValue("persistentId-index",
+                    "")).trim(), "pid");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
@@ -455,11 +569,11 @@ public class CommonParams {
             if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
             else unitLen = "1000";
         }
-        this.unitLen = Integer.valueOf(checked(unitLen, "unit-len", "\\d+"));
+        this.unitLen = Integer.valueOf(ParamsUtils.checked(unitLen, "unit-len", "\\d+"));
     }
 
     private void setThreads(String threads) throws IOException {
-        this.threads = Integer.valueOf(checked(threads, "threads", "[1-9]\\d*"));
+        this.threads = Integer.valueOf(ParamsUtils.checked(threads, "threads", "[1-9]\\d*"));
     }
 
     private void setBatchSize(String batchSize) throws IOException {
@@ -470,11 +584,11 @@ public class CommonParams {
                 batchSize = "0";
             }
         }
-        this.batchSize = Integer.valueOf(checked(batchSize, "batch-size", "\\d+"));
+        this.batchSize = Integer.valueOf(ParamsUtils.checked(batchSize, "batch-size", "\\d+"));
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
-        this.retryTimes = Integer.valueOf(checked(retryTimes, "retry-times", "\\d+"));
+        this.retryTimes = Integer.valueOf(ParamsUtils.checked(retryTimes, "retry-times", "\\d+"));
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
@@ -491,7 +605,7 @@ public class CommonParams {
                 else saveTotal = "true";
             }
         }
-        this.saveTotal = Boolean.valueOf(checked(saveTotal, "save-total", "(true|false)"));
+        this.saveTotal = Boolean.valueOf(ParamsUtils.checked(saveTotal, "save-total", "(true|false)"));
     }
 
     private void setSaveSeparator(String separator) {
@@ -511,10 +625,6 @@ public class CommonParams {
             rmFields = new HashSet<>();
             Collections.addAll(rmFields, fields);
         }
-    }
-
-    public boolean containIndex(String name) {
-        return indexMap.containsValue(name);
     }
 
     public void setEntryParam(IEntryParam entryParam) {
@@ -537,32 +647,20 @@ public class CommonParams {
         this.path = path;
     }
 
-    public void setBaseFilter(BaseFilter<Map<String, String>> baseFilter) {
-        this.baseFilter = baseFilter;
-    }
-
-    public void setSeniorFilter(SeniorFilter<Map<String, String>> seniorFilter) {
-        this.seniorFilter = seniorFilter;
-    }
-
     public void setProcess(String process) {
         this.process = process;
-    }
-
-    public void setAddKeyPrefix(String addKeyPrefix) {
-        this.addKeyPrefix = addKeyPrefix;
-    }
-
-    public void setRmKeyPrefix(String rmKeyPrefix) {
-        this.rmKeyPrefix = rmKeyPrefix;
     }
 
     public void setSource(String source) {
         this.source = source;
     }
 
-    public void setIndexMap(HashMap<String, String> indexMap) {
-        this.indexMap = indexMap;
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes;
+    }
+
+    public void setParse(String parse) {
+        this.parse = parse;
     }
 
     public void setQiniuAccessKey(String qiniuAccessKey) {
@@ -613,6 +711,26 @@ public class CommonParams {
         this.prefixRight = prefixRight;
     }
 
+    public void setAddKeyPrefix(String addKeyPrefix) {
+        this.addKeyPrefix = addKeyPrefix;
+    }
+
+    public void setRmKeyPrefix(String rmKeyPrefix) {
+        this.rmKeyPrefix = rmKeyPrefix;
+    }
+
+    public void setBaseFilter(BaseFilter<Map<String, String>> baseFilter) {
+        this.baseFilter = baseFilter;
+    }
+
+    public void setSeniorFilter(SeniorFilter<Map<String, String>> seniorFilter) {
+        this.seniorFilter = seniorFilter;
+    }
+
+    public void setIndexMap(HashMap<String, String> indexMap) {
+        this.indexMap = indexMap;
+    }
+
     public void setUnitLen(int unitLen) {
         this.unitLen = unitLen;
     }
@@ -623,10 +741,6 @@ public class CommonParams {
 
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes;
     }
 
     public void setSaveTotal(boolean saveTotal) {
@@ -649,6 +763,14 @@ public class CommonParams {
         this.rmFields = rmFields;
     }
 
+    public void setMapLine(Map<String, String> mapLine) {
+        this.mapLine = mapLine;
+    }
+
+    public void setPfopConfigs(List<JsonObject> pfopConfigs) {
+        this.pfopConfigs = pfopConfigs;
+    }
+
     public int getConnectTimeout() {
         return connectTimeout;
     }
@@ -669,24 +791,12 @@ public class CommonParams {
         return process;
     }
 
-    public String getAddKeyPrefix() {
-        return addKeyPrefix;
-    }
-
-    public String getRmKeyPrefix() {
-        return rmKeyPrefix;
-    }
-
     public String getSource() {
         return source;
     }
 
-    public BaseFilter<Map<String, String>> getBaseFilter() {
-        return baseFilter;
-    }
-
-    public SeniorFilter<Map<String, String>> getSeniorFilter() {
-        return seniorFilter;
+    public int getRetryTimes() {
+        return retryTimes;
     }
 
     public String getParse() {
@@ -733,6 +843,10 @@ public class CommonParams {
         return antiPrefixes;
     }
 
+    public Map<String, String[]> getPrefixesMap() {
+        return prefixesMap;
+    }
+
     public boolean getPrefixLeft() {
         return prefixLeft;
     }
@@ -741,8 +855,24 @@ public class CommonParams {
         return prefixRight;
     }
 
-    public Map<String, String[]> getPrefixesMap() {
-        return prefixesMap;
+    public String getAddKeyPrefix() {
+        return addKeyPrefix;
+    }
+
+    public String getRmKeyPrefix() {
+        return rmKeyPrefix;
+    }
+
+    public BaseFilter<Map<String, String>> getBaseFilter() {
+        return baseFilter;
+    }
+
+    public SeniorFilter<Map<String, String>> getSeniorFilter() {
+        return seniorFilter;
+    }
+
+    public HashMap<String, String> getIndexMap() {
+        return indexMap;
     }
 
     public int getUnitLen() {
@@ -755,10 +885,6 @@ public class CommonParams {
 
     public int getBatchSize() {
         return batchSize;
-    }
-
-    public int getRetryTimes() {
-        return retryTimes;
     }
 
     public Boolean getSaveTotal() {
@@ -785,7 +911,11 @@ public class CommonParams {
         return rmFields;
     }
 
-    public HashMap<String, String> getIndexMap() {
-        return indexMap;
+    public Map<String, String> getMapLine() {
+        return mapLine;
+    }
+
+    public List<JsonObject> getPfopConfigs() {
+        return pfopConfigs;
     }
 }

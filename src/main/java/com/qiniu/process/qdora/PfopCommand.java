@@ -1,5 +1,7 @@
 package com.qiniu.process.qdora;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.qiniu.common.QiniuException;
@@ -23,62 +25,49 @@ public class PfopCommand extends Base<Map<String, String>> {
     private List<JsonObject> pfopConfigs;
     private MediaManager mediaManager;
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
+    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                       List<JsonObject> pfopConfigs) throws IOException {
         super("pfopcmd", "", "", null, null);
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
         this.mediaManager = new MediaManager();
     }
 
-    public PfopCommand(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize) throws IOException {
-        super("pfopcmd", "", "", null, null);
-        set(avinfoIndex, pfopConfigs, hasDuration, hasSize);
-        this.mediaManager = new MediaManager();
-    }
-
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath,
-                       int saveIndex) throws IOException {
+    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                       List<JsonObject> pfopConfigs, String savePath, int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, null, savePath, saveIndex);
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
         this.mediaManager = new MediaManager();
     }
 
-    public PfopCommand(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize, String savePath,
-                       int saveIndex) throws IOException {
-        super("pfopcmd", "", "", null, null, savePath, saveIndex);
-        set(avinfoIndex, pfopConfigs, hasDuration, hasSize);
-        this.mediaManager = new MediaManager();
+    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                       List<JsonObject> pfopConfigs, String savePath) throws IOException {
+        this(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs, savePath, 0);
     }
 
-    public PfopCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize, String savePath)
-            throws IOException {
-        this(avinfoIndex, jsonPath, hasDuration, hasSize, savePath, 0);
-    }
-
-    private void set(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize) throws IOException {
-        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
+    private void set(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                     List<JsonObject> pfopConfigs) throws IOException {
+        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfo-index.");
         else this.avinfoIndex = avinfoIndex;
-        this.pfopConfigs = new ArrayList<>();
-        JsonFile jsonFile = new JsonFile(jsonPath);
-        for (String key : jsonFile.getKeys()) {
-            JsonObject jsonObject = PfopUtils.checkPfopJson(jsonFile.getElement(key).getAsJsonObject(), true);
-            jsonObject.addProperty("name", key);
-            this.pfopConfigs.add(jsonObject);
+        this.hasDuration = hasDuration;
+        this.hasSize = hasSize;
+        if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            this.pfopConfigs = pfopConfigs;
+        } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
+            this.pfopConfigs = new ArrayList<>();
+            JsonFile jsonFile = new JsonFile(pfopJsonPath);
+            JsonArray array = jsonFile.getElement("pfopcmd").getAsJsonArray();
+            for (JsonElement jsonElement : array) {
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), true);
+                this.pfopConfigs.add(jsonObject);
+            }
+        } else {
+            throw new IOException("please set the pfop-config.");
         }
-        this.hasDuration = hasDuration;
-        this.hasSize = hasSize;
     }
 
-    private void set(String avinfoIndex, List<JsonObject> pfopConfigs, boolean hasDuration, boolean hasSize) throws IOException {
-        if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfoIndex.");
-        else this.avinfoIndex = avinfoIndex;
-        this.pfopConfigs = pfopConfigs;
-        this.hasDuration = hasDuration;
-        this.hasSize = hasSize;
-    }
-
-    public void updateCommand(String avinfoIndex, String jsonPath, boolean hasDuration, boolean hasSize)
-            throws IOException {
-        set(avinfoIndex, jsonPath, hasDuration, hasSize);
+    public void updateCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+                              List<JsonObject> pfopConfigs) throws IOException {
+        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
     }
 
     @SuppressWarnings("unchecked")
@@ -122,7 +111,7 @@ public class PfopCommand extends Base<Map<String, String>> {
                 if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
                 if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
                 videoStream = avinfo.getVideoStream();
-                if (videoStream == null) throw new Exception("videoStream is null");
+                if (videoStream == null) throw new Exception("videoStream is null.");
                 if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
                     resultList.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
                 }

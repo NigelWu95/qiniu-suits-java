@@ -2,10 +2,9 @@ package com.qiniu.config;
 
 import com.google.gson.JsonObject;
 import com.qiniu.interfaces.IEntryParam;
-import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.ParamsUtils;
 
 import java.io.*;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -14,64 +13,19 @@ public class ParamsConfig implements IEntryParam {
     private Map<String, String> paramsMap;
 
     public ParamsConfig(Properties properties) {
-        paramsMap = new HashMap<>();
-        for (String key : properties.stringPropertyNames()) {
-            paramsMap.put(key, properties.getProperty(key));
-        }
+        paramsMap = ParamsUtils.toParamsMap(properties);
     }
 
     public ParamsConfig(String resource) throws IOException {
-        resource = FileNameUtils.realPathWithUserHome(resource);
-        FileReader fileReader = new FileReader(resource);
-        BufferedReader reader = new BufferedReader(fileReader);
-        paramsMap = new HashMap<>();
-        try {
-            String line;
-            String[] strings;
-            while ((line = reader.readLine()) != null) {
-                if (!"".equals(line) && !line.startsWith("#") && !line.startsWith("//")) {
-                    strings = splitParam(line);
-                    paramsMap.put(strings[0], strings[1]);
-                }
-            }
-        } finally {
-            try {
-                fileReader.close();
-                reader.close();
-            } catch (IOException e) {
-                fileReader = null;
-                reader = null;
-            }
-        }
+        paramsMap = ParamsUtils.toParamsMap(resource);
     }
 
     public ParamsConfig(JsonObject jsonObject) throws IOException {
-        if (jsonObject == null || jsonObject.size() == 0) throw new IOException("json is empty.");
-        paramsMap = new HashMap<>();
-        for (String key : jsonObject.keySet()) {
-            if (jsonObject.get(key).isJsonNull() || jsonObject.get(key).isJsonPrimitive() ||
-                    jsonObject.get(key).isJsonObject() || jsonObject.get(key).isJsonArray()) { continue; }
-            paramsMap.put(key, jsonObject.get(key).getAsString());
-        }
+        paramsMap = ParamsUtils.toParamsMap(jsonObject);
     }
 
     public ParamsConfig(String[] args) throws IOException {
-        if (args == null || args.length == 0) throw new IOException("args is empty.");
-        else {
-            boolean cmdGoon = false;
-            paramsMap = new HashMap<>();
-            String[] strings;
-            for (String arg : args) {
-                // 参数命令格式：-<key>=<value>
-                cmdGoon = arg.matches("-.+=.+") || cmdGoon;
-                if (cmdGoon) {
-                    if (!arg.startsWith("-"))
-                        throw new IOException("invalid command param: \"" + arg + "\", not start with \"-\".");
-                    strings = splitParam(arg.substring(1));
-                    paramsMap.put(strings[0], strings[1]);
-                }
-            }
-        }
+        paramsMap = ParamsUtils.toParamsMap(args);
     }
 
     public ParamsConfig(Map<String, String> initMap) throws IOException {
@@ -79,18 +33,12 @@ public class ParamsConfig implements IEntryParam {
         this.paramsMap = initMap;
     }
 
-    private String[] splitParam(String paramCommand) throws IOException {
-        if (!paramCommand.contains("="))
-            throw new IOException("invalid command param: \"" + paramCommand + "\", no value set with \"=\".");
-        String[] strings = new String[2];
-        int position = paramCommand.indexOf("=");
-        if (position + 1 == paramCommand.length())
-            throw new IOException("the \"" + paramCommand + "\" param has no value."); // 不允许空值的出现
-        strings[0] = paramCommand.substring(0, position);
-        strings[1] = paramCommand.substring(position + 1);
-        if (strings[1].matches("(\".*\"|\'.*\')"))
-            return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
-        return strings;
+    public void addParams(Map<String, String> paramsMap) {
+        this.paramsMap.putAll(paramsMap);
+    }
+
+    public void addParam(String key, String value) {
+        this.paramsMap.put(key, value);
     }
 
     /**
@@ -101,7 +49,7 @@ public class ParamsConfig implements IEntryParam {
      */
     public String getValue(String key) throws IOException {
         if (paramsMap == null || "".equals(paramsMap.getOrDefault(key, ""))) {
-            throw new IOException("not set \"" + key + "\" parameter.");
+            throw new IOException("not set \"" + key + "\" parameter value.");
         } else {
             return paramsMap.get(key);
         }

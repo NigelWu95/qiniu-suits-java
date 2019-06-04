@@ -68,13 +68,12 @@ public final class HttpRespUtils {
     }
 
     /**
-     * 将 Response 对象转换成为 json 格式结果字符串
+     * 将 Response 对象转换成为 code 格式结果字符串
      * @param response 得到的 Response 对象
-     * @return Response body 转换的 String 对象，用 json 格式记录，包括 status code
+     * @return Response body 转换的 String 对象，包括 status code
      * @throws QiniuException Response 非正常响应的情况下抛出的异常
      */
-    public static String responseJson(Response response) throws QiniuException {
-        String result = getResult(response);
-        return "{\"code\":" + response.statusCode + ",\"message\":\"" + result + "\"}";
+    public static String getResultWithCode(Response response) throws QiniuException {
+        return response.statusCode + "\t" + getResult(response);
     }
 }

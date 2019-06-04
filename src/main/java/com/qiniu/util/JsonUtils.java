@@ -24,7 +24,7 @@ public final class JsonUtils {
     }
 
     public static String toJson(String jsonData) {
-        return jsonParser.parse(jsonData).getAsString();
+        return jsonParser.parse(jsonData).toString();
     }
 
     public static String toJson(Object srcObject) {
