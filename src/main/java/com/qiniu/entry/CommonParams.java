@@ -76,11 +76,6 @@ public class CommonParams {
         if (source.matches("(local|terminal)")) {
             parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
-            if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
-            if (ProcessUtils.needAuth(process)) {
-                qiniuAccessKey = entryParam.getValue("ak").trim();
-                qiniuSecretKey = entryParam.getValue("sk").trim();
-            }
         } else {
             if ("tencent".equals(source)) {
                 tencentSecretId = entryParam.getValue("ten-id").trim();
@@ -102,6 +97,11 @@ public class CommonParams {
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         }
 
+        if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
+        if (ProcessUtils.needAuth(process)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
+        }
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setBaseFilter();
