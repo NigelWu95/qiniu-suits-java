@@ -50,7 +50,9 @@ public class PfopCommand extends Base<Map<String, String>> {
         else this.avinfoIndex = avinfoIndex;
         this.hasDuration = hasDuration;
         this.hasSize = hasSize;
-        if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
+        if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            this.pfopConfigs = pfopConfigs;
+        } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
             this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
             JsonArray array = jsonFile.getElement("pfopcmd").getAsJsonArray();
@@ -58,8 +60,6 @@ public class PfopCommand extends Base<Map<String, String>> {
                 JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), true);
                 this.pfopConfigs.add(jsonObject);
             }
-        } else if (pfopConfigs != null && pfopConfigs.size() > 0) {
-            this.pfopConfigs = pfopConfigs;
         } else {
             throw new IOException("please set the pfop-config.");
         }
