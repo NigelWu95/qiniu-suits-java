@@ -44,7 +44,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
 
     private void set(String pipeline, String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
-        if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
+        if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            this.pfopConfigs = pfopConfigs;
+        } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
             this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
             JsonArray array = jsonFile.getElement("pfop").getAsJsonArray();
@@ -52,8 +54,6 @@ public class QiniuPfop extends Base<Map<String, String>> {
                 JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
                 this.pfopConfigs.add(jsonObject);
             }
-        } else if (pfopConfigs != null && pfopConfigs.size() > 0) {
-            this.pfopConfigs = pfopConfigs;
         } else if (fopsIndex != null && !"".equals(fopsIndex)) {
             this.fopsIndex = fopsIndex;
         } else {
