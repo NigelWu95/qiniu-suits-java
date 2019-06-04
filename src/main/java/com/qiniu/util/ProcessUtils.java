@@ -68,7 +68,12 @@ public final class ProcessUtils {
         add("avinfo");
         add("exportts");
     }};
-
+    private static Set<String> dangerousProcesses = new HashSet<String>(){{
+        add("status");
+        add("move");
+        add("rename");
+        add("delete");
+    }};
     private static Set<String> processes = new HashSet<String>(){{
         addAll(needUrlProcesses);
         addAll(needToKeyProcesses);
@@ -117,6 +122,10 @@ public final class ProcessUtils {
 
     public static boolean needConfiguration(String process) {
         return needConfigurationProcesses.contains(process);
+    }
+
+    public static boolean isDangerous(String process) {
+        return dangerousProcesses.contains(process);
     }
 
     public static boolean isSupportedProcess(String process) {
