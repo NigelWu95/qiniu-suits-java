@@ -97,4 +97,18 @@ public class QSuitsEntryTest {
         InputSource inputSource = qSuitsEntry.getScannerSource();
         inputSource.export(System.in, processor);
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testEntryAliOss() throws Exception {
+        IEntryParam entryParam = new ParamsConfig("resources/.ali.properties");
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
+        ILineProcess<Map<String, String>> processor = qSuitsEntry.getProcessor();
+        IDataSource dataSource = qSuitsEntry.getDataSource();
+        if (dataSource != null) {
+            dataSource.setProcessor(processor);
+            dataSource.export();
+        }
+        if (processor != null) processor.closeResource();
+    }
 }
