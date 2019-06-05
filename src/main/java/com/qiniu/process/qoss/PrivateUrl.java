@@ -17,14 +17,14 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
                       String savePath, int saveIndex) throws IOException {
-        super("privateurl", accessKey, secretKey, null, null, savePath, saveIndex);
+        super("privateurl", accessKey, secretKey, null, savePath, saveIndex);
         this.auth = Auth.create(accessKey, secretKey);
         set(domain, protocol, urlIndex, expires);
     }
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires)
             throws IOException {
-        super("privateurl", accessKey, secretKey, null, null);
+        super("privateurl", accessKey, secretKey, null);
         this.auth = Auth.create(accessKey, secretKey);
         set(domain, protocol, urlIndex, expires);
     }
@@ -50,14 +50,25 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expires = expires == 0L ? 3600 : expires;
     }
 
-    public void updatePrivate(String domain, String protocol, String urlIndex, long expires, String rmPrefix)
-            throws IOException {
-        set(domain, protocol, urlIndex, expires);
+    public void updateDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updateUrlIndex(String urlIndex) {
+        this.urlIndex = urlIndex;
+    }
+
+    public void updateExpires(long expires) {
+        this.expires = expires;
     }
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl privateUrl = (PrivateUrl)super.clone();
-        privateUrl.auth = Auth.create(accessKey, secretKey);
+        privateUrl.auth = Auth.create(authKey1, authKey2);
         return privateUrl;
     }
 
@@ -68,12 +79,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
-    }
-
-    @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override

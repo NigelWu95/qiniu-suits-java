@@ -24,19 +24,20 @@ public class StatFile extends Base<Map<String, String>> {
     private String separator;
     private ITypeConvert typeConverter;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String format,
                     String separator) throws IOException {
-        super("stat", accessKey, secretKey, configuration, bucket);
-        set(format, separator);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        super("stat", accessKey, secretKey, bucket);
+        set(configuration, format, separator);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
                     String format, String separator, int saveIndex) throws IOException {
-        super("stat", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
-        set(format, separator);
+        super("stat", accessKey, secretKey, bucket, savePath, saveIndex);
+        set(configuration, format, separator);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
@@ -47,7 +48,8 @@ public class StatFile extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
     }
 
-    private void set(String format, String separator) throws IOException {
+    private void set(Configuration configuration, String format, String separator) throws IOException {
+        this.configuration = configuration;
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
             this.separator = "csv".equals(format) ? "," : separator;
@@ -58,14 +60,17 @@ public class StatFile extends Base<Map<String, String>> {
         else typeConverter = new QOSObjToString(format, separator, null);
     }
 
-    public void updateStat(String bucket, String format, String separator) throws IOException {
-        this.bucket = bucket;
-        set(format, separator);
+    public void updateFormat(String format) {
+        this.format = format;
+    }
+
+    public void updateSeparator(String separator) {
+        this.separator = separator;
     }
 
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
-        statFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) {
             statFile.batchOperations = new BatchOperations();
             try {
@@ -140,11 +145,6 @@ public class StatFile extends Base<Map<String, String>> {
             }
         }
         return retryList;
-    }
-
-    @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -17,9 +16,8 @@ import java.util.stream.Collectors;
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     private String processName;
-    protected Configuration configuration;
-    protected String accessKey;
-    protected String secretKey;
+    protected String authKey1;
+    protected String authKey2;
     protected String bucket;
     protected int batchSize;
     protected int retryTimes = 5;
@@ -27,20 +25,16 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket)
-            throws IOException {
-        if (ProcessUtils.needConfiguration(processName) && configuration == null)
-            throw new IOException("please set configuration, it can not be null.");
+    public Base(String processName, String authKey1, String authKey2, String bucket) {
         this.processName = processName;
-        this.configuration = configuration;
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
+        this.authKey1 = authKey1;
+        this.authKey2 = authKey2;
         this.bucket = bucket;
     }
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
+    public Base(String processName, String accessKey, String secretKey, String bucket,
                 String savePath, int saveIndex) throws IOException {
-        this(processName, accessKey, secretKey, configuration, bucket);
+        this(processName, accessKey, secretKey, bucket);
         this.saveIndex = saveIndex;
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
@@ -48,6 +42,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public String getProcessName() {
         return this.processName;
+    }
+
+    public void updateBucket(String bucket) {
+        this.bucket = bucket;
     }
 
     public void setBatchSize(int batchSize) throws IOException {
@@ -67,7 +65,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
         this.fileSaveMapper.closeWriters();
-        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
     }
 
     @SuppressWarnings("unchecked")
@@ -88,7 +86,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     public abstract String resultInfo(T line);
 
-    public abstract boolean validCheck(T line);
+    public boolean validCheck(T line) {
+        return true;
+    }
 
     /**
      * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
@@ -97,7 +97,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws QiniuException 执行失败抛出的异常
      */
     public String batchResult(List<T> lineList) throws IOException {
-        return null;
+        throw new IOException("no default batch operation, please implements batch processing by yourself.");
     }
 
     /**
@@ -149,8 +149,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            if (!validCheck(line)) {
-                errorLineList.add(resultInfo(line) + "\tempty target key's value in line.");
+            if (line == null || !validCheck(line)) {
+                errorLineList.add(line + "\tempty target key's value in line.");
                 return false;
             } else {
                 return true;
@@ -210,7 +210,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws IOException 写入结果失败抛出异常
      */
     public void parseSingleResult(T line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(resultInfo(line) + "\t" + result, false);
+        fileSaveMapper.writeSuccess(result, false);
     }
 
     /**
@@ -225,8 +225,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         T line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            if (!validCheck(line)) {
-                fileSaveMapper.writeError(resultInfo(line) + "\tempty target key's value in line.", false);
+            if (line == null || !validCheck(line)) {
+                fileSaveMapper.writeError(line + "\tempty target key's value in line.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会

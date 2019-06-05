@@ -9,6 +9,7 @@ import com.qiniu.config.JsonFile;
 import com.qiniu.model.qdora.Avinfo;
 import com.qiniu.model.qdora.VideoStream;
 import com.qiniu.process.Base;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.JsonUtils;
 import com.qiniu.util.PfopUtils;
 
@@ -23,29 +24,31 @@ public class PfopCommand extends Base<Map<String, String>> {
     private boolean hasSize;
     private String avinfoIndex;
     private List<JsonObject> pfopConfigs;
+    private Configuration configuration;
     private MediaManager mediaManager;
 
-    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
-                       List<JsonObject> pfopConfigs) throws IOException {
-        super("pfopcmd", "", "", null, null);
-        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
-        this.mediaManager = new MediaManager();
+    public PfopCommand(Configuration configuration, String avinfoIndex, boolean hasDuration, boolean hasSize,
+                       String pfopJsonPath, List<JsonObject> pfopConfigs) throws IOException {
+        super("pfopcmd", "", "", null);
+        set(configuration, avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
+        this.mediaManager = new MediaManager(configuration.clone());
     }
 
-    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
-                       List<JsonObject> pfopConfigs, String savePath, int saveIndex) throws IOException {
-        super("pfopcmd", "", "", null, null, savePath, saveIndex);
-        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
-        this.mediaManager = new MediaManager();
+    public PfopCommand(Configuration configuration, String avinfoIndex, boolean hasDuration, boolean hasSize,
+                       String pfopJsonPath, List<JsonObject> pfopConfigs, String savePath, int saveIndex) throws IOException {
+        super("pfopcmd", "", "", null, savePath, saveIndex);
+        set(configuration, avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
+        this.mediaManager = new MediaManager(configuration.clone());
     }
 
-    public PfopCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
-                       List<JsonObject> pfopConfigs, String savePath) throws IOException {
-        this(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs, savePath, 0);
+    public PfopCommand(Configuration configuration, String avinfoIndex, boolean hasDuration, boolean hasSize,
+                       String pfopJsonPath, List<JsonObject> pfopConfigs, String savePath) throws IOException {
+        this(configuration, avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs, savePath, 0);
     }
 
-    private void set(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
+    private void set(Configuration configuration, String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
                      List<JsonObject> pfopConfigs) throws IOException {
+        this.configuration = configuration;
         if (avinfoIndex == null || "".equals(avinfoIndex)) throw new IOException("please set the avinfo-index.");
         else this.avinfoIndex = avinfoIndex;
         this.hasDuration = hasDuration;
@@ -65,15 +68,38 @@ public class PfopCommand extends Base<Map<String, String>> {
         }
     }
 
-    public void updateCommand(String avinfoIndex, boolean hasDuration, boolean hasSize, String pfopJsonPath,
-                              List<JsonObject> pfopConfigs) throws IOException {
-        set(avinfoIndex, hasDuration, hasSize, pfopJsonPath, pfopConfigs);
+    public void updateHasDuration(boolean hasDuration) {
+        this.hasDuration = hasDuration;
+    }
+
+    public void updateHasSize(boolean hasSize) {
+        this.hasSize = hasSize;
+    }
+
+    public void updateAvinfoIndex(String avinfoIndex) {
+        this.avinfoIndex = avinfoIndex;
+    }
+
+    public void updateFopsConfig(String pfopJsonPath, List<JsonObject> pfopConfigs) throws IOException {
+        if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            this.pfopConfigs = pfopConfigs;
+        } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
+            this.pfopConfigs = new ArrayList<>();
+            JsonFile jsonFile = new JsonFile(pfopJsonPath);
+            JsonArray array = jsonFile.getElement("pfop").getAsJsonArray();
+            for (JsonElement jsonElement : array) {
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
+                this.pfopConfigs.add(jsonObject);
+            }
+        } else {
+            throw new IOException("please set the pfop-config or fops-index.");
+        }
     }
 
     @SuppressWarnings("unchecked")
     public PfopCommand clone() throws CloneNotSupportedException {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
-        pfopCommand.mediaManager = new MediaManager();
+        pfopCommand.mediaManager = new MediaManager(configuration.clone());
         return pfopCommand;
     }
 
@@ -85,11 +111,6 @@ public class PfopCommand extends Base<Map<String, String>> {
     @Override
     public boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
-    }
-
-    @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override

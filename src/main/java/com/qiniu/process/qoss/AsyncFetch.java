@@ -26,29 +26,33 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private String callbackHost;
     private int fileType;
     private boolean ignoreSameKey;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix) throws IOException {
-        super("asyncfetch", accessKey, secretKey, configuration, bucket);
-        set(domain, protocol, urlIndex, addPrefix);
+                      String protocol, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
+        super("asyncfetch", accessKey, secretKey, bucket);
+        set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix, String savePath, int saveIndex) throws IOException {
-        super("asyncfetch", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
-        set(domain, protocol, urlIndex, addPrefix);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-    }
-
-    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String keyPrefix, String savePath)
+                      String protocol, String urlIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, savePath, 0);
+        super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
+        set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    private void set(String domain, String protocol, String urlIndex, String addPrefix) throws IOException {
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
+                      String protocol, String urlIndex, String addPrefix, String rmPrefix, String savePath)
+            throws IOException {
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, addPrefix, rmPrefix, savePath, 0);
+    }
+
+    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String addPrefix,
+                     String rmPrefix) throws IOException {
+        this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
@@ -62,12 +66,26 @@ public class AsyncFetch extends Base<Map<String, String>> {
             this.urlIndex = urlIndex;
         }
         this.addPrefix = addPrefix == null ? "" : addPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
-    public void updateFetch(String bucket, String domain, String protocol, String urlIndex, String keyPrefix,
-                            String rmPrefix) throws IOException {
-        this.bucket = bucket;
-        set(domain, protocol, urlIndex, keyPrefix);
+    public void updateDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updateUrlIndex(String urlIndex) {
+        this.urlIndex = urlIndex;
+    }
+
+    public void updateAddPrefix(String addPrefix) {
+        this.addPrefix = addPrefix;
+    }
+
+    public void updateRmPrefix(String rmPrefix) {
         this.rmPrefix = rmPrefix;
     }
 
@@ -86,7 +104,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        asyncFetch.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         return asyncFetch;
     }
 
@@ -104,26 +122,28 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
+        String key = line.get("key");
         try {
-            String key;
             if (url == null || "".equals(url)) {
-                key = line.get("key").replaceAll("\\?", "%3F");
-                url = protocol + "://" + domain + "/" + key;
+                key = addPrefix + key;
+                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3F");
                 line.put(urlIndex, url);
             } else {
-                key = FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+                if (key != null) key = addPrefix + key;
+                else key = addPrefix + FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
-            line.put("key", addPrefix + key);
+            line.put("key", key);
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
-        Response response = fetch(url, line.get("key"), line.get(md5Index), line.get("hash"));
-        return response.statusCode + "\t" + HttpRespUtils.getResult(response);
+        Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
+        return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }
 }

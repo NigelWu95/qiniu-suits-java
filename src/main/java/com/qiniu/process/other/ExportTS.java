@@ -16,18 +16,19 @@ public class ExportTS extends Base<Map<String, String>> {
     private String domain;
     private String protocol;
     private String urlIndex;
+    private Configuration configuration;
     private M3U8Manager m3U8Manager;
 
     public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex) throws IOException {
-        super("exportts", "", "", configuration, null);
-        set(domain, protocol, urlIndex);
+        super("exportts", "", "", null);
+        set(configuration, domain, protocol, urlIndex);
         this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
     }
 
     public ExportTS(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
                     int saveIndex) throws IOException {
-        super("exportts", "", "", configuration, null, savePath, saveIndex);
-        set(domain, protocol, urlIndex);
+        super("exportts", "", "", null, savePath, saveIndex);
+        set(configuration, domain, protocol, urlIndex);
         this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
     }
 
@@ -36,7 +37,8 @@ public class ExportTS extends Base<Map<String, String>> {
         this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
-    private void set(String domain, String protocol, String urlIndex) throws IOException {
+    private void set(Configuration configuration, String domain, String protocol, String urlIndex) throws IOException {
+        this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
@@ -51,10 +53,16 @@ public class ExportTS extends Base<Map<String, String>> {
         }
     }
 
-    public void updateExport(String domain, String protocol, String urlIndex)
-            throws IOException {
-        set(domain, protocol, urlIndex);
-        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
+    public void updateDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updateUrlIndex(String urlIndex) {
+        this.urlIndex = urlIndex;
     }
 
     public ExportTS clone() throws CloneNotSupportedException {

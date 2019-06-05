@@ -19,13 +19,14 @@ public class MoveFile extends Base<Map<String, String>> {
     private String addPrefix;
     private String rmPrefix;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket);
-        set(toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket);
+        set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -33,9 +34,9 @@ public class MoveFile extends Base<Map<String, String>> {
                     String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, configuration, bucket,
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket,
                 savePath, saveIndex);
-        set(toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+        set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
@@ -48,8 +49,9 @@ public class MoveFile extends Base<Map<String, String>> {
                 savePath, 0);
     }
 
-    private void set(String toBucket, String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix)
-            throws IOException {
+    private void set(Configuration configuration, String toBucket, String toKeyIndex, String addPrefix,
+                     boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+        this.configuration = configuration;
         this.toBucket = toBucket;
         if (toKeyIndex == null || "".equals(toKeyIndex)) {
             this.toKeyIndex = "key";
@@ -70,15 +72,25 @@ public class MoveFile extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
-    public void updateMove(String bucket, String toBucket, String toKeyIndex, String addPrefix,
-                           boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
-        this.bucket = bucket;
-        set(toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
+    public void updateToBucket(String toBucket) {
+        this.toBucket = toBucket;
+    }
+
+    public void updateToKeyIndex(String toKeyIndex) {
+        this.toKeyIndex = toKeyIndex;
+    }
+
+    public void updateAddPrefix(String addPrefix) {
+        this.addPrefix = addPrefix;
+    }
+
+    public void updateRmPrefix(String rmPrefix) {
+        this.rmPrefix = rmPrefix;
     }
 
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
-        moveFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) moveFile.batchOperations = new BatchOperations();
         return moveFile;
     }
@@ -115,10 +127,12 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
+        String key = line.get("key");
+        String toKey = line.get("to-key");
         if (toBucket == null || "".equals(toBucket)) {
-            return HttpRespUtils.getResultWithCode(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
+            return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey));
         } else {
-            return HttpRespUtils.getResultWithCode(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
+            return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));
         }
     }
 }

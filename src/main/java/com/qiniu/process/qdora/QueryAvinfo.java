@@ -14,18 +14,19 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     private String domain;
     private String protocol;
     private String urlIndex;
+    private Configuration configuration;
     private MediaManager mediaManager;
 
     public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex) throws IOException {
-        super("avinfo", "", "", configuration, null);
-        set(protocol, domain, urlIndex);
+        super("avinfo", "", "", null);
+        set(configuration, protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
                        int saveIndex) throws IOException {
-        super("avinfo", "", "", configuration, null, savePath, saveIndex);
-        set(protocol, domain, urlIndex);
+        super("avinfo", "", "", null, savePath, saveIndex);
+        set(configuration, protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
@@ -34,7 +35,8 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
-    private void set(String protocol, String domain, String urlIndex) throws IOException {
+    private void set(Configuration configuration, String protocol, String domain, String urlIndex) throws IOException {
+        this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
@@ -49,9 +51,16 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         }
     }
 
-    public void updateQuery(String protocol, String domain, String urlIndex) throws IOException {
-        set(protocol, domain, urlIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+    public void updateDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updateUrlIndex(String urlIndex) {
+        this.urlIndex = urlIndex;
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {
@@ -62,12 +71,13 @@ public class QueryAvinfo extends Base<Map<String, String>> {
 
     @Override
     public String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return line.get(urlIndex);
     }
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     public String singleResult(Map<String, String> line) throws QiniuException {
@@ -80,7 +90,7 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         if (avinfo != null && !"".equals(avinfo)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
-                return JsonUtils.toJson(avinfo);
+                return url + "\t" + JsonUtils.toJson(avinfo);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }

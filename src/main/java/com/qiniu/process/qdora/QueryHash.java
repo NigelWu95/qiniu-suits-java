@@ -16,19 +16,20 @@ public class QueryHash extends Base<Map<String, String>> {
     private String domain;
     private String protocol;
     private String urlIndex;
+    private Configuration configuration;
     private FileChecker fileChecker;
 
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex)
             throws IOException {
-        super("qhash", "", "", configuration, null);
-        set(algorithm, protocol, domain, urlIndex);
+        super("qhash", "", "", null);
+        set(configuration, algorithm, protocol, domain, urlIndex);
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
     }
 
     public QueryHash(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex,
                      String savePath, int saveIndex) throws IOException {
-        super("qhash", "", "", configuration, null, savePath, saveIndex);
-        set(algorithm, protocol, domain, urlIndex);
+        super("qhash", "", "", null, savePath, saveIndex);
+        set(configuration, algorithm, protocol, domain, urlIndex);
         this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
     }
 
@@ -37,7 +38,9 @@ public class QueryHash extends Base<Map<String, String>> {
         this(configuration, algorithm, protocol, domain, urlIndex, savePath, 0);
     }
 
-    private void set(String algorithm, String protocol, String domain, String urlIndex) throws IOException {
+    private void set(Configuration configuration, String algorithm, String protocol, String domain, String urlIndex)
+            throws IOException {
+        this.configuration = configuration;
         this.algorithm = algorithm;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
@@ -53,10 +56,20 @@ public class QueryHash extends Base<Map<String, String>> {
         }
     }
 
-    public void updateQuery(String algorithm, String protocol, String domain, String urlIndex)
-            throws IOException {
-        set(algorithm, protocol, domain, urlIndex);
-        this.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
+    public void updateAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public void updateDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updateUrlIndex(String urlIndex) {
+        this.urlIndex = urlIndex;
     }
 
     public QueryHash clone() throws CloneNotSupportedException {
@@ -67,12 +80,13 @@ public class QueryHash extends Base<Map<String, String>> {
 
     @Override
     public String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return line.get(urlIndex);
     }
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override
@@ -86,7 +100,7 @@ public class QueryHash extends Base<Map<String, String>> {
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
-                return JsonUtils.toJson(qhash);
+                return url + "\t" + JsonUtils.toJson(qhash);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }

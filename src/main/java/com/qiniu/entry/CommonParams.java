@@ -69,9 +69,8 @@ public class CommonParams {
         readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         path = entryParam.getValue("path", "");
-        process = entryParam.getValue("process", "").trim();
-        if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
         setSource();
+        setProcess();
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         if (source.matches("(local|terminal)")) {
             parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
@@ -172,9 +171,10 @@ public class CommonParams {
                 if (!"".equals(url)) {
                     indexMap.put("url", "url");
                     mapLine.put("url", url);
-                } else {
+                    mapLine.put("key", entryParam.getValue("key", null));
+                } else if (!fromLine) {
                     entryParam.getValue("domain");
-                    if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                    mapLine.put("key", entryParam.getValue("key"));
                 }
                 break;
             case "pfop":
@@ -258,8 +258,13 @@ public class CommonParams {
         if (!source.matches("(local|qiniu|tencent|aliyun)")) {
             throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
         }
-        if (process != null && !"".equals(process)) {
-            if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+    }
+
+    private void setProcess() throws IOException {
+        process = entryParam.getValue("process", "").trim();
+        if (!"".equals(process)) {
+            if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
+            else if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
                 throw new IOException("the process: " + process + " don't support getting source line from list.");
             }
         }

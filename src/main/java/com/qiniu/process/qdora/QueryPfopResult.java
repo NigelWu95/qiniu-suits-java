@@ -15,18 +15,19 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     private String protocol;
     private String pidIndex;
+    private Configuration configuration;
     private MediaManager mediaManager;
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex) throws IOException {
-        super("pfopresult", "", "", configuration, null);
-        set(protocol, persistentIdIndex);
+        super("pfopresult", "", "", null);
+        set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
                            int saveIndex) throws IOException {
-        super("pfopresult", "", "", configuration, null, savePath, saveIndex);
-        set(protocol, persistentIdIndex);
+        super("pfopresult", "", "", null, savePath, saveIndex);
+        set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
@@ -35,15 +36,19 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         this(configuration, protocol, persistentIdIndex, savePath, 0);
     }
 
-    private void set(String protocol, String pidIndex) throws IOException {
+    private void set(Configuration configuration, String protocol, String pidIndex) throws IOException {
+        this.configuration = configuration;
         this.protocol = protocol;
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentId-index.");
         else this.pidIndex = pidIndex;
     }
 
-    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
-        set(protocol, persistentIdIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updatePidIndex(String pidIndex) {
+        this.pidIndex = pidIndex;
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {
@@ -59,10 +64,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        return line.get(pidIndex) != null;
     }
 
-    // 由于 pfopResult 操作的结果记录方式不同，直接在 singleResult 方法中进行记录，将 base 类的 parseSingleResult 方法重写为空
     @Override
     public void parseSingleResult(Map<String, String> line, String result) throws IOException {
         if (result != null && !"".equals(result)) {
@@ -94,6 +98,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
-        return mediaManager.getPfopResultBodyById(line.get(pidIndex));
+        String pid = line.get(pidIndex);
+        return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }
 }
