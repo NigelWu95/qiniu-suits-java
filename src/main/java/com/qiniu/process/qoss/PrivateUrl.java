@@ -68,12 +68,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
-    }
-
-    @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override

@@ -65,6 +65,7 @@ public class DeleteFile extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpRespUtils.getResultWithCode(bucketManager.delete(bucket, line.get("key")));
+        String key = line.get("key");
+        return key + "\t" + HttpRespUtils.getResult(bucketManager.delete(bucket, key));
     }
 }

@@ -5,6 +5,7 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -51,7 +52,8 @@ public class MirrorFile extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        bucketManager.prefetch(bucket, line.get("key"));
-        return "200"; // 返回当作 200 当作成功的状态码
+        String key = line.get("key");
+        bucketManager.prefetch(bucket, key);
+        return key;
     }
 }

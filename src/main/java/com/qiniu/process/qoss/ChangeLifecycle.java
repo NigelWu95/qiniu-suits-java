@@ -70,6 +70,7 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpRespUtils.getResultWithCode(bucketManager.deleteAfterDays(bucket, line.get("key"), days));
+        String key = line.get("key");
+        return key + "\t" + HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, key, days));
     }
 }
