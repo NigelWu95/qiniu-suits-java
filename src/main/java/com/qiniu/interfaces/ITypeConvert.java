@@ -12,8 +12,8 @@ public interface ITypeConvert<E, T> {
 
     int errorSize();
 
-    // 消费者方法，调用后消费错误记录列表
-    default List<String> consumeErrors() {
-        return new ArrayList<>();
+    // 消费者方法，调用后现有的错误记录列表转换成 String 并清空列表
+    default String errorLines() {
+        return null;
     }
 }

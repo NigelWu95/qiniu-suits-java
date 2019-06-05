@@ -21,7 +21,7 @@ public abstract class Converter<E, T> implements ITypeConvert<E, T> {
                 try {
                     mapList.add(convertToV(line));
                 } catch (Exception e) {
-                    errorList.add(JsonUtils.toJson(line) + "\t" + e.getMessage());
+                    errorList.add(JsonUtils.toJson(line) + "\tcvterr " + e.getMessage());
                 }
             }
         }
@@ -34,9 +34,9 @@ public abstract class Converter<E, T> implements ITypeConvert<E, T> {
     }
 
     @Override
-    public List<String> consumeErrors() {
+    public String errorLines() {
         try {
-            return new ArrayList<>(errorList);
+            return String.join("\n", errorList);
         } finally {
             errorList.clear();
         }

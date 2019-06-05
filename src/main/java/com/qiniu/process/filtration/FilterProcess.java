@@ -133,8 +133,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         if (nextProcessor == null) {
             List<String> writeList = typeConverter.convertToVList(filterList);
             if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
-            if (typeConverter.errorSize() > 0)
-                fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrors()), false);
+            if (typeConverter.errorSize() > 0) fileSaveMapper.writeError(typeConverter.errorLines(), false);
         } else {
             nextProcessor.processLine(filterList);
         }
