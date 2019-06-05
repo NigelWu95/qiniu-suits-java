@@ -53,6 +53,18 @@ public class ExportTS extends Base<Map<String, String>> {
         }
     }
 
+    public void updateDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updateUrlIndex(String urlIndex) {
+        this.urlIndex = urlIndex;
+    }
+
     public ExportTS clone() throws CloneNotSupportedException {
         ExportTS exportTS = (ExportTS)super.clone();
         exportTS.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);

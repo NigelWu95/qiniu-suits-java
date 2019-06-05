@@ -43,6 +43,14 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         else this.pidIndex = pidIndex;
     }
 
+    public void updateProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void updatePidIndex(String pidIndex) {
+        this.pidIndex = pidIndex;
+    }
+
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
         pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);
