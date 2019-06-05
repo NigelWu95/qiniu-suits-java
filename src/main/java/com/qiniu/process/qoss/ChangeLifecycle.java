@@ -43,7 +43,7 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     public ChangeLifecycle clone() throws CloneNotSupportedException {
         ChangeLifecycle changeLifecycle = (ChangeLifecycle)super.clone();
-        changeLifecycle.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        changeLifecycle.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) changeLifecycle.batchOperations = new BatchOperations();
         return changeLifecycle;
     }

@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     private String processName;
-    protected String accessKey;
-    protected String secretKey;
+    protected String authKey1;
+    protected String authKey2;
     protected String bucket;
     protected int batchSize;
     protected int retryTimes = 5;
@@ -25,10 +25,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
 
-    public Base(String processName, String accessKey, String secretKey, String bucket) {
+    public Base(String processName, String authKey1, String authKey2, String bucket) {
         this.processName = processName;
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
+        this.authKey1 = authKey1;
+        this.authKey2 = authKey2;
         this.bucket = bucket;
     }
 

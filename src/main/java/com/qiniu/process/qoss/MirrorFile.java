@@ -35,7 +35,7 @@ public class MirrorFile extends Base<Map<String, String>> {
 
     public MirrorFile clone() throws CloneNotSupportedException {
         MirrorFile mirrorFile = (MirrorFile) super.clone();
-        mirrorFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        mirrorFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         return mirrorFile;
     }
 
