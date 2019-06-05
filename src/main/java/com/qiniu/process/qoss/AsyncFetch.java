@@ -110,20 +110,20 @@ public class AsyncFetch extends Base<Map<String, String>> {
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
+        String key;
         try {
-            String key;
             if (url == null || "".equals(url)) {
-                key = line.get("key").replaceAll("\\?", "%3F");
+                key = addPrefix + line.get("key").replaceAll("\\?", "%3F");
                 url = protocol + "://" + domain + "/" + key;
                 line.put(urlIndex, url);
             } else {
-                key = FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+                key = addPrefix + FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
-            line.put("key", addPrefix + key);
+            line.put("key", key);
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
-        Response response = fetch(url, line.get("key"), line.get(md5Index), line.get("hash"));
-        return response.statusCode + "\t" + HttpRespUtils.getResult(response);
+        Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
+        return response.statusCode + "\t" + key + "\t" + HttpRespUtils.getResult(response);
     }
 }
