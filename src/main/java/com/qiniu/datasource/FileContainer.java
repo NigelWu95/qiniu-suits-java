@@ -93,7 +93,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
-        ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
+        ITypeConvert<T, String> stringConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
         List<String> writeList;
@@ -114,13 +114,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             if (line != null && !"".equals(line)) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 convertedList = converter.convertToVList(srcList);
-                if (converter.errorSize() > 0)
-                    saver.writeError(String.join("\n", converter.consumeErrors()), false);
+                if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
                 if (saveTotal) {
-                    writeList = writeTypeConverter.convertToVList(convertedList);
+                    writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                    if (writeTypeConverter.errorSize() > 0)
-                        saver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
+                    if (stringConverter.errorSize() > 0)
+                        saver.writeKeyFile("string-error", stringConverter.errorLines(), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
