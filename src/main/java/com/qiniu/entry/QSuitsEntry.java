@@ -394,6 +394,7 @@ public class QSuitsEntry {
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
+        String rmPrefix = entryParam.getValue("rm-prefix", null);
         String host = entryParam.getValue("host", null);
         String md5Index = indexMap.containsValue("md5") ? "md5" : null;
         String callbackUrl = entryParam.getValue("callback-url", null);
@@ -404,9 +405,9 @@ public class QSuitsEntry {
         String ignore = entryParam.getValue("ignore-same-key", "false");
         ignore = ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = single ? new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
-                toBucket, domain, protocol, urlIndex, addPrefix)
+                toBucket, domain, protocol, urlIndex, addPrefix, rmPrefix)
                 : new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig, toBucket, domain, protocol, urlIndex,
-                addPrefix, savePath);
+                addPrefix, rmPrefix, savePath);
         if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
                 || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
