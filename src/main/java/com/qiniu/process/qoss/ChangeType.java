@@ -74,7 +74,7 @@ public class ChangeType extends Base<Map<String, String>> {
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
-        return key + "\t" + HttpRespUtils.getResult(bucketManager.changeType(bucket, key, type == 0 ?
+        return key + "\t" + type + "\t" + HttpRespUtils.getResult(bucketManager.changeType(bucket, key, type == 0 ?
                 StorageType.COMMON : StorageType.INFREQUENCY));
     }
 }

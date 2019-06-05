@@ -64,7 +64,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        return line.get(pidIndex) != null;
     }
 
     @Override
@@ -98,6 +98,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
-        return mediaManager.getPfopResultBodyById(line.get(pidIndex));
+        String pid = line.get(pidIndex);
+        return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }
 }
