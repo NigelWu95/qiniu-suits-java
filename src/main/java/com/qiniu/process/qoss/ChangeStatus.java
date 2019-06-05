@@ -23,7 +23,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         super("status", accessKey, secretKey, bucket);
         this.status = status;
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,

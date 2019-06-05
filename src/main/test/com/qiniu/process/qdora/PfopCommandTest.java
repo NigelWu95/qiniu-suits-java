@@ -1,5 +1,6 @@
 package com.qiniu.process.qdora;
 
+import com.qiniu.storage.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,7 +19,7 @@ public class PfopCommandTest {
     @Test
     @Before
     public void init() throws IOException {
-        pfopCommand = new PfopCommand("avinfo", true, true,
+        pfopCommand = new PfopCommand(new Configuration(), "avinfo", true, true,
                 "resources" + System.getProperty("file.separator") + "process.json", null, "../temp3");
     }
 
