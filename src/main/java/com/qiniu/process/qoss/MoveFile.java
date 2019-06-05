@@ -74,7 +74,7 @@ public class MoveFile extends Base<Map<String, String>> {
 
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
-        moveFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) moveFile.batchOperations = new BatchOperations();
         return moveFile;
     }

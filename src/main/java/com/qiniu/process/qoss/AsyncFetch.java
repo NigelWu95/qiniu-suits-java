@@ -84,7 +84,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        asyncFetch.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         return asyncFetch;
     }
 

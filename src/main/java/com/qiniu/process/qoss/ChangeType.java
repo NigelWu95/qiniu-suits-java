@@ -44,7 +44,7 @@ public class ChangeType extends Base<Map<String, String>> {
 
     public ChangeType clone() throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
-        changeType.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        changeType.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) changeType.batchOperations = new BatchOperations();
         return changeType;
     }
