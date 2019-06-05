@@ -88,7 +88,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     public abstract String resultInfo(T line);
 
-    public abstract boolean validCheck(T line);
+    public boolean validCheck(T line) {
+        return true;
+    }
 
     /**
      * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
@@ -97,7 +99,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws QiniuException 执行失败抛出的异常
      */
     public String batchResult(List<T> lineList) throws IOException {
-        return null;
+        throw new IOException("no default batch operation, please implements batch processing by yourself.");
     }
 
     /**
@@ -149,8 +151,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         // 先进行过滤修改
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
-            if (!validCheck(line)) {
-                errorLineList.add(resultInfo(line) + "\tempty target key's value in line.");
+            if (line == null || !validCheck(line)) {
+                errorLineList.add(line + "\tempty target key's value in line.");
                 return false;
             } else {
                 return true;
@@ -225,8 +227,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         T line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            if (!validCheck(line)) {
-                fileSaveMapper.writeError(resultInfo(line) + "\tempty target key's value in line.", false);
+            if (line == null || !validCheck(line)) {
+                fileSaveMapper.writeError(line + "\tempty target key's value in line.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
