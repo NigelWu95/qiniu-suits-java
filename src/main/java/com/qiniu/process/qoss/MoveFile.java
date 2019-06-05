@@ -72,6 +72,22 @@ public class MoveFile extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
+    public void updateToBucket(String toBucket) {
+        this.toBucket = toBucket;
+    }
+
+    public void updateToKeyIndex(String toKeyIndex) {
+        this.toKeyIndex = toKeyIndex;
+    }
+
+    public void updateAddPrefix(String addPrefix) {
+        this.addPrefix = addPrefix;
+    }
+
+    public void updateRmPrefix(String rmPrefix) {
+        this.rmPrefix = rmPrefix;
+    }
+
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
         moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());

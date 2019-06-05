@@ -60,6 +60,14 @@ public class StatFile extends Base<Map<String, String>> {
         else typeConverter = new QOSObjToString(format, separator, null);
     }
 
+    public void updateFormat(String format) {
+        this.format = format;
+    }
+
+    public void updateSeparator(String separator) {
+        this.separator = separator;
+    }
+
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());

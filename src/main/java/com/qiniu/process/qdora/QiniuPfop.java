@@ -64,6 +64,28 @@ public class QiniuPfop extends Base<Map<String, String>> {
         }
     }
 
+    public void updatePipeline(String pipeline) {
+        this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
+    }
+
+    public void updateFopsConfig(String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
+        if (pfopConfigs != null && pfopConfigs.size() > 0) {
+            this.pfopConfigs = pfopConfigs;
+        } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
+            this.pfopConfigs = new ArrayList<>();
+            JsonFile jsonFile = new JsonFile(pfopJsonPath);
+            JsonArray array = jsonFile.getElement("pfop").getAsJsonArray();
+            for (JsonElement jsonElement : array) {
+                JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
+                this.pfopConfigs.add(jsonObject);
+            }
+        } else if (fopsIndex != null && !"".equals(fopsIndex)) {
+            this.fopsIndex = fopsIndex;
+        } else {
+            throw new IOException("please set the pfop-config or fops-index.");
+        }
+    }
+
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
         qiniuPfop.operationManager = new OperationManager(Auth.create(authKey1, authKey2), configuration.clone());
