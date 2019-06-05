@@ -23,54 +23,54 @@ Exception in thread "main" java.io.IOException: please set pipeline, if you don'
 	at com.qiniu.entry.QSuitsEntry.whichNextProcessor(QSuitsEntry.java:326)
 	at com.qiniu.entry.EntryMain.main(EntryMain.java:32)
 ➜ ~ java -jar qsuits-6.20.jar -s -process=pfop -ak=XgP9wnGCGGX8FlS7zxfOQcPev6pFUBo0T1Os375l -sk=scDsyT37O0qg4qM88XY1Bsg0ulj6O8u56Y-bu_7a -bucket=temp -key=110.mp4 -fops="avthumb/mp4|saveas/dGVtcDprZXkubXA0" -force-public=true
-z0.5cf6460238b9f31ea6d3d29d
+10.mp4	z0.5cf4e0b138b9f31ea670c97e
 ```
 ###### 3 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](pfopresult.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=pfopresult -pid=z0.5cf6460238b9f31ea6d3d29d
-{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf6460238b9f31ea6d3d29d","inputBucket":"temp","inputKey":"110.mp4","items":[{"cmd":"avthumb/mp4|saveas/dGVtcDprZXkubXA0","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"key.mp4","returnOld":0}],"pipeline":"0.default","reqid":"uxAAACmnPRWo96QV"}
+z0.5cf6460238b9f31ea6d3d29d	{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf6460238b9f31ea6d3d29d","inputBucket":"temp","inputKey":"110.mp4","items":[{"cmd":"avthumb/mp4|saveas/dGVtcDprZXkubXA0","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"key.mp4","returnOld":0}],"pipeline":"0.default","reqid":"uxAAACmnPRWo96QV"}
 ➜ ~ java -jar qsuits-6.20.jar -s -process=pfopresult -persistentId=z0.5cf6460238b9f31ea6d3d29d
-{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf6460238b9f31ea6d3d29d","inputBucket":"temp","inputKey":"110.mp4","items":[{"cmd":"avthumb/mp4|saveas/dGVtcDprZXkubXA0","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"key.mp4","returnOld":0}],"pipeline":"0.default","reqid":"uxAAACmnPRWo96QV"}
+z0.5cf6460238b9f31ea6d3d29d	{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf6460238b9f31ea6d3d29d","inputBucket":"temp","inputKey":"110.mp4","items":[{"cmd":"avthumb/mp4|saveas/dGVtcDprZXkubXA0","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"key.mp4","returnOld":0}],"pipeline":"0.default","reqid":"uxAAACmnPRWo96QV"}
 ```
 ###### 4 查询空间资源的视频元信息 [avinfo 配置](avinfo.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=avinfo -url=http://p3l1d5mx4.bkt.clouddn.com/10.mp4
-{"streams":[{"index":0,"codec_name":"h264","codec_long_name":"H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10","profile":"High","codec_type":"video","codec_time_base":"1/60","codec_tag_string":"avc1","codec_tag":"0x31637661","width":720,"height":486,"coded_width":720,"coded_height":496,"has_b_frames":2,"sample_aspect_ratio":"1:1","display_aspect_ratio":"40:27","pix_fmt":"yuv420p","level":30,"chroma_location":"left","refs":1,"is_avc":"true","nal_length_size":"4","r_frame_rate":"30/1","avg_frame_rate":"30/1","time_base":"1/15360","start_pts":0,"start_time":"0.000000","duration_ts":92160,"duration":"6.000000","bit_rate":"695088","bits_per_raw_sample":"8","nb_frames":"180","disposition":{"default":1,"dub":0,"original":0,"comment":0,"lyrics":0,"karaoke":0,"forced":0,"hearing_impaired":0,"visual_impaired":0,"clean_effects":0,"attached_pic":0,"timed_thumbnails":0},"tags":{"creation_time":"2011-09-15T17:31:45.000000Z","language":"eng","handler_name":"VideoHandler"}}],"format":{"nb_streams":1,"nb_programs":0,"format_name":"mov,mp4,m4a,3gp,3g2,mj2","format_long_name":"QuickTime / MOV","start_time":"0.000000","duration":"6.000000","size":"524167","bit_rate":"698889","probe_score":100,"tags":{"major_brand":"isom","minor_version":"512","compatible_brands":"isomiso2avc1mp41","creation_time":"2011-09-15T17:31:45.000000Z","encoder":"Lavf57.71.100"}}}
+http://p3l1d5mx4.bkt.clouddn.com/10.mp4	{"streams":[{"index":0,"codec_name":"h264","codec_long_name":"H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10","profile":"High","codec_type":"video","codec_time_base":"1/60","codec_tag_string":"avc1","codec_tag":"0x31637661","width":720,"height":486,"coded_width":720,"coded_height":496,"has_b_frames":2,"sample_aspect_ratio":"1:1","display_aspect_ratio":"40:27","pix_fmt":"yuv420p","level":30,"chroma_location":"left","refs":1,"is_avc":"true","nal_length_size":"4","r_frame_rate":"30/1","avg_frame_rate":"30/1","time_base":"1/15360","start_pts":0,"start_time":"0.000000","duration_ts":92160,"duration":"6.000000","bit_rate":"695088","bits_per_raw_sample":"8","nb_frames":"180","disposition":{"default":1,"dub":0,"original":0,"comment":0,"lyrics":0,"karaoke":0,"forced":0,"hearing_impaired":0,"visual_impaired":0,"clean_effects":0,"attached_pic":0,"timed_thumbnails":0},"tags":{"creation_time":"2011-09-15T17:31:45.000000Z","language":"eng","handler_name":"VideoHandler"}}],"format":{"nb_streams":1,"nb_programs":0,"format_name":"mov,mp4,m4a,3gp,3g2,mj2","format_long_name":"QuickTime / MOV","start_time":"0.000000","duration":"6.000000","size":"524167","bit_rate":"698889","probe_score":100,"tags":{"major_brand":"isom","minor_version":"512","compatible_brands":"isomiso2avc1mp41","creation_time":"2011-09-15T17:31:45.000000Z","encoder":"Lavf57.71.100"}}}
 ```
 ###### 5 查询资源的 qhash [qhash 配置](qhash.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=qhash -url=http://p3l1d5mx4.bkt.clouddn.com/10.mp4
-{"hash":"dc7a26a67763b478f0b05ec38b769349","fsize":524167}
+http://p3l1d5mx4.bkt.clouddn.com/10.mp4	{"hash":"dc7a26a67763b478f0b05ec38b769349","fsize":524167}
 ```
 ###### 6 异步抓取资源到指定空间 [asyncfetch 配置](asyncfetch.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -i -process=asyncfetch -ak=------ -sk=------- -to-bucket=temp -url=http://p3l1d5mx4.bkt.clouddn.com/10.mp4
-200	{"id":"eyJ6b25lIjoiejAiLCJxdWV1ZSI6IlNJU1lQSFVTLUpPQlMtVjMiLCJwYXJ0X2lkIjoyMiwib2Zmc2V0IjoxMjM0OTk2NH0=","wait":3}
+10.mp4	http://p3l1d5mx4.bkt.clouddn.com/10.mp4	200	{"id":"eyJ6b25lIjoiejAiLCJxdWV1ZSI6IlNJU1lQSFVTLUpPQlMtVjMiLCJwYXJ0X2lkIjoyMiwib2Zmc2V0IjoxMjM0OTk2NH0=","wait":3}
 ```
 ###### 7 修改空间资源的生命周期 [lifecycle 配置](lifecycle.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=lifecycle -ak=------ -sk=------- -bucket=temp -days=1 -key=10.mp4
-200	
+10.mp4	1	
 ```
 ###### 8 修改空间资源的状态（启用/禁用）[status 配置](status.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=status -ak=-------- -sk=-------- -bucket=temp -status=1 -key=10.mp4
-200	
+10.mp4	1	
 ```
 ###### 9 修改空间资源的存储类型（低频/标准）[type 配置](type.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=type -ak=--------- -sk=-------- -bucket=temp -type=1 -key=10.mp4
-200	
+10.mp4	1	
 ```
 ###### 10 复制资源到指定空间 [copy 配置](copy.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=copy -ak=-------- -sk=-------- -bucket=temp -to-bucket=ts-work -key=10.mp4
-200	
+10.mp4	10.mp4	
 ```
 ###### 11 移动资源到指定空间 [move 配置](move.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=move -ak=------- -sk=-------- -bucket=temp -to-bucket=ts-work -key=10.mp4
-200	
+10.mp4	10.mp4	
 ```
 ###### 12 对指定空间的资源进行重命名 [rename 配置](rename.md)  
 ```
@@ -82,12 +82,12 @@ Exception in thread "main" java.io.IOException: there is no to-key index, if you
 	at com.qiniu.entry.QSuitsEntry.whichNextProcessor(QSuitsEntry.java:321)
 	at com.qiniu.entry.EntryMain.main(EntryMain.java:32)
 java -jar qsuits-6.20.jar -s -process=rename -ak=------ -sk=------- -bucket=temp -add-prefix=2 -prefix-force=true -key=10.mp4
-200	
+10.mp4	10.mp4	
 ```
 ###### 13 删除空间资源 [delete 配置](delete.md)  
 ```
 ➜ ~ java -jar qsuits-6.20.jar -s -process=delete -ak=---------- -sk=--------- -bucket=ts-work -key=10.mp4
-200	
+10.mp4	
 ```
 ###### 14 查询空间资源的元信息 [stat 配置](stat.md)  
 ```

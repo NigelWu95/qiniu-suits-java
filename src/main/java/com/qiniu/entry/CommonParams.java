@@ -172,9 +172,10 @@ public class CommonParams {
                 if (!"".equals(url)) {
                     indexMap.put("url", "url");
                     mapLine.put("url", url);
-                } else {
+                    mapLine.put("key", entryParam.getValue("key", null));
+                } else if (!fromLine) {
                     entryParam.getValue("domain");
-                    if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                    mapLine.put("key", entryParam.getValue("key"));
                 }
                 break;
             case "pfop":

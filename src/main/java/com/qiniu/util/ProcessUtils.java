@@ -5,28 +5,28 @@ import java.util.Set;
 
 public final class ProcessUtils {
 
-    private static Set<String> needUrlProcesses = new HashSet<String>(){{
+    public static Set<String> needUrlProcesses = new HashSet<String>(){{
         add("asyncfetch");
         add("privateurl");
         add("qhash");
         add("avinfo");
         add("exportts");
     }};
-    private static Set<String> needToKeyProcesses = new HashSet<String>(){{
+    public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
         add("move");
         add("rename");
     }};
-    private static Set<String> needFopsProcesses = new HashSet<String>(){{
+    public static Set<String> needFopsProcesses = new HashSet<String>(){{
         add("pfop");
     }};
-    private static Set<String> needPidProcesses = new HashSet<String>(){{
+    public static Set<String> needPidProcesses = new HashSet<String>(){{
         add("pfopresult");
     }};
-    private static Set<String> needAvinfoProcesses = new HashSet<String>(){{
+    public static Set<String> needAvinfoProcesses = new HashSet<String>(){{
         add("pfopcmd");
     }};
-    private static Set<String> needBucketAnKeyProcesses = new HashSet<String>(){{
+    public static Set<String> needBucketAnKeyProcesses = new HashSet<String>(){{
         add("status");
         add("type");
         add("lifecycle");
@@ -38,12 +38,12 @@ public final class ProcessUtils {
         add("pfop");
         add("stat");
     }};
-    private static Set<String> needAuthProcesses = new HashSet<String>(){{
+    public static Set<String> needAuthProcesses = new HashSet<String>(){{
         addAll(needBucketAnKeyProcesses);
         add("asyncfetch");
         add("privateurl");
     }};
-    private static Set<String> canBatchProcesses = new HashSet<String>(){{
+    public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
         add("type");
         add("lifecycle");
@@ -53,14 +53,14 @@ public final class ProcessUtils {
         add("delete");
         add("stat");
     }};
-    private static Set<String> supportListSourceProcesses = new HashSet<String>(){{
+    public static Set<String> supportListSourceProcesses = new HashSet<String>(){{
         addAll(needAuthProcesses);
         add("qhash");
         add("avinfo");
         add("exportts");
         add("filter");
     }};
-    private static Set<String> needConfigurationProcesses = new HashSet<String>(){{
+    public static Set<String> needConfigurationProcesses = new HashSet<String>(){{
         addAll(needBucketAnKeyProcesses);
         addAll(needPidProcesses);
         add("asyncfetch");
@@ -68,13 +68,13 @@ public final class ProcessUtils {
         add("avinfo");
         add("exportts");
     }};
-    private static Set<String> dangerousProcesses = new HashSet<String>(){{
+    public static Set<String> dangerousProcesses = new HashSet<String>(){{
         add("status");
         add("move");
         add("rename");
         add("delete");
     }};
-    private static Set<String> processes = new HashSet<String>(){{
+    public static Set<String> processes = new HashSet<String>(){{
         addAll(needUrlProcesses);
         addAll(needToKeyProcesses);
         addAll(needFopsProcesses);
