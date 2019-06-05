@@ -36,14 +36,14 @@ ignore-same-key=
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|  
-|host| host 字符串| 抓取源资源时指定 host（暂未启用）|  
+|host| host 字符串|（暂未启用）抓取源资源时指定 host|  
 |md5-index| 字符串| 资源 md5 值索引（下标），需要手动指定才会进行解析|  
 |callback-url| 公网可访问的 url 字符串| 设置回调地址|  
 |callback-body| body 字符串| 设置回调 body|  
 |callback-body-type| body-type 字符串| 设置回调 body 类型|  
 |callback-host| host 字符串| 设置回调 host |  
 |file-type| 0/1| 文件的存储类型|  
-|ignore-same-key| true/false|（暂未启用）|  
+|ignore-same-key| true/false|（暂未启用）为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
 
 ### 关于 url-index 和 md5-index
 当使用 file 源且 parse=tab/csv 时下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 key 字段加上 domain 的
