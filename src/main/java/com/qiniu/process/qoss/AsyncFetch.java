@@ -104,26 +104,28 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
-        String key;
+        String key = line.get("key");
         try {
             if (url == null || "".equals(url)) {
-                key = addPrefix + line.get("key").replaceAll("\\?", "%3F");
-                url = protocol + "://" + domain + "/" + key;
+                key = addPrefix + key;
+                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3F");
                 line.put(urlIndex, url);
             } else {
-                key = addPrefix + FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+                if (key != null) key = addPrefix + key;
+                else key = addPrefix + FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
             line.put("key", key);
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
         Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
-        return response.statusCode + "\t" + key + "\t" + HttpRespUtils.getResult(response);
+        return response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }
 }
