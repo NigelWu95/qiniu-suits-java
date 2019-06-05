@@ -66,7 +66,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
 
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
-        qiniuPfop.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        qiniuPfop.operationManager = new OperationManager(Auth.create(authKey1, authKey2), configuration.clone());
         return qiniuPfop;
     }
 

@@ -43,7 +43,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        changeStatus.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) changeStatus.batchOperations = new BatchOperations();
         return changeStatus;
     }

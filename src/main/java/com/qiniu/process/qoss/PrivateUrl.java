@@ -52,7 +52,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl privateUrl = (PrivateUrl)super.clone();
-        privateUrl.auth = Auth.create(accessKey, secretKey);
+        privateUrl.auth = Auth.create(authKey1, authKey2);
         return privateUrl;
     }
 

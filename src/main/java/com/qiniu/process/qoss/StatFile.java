@@ -62,7 +62,7 @@ public class StatFile extends Base<Map<String, String>> {
 
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
-        statFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) {
             statFile.batchOperations = new BatchOperations();
             try {

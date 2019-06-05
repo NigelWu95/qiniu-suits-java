@@ -40,7 +40,7 @@ public class DeleteFile extends Base<Map<String, String>> {
 
     public DeleteFile clone() throws CloneNotSupportedException {
         DeleteFile deleteFile = (DeleteFile)super.clone();
-        deleteFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        deleteFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) deleteFile.batchOperations = new BatchOperations();
         return deleteFile;
     }
