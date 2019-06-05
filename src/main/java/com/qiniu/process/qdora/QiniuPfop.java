@@ -19,20 +19,21 @@ public class QiniuPfop extends Base<Map<String, String>> {
     private StringMap pfopParams;
     private List<JsonObject> pfopConfigs;
     private String fopsIndex;
+    private Configuration configuration;
     private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
                      String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex, String savePath,
                      int saveIndex) throws IOException {
-        super("pfop", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
-        set(pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
+        super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
+        set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
                      String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
-        super("pfop", accessKey, secretKey, configuration, bucket);
-        set(pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
+        super("pfop", accessKey, secretKey, bucket);
+        set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -42,7 +43,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, pipeline, pfopJsonPath, pfopConfigs, fopsIndex, savePath, 0);
     }
 
-    private void set(String pipeline, String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
+    private void set(Configuration configuration, String pipeline, String pfopJsonPath, List<JsonObject> pfopConfigs,
+                     String fopsIndex) throws IOException {
+        this.configuration = configuration;
         this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             this.pfopConfigs = pfopConfigs;
@@ -59,12 +62,6 @@ public class QiniuPfop extends Base<Map<String, String>> {
         } else {
             throw new IOException("please set the pfop-config or fops-index.");
         }
-    }
-
-    public void updateFop(String bucket, String pipeline, String jsonPath, List<JsonObject> pfopConfigs, String fopsIndex)
-            throws IOException {
-        this.bucket = bucket;
-        set(pipeline, jsonPath, pfopConfigs, fopsIndex);
     }
 
     public QiniuPfop clone() throws CloneNotSupportedException {

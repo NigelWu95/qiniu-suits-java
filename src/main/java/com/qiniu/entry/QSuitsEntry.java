@@ -432,10 +432,10 @@ public class QSuitsEntry {
         size = ParamsUtils.checked(size, "size", "(true|false)");
         String configJson = entryParam.getValue("pfop-config", null);
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
-        return single ? new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
-                pfopConfigs)
-                : new PfopCommand(avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson, pfopConfigs,
-                savePath);
+        return single ? new PfopCommand(qiniuConfig, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
+                configJson, pfopConfigs)
+                : new PfopCommand(qiniuConfig, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
+                pfopConfigs, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop(boolean single) throws IOException {
