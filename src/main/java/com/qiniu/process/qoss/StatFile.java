@@ -143,11 +143,6 @@ public class StatFile extends Base<Map<String, String>> {
     }
 
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public String singleResult(Map<String, String> line) throws QiniuException {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));

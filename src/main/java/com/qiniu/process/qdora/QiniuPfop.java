@@ -85,9 +85,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
+        String key = line.get("key");
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             StringBuilder cmdBuilder = new StringBuilder();
-            String key = line.get("key");
             for (JsonObject pfopConfig : pfopConfigs) {
                 cmdBuilder.append(pfopConfig.get("cmd").getAsString())
                         .append("|saveas/")
@@ -95,9 +95,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
                         .append(";");
             }
             cmdBuilder.deleteCharAt(cmdBuilder.length() - 1);
-            return operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams);
+            return key + "\t" + operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams);
         } else {
-            return operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
+            return key + "\t" + operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
         }
     }
 }

@@ -88,11 +88,6 @@ public class PfopCommand extends Base<Map<String, String>> {
     }
 
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
-    }
-
-    @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String key;
         String info;

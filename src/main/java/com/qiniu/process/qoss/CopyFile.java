@@ -88,7 +88,8 @@ public class CopyFile extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
-        return HttpRespUtils.getResultWithCode(bucketManager.copy(bucket, line.get("key"), toBucket,
-                line.get("to-key"), false));
+        String key = line.get("key");
+        String toKey = line.get("to-key");
+        return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false));
     }
 }
