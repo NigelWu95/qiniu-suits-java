@@ -60,14 +60,6 @@ public final class ProcessUtils {
         add("exportts");
         add("filter");
     }};
-    public static Set<String> needConfigurationProcesses = new HashSet<String>(){{
-        addAll(needBucketAnKeyProcesses);
-        addAll(needPidProcesses);
-        add("asyncfetch");
-        add("qhash");
-        add("avinfo");
-        add("exportts");
-    }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
         add("status");
         add("move");
@@ -118,10 +110,6 @@ public final class ProcessUtils {
 
     public static boolean supportListSource(String process) {
         return supportListSourceProcesses.contains(process);
-    }
-
-    public static boolean needConfiguration(String process) {
-        return needConfigurationProcesses.contains(process);
     }
 
     public static boolean isDangerous(String process) {
