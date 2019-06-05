@@ -172,7 +172,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / limit;
+        int times = 50000 / fileInfoList.size();
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {

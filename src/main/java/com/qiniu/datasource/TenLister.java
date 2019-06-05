@@ -128,7 +128,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / listObjectsRequest.getMaxKeys();
+        int times = 50000 / cosObjectList.size();
         times = times > 10 ? 10 : times;
         List<COSObjectSummary> futureList = cosObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
