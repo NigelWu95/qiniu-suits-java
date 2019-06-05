@@ -12,26 +12,25 @@ import java.util.Map;
 
 public class MirrorFile extends Base<Map<String, String>> {
 
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                      int saveIndex) throws IOException {
-        super("mirror", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket) {
+        super("mirror", accessKey, secretKey, bucket);
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
-        super("mirror", accessKey, secretKey, configuration, bucket);
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                      int saveIndex) throws IOException {
+        super("mirror", accessKey, secretKey, bucket, savePath, saveIndex);
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
             throws IOException {
         this(accessKey, secretKey, configuration, bucket, savePath, 0);
-    }
-
-    public void updateMirror(String bucket) {
-        this.bucket = bucket;
     }
 
     public MirrorFile clone() throws CloneNotSupportedException {

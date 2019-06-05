@@ -6,7 +6,6 @@ import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     private String processName;
-    protected Configuration configuration;
     protected String accessKey;
     protected String secretKey;
     protected String bucket;
@@ -27,20 +25,16 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket)
-            throws IOException {
-        if (ProcessUtils.needConfiguration(processName) && configuration == null)
-            throw new IOException("please set configuration, it can not be null.");
+    public Base(String processName, String accessKey, String secretKey, String bucket) {
         this.processName = processName;
-        this.configuration = configuration;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.bucket = bucket;
     }
 
-    public Base(String processName, String accessKey, String secretKey, Configuration configuration, String bucket,
+    public Base(String processName, String accessKey, String secretKey, String bucket,
                 String savePath, int saveIndex) throws IOException {
-        this(processName, accessKey, secretKey, configuration, bucket);
+        this(processName, accessKey, secretKey, bucket);
         this.saveIndex = saveIndex;
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));

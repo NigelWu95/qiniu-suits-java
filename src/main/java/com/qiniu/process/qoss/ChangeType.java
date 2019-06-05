@@ -17,31 +17,29 @@ public class ChangeType extends Base<Map<String, String>> {
 
     private int type;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type) throws IOException {
-        super("type", accessKey, secretKey, configuration, bucket);
+    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type) {
+        super("type", accessKey, secretKey, bucket);
         this.type = type;
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String savePath, int saveIndex) throws IOException {
-        super("type", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("type", accessKey, secretKey, bucket, savePath, saveIndex);
         this.type = type;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
                       String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, type, savePath, 0);
-    }
-
-    public void updateType(String bucket, int type) {
-        this.bucket = bucket;
-        this.type = type;
     }
 
     public ChangeType clone() throws CloneNotSupportedException {
