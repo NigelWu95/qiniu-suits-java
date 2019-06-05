@@ -44,6 +44,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         return this.processName;
     }
 
+    public void updateBucket(String bucket) {
+        this.bucket = bucket;
+    }
+
     public void setBatchSize(int batchSize) throws IOException {
         if (!ProcessUtils.canBatch(processName)) {
             throw new IOException(processName + " is not support batch operation.");
@@ -61,7 +65,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
         this.fileSaveMapper.closeWriters();
-        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
     }
 
     @SuppressWarnings("unchecked")
