@@ -212,7 +212,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws IOException 写入结果失败抛出异常
      */
     public void parseSingleResult(T line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(resultInfo(line) + "\t" + result, false);
+        fileSaveMapper.writeSuccess(result, false);
     }
 
     /**

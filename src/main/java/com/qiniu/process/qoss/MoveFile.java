@@ -115,10 +115,12 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws IOException {
+        String key = line.get("key");
+        String toKey = line.get("to-key");
         if (toBucket == null || "".equals(toBucket)) {
-            return HttpRespUtils.getResultWithCode(bucketManager.rename(bucket, line.get("key"), line.get("to-key")));
+            return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey));
         } else {
-            return HttpRespUtils.getResultWithCode(bucketManager.move(bucket, line.get("key"), toBucket, line.get("to-key")));
+            return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));
         }
     }
 }

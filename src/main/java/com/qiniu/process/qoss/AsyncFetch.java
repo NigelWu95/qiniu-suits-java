@@ -126,6 +126,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
             throw new QiniuException(e, e.getMessage());
         }
         Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
-        return response.statusCode + "\t" + HttpRespUtils.getResult(response);
+        return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }
 }

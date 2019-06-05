@@ -67,12 +67,13 @@ public class QueryHash extends Base<Map<String, String>> {
 
     @Override
     public String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return line.get(urlIndex);
     }
 
     @Override
     public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override
@@ -86,7 +87,7 @@ public class QueryHash extends Base<Map<String, String>> {
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
             try {
-                return JsonUtils.toJson(qhash);
+                return url + "\t" + JsonUtils.toJson(qhash);
             } catch (JsonParseException e) {
                 throw new QiniuException(e, e.getMessage());
             }
