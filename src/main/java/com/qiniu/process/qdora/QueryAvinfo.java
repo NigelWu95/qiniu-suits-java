@@ -14,18 +14,19 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     private String domain;
     private String protocol;
     private String urlIndex;
+    private Configuration configuration;
     private MediaManager mediaManager;
 
     public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex) throws IOException {
-        super("avinfo", "", "", configuration, null);
-        set(protocol, domain, urlIndex);
+        super("avinfo", "", "", null);
+        set(configuration, protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
                        int saveIndex) throws IOException {
-        super("avinfo", "", "", configuration, null, savePath, saveIndex);
-        set(protocol, domain, urlIndex);
+        super("avinfo", "", "", null, savePath, saveIndex);
+        set(configuration, protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
@@ -34,7 +35,8 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         this(configuration, domain, protocol, urlIndex, savePath, 0);
     }
 
-    private void set(String protocol, String domain, String urlIndex) throws IOException {
+    private void set(Configuration configuration, String protocol, String domain, String urlIndex) throws IOException {
+        this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
@@ -47,11 +49,6 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         } else {
             this.urlIndex = urlIndex;
         }
-    }
-
-    public void updateQuery(String protocol, String domain, String urlIndex) throws IOException {
-        set(protocol, domain, urlIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryAvinfo clone() throws CloneNotSupportedException {

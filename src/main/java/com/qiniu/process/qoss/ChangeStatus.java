@@ -16,32 +16,29 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     private int status;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status)
-            throws IOException {
-        super("status", accessKey, secretKey, configuration, bucket);
+    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status) {
+        super("status", accessKey, secretKey, bucket);
         this.status = status;
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                         String savePath, int saveIndex) throws IOException {
-        super("status", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("status", accessKey, secretKey, bucket, savePath, saveIndex);
         this.status = status;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                         String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, status, savePath, 0);
-    }
-
-    public void updateStatus(String bucket, int status) {
-        this.bucket = bucket;
-        this.status = status;
     }
 
     public ChangeStatus clone() throws CloneNotSupportedException {

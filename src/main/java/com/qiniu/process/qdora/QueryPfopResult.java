@@ -15,18 +15,19 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     private String protocol;
     private String pidIndex;
+    private Configuration configuration;
     private MediaManager mediaManager;
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex) throws IOException {
-        super("pfopresult", "", "", configuration, null);
-        set(protocol, persistentIdIndex);
+        super("pfopresult", "", "", null);
+        set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
                            int saveIndex) throws IOException {
-        super("pfopresult", "", "", configuration, null, savePath, saveIndex);
-        set(protocol, persistentIdIndex);
+        super("pfopresult", "", "", null, savePath, saveIndex);
+        set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
@@ -35,15 +36,11 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         this(configuration, protocol, persistentIdIndex, savePath, 0);
     }
 
-    private void set(String protocol, String pidIndex) throws IOException {
+    private void set(Configuration configuration, String protocol, String pidIndex) throws IOException {
+        this.configuration = configuration;
         this.protocol = protocol;
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentId-index.");
         else this.pidIndex = pidIndex;
-    }
-
-    public void updateQuery(String protocol, String persistentIdIndex) throws IOException {
-        set(protocol, persistentIdIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
     public QueryPfopResult clone() throws CloneNotSupportedException {

@@ -16,32 +16,29 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     private int days;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days)
-            throws IOException {
-        super("lifecycle", accessKey, secretKey, configuration, bucket);
+    public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days) {
+        super("lifecycle", accessKey, secretKey, bucket);
         this.days = days;
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                            String savePath, int saveIndex) throws IOException {
-        super("lifecycle", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("lifecycle", accessKey, secretKey, bucket, savePath, saveIndex);
         this.days = days;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                            String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, days, savePath, 0);
-    }
-
-    public void updateLifecycle(String bucket, int days) {
-        this.bucket = bucket;
-        this.days = days;
     }
 
     public ChangeLifecycle clone() throws CloneNotSupportedException {
