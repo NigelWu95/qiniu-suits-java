@@ -30,27 +30,28 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix) throws IOException {
+                      String protocol, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
         super("asyncfetch", accessKey, secretKey, bucket);
-        set(configuration, domain, protocol, urlIndex, addPrefix);
+        set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix, String savePath, int saveIndex) throws IOException {
+                      String protocol, String urlIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex)
+            throws IOException {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
-        set(configuration, domain, protocol, urlIndex, addPrefix);
+        set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String keyPrefix, String savePath)
+                      String protocol, String urlIndex, String addPrefix, String rmPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, keyPrefix, savePath, 0);
+        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, addPrefix, rmPrefix, savePath, 0);
     }
 
-    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String addPrefix)
-            throws IOException {
+    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String addPrefix,
+                     String rmPrefix) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
@@ -65,6 +66,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
             this.urlIndex = urlIndex;
         }
         this.addPrefix = addPrefix == null ? "" : addPrefix;
+        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
 
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
