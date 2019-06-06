@@ -64,18 +64,18 @@ public class OssUtils {
     }
 
     public static String getQiniuMarker(FileInfo fileInfo) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("k", fileInfo.key);
-        return Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
-                Base64.URL_SAFE | Base64.NO_WRAP);
+        if (fileInfo == null || fileInfo.key == null) return null;
+        else return getQiniuMarker(fileInfo.key);
     }
 
-    public static String getAliOssMarker(OSSObjectSummary ossObjectSummary) {
-        return ossObjectSummary.getKey();
+    public static String getAliOssMarker(OSSObjectSummary summary) {
+        if (summary == null || summary.getKey() == null) return null;
+        else return summary.getKey();
     }
 
-    public static String getTenCosMarker(COSObjectSummary cosObjectSummary) {
-        return cosObjectSummary.getKey();
+    public static String getTenCosMarker(COSObjectSummary summary) {
+        if (summary == null || summary.getKey() == null) return null;
+        else return summary.getKey();
     }
 
     public static String getQiniuMarker(String key) {
