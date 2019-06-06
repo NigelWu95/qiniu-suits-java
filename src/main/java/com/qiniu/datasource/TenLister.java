@@ -6,6 +6,7 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
+import com.qiniu.util.OssUtils;
 
 import java.util.List;
 
@@ -169,7 +170,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(object.getKey());
+        listObjectsRequest.setMarker(OssUtils.getTenCosMarker(object));
     }
 
     @Override

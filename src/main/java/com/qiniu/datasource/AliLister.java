@@ -178,7 +178,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public void updateMarkerBy(OSSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(object.getKey());
+        listObjectsRequest.setMarker(OssUtils.getAliOssMarker(object));
     }
 
     @Override
