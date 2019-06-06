@@ -369,8 +369,11 @@ public class CommonParams {
     public LocalDateTime checkedDatetime(String datetime) throws Exception {
         LocalDateTime dateTime;
         if (datetime == null) {
-            dateTime = null;
-        } else if (datetime.matches("(|0)")) {
+            return null;
+        } else {
+            datetime = datetime.trim();
+        }
+        if (datetime.matches("(|0)")) {
             dateTime = LocalDateTime.MIN;
         } else if (datetime.equals("now")) {
             dateTime = LocalDateTime.now();
