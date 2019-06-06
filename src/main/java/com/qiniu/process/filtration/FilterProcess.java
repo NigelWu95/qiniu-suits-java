@@ -112,8 +112,12 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
     public String processLine(T line) throws IOException {
         try {
-            if (filter.doFilter(line)) return String.valueOf(true);
-            else return  "false";
+            if (filter.doFilter(line)) {
+                if (nextProcessor == null) return String.valueOf(true);
+                else return nextProcessor.processLine(line);
+            } else {
+                return "false";
+            }
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
