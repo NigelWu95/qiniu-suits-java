@@ -350,7 +350,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     // 全局结尾则设置前缀为空，否则设置前缀为起始值
                     if (globalEnd) lastEiLister.setPrefix("");
                     else lastEiLister.setPrefix(startLister.getPrefix());
-                    lastEiLister.updateMarkerBy(lastEiLister.currentLast());
+                    if (!lastEiLister.hasNext()) lastEiLister.updateMarkerBy(lastEiLister.currentLast());
                     lastUpdated = true;
                 }
             }

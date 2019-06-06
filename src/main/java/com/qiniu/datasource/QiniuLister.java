@@ -208,12 +208,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void updateMarkerBy(FileInfo object) {
-        if (object != null) {
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("k", object.key);
-            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
-                    Base64.URL_SAFE | Base64.NO_WRAP);
-        }
+        marker = OssUtils.getQiniuMarker(object);
     }
 
     @Override
