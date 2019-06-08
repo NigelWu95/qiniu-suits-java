@@ -346,7 +346,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastUpdated) {
                 // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
-                ILister<E> lastEiLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+                ILister<E> lastEiLister = listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).get();
                 if (!lastEiLister.hasNext()) {
                     lastEiLister.updateMarkerBy(lastEiLister.currentLast());
                     lastEiLister.setStraight(true);
@@ -368,7 +368,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }
             // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (listerList.size() > 0 && listerList.size() < threads) {
-                optional = listerList.parallelStream().map(lister -> {
+                listerList = listerList.parallelStream().map(lister -> {
                     try {
                         List<ILister<E>> nextList = nextLevelLister(lister, true);
                         Iterator<ILister<E>> it = nextList.iterator();
@@ -387,20 +387,14 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     } catch (Exception e) {
                         SystemUtils.exit(exitBool, e); return null;
                     }
-                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                if (optional.isPresent() && optional.get().size() > 0) {
-                    listerList = optional.get();
-                } else {
-                    throw new IOException("compute next level lister error, current lister count: " + listerList.size() +
-                            "and start lister's prefix is: " + startLister.getPrefix());
-                }
+                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).get();
             } else {
                 break;
             }
         }
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
         if (!lastUpdated && listerList.size() > 0) {
-            ILister<E> lastEiLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+            ILister<E> lastEiLister = listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).get();
             if (globalEnd) lastEiLister.setPrefix("");
             else lastEiLister.setPrefix(startLister.getPrefix());
             if (!lastEiLister.hasNext()) lastEiLister.updateMarkerBy(lastEiLister.currentLast());
