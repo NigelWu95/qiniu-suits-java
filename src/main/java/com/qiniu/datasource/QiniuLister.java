@@ -166,8 +166,11 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return;
-        doList();
+        if (hasNext()) {
+            doList();
+        } else {
+            fileInfoList.clear();
+        }
     }
 
     @Override
