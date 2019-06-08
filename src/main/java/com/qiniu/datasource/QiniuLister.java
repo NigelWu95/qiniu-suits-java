@@ -1,7 +1,6 @@
 package com.qiniu.datasource;
 
 import com.google.gson.*;
-import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
@@ -167,7 +166,8 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return; doList();
+        if (!hasNext()) return;
+        doList();
     }
 
     @Override
@@ -208,7 +208,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void updateMarkerBy(FileInfo object) {
-        marker = OssUtils.getQiniuMarker(object);
+        if (object != null) marker = OssUtils.getQiniuMarker(object.key);
     }
 
     @Override

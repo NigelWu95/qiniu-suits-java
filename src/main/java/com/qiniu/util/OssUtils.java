@@ -64,18 +64,15 @@ public class OssUtils {
     }
 
     public static String getQiniuMarker(FileInfo fileInfo) {
-        if (fileInfo == null || fileInfo.key == null) return null;
-        else return getQiniuMarker(fileInfo.key);
+        return getQiniuMarker(fileInfo.key);
     }
 
     public static String getAliOssMarker(OSSObjectSummary summary) {
-        if (summary == null || summary.getKey() == null) return null;
-        else return summary.getKey();
+        return summary.getKey();
     }
 
     public static String getTenCosMarker(COSObjectSummary summary) {
-        if (summary == null || summary.getKey() == null) return null;
-        else return summary.getKey();
+        return summary.getKey();
     }
 
     public static String getQiniuMarker(String key) {
