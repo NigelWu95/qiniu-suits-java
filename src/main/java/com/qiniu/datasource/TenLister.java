@@ -124,7 +124,11 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return; doList();
+        if (hasNext()) {
+            doList();
+        } else {
+            cosObjectList.clear();
+        }
     }
 
     @Override
