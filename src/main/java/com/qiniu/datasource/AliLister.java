@@ -94,7 +94,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     private void checkedListWithEnd() {
-        if (endPrefix != null && !"".equals(endPrefix)) {
+        String endKey = currentEndKey();
+        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
             int size = ossObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
@@ -105,8 +106,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
                     return;
                 }
             }
-            String endKey = currentEndKey();
-            if (endKey == null || endKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
 
     }
