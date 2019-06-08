@@ -344,13 +344,14 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastUpdated) {
                 listerList.sort(Comparator.comparing(ILister::getPrefix));
-                ILister<E> lastEiLister = listerList.get(listerList.size() - 1);
                 // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
-                if (!lastEiLister.hasNext() || lastEiLister.getStraight()) {
+                ILister<E> lastEiLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+                if (!lastEiLister.hasNext()) lastEiLister.setStraight(true);
+                if (lastEiLister.getStraight()) {
                     // 全局结尾则设置前缀为空，否则设置前缀为起始值
                     if (globalEnd) lastEiLister.setPrefix("");
                     else lastEiLister.setPrefix(startLister.getPrefix());
-                    if (!lastEiLister.hasNext()) lastEiLister.updateMarkerBy(lastEiLister.currentLast());
+                    lastEiLister.updateMarkerBy(lastEiLister.currentLast());
                     lastUpdated = true;
                 }
             }
@@ -396,8 +397,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         }
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
         if (!lastUpdated && listerList.size() > 0) {
-            listerList.sort(Comparator.comparing(ILister::getPrefix));
-            ILister<E> lastEiLister = listerList.get(listerList.size() - 1);
+            ILister<E> lastEiLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
             if (globalEnd) lastEiLister.setPrefix("");
             else lastEiLister.setPrefix(startLister.getPrefix());
             if (!lastEiLister.hasNext()) lastEiLister.updateMarkerBy(lastEiLister.currentLast());
