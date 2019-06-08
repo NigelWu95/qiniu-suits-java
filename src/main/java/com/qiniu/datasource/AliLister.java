@@ -132,7 +132,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return; doList();
+        if (hasNext()) {
+            doList();
+        } else {
+            ossObjectList.clear();
+        }
     }
 
     @Override
