@@ -263,12 +263,12 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
      * @param lister 起始列举对象
      * @return 下一级别可并发的列举对象集
      */
-    private List<ILister<E>> nextLevelLister(ILister<E> lister) throws SuitsException {
+    private List<ILister<E>> nextLevelLister(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
         int retry = retryTimes;
         boolean next;
         while (true) {
             try {
-                next = lister.hasFutureNext();
+                next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
                 break;
             } catch (SuitsException e) {
                 System.out.println("check lister has future next retrying...\n" + e.getMessage());
@@ -337,7 +337,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             execInThread(startLister, order++);
             return order;
         }
-        List<ILister<E>> listerList = nextLevelLister(startLister);
+        List<ILister<E>> listerList = nextLevelLister(startLister, false);
         int[] alreadyOrder = new int[]{order};
         boolean lastUpdated = false;
         Iterator<ILister<E>> listerIterator;
@@ -370,7 +370,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             if (listerList.size() > 0 && listerList.size() < threads) {
                 optional = listerList.parallelStream().map(lister -> {
                     try {
-                        List<ILister<E>> nextList = nextLevelLister(lister);
+                        List<ILister<E>> nextList = nextLevelLister(lister, true);
                         Iterator<ILister<E>> it = nextList.iterator();
                         int size = nextList.size();
                         // 为了更优的列举性能，考虑将每个 prefix 下一级迭代过程中产生的部分 lister 先执行，因为产生的下级列举对象本身是按前
