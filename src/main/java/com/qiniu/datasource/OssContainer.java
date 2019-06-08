@@ -140,13 +140,12 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = getNewStringConverter();
-        List<E> objects;
         List<T> convertedList;
         List<String> writeList;
+        List<E> objects = lister.currents();
         int retry;
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
-        do {
-            objects = lister.currents();
+        while (objects.size() > 0 || lister.hasNext()) {
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -166,6 +165,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             while (true) {
                 try {
                     lister.listForward();
+                    objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
@@ -174,7 +174,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     else retry--;
                 }
             }
-        } while (lister.hasNext());
+        }
     }
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
