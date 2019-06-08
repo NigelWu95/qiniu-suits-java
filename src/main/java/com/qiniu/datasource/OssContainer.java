@@ -144,8 +144,9 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         List<String> writeList;
         List<E> objects = lister.currents();
         int retry;
+        boolean goon = objects.size() > 0 || lister.hasNext();
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
-        while (objects.size() > 0 || lister.hasNext()) {
+        while (goon) {
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -162,7 +163,8 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
             }
             retry = retryTimes;
-            while (true) {
+            goon = lister.hasNext();
+            while (goon) {
                 try {
                     lister.listForward();
                     objects = lister.currents();
@@ -343,15 +345,16 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
             if (!lastUpdated) {
-                listerList.sort(Comparator.comparing(ILister::getPrefix));
                 // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
                 ILister<E> lastEiLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
-                if (!lastEiLister.hasNext()) lastEiLister.setStraight(true);
+                if (!lastEiLister.hasNext()) {
+                    lastEiLister.updateMarkerBy(lastEiLister.currentLast());
+                    lastEiLister.setStraight(true);
+                }
                 if (lastEiLister.getStraight()) {
                     // 全局结尾则设置前缀为空，否则设置前缀为起始值
                     if (globalEnd) lastEiLister.setPrefix("");
                     else lastEiLister.setPrefix(startLister.getPrefix());
-                    lastEiLister.updateMarkerBy(lastEiLister.currentLast());
                     lastUpdated = true;
                 }
             }
