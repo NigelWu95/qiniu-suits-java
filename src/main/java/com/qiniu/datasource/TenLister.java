@@ -93,17 +93,16 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     private void checkedListWithEnd() {
-        if (endPrefix != null && !"".equals(endPrefix)) {
+        String endKey = currentEndKey();
+        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+            listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
             for (int i = 0; i < size; i++) {
                 if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     cosObjectList = cosObjectList.subList(0, i);
-                    listObjectsRequest.setMarker(null);
                     return;
                 }
             }
-            String endKey = currentEndKey();
-            if (endKey == null || endKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
     }
 
