@@ -170,7 +170,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
-        listObjectsRequest.setMarker(OssUtils.getTenCosMarker(object));
+        if (object != null) listObjectsRequest.setMarker(OssUtils.getTenCosMarker(object.getKey()));
     }
 
     @Override
