@@ -5,7 +5,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
@@ -104,7 +104,7 @@ public class MoveFile extends Base<Map<String, String>> {
     public boolean validCheck(Map<String, String> line) {
         if (line.get("key") == null) return false;
         try {
-            String toKey = FileNameUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
+            String toKey = FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
             line.put("to-key", addPrefix + toKey);
             return true;
         } catch (IOException e) {

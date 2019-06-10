@@ -1,6 +1,6 @@
 package com.qiniu.persistence;
 
-import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.FileUtils;
 
 import java.io.*;
 import java.util.*;
@@ -14,7 +14,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     private int retryTimes = 5;
 
     public FileSaveMapper(String targetFileDir) throws IOException {
-        this.targetFileDir = FileNameUtils.realPathWithUserHome(targetFileDir);
+        this.targetFileDir = FileUtils.realPathWithUserHome(targetFileDir);
     }
 
     public FileSaveMapper(String targetFileDir, String prefix, String suffix) throws IOException {
