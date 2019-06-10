@@ -77,6 +77,7 @@ public class OssUtils {
 
     public static String getQiniuMarker(String key) {
         JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("c", 0);
         jsonObject.addProperty("k", key);
         return Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                 Base64.URL_SAFE | Base64.NO_WRAP);
