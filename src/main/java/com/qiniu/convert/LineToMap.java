@@ -1,7 +1,7 @@
 package com.qiniu.convert;
 
 import com.qiniu.interfaces.ILineParser;
-import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.FileUtils;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class LineToMap extends Converter<String, Map<String, String>> {
         String key = itemMap.get("key");
         if (key != null) {
             if (addKeyPrefix == null) addKeyPrefix = "";
-            itemMap.put("key", addKeyPrefix + FileNameUtils.rmPrefix(rmKeyPrefix, key));
+            itemMap.put("key", addKeyPrefix + FileUtils.rmPrefix(rmKeyPrefix, key));
         }
         return itemMap;
     }
