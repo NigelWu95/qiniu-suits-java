@@ -5,11 +5,9 @@ import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.SystemUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,29 +164,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         });
     }
 
-    protected abstract IReader<E> getReader(String path) throws IOException;
+    protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
 
     public void export() throws Exception {
-        List<IReader<E>> fileReaders = new ArrayList<>();
-        File sourceFile = new File(FileNameUtils.realPathWithUserHome(filePath));
-        if (sourceFile.isDirectory()) {
-            File[] fs = sourceFile.listFiles();
-            if (fs == null) throw new IOException("The current path you gave may be incorrect: \"" + filePath + "\"");
-            for(File f : fs) {
-                if (!f.isDirectory() && f.getName().endsWith(".txt")) {
-                    fileReaders.add(getReader(f.getAbsoluteFile().getPath()));
-                }
-            }
-        } else {
-            if (filePath.endsWith(".txt")) {
-                fileReaders.add(getReader(filePath));
-            } else {
-                throw new IOException("please provide the .txt file. The current path you gave is: \"" + filePath + "\"");
-            }
-        }
-        if (fileReaders.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
-                " path you gave is: " + filePath);
-
+        List<IReader<E>> fileReaders = getFileReaders(filePath);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
