@@ -264,18 +264,12 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
      * @return 下一级别可并发的列举对象集
      */
     private List<ILister<E>> nextLevelLister(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
-        boolean next = false;
+        boolean next;
         int retry = retryTimes;
-        String endKey = lister.currentEndKey();
         // 如果 endKey 为空的话表明 lister 没有后续的列表可以列举
-        while (endKey != null) {
+        while (true) {
             try {
-                if (doFutureCheck) {
-                    next = lister.hasFutureNext();
-                    endKey = lister.currentEndKey();
-                } else {
-                    next = lister.hasNext();
-                }
+                next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
                 break;
             } catch (SuitsException e) {
                 System.out.println("check lister has future next retrying...\n" + e.getMessage());
@@ -287,10 +281,8 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         String startPrefix = lister.getPrefix();
         String point = "";
         List<ILister<E>> nextLevelList = new ArrayList<>();
-        if (!next) { // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
-            nextLevelList.add(lister);
-            return nextLevelList;
-        } else { // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
+        String endKey = lister.currentEndKey();
+        if (next && endKey != null) { // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
             int prefixLen = startPrefix.length();
             // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
             // endPrefix
@@ -317,6 +309,9 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 lister.setEndPrefix(startPrefix + originPrefixList.get(0));
                 nextLevelList.add(lister);
             }
+        } else { // 如果没有可继续的 marker 的话则不需要再往前进行检索了，直接返回仅包含该 lister 的列表
+            nextLevelList.add(lister);
+            return nextLevelList;
         }
 
         for (String prefix : originPrefixList) {
