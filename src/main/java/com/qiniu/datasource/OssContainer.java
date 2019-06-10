@@ -345,12 +345,12 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         boolean lastUpdated = false;
         while (listerList.size() <= 0 || listerList.size() >= threads) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
-//            if (!lastListerUpdated.get()) {
-            if (!lastUpdated) {
-                ILister<E> lastLister =
-                        listerList.stream().max(Comparator.comparing(ILister::getPrefix))
-                        .get();
-//                        .ifPresent(lastLister -> {
+            if (!lastListerUpdated.get()) {
+//            if (!lastUpdated) {
+//                ILister<E> lastLister =
+                        listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
+//                        .get();
+                        .ifPresent(lastLister -> {
                     // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
                     if (!lastLister.hasNext()) {
                         // 全局结尾则设置前缀为空，否则设置前缀为起始值
@@ -359,9 +359,9 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                         lastLister.updateMarkerBy(lastLister.currentLast());
                         lastLister.setStraight(true);
                         lastListerUpdated.set(true);
-                        lastUpdated = true;
+//                        lastUpdated = true;
                     }
-//                });
+                });
             }
             listerList = listerList.parallelStream().filter(eiLister -> {
                 if (eiLister.canStraight()) {
@@ -396,9 +396,9 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).get();
         }
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-//        if (!lastListerUpdated.get()) {
-        if (!lastUpdated) {
-            listerList.stream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
+        if (!lastListerUpdated.get()) {
+//        if (!lastUpdated) {
+            listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
                 if (globalEnd) lister.setPrefix("");
                 else lister.setPrefix(startLister.getPrefix());
                 if (!lister.hasNext()) lister.updateMarkerBy(lister.currentLast());
