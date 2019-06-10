@@ -5,7 +5,7 @@ import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.FileUtils;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
@@ -38,31 +38,15 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
-    private boolean isText(File file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line1 = reader.readLine();
-        String line2 = reader.readLine();
-        byte[] bytes = line2 != null ? line2.getBytes() : line1 != null ? line1.getBytes() : new byte[0];
-        boolean isText = line1 != null;
-        for (byte aByte : bytes) {
-            if (aByte < 0) isText = false;
-        }
-        reader.close();
-        return isText;
-    }
-
     private List<File> getFiles(File directory) throws IOException {
         List<File> files = new ArrayList<>();
-        MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
         for(File f : Objects.requireNonNull(directory.listFiles())) {
             if (f.isDirectory()) {
                 files.addAll(getFiles(f));
             } else {
-                String type = mimetypesFileTypeMap.getContentType(f);
-                if (type.equals("text/plain")) {
+                String type = FileUtils.contentType(f);
+                if (type.startsWith("text") || type.equals("application/octet-stream")) {
                     files.add(f);
-                } else {
-                    if (isText(f)) files.add(f);
                 }
             }
         }
@@ -72,8 +56,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     @Override
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
-        File sourceFile = new File(FileNameUtils.realPathWithUserHome(path));
-        MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
+        File sourceFile = new File(FileUtils.realPathWithUserHome(path));
         if (sourceFile.isDirectory()) {
             File[] fs = sourceFile.listFiles();
             if (fs == null) throw new IOException("The current path you gave may be incorrect: " + path);
@@ -84,8 +67,8 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
                 }
             }
         } else {
-            String type = mimetypesFileTypeMap.getContentType(sourceFile);
-            if (type.equals("text/plain") || isText(sourceFile)) {
+            String type = FileUtils.contentType(sourceFile);
+            if (type.startsWith("text") || type.equals("application/octet-stream")) {
                 fileReaders.add(new LocalFileReader(sourceFile));
             } else {
                 throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);

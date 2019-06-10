@@ -137,7 +137,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
                 line.put(urlIndex, url);
             } else {
                 if (key != null) key = addPrefix + key;
-                else key = addPrefix + FileNameUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+                else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
             line.put("key", key);
         } catch (Exception e) {

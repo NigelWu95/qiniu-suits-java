@@ -45,7 +45,7 @@ public final class PfopUtils {
         if (saveAs.contains(":")) {
             String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
             if (saveAsKey.contains("$(name)") || saveAsKey.contains("$(ext)")) {
-                String[] items = FileNameUtils.getNameItems(srcKey);
+                String[] items = FileUtils.getNameItems(srcKey);
                 saveAsKey = saveAsKey.replace("$(name)", items[0]).replace("$(ext)", items[1]);
             }
             if (saveAsKey.contains("$(key)")) {

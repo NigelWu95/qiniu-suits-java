@@ -1,6 +1,6 @@
 package com.qiniu.config;
 
-import com.qiniu.util.FileNameUtils;
+import com.qiniu.util.FileUtils;
 
 import java.io.*;
 import java.util.Properties;
@@ -11,7 +11,7 @@ public class PropertiesFile {
     private Properties properties;
 
     public PropertiesFile(String resourceName) throws IOException {
-        resourceName = FileNameUtils.realPathWithUserHome(resourceName);
+        resourceName = FileUtils.realPathWithUserHome(resourceName);
         InputStream inputStream = new FileInputStream(resourceName);
         try {
             properties = new Properties();
