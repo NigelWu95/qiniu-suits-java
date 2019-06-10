@@ -340,22 +340,27 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         List<ILister<E>> listerList = nextLevelLister(startLister, false);
         int[] alreadyOrder = new int[]{order};
         AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
+        boolean lastUpdated = false;
         Iterator<ILister<E>> listerIterator;
-        Optional<List<ILister<E>>> optional;
         while (true) {
             // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
-            if (!lastListerUpdated.get()) {
-                listerList.stream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
+//            if (!lastListerUpdated.get()) {
+            if (!lastUpdated) {
+                ILister<E> lastLister =
+                        listerList.stream().max(Comparator.comparing(ILister::getPrefix))
+                        .get();
+//                        .ifPresent(lastLister -> {
                     // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
-                    if (!lister.hasNext()) {
+                    if (!lastLister.hasNext()) {
                         // 全局结尾则设置前缀为空，否则设置前缀为起始值
-                        if (globalEnd) lister.setPrefix("");
-                        else lister.setPrefix(startLister.getPrefix());
-                        lister.updateMarkerBy(lister.currentLast());
-                        lister.setStraight(true);
+                        if (globalEnd) lastLister.setPrefix("");
+                        else lastLister.setPrefix(startLister.getPrefix());
+                        lastLister.updateMarkerBy(lastLister.currentLast());
+                        lastLister.setStraight(true);
                         lastListerUpdated.set(true);
+                        lastUpdated = true;
                     }
-                });
+//                });
             }
             listerIterator = listerList.iterator();
             while (listerIterator.hasNext()) {
@@ -367,7 +372,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }
             // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
             if (listerList.size() > 0 && listerList.size() < threads) {
-                optional = listerList.parallelStream().map(lister -> {
+                listerList = listerList.parallelStream().map(lister -> {
                     try {
                         List<ILister<E>> nextList = nextLevelLister(lister, true);
                         Iterator<ILister<E>> it = nextList.iterator();
@@ -386,18 +391,14 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     } catch (Exception e) {
                         SystemUtils.exit(exitBool, e); return null;
                     }
-                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; });
-                if (optional.isPresent() && optional.get().size() > 0) {
-                    listerList = optional.get();
-                } else {
-                    break;
-                }
+                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).get();
             } else {
                 break;
             }
         }
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-        if (!lastListerUpdated.get()) {
+//        if (!lastListerUpdated.get()) {
+        if (!lastUpdated) {
             listerList.stream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
                 if (globalEnd) lister.setPrefix("");
                 else lister.setPrefix(startLister.getPrefix());
