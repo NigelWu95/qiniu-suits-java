@@ -264,9 +264,11 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
      * @return 下一级别可并发的列举对象集
      */
     private List<ILister<E>> nextLevelLister(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
+        boolean next = false;
         int retry = retryTimes;
-        boolean next;
-        while (true) {
+        String endKey = lister.currentEndKey();
+        // 如果 endKey 为空的话表明 lister 没有后续的列表可以列举
+        while (endKey != null) {
             try {
                 next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
                 break;
@@ -285,11 +287,10 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             return nextLevelList;
         } else { // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
             int prefixLen = startPrefix.length();
-            String lastKey = lister.currentEndKey();
             // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
             // endPrefix
-            if (lastKey != null && lastKey.length() > prefixLen) {
-                point = lastKey.substring(prefixLen, prefixLen + 1);
+            if (endKey.length() > prefixLen) {
+                point = endKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
                     lister.setStraight(true);
@@ -302,7 +303,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 } else {
                     if (!prefixesMap.containsKey(startPrefix + point))
                         prefixesMap.put(startPrefix + point, new String[]{lister.getMarker(), ""});
-                    lister.setEndPrefix(lastKey);
+                    lister.setEndPrefix(endKey);
                     nextLevelList.add(lister);
                 }
             } else {
@@ -316,7 +317,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         for (String prefix : originPrefixList) {
             if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                 ILister<E> generated = generateLister(startPrefix + prefix);
-                if (generated != null && (generated.hasNext() || generated.currents().size() > 0)) nextLevelList.add(generated);
+                if (generated != null && generated.currentEndKey() != null) nextLevelList.add(generated);
             }
         }
         return nextLevelList;
