@@ -416,12 +416,12 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     /**
      * 根据 startLister 得到可并发的下一级 lister 对象集放入多线程执行列举
      * @param startLister 已初始化的起始的 lister
-     * @param globalEnd startLister 是否需要列举到全局的结尾处（从该 startLister 开始列举到整个空间结束）
+     * @param lastPrefix 最后一段列举需要更新的前缀
      * @param order lister 执行的起始序号
      * @return 此次计算并执行到的 lister 序号，用于后续可能继续向线程添加 lister 执行设置起始序号
      * @throws Exception 下一级 lister 列表计算和多线程执行过程中可能产生的异常
      */
-    private int computeToList(ILister<E> startLister, boolean globalEnd, int order) throws Exception {
+    private int computeToList(ILister<E> startLister, String lastPrefix, int order) throws Exception {
         List<ILister<E>> listerList = null;
         if (threads > 1) {
             String point = computePoint(startLister, false);
@@ -431,12 +431,12 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }
         }
         if (listerList == null) {
-            if (globalEnd) startLister.setPrefix("");
+            startLister.setPrefix(lastPrefix);
             if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
             execInThread(startLister, order++);
             return order;
         } else {
-            return obtainThreadsToRun(listerList, order, globalEnd ? "" : startLister.getPrefix());
+            return obtainThreadsToRun(listerList, order, lastPrefix);
         }
     }
 
@@ -452,7 +452,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
-                computeToList(startLister, true, order);
+                computeToList(startLister, "", order);
             } else {
                 Collections.sort(prefixes);
                 if (prefixLeft) {
@@ -460,16 +460,15 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     startLister.setEndPrefix(prefixes.get(0));
                     execInThread(startLister, order++);
                 }
-                for (int i = 0; i < prefixes.size() - 1; i++) {
-                    ILister<E> startLister = generateLister(prefixes.get(i));
-                    order = computeToList(startLister, false, order);
+                int mSize = prefixes.size() - 1;
+                for (int i = 0; i < mSize; i++) {
+                    String prefix = prefixes.get(i);
+                    ILister<E> startLister = generateLister(prefix);
+                    order = computeToList(startLister, prefix, order);
                 }
-                ILister<E> startLister = generateLister(prefixes.get(prefixes.size() - 1));
-                if (prefixRight) {
-                    computeToList(startLister, true, order);
-                } else {
-                    computeToList(startLister, false, order);
-                }
+                String lastPrefix = prefixRight ? "" : prefixes.get(mSize);
+                ILister<E> startLister = generateLister(lastPrefix);
+                computeToList(startLister, lastPrefix, order);
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
