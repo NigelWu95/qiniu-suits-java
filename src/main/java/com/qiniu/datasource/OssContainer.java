@@ -302,6 +302,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             }
         } else {
             lister.setStraight(true);
+//            lister.setEndPrefix(endKey);
         }
         return point;
     }
@@ -334,10 +335,10 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         String point = computePoint(lister, true);
         List<ILister<E>> nextList;
         if (lister.getStraight()) {
+            nextList = new ArrayList<ILister<E>>(){{ add(lister); }};
+        } else {
             nextList = nextLevelLister(originPrefixList, lister.getPrefix(), point);
             nextList.add(lister);
-        } else {
-            nextList = new ArrayList<ILister<E>>(){{ add(lister); }};
         }
         Iterator<ILister<E>> it = nextList.iterator();
         int size = nextList.size();
@@ -372,42 +373,43 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                         }
                     });
         }
-        return listerList.parallelStream().filter(eiLister -> {
-            if (eiLister.canStraight()) {
-                try {
-                    execInThread(eiLister, atomicOrder.addAndGet(1));
-                } catch (Exception e) {
-                    SystemUtils.exit(exitBool, e);
-                }
-                return false;
-            } else {
-                return true; // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-            }
-        }).map(lister -> {
+        return listerList.parallelStream().map(lister -> {
             try {
-                return filteredNextList(lister, atomicOrder);
+                if (lister.canStraight()) {
+                    try {
+                        execInThread(lister, atomicOrder.addAndGet(1));
+                    } catch (Exception e) {
+                        SystemUtils.exit(exitBool, e);
+                    }
+                    return null;
+                } else { // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
+                    return filteredNextList(lister, atomicOrder);
+                }
             } catch (Exception e) {
                 SystemUtils.exit(exitBool, e); return null;
             }
-        }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).get();
+        }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
     private int obtainThreadsToRun(List<ILister<E>> listerList, int order, String lastPrefix) throws Exception {
         AtomicInteger atomicOrder = new AtomicInteger(order);
         AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
         listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
-        while (listerList.size() > 0 && listerList.size() < threads) {
+        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
         }
 
-        // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-        if (!lastListerUpdated.get()) {
-            listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
-                lister.setPrefix(lastPrefix);
-                if (!lister.hasNext()) lister.updateMarkerBy(lister.currentLast());
-            });
+        if (listerList != null) {
+            // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
+            if (!lastListerUpdated.get()) {
+                listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lastLister -> {
+                    System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.hasNext());
+                    lastLister.setPrefix(lastPrefix);
+                    if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+                });
+            }
+            for (ILister<E> lister : listerList) execInThread(lister, atomicOrder.addAndGet(1));
         }
-        for (ILister<E> lister : listerList) execInThread(lister, atomicOrder.addAndGet(1));
         return atomicOrder.get();
     }
 
