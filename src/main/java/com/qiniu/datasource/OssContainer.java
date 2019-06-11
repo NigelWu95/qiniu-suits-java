@@ -318,8 +318,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     }
 
     private List<ILister<E>> parallelNextLevelLister(List<String> prefixes, String startPrefix, String point) {
-        return prefixes.parallelStream()
-                .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
+        return prefixes.parallelStream().filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
                 .map(prefix -> {
                     try {
                         return generateLister(startPrefix + prefix);
@@ -327,13 +326,19 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                         SystemUtils.exit(exitBool, e);
                         return null;
                     }
-                }).collect(Collectors.toList());
+                }).filter(generated -> generated != null && generated.currentEndKey() != null)
+                .collect(Collectors.toList());
     }
 
     private List<ILister<E>> filteredNextList(ILister<E> lister, AtomicInteger atomicOrder) throws Exception {
         String point = computePoint(lister, true);
-        List<ILister<E>> nextList = lister.getStraight() ? new ArrayList<ILister<E>>(){{ add(lister); }} :
-                nextLevelLister(originPrefixList, lister.getPrefix(), point);
+        List<ILister<E>> nextList;
+        if (lister.getStraight()) {
+            nextList = nextLevelLister(originPrefixList, lister.getPrefix(), point);
+            nextList.add(lister);
+        } else {
+            nextList = new ArrayList<ILister<E>>(){{ add(lister); }};
+        }
         Iterator<ILister<E>> it = nextList.iterator();
         int size = nextList.size();
         // 为了更优的列举性能，考虑将每个 prefix 下一级迭代过程中产生的部分 lister 先执行，因为产生的下级列举对象本身是按前
@@ -349,52 +354,54 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         return nextList;
     }
 
+    private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix,
+                                                      AtomicBoolean lastListerUpdated, AtomicInteger atomicOrder) {
+        if (!lastListerUpdated.get()) {
+//                ILister<E> lastLister =
+            listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
+//                        .get();
+                    .ifPresent(lastLister -> {
+                        System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.hasNext());
+                        // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
+                        if (!lastLister.hasNext()) {
+                            // 全局结尾则设置前缀为空，否则设置前缀为起始值
+                            lastLister.setPrefix(lastPrefix);
+                            lastLister.updateMarkerBy(lastLister.currentLast());
+                            lastLister.setStraight(true);
+                            lastListerUpdated.set(true);
+                        }
+                    });
+        }
+        return listerList.parallelStream().filter(eiLister -> {
+            if (eiLister.canStraight()) {
+                try {
+                    execInThread(eiLister, atomicOrder.addAndGet(1));
+                } catch (Exception e) {
+                    SystemUtils.exit(exitBool, e);
+                }
+                return false;
+            } else {
+                return true; // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
+            }
+        }).map(lister -> {
+            try {
+                return filteredNextList(lister, atomicOrder);
+            } catch (Exception e) {
+                SystemUtils.exit(exitBool, e); return null;
+            }
+        }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).get();
+    }
+
     private int obtainThreadsToRun(List<ILister<E>> listerList, int order, String lastPrefix) throws Exception {
         AtomicInteger atomicOrder = new AtomicInteger(order);
         AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
+        listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
         while (listerList.size() > 0 && listerList.size() < threads) {
-            // 是否更新了列举的末尾设置，每个 startLister 只需要更新一次末尾设置
-            if (!lastListerUpdated.get()) {
-//            if (!lastUpdated) {
-//                ILister<E> lastLister =
-                listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
-//                        .get();
-                        .ifPresent(lastLister -> {
-                            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.hasNext());
-                            // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
-                            if (!lastLister.hasNext()) {
-                                // 全局结尾则设置前缀为空，否则设置前缀为起始值
-                                lastLister.setPrefix(lastPrefix);
-                                lastLister.updateMarkerBy(lastLister.currentLast());
-                                lastLister.setStraight(true);
-                                lastListerUpdated.set(true);
-//                        lastUpdated = true;
-                            }
-                        });
-            }
-            listerList = listerList.parallelStream().filter(eiLister -> {
-                if (eiLister.canStraight()) {
-                    try {
-                        execInThread(eiLister, atomicOrder.addAndGet(1));
-                    } catch (Exception e) {
-                        SystemUtils.exit(exitBool, e);
-                    }
-                    return false;
-                } else {
-                    return true; // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-                }
-            }).map(lister -> {
-                try {
-                    return filteredNextList(lister, atomicOrder);
-                } catch (Exception e) {
-                    SystemUtils.exit(exitBool, e); return null;
-                }
-            }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).get();
+            listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
         }
 
         // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
         if (!lastListerUpdated.get()) {
-//        if (!lastUpdated) {
             listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lister -> {
                 lister.setPrefix(lastPrefix);
                 if (!lister.hasNext()) lister.updateMarkerBy(lister.currentLast());
@@ -418,6 +425,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             String point = computePoint(startLister, false);
             if (!startLister.getStraight()) {
                 listerList = parallelNextLevelLister(originPrefixList, startLister.getPrefix(), point);
+                listerList.add(startLister);
             }
         }
         if (listerList == null) {
