@@ -446,7 +446,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     public void export() {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        int order = 1;
+        int order = 0;
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         try {
