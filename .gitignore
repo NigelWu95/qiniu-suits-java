@@ -22,8 +22,6 @@ out/
 .idea_modules/
 
 ### custom
-resources/.*.properties
-resources/.*.json
-resources/.*.config
+resources/.*
 assembly/
 .DS_Store
