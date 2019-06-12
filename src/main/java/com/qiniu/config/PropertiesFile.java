@@ -11,16 +11,24 @@ public class PropertiesFile {
     private Properties properties;
 
     public PropertiesFile(String resourceName) throws IOException {
-        resourceName = FileUtils.realPathWithUserHome(resourceName);
-        InputStream inputStream = new FileInputStream(resourceName);
+        InputStream inputStream = null;
         try {
+            File file = new File(FileUtils.realPathWithUserHome(resourceName));
+            if (file.exists()) {
+                inputStream = new FileInputStream(file);
+            } else {
+                inputStream = getClass().getClassLoader().getResourceAsStream(resourceName);
+            }
+            if (inputStream == null) throw new IOException(resourceName + " may be not exists.");
             properties = new Properties();
             properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
         } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                inputStream = null;
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    inputStream = null;
+                }
             }
         }
     }

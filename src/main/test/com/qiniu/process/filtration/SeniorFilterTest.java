@@ -14,7 +14,7 @@ public class SeniorFilterTest {
     @Test
     @Before
     public void init() throws IOException {
-        seniorFilter = new SeniorFilter<Map<String, String>>("mime", "resources/.check.json", false) {
+        seniorFilter = new SeniorFilter<Map<String, String>>("ext-mime", "resources/check-config.json", false) {
             @Override
             protected String valueFrom(Map<String, String> item, String key) {
                 return item != null ? item.get(key) : null;
