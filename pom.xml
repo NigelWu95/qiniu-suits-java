@@ -82,7 +82,7 @@
           <resource>
               <directory>resources</directory>
               <filtering>false</filtering>
-              <targetPath>resources/</targetPath>
+              <!--<targetPath>resources/</targetPath>-->
               <includes>
                   <include>check.json</include>
               </includes>
