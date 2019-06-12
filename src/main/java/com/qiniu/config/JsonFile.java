@@ -6,23 +6,23 @@ import com.qiniu.util.FileUtils;
 import com.qiniu.util.JsonUtils;
 
 import java.io.*;
+import java.util.Properties;
 import java.util.Set;
 
 public class JsonFile {
 
     private JsonObject jsonObject;
 
-    public JsonFile(String resourceFile) throws IOException {
-        resourceFile = FileUtils.realPathWithUserHome(resourceFile);
+    public JsonFile(String resourceName) throws IOException {
         InputStream inputStream = null;
         try {
-            File file = new File(resourceFile);
-            if (!file.exists()) {
-                inputStream = getClass().getResourceAsStream(System.getProperty("file.separator") + resourceFile);
-            } else {
+            File file = new File(FileUtils.realPathWithUserHome(resourceName));
+            if (file.exists()) {
                 inputStream = new FileInputStream(file);
+            } else {
+                inputStream = getClass().getClassLoader().getResourceAsStream(resourceName);
             }
-            if (inputStream == null) throw new IOException(resourceFile + " may be not exists.");
+            if (inputStream == null) throw new IOException(resourceName + " may be not exists.");
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             StringBuilder stringBuilder = new StringBuilder();
             String line;
@@ -31,7 +31,7 @@ public class JsonFile {
             }
             jsonObject = JsonUtils.toJsonObject(stringBuilder.toString());
         } catch (Exception e) {
-            throw new IOException("load " + resourceFile + " json config failed, " + e.getMessage());
+            throw new IOException("load json config file failed, " + e.getMessage());
         } finally {
             if (inputStream != null) {
                 try {
