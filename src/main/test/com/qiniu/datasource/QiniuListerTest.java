@@ -23,14 +23,16 @@ public class QiniuListerTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
-                null, null, null, null, 10000);
+                "fragments/z1.yanyuvideo.room7", null, null, null, 10000);
     }
 
     @Test
     public void testNext() {
+        int times = 0;
         int size = qiniuLister.currents().size();
         while (qiniuLister.hasNext()) {
             try {
+                System.out.println(times++);
                 qiniuLister.listForward();
                 size += qiniuLister.currents().size();
             } catch (SuitsException e) {
