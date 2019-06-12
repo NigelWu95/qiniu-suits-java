@@ -358,20 +358,20 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix,
                                                       AtomicBoolean lastListerUpdated, AtomicInteger atomicOrder) {
         if (!lastListerUpdated.get()) {
-//                ILister<E> lastLister =
+            ILister<E> lastLister =
             listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
-//                        .get();
-                    .ifPresent(lastLister -> {
-                        System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.hasNext());
-                        // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
-                        if (!lastLister.hasNext()) {
-                            // 全局结尾则设置前缀为空，否则设置前缀为起始值
-                            lastLister.setPrefix(lastPrefix);
-                            lastLister.updateMarkerBy(lastLister.currentLast());
-                            lastLister.setStraight(true);
-                            lastListerUpdated.set(true);
-                        }
-                    });
+                    .get();
+//                    .ifPresent(lastLister -> {
+            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
+            // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
+            if (!lastLister.hasNext()) {
+                // 全局结尾则设置前缀为空，否则设置前缀为起始值
+                lastLister.setPrefix(lastPrefix);
+                lastLister.updateMarkerBy(lastLister.currentLast());
+                lastLister.setStraight(true);
+                lastListerUpdated.set(true);
+            }
+//                    });
         }
         return listerList.parallelStream().map(lister -> {
             try {
@@ -402,11 +402,13 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         if (listerList != null) {
             // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
             if (!lastListerUpdated.get()) {
-                listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix)).ifPresent(lastLister -> {
-                    System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.hasNext());
-                    lastLister.setPrefix(lastPrefix);
-                    if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
-                });
+                ILister<E> lastLister = listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
+                        .get();
+//                        .ifPresent(lastLister -> {
+                System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
+                lastLister.setPrefix(lastPrefix);
+                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+//                });
             }
             for (ILister<E> lister : listerList) execInThread(lister, atomicOrder.addAndGet(1));
         }
