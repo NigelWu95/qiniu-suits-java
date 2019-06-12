@@ -456,9 +456,9 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
             } else {
                 Collections.sort(prefixes);
                 if (prefixLeft) {
-                    ILister<E> startLister = generateLister("");
-                    startLister.setEndPrefix(prefixes.get(0));
-                    execInThread(startLister, order++);
+                    ILister<E> firstLister = generateLister("");
+                    firstLister.setEndPrefix(prefixes.get(0));
+                    execInThread(firstLister, order++);
                 }
                 int mSize = prefixes.size() - 1;
                 for (int i = 0; i < mSize; i++) {
@@ -466,9 +466,8 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                     ILister<E> startLister = generateLister(prefix);
                     order = computeToList(startLister, prefix, order);
                 }
-                String lastPrefix = prefixRight ? "" : prefixes.get(mSize);
-                ILister<E> startLister = generateLister(lastPrefix);
-                computeToList(startLister, lastPrefix, order);
+                ILister<E> lastLister = generateLister(prefixes.get(mSize));
+                computeToList(lastLister, prefixRight ? "" : lastLister.getPrefix(), order);
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
