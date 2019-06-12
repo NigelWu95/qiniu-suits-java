@@ -1,0 +1,1496 @@
+{
+  "routers": [
+    {
+      "pattern": "/origin/(.+)_120_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/origin/${1}.${2}"
+    },
+    {
+      "pattern": "/(tieba|face)(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)(.+)_301_301.jpg(?:[?].+)?$",
+      "repl": "/${1}${2}${3}_ori.jpg"
+    },
+    {
+      "pattern": "/(tieba|face)(.+)_301_301.jpg(?:[?].+)?$",
+      "repl": "/${1}${2}_ori.jpg"
+    },
+    {
+      "pattern": "([^?]*)[.]([^?]+)[?]facecrop2(.+)$",
+      "repl": "${1}_ori.${2}"
+    },
+    {
+      "pattern": "/message((?:/\\w\\w*)*)/(\\w+)_600_300_face[.]([^?]+)(?:[?].+)?$",
+      "repl": "/message${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/(?:voice|event2|origin).+$",
+      "repl": "${0}"
+    },
+    {
+      "pattern": "([^?]*)[.]([^?]+)[?]syxinyangsy$",
+      "repl": "${1}_ori.${2}"
+    },
+    {
+      "pattern": "(.+)_300w[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "${1}_ori.${2}"
+    },
+    {
+      "pattern": "(.+)_300w[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}_ori.${2}"
+    },
+    {
+      "pattern": "(.+)_300h[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "${1}_ori.${2}"
+    },
+    {
+      "pattern" : "(.+)_300h[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}_ori.${2}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_344_(\\d+)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_344_(\\d+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_344_(\\d+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_344_(\\d+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${6}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${6}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_75[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_75[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_160[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_160[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_301_301[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_301_301[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_198_198[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_198_198[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_130_130[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_130_130[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_152_152[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_90_120[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_90_120[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_75[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_75[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_160[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_160[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)[.](gif)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_75[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_75[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_160[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_160[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_75[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_75[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_160[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_160[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_75[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_75[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_160[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_160[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_301_301[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_198_198[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_130_130[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_152_152[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_90_120[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_236_156[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_200_200[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_345_248[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_75[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_75[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_160[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_160[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}.${5}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}.${5}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}.${3}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}.${3}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}.${4}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}.${4}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}.${3}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_570[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_570[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)[.](gif)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)[.](gif)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${6}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${6}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${5}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba(/ios/post|/ios/doctorsay|/ios/wendaold|/ios/shortpost|/ios/wenda|/android/post|/android/doctorsay|/android/wendaold|/android/shortpost|/android/wenda|/web/post|/web/doctorsay|/web/wendaold|/web/shortpost|/web/wenda)((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}${2}/${3}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/tieba((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/tieba${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_301_301[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_198_198[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_198_198[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_130_130[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_130_130[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_152_152[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_152_152[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_90_120[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_90_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_75[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_75[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_160[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_160[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/duanping(.+)/(.+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/duanping${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/ablum((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/ablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/genhhospital((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/genhhospital${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/nomkablum((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/nomkablum${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_301_301[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_198_198[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_130_130[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_152_152[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_90_120[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_236_156[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_200_200[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_345_248[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_75[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_160[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "/beau_identity((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "/beau_identity${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}.${5}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}.${3}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}.${4}"
+    },
+    {
+      "pattern": "((?:/\\d+/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${5}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_570[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)_([1-9]\\d*)[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${4}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)2webp(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    },
+    {
+      "pattern": "((?:/\\w\\w*)*)/(\\w+)[.]([^?]+)(?:[?].+)?$",
+      "repl": "${1}/${2}_ori.${3}"
+    }
+  ]
+}
