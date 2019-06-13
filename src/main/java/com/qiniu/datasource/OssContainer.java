@@ -45,8 +45,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
-        this.prefixesMap = prefixesMap == null ? new HashMap<>() : prefixesMap;
-        setPrefixes();
+        setPrefixesAndMap(prefixesMap);
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
         setIndexMapWithDefault(indexMap);
@@ -87,9 +86,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     public void updateSettings(CommonParams commonParams) {
         bucket = commonParams.getBucket();
         antiPrefixes = commonParams.getAntiPrefixes();
-        prefixesMap = commonParams.getPrefixesMap();
-        if (prefixesMap == null) prefixesMap = new HashMap<>();
-        setPrefixes();
+        setPrefixesAndMap(commonParams.getPrefixesMap());
         prefixLeft = commonParams.getPrefixLeft();
         prefixRight = commonParams.getPrefixRight();
         setIndexMapWithDefault(commonParams.getIndexMap());
@@ -107,11 +104,32 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         this.processor = processor;
     }
 
-    private void setPrefixes() {
-        prefixes = new ArrayList<>();
-        for (String prefix : prefixesMap.keySet()) {
-            if (checkPrefix(prefix)) prefixes.add(prefix);
+    private void setPrefixesAndMap(Map<String, String[]> prefixesMap) {
+        if (prefixesMap == null) {
+            this.prefixesMap = new HashMap<>();
+        } else {
+            this.prefixesMap = prefixesMap;
+            prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix)
+                    .sorted().collect(Collectors.toList());
+            int size = prefixes.size();
+            if (size == 0) return;
+            Iterator<String> iterator = prefixes.iterator();
+            String temp = iterator.next();
+            while (iterator.hasNext() && size > 0) {
+                size--;
+                String prefix = iterator.next();
+                if (prefix.startsWith(temp)) {
+                    iterator.remove();
+                    this.prefixesMap.remove(prefix);
+                } else {
+                    temp = prefix;
+                }
+            }
         }
+    }
+
+    private synchronized void insertIntoPrefixesMap(String prefix, String[] markerAndEnd) {
+        prefixesMap.put(prefix, markerAndEnd);
     }
 
     /**
@@ -291,8 +309,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 } else if (point.compareTo(originPrefixList.get(0)) < 0) {
                     lister.setEndPrefix(startPrefix + originPrefixList.get(0));
                 } else {
-                    if (!prefixesMap.containsKey(startPrefix + point))
-                        prefixesMap.put(startPrefix + point, new String[]{lister.getMarker(), ""});
+                    insertIntoPrefixesMap(startPrefix + point, new String[]{lister.getMarker(), ""});
                     lister.setEndPrefix(endKey);
                 }
             } else {
@@ -456,7 +473,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                 ILister<E> startLister = generateLister("");
                 computeToList(startLister, "", order);
             } else {
-                Collections.sort(prefixes);
+//                Collections.sort(prefixes);
                 if (prefixLeft) {
                     ILister<E> firstLister = generateLister("");
                     firstLister.setEndPrefix(prefixes.get(0));

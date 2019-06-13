@@ -109,26 +109,33 @@ public class QiniuLister implements ILister<FileInfo> {
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
         List<FileInfo> fileInfoList = new ArrayList<>();
+        JsonObject jsonObject = null;
         try {
             String line;
-            JsonObject jsonObject = null;
             while ((line = bufferedReader.readLine()) != null) {
                 jsonObject = JsonUtils.toJsonObject(line);
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
                     fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
                 }
             }
-            if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
-                this.marker = jsonObject.get("marker").getAsString();
-            } else {
-                this.marker = null;
-            }
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
+            this.marker = jsonObject.get("marker").getAsString();
+        } else {
+            this.marker = null;
+        }
+        try {
             bufferedReader.close();
             reader.close();
             inputStream.close();
             response.close();
         } catch (IOException e) {
-            throw new QiniuException(e, e.getMessage());
+            bufferedReader = null;
+            reader = null;
+            inputStream = null;
+            response = null;
         }
         return fileInfoList;
     }
