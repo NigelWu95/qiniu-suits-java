@@ -1,10 +1,38 @@
 package com.qiniu.util;
 
+import com.qiniu.sdk.UpYunConfig;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
 
 public final class CharactersUtils {
+
+    private static MessageDigest md5;
+
+    /**
+     * 对字符串进行 MD5 加密
+     *
+     * @param str 待加密字符串
+     * @return 加密后字符串
+     */
+    public static String md5(String str) throws Exception {
+        char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                'a', 'b', 'c', 'd', 'e', 'f'};
+        if (md5 == null) md5 = MessageDigest.getInstance("MD5");
+        md5.update(str.getBytes(UpYunConfig.UTF8));
+        byte[] encodedValue = md5.digest();
+        int j = encodedValue.length;
+        char finalValue[] = new char[j * 2];
+        int k = 0;
+        for (byte encoded : encodedValue) {
+            finalValue[k++] = hexDigits[encoded >> 4 & 0xf];
+            finalValue[k++] = hexDigits[encoded & 0xf];
+        }
+
+        return new String(finalValue);
+    }
 
     public static String[] parseStringToHexArray(String originString) {
 

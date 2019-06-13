@@ -20,8 +20,10 @@ public class UpYunConfig implements Cloneable {
     public int read_timeout = DEFAULT_READ_TIMEOUT;
     public int write_timeout = DEFAULT_WRITE_TIMEOUT;
 
+    public UpYunConfig() {}
+
     @Override
-    protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
+    public UpYunConfig clone() throws CloneNotSupportedException {
+        return (UpYunConfig) super.clone();
     }
 }
