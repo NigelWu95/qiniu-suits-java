@@ -39,8 +39,8 @@ public class UpYunClient {
         // 获取链接
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(config.connect_timeout);
-        conn.setReadTimeout(config.read_timeout);
+        conn.setConnectTimeout(config.connectTimeout);
+        conn.setReadTimeout(config.readTimeout);
         conn.setRequestMethod(UpYunConfig.METHOD_GET);
         conn.setUseCaches(false);
         String date = getGMTDate();

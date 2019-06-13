@@ -15,6 +15,7 @@ import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.ExportTS;
 import com.qiniu.process.qdora.*;
 import com.qiniu.process.qoss.*;
+import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.OssUtils;
 import com.qiniu.util.ParamsUtils;
@@ -34,6 +35,7 @@ public class QSuitsEntry {
     private Configuration qiniuConfig;
     private ClientConfig tenClientConfig;
     private ClientConfiguration aliClientConfig;
+    private UpYunConfig upYunConfig;
     private String source;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
@@ -92,6 +94,11 @@ public class QSuitsEntry {
     public void setAliClientConfig(ClientConfiguration clientConfig) throws IOException {
         if (clientConfig == null) throw new IOException("the clientConfiguration can not be null when you set it.");
         this.aliClientConfig = clientConfig;
+    }
+
+    public void setUpYunConfig(UpYunConfig upYunConfig) throws IOException {
+        if (upYunConfig == null) throw new IOException("the clientConfiguration can not be null when you set it.");
+        this.upYunConfig = upYunConfig;
     }
 
     private void setMembers() {
@@ -205,6 +212,19 @@ public class QSuitsEntry {
         return clientConfig;
     }
 
+    public UpYunConfig getUpYunConfig() {
+        return upYunConfig == null ? getDefaultUpYunConfig() : upYunConfig;
+    }
+
+    private UpYunConfig getDefaultUpYunConfig() {
+        UpYunConfig upYunConfig = new UpYunConfig();
+        if (1000 * connectTimeout > upYunConfig.connectTimeout)
+            upYunConfig.connectTimeout = 1000 * connectTimeout;
+        if (1000 * readTimeout > upYunConfig.readTimeout)
+            upYunConfig.readTimeout = 1000 * readTimeout;
+        return upYunConfig;
+    }
+
     public IDataSource getDataSource() throws IOException {
         if ("qiniu".equals(source)) {
             return getQiniuOssContainer();
@@ -212,6 +232,8 @@ public class QSuitsEntry {
             return getTenOssContainer();
         } else if ("aliyun".equals(source)) {
             return getAliOssContainer();
+        } else if ("upyun".equals(source)) {
+            return getUpYunOssContainer();
         } else if ("local".equals(source)) {
             return getLocalFileContainer();
         } else {
@@ -241,11 +263,11 @@ public class QSuitsEntry {
     }
 
     public QiniuOssContainer getQiniuOssContainer() {
+        if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         QiniuOssContainer qiniuOssContainer = new QiniuOssContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
                 bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         qiniuOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
@@ -256,11 +278,11 @@ public class QSuitsEntry {
     public TenOssContainer getTenOssContainer() throws IOException {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
+        if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
         TenOssContainer tenOssContainer = new TenOssContainer(secretId, secretKey, tenClientConfig, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         tenOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
@@ -279,16 +301,31 @@ public class QSuitsEntry {
             if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
             endPoint = "http://" + regionName + ".aliyuncs.com";
         }
+        if (aliClientConfig == null) aliClientConfig = getDefaultAliClientConfig();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (aliClientConfig == null) aliClientConfig = getDefaultAliClientConfig();
         AliOssContainer aliOssContainer = new AliOssContainer(accessId, accessSecret, aliClientConfig, endPoint, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         aliOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         aliOssContainer.setRetryTimes(retryTimes);
         return aliOssContainer;
+    }
+
+    public UpYunOssContainer getUpYunOssContainer() {
+        String username = commonParams.getUpyunUsername();
+        String password = commonParams.getUpyunPassword();
+        if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
+        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        UpYunOssContainer upYunOssContainer = new UpYunOssContainer(username, password, upYunConfig, bucket,
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        upYunOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        upYunOssContainer.setRetryTimes(retryTimes);
+        return upYunOssContainer;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {

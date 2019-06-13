@@ -34,6 +34,8 @@ public class CommonParams {
     private String tencentSecretKey;
     private String aliyunAccessId;
     private String aliyunAccessSecret;
+    private String upyunUsername;
+    private String upyunPassword;
     private String bucket;
     private String regionName;
     private Map<String, String[]> prefixesMap;
@@ -82,6 +84,9 @@ public class CommonParams {
             } else if ("aliyun".equals(source)) {
                 aliyunAccessId = entryParam.getValue("ali-id").trim();
                 aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+            } else if ("upyun".equals(source)) {
+                upyunUsername = entryParam.getValue("up-name").trim();
+                upyunPassword = entryParam.getValue("up-pass").trim();
             } else {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
@@ -249,14 +254,15 @@ public class CommonParams {
                 if ("".equals(path) || path.startsWith("qiniu://")) source = "qiniu";
                 else if (path.startsWith("tencent://")) source = "tencent";
                 else if (path.startsWith("aliyun://")) source = "aliyun";
+                else if (path.startsWith("upyun://")) source = "upyun";
                 else source = "local";
             }
         }
         // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
-        if (!source.matches("(local|qiniu|tencent|aliyun)")) {
-            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
+        if (!source.matches("(local|qiniu|tencent|aliyun|upyun)")) {
+            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun|upyun)");
         }
     }
 
@@ -283,6 +289,9 @@ public class CommonParams {
             bucket = entryParam.getValue("bucket", bucket).trim();
         } else if ("aliyun".equals(source) && path.startsWith("aliyun://")) {
             bucket = path.substring(9);
+            bucket = entryParam.getValue("bucket", bucket).trim();
+        } else if ("upyun".equals(source) && path.startsWith("upyun://")) {
+            bucket = path.substring(8);
             bucket = entryParam.getValue("bucket", bucket).trim();
         } else {
             bucket = entryParam.getValue("bucket").trim();
@@ -319,6 +328,8 @@ public class CommonParams {
                             marker = OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString());
                         } else if ("aliyun".equals(source)) {
                             marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
+                        } else if ("upyun".equals(source)) {
+                            marker = OssUtils.getUpYunMarker(bucket, jsonCfg.get("start").getAsString());
                         }
                     }
                 } else {
@@ -601,7 +612,7 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun)")) {
+            if (source.matches("(qiniu|tencent|aliyun|upyun)")) {
                 if (process == null || "".equals(process)) {
                     saveTotal = "true";
                 } else {
@@ -693,6 +704,14 @@ public class CommonParams {
 
     public void setAliyunAccessSecret(String aliyunAccessSecret) {
         this.aliyunAccessSecret = aliyunAccessSecret;
+    }
+
+    public void setUpyunUsername(String upyunUsername) {
+        this.upyunUsername = upyunUsername;
+    }
+
+    public void setUpyunPassword(String upyunPassword) {
+        this.upyunPassword = upyunPassword;
     }
 
     public void setBucket(String bucket) {
@@ -837,6 +856,14 @@ public class CommonParams {
 
     public String getAliyunAccessSecret() {
         return aliyunAccessSecret;
+    }
+
+    public String getUpyunUsername() {
+        return upyunUsername;
+    }
+
+    public String getUpyunPassword() {
+        return upyunPassword;
     }
 
     public String getBucket() {

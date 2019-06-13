@@ -16,9 +16,9 @@ public class UpYunConfig implements Cloneable {
     public static int DEFAULT_READ_TIMEOUT = 30 * 1000;
     public static int DEFAULT_WRITE_TIMEOUT = 30 * 1000;
 
-    public int connect_timeout = DEFAULT_CONNECT_TIMEOUT;
-    public int read_timeout = DEFAULT_READ_TIMEOUT;
-    public int write_timeout = DEFAULT_WRITE_TIMEOUT;
+    public int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    public int readTimeout = DEFAULT_READ_TIMEOUT;
+    public int writeTimeout = DEFAULT_WRITE_TIMEOUT;
 
     public UpYunConfig() {}
 
