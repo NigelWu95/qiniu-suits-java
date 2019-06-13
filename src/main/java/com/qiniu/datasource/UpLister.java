@@ -99,32 +99,40 @@ public class UpLister implements ILister<FolderItem> {
     }
 
     private List<FolderItem> getListResult(String prefix, String marker, int limit) throws IOException, UpException {
-        HttpURLConnection conn = upYunClient.listFilesConnection(bucket, prefix, marker, limit);
         StringBuilder text = new StringBuilder();
-        int code = conn.getResponseCode();
         List<FolderItem> folderItems = new ArrayList<>();
-//        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
-        InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-        InputStreamReader sr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(sr);
-        char[] chars = new char[4096];
-        int length;
-        while ((length = br.read(chars)) != -1) {
-            text.append(chars, 0, length);
-        }
-
-        this.marker = conn.getHeaderField("x-upyun-list-iter");
-        if (this.marker.equals("g2gCZAAEbmV4dGQAA2VvZg") || text.length() == 0) this.marker = null;
+        HttpURLConnection conn = null;
+        int code;
+        InputStream is = null;
+        InputStreamReader sr = null;
+        BufferedReader br = null;
         try {
-            br.close();
-            sr.close();
-            is.close();
-        } catch (IOException e) {
-            br = null;
-            sr = null;
-            is = null;
+            conn = upYunClient.listFilesConnection(bucket, prefix, marker, limit);
+            code = conn.getResponseCode();
+//        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
+            is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+            sr = new InputStreamReader(is);
+            br = new BufferedReader(sr);
+            char[] chars = new char[4096];
+            int length;
+            while ((length = br.read(chars)) != -1) {
+                text.append(chars, 0, length);
+            }
+            this.marker = conn.getHeaderField("x-upyun-list-iter");
+            if (this.marker.equals("g2gCZAAEbmV4dGQAA2VvZg") || text.length() == 0) this.marker = null;
+            if (code >= 400) throw new UpAPIException(code, text.toString());
+        } finally {
+            try {
+                if (conn != null) conn.disconnect();
+                if (br != null) br.close();
+                if (sr != null) sr.close();
+                if (is != null) is.close();
+            } catch (IOException e) {
+                br = null;
+                sr = null;
+                is = null;
+            }
         }
-        if (code >= 400) throw new UpAPIException(code, text.toString());
         String result = text.toString();
         String[] lines = result.split("\n");
         for (String line : lines) {
