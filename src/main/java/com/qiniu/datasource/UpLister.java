@@ -3,13 +3,13 @@ package com.qiniu.datasource;
 import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FolderItem;
 import com.qiniu.sdk.UpYunClient;
+import com.qiniu.util.OssUtils;
 import com.upyun.UpAPIException;
 import com.upyun.UpException;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 public class UpLister implements ILister<FolderItem> {
@@ -213,11 +213,7 @@ public class UpLister implements ILister<FolderItem> {
 
     @Override
     public String currentEndKey() {
-        if (hasNext()) {
-            Base64.Decoder decoder = Base64.getDecoder();
-            String keyString = new String(decoder.decode(marker));
-            return keyString.substring(bucket.length() + 3);
-        }
+        if (hasNext()) return OssUtils.decodeUpYunMarker(bucket, marker);
         FolderItem last = currentLast();
         return last != null ? last.key : null;
     }
@@ -225,8 +221,7 @@ public class UpLister implements ILister<FolderItem> {
     @Override
     public void updateMarkerBy(FolderItem object) {
         if (object != null) {
-            Base64.Encoder encoder = Base64.getEncoder();
-            marker = new String(encoder.encode((bucket + "/@" + object.key).getBytes()));
+            marker = OssUtils.getUpYunMarker(bucket, object.key);
         }
     }
 

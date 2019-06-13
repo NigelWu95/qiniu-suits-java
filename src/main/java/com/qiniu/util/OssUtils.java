@@ -16,14 +16,19 @@ import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
+import com.qiniu.sdk.FolderItem;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Base64.*;
 
 public class OssUtils {
+
+    public static Encoder encoder = java.util.Base64.getEncoder();
+    public static Decoder decoder = java.util.Base64.getDecoder();
 
     public static Map<String, Integer> aliStatus = new HashMap<String, Integer>(){{
         put("UnknownHost", 400); // 错误的 region 等
@@ -75,6 +80,10 @@ public class OssUtils {
         return summary.getKey();
     }
 
+    public static String getUpYunMarker(String bucket, FolderItem folderItem) {
+        return new String(encoder.encode((bucket + "/@" + folderItem.key).getBytes()));
+    }
+
     public static String getQiniuMarker(String key) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("c", 0);
@@ -91,6 +100,10 @@ public class OssUtils {
         return key;
     }
 
+    public static String getUpYunMarker(String bucket, String key) {
+        return new String(encoder.encode((bucket + "/@" + key).getBytes()));
+    }
+
     public static String decodeQiniuMarker(String marker) {
         String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));
         JsonObject jsonObject = new JsonParser().parse(decodedMarker).getAsJsonObject();
@@ -103,6 +116,11 @@ public class OssUtils {
 
     public static String decodeTenCosMarker(String marker) {
         return marker;
+    }
+
+    public static String decodeUpYunMarker(String bucket, String marker) {
+        String keyString = new String(decoder.decode(marker));
+        return keyString.substring(bucket.length() + 3);
     }
 
     public static Zone getQiniuRegion(String regionName) {
