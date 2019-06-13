@@ -119,7 +119,7 @@ public class UpLister implements ILister<FolderItem> {
                 text.append(chars, 0, length);
             }
             this.marker = conn.getHeaderField("x-upyun-list-iter");
-            if (this.marker.equals("g2gCZAAEbmV4dGQAA2VvZg") || text.length() == 0) this.marker = null;
+            if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
             if (code >= 400) throw new UpAPIException(code, text.toString());
         } finally {
             try {
@@ -165,7 +165,7 @@ public class UpLister implements ILister<FolderItem> {
             folderItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (UpAPIException e) {
-            throw new SuitsException(e.statusCode, e.getMessage());
+            throw new SuitsException(e.statusCode, e.getMessage().replaceAll("\n", "  "));
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
         } catch (Exception e) {
