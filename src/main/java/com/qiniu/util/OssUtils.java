@@ -100,11 +100,9 @@ public class OssUtils {
         return key;
     }
 
-    public static String getUpYunMarker(String bucket, String key) {
-//        UpYun upYun = new UpYun();
-//        upYun.readFile()
-        return new String(encoder.encode((bucket + "/@#" + key).getBytes()));
-    }
+//    public static String getUpYunMarker(String bucket, String key) {
+//        return new String(encoder.encode((bucket + "/@#" + key).getBytes()));
+//    }
 
     public static String decodeQiniuMarker(String marker) {
         String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));

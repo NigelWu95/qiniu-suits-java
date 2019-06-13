@@ -217,7 +217,7 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void updateMarkerBy(FileItem object) {
         if (object != null) {
-            marker = OssUtils.getUpYunMarker(bucket, object.key);
+            marker = OssUtils.getUpYunMarker(bucket, object);
         }
     }
 

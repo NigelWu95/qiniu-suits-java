@@ -11,6 +11,9 @@ import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
+import com.qiniu.sdk.FileItem;
+import com.qiniu.sdk.UpYunClient;
+import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -308,7 +311,7 @@ public class CommonParams {
         }
     }
 
-    private void setPrefixesMap(String prefixConfig, String prefixes) throws IOException {
+    private void setPrefixesMap(String prefixConfig, String prefixes) throws Exception {
         prefixesMap = new HashMap<>();
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
@@ -329,7 +332,9 @@ public class CommonParams {
                         } else if ("aliyun".equals(source)) {
                             marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
                         } else if ("upyun".equals(source)) {
-                            marker = OssUtils.getUpYunMarker(bucket, jsonCfg.get("start").getAsString());
+                            UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), upyunUsername, upyunPassword);
+                            FileItem fileItem = upYunClient.getFileInfo(bucket, jsonCfg.get("start").getAsString());
+                            marker = OssUtils.getUpYunMarker(bucket, fileItem);
                         }
                     }
                 } else {
