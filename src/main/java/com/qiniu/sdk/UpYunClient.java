@@ -72,10 +72,15 @@ public class UpYunClient {
         if (code != 200) throw new IOException(code + " " + conn.getResponseMessage());
         FileItem fileItem = new FileItem();
         fileItem.key = key;
-        fileItem.attribute = conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_TYPE);
-        fileItem.size = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_SIZE));
-        fileItem.timeSeconds = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_DATE));
-        conn.disconnect();
+        try {
+            fileItem.attribute = conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_TYPE);
+            fileItem.size = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_SIZE));
+            fileItem.timeSeconds = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_DATE));
+        } catch (NullPointerException | NumberFormatException e) {
+            throw new IOException(conn.getResponseMessage() + "  " + e.getMessage());
+        } finally {
+            conn.disconnect();
+        }
         return fileItem;
     }
 }

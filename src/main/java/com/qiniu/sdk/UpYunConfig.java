@@ -8,7 +8,7 @@ public class UpYunConfig implements Cloneable {
     public static final String UTF8 = "UTF-8";
     public static final String AUTHORIZATION = "Authorization";
     public static final String DATE = "Date";
-    public static final String METHOD_HEAD = "GET";
+    public static final String METHOD_HEAD = "HEAD";
     public static final String METHOD_GET = "GET";
     public static final String apiDomain = "v0.api.upyun.com";
 
