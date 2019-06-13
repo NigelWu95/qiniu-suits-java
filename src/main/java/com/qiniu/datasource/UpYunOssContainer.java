@@ -1,7 +1,10 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
+import com.qiniu.convert.UOSObjToMap;
+import com.qiniu.convert.UOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FolderItem;
 import com.qiniu.sdk.UpYunClient;
@@ -34,17 +37,17 @@ public class UpYunOssContainer extends OssContainer<FolderItem, BufferedWriter, 
 
     @Override
     protected ITypeConvert<FolderItem, Map<String, String>> getNewConverter() {
-        return null;
+        return new UOSObjToMap(indexMap);
     }
 
     @Override
     protected ITypeConvert<FolderItem, String> getNewStringConverter() throws IOException {
-        return null;
+        return new UOSObjToString(saveFormat, saveSeparator, rmFields);
     }
 
     @Override
     protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
-        return null;
+        return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
     @Override

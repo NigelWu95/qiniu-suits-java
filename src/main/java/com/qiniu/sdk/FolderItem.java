@@ -14,30 +14,32 @@ public class FolderItem {
     public long size;
 
     // 文件日期
-    public Date date;
+//    public Date date;
+    public long timeSeconds;
 
     public FolderItem(String data) {
         String[] a = data.split("\t");
-        if (a.length == 4) {
-            this.key = a[0];
-            this.attribute = ("N".equals(a[1]) ? "File" : "Folder");
-            try {
-                this.size = Long.parseLong(a[2].trim());
-            } catch (NumberFormatException e) {
-                this.size = -1;
-            }
-            long da = 0;
-            try {
-                da = Long.parseLong(a[3].trim());
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-            this.date = new Date(da * 1000);
-        }
+        key = a[0];
+        if (a.length > 1) attribute = ("N".equals(a[1]) ? "File" : "Folder");
+        if (a.length > 2) size = Long.parseLong(a[2].trim());
+        if (a.length > 3) timeSeconds = Long.parseLong(a[3].trim());
+//        try {
+//            this.size = Long.parseLong(a[2].trim());
+//        } catch (NumberFormatException e) {
+//            this.size = -1;
+//        }
+//        long da = 0;
+//        try {
+//            da = Long.parseLong(a[3].trim());
+//        } catch (NumberFormatException e) {
+//            e.printStackTrace();
+//        }
+//        this.date = new Date(da * 1000);
     }
 
     @Override
     public String toString() {
-        return "key=" + key + ",size=" + size + ",time=" + date + ",attribute=" + attribute;
+//        return "key=" + key + ",size=" + size + ",time=" + date + ",attribute=" + attribute;
+        return "key=" + key + ",size=" + size + ",time=" + timeSeconds + ",attribute=" + attribute;
     }
 }
