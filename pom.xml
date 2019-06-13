@@ -63,13 +63,6 @@
             <version>3.4.2</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.upyun/java-sdk -->
-        <dependency>
-            <groupId>com.upyun</groupId>
-            <artifactId>java-sdk</artifactId>
-            <version>4.1.1</version>
-        </dependency>
-
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>

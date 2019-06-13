@@ -4,8 +4,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FolderItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.OssUtils;
-import com.upyun.UpAPIException;
-import com.upyun.UpException;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -98,7 +96,7 @@ public class UpLister implements ILister<FolderItem> {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    private List<FolderItem> getListResult(String prefix, String marker, int limit) throws IOException, UpException {
+    private List<FolderItem> getListResult(String prefix, String marker, int limit) throws IOException {
         StringBuilder text = new StringBuilder();
         List<FolderItem> folderItems = new ArrayList<>();
         HttpURLConnection conn = null;
@@ -120,7 +118,7 @@ public class UpLister implements ILister<FolderItem> {
             }
             this.marker = conn.getHeaderField("x-upyun-list-iter");
             if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
-            if (code >= 400) throw new UpAPIException(code, text.toString());
+            if (code >= 400) throw new SuitsException(code, text.toString());
         } finally {
             try {
                 if (conn != null) conn.disconnect();
@@ -164,8 +162,6 @@ public class UpLister implements ILister<FolderItem> {
         try {
             folderItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
-        } catch (UpAPIException e) {
-            throw new SuitsException(e.statusCode, e.getMessage().replaceAll("\n", "  "));
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
         } catch (Exception e) {

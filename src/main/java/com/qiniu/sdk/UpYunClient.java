@@ -1,16 +1,12 @@
 package com.qiniu.sdk;
 
 import com.qiniu.util.CharactersUtils;
-import com.upyun.UpException;
-import com.upyun.UpYunUtils;
+import com.qiniu.util.DatetimeUtils;
+import com.qiniu.util.OssUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
 
 public class UpYunClient {
 
@@ -34,7 +30,7 @@ public class UpYunClient {
     }
 
     public HttpURLConnection listFilesConnection(String bucketName, String prefix, String marker, int limit)
-            throws IOException, UpException {
+            throws IOException {
         String uri = "/" + bucketName + "/" + (prefix == null ? "" : prefix);
         // 获取链接
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
@@ -43,25 +39,14 @@ public class UpYunClient {
         conn.setReadTimeout(config.readTimeout);
         conn.setRequestMethod(UpYunConfig.METHOD_GET);
         conn.setUseCaches(false);
-        String date = getGMTDate();
+        String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, UpYunUtils.sign(UpYunConfig.METHOD_GET, date, uri, userName,
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri, userName,
                 password, null));
         conn.setRequestProperty("x-list-iter", marker);
         conn.setRequestProperty("x-list-limit", String.valueOf(limit));
         conn.connect();
         return conn;
-    }
-
-    /**
-     * 获取 GMT 格式时间戳
-     *
-     * @return GMT 格式时间戳
-     */
-    private String getGMTDate() {
-        SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
-        format.setTimeZone(TimeZone.getTimeZone("GMT"));
-        return format.format(new Date());
     }
 }
 

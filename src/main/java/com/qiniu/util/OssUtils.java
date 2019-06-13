@@ -81,7 +81,7 @@ public class OssUtils {
     }
 
     public static String getUpYunMarker(String bucket, FolderItem folderItem) {
-        return new String(encoder.encode((bucket + "/@" + folderItem.key).getBytes()));
+        return new String(encoder.encode((bucket + (folderItem.size == 0 ? "/@~" : "/@#") + folderItem.key).getBytes()));
     }
 
     public static String getQiniuMarker(String key) {
@@ -101,7 +101,9 @@ public class OssUtils {
     }
 
     public static String getUpYunMarker(String bucket, String key) {
-        return new String(encoder.encode((bucket + "/@" + key).getBytes()));
+//        UpYun upYun = new UpYun();
+//        upYun.readFile()
+        return new String(encoder.encode((bucket + "/@#" + key).getBytes()));
     }
 
     public static String decodeQiniuMarker(String marker) {
@@ -172,5 +174,38 @@ public class OssUtils {
             if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
         }
         throw new IOException("can not find this bucket.");
+    }
+
+    private static final String lineSeparator = System.getProperty("line.separator");
+
+    public static String upYunSign(String method, String date, String path, String userName, String password, String md5)
+            throws IOException {
+        StringBuilder sb = new StringBuilder();
+        String sp = "&";
+        sb.append(method);
+        sb.append(sp);
+        sb.append(path);
+
+        sb.append(sp);
+        sb.append(date);
+
+        if (md5 != null && md5.length() > 0) {
+            sb.append(sp);
+            sb.append(md5);
+        }
+        String raw = sb.toString().trim();
+        byte[] hmac;
+        try {
+            hmac = EncryptUtils.calculateRFC2104HMACRaw(password, raw);
+        } catch (Exception e) {
+            throw new IOException("calculate SHA1 wrong.");
+        }
+
+        if (hmac != null) {
+            return "UPYUN " + userName + ":" + EncryptUtils.encodeLines(hmac, 0, hmac.length, 76,
+                    lineSeparator).trim();
+        }
+
+        return null;
     }
 }
