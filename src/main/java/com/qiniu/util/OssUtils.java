@@ -16,7 +16,7 @@ import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
-import com.qiniu.sdk.FolderItem;
+import com.qiniu.sdk.FileItem;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -80,8 +80,8 @@ public class OssUtils {
         return summary.getKey();
     }
 
-    public static String getUpYunMarker(String bucket, FolderItem folderItem) {
-        return new String(encoder.encode((bucket + (folderItem.size == 0 ? "/@~" : "/@#") + folderItem.key).getBytes()));
+    public static String getUpYunMarker(String bucket, FileItem fileItem) {
+        return new String(encoder.encode((bucket + (fileItem.size == 0 ? "/@~" : "/@#") + fileItem.key).getBytes()));
     }
 
     public static String getQiniuMarker(String key) {

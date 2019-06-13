@@ -1,15 +1,15 @@
 package com.qiniu.convert;
 
 import com.qiniu.interfaces.IStringFormat;
-import com.qiniu.sdk.FolderItem;
+import com.qiniu.sdk.FileItem;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.Set;
 
-public class UOSObjToString extends Converter<FolderItem, String> {
+public class UOSObjToString extends Converter<FileItem, String> {
 
-    private IStringFormat<FolderItem> stringFormatter;
+    private IStringFormat<FileItem> stringFormatter;
 
     public UOSObjToString(String format, String separator, Set<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
@@ -25,7 +25,7 @@ public class UOSObjToString extends Converter<FolderItem, String> {
     }
 
     @Override
-    public String convertToV(FolderItem line) throws IOException {
+    public String convertToV(FileItem line) throws IOException {
         return stringFormatter.toFormatString(line);
     }
 }

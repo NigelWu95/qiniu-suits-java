@@ -1,12 +1,12 @@
 package com.qiniu.convert;
 
-import com.qiniu.sdk.FolderItem;
+import com.qiniu.sdk.FileItem;
 import com.qiniu.util.LineUtils;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class UOSObjToMap extends Converter<FolderItem, Map<String, String>> {
+public class UOSObjToMap extends Converter<FileItem, Map<String, String>> {
 
     private Map<String, String> indexMap;
 
@@ -15,7 +15,7 @@ public class UOSObjToMap extends Converter<FolderItem, Map<String, String>> {
     }
 
     @Override
-    public Map<String, String> convertToV(FolderItem line) throws IOException {
+    public Map<String, String> convertToV(FileItem line) throws IOException {
         return LineUtils.getItemMap(line, indexMap);
     }
 

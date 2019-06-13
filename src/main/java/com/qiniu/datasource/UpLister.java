@@ -1,7 +1,7 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
-import com.qiniu.sdk.FolderItem;
+import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.OssUtils;
 
@@ -10,7 +10,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UpLister implements ILister<FolderItem> {
+public class UpLister implements ILister<FileItem> {
 
     private UpYunClient upYunClient;
     private String bucket;
@@ -19,7 +19,7 @@ public class UpLister implements ILister<FolderItem> {
     private String endPrefix;
     private int limit;
     private boolean straight;
-    private List<FolderItem> folderItems;
+    private List<FileItem> fileItems;
 
     public UpLister(UpYunClient upYunClient, String bucket, String prefix, String marker, String endPrefix,
                     int limit) throws SuitsException {
@@ -96,9 +96,9 @@ public class UpLister implements ILister<FolderItem> {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    private List<FolderItem> getListResult(String prefix, String marker, int limit) throws IOException {
+    private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
         StringBuilder text = new StringBuilder();
-        List<FolderItem> folderItems = new ArrayList<>();
+        List<FileItem> fileItems = new ArrayList<>();
         HttpURLConnection conn = null;
         int code;
         InputStream is = null;
@@ -135,10 +135,10 @@ public class UpLister implements ILister<FolderItem> {
         String[] lines = result.split("\n");
         for (String line : lines) {
             if (line.indexOf("\t") > 0) {
-                folderItems.add(new FolderItem(line));
+                fileItems.add(new FileItem(line));
             }
         }
-        return folderItems;
+        return fileItems;
     }
 
     private void checkedListWithEnd() {
@@ -146,12 +146,12 @@ public class UpLister implements ILister<FolderItem> {
         // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
         if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
             marker = null;
-            int size = folderItems.size();
+            int size = fileItems.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
             for (int i = 0; i < size; i++) {
-                if (folderItems.get(i).key.compareTo(endPrefix) > 0) {
-                    folderItems = folderItems.subList(0, i);
+                if (fileItems.get(i).key.compareTo(endPrefix) > 0) {
+                    fileItems = fileItems.subList(0, i);
                     return;
                 }
             }
@@ -160,7 +160,7 @@ public class UpLister implements ILister<FolderItem> {
 
     private void doList() throws SuitsException {
         try {
-            folderItems = getListResult(prefix, marker, limit);
+            fileItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
@@ -174,7 +174,7 @@ public class UpLister implements ILister<FolderItem> {
         if (hasNext()) {
             doList();
         } else {
-            folderItems.clear();
+            fileItems.clear();
         }
     }
 
@@ -185,37 +185,37 @@ public class UpLister implements ILister<FolderItem> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (folderItems.size() + 1);
+        int times = 50000 / (fileItems.size() + 1);
         times = times > 10 ? 10 : times;
-        List<FolderItem> futureList = folderItems;
+        List<FileItem> futureList = fileItems;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
             times--;
             doList();
-            futureList.addAll(folderItems);
+            futureList.addAll(fileItems);
         }
-        folderItems = futureList;
+        fileItems = futureList;
         return hasNext();
     }
 
     @Override
-    public List<FolderItem> currents() {
-        return folderItems;
+    public List<FileItem> currents() {
+        return fileItems;
     }
 
     @Override
-    public FolderItem currentLast() {
-        return folderItems.size() > 0 ? folderItems.get(folderItems.size() - 1) : null;
+    public FileItem currentLast() {
+        return fileItems.size() > 0 ? fileItems.get(fileItems.size() - 1) : null;
     }
 
     @Override
     public String currentEndKey() {
         if (hasNext()) return OssUtils.decodeUpYunMarker(bucket, marker);
-        FolderItem last = currentLast();
+        FileItem last = currentLast();
         return last != null ? last.key : null;
     }
 
     @Override
-    public void updateMarkerBy(FolderItem object) {
+    public void updateMarkerBy(FileItem object) {
         if (object != null) {
             marker = OssUtils.getUpYunMarker(bucket, object.key);
         }
@@ -224,6 +224,6 @@ public class UpLister implements ILister<FolderItem> {
     @Override
     public void close() {
         upYunClient = null;
-        folderItems = null;
+        fileItems = null;
     }
 }

@@ -6,7 +6,7 @@ import com.qiniu.convert.UOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.sdk.FolderItem;
+import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class UpYunOssContainer extends OssContainer<FolderItem, BufferedWriter, Map<String, String>> {
+public class UpYunOssContainer extends OssContainer<FileItem, BufferedWriter, Map<String, String>> {
 
     private String username;
     private String password;
@@ -36,12 +36,12 @@ public class UpYunOssContainer extends OssContainer<FolderItem, BufferedWriter, 
     }
 
     @Override
-    protected ITypeConvert<FolderItem, Map<String, String>> getNewConverter() {
+    protected ITypeConvert<FileItem, Map<String, String>> getNewConverter() {
         return new UOSObjToMap(indexMap);
     }
 
     @Override
-    protected ITypeConvert<FolderItem, String> getNewStringConverter() throws IOException {
+    protected ITypeConvert<FileItem, String> getNewStringConverter() throws IOException {
         return new UOSObjToString(saveFormat, saveSeparator, rmFields);
     }
 
@@ -51,7 +51,7 @@ public class UpYunOssContainer extends OssContainer<FolderItem, BufferedWriter, 
     }
 
     @Override
-    protected ILister<FolderItem> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<FileItem> getLister(String prefix, String marker, String end) throws SuitsException {
         try {
             return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
         } catch (Exception e) {

@@ -1,8 +1,6 @@
 package com.qiniu.sdk;
 
-import java.util.Date;
-
-public class FolderItem {
+public class FileItem {
 
     // 文件名
     public String key;
@@ -17,7 +15,9 @@ public class FolderItem {
 //    public Date date;
     public long timeSeconds;
 
-    public FolderItem(String data) {
+    public FileItem() {}
+
+    public FileItem(String data) {
         String[] a = data.split("\t");
         key = a[0];
         if (a.length > 1) attribute = ("N".equals(a[1]) ? "File" : "Folder");

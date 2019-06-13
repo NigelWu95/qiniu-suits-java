@@ -21,7 +21,6 @@ public class UpYunClient {
      *
      * @param userName   操作员名称
      * @param password   密码，不需要MD5加密
-     * @return UpYun object
      */
     public UpYunClient(UpYunConfig config, String userName, String password) throws Exception {
         this.config = config;
@@ -29,9 +28,9 @@ public class UpYunClient {
         this.password = CharactersUtils.md5(password);
     }
 
-    public HttpURLConnection listFilesConnection(String bucketName, String prefix, String marker, int limit)
+    public HttpURLConnection listFilesConnection(String bucket, String prefix, String marker, int limit)
             throws IOException {
-        String uri = "/" + bucketName + "/" + (prefix == null ? "" : prefix);
+        String uri = "/" + bucket + "/" + (prefix == null ? "" : prefix);
         // 获取链接
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -47,6 +46,37 @@ public class UpYunClient {
         conn.setRequestProperty("x-list-limit", String.valueOf(limit));
         conn.connect();
         return conn;
+    }
+
+    /**
+     * 获取文件信息
+     *
+     * @param key 文件路径
+     * @return FileItem 文件对象
+     */
+    public FileItem getFileInfo(String bucket, String key) throws IOException {
+        String uri = "/" + bucket + "/" + key;
+        // 获取链接
+        URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(config.connectTimeout);
+        conn.setReadTimeout(config.readTimeout);
+        conn.setRequestMethod(UpYunConfig.METHOD_HEAD);
+        conn.setUseCaches(false);
+        String date = DatetimeUtils.getGMTDate();
+        conn.setRequestProperty(UpYunConfig.DATE, date);
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_HEAD, date, uri, userName,
+                password, null));
+        conn.connect();
+        int code = conn.getResponseCode();
+        if (code != 200) throw new IOException(code + " " + conn.getResponseMessage());
+        FileItem fileItem = new FileItem();
+        fileItem.key = key;
+        fileItem.attribute = conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_TYPE);
+        fileItem.size = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_SIZE));
+        fileItem.timeSeconds = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_DATE));
+        conn.disconnect();
+        return fileItem;
     }
 }
 
