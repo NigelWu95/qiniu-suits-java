@@ -9,20 +9,21 @@ import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
-import java.util.Scanner;
 
-public class ScannerSource {
+public class InputSource {
 
-    protected String parseFormat;
+    protected String parse;
     protected String separator;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
     protected Map<String, String> indexMap;
 
-    public ScannerSource(String parseFormat, String separator, String addKeyPrefix, String rmKeyPrefix,
-                          Map<String, String> indexMap) {
-        this.parseFormat = parseFormat;
+    public InputSource(String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
+                       Map<String, String> indexMap) {
+        this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
         this.rmKeyPrefix = rmKeyPrefix;
@@ -31,27 +32,37 @@ public class ScannerSource {
 
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
-        this.parseFormat = commonParams.getParse();
+        this.parse = commonParams.getParse();
         this.separator = commonParams.getSeparator();
         this.addKeyPrefix = commonParams.getAddKeyPrefix();
         this.rmKeyPrefix = commonParams.getRmKeyPrefix();
         this.indexMap = commonParams.getIndexMap();
     }
 
-    public void export(Scanner scanner, ILineProcess<Map<String, String >> processor) throws IOException {
-        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parseFormat, separator, addKeyPrefix,
+    public void export(InputStream inputStream, ILineProcess<Map<String, String >> processor) throws IOException {
+        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap);
+        InputStreamReader reader = new InputStreamReader(inputStream);
+        StringBuilder stringBuilder = new StringBuilder();
+        int t;
         String line;
         Map<String, String> converted;
         boolean quit = false;
         int retry;
-        while (!quit) { // scanner.hasNext() 不能读取空行，不能勇于判断
-            line = scanner.nextLine();
-            quit = line == null || line.isEmpty();
+        while (!quit) {
+            System.out.println("please input line data to process: ");
+            while ((t = reader.read()) != -1) {
+                if(t == '\n') break;
+                stringBuilder.append((char)t);
+            }
+            line = stringBuilder.toString();
+            stringBuilder.delete(0, stringBuilder.length());
+            quit = line.isEmpty();
             if (!quit) {
                 if (processor != null) {
                     converted = converter.convertToV(line);
                     try {
+                        processor.validCheck(converted);
                         System.out.println(processor.processLine(converted));
                     } catch (QiniuException e) {
                         retry = HttpRespUtils.checkException(e, 1);

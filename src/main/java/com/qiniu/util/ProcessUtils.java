@@ -1,31 +1,32 @@
 package com.qiniu.util;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class ProcessUtils {
 
-    private static List<String> needUrlProcesses = new ArrayList<String>(){{
+    public static Set<String> needUrlProcesses = new HashSet<String>(){{
         add("asyncfetch");
         add("privateurl");
         add("qhash");
         add("avinfo");
         add("exportts");
     }};
-    private static List<String> needNewKeyProcesses = new ArrayList<String>(){{
+    public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
+        add("move");
         add("rename");
     }};
-    private static List<String> needFopsProcesses = new ArrayList<String>(){{
+    public static Set<String> needFopsProcesses = new HashSet<String>(){{
         add("pfop");
     }};
-    private static List<String> needPidProcesses = new ArrayList<String>(){{
+    public static Set<String> needPidProcesses = new HashSet<String>(){{
         add("pfopresult");
     }};
-    private static List<String> needAvinfoProcesses = new ArrayList<String>(){{
+    public static Set<String> needAvinfoProcesses = new HashSet<String>(){{
         add("pfopcmd");
     }};
-    private static List<String> needBucketAnKeyProcesses = new ArrayList<String>(){{
+    public static Set<String> needBucketAnKeyProcesses = new HashSet<String>(){{
         add("status");
         add("type");
         add("lifecycle");
@@ -37,12 +38,12 @@ public final class ProcessUtils {
         add("pfop");
         add("stat");
     }};
-    private static List<String> needAuthProcesses = new ArrayList<String>(){{
+    public static Set<String> needAuthProcesses = new HashSet<String>(){{
         addAll(needBucketAnKeyProcesses);
         add("asyncfetch");
         add("privateurl");
     }};
-    private static List<String> canBatchProcesses = new ArrayList<String>(){{
+    public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
         add("type");
         add("lifecycle");
@@ -52,28 +53,35 @@ public final class ProcessUtils {
         add("delete");
         add("stat");
     }};
-    private static List<String> supportListSourceProcesses = new ArrayList<String>(){{
+    public static Set<String> supportListSourceProcesses = new HashSet<String>(){{
         addAll(needAuthProcesses);
         add("qhash");
         add("avinfo");
         add("exportts");
         add("filter");
     }};
-    private static List<String> needConfigurationProcesses = new ArrayList<String>(){{
-        addAll(needBucketAnKeyProcesses);
+    public static Set<String> dangerousProcesses = new HashSet<String>(){{
+        add("status");
+        add("move");
+        add("rename");
+        add("delete");
+    }};
+    public static Set<String> processes = new HashSet<String>(){{
+        addAll(needUrlProcesses);
+        addAll(needToKeyProcesses);
+        addAll(needFopsProcesses);
         addAll(needPidProcesses);
-        add("asyncfetch");
-        add("qhash");
-        add("avinfo");
-        add("exportts");
+        addAll(needAvinfoProcesses);
+        addAll(needBucketAnKeyProcesses);
+        addAll(supportListSourceProcesses);
     }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
     }
 
-    public static boolean needNewKey(String process) {
-        return needNewKeyProcesses.contains(process);
+    public static boolean needToKey(String process) {
+        return needToKeyProcesses.contains(process);
     }
 
     public static boolean needFops(String process) {
@@ -104,7 +112,11 @@ public final class ProcessUtils {
         return supportListSourceProcesses.contains(process);
     }
 
-    public static boolean needConfiguration(String process) {
-        return needConfigurationProcesses.contains(process);
+    public static boolean isDangerous(String process) {
+        return dangerousProcesses.contains(process);
+    }
+
+    public static boolean isSupportedProcess(String process) {
+        return processes.contains(process);
     }
 }

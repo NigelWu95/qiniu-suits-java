@@ -28,8 +28,15 @@ x.xx-thin 为降配版，适用于 4C8G 及以下的机器），能够**并发�
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 - [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 
+*【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
+
 ### 1 程序运行过程  
-读取[数据源](docs/datasource.md) => [选择[过滤器](docs/filter.md)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](docs/resultsave.md)  
+#### （1）批处理模式
+[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [指定数据[处理过程](#5-处理过程) =>] [结果持久化](docs/resultsave.md)  
+#### （2）交互模式
+**所有 process 支持[交互模式](docs/interactive.md)运行**：一次启动，可无限次命令行输入 data，输入一次处理一次并返回结果。  
+#### （3）单行模式
+**所有 process 支持[单行模式](docs/single.md)运行**：一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
 #### 关于版本  

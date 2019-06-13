@@ -15,18 +15,21 @@ import java.util.Map;
 public class DeleteFile extends Base<Map<String, String>> {
 
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
-        super("delete", accessKey, secretKey, configuration, bucket);
+    public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket) {
+        super("delete", accessKey, secretKey, bucket);
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
                       int saveIndex) throws IOException {
-        super("delete", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("delete", accessKey, secretKey, bucket, savePath, saveIndex);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -35,13 +38,9 @@ public class DeleteFile extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, savePath, 0);
     }
 
-    public void updateDelete(String bucket) {
-        this.bucket = bucket;
-    }
-
     public DeleteFile clone() throws CloneNotSupportedException {
         DeleteFile deleteFile = (DeleteFile)super.clone();
-        deleteFile.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        deleteFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) deleteFile.batchOperations = new BatchOperations();
         return deleteFile;
     }
@@ -65,6 +64,7 @@ public class DeleteFile extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpRespUtils.getResult(bucketManager.delete(bucket, line.get("key")));
+        String key = line.get("key");
+        return key + "\t" + HttpRespUtils.getResult(bucketManager.delete(bucket, key));
     }
 }

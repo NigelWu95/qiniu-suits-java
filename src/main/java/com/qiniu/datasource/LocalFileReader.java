@@ -1,7 +1,5 @@
 package com.qiniu.datasource;
 
-import com.qiniu.util.FileNameUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -13,16 +11,14 @@ public class LocalFileReader implements IReader<BufferedReader> {
     private String name;
     private BufferedReader bufferedReader;
 
-    public LocalFileReader(String filepath) throws IOException {
-        filepath = FileNameUtils.realPathWithUserHome(filepath);
-        File sourceFile = new File(filepath);
+    public LocalFileReader(File sourceFile) throws IOException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(sourceFile);
         } catch (IOException e) {
             throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
         }
-        name = sourceFile.getName().substring(0, sourceFile.getName().length() - 4);
+        name = sourceFile.getPath();
         bufferedReader = new BufferedReader(fileReader);
     }
 

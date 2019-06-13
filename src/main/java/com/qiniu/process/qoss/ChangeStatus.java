@@ -16,21 +16,23 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     private int status;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status)
-            throws IOException {
-        super("status", accessKey, secretKey, configuration, bucket);
+    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status) {
+        super("status", accessKey, secretKey, bucket);
         this.status = status;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        this.configuration = configuration;
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
                         String savePath, int saveIndex) throws IOException {
-        super("status", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("status", accessKey, secretKey, bucket, savePath, saveIndex);
         this.status = status;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -39,14 +41,13 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, status, savePath, 0);
     }
 
-    public void updateStatus(String bucket, int status) {
-        this.bucket = bucket;
+    public void updateStatus(int status) {
         this.status = status;
     }
 
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        changeStatus.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) changeStatus.batchOperations = new BatchOperations();
         return changeStatus;
     }
@@ -70,6 +71,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpRespUtils.getResult(bucketManager.changeStatus(bucket, line.get("key"), status));
+        String key = line.get("key");
+        return key + "\t" + status + "\t" + HttpRespUtils.getResult(bucketManager.changeStatus(bucket, key, status));
     }
 }

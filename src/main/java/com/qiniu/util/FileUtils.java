@@ -1,8 +1,57 @@
 package com.qiniu.util;
 
+import javax.activation.MimetypesFileTypeMap;
+import java.io.File;
 import java.io.IOException;
+import java.net.FileNameMap;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-public final class FileNameUtils {
+public final class FileUtils {
+
+    private static final MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
+    private static final FileNameMap fileNameMap = URLConnection.getFileNameMap();
+
+    public static String contentType(String path) {
+        String type = fileNameMap.getContentTypeFor(path);
+        if (type == null) {
+            type = mimetypesFileTypeMap.getContentType(path);
+            if ("application/octet-stream".equals(type)) {
+                try {
+                    type = Files.probeContentType(Paths.get(path));
+                    if (type == null) return "application/octet-stream";
+                    else return type;
+                } catch (IOException e) {
+                    return "application/octet-stream";
+                }
+            } else {
+                return type;
+            }
+        } else {
+            return type;
+        }
+    }
+
+    public static String contentType(File file) throws IOException {
+        String type = fileNameMap.getContentTypeFor(file.getCanonicalPath());
+        if (type == null) {
+            type = mimetypesFileTypeMap.getContentType(file);
+            if ("application/octet-stream".equals(type)) {
+                try {
+                    type = Files.probeContentType(file.toPath());
+                    if (type == null) return "application/octet-stream";
+                    else return type;
+                } catch (IOException e) {
+                    return "application/octet-stream";
+                }
+            } else {
+                return type;
+            }
+        } else {
+            return type;
+        }
+    }
 
     public static String realPathWithUserHome(String pathStr) throws IOException {
         if (pathStr == null || "".equals(pathStr)) throw new IOException("the path is empty.");

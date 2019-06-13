@@ -1,7 +1,6 @@
 package com.qiniu.datasource;
 
 import com.google.gson.*;
-import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
@@ -94,6 +93,11 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
+    public boolean getStraight() {
+        return straight;
+    }
+
+    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
@@ -105,45 +109,51 @@ public class QiniuLister implements ILister<FileInfo> {
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
         List<FileInfo> fileInfoList = new ArrayList<>();
+        JsonObject jsonObject = null;
         try {
             String line;
-            JsonObject jsonObject = null;
             while ((line = bufferedReader.readLine()) != null) {
                 jsonObject = JsonUtils.toJsonObject(line);
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
                     fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
                 }
             }
-            if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
-                this.marker = jsonObject.get("marker").getAsString();
-            } else {
-                this.marker = null;
-            }
+        } catch (IOException e) {
+            throw new QiniuException(e, e.getMessage());
+        }
+        if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
+            this.marker = jsonObject.get("marker").getAsString();
+        } else {
+            this.marker = null;
+        }
+        try {
             bufferedReader.close();
             reader.close();
             inputStream.close();
             response.close();
         } catch (IOException e) {
-            throw new QiniuException(e, e.getMessage());
+            bufferedReader = null;
+            reader = null;
+            inputStream = null;
+            response = null;
         }
         return fileInfoList;
     }
 
     private void checkedListWithEnd() {
-        if (endPrefix != null && !"".equals(endPrefix)) {
+        String endKey = currentEndKey();
+        // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
+        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+            marker = null;
             int size = fileInfoList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
             for (int i = 0; i < size; i++) {
                 if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
                     fileInfoList = fileInfoList.subList(0, i);
-                    marker = null;
                     return;
                 }
             }
-            // 如果列表的所有元素文件名没有大于 endPrefix 的，则需要判断最后一个元素是否和 endPrefix 存在大于等于关系
-            String endKey = currentEndKey();
-            if (endKey == null || endKey.compareTo(endPrefix) >= 0) marker = null;
         }
     }
 
@@ -162,7 +172,11 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return; doList();
+        if (hasNext()) {
+            doList();
+        } else {
+            fileInfoList.clear();
+        }
     }
 
     @Override
@@ -172,11 +186,11 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / limit;
+        int times = 50000 / (fileInfoList.size() + 1);
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            times--;
+            if (futureList.size() > 0) times--;
             doList();
             futureList.addAll(fileInfoList);
         }
@@ -203,12 +217,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void updateMarkerBy(FileInfo object) {
-        if (object != null) {
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("k", object.key);
-            marker = Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
-                    Base64.URL_SAFE | Base64.NO_WRAP);
-        }
+        if (object != null) marker = OssUtils.getQiniuMarker(object.key);
     }
 
     @Override

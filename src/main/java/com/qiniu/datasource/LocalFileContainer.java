@@ -5,10 +5,10 @@ import com.qiniu.convert.MapToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.FileUtils;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
+import javax.activation.MimetypesFileTypeMap;
+import java.io.*;
 import java.util.*;
 
 public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter, Map<String, String>> {
@@ -20,7 +20,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
 
     @Override
     protected ITypeConvert<String, Map<String, String>> getNewConverter() throws IOException {
-        return new LineToMap(parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+        return new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
     @Override
@@ -38,8 +38,44 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
+    private List<File> getFiles(File directory) throws IOException {
+        List<File> files = new ArrayList<>();
+        for(File f : Objects.requireNonNull(directory.listFiles())) {
+            if (f.isDirectory()) {
+                files.addAll(getFiles(f));
+            } else {
+                String type = FileUtils.contentType(f);
+                if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                    files.add(f);
+                }
+            }
+        }
+        return files;
+    }
+
     @Override
-    protected IReader<BufferedReader> getReader(String path) throws IOException {
-        return new LocalFileReader(path);
+    protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
+        List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
+        File sourceFile = new File(FileUtils.realPathWithUserHome(path));
+        if (sourceFile.isDirectory()) {
+            File[] fs = sourceFile.listFiles();
+            if (fs == null) throw new IOException("The current path you gave may be incorrect: " + path);
+            else {
+                List<File> files = getFiles(sourceFile);
+                for (File file : files) {
+                    fileReaders.add(new LocalFileReader(file));
+                }
+            }
+        } else {
+            String type = FileUtils.contentType(sourceFile);
+            if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                fileReaders.add(new LocalFileReader(sourceFile));
+            } else {
+                throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
+            }
+        }
+        if (fileReaders.size() == 0) throw new IOException("please provide the \'text\' file in the directory. " +
+                "The current path you gave is: " + path);
+        return fileReaders;
     }
 }

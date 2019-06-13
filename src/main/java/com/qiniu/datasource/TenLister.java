@@ -6,6 +6,7 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
+import com.qiniu.util.OssUtils;
 
 import java.util.List;
 
@@ -82,22 +83,26 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
+    public boolean getStraight() {
+        return straight;
+    }
+
+    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private void checkedListWithEnd() {
-        if (endPrefix != null && !"".equals(endPrefix)) {
+        String endKey = currentEndKey();
+        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+            listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
             for (int i = 0; i < size; i++) {
                 if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     cosObjectList = cosObjectList.subList(0, i);
-                    listObjectsRequest.setMarker(null);
                     return;
                 }
             }
-            String endKey = currentEndKey();
-            if (endKey == null || endKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
     }
 
@@ -118,7 +123,11 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return; doList();
+        if (hasNext()) {
+            doList();
+        } else {
+            cosObjectList.clear();
+        }
     }
 
     @Override
@@ -128,11 +137,11 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / listObjectsRequest.getMaxKeys();
+        int times = 50000 / (cosObjectList.size() + 1);
         times = times > 10 ? 10 : times;
         List<COSObjectSummary> futureList = cosObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            times--;
+            if (futureList.size() > 0) times--;
             doList();
             futureList.addAll(cosObjectList);
         }
@@ -164,7 +173,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(object.getKey());
+        if (object != null) listObjectsRequest.setMarker(OssUtils.getTenCosMarker(object.getKey()));
     }
 
     @Override

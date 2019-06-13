@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
@@ -104,10 +105,19 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         return mapFilter;
     }
 
+    @Override
+    public boolean validCheck(Map<String, String> line) {
+        return true;
+    }
+
     public String processLine(T line) throws IOException {
         try {
-            if (filter.doFilter(line)) return String.valueOf(true);
-            else return  "false";
+            if (filter.doFilter(line)) {
+                if (nextProcessor == null) return String.valueOf(true);
+                else return nextProcessor.processLine(line);
+            } else {
+                return "false";
+            }
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }
@@ -127,8 +137,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         if (nextProcessor == null) {
             List<String> writeList = typeConverter.convertToVList(filterList);
             if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
-            if (typeConverter.errorSize() > 0)
-                fileSaveMapper.writeError(String.join("\n", typeConverter.consumeErrors()), false);
+            if (typeConverter.errorSize() > 0) fileSaveMapper.writeError(typeConverter.errorLines(), false);
         } else {
             nextProcessor.processLine(filterList);
         }

@@ -64,22 +64,20 @@ public class OssUtils {
     }
 
     public static String getQiniuMarker(FileInfo fileInfo) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("k", fileInfo.key);
-        return Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
-                Base64.URL_SAFE | Base64.NO_WRAP);
+        return getQiniuMarker(fileInfo.key);
     }
 
-    public static String getAliOssMarker(OSSObjectSummary ossObjectSummary) {
-        return ossObjectSummary.getKey();
+    public static String getAliOssMarker(OSSObjectSummary summary) {
+        return summary.getKey();
     }
 
-    public static String getTenCosMarker(COSObjectSummary cosObjectSummary) {
-        return cosObjectSummary.getKey();
+    public static String getTenCosMarker(COSObjectSummary summary) {
+        return summary.getKey();
     }
 
     public static String getQiniuMarker(String key) {
         JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("c", 0);
         jsonObject.addProperty("k", key);
         return Base64.encodeToString(JsonUtils.toJson(jsonObject).getBytes(Constants.UTF_8),
                 Base64.URL_SAFE | Base64.NO_WRAP);
@@ -108,6 +106,7 @@ public class OssUtils {
     }
 
     public static Zone getQiniuRegion(String regionName) {
+        if (regionName == null) return Zone.autoZone();
         switch (regionName) {
             case "z0":
             case "huadong": return Zone.huadong();

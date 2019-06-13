@@ -84,12 +84,18 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
+    public boolean getStraight() {
+        return straight;
+    }
+
+    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private void checkedListWithEnd() {
-        if (endPrefix != null && !"".equals(endPrefix)) {
+        String endKey = currentEndKey();
+        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
             int size = ossObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
@@ -100,8 +106,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
                     return;
                 }
             }
-            String endKey = currentEndKey();
-            if (endKey == null || endKey.compareTo(endPrefix) >= 0) listObjectsRequest.setMarker(null);
         }
 
     }
@@ -127,7 +131,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public void listForward() throws SuitsException {
-        if (!hasNext()) return; doList();
+        if (hasNext()) {
+            doList();
+        } else {
+            ossObjectList.clear();
+        }
     }
 
     @Override
@@ -137,11 +145,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / listObjectsRequest.getMaxKeys();
+        int times = 50000 / (ossObjectList.size() + 1);
         times = times > 10 ? 10 : times;
         List<OSSObjectSummary> futureList = ossObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            times--;
+            if (futureList.size() > 0) times--;
             doList();
             futureList.addAll(ossObjectList);
         }
@@ -173,7 +181,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public void updateMarkerBy(OSSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(object.getKey());
+        if (object != null) listObjectsRequest.setMarker(OssUtils.getAliOssMarker(object.getKey()));
     }
 
     @Override

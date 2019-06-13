@@ -11,10 +11,12 @@ public final class PfopUtils {
 
     public static JsonObject checkPfopJson(JsonObject jsonObject, boolean scaleCheck) throws IOException {
         if (scaleCheck) {
+            if (!jsonObject.has("scale"))
+                throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");
             List<Integer> scale = JsonUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});
             if (scale.size() < 1) {
-                throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");
+                throw new IOException("the json-config's \"scale\" field is empty in \"" + jsonObject + "\".");
             } else if (scale.size() == 1) {
                 JsonArray jsonArray = new JsonArray();
                 jsonArray.add(scale.get(0));
@@ -35,11 +37,15 @@ public final class PfopUtils {
     }
 
     public static String generateFopCmd(String srcKey, JsonObject pfopJson) {
+        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(generateFopSaveAs(srcKey, pfopJson));
+    }
+
+    public static String generateFopSaveAs(String srcKey, JsonObject pfopJson) {
         String saveAs = pfopJson.get("saveas").getAsString();
         if (saveAs.contains(":")) {
             String saveAsKey = saveAs.substring(saveAs.indexOf(":") + 1);
             if (saveAsKey.contains("$(name)") || saveAsKey.contains("$(ext)")) {
-                String[] items = FileNameUtils.getNameItems(srcKey);
+                String[] items = FileUtils.getNameItems(srcKey);
                 saveAsKey = saveAsKey.replace("$(name)", items[0]).replace("$(ext)", items[1]);
             }
             if (saveAsKey.contains("$(key)")) {
@@ -47,6 +53,6 @@ public final class PfopUtils {
             }
             saveAs = saveAs.replace(saveAs.substring(saveAs.indexOf(":") + 1), saveAsKey);
         }
-        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(saveAs);
+        return saveAs;
     }
 }

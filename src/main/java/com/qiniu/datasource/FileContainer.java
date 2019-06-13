@@ -5,11 +5,9 @@ import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.FileNameUtils;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.SystemUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
     private String filePath;
-    protected String parseFormat;
+    protected String parse;
     protected String separator;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
@@ -39,10 +37,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<T> processor; // 定义的资源处理器
 
-    public FileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix, String rmKeyPrefix,
+    public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> indexMap, int unitLen, int threads) {
         this.filePath = filePath;
-        this.parseFormat = parseFormat;
+        this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
         this.rmKeyPrefix = rmKeyPrefix;
@@ -68,7 +66,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     // 通过 commonParams 来更新基本参数
     public void updateSettings(CommonParams commonParams) {
         this.filePath = commonParams.getPath();
-        this.parseFormat = commonParams.getParse();
+        this.parse = commonParams.getParse();
         this.separator = commonParams.getSeparator();
         this.addKeyPrefix = commonParams.getAddKeyPrefix();
         this.rmKeyPrefix = commonParams.getRmKeyPrefix();
@@ -93,7 +91,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
-        ITypeConvert<T, String> writeTypeConverter = getNewStringConverter();
+        ITypeConvert<T, String> stringConverter = getNewStringConverter();
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
         List<String> writeList;
@@ -114,13 +112,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             if (line != null && !"".equals(line)) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 convertedList = converter.convertToVList(srcList);
-                if (converter.errorSize() > 0)
-                    saver.writeError(String.join("\n", converter.consumeErrors()), false);
+                if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
                 if (saveTotal) {
-                    writeList = writeTypeConverter.convertToVList(convertedList);
+                    writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                    if (writeTypeConverter.errorSize() > 0)
-                        saver.writeError(String.join("\n", writeTypeConverter.consumeErrors()), false);
+                    if (stringConverter.errorSize() > 0)
+                        saver.writeKeyFile("string-error", stringConverter.errorLines(), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -167,29 +164,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         });
     }
 
-    protected abstract IReader<E> getReader(String path) throws IOException;
+    protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
 
     public void export() throws Exception {
-        List<IReader<E>> fileReaders = new ArrayList<>();
-        File sourceFile = new File(FileNameUtils.realPathWithUserHome(filePath));
-        if (sourceFile.isDirectory()) {
-            File[] fs = sourceFile.listFiles();
-            if (fs == null) throw new IOException("The current path you gave may be incorrect: \"" + filePath + "\"");
-            for(File f : fs) {
-                if (!f.isDirectory() && f.getName().endsWith(".txt")) {
-                    fileReaders.add(getReader(f.getAbsoluteFile().getPath()));
-                }
-            }
-        } else {
-            if (filePath.endsWith(".txt")) {
-                fileReaders.add(getReader(filePath));
-            } else {
-                throw new IOException("please provide the .txt file. The current path you gave is: \"" + filePath + "\"");
-            }
-        }
-        if (fileReaders.size() == 0) throw new IOException("please provide the .txt file int the directory. The current" +
-                " path you gave is: " + filePath);
-
+        List<IReader<E>> fileReaders = getFileReaders(filePath);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());

@@ -16,21 +16,23 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     private int days;
     private BatchOperations batchOperations;
+    private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days)
-            throws IOException {
-        super("lifecycle", accessKey, secretKey, configuration, bucket);
+    public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days) {
+        super("lifecycle", accessKey, secretKey, bucket);
         this.days = days;
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                            String savePath, int saveIndex) throws IOException {
-        super("lifecycle", accessKey, secretKey, configuration, bucket, savePath, saveIndex);
+        super("lifecycle", accessKey, secretKey, bucket, savePath, saveIndex);
         this.days = days;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
     }
 
@@ -39,14 +41,13 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, days, savePath, 0);
     }
 
-    public void updateLifecycle(String bucket, int days) {
-        this.bucket = bucket;
+    public void updateDays(int days) {
         this.days = days;
     }
 
     public ChangeLifecycle clone() throws CloneNotSupportedException {
         ChangeLifecycle changeLifecycle = (ChangeLifecycle)super.clone();
-        changeLifecycle.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        changeLifecycle.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         if (batchSize > 1) changeLifecycle.batchOperations = new BatchOperations();
         return changeLifecycle;
     }
@@ -70,6 +71,7 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
-        return HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, line.get("key"), days));
+        String key = line.get("key");
+        return key + "\t" + days + "\t" + HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, key, days));
     }
 }

@@ -32,7 +32,7 @@ public abstract class SeniorFilter<T> {
             );
         }
         if (checkExtMime() && !rewrite) {
-            JsonFile jsonFile = new JsonFile("resources" + System.getProperty("file.separator") + "check.json");
+            JsonFile jsonFile = new JsonFile("check.json");
             JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
             List<String> defaultList = JsonUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
                     new TypeToken<List<String>>(){});
