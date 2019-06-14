@@ -9,8 +9,6 @@ import java.security.MessageDigest;
 
 public final class CharactersUtils {
 
-    private static MessageDigest md5;
-
     /**
      * 对字符串进行 MD5 加密
      *
@@ -20,7 +18,7 @@ public final class CharactersUtils {
     public static String md5(String str) throws Exception {
         char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                 'a', 'b', 'c', 'd', 'e', 'f'};
-        if (md5 == null) md5 = MessageDigest.getInstance("MD5");
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
         md5.update(str.getBytes(UpYunConfig.UTF8));
         byte[] encodedValue = md5.digest();
         int j = encodedValue.length;

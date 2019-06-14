@@ -118,7 +118,21 @@ public class UpLister implements ILister<FileItem> {
             }
             this.marker = conn.getHeaderField("x-upyun-list-iter");
             if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
-            if (code >= 400) throw new SuitsException(code, text.toString());
+            if (code == 200) {
+                String result = text.toString();
+                String[] lines = result.split("\n");
+                for (String line : lines) {
+                    if (line.indexOf("\t") > 0) {
+                        fileItems.add(new FileItem(line));
+                    }
+                }
+                return fileItems;
+            } else if (code == 404) {
+                this.marker = null;
+                return fileItems;
+            } else {
+                throw new SuitsException(code, text.toString());
+            }
         } finally {
             try {
                 if (conn != null) conn.disconnect();
@@ -131,14 +145,6 @@ public class UpLister implements ILister<FileItem> {
                 is = null;
             }
         }
-        String result = text.toString();
-        String[] lines = result.split("\n");
-        for (String line : lines) {
-            if (line.indexOf("\t") > 0) {
-                fileItems.add(new FileItem(line));
-            }
-        }
-        return fileItems;
     }
 
     private void checkedListWithEnd() {
