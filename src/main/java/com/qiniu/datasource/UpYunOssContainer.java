@@ -47,7 +47,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
     protected Set<String> rmFields;
     private ExecutorService executorPool; // 线程池
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
-    private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public UpYunOssContainer(String username, String password, UpYunConfig configuration, String bucket,
@@ -141,10 +140,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
     @Override
     public String getSourceName() {
         return "upyun";
-    }
-
-    private synchronized void insertIntoPrefixesMap(String prefix, String[] markerAndEnd) {
-        prefixesMap.put(prefix, markerAndEnd);
     }
 
     /**
@@ -262,40 +257,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         }
     }
 
-    /**
-     * 根据当前参数值创建多线程执行数据源导出工作
-     */
-    public void export() {
-        String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " running...");
-        AtomicInteger order = new AtomicInteger(0);
-        executorPool = Executors.newFixedThreadPool(threads);
-        exitBool = new AtomicBoolean(false);
-        try {
-            if (prefixes == null || prefixes.size() == 0) {
-                UpLister startLister = generateLister("");
-                list1(startLister, order);
-            } else {
-//                Collections.sort(prefixes);
-                prefixes.parallelStream().filter(this::checkPrefix)
-                        .forEach(prefix -> {
-                            try {
-                                UpLister upLister = generateLister(prefix);
-                                order.addAndGet(1);
-                                list2(upLister, order);
-                            } catch (Exception e) {
-                                SystemUtils.exit(exitBool, e);
-                            }
-                        });
-            }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) Thread.sleep(1000);
-            System.out.println(info + " finished");
-        } catch (Throwable throwable) {
-            SystemUtils.exit(exitBool, throwable);
-        }
-    }
-
     private void list(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
@@ -326,7 +287,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
             directories.parallelStream().filter(this::checkPrefix)
                     .forEach(prefix -> {
                         try {
-                            UpLister upLister = generateLister(startLister.getPrefix() + prefix);
+                            UpLister upLister = generateLister(prefix);
                             order.addAndGet(1);
                             list2(upLister, order);
                         } catch (Exception e) {
@@ -342,11 +303,44 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         if (directories != null) {
             for (String prefix : directories) {
                 if (checkPrefix(prefix)) {
-                    UpLister upLister = generateLister(startLister.getPrefix() + prefix);
+                    UpLister upLister = generateLister(startLister.getPrefix() + "/" + prefix);
                     order.addAndGet(1);
                     list2(upLister, order);
                 }
             }
+        }
+    }
+
+    /**
+     * 根据当前参数值创建多线程执行数据源导出工作
+     */
+    public void export() {
+        String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
+        System.out.println(info + " running...");
+        AtomicInteger order = new AtomicInteger(0);
+        executorPool = Executors.newFixedThreadPool(threads);
+        exitBool = new AtomicBoolean(false);
+        try {
+            if (prefixes == null || prefixes.size() == 0) {
+                UpLister startLister = generateLister("");
+                list1(startLister, order);
+            } else {
+                prefixes.parallelStream().filter(this::checkPrefix)
+                        .forEach(prefix -> {
+                            try {
+                                UpLister upLister = generateLister(prefix);
+                                order.addAndGet(1);
+                                list2(upLister, order);
+                            } catch (Exception e) {
+                                SystemUtils.exit(exitBool, e);
+                            }
+                        });
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) Thread.sleep(1000);
+            System.out.println(info + " finished");
+        } catch (Throwable throwable) {
+            SystemUtils.exit(exitBool, throwable);
         }
     }
 }
