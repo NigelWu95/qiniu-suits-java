@@ -1,33 +1,141 @@
 package com.qiniu.datasource;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.UOSObjToMap;
 import com.qiniu.convert.UOSObjToString;
+import com.qiniu.entry.CommonParams;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
+import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.LineUtils;
+import com.qiniu.util.SystemUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-public class UpYunOssContainer extends OssContainer<FileItem, BufferedWriter, Map<String, String>> {
+public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResultOutput<BufferedWriter>, Map<String, String>> {
 
     private String username;
     private String password;
     private UpYunConfig configuration;
+    protected String bucket;
+    private List<String> antiPrefixes;
+    private Map<String, String[]> prefixesMap;
+    private List<String> prefixes;
+    private boolean prefixLeft;
+    private boolean prefixRight;
+    protected Map<String, String> indexMap;
+    protected int unitLen;
+    private int threads;
+    protected int retryTimes = 5;
+    protected String savePath;
+    protected boolean saveTotal;
+    protected String saveFormat;
+    protected String saveSeparator;
+    protected Set<String> rmFields;
+    private ExecutorService executorPool; // 线程池
+    private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    private List<String> originPrefixList = new ArrayList<>();
+    private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public UpYunOssContainer(String username, String password, UpYunConfig configuration, String bucket,
                              List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
                              boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
-        super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
         this.configuration = configuration;
+        this.bucket = bucket;
+        // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
+        this.antiPrefixes = antiPrefixes;
+        setPrefixesAndMap(prefixesMap);
+        this.prefixLeft = prefixLeft;
+        this.prefixRight = prefixRight;
+        setIndexMapWithDefault(indexMap);
+        this.unitLen = unitLen;
+        this.threads = threads;
+        this.saveTotal = true; // 默认全记录保存
+    }
+
+    // 不调用则各参数使用默认值
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
+        this.savePath = savePath;
+        this.saveTotal = saveTotal;
+        this.saveFormat = format;
+        this.saveSeparator = separator;
+        this.rmFields = rmFields;
+    }
+
+    public void setRetryTimes(int retryTimes) {
+        this.retryTimes = retryTimes;
+    }
+
+    private void setIndexMapWithDefault(Map<String, String> indexMap) {
+        if (indexMap == null || indexMap.size() == 0) {
+            if (this.indexMap == null) this.indexMap = new HashMap<>();
+            for (String fileInfoField : LineUtils.fileInfoFields) {
+                this.indexMap.put(fileInfoField, fileInfoField);
+            }
+        } else {
+            this.indexMap = indexMap;
+        }
+    }
+
+    // 通过 commonParams 来更新基本参数
+    public void updateSettings(CommonParams commonParams) {
+        bucket = commonParams.getBucket();
+        antiPrefixes = commonParams.getAntiPrefixes();
+        setPrefixesAndMap(commonParams.getPrefixesMap());
+        prefixLeft = commonParams.getPrefixLeft();
+        prefixRight = commonParams.getPrefixRight();
+        setIndexMapWithDefault(commonParams.getIndexMap());
+        unitLen = commonParams.getUnitLen();
+        retryTimes = commonParams.getRetryTimes();
+        threads = commonParams.getThreads();
+        savePath = commonParams.getSavePath();
+        saveTotal = commonParams.getSaveTotal();
+        saveFormat = commonParams.getSaveFormat();
+        saveSeparator = commonParams.getSaveSeparator();
+        rmFields = commonParams.getRmFields();
+    }
+
+    public void setProcessor(ILineProcess<Map<String, String>> processor) {
+        this.processor = processor;
+    }
+
+    private void setPrefixesAndMap(Map<String, String[]> prefixesMap) {
+        if (prefixesMap == null) {
+            this.prefixesMap = new HashMap<>();
+        } else {
+            this.prefixesMap = prefixesMap;
+            prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix)
+                    .sorted().collect(Collectors.toList());
+            int size = prefixes.size();
+            if (size == 0) return;
+            Iterator<String> iterator = prefixes.iterator();
+            String temp = iterator.next();
+            while (iterator.hasNext() && size > 0) {
+                size--;
+                String prefix = iterator.next();
+                if (prefix.startsWith(temp)) {
+                    iterator.remove();
+                    this.prefixesMap.remove(prefix);
+                } else {
+                    temp = prefix;
+                }
+            }
+        }
     }
 
     @Override
@@ -35,27 +143,210 @@ public class UpYunOssContainer extends OssContainer<FileItem, BufferedWriter, Ma
         return "upyun";
     }
 
-    @Override
+    private synchronized void insertIntoPrefixesMap(String prefix, String[] markerAndEnd) {
+        prefixesMap.put(prefix, markerAndEnd);
+    }
+
+    /**
+     * 检验 prefix 是否有效，在 antiPrefixes 前缀列表中或者为空均无效
+     * @param prefix 待检验的 prefix
+     * @return 检验结果，true 表示 prefix 有效不需要剔除
+     */
+    private boolean checkPrefix(String prefix) {
+        if (prefix == null || "".equals(prefix)) return false;
+        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
+        for (String antiPrefix : antiPrefixes) {
+            if (prefix.startsWith(antiPrefix)) return false;
+        }
+        return true;
+    }
+
     protected ITypeConvert<FileItem, Map<String, String>> getNewConverter() {
         return new UOSObjToMap(indexMap);
     }
 
-    @Override
     protected ITypeConvert<FileItem, String> getNewStringConverter() throws IOException {
         return new UOSObjToString(saveFormat, saveSeparator, rmFields);
     }
 
-    @Override
     protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
-    @Override
-    protected ILister<FileItem> getLister(String prefix, String marker, String end) throws SuitsException {
+    /**
+     * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
+     * @param lister 已经初始化的 lister 对象
+     * @param saver 用于列举结果持久化的文件对象
+     * @param processor 用于资源处理的处理器对象
+     * @throws IOException 列举出现错误或者持久化错误抛出的异常
+     */
+    public void export(ILister<FileItem> lister, IResultOutput<BufferedWriter> saver, ILineProcess<Map<String, String>> processor) throws IOException {
+        ITypeConvert<FileItem, Map<String, String>> converter = getNewConverter();
+        ITypeConvert<FileItem, String> stringConverter = getNewStringConverter();
+        List<Map<String, String>> convertedList;
+        List<String> writeList;
+        List<FileItem> objects = lister.currents();
+        int retry;
+        boolean goon = objects.size() > 0 || lister.hasNext();
+        // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
+        while (goon) {
+            if (saveTotal) {
+                writeList = stringConverter.convertToVList(objects);
+                if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
+                if (stringConverter.errorSize() > 0) saver.writeKeyFile("string-error", stringConverter.errorLines(), false);
+            }
+            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+            try {
+                if (processor != null) {
+                    convertedList = converter.convertToVList(objects);
+                    if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
+                    processor.processLine(convertedList);
+                }
+            } catch (QiniuException e) {
+                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+            }
+            retry = retryTimes;
+            goon = lister.hasNext();
+            while (goon) {
+                try {
+                    lister.listForward();
+                    objects = lister.currents();
+                    break;
+                } catch (SuitsException e) {
+                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
+                    if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                    else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                    else retry--;
+                }
+            }
+        }
+    }
+
+    /**
+     * 在 prefixes map 的参数配置中取出 marker 和 end 参数
+     * @param prefix 配置的前缀参数
+     * @return 返回针对该前缀配置的 marker 和 end
+     */
+    private String[] getMarkerAndEnd(String prefix) {
+        if (prefixesMap.containsKey(prefix)) {
+            String[] mapValue = prefixesMap.get(prefix);
+            if (mapValue != null && mapValue.length > 1) {
+                return mapValue;
+            } else if (mapValue == null || mapValue.length == 0){
+                return new String[]{"", ""};
+            } else {
+                return new String[]{mapValue[0], ""};
+            }
+        } else {
+            return new String[]{"", ""};
+        }
+    }
+
+    private UpLister generateLister(String prefix) throws SuitsException {
+        int retry = retryTimes;
+        String[] markerAndEnd = getMarkerAndEnd(prefix);
+        while (true) {
+            try {
+                try {
+                    return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix,
+                            markerAndEnd[0], markerAndEnd[1], unitLen);
+                } catch (Exception e) {
+                    throw new SuitsException(40000, e.getMessage());
+                }
+            } catch (SuitsException e) {
+                System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
+                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                else retry--;
+            }
+        }
+    }
+
+    /**
+     * 根据当前参数值创建多线程执行数据源导出工作
+     */
+    public void export() {
+        String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
+        System.out.println(info + " running...");
+        AtomicInteger order = new AtomicInteger(0);
+        executorPool = Executors.newFixedThreadPool(threads);
+        exitBool = new AtomicBoolean(false);
         try {
-            return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
+            if (prefixes == null || prefixes.size() == 0) {
+                UpLister startLister = generateLister("");
+                list1(startLister, order);
+            } else {
+//                Collections.sort(prefixes);
+                prefixes.parallelStream().filter(this::checkPrefix)
+                        .forEach(prefix -> {
+                            try {
+                                UpLister upLister = generateLister(prefix);
+                                order.addAndGet(1);
+                                list2(upLister, order);
+                            } catch (Exception e) {
+                                SystemUtils.exit(exitBool, e);
+                            }
+                        });
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) Thread.sleep(1000);
+            System.out.println(info + " finished");
+        } catch (Throwable throwable) {
+            SystemUtils.exit(exitBool, throwable);
+        }
+    }
+
+    private void list(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+        // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
+        // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        // 持久化结果标识信息
+        String newOrder = String.valueOf(order);
+        IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
+        try {
+            String record = "order " + newOrder + ": " + lister.getPrefix();
+            export(lister, saver, lineProcessor);
+            record += "\tsuccessfully done";
+            System.out.println(record);
+            saver.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+            lister.close();
         } catch (Exception e) {
-            throw new SuitsException(40000, e.getMessage());
+            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
+                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
+            saver.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+        }
+    }
+
+    private void list1(UpLister startLister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+        list(startLister, order);
+        List<String> directories = startLister.getDirectories();
+        if (directories != null) {
+            directories.parallelStream().filter(this::checkPrefix)
+                    .forEach(prefix -> {
+                        try {
+                            UpLister upLister = generateLister(startLister.getPrefix() + prefix);
+                            order.addAndGet(1);
+                            list2(upLister, order);
+                        } catch (Exception e) {
+                            SystemUtils.exit(exitBool, e);
+                        }
+                    });
+        }
+    }
+
+    private void list2(UpLister startLister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+        list(startLister, order);
+        List<String> directories = startLister.getDirectories();
+        if (directories != null) {
+            for (String prefix : directories) {
+                if (checkPrefix(prefix)) {
+                    UpLister upLister = generateLister(startLister.getPrefix() + prefix);
+                    order.addAndGet(1);
+                    list2(upLister, order);
+                }
+            }
         }
     }
 }

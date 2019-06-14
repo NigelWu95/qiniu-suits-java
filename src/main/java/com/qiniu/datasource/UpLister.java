@@ -20,6 +20,7 @@ public class UpLister implements ILister<FileItem> {
     private int limit;
     private boolean straight;
     private List<FileItem> fileItems;
+    private List<String> directories = new ArrayList<>();
 
     public UpLister(UpYunClient upYunClient, String bucket, String prefix, String marker, String endPrefix,
                     int limit) throws SuitsException {
@@ -123,7 +124,9 @@ public class UpLister implements ILister<FileItem> {
                 String[] lines = result.split("\n");
                 for (String line : lines) {
                     if (line.indexOf("\t") > 0) {
-                        fileItems.add(new FileItem(line));
+                        FileItem fileItem = new FileItem(line);
+                        if ("N".equals(fileItem.attribute)) fileItems.add(fileItem);
+                        else directories.add(fileItem.key);
                     }
                 }
                 return fileItems;
@@ -206,6 +209,10 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public List<FileItem> currents() {
         return fileItems;
+    }
+
+    public List<String> getDirectories() {
+        return directories;
     }
 
     @Override

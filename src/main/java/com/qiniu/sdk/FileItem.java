@@ -2,7 +2,7 @@ package com.qiniu.sdk;
 
 public class FileItem {
 
-    // 文件名
+    // 文件名/目录名
     public String key;
 
     // 文件属性 {file, folder}
@@ -20,7 +20,7 @@ public class FileItem {
     public FileItem(String data) {
         String[] a = data.split("\t");
         key = a[0];
-        if (a.length > 1) attribute = ("N".equals(a[1]) ? "File" : "Folder");
+        attribute = ("N".equals(a[1]) ? "File" : "Folder");
         if (a.length > 2) size = Long.parseLong(a[2].trim());
         if (a.length > 3) timeSeconds = Long.parseLong(a[3].trim());
 //        try {
