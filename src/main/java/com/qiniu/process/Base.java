@@ -11,6 +11,7 @@ import com.qiniu.util.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
@@ -21,7 +22,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String bucket;
     protected int batchSize;
     protected int retryTimes = 5;
-    protected int saveIndex;
+    protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
 
@@ -35,7 +36,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public Base(String processName, String accessKey, String secretKey, String bucket,
                 String savePath, int saveIndex) throws IOException {
         this(processName, accessKey, secretKey, bucket);
-        this.saveIndex = saveIndex;
+        this.saveIndex = new AtomicInteger(saveIndex);
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
     }
@@ -65,14 +66,14 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
         this.fileSaveMapper.closeWriters();
-        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
     }
 
     @SuppressWarnings("unchecked")
     public Base<T> clone() throws CloneNotSupportedException {
         Base<T> base = (Base<T>)super.clone();
         try {
-            base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
+            base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
