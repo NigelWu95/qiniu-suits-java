@@ -243,12 +243,8 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         String[] markerAndEnd = getMarkerAndEnd(prefix);
         while (true) {
             try {
-                try {
-                    return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix,
-                            markerAndEnd[0], markerAndEnd[1], unitLen);
-                } catch (Exception e) {
-                    throw new SuitsException(40000, e.getMessage());
-                }
+                return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, markerAndEnd[0],
+                        markerAndEnd[1], unitLen);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
@@ -258,7 +254,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         }
     }
 
-    private void list(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+    private void listing(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
@@ -281,17 +277,39 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         }
     }
 
-    private void list2(UpLister startLister, AtomicInteger order) throws IOException, CloneNotSupportedException {
-        order.addAndGet(1);
-        list(startLister, order);
-        List<String> directories = startLister.getDirectories();
+    private void recursionListing(UpLister lister, ILineProcess<Map<String, String>> processor,
+                               IResultOutput<BufferedWriter> saver) throws IOException {
+        export(lister, saver, processor);
+        lister.close();
+        List<String> directories = lister.getDirectories();
         if (directories != null) {
             for (String prefix : directories) {
                 if (checkPrefix(prefix)) {
-                    UpLister upLister = generateLister(startLister.getPrefix() + "/" + prefix);
-                    list2(upLister, order);
+                    UpLister upLister = generateLister(lister.getPrefix() + "/" + prefix);
+                    export(upLister, saver, processor);
                 }
             }
+        }
+    }
+
+    private void listingWithDirectories(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+        order.addAndGet(1);
+        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        // 持久化结果标识信息
+        String newOrder = String.valueOf(order);
+        IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
+        try {
+            String record = "order " + newOrder + ": " + lister.getPrefix();
+            recursionListing(lister, lineProcessor, saver);
+            record += "\tsuccessfully done";
+            System.out.println(record);
+            saver.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+        } catch (Exception e) {
+            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
+                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
+            saver.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
         }
     }
 
@@ -307,14 +325,14 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 UpLister startLister = generateLister("");
-                list(startLister, order);
+                listing(startLister, order);
                 prefixes = startLister.getDirectories();
             }
             prefixes.parallelStream().filter(this::checkPrefix)
                     .forEach(prefix -> {
                         try {
                             UpLister upLister = generateLister(prefix);
-                            list2(upLister, order);
+                            listingWithDirectories(upLister, order);
                         } catch (Exception e) {
                             SystemUtils.exit(exitBool, e);
                         }

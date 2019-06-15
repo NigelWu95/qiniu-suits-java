@@ -22,7 +22,7 @@ public class UpYunClient {
      * @param userName   操作员名称
      * @param password   密码，不需要MD5加密
      */
-    public UpYunClient(UpYunConfig config, String userName, String password) throws Exception {
+    public UpYunClient(UpYunConfig config, String userName, String password) {
         this.config = config;
         this.userName = userName;
         this.password = CharactersUtils.md5(password);
