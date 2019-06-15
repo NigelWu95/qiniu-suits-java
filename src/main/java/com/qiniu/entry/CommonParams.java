@@ -317,14 +317,14 @@ public class CommonParams {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
             String marker = null;
-            String end;
+            String end = null;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
-                if (jsonCfg.get("marker") instanceof JsonNull || "".equals(jsonCfg.get("marker").getAsString())) {
-                    if (jsonCfg.get("start") instanceof JsonNull || "".equals(jsonCfg.get("start").getAsString())) {
-                        marker = "";
-                    } else {
+                if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
+                    marker = jsonCfg.get("marker").getAsString();
+                } else {
+                    if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
                             marker = OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString());
                         } else if ("tencent".equals(source)) {
@@ -337,10 +337,9 @@ public class CommonParams {
                             marker = OssUtils.getUpYunMarker(bucket, fileItem);
                         }
                     }
-                } else {
-                    marker = jsonCfg.get("marker").getAsString();
                 }
-                end = jsonCfg.get("end").getAsString();
+                if (jsonCfg.has("end") && !(jsonCfg.get("end") instanceof JsonNull))
+                    end = jsonCfg.get("end").getAsString();
                 prefixesMap.put(prefix, new String[]{marker, end});
             }
         } else {

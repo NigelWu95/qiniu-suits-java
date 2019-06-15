@@ -28,9 +28,9 @@ public class UpYunClient {
         this.password = CharactersUtils.md5(password);
     }
 
-    public HttpURLConnection listFilesConnection(String bucket, String prefix, String marker, int limit)
+    public HttpURLConnection listFilesConnection(String bucket, String directory, String marker, int limit)
             throws IOException {
-        String uri = "/" + bucket + "/" + (prefix == null ? "" : prefix);
+        String uri = "/" + bucket + "/" + (directory == null ? "" : directory);
         // 获取链接
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
