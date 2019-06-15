@@ -181,7 +181,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         List<Map<String, String>> convertedList;
         List<String> writeList;
         List<FileItem> objects = lister.currents()
-                .stream().peek(fileItem -> fileItem.key += lister.getPrefix() + "/").collect(Collectors.toList());
+                .stream().peek(fileItem -> fileItem.key = lister.getPrefix() + "/" + fileItem.key).collect(Collectors.toList());
         int retry;
         boolean goon = objects.size() > 0 || lister.hasNext();
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -281,31 +281,14 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         }
     }
 
-    private void list1(UpLister startLister, AtomicInteger order) throws IOException, CloneNotSupportedException {
-        list(startLister, order);
-        List<String> directories = startLister.getDirectories();
-        if (directories != null) {
-            directories.parallelStream().filter(this::checkPrefix)
-                    .forEach(prefix -> {
-                        try {
-                            UpLister upLister = generateLister(prefix);
-                            order.addAndGet(1);
-                            list2(upLister, order);
-                        } catch (Exception e) {
-                            SystemUtils.exit(exitBool, e);
-                        }
-                    });
-        }
-    }
-
     private void list2(UpLister startLister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+        order.addAndGet(1);
         list(startLister, order);
         List<String> directories = startLister.getDirectories();
         if (directories != null) {
             for (String prefix : directories) {
                 if (checkPrefix(prefix)) {
                     UpLister upLister = generateLister(startLister.getPrefix() + "/" + prefix);
-                    order.addAndGet(1);
                     list2(upLister, order);
                 }
             }
@@ -324,19 +307,18 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 UpLister startLister = generateLister("");
-                list1(startLister, order);
-            } else {
-                prefixes.parallelStream().filter(this::checkPrefix)
-                        .forEach(prefix -> {
-                            try {
-                                UpLister upLister = generateLister(prefix);
-                                order.addAndGet(1);
-                                list2(upLister, order);
-                            } catch (Exception e) {
-                                SystemUtils.exit(exitBool, e);
-                            }
-                        });
+                list(startLister, order);
+                prefixes = startLister.getDirectories();
             }
+            prefixes.parallelStream().filter(this::checkPrefix)
+                    .forEach(prefix -> {
+                        try {
+                            UpLister upLister = generateLister(prefix);
+                            list2(upLister, order);
+                        } catch (Exception e) {
+                            SystemUtils.exit(exitBool, e);
+                        }
+                    });
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             System.out.println(info + " finished");
