@@ -123,7 +123,7 @@ public class OssUtils {
     }
 
     public static String getUpYunMarker(String bucket, FileItem fileItem) {
-        return new String(encoder.encode((bucket + (fileItem.size == 0 ? "/@~" : "/@#") + fileItem.key).getBytes()));
+        return new String(encoder.encode((bucket + ("F".equals(fileItem.attribute) ? "/@~" : "/@#") + fileItem.key).getBytes()));
     }
 
     public static String getQiniuMarker(String key) {

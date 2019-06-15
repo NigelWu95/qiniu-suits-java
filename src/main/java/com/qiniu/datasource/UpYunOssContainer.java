@@ -338,12 +338,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                                 SystemUtils.exit(exitBool, e);
                             }
                         });
-//                        try {
-//                            UpLister upLister = generateLister(prefix);
-//                            directoriesListing(upLister, order);
-//                        } catch (Exception e) {
-//                            SystemUtils.exit(exitBool, e);
-//                        }
                     });
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
