@@ -292,7 +292,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         }
     }
 
-    private void listingWithDirectories(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
+    private void directoriesListing(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
         order.addAndGet(1);
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
@@ -305,43 +305,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
             System.out.println(record);
             saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
-        } catch (Exception e) {
-            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
-                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
-            saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
-        }
-    }
-
-    private void directoriesListing(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
-        order.addAndGet(1);
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        // 持久化结果标识信息
-        String newOrder = String.valueOf(order);
-        IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
-        try {
-            String record = "order " + newOrder + ": " + lister.getPrefix();
-            export(lister, saver, processor);
-            lister.close();
-            record += "\tsuccessfully done";
-            System.out.println(record);
-            saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
-            List<String> directories = lister.getDirectories();
-            if (directories != null) {
-                for (String prefix : directories) {
-                    if (checkPrefix(prefix)) {
-                        UpLister upLister = generateLister(lister.getPrefix() + "/" + prefix);
-                        executorPool.execute(() -> {
-                            try {
-                                listingWithDirectories(upLister, order);
-                            } catch (Exception e) {
-                                SystemUtils.exit(exitBool, e);
-                            }
-                        });
-                    }
-                }
-            }
         } catch (Exception e) {
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                     lister.getMarker() + "\tend:" + lister.getEndPrefix());
@@ -367,12 +330,20 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
             }
             prefixes.parallelStream().filter(this::checkPrefix)
                     .forEach(prefix -> {
-                        try {
-                            UpLister upLister = generateLister(prefix);
-                            directoriesListing(upLister, order);
-                        } catch (Exception e) {
-                            SystemUtils.exit(exitBool, e);
-                        }
+                        executorPool.execute(() -> {
+                            try {
+                                UpLister upLister = generateLister(prefix);
+                                directoriesListing(upLister, order);
+                            } catch (Exception e) {
+                                SystemUtils.exit(exitBool, e);
+                            }
+                        });
+//                        try {
+//                            UpLister upLister = generateLister(prefix);
+//                            directoriesListing(upLister, order);
+//                        } catch (Exception e) {
+//                            SystemUtils.exit(exitBool, e);
+//                        }
                     });
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
