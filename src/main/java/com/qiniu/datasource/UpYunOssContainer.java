@@ -180,7 +180,8 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         ITypeConvert<FileItem, String> stringConverter = getNewStringConverter();
         List<Map<String, String>> convertedList;
         List<String> writeList;
-        List<FileItem> objects = lister.currents();
+        List<FileItem> objects = lister.currents()
+                .stream().peek(fileItem -> fileItem.key += lister.getPrefix() + "/").collect(Collectors.toList());
         int retry;
         boolean goon = objects.size() > 0 || lister.hasNext();
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
