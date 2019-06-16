@@ -319,10 +319,12 @@ public class QSuitsEntry {
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
-        boolean prefixLeft = commonParams.getPrefixLeft();
-        boolean prefixRight = commonParams.getPrefixRight();
+//        boolean prefixLeft = commonParams.getPrefixLeft();
+//        boolean prefixRight = commonParams.getPrefixRight();
         UpYunOssContainer upYunOssContainer = new UpYunOssContainer(username, password, upYunConfig, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+                antiPrefixes, prefixesMap,
+//                prefixLeft, prefixRight,
+                indexMap, unitLen, threads);
         upYunOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         upYunOssContainer.setRetryTimes(retryTimes);
         return upYunOssContainer;

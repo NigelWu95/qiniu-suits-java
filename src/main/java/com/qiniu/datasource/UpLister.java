@@ -171,6 +171,8 @@ public class UpLister implements ILister<FileItem> {
         try {
             fileItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
+        } catch (SuitsException e) {
+            throw e;
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
         } catch (Exception e) {

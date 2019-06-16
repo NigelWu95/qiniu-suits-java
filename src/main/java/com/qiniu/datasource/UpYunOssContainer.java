@@ -34,8 +34,8 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
     private List<String> antiPrefixes;
     private Map<String, String[]> prefixesMap;
     private List<String> prefixes;
-    private boolean prefixLeft;
-    private boolean prefixRight;
+//    private boolean prefixLeft;
+//    private boolean prefixRight;
     protected Map<String, String> indexMap;
     protected int unitLen;
     private int threads;
@@ -50,8 +50,9 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public UpYunOssContainer(String username, String password, UpYunConfig configuration, String bucket,
-                             List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                             boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                             List<String> antiPrefixes, Map<String, String[]> prefixesMap,
+//                             boolean prefixLeft, boolean prefixRight,
+                             Map<String, String> indexMap, int unitLen, int threads) {
         this.username = username;
         this.password = password;
         this.configuration = configuration;
@@ -59,8 +60,8 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
         setPrefixesAndMap(prefixesMap);
-        this.prefixLeft = prefixLeft;
-        this.prefixRight = prefixRight;
+//        this.prefixLeft = prefixLeft;
+//        this.prefixRight = prefixRight;
         setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
@@ -96,8 +97,8 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         bucket = commonParams.getBucket();
         antiPrefixes = commonParams.getAntiPrefixes();
         setPrefixesAndMap(commonParams.getPrefixesMap());
-        prefixLeft = commonParams.getPrefixLeft();
-        prefixRight = commonParams.getPrefixRight();
+//        prefixLeft = commonParams.getPrefixLeft();
+//        prefixRight = commonParams.getPrefixRight();
         setIndexMapWithDefault(commonParams.getIndexMap());
         unitLen = commonParams.getUnitLen();
         retryTimes = commonParams.getRetryTimes();
@@ -328,6 +329,19 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                 listing(startLister, order);
                 prefixes = startLister.getDirectories();
             }
+//            else {
+//                if (prefixLeft) {
+//                    String minPrefix = prefixes.get(0);
+//                    UpLister firstLister = generateLister("");
+//                    firstLister.setEndPrefix(minPrefix);
+//                    listing(firstLister, order);
+//                    firstLister.getDirectories().parallelStream().filter(prefix -> prefix.compareTo(minPrefix) < 0)
+//                            .forEach(prefixes::add);
+//                }
+//                if (prefixRight) {
+//
+//                }
+//            }
             prefixes.parallelStream().filter(this::checkPrefix)
                     .forEach(prefix -> {
                         executorPool.execute(() -> {
