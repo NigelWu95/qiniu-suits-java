@@ -1,8 +1,12 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
+import com.qiniu.util.JsonUtils;
 import com.qiniu.util.OssUtils;
 
 import java.io.*;
@@ -106,9 +110,11 @@ public class UpLister implements ILister<FileItem> {
         InputStreamReader sr = null;
         BufferedReader br = null;
         try {
-            if (prefix.endsWith("FF8080815919A15101591AFE37C603F7 "))
-                System.out.println();
             conn = upYunClient.listFilesConnection(bucket, prefix, marker, limit);
+            conn.setRequestProperty("x-list-iter", marker);
+            conn.setRequestProperty("x-list-limit", String.valueOf(limit));
+            conn.setRequestProperty("Accept", "application/json");
+            conn.connect();
             code = conn.getResponseCode();
 //        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
             is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
@@ -119,18 +125,39 @@ public class UpLister implements ILister<FileItem> {
             while ((length = br.read(chars)) != -1) {
                 text.append(chars, 0, length);
             }
-            this.marker = conn.getHeaderField("x-upyun-list-iter");
-            if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
             if (code == 200) {
-                String result = text.toString();
-                String[] lines = result.split("\n");
-                for (String line : lines) {
-                    if (line.indexOf("\t") > 0) {
-                        FileItem fileItem = new FileItem(line);
-                        if ("N".equals(fileItem.attribute)) fileItems.add(fileItem);
-                        else directories.add(fileItem.key);
+//                String result = text.toString();
+//                String[] lines = result.split("\n");
+//                for (String line : lines) {
+//                    if (line.indexOf("\t") > 0) {
+//                        FileItem fileItem = new FileItem(line);
+//                        if ("N".equals(fileItem.attribute)) fileItems.add(fileItem);
+//                        else directories.add(fileItem.key);
+//                    }
+//                }
+//                this.marker = conn.getHeaderField("x-upyun-list-iter");
+                JsonObject returnJson = JsonUtils.toJsonObject(text.toString());
+                JsonArray files = returnJson.has("files") ? returnJson.getAsJsonArray("files") :
+                        new JsonArray();
+                JsonObject object;
+                String attribute;
+                for (JsonElement item : files) {
+                    object = item.getAsJsonObject();
+                    attribute = object.get("type").getAsString();
+                    if ("folder".equals(attribute)) {
+                        directories.add(object.get("name").getAsString());
+                    } else {
+                        FileItem fileItem = new FileItem();
+                        fileItem.key = (prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :
+                                prefix + "/" + object.get("name").getAsString();
+                        fileItem.attribute = attribute;
+                        fileItem.size = object.get("length").getAsLong();
+                        fileItem.timeSeconds = object.get("last_modified").getAsLong();
+                        fileItems.add(fileItem);
                     }
                 }
+                this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
+                if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
                 return fileItems;
             } else if (code == 404) {
                 this.marker = null;

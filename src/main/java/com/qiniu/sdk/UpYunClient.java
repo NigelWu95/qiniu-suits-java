@@ -28,9 +28,9 @@ public class UpYunClient {
         this.password = CharactersUtils.md5(password);
     }
 
-    public HttpURLConnection listFilesConnection(String bucket, String directory, String marker, int limit)
-            throws IOException {
-        String uri = "/" + bucket + "/" + (directory == null ? "" : directory.replace(" ", "%20"));
+    public HttpURLConnection listFilesConnection(String bucket, String directory, String marker, int limit) throws IOException {
+        directory = directory == null ? "" : directory.replace(" ", "%20").replace("\t", "%09");
+        String uri = "/" + bucket + "/" + directory;
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setConnectTimeout(config.connectTimeout);
@@ -41,9 +41,6 @@ public class UpYunClient {
         conn.setRequestProperty(UpYunConfig.DATE, date);
         conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
                 userName, password, null));
-        conn.setRequestProperty("x-list-iter", marker);
-        conn.setRequestProperty("x-list-limit", String.valueOf(limit));
-        conn.connect();
         return conn;
     }
 
