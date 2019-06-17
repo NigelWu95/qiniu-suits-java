@@ -213,6 +213,9 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
                     if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                    else if (e.getStatusCode() == 429) {
+                        try { Thread.sleep(1000); } catch (InterruptedException ignored) { }
+                    }
                     else retry--;
                 }
             }
@@ -250,6 +253,9 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                else if (e.getStatusCode() == 429) {
+                    try { Thread.sleep(1000); } catch (InterruptedException ignored) { }
+                }
                 else retry--;
             }
         }
