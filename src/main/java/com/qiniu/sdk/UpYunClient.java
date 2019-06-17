@@ -30,8 +30,7 @@ public class UpYunClient {
 
     public HttpURLConnection listFilesConnection(String bucket, String directory, String marker, int limit)
             throws IOException {
-        String uri = "/" + bucket + "/" + (directory == null ? "" : directory);
-        // 获取链接
+        String uri = "/" + bucket + "/" + (directory == null ? "" : directory.replace(" ", "%20"));
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setConnectTimeout(config.connectTimeout);
@@ -40,8 +39,8 @@ public class UpYunClient {
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri, userName,
-                password, null));
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
+                userName, password, null));
         conn.setRequestProperty("x-list-iter", marker);
         conn.setRequestProperty("x-list-limit", String.valueOf(limit));
         conn.connect();

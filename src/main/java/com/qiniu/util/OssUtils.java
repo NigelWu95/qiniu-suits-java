@@ -225,7 +225,6 @@ public class OssUtils {
         sb.append(method);
         sb.append(sp);
         sb.append(path);
-
         sb.append(sp);
         sb.append(date);
 

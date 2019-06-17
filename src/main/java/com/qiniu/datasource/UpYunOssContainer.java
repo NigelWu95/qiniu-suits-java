@@ -279,6 +279,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         } catch (Exception e) {
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                     lister.getMarker() + "\tend:" + lister.getEndPrefix());
+            e.printStackTrace();
             saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
         }
@@ -315,6 +316,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         } catch (Exception e) {
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                     lister.getMarker() + "\tend:" + lister.getEndPrefix());
+            e.printStackTrace();
             saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
         }

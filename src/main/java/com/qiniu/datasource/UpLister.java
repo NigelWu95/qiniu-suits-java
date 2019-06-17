@@ -106,6 +106,8 @@ public class UpLister implements ILister<FileItem> {
         InputStreamReader sr = null;
         BufferedReader br = null;
         try {
+            if (prefix.endsWith("FF8080815919A15101591AFE37C603F7 "))
+                System.out.println();
             conn = upYunClient.listFilesConnection(bucket, prefix, marker, limit);
             code = conn.getResponseCode();
 //        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()

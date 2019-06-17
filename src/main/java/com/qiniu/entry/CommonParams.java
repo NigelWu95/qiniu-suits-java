@@ -134,7 +134,6 @@ public class CommonParams {
         readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         process = entryParam.getValue("process").trim();
-        if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
         source = "terminal";
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
@@ -271,11 +270,8 @@ public class CommonParams {
 
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
-        if (!"".equals(process)) {
-            if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
-            else if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
-                throw new IOException("the process: " + process + " don't support getting source line from list.");
-            }
+        if (!process.isEmpty() && DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+            throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
     }
 
