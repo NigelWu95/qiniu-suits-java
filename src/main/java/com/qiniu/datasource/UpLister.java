@@ -253,7 +253,7 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public String currentEndKey() {
-        if (hasNext()) return OssUtils.decodeUpYunMarker(bucket, marker);
+        if (hasNext()) return OssUtils.decodeUpYunMarker(marker);
         FileItem last = currentLast();
         return last != null ? last.key : null;
     }

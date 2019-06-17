@@ -123,7 +123,19 @@ public class OssUtils {
     }
 
     public static String getUpYunMarker(String bucket, FileItem fileItem) {
-        return new String(encoder.encode((bucket + ("F".equals(fileItem.attribute) ? "/@~" : "/@#") + fileItem.key).getBytes()));
+        if (fileItem.key.contains("/")) {
+            String convertedKey = fileItem.key.replaceAll("/", "/~");
+            int lastIndex = convertedKey.lastIndexOf("~");
+            if ("folder".equals(fileItem.attribute) || ("F".equals(fileItem.attribute))) {
+                convertedKey = convertedKey.substring(0, lastIndex) + "@" + convertedKey.substring(lastIndex);
+            } else {
+                convertedKey = convertedKey.substring(0, lastIndex) + "@#" + convertedKey.substring(lastIndex + 1);
+            }
+            return new String(encoder.encode((bucket + "/~" + convertedKey).getBytes()));
+        } else {
+            return ("folder".equals(fileItem.attribute) || ("F".equals(fileItem.attribute))) ?
+                bucket + "/@~" + fileItem.key : bucket + "/@#" + fileItem.key;
+        }
     }
 
     public static String getQiniuMarker(String key) {
@@ -160,9 +172,10 @@ public class OssUtils {
         return marker;
     }
 
-    public static String decodeUpYunMarker(String bucket, String marker) {
+    public static String decodeUpYunMarker(String marker) {
         String keyString = new String(decoder.decode(marker));
-        return keyString.substring(bucket.length() + 3);
+        int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
+        return keyString.substring(index).replaceAll("(/~|/@~|/@#)", "/");
     }
 
     public static Zone getQiniuRegion(String regionName) {
