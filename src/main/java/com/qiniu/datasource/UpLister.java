@@ -2,6 +2,7 @@ package com.qiniu.datasource;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
@@ -126,6 +127,7 @@ public class UpLister implements ILister<FileItem> {
                 text.append(chars, 0, length);
             }
             if (code == 200) {
+//                this.marker = conn.getHeaderField("x-upyun-list-iter");
 //                String result = text.toString();
 //                String[] lines = result.split("\n");
 //                for (String line : lines) {
@@ -135,29 +137,29 @@ public class UpLister implements ILister<FileItem> {
 //                        else directories.add(fileItem.key);
 //                    }
 //                }
-//                this.marker = conn.getHeaderField("x-upyun-list-iter");
                 JsonObject returnJson = JsonUtils.toJsonObject(text.toString());
-                JsonArray files = returnJson.has("files") ? returnJson.getAsJsonArray("files") :
-                        new JsonArray();
-                JsonObject object;
-                String attribute;
-                for (JsonElement item : files) {
-                    object = item.getAsJsonObject();
-                    attribute = object.get("type").getAsString();
-                    if ("folder".equals(attribute)) {
-                        directories.add(object.get("name").getAsString());
-                    } else {
-                        FileItem fileItem = new FileItem();
-                        fileItem.key = (prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :
-                                prefix + "/" + object.get("name").getAsString();
-                        fileItem.attribute = attribute;
-                        fileItem.size = object.get("length").getAsLong();
-                        fileItem.timeSeconds = object.get("last_modified").getAsLong();
-                        fileItems.add(fileItem);
-                    }
-                }
                 this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
                 if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
+                if (returnJson.has("files") && returnJson.get("files").isJsonArray()) {
+                    JsonArray files = returnJson.get("files").getAsJsonArray();
+                    JsonObject object;
+                    String attribute;
+                    for (JsonElement item : files) {
+                        object = item.getAsJsonObject();
+                        attribute = object.get("type").getAsString();
+                        if ("folder".equals(attribute)) {
+                            directories.add(object.get("name").getAsString());
+                        } else {
+                            FileItem fileItem = new FileItem();
+                            fileItem.key = (prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :
+                                    prefix + "/" + object.get("name").getAsString();
+                            fileItem.attribute = attribute;
+                            fileItem.size = object.get("length").getAsLong();
+                            fileItem.timeSeconds = object.get("last_modified").getAsLong();
+                            fileItems.add(fileItem);
+                        }
+                    }
+                }
                 return fileItems;
             } else if (code == 404) {
                 this.marker = null;
