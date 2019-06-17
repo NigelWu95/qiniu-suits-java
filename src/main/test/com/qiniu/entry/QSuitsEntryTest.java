@@ -8,6 +8,7 @@ import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.util.ParamsUtils;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class QSuitsEntryTest {
@@ -72,11 +73,23 @@ public class QSuitsEntryTest {
                 , "-cmd=avthumb/mp4"
                 , "-saveas=temp:$(key)"
 //                , "-pfop-config=resources/process.json"
+                , "-f"
+                , "-s"
+                , "-i"
+                , "-single"
         };
-        QSuitsEntry qSuitsEntry = new QSuitsEntry(ParamsUtils.toParamsMap(args));
+        Map<String, String> preSetMap = new HashMap<String, String>(){{
+            put("f", "verify=false");
+            put("s", "single=true");
+            put("single", "single=true");
+            put("i", "single=true");
+        }};
+        Map<String, String> paramsMap = ParamsUtils.toParamsMap(args, preSetMap);
+        IEntryParam entryParam = new ParamsConfig(paramsMap);
+        CommonParams commonParams = new CommonParams(paramsMap);
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor;
         processor = qSuitsEntry.whichNextProcessor(true);
-        CommonParams commonParams = qSuitsEntry.getCommonParams();
         processor.validCheck(commonParams.getMapLine());
         System.out.println(processor.processLine(commonParams.getMapLine()));
     }
@@ -94,7 +107,10 @@ public class QSuitsEntryTest {
 //                , "-avinfo-index=1"
                 , "-pfop-config=resources/process.json"
         };
-        QSuitsEntry qSuitsEntry = new QSuitsEntry(args);
+        Map<String, String> paramsMap = ParamsUtils.toParamsMap(args, null);
+        IEntryParam entryParam = new ParamsConfig(paramsMap);
+        CommonParams commonParams = new CommonParams(paramsMap);
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.whichNextProcessor(true);
         InputSource inputSource = qSuitsEntry.getScannerSource();
         inputSource.export(System.in, processor);
@@ -104,7 +120,8 @@ public class QSuitsEntryTest {
     @SuppressWarnings("unchecked")
     public void testEntryAliOss() throws Exception {
         IEntryParam entryParam = new ParamsConfig("resources/.ali.properties");
-        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
+        CommonParams commonParams = new CommonParams(entryParam);
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.getProcessor();
         IDataSource dataSource = qSuitsEntry.getDataSource();
         if (dataSource != null) {

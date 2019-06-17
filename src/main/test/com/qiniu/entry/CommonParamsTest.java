@@ -21,7 +21,7 @@ public class CommonParamsTest {
                 ,"-f-prefix=fragments,abc,\\,a"
 //                ,"-f-mime=video"
                 };
-        IEntryParam entryParam = new ParamsConfig(args);
+        IEntryParam entryParam = new ParamsConfig(args, null);
         CommonParams commonParams = new CommonParams(entryParam);
         Map<String,String> map = commonParams.getIndexMap();
         System.out.println(map);

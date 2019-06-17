@@ -6,8 +6,6 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
-import com.qiniu.config.ParamsConfig;
-import com.qiniu.config.PropertiesFile;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
@@ -21,7 +19,6 @@ import com.qiniu.util.OssUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -52,19 +49,13 @@ public class QSuitsEntry {
     private String saveSeparator;
     private Set<String> rmFields;
 
-    public QSuitsEntry(String[] args) throws Exception {
-        this.entryParam = new ParamsConfig(getEntryParams(args));
+    public QSuitsEntry(IEntryParam entryParam) throws Exception {
+        this.entryParam = entryParam;
         this.commonParams = new CommonParams(entryParam);
         setMembers();
     }
 
-    public QSuitsEntry(Map<String, String> paramsMap) throws Exception {
-        this.entryParam = new ParamsConfig(paramsMap);
-        this.commonParams = new CommonParams(paramsMap);
-        setMembers();
-    }
-
-    public QSuitsEntry(IEntryParam entryParam) throws Exception {
+    public QSuitsEntry(IEntryParam entryParam, CommonParams commonParams) throws Exception {
         this.entryParam = entryParam;
         this.commonParams = new CommonParams(entryParam);
         setMembers();
@@ -120,43 +111,6 @@ public class QSuitsEntry {
         this.savePath = commonParams.getSavePath() + commonParams.getSaveTag();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
-    }
-
-    public static Map<String, String> getEntryParams(String[] args) throws IOException {
-        Map<String, String> paramsMap;
-        List<String> configFiles = new ArrayList<String>(){{
-            add("resources" + System.getProperty("file.separator") + "application.config");
-            add("resources" + System.getProperty("file.separator") + ".application.config");
-            add("resources" + System.getProperty("file.separator") + ".application.properties");
-        }};
-        boolean paramFromConfig = true;
-        if (args != null && args.length > 0) {
-            if (args[0].startsWith("-config=")) configFiles.add(args[0].split("=")[1]);
-            else paramFromConfig = false;
-        }
-        String configFilePath = null;
-        if (paramFromConfig) {
-            for (int i = configFiles.size() - 1; i >= 0; i--) {
-                File file = new File(configFiles.get(i));
-                if (file.exists()) {
-                    configFilePath = configFiles.get(i);
-                    break;
-                }
-            }
-            if (configFilePath == null) throw new IOException("there is no config file detected.");
-            else paramFromConfig = true;
-        }
-        if (paramFromConfig) {
-            if (configFilePath.endsWith(".properties")) {
-                paramsMap = ParamsUtils.toParamsMap(new PropertiesFile(configFilePath).getProperties());
-            } else {
-                paramsMap = ParamsUtils.toParamsMap(configFilePath);
-            }
-        } else {
-            paramsMap = ParamsUtils.toParamsMap(args);
-            paramsMap.putAll(ParamsUtils.toParamsMap(args));
-        }
-        return paramsMap;
     }
 
     public IEntryParam getEntryParam() {

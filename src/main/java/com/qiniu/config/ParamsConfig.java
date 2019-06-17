@@ -24,8 +24,8 @@ public class ParamsConfig implements IEntryParam {
         paramsMap = ParamsUtils.toParamsMap(jsonObject);
     }
 
-    public ParamsConfig(String[] args) throws IOException {
-        paramsMap = ParamsUtils.toParamsMap(args);
+    public ParamsConfig(String[] args, Map<String, String> preSetMap) throws IOException {
+        paramsMap = ParamsUtils.toParamsMap(args, preSetMap);
     }
 
     public ParamsConfig(Map<String, String> initMap) throws IOException {
