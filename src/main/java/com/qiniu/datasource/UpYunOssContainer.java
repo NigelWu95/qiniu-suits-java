@@ -213,7 +213,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                     if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                     else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else if (e.getStatusCode() == 429) {
-                        try { Thread.sleep(1000); } catch (InterruptedException ignored) { }
+                        try { Thread.sleep(3000); } catch (InterruptedException ignored) { }
                     }
                     else retry--;
                 }
@@ -253,7 +253,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                 if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
                 else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else if (e.getStatusCode() == 429) {
-                    try { Thread.sleep(1000); } catch (InterruptedException ignored) { }
+                    try { Thread.sleep(3000); } catch (InterruptedException ignored) { }
                 }
                 else retry--;
             }

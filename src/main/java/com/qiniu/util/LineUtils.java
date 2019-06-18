@@ -173,6 +173,9 @@ public final class LineUtils {
                 case "timestamp":
                 case "putTime":
                     itemMap.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
+                case "mime":
+                case "mimeType":
+                    itemMap.put(indexMap.get(index), fileItem.attribute); break;
             }
         }
         return itemMap;
@@ -327,6 +330,8 @@ public final class LineUtils {
             converted.addProperty("size", fileItem.size);
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.addProperty("datetime", DatetimeUtils.stringOf(fileItem.timeSeconds));
+        if (rmFields == null || mimeFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("mime", fileItem.attribute);
         if (converted.size() == 0) throw new IOException("empty result.");
         return converted.toString();
     }
@@ -340,6 +345,8 @@ public final class LineUtils {
             converted.append(fileItem.size).append(separator);
         if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
             converted.append(DatetimeUtils.stringOf(fileItem.timeSeconds)).append(separator);
+        if (rmFields == null || mimeFields.stream().noneMatch(rmFields::contains))
+            converted.append(fileItem.attribute).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }
