@@ -28,9 +28,12 @@ public class UpYunClient {
         this.password = CharactersUtils.md5(password);
     }
 
-    public HttpURLConnection listFilesConnection(String bucket, String directory, String marker, int limit) throws IOException {
-        directory = directory == null ? "" : directory.replace(" ", "%20").replace("\t", "%09");
-        String uri = "/" + bucket + "/" + directory;
+    public HttpURLConnection listFilesConnection(String bucket, String directory) throws IOException {
+        String uri;
+        if (directory == null || directory.isEmpty()) uri = "/" + bucket;
+        else if (directory.endsWith(" ")) uri = "/" + bucket + "/" + directory.substring(0, directory.length() - 1) + "%20";
+        else if (directory.endsWith("\t")) uri = "/" + bucket + "/" + directory.substring(0, directory.length() - 1) + "%09";
+        else uri = "/" + bucket + "/" + directory;
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setConnectTimeout(config.connectTimeout);
