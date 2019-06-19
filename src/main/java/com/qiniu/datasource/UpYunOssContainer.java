@@ -327,21 +327,18 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
 //                }
 //            }
 
-            ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
             AtomicBoolean loopMore = new AtomicBoolean(true);
             while (prefixes != null && prefixes.size() > 0) {
                 prefixes = prefixes.parallelStream().filter(this::checkPrefix)
                         .map(prefix -> {
                             try {
-                                String preOne = prefix.split("/")[0];
-                                if (loopMore.get() && !map.containsKey(preOne)) map.put(preOne, order.addAndGet(1));
                                 UpLister upLister = generateLister(prefix);
                                 if (upLister.hasNext() || upLister.getDirectories() != null) {
-                                    return listing(upLister, map.get(preOne));
+                                    return listing(upLister, order.addAndGet(1));
                                 } else {
                                     executorPool.execute(() -> {
                                         try {
-                                            listing(upLister, map.get(preOne));
+                                            listing(upLister, order.addAndGet(1));
                                         } catch (Exception e) {
                                             SystemUtils.exit(exitBool, e);
                                         }
