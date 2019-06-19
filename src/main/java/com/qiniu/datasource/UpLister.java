@@ -2,7 +2,6 @@ package com.qiniu.datasource;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
@@ -25,7 +24,7 @@ public class UpLister implements ILister<FileItem> {
     private int limit;
     private boolean straight;
     private List<FileItem> fileItems;
-    private List<String> directories = new ArrayList<>();
+    private List<String> directories;
 
     public UpLister(UpYunClient upYunClient, String bucket, String prefix, String marker, String endPrefix,
                     int limit) throws SuitsException {
@@ -148,7 +147,9 @@ public class UpLister implements ILister<FileItem> {
                         object = item.getAsJsonObject();
                         attribute = object.get("type").getAsString();
                         if ("folder".equals(attribute)) {
-                            directories.add(object.get("name").getAsString());
+                            if (directories == null) directories = new ArrayList<>();
+                            else directories.add((prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :
+                                    prefix + "/" + object.get("name").getAsString());
                         } else {
                             FileItem fileItem = new FileItem();
                             fileItem.key = (prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :

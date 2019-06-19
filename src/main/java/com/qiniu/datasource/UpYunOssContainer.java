@@ -19,6 +19,7 @@ import com.qiniu.util.SystemUtils;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -210,11 +211,11 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
-                    if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
-                    else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                    if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) retry--;
                     else if (e.getStatusCode() == 429) {
                         try { Thread.sleep(3000); } catch (InterruptedException ignored) { }
-                    }
+                    } else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                    else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                     else retry--;
                 }
             }
@@ -250,11 +251,12 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                         markerAndEnd[1], unitLen);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
-                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
-                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
+                if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) retry--;
                 else if (e.getStatusCode() == 429) {
                     try { Thread.sleep(3000); } catch (InterruptedException ignored) { }
                 }
+                else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
+                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
                 else retry--;
             }
         }
@@ -272,53 +274,52 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
             export(lister, saver, lineProcessor);
             record += "\tsuccessfully done";
             System.out.println(record);
-            saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
-            lister.close();
         } catch (Exception e) {
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                     lister.getMarker() + "\tend:" + lister.getEndPrefix());
             e.printStackTrace();
+        } finally {
+            lister.close();
             saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
         }
     }
 
-    private void recursionListing(UpLister lister, IResultOutput<BufferedWriter> saver,
-                                  ILineProcess<Map<String, String>> processor) throws IOException {
-        export(lister, saver, processor);
-        lister.close();
-        List<String> directories = lister.getDirectories();
-        if (directories != null) {
-            for (String prefix : directories) {
-                if (checkPrefix(prefix)) {
-                    UpLister upLister = generateLister(lister.getPrefix() + "/" + prefix);
-                    recursionListing(upLister, saver, processor);
-                }
-            }
-        }
-    }
+//    private void recursionListing(UpLister lister, IResultOutput<BufferedWriter> saver,
+//                                  ILineProcess<Map<String, String>> processor) throws IOException {
+//        export(lister, saver, processor);
+//        lister.close();
+//        List<String> directories = lister.getDirectories();
+//        if (directories != null) {
+//            for (String prefix : directories) {
+//                if (checkPrefix(prefix)) {
+//                    UpLister upLister = generateLister(lister.getPrefix() + "/" + prefix);
+//                    recursionListing(upLister, saver, processor);
+//                }
+//            }
+//        }
+//    }
 
-    private void directoriesListing(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
-        order.addAndGet(1);
+    private List<String> listingResult(UpLister lister, int order) throws Exception {
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
         IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
         try {
             String record = "order " + newOrder + ": " + lister.getPrefix();
-            recursionListing(lister, saver, lineProcessor);
+            export(lister, saver, processor);
             record += "\tsuccessfully done";
             System.out.println(record);
-            saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
         } catch (Exception e) {
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                     lister.getMarker() + "\tend:" + lister.getEndPrefix());
             e.printStackTrace();
+        } finally {
+            lister.close();
             saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
         }
+        return lister.getDirectories();
     }
 
     /**
@@ -333,8 +334,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 UpLister startLister = generateLister("");
-                listing(startLister, order);
-                prefixes = startLister.getDirectories();
+                prefixes = listingResult(startLister, order.addAndGet(1));
             }
 //            else {
 //                if (prefixLeft) {
@@ -349,17 +349,50 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
 //
 //                }
 //            }
-            prefixes.parallelStream().filter(this::checkPrefix)
-                    .forEach(prefix -> {
-                        executorPool.execute(() -> {
+
+            ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+            AtomicBoolean loopMore = new AtomicBoolean(true);
+            while (prefixes != null && prefixes.size() > 0) {
+                prefixes = prefixes.parallelStream().filter(this::checkPrefix)
+                        .map(prefix -> {
                             try {
+                                String preOne = prefix.split("/")[0];
+                                if (loopMore.get() && !map.containsKey(preOne)) map.put(preOne, order.addAndGet(1));
                                 UpLister upLister = generateLister(prefix);
-                                directoriesListing(upLister, order);
+                                if (!upLister.hasNext() && upLister.getDirectories() == null) {
+                                    executorPool.execute(() -> {
+                                        try {
+                                            listingResult(upLister, map.get(preOne));
+//                                            listingResult(upLister, order);
+                                        } catch (Exception e) {
+                                            SystemUtils.exit(exitBool, e);
+                                        }
+                                    });
+                                    return null;
+                                } else {
+                                    return listingResult(upLister, map.get(preOne));
+//                                    return listingResult(upLister, order);
+                                }
                             } catch (Exception e) {
                                 SystemUtils.exit(exitBool, e);
+                                return null;
                             }
-                        });
-                    });
+                        }).filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                loopMore.set(false);
+            }
+
+//            prefixes.parallelStream().filter(this::checkPrefix)
+//                    .forEach(prefix -> {
+//                        executorPool.execute(() -> {
+//                            try {
+//                                UpLister upLister = generateLister(prefix);
+//                                listingResult(upLister, order);
+//                            } catch (Exception e) {
+//                                SystemUtils.exit(exitBool, e);
+//                            }
+//                        });
+//                    });
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             System.out.println(info + " finished");
