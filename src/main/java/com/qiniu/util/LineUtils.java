@@ -5,6 +5,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qiniu.sdk.FileItem;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -154,6 +155,32 @@ public final class LineUtils {
         return itemMap;
     }
 
+    public static Map<String, String> getItemMap(FileItem fileItem, Map<String, String> indexMap)
+            throws IOException {
+        if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
+        Map<String, String> itemMap = new HashMap<>();
+        for (String index : indexMap.keySet()) {
+            if (!fileInfoFields.contains(index)) {
+                throw new IOException("the index: " + index + " can't be found.");
+            }
+            switch (index) {
+                case "key": itemMap.put(indexMap.get(index), fileItem.key); break;
+                case "size":
+                case "fsize":
+                    itemMap.put(indexMap.get(index), String.valueOf(fileItem.size)); break;
+                case "datetime":
+                    itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
+                case "timestamp":
+                case "putTime":
+                    itemMap.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
+                case "mime":
+                case "mimeType":
+                    itemMap.put(indexMap.get(index), fileItem.attribute); break;
+            }
+        }
+        return itemMap;
+    }
+
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap) throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         Map<String, String> itemMap = new HashMap<>();
@@ -261,7 +288,7 @@ public final class LineUtils {
     }
 
     public static String toFormatString(OSSObjectSummary ossObject, Set<String> rmFields) throws IOException {
-        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
         JsonObject converted = new JsonObject();
         if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", ossObject.getKey());
         if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
@@ -279,7 +306,7 @@ public final class LineUtils {
 
     public static String toFormatString(OSSObjectSummary ossObject, String separator, Set<String> rmFields)
             throws IOException {
-        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
         if (rmFields == null || !rmFields.contains("key")) converted.append(ossObject.getKey()).append(separator);
         if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
@@ -291,6 +318,35 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
         if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && ossObject.getOwner() != null)
             converted.append(ossObject.getOwner().getDisplayName()).append(separator);
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
+    public static String toFormatString(FileItem fileItem, Set<String> rmFields) throws IOException {
+        if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
+        JsonObject converted = new JsonObject();
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", fileItem.key);
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("size", fileItem.size);
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("datetime", DatetimeUtils.stringOf(fileItem.timeSeconds));
+        if (rmFields == null || mimeFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("mime", fileItem.attribute);
+        if (converted.size() == 0) throw new IOException("empty result.");
+        return converted.toString();
+    }
+
+    public static String toFormatString(FileItem fileItem, String separator, Set<String> rmFields)
+            throws IOException {
+        if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
+        StringBuilder converted = new StringBuilder();
+        if (rmFields == null || !rmFields.contains("key")) converted.append(fileItem.key).append(separator);
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
+            converted.append(fileItem.size).append(separator);
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
+            converted.append(DatetimeUtils.stringOf(fileItem.timeSeconds)).append(separator);
+        if (rmFields == null || mimeFields.stream().noneMatch(rmFields::contains))
+            converted.append(fileItem.attribute).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }

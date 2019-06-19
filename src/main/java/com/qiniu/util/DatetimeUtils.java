@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 public final class DatetimeUtils {
@@ -98,5 +100,16 @@ public final class DatetimeUtils {
     // 注意：该方法根据时间戳的长度自动判断精度，如 10 位的时间戳精度为秒，13 位的时间戳精度位毫秒，19 位的时间戳精度为纳秒
     public static LocalDateTime datetimeOf(long timestamp) {
         return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
+    }
+
+    /**
+     * 获取 GMT 格式时间戳，'Tue, 3 Jun 2008 11:05:30 GMT'
+     * DateTimeFormatter.RFC_1123_DATE_TIME
+     * @return GMT 格式时间戳
+     */
+    public static String getGMTDate() {
+        SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return format.format(new Date());
     }
 }

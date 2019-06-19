@@ -1,13 +1,17 @@
 package com.qiniu.entry;
 
+import com.qiniu.config.ParamsConfig;
+import com.qiniu.config.PropertiesFile;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.InputSource;
+import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
 
-import java.util.Map;
-import java.util.Scanner;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 
 public class EntryMain {
 
@@ -15,21 +19,21 @@ public class EntryMain {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        boolean single = false;
-        boolean interactive = false;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].matches("-f")) {
-                args[i] = "-verify=false";
-                process_verify = false;
-            } else if (args[i].matches("-(s|-single|-single=true|line=.?)")) {
-                args[i] = "-single=true";
-                single = true;
-            } else if (args[i].matches("-(i|-interactive|-interactive=true)")) {
-                args[i] = "-interactive=true";
-                interactive = true;
-            }
-        }
-        QSuitsEntry qSuitsEntry = single ? new QSuitsEntry(ParamsUtils.toParamsMap(args)) : new QSuitsEntry(args);
+        Map<String, String> preSetMap = new HashMap<String, String>(){{
+            put("f", "verify=false");
+            put("s", "single=true");
+            put("single", "single=true");
+            put("line", "single=true");
+            put("i", "interactive=true");
+            put("interactive", "interactive=true");
+        }};
+        Map<String, String> paramsMap = getEntryParams(args, preSetMap);
+        if (paramsMap.containsKey("verify")) process_verify = Boolean.parseBoolean(paramsMap.get("verify"));
+        boolean single = paramsMap.containsKey("single") && Boolean.parseBoolean(paramsMap.get("single"));
+        boolean interactive = paramsMap.containsKey("interactive") && Boolean.parseBoolean(paramsMap.get("interactive"));
+        IEntryParam entryParam = new ParamsConfig(paramsMap);
+        CommonParams commonParams = single ? new CommonParams(paramsMap) : new CommonParams(entryParam);
+        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor = single || interactive ? qSuitsEntry.whichNextProcessor(true) :
                 qSuitsEntry.getProcessor();
         if (process_verify && processor != null) {
@@ -45,7 +49,6 @@ public class EntryMain {
             }
         }
         if (single) {
-            CommonParams commonParams = qSuitsEntry.getCommonParams();
             if (processor != null) {
                 processor.validCheck(commonParams.getMapLine());
                 System.out.println(processor.processLine(commonParams.getMapLine()));
@@ -61,5 +64,42 @@ public class EntryMain {
             }
         }
         if (processor != null) processor.closeResource();
+    }
+
+    public static Map<String, String> getEntryParams(String[] args, Map<String, String> preSetMap) throws IOException {
+        Map<String, String> paramsMap;
+        List<String> configFiles = new ArrayList<String>(){{
+            add("resources" + System.getProperty("file.separator") + "application.config");
+            add("resources" + System.getProperty("file.separator") + ".application.config");
+            add("resources" + System.getProperty("file.separator") + ".application.properties");
+        }};
+        boolean paramFromConfig = true;
+        if (args != null && args.length > 0) {
+            if (args[0].startsWith("-config=")) configFiles.add(args[0].split("=")[1]);
+            else paramFromConfig = false;
+        }
+        String configFilePath = null;
+        if (paramFromConfig) {
+            for (int i = configFiles.size() - 1; i >= 0; i--) {
+                File file = new File(configFiles.get(i));
+                if (file.exists()) {
+                    configFilePath = configFiles.get(i);
+                    break;
+                }
+            }
+            if (configFilePath == null) throw new IOException("there is no config file detected.");
+            else paramFromConfig = true;
+        }
+        if (paramFromConfig) {
+            if (configFilePath.endsWith(".properties")) {
+                paramsMap = ParamsUtils.toParamsMap(new PropertiesFile(configFilePath).getProperties());
+            } else {
+                paramsMap = ParamsUtils.toParamsMap(configFilePath);
+            }
+        } else {
+            paramsMap = ParamsUtils.toParamsMap(args, preSetMap);
+            paramsMap.putAll(ParamsUtils.toParamsMap(args, preSetMap));
+        }
+        return paramsMap;
     }
 }

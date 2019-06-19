@@ -98,19 +98,24 @@ public class ParamsUtils {
         return paramsMap;
     }
 
-    public static Map<String, String> toParamsMap(String[] args) throws IOException {
+    public static Map<String, String> toParamsMap(String[] args, Map<String, String> preSetMap) throws IOException {
         if (args == null || args.length == 0) throw new IOException("args is empty.");
         else {
             boolean cmdGoon = false;
             Map<String, String> paramsMap = new HashMap<>();
             String[] strings;
+            String key;
             for (String arg : args) {
                 // 参数命令格式：-<key>=<value>
                 cmdGoon = arg.matches("^-.+=.+$") || cmdGoon;
                 if (cmdGoon) {
                     if (!arg.startsWith("-"))
                         throw new IOException("invalid command param: \"" + arg + "\", not start with \"-\".");
-                    strings = splitParam(arg.substring(1));
+                    key = arg.substring(1);
+                    if (preSetMap != null && preSetMap.containsKey(key)) {
+                        key = preSetMap.get(key);
+                    }
+                    strings = splitParam(key);
                     paramsMap.put(strings[0], strings[1]);
                 }
             }

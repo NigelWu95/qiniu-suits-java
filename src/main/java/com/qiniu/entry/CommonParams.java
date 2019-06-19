@@ -11,6 +11,9 @@ import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
+import com.qiniu.sdk.FileItem;
+import com.qiniu.sdk.UpYunClient;
+import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -34,6 +37,8 @@ public class CommonParams {
     private String tencentSecretKey;
     private String aliyunAccessId;
     private String aliyunAccessSecret;
+    private String upyunUsername;
+    private String upyunPassword;
     private String bucket;
     private String regionName;
     private Map<String, String[]> prefixesMap;
@@ -82,6 +87,9 @@ public class CommonParams {
             } else if ("aliyun".equals(source)) {
                 aliyunAccessId = entryParam.getValue("ali-id").trim();
                 aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+            } else if ("upyun".equals(source)) {
+                upyunUsername = entryParam.getValue("up-name").trim();
+                upyunPassword = entryParam.getValue("up-pass").trim();
             } else {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
@@ -126,7 +134,6 @@ public class CommonParams {
         readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         process = entryParam.getValue("process").trim();
-        if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
         source = "terminal";
         setRetryTimes(entryParam.getValue("retry-times", "3").trim());
         parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
@@ -249,24 +256,22 @@ public class CommonParams {
                 if ("".equals(path) || path.startsWith("qiniu://")) source = "qiniu";
                 else if (path.startsWith("tencent://")) source = "tencent";
                 else if (path.startsWith("aliyun://")) source = "aliyun";
+                else if (path.startsWith("upyun://")) source = "upyun";
                 else source = "local";
             }
         }
         // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
-        if (!source.matches("(local|qiniu|tencent|aliyun)")) {
-            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun)");
+        if (!source.matches("(local|qiniu|tencent|aliyun|upyun)")) {
+            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun|upyun)");
         }
     }
 
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
-        if (!"".equals(process)) {
-            if (!ProcessUtils.isSupportedProcess(process)) throw new IOException("unsupported process: " + process + ".");
-            else if (DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
-                throw new IOException("the process: " + process + " don't support getting source line from list.");
-            }
+        if (!process.isEmpty() && DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+            throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
     }
 
@@ -284,6 +289,9 @@ public class CommonParams {
         } else if ("aliyun".equals(source) && path.startsWith("aliyun://")) {
             bucket = path.substring(9);
             bucket = entryParam.getValue("bucket", bucket).trim();
+        } else if ("upyun".equals(source) && path.startsWith("upyun://")) {
+            bucket = path.substring(8);
+            bucket = entryParam.getValue("bucket", bucket).trim();
         } else {
             bucket = entryParam.getValue("bucket").trim();
         }
@@ -299,32 +307,35 @@ public class CommonParams {
         }
     }
 
-    private void setPrefixesMap(String prefixConfig, String prefixes) throws IOException {
+    private void setPrefixesMap(String prefixConfig, String prefixes) throws Exception {
         prefixesMap = new HashMap<>();
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
             String marker = null;
-            String end;
+            String end = null;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
-                if (jsonCfg.get("marker") instanceof JsonNull || "".equals(jsonCfg.get("marker").getAsString())) {
-                    if (jsonCfg.get("start") instanceof JsonNull || "".equals(jsonCfg.get("start").getAsString())) {
-                        marker = "";
-                    } else {
+                if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
+                    marker = jsonCfg.get("marker").getAsString();
+                } else {
+                    if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
                             marker = OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString());
                         } else if ("tencent".equals(source)) {
                             marker = OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString());
                         } else if ("aliyun".equals(source)) {
                             marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
+                        } else if ("upyun".equals(source)) {
+                            UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), upyunUsername, upyunPassword);
+                            FileItem fileItem = upYunClient.getFileInfo(bucket, jsonCfg.get("start").getAsString());
+                            marker = OssUtils.getUpYunMarker(bucket, fileItem);
                         }
                     }
-                } else {
-                    marker = jsonCfg.get("marker").getAsString();
                 }
-                end = jsonCfg.get("end").getAsString();
+                if (jsonCfg.has("end") && !(jsonCfg.get("end") instanceof JsonNull))
+                    end = jsonCfg.get("end").getAsString();
                 prefixesMap.put(prefix, new String[]{marker, end});
             }
         } else {
@@ -601,7 +612,7 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun)")) {
+            if (source.matches("(qiniu|tencent|aliyun|upyun)")) {
                 if (process == null || "".equals(process)) {
                     saveTotal = "true";
                 } else {
@@ -693,6 +704,14 @@ public class CommonParams {
 
     public void setAliyunAccessSecret(String aliyunAccessSecret) {
         this.aliyunAccessSecret = aliyunAccessSecret;
+    }
+
+    public void setUpyunUsername(String upyunUsername) {
+        this.upyunUsername = upyunUsername;
+    }
+
+    public void setUpyunPassword(String upyunPassword) {
+        this.upyunPassword = upyunPassword;
     }
 
     public void setBucket(String bucket) {
@@ -837,6 +856,14 @@ public class CommonParams {
 
     public String getAliyunAccessSecret() {
         return aliyunAccessSecret;
+    }
+
+    public String getUpyunUsername() {
+        return upyunUsername;
+    }
+
+    public String getUpyunPassword() {
+        return upyunPassword;
     }
 
     public String getBucket() {
