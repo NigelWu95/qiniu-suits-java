@@ -16,12 +16,6 @@ public class UpYunClient {
     // 操作员密码
     private String password;
 
-    /**
-     * 初始化 UpYun 存储接口
-     *
-     * @param userName   操作员名称
-     * @param password   密码，不需要MD5加密
-     */
     public UpYunClient(UpYunConfig config, String userName, String password) {
         this.config = config;
         this.userName = userName;
@@ -47,12 +41,6 @@ public class UpYunClient {
         return conn;
     }
 
-    /**
-     * 获取文件信息
-     *
-     * @param key 文件路径
-     * @return FileItem 文件对象
-     */
     public FileItem getFileInfo(String bucket, String key) throws IOException {
         String uri = "/" + bucket + "/" + key;
         // 获取链接
