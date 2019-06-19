@@ -110,7 +110,7 @@ public class UpLister implements ILister<FileItem> {
         InputStreamReader sr = null;
         BufferedReader br = null;
         try {
-            conn = upYunClient.listFilesConnection(bucket, prefix, marker, limit);
+            conn = upYunClient.listFilesConnection(bucket, prefix);
             conn.setRequestProperty("x-list-iter", marker);
             conn.setRequestProperty("x-list-limit", String.valueOf(limit));
             conn.setRequestProperty("Accept", "application/json");
