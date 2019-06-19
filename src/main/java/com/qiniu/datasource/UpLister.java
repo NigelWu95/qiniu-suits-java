@@ -143,17 +143,22 @@ public class UpLister implements ILister<FileItem> {
                     JsonArray files = returnJson.get("files").getAsJsonArray();
                     JsonObject object;
                     String attribute;
+                    String totalName;
                     for (JsonElement item : files) {
                         object = item.getAsJsonObject();
                         attribute = object.get("type").getAsString();
+                        totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
+                                prefix + "/" + object.get("name").getAsString();
                         if ("folder".equals(attribute)) {
-                            if (directories == null) directories = new ArrayList<>();
-                            else directories.add((prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :
-                                    prefix + "/" + object.get("name").getAsString());
+                            if (directories == null) {
+                                directories = new ArrayList<>();
+                                directories.add(totalName);
+                            } else {
+                                directories.add(totalName);
+                            }
                         } else {
                             FileItem fileItem = new FileItem();
-                            fileItem.key = (prefix == null || prefix.isEmpty()) ? object.get("name").getAsString() :
-                                    prefix + "/" + object.get("name").getAsString();
+                            fileItem.key = totalName;
                             fileItem.attribute = attribute;
                             fileItem.size = object.get("length").getAsLong();
                             fileItem.timeSeconds = object.get("last_modified").getAsLong();

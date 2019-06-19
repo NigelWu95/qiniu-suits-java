@@ -262,29 +262,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         }
     }
 
-    private void listing(UpLister lister, AtomicInteger order) throws IOException, CloneNotSupportedException {
-        // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-        // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        // 持久化结果标识信息
-        String newOrder = String.valueOf(order);
-        IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
-        try {
-            String record = "order " + newOrder + ": " + lister.getPrefix();
-            export(lister, saver, lineProcessor);
-            record += "\tsuccessfully done";
-            System.out.println(record);
-        } catch (Exception e) {
-            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
-                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
-            e.printStackTrace();
-        } finally {
-            lister.close();
-            saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
-        }
-    }
-
 //    private void recursionListing(UpLister lister, IResultOutput<BufferedWriter> saver,
 //                                  ILineProcess<Map<String, String>> processor) throws IOException {
 //        export(lister, saver, processor);
@@ -300,7 +277,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
 //        }
 //    }
 
-    private List<String> listingResult(UpLister lister, int order) throws Exception {
+    private List<String> listing(UpLister lister, int order) throws Exception {
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
         // 持久化结果标识信息
         String newOrder = String.valueOf(order);
@@ -334,7 +311,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 UpLister startLister = generateLister("");
-                prefixes = listingResult(startLister, order.addAndGet(1));
+                prefixes = listing(startLister, order.addAndGet(1));
             }
 //            else {
 //                if (prefixLeft) {
@@ -359,20 +336,32 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                                 String preOne = prefix.split("/")[0];
                                 if (loopMore.get() && !map.containsKey(preOne)) map.put(preOne, order.addAndGet(1));
                                 UpLister upLister = generateLister(prefix);
-                                if (!upLister.hasNext() && upLister.getDirectories() == null) {
+                                if (upLister.hasNext() || upLister.getDirectories() != null) {
+                                    return listing(upLister, map.get(preOne));
+                                } else {
                                     executorPool.execute(() -> {
                                         try {
-                                            listingResult(upLister, map.get(preOne));
-//                                            listingResult(upLister, order);
+                                            listing(upLister, map.get(preOne));
                                         } catch (Exception e) {
                                             SystemUtils.exit(exitBool, e);
                                         }
                                     });
                                     return null;
-                                } else {
-                                    return listingResult(upLister, map.get(preOne));
-//                                    return listingResult(upLister, order);
                                 }
+//                                if (!upLister.hasNext() && upLister.getDirectories() == null) {
+//                                    executorPool.execute(() -> {
+//                                        try {
+//                                            listingResult(upLister, map.get(preOne));
+////                                            listingResult(upLister, order);
+//                                        } catch (Exception e) {
+//                                            SystemUtils.exit(exitBool, e);
+//                                        }
+//                                    });
+//                                    return null;
+//                                } else {
+//                                    return listingResult(upLister, map.get(preOne));
+////                                    return listingResult(upLister, order);
+//                                }
                             } catch (Exception e) {
                                 SystemUtils.exit(exitBool, e);
                                 return null;
