@@ -376,7 +376,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                                                       AtomicBoolean lastListerUpdated, AtomicInteger atomicOrder) {
         if (!lastListerUpdated.get()) {
             ILister<E> lastLister =
-            listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
+            listerList.stream().max(Comparator.comparing(ILister::getPrefix))
                     .get();
 //                    .ifPresent(lastLister -> {
             System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
@@ -419,7 +419,8 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         if (listerList != null) {
             // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
             if (!lastListerUpdated.get()) {
-                ILister<E> lastLister = listerList.parallelStream().max(Comparator.comparing(ILister::getPrefix))
+                ILister<E> lastLister =
+                        listerList.stream().max(Comparator.comparing(ILister::getPrefix))
                         .get();
 //                        .ifPresent(lastLister -> {
                 System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());

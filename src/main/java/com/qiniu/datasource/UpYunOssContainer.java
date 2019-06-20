@@ -283,7 +283,7 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
         IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
         try {
             String record = "order " + newOrder + ": " + lister.getPrefix();
-            export(lister, saver, processor);
+            export(lister, saver, lineProcessor);
             record += "\tsuccessfully done";
             System.out.println(record);
         } catch (Exception e) {
@@ -344,20 +344,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                                     });
                                     return null;
                                 }
-//                                if (!upLister.hasNext() && upLister.getDirectories() == null) {
-//                                    executorPool.execute(() -> {
-//                                        try {
-//                                            listingResult(upLister, map.get(preOne));
-////                                            listingResult(upLister, order);
-//                                        } catch (Exception e) {
-//                                            SystemUtils.exit(exitBool, e);
-//                                        }
-//                                    });
-//                                    return null;
-//                                } else {
-//                                    return listingResult(upLister, map.get(preOne));
-////                                    return listingResult(upLister, order);
-//                                }
                             } catch (Exception e) {
                                 SystemUtils.exit(exitBool, e);
                                 return null;
@@ -366,18 +352,6 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
                 loopMore.set(false);
             }
-
-//            prefixes.parallelStream().filter(this::checkPrefix)
-//                    .forEach(prefix -> {
-//                        executorPool.execute(() -> {
-//                            try {
-//                                UpLister upLister = generateLister(prefix);
-//                                listingResult(upLister, order);
-//                            } catch (Exception e) {
-//                                SystemUtils.exit(exitBool, e);
-//                            }
-//                        });
-//                    });
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             System.out.println(info + " finished");
