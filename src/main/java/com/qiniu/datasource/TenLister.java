@@ -13,8 +13,8 @@ import java.util.List;
 public class TenLister implements ILister<COSObjectSummary> {
 
     private COSClient cosClient;
-    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private String endPrefix;
     private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 

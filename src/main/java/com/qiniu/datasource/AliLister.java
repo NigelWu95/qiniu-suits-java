@@ -13,8 +13,8 @@ import java.util.List;
 public class AliLister implements ILister<OSSObjectSummary> {
 
     private OSSClient ossClient;
-    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private String endPrefix;
     private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
@@ -106,7 +106,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
                 }
             }
         }
-
     }
 
     private void doList() throws SuitsException {

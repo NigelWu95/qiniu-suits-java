@@ -48,7 +48,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker == null ? "" : marker;
+        this.marker = marker;
     }
 
     @Override
