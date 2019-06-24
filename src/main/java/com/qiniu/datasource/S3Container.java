@@ -7,6 +7,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
+import com.qiniu.convert.S3ObjToMap;
+import com.qiniu.convert.S3ObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
@@ -40,12 +42,12 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
 
     @Override
     protected ITypeConvert<S3ObjectSummary, Map<String, String>> getNewConverter() {
-        return null;
+        return new S3ObjToMap(indexMap);
     }
 
     @Override
     protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() throws IOException {
-        return null;
+        return new S3ObjToString(saveFormat, saveSeparator, rmFields);
     }
 
     @Override
