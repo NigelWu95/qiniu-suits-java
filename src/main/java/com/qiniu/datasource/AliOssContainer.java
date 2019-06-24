@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
+public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String accessKeyId;
     private String accessKeySecret;

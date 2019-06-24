@@ -15,13 +15,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter, Map<String, String>> {
+public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedWriter, Map<String, String>> {
 
     private String accessKey;
     private String secretKey;
     private Configuration configuration;
 
-    public QiniuOssContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
+    public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
                              boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);

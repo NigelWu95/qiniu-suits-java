@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResultOutput<BufferedWriter>, Map<String, String>> {
+public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOutput<BufferedWriter>, Map<String, String>> {
 
     private String username;
     private String password;
@@ -49,10 +49,10 @@ public class UpYunOssContainer implements IDataSource<ILister<FileItem>, IResult
     private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
-    public UpYunOssContainer(String username, String password, UpYunConfig configuration, String bucket,
-                             List<String> antiPrefixes, Map<String, String[]> prefixesMap,
+    public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
+                          List<String> antiPrefixes, Map<String, String[]> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                             Map<String, String> indexMap, int unitLen, int threads) {
+                          Map<String, String> indexMap, int unitLen, int threads) {
         this.username = username;
         this.password = password;
         this.configuration = configuration;

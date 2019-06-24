@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class QiniuOssContainerTest {
+public class QiniuQosContainerTest {
 
     @Test
     public void setPrefixesScope() {

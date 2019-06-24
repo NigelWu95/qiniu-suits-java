@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
+public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
     private List<String> antiPrefixes;
@@ -40,8 +40,8 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<T> processor; // 定义的资源处理器
 
-    public OssContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                        boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+    public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
+                                 boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;

@@ -15,13 +15,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
+public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String secretId;
     private String secretKey;
     private ClientConfig clientConfig;
 
-    public TenOssContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
+    public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
                            boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);

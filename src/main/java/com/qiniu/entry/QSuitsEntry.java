@@ -181,13 +181,13 @@ public class QSuitsEntry {
 
     public IDataSource getDataSource() throws IOException {
         if ("qiniu".equals(source)) {
-            return getQiniuOssContainer();
+            return getQiniuQosContainer();
         } else if ("tencent".equals(source)) {
-            return getTenOssContainer();
+            return getTenCosContainer();
         } else if ("aliyun".equals(source)) {
             return getAliOssContainer();
         } else if ("upyun".equals(source)) {
-            return getUpYunOssContainer();
+            return getUpYosContainer();
         } else if ("local".equals(source)) {
             return getLocalFileContainer();
         } else {
@@ -216,20 +216,20 @@ public class QSuitsEntry {
         return localFileContainer;
     }
 
-    public QiniuOssContainer getQiniuOssContainer() {
+    public QiniuQosContainer getQiniuQosContainer() {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        QiniuOssContainer qiniuOssContainer = new QiniuOssContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
+        QiniuQosContainer qiniuQosContainer = new QiniuQosContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
                 bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        qiniuOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        qiniuOssContainer.setRetryTimes(retryTimes);
-        return qiniuOssContainer;
+        qiniuQosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        qiniuQosContainer.setRetryTimes(retryTimes);
+        return qiniuQosContainer;
     }
 
-    public TenOssContainer getTenOssContainer() throws IOException {
+    public TenCosContainer getTenCosContainer() throws IOException {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
@@ -237,11 +237,11 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        TenOssContainer tenOssContainer = new TenOssContainer(secretId, secretKey, tenClientConfig, bucket,
+        TenCosContainer tenCosContainer = new TenCosContainer(secretId, secretKey, tenClientConfig, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        tenOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        tenOssContainer.setRetryTimes(retryTimes);
-        return tenOssContainer;
+        tenCosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        tenCosContainer.setRetryTimes(retryTimes);
+        return tenCosContainer;
     }
 
     public AliOssContainer getAliOssContainer() throws IOException {
@@ -267,7 +267,7 @@ public class QSuitsEntry {
         return aliOssContainer;
     }
 
-    public UpYunOssContainer getUpYunOssContainer() {
+    public UpYosContainer getUpYosContainer() {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
@@ -275,13 +275,13 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
 //        boolean prefixLeft = commonParams.getPrefixLeft();
 //        boolean prefixRight = commonParams.getPrefixRight();
-        UpYunOssContainer upYunOssContainer = new UpYunOssContainer(username, password, upYunConfig, bucket,
+        UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket,
                 antiPrefixes, prefixesMap,
 //                prefixLeft, prefixRight,
                 indexMap, unitLen, threads);
-        upYunOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        upYunOssContainer.setRetryTimes(retryTimes);
-        return upYunOssContainer;
+        upYosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        upYosContainer.setRetryTimes(retryTimes);
+        return upYosContainer;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
