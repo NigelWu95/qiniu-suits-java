@@ -24,7 +24,7 @@ public class UpYunClient {
 
     public HttpURLConnection listFilesConnection(String bucket, String directory) throws IOException {
         String uri;
-        if (directory == null || directory.isEmpty()) uri = "/" + bucket;
+        if (directory == null || directory.isEmpty()) uri = "/" + bucket + "/";
         else if (directory.endsWith(" ")) uri = "/" + bucket + "/" + directory.substring(0, directory.length() - 1) + "%20";
         else if (directory.endsWith("\t")) uri = "/" + bucket + "/" + directory.substring(0, directory.length() - 1) + "%09";
         else uri = "/" + bucket + "/" + directory;
