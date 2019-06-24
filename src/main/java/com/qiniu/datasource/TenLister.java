@@ -25,7 +25,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
         listObjectsRequest.setDelimiter(delimiter);
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
@@ -40,7 +40,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     public void setMarker(String marker) {
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
     }
 
     public String getMarker() {

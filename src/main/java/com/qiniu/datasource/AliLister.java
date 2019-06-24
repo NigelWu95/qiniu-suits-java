@@ -25,7 +25,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
         listObjectsRequest.setDelimiter(delimiter);
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
@@ -40,7 +40,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     public void setMarker(String marker) {
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
     }
 
     public String getMarker() {

@@ -29,7 +29,7 @@ public class QiniuLister implements ILister<FileInfo> {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
-        this.marker = marker;
+        this.marker = "".equals(marker) ? null : marker;
         this.endPrefix = endPrefix;
         this.delimiter = delimiter;
         this.limit = limit;
@@ -48,7 +48,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker;
+        this.marker = "".equals(marker) ? null : marker;
     }
 
     @Override
