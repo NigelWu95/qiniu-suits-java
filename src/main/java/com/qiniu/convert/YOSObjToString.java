@@ -7,11 +7,11 @@ import com.qiniu.util.LineUtils;
 import java.io.IOException;
 import java.util.Set;
 
-public class UOSObjToString extends Converter<FileItem, String> {
+public class YOSObjToString extends Converter<FileItem, String> {
 
     private IStringFormat<FileItem> stringFormatter;
 
-    public UOSObjToString(String format, String separator, Set<String> rmFields) throws IOException {
+    public YOSObjToString(String format, String separator, Set<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, rmFields);

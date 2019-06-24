@@ -6,11 +6,11 @@ import com.qiniu.util.LineUtils;
 import java.io.IOException;
 import java.util.Map;
 
-public class UOSObjToMap extends Converter<FileItem, Map<String, String>> {
+public class YOSObjToMap extends Converter<FileItem, Map<String, String>> {
 
     private Map<String, String> indexMap;
 
-    public UOSObjToMap(Map<String, String> indexMap) {
+    public YOSObjToMap(Map<String, String> indexMap) {
         this.indexMap = indexMap;
     }
 

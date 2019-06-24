@@ -2,8 +2,8 @@ package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
-import com.qiniu.convert.UOSObjToMap;
-import com.qiniu.convert.UOSObjToString;
+import com.qiniu.convert.YOSObjToMap;
+import com.qiniu.convert.YOSObjToString;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
@@ -158,11 +158,11 @@ public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOut
     }
 
     protected ITypeConvert<FileItem, Map<String, String>> getNewConverter() {
-        return new UOSObjToMap(indexMap);
+        return new YOSObjToMap(indexMap);
     }
 
     protected ITypeConvert<FileItem, String> getNewStringConverter() throws IOException {
-        return new UOSObjToString(saveFormat, saveSeparator, rmFields);
+        return new YOSObjToString(saveFormat, saveSeparator, rmFields);
     }
 
     protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {

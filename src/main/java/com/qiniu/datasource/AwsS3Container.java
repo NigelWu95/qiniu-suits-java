@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 
 import java.io.BufferedWriter;
@@ -49,7 +50,7 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
 
     @Override
     protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
-        return null;
+        return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
     @Override
