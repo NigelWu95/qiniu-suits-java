@@ -105,16 +105,13 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws IOException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
         if (response.statusCode != 200) throw new QiniuException(response);
-        InputStream inputStream = null;
-        Reader reader = null;
-        BufferedReader bufferedReader = null;
+        InputStream inputStream = new BufferedInputStream(response.bodyStream());
+        Reader reader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        JsonObject jsonObject = null;
+        String line;
         try {
-            inputStream = new BufferedInputStream(response.bodyStream());
-            reader = new InputStreamReader(inputStream);
-            bufferedReader = new BufferedReader(reader);
-            List<FileInfo> fileInfoList = new ArrayList<>();
-            JsonObject jsonObject = null;
-            String line;
             while ((line = bufferedReader.readLine()) != null) {
                 jsonObject = JsonUtils.toJsonObject(line);
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
@@ -129,9 +126,9 @@ public class QiniuLister implements ILister<FileInfo> {
             return fileInfoList;
         } finally {
             try {
-                if (bufferedReader != null) bufferedReader.close();
-                if (reader != null) reader.close();
-                if (inputStream != null) inputStream.close();
+                bufferedReader.close();
+                reader.close();
+                inputStream.close();
                 response.close();
             } catch (IOException e) {
                 bufferedReader = null;

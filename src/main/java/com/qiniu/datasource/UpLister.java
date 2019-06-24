@@ -49,7 +49,7 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker == null ? "" : marker;
+        this.marker = marker;
     }
 
     @Override

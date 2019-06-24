@@ -48,8 +48,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endKeyPrefix) {
-        this.endPrefix = endKeyPrefix;
+    public void setEndPrefix(String endPrefix) {
+        this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
 

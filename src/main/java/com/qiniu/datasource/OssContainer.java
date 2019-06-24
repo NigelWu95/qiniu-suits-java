@@ -329,7 +329,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
         for (String prefix : prefixes) {
             if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                 ILister<E> generated = generateLister(startPrefix + prefix);
-                if (generated != null && generated.currentEndKey() != null) nextLevelList.add(generated);
+                if (generated != null && (generated.currents().size() > 0 || generated.hasNext())) nextLevelList.add(generated);
             }
         }
         return nextLevelList;
@@ -344,7 +344,7 @@ public abstract class OssContainer<E, W, T> implements IDataSource<ILister<E>, I
                         SystemUtils.exit(exitBool, e);
                         return null;
                     }
-                }).filter(generated -> generated != null && generated.currentEndKey() != null)
+                }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
                 .collect(Collectors.toList());
     }
 
