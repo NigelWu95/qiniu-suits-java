@@ -8,7 +8,7 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LineUtils;
-import com.qiniu.util.SystemUtils;
+import com.qiniu.util.ThrowUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -21,24 +21,24 @@ import java.util.stream.Collectors;
 public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
-    private List<String> antiPrefixes;
-    private Map<String, Map<String, String>> prefixesMap;
-    private List<String> prefixes;
-    private boolean prefixLeft;
-    private boolean prefixRight;
+    protected List<String> antiPrefixes;
+    protected Map<String, Map<String, String>> prefixesMap;
+    protected List<String> prefixes;
+    protected boolean prefixLeft;
+    protected boolean prefixRight;
     protected Map<String, String> indexMap;
     protected int unitLen;
-    private int threads;
+    protected int threads;
     protected int retryTimes = 5;
     protected String savePath;
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
     protected Set<String> rmFields;
-    private ExecutorService executorPool; // 线程池
-    private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
-    private List<String> originPrefixList = new ArrayList<>();
-    private ILineProcess<T> processor; // 定义的资源处理器
+    protected ExecutorService executorPool; // 线程池
+    protected AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    protected List<String> originPrefixList = new ArrayList<>();
+    protected ILineProcess<T> processor; // 定义的资源处理器
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
@@ -137,7 +137,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @param prefix 待检验的 prefix
      * @return 检验结果，true 表示 prefix 有效不需要剔除
      */
-    private boolean checkPrefix(String prefix) {
+    protected boolean checkPrefix(String prefix) {
         if (prefix == null || "".equals(prefix)) return false;
         if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
         for (String antiPrefix : antiPrefixes) {
@@ -191,8 +191,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
-                    if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) throw e;
-                    else retry--;
+                    retry = ThrowUtils.listExceptionWithRetry(e, retry);
                 }
             }
         }
@@ -227,7 +226,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         lister.getMarker() + "\tend:" + lister.getEndPrefix());
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
-                SystemUtils.exit(exitBool, e);
+                ThrowUtils.exit(exitBool, e);
             }
         });
     }
@@ -242,7 +241,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     protected abstract ILister<E> getLister(String prefix, String marker, String start, String end) throws SuitsException;
 
-    private ILister<E> generateLister(String prefix) throws SuitsException {
+    protected ILister<E> generateLister(String prefix) throws SuitsException {
         int retry = retryTimes;
         Map<String, String> map;
         if (prefixesMap.containsKey(prefix) && prefixesMap.get(prefix) != null) map = prefixesMap.get(prefix);
@@ -255,8 +254,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
-                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) throw e;
-                else retry--;
+                retry = ThrowUtils.listExceptionWithRetry(e, retry);
             }
         }
     }
@@ -326,7 +324,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     try {
                         return generateLister(startPrefix + prefix);
                     } catch (SuitsException e) {
-                        SystemUtils.exit(exitBool, e);
+                        ThrowUtils.exit(exitBool, e);
                         return null;
                     }
                 }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
@@ -381,14 +379,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     try {
                         execInThread(lister, atomicOrder.addAndGet(1));
                     } catch (Exception e) {
-                        SystemUtils.exit(exitBool, e);
+                        ThrowUtils.exit(exitBool, e);
                     }
                     return null;
                 } else { // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
                     return filteredNextList(lister, atomicOrder);
                 }
             } catch (Exception e) {
-                SystemUtils.exit(exitBool, e); return null;
+                ThrowUtils.exit(exitBool, e); return null;
             }
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
@@ -480,7 +478,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             System.out.println(info + " finished");
         } catch (Throwable throwable) {
-            SystemUtils.exit(exitBool, throwable);
+            ThrowUtils.exit(exitBool, throwable);
         }
     }
 }

@@ -6,7 +6,7 @@ import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.SystemUtils;
+import com.qiniu.util.ThrowUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -159,7 +159,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 }
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
-                SystemUtils.exit(exitBool, e);
+                ThrowUtils.exit(exitBool, e);
             }
         });
     }
@@ -183,7 +183,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             while (!executorPool.isTerminated()) Thread.sleep(1000);
             System.out.println(info + " finished");
         } catch (Throwable throwable) {
-            SystemUtils.exit(exitBool, throwable);
+            ThrowUtils.exit(exitBool, throwable);
         }
     }
 }
