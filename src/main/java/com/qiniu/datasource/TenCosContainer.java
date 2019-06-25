@@ -53,7 +53,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
 
     @Override
     protected ILister<COSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null) marker = OssUtils.getTenCosMarker(start);
+        if (marker == null || "".equals(marker)) marker = OssUtils.getTenCosMarker(start);
         return new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig), bucket, prefix,
                 marker, end, unitLen);
     }

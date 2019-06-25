@@ -247,9 +247,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> map;
         if (prefixesMap.containsKey(prefix) && prefixesMap.get(prefix) != null) map = prefixesMap.get(prefix);
         else map = new HashMap<>();
+        String marker = map.get("marker");
+        String start = map.get("start");
+        String end = map.get("end");
         while (true) {
             try {
-                return getLister(prefix, map.get("marker"), map.get("start"), map.get("end"));
+                return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) throw e;

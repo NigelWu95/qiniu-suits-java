@@ -22,6 +22,7 @@ import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.Bucket;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
+import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
@@ -164,7 +165,8 @@ public class OssUtils {
         return key;
     }
 
-    public static String getUpYunMarker(String username, String password, String bucket, String key) throws IOException {
+    public static String getUpYunMarker(String username, String password, String bucket, String key) throws SuitsException {
+        if (key == null || "".equals(key)) return null;
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
         FileItem fileItem = upYunClient.getFileInfo(bucket, key);
         return getUpYunMarker(bucket, fileItem);

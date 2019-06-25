@@ -30,7 +30,7 @@ public class ObjectToMapTest {
         String secretKey = entryParam.getValue("sk");
         String bucket = entryParam.getValue("bucket");
         QiniuLister qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
-                null, null, null, null, 10000);
+                null, null, null, 10000);
         fileInfoList = qiniuLister.currents();
     }
 

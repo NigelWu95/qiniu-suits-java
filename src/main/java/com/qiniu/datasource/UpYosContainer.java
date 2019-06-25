@@ -228,17 +228,12 @@ public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOut
         if (prefixesMap.containsKey(prefix) && prefixesMap.get(prefix) != null) map = prefixesMap.get(prefix);
         else map = new HashMap<>();
         String marker = map.get("marker");
-        if (marker == null) {
-            try {
-                marker = OssUtils.getUpYunMarker(username, password, bucket, map.get("start"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        String start = map.get("start");
+        String end = map.get("end");
         while (true) {
             try {
-                return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker,
-                        map.get("end"), unitLen);
+                if (marker == null || "".equals(marker)) marker = OssUtils.getUpYunMarker(username, password, bucket, start);
+                return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) retry--;

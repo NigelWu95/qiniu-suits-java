@@ -53,7 +53,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
 
     @Override
     protected ILister<FileInfo> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null) marker = OssUtils.getQiniuMarker(start);
+        if (marker == null || "".equals(marker)) marker = OssUtils.getQiniuMarker(start);
         return new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()), bucket,
                 prefix, marker, end, unitLen);
     }

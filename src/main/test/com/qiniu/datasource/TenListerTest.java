@@ -27,7 +27,7 @@ public class TenListerTest {
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         COSClient cosClient = new COSClient(cred, clientConfig);
         String bucket = propertiesFile.getValue("bucket");
-        tenLister = new TenLister(cosClient, bucket, null, null, null, null, 1000);
+        tenLister = new TenLister(cosClient, bucket, null, null, null, 1000);
     }
 
     @Test
