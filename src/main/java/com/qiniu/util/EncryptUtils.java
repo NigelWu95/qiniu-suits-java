@@ -11,7 +11,7 @@ public class EncryptUtils {
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
     public static byte[] calculateRFC2104HMACRaw(String key, String data)
-            throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+            throws NoSuchAlgorithmException, InvalidKeyException {
         byte[] keyBytes = key.getBytes();
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 

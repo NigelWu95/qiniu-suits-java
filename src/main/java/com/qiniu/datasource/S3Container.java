@@ -18,16 +18,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, BufferedWriter, Map<String, String>> {
+public class S3Container extends CloudStorageContainer<S3ObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String accessKeyId;
     private String secretKey;
     private ClientConfiguration clientConfig;
     private String region;
 
-    public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
-                          String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                          boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+    public S3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
+                       String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
+                       boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
@@ -37,7 +37,7 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
 
     @Override
     public String getSourceName() {
-        return "aws";
+        return "s3";
     }
 
     @Override

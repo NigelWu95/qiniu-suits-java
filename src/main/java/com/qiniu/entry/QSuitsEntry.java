@@ -33,6 +33,7 @@ public class QSuitsEntry {
     private ClientConfig tenClientConfig;
     private ClientConfiguration aliClientConfig;
     private UpYunConfig upYunConfig;
+    private com.amazonaws.ClientConfiguration s3ClientConfig;
     private String source;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
@@ -179,6 +180,21 @@ public class QSuitsEntry {
         return upYunConfig;
     }
 
+    public com.amazonaws.ClientConfiguration getS3ClientConfig() {
+        return aliClientConfig == null ? getDefaultS3ClientConfig() : s3ClientConfig;
+    }
+
+    private com.amazonaws.ClientConfiguration getDefaultS3ClientConfig() {
+        com.amazonaws.ClientConfiguration clientConfig = new com.amazonaws.ClientConfiguration();
+        if (1000 * connectTimeout > clientConfig.getConnectionTimeout())
+            clientConfig.setConnectionTimeout(1000 * connectTimeout);
+        if (1000 * readTimeout > clientConfig.getSocketTimeout())
+            clientConfig.setSocketTimeout(1000 * readTimeout);
+        if (1000 * requestTimeout > clientConfig.getRequestTimeout())
+            clientConfig.setRequestTimeout(1000 * requestTimeout);
+        return clientConfig;
+    }
+
     public IDataSource getDataSource() throws IOException {
         if ("qiniu".equals(source)) {
             return getQiniuQosContainer();
@@ -188,6 +204,8 @@ public class QSuitsEntry {
             return getAliOssContainer();
         } else if ("upyun".equals(source)) {
             return getUpYosContainer();
+        } else if ("aws".equals(source) || "s3".equals(source)) {
+            return getS3Container();
         } else if ("local".equals(source)) {
             return getLocalFileContainer();
         } else {
@@ -282,6 +300,21 @@ public class QSuitsEntry {
         upYosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
         upYosContainer.setRetryTimes(retryTimes);
         return upYosContainer;
+    }
+
+    public S3Container getS3Container() {
+        String s3AccessId = commonParams.getS3AccessId();
+        String s3SecretKey = commonParams.getS3SecretKey();
+        if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();
+        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        S3Container s3Container = new S3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        s3Container.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        s3Container.setRetryTimes(retryTimes);
+        return s3Container;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {

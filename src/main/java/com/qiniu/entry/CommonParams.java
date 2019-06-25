@@ -31,6 +31,8 @@ public class CommonParams {
     private String path;
     private String parse;
     private String separator;
+    private String s3AccessId;
+    private String s3SecretKey;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
     private String tencentSecretId;
@@ -63,6 +65,8 @@ public class CommonParams {
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
 
+    public CommonParams() {}
+
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
      * @param entryParam 配置参数入口
@@ -90,6 +94,9 @@ public class CommonParams {
             } else if ("upyun".equals(source)) {
                 upyunUsername = entryParam.getValue("up-name").trim();
                 upyunPassword = entryParam.getValue("up-pass").trim();
+            } else if ("aws".equals(source) || "s3".equals(source)) {
+                s3AccessId = entryParam.getValue("s3-id").trim();
+                s3SecretKey = entryParam.getValue("s3-secret").trim();
             } else {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
@@ -682,6 +689,14 @@ public class CommonParams {
         this.parse = parse;
     }
 
+    public void setS3AccessId(String s3AccessId) {
+        this.s3AccessId = s3AccessId;
+    }
+
+    public void setS3SecretKey(String s3SecretKey) {
+        this.s3SecretKey = s3SecretKey;
+    }
+
     public void setQiniuAccessKey(String qiniuAccessKey) {
         this.qiniuAccessKey = qiniuAccessKey;
     }
@@ -832,6 +847,14 @@ public class CommonParams {
 
     public String getSeparator() {
         return separator;
+    }
+
+    public String getS3AccessId() {
+        return s3AccessId;
+    }
+
+    public String getS3SecretKey() {
+        return s3SecretKey;
     }
 
     public String getQiniuAccessKey() {

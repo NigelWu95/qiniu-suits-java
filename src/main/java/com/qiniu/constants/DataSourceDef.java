@@ -5,6 +5,8 @@ import java.util.Set;
 
 public class DataSourceDef {
 
+    public static String S3 = "s3";
+    public static String AWS = "aws";
     public static String QINIU = "qiniu";
     public static String TENCENT = "tencent";
     public static String ALIYUN = "aliyun";
