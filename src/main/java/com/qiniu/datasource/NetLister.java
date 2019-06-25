@@ -133,7 +133,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
         times = times > 10 ? 10 : times;
         List<NOSObjectSummary> futureList = nosObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+            times--;
             doList();
             futureList.addAll(nosObjectList);
         }

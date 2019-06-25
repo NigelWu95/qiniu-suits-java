@@ -135,7 +135,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         times = times > 10 ? 10 : times;
         List<OSSObjectSummary> futureList = ossObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+            times--;
             doList();
             futureList.addAll(ossObjectList);
         }
@@ -151,11 +151,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public OSSObjectSummary currentLast() {
         return ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
-//        if (last == null && hasNext()) {
-//            last = new OSSObjectSummary();
-//            last.setKey(getMarker());
-//        }
-//        return last;
     }
 
     @Override

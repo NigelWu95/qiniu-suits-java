@@ -276,12 +276,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
         String startPrefix = lister.getPrefix();
         String point = "";
-        String endKey = lister.currentEndKey();
-        if (next && endKey != null) { // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
+        if (next) {
+            // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
+            String endKey = lister.currentEndKey();
             int prefixLen = startPrefix.length();
-            // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符，用于和预定义前缀列表进行比较，确定 lister 的
-            // endPrefix
-            if (endKey.length() > prefixLen) {
+            if (endKey == null) {
+                lister.setStraight(true);
+            } else if (endKey.length() > prefixLen) { // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个
+                // 字符，用于和预定义前缀列表进行比较，确定 lister 的 endPrefix
                 point = endKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
@@ -362,7 +364,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList.stream().max(Comparator.comparing(ILister::getPrefix))
                     .get();
 //                    .ifPresent(lastLister -> {
-            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
+//            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
             // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
             if (!lastLister.hasNext()) {
                 // 全局结尾则设置前缀为空，否则设置前缀为起始值
@@ -394,8 +396,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private int obtainThreadsToRun(List<ILister<E>> listerList, int order, String lastPrefix) throws Exception {
         AtomicInteger atomicOrder = new AtomicInteger(order);
         AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
-        listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
-        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+//        listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
+//        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+//            listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
+//        }
+        while (listerList != null && listerList.size() > 0) {
             listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
         }
 
@@ -406,7 +411,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         listerList.stream().max(Comparator.comparing(ILister::getPrefix))
                         .get();
 //                        .ifPresent(lastLister -> {
-                System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
+//                System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
                 lastLister.setPrefix(lastPrefix);
                 if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
 //                });

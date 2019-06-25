@@ -129,7 +129,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         times = times > 10 ? 10 : times;
         List<COSObjectSummary> futureList = cosObjectList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+            times--;
             doList();
             futureList.addAll(cosObjectList);
         }
@@ -149,12 +149,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public String currentEndKey() {
-//        COSObjectSummary last = null;
-        if (hasNext()) {
-//            last = new COSObjectSummary();
-//            last.setKey(getMarker());
-            return getMarker();
-        }
+        if (hasNext()) return getMarker();
         COSObjectSummary last = currentLast();
         return last != null ? last.getKey() : null;
     }

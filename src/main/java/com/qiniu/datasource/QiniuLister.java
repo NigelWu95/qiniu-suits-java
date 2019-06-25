@@ -19,7 +19,6 @@ public class QiniuLister implements ILister<FileInfo> {
     private String prefix;
     private String marker;
     private String endPrefix;
-    private String delimiter;
     private int limit;
     private boolean straight;
     private List<FileInfo> fileInfoList;
@@ -31,7 +30,6 @@ public class QiniuLister implements ILister<FileInfo> {
         this.prefix = prefix;
         this.marker = "".equals(marker) ? null : marker;
         this.endPrefix = endPrefix;
-        this.delimiter = delimiter;
         this.limit = limit;
         doList();
     }
@@ -92,8 +90,8 @@ public class QiniuLister implements ILister<FileInfo> {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws IOException {
-        Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
+    public List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
+        Response response = bucketManager.listV2(bucket, prefix, marker, limit, null);
         if (response.statusCode != 200) throw new QiniuException(response);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
@@ -148,7 +146,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     private void doList() throws SuitsException {
         try {
-            fileInfoList = getListResult(prefix, delimiter, marker, limit);
+            fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
@@ -179,7 +177,9 @@ public class QiniuLister implements ILister<FileInfo> {
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+            // 优化大量删除情况下的列举速度，去掉 size>0 的条件
+//            if (futureList.size() > 0)
+                times--;
             doList();
             futureList.addAll(fileInfoList);
         }

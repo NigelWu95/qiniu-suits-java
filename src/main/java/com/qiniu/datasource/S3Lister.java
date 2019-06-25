@@ -140,7 +140,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         times = times > 10 ? 10 : times;
         List<S3ObjectSummary> futureList = s3ObjectSummaryList;
         while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+            times--;
             doList();
             futureList.addAll(s3ObjectSummaryList);
         }
@@ -165,9 +165,9 @@ public class S3Lister implements ILister<S3ObjectSummary> {
             return last.getKey();
         } else {
             int retry = 5;
-            while (true) {
+            while (hasNext() && s3ObjectSummaryList.size() <= 0) {
                 try {
-                    hasFutureNext();
+                    doList();
                     break;
                 } catch (SuitsException e) {
                     retry--;
