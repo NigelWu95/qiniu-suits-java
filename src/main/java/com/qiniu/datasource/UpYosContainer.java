@@ -14,6 +14,7 @@ import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LineUtils;
+import com.qiniu.util.OssUtils;
 import com.qiniu.util.SystemUtils;
 
 import java.io.BufferedWriter;
@@ -32,7 +33,7 @@ public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOut
     private UpYunConfig configuration;
     protected String bucket;
     private List<String> antiPrefixes;
-    private Map<String, String[]> prefixesMap;
+    private Map<String, Map<String, String>> prefixesMap;
     private List<String> prefixes;
 //    private boolean prefixLeft;
 //    private boolean prefixRight;
@@ -50,7 +51,7 @@ public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOut
     private ILineProcess<Map<String, String>> processor; // 定义的资源处理器
 
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
-                          List<String> antiPrefixes, Map<String, String[]> prefixesMap,
+                          List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
                           Map<String, String> indexMap, int unitLen, int threads) {
         this.username = username;
@@ -114,7 +115,7 @@ public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOut
         this.processor = processor;
     }
 
-    private void setPrefixesAndMap(Map<String, String[]> prefixesMap) {
+    private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
         if (prefixesMap == null) {
             this.prefixesMap = new HashMap<>();
         } else {
@@ -221,33 +222,23 @@ public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOut
         }
     }
 
-    /**
-     * 在 prefixes map 的参数配置中取出 marker 和 end 参数
-     * @param prefix 配置的前缀参数
-     * @return 返回针对该前缀配置的 marker 和 end
-     */
-    private String[] getMarkerAndEnd(String prefix) {
-        if (prefixesMap.containsKey(prefix)) {
-            String[] mapValue = prefixesMap.get(prefix);
-            if (mapValue != null && mapValue.length > 1) {
-                return mapValue;
-            } else if (mapValue == null || mapValue.length == 0){
-                return new String[]{"", ""};
-            } else {
-                return new String[]{mapValue[0], ""};
-            }
-        } else {
-            return new String[]{"", ""};
-        }
-    }
-
     private UpLister generateLister(String prefix) throws SuitsException {
         int retry = retryTimes;
-        String[] markerAndEnd = getMarkerAndEnd(prefix);
+        Map<String, String> map;
+        if (prefixesMap.containsKey(prefix) && prefixesMap.get(prefix) != null) map = prefixesMap.get(prefix);
+        else map = new HashMap<>();
+        String marker = map.get("marker");
+        if (marker == null) {
+            try {
+                marker = OssUtils.getUpYunMarker(username, password, bucket, map.get("start"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         while (true) {
             try {
-                return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, markerAndEnd[0],
-                        markerAndEnd[1], unitLen);
+                return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker,
+                        map.get("end"), unitLen);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) retry--;

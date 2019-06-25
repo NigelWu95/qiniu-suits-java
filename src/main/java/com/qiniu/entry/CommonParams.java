@@ -43,7 +43,7 @@ public class CommonParams {
     private String upyunPassword;
     private String bucket;
     private String regionName;
-    private Map<String, String[]> prefixesMap;
+    private Map<String, Map<String, String>> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -327,39 +327,38 @@ public class CommonParams {
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
-            String marker = null;
-            String start = null;
-            String end = null;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
+                Map<String, String> markerAndEnd = new HashMap<>();
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
-                    marker = jsonCfg.get("marker").getAsString();
+                    markerAndEnd.put("marker", jsonCfg.get("marker").getAsString());
                 } else {
                     if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
-                            marker = OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString());
+                            markerAndEnd.put("marker", OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
                         } else if ("tencent".equals(source)) {
-                            marker = OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString());
+                            markerAndEnd.put("marker", OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
                         } else if ("aliyun".equals(source)) {
-                            marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
+                            markerAndEnd.put("marker", OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
                         } else if ("upyun".equals(source)) {
-                            UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), upyunUsername, upyunPassword);
-                            FileItem fileItem = upYunClient.getFileInfo(bucket, jsonCfg.get("start").getAsString());
-                            marker = OssUtils.getUpYunMarker(bucket, fileItem);
+                            String start = jsonCfg.get("start").getAsString();
+                            markerAndEnd.put("marker", OssUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
+                        } else if ("aws".equals(source) || "s3".equals(source)) {
+                            markerAndEnd.put("start", jsonCfg.get("start").getAsString());
                         }
                     }
                 }
                 if (jsonCfg.has("end") && !(jsonCfg.get("end") instanceof JsonNull))
-                    end = jsonCfg.get("end").getAsString();
-                prefixesMap.put(prefix, new String[]{marker, end});
+                    markerAndEnd.put("end", jsonCfg.get("end").getAsString());
+                prefixesMap.put(prefix, markerAndEnd);
             }
         } else {
             String[] prefixList = ParamsUtils.escapeSplit(prefixes);
             for (String prefix : prefixList) {
                 // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
                 prefixesMap.remove(prefix);
-                prefixesMap.put(prefix, new String[]{"", ""});
+                prefixesMap.put(prefix, new HashMap<>());
             }
         }
     }
@@ -746,7 +745,7 @@ public class CommonParams {
         this.regionName = regionName;
     }
 
-    public void setPrefixesMap(Map<String, String[]> prefixesMap) {
+    public void setPrefixesMap(Map<String, Map<String, String>> prefixesMap) {
         this.prefixesMap = prefixesMap;
     }
 
@@ -910,7 +909,7 @@ public class CommonParams {
         return antiPrefixes;
     }
 
-    public Map<String, String[]> getPrefixesMap() {
+    public Map<String, Map<String, String>> getPrefixesMap() {
         return prefixesMap;
     }
 

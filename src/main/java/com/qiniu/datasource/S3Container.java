@@ -26,8 +26,8 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     private String region;
 
     public S3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
-                       String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                       boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                       String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                       boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;

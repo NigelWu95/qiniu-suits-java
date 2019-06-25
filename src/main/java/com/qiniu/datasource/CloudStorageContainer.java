@@ -22,7 +22,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     protected String bucket;
     private List<String> antiPrefixes;
-    private Map<String, String[]> prefixesMap;
+    private Map<String, Map<String, String>> prefixesMap;
     private List<String> prefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -40,8 +40,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private List<String> originPrefixList = new ArrayList<>();
     private ILineProcess<T> processor; // 定义的资源处理器
 
-    public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                                 boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+    public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                                 boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
@@ -104,7 +104,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.processor = processor;
     }
 
-    private void setPrefixesAndMap(Map<String, String[]> prefixesMap) {
+    private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
         if (prefixesMap == null) {
             this.prefixesMap = new HashMap<>();
         } else {
@@ -128,7 +128,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private synchronized void insertIntoPrefixesMap(String prefix, String[] markerAndEnd) {
+    private synchronized void insertIntoPrefixesMap(String prefix, Map<String, String> markerAndEnd) {
         prefixesMap.put(prefix, markerAndEnd);
     }
 
@@ -233,26 +233,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     /**
-     * 在 prefixes map 的参数配置中取出 marker 和 end 参数
-     * @param prefix 配置的前缀参数
-     * @return 返回针对该前缀配置的 marker 和 end
-     */
-    private String[] getMarkerAndEnd(String prefix) {
-        if (prefixesMap.containsKey(prefix)) {
-            String[] mapValue = prefixesMap.get(prefix);
-            if (mapValue != null && mapValue.length > 1) {
-                return mapValue;
-            } else if (mapValue == null || mapValue.length == 0){
-                return new String[]{"", ""};
-            } else {
-                return new String[]{mapValue[0], ""};
-            }
-        } else {
-            return new String[]{"", ""};
-        }
-    }
-
-    /**
      * 生成 prefix 前缀下的列举对象
      * @param prefix 指定的前缀参数
      * @param marker 指定的列举开始 marker
@@ -264,10 +244,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private ILister<E> generateLister(String prefix) throws SuitsException {
         int retry = retryTimes;
-        String[] markerAndEnd = getMarkerAndEnd(prefix);
+        Map<String, String> map;
+        if (prefixesMap.containsKey(prefix) && prefixesMap.get(prefix) != null) map = prefixesMap.get(prefix);
+        else map = new HashMap<>();
         while (true) {
             try {
-                return getLister(prefix, markerAndEnd[0], null, markerAndEnd[1]);
+                return getLister(prefix, map.get("marker"), map.get("start"), map.get("end"));
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) throw e;
@@ -307,7 +289,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 } else if (point.compareTo(originPrefixList.get(0)) < 0) {
                     lister.setEndPrefix(startPrefix + originPrefixList.get(0));
                 } else {
-                    insertIntoPrefixesMap(startPrefix + point, new String[]{lister.getMarker(), ""});
+                    insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
+                        put("marker", lister.getMarker());
+                    }});
                     lister.setEndPrefix(endKey);
                 }
             } else {

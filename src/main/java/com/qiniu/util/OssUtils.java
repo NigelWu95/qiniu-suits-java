@@ -24,6 +24,8 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
 import com.qiniu.sdk.FileItem;
+import com.qiniu.sdk.UpYunClient;
+import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -146,6 +148,7 @@ public class OssUtils {
     }
 
     public static String getQiniuMarker(String key) {
+        if (key == null || "".equals(key)) return null;
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("c", 0);
         jsonObject.addProperty("k", key);
@@ -161,9 +164,11 @@ public class OssUtils {
         return key;
     }
 
-//    public static String getUpYunMarker(String bucket, String key) {
-//        return new String(encoder.encode((bucket + "/@#" + key).getBytes()));
-//    }
+    public static String getUpYunMarker(String username, String password, String bucket, String key) throws IOException {
+        UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
+        FileItem fileItem = upYunClient.getFileInfo(bucket, key);
+        return getUpYunMarker(bucket, fileItem);
+    }
 
     public static String decodeQiniuMarker(String marker) {
         String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));

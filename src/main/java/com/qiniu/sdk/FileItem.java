@@ -20,7 +20,7 @@ public class FileItem {
     public FileItem(String data) {
         String[] a = data.split("\t");
         key = a[0];
-        attribute = a[1];
+        if (a.length > 1) attribute = a[1];
         if (a.length > 2) size = Long.parseLong(a[2].trim());
         if (a.length > 3) timeSeconds = Long.parseLong(a[3].trim());
 //        try {

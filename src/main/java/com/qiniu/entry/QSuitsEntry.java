@@ -236,7 +236,7 @@ public class QSuitsEntry {
 
     public QiniuQosContainer getQiniuQosContainer() {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -251,7 +251,7 @@ public class QSuitsEntry {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -274,7 +274,7 @@ public class QSuitsEntry {
             endPoint = "http://" + regionName + ".aliyuncs.com";
         }
         if (aliClientConfig == null) aliClientConfig = getDefaultAliClientConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -289,7 +289,7 @@ public class QSuitsEntry {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
 //        boolean prefixLeft = commonParams.getPrefixLeft();
 //        boolean prefixRight = commonParams.getPrefixRight();
@@ -306,7 +306,7 @@ public class QSuitsEntry {
         String s3AccessId = commonParams.getS3AccessId();
         String s3SecretKey = commonParams.getS3SecretKey();
         if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();

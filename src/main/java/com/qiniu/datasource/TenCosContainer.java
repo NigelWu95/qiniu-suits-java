@@ -10,6 +10,7 @@ import com.qiniu.convert.COSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.OssUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -22,7 +23,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     private ClientConfig clientConfig;
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
-                           List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
+                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
                            boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
@@ -52,6 +53,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
 
     @Override
     protected ILister<COSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+        if (marker == null) marker = OssUtils.getTenCosMarker(start);
         return new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig), bucket, prefix,
                 marker, end, unitLen);
     }

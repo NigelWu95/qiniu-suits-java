@@ -10,6 +10,7 @@ import com.qiniu.convert.OSSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.OssUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -24,8 +25,8 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     private String endpoint;
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
-                           String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                           String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
@@ -55,6 +56,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
 
     @Override
     protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+        if (marker == null) marker = OssUtils.getAliOssMarker(start);
         return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
                 clientConfig), bucket, prefix, marker, end, unitLen);
     }
