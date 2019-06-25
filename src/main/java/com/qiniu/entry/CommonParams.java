@@ -94,7 +94,7 @@ public class CommonParams {
             } else if ("upyun".equals(source)) {
                 upyunUsername = entryParam.getValue("up-name").trim();
                 upyunPassword = entryParam.getValue("up-pass").trim();
-            } else if ("aws".equals(source) || "s3".equals(source)) {
+            } else if ("s3".equals(source) || "aws".equals(source)) {
                 s3AccessId = entryParam.getValue("s3-id").trim();
                 s3SecretKey = entryParam.getValue("s3-secret").trim();
             } else {
@@ -264,20 +264,22 @@ public class CommonParams {
                 else if (path.startsWith("tencent://")) source = "tencent";
                 else if (path.startsWith("aliyun://")) source = "aliyun";
                 else if (path.startsWith("upyun://")) source = "upyun";
+                else if (path.startsWith("aws://")) source = "aws";
+                else if (path.startsWith("s3://")) source = "s3";
                 else source = "local";
             }
         }
         // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
-        if (!source.matches("(local|qiniu|tencent|aliyun|upyun)")) {
-            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun|upyun)");
+        if (!source.matches("(local|qiniu|tencent|aliyun|upyun|aws|s3)")) {
+            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,aws,s3]");
         }
     }
 
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
-        if (!process.isEmpty() && DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+        if (!process.isEmpty() && DataSourceDef.cloudStorage.contains(source) && !ProcessUtils.supportListSource(process)) {
             throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
     }
@@ -298,6 +300,12 @@ public class CommonParams {
             bucket = entryParam.getValue("bucket", bucket).trim();
         } else if ("upyun".equals(source) && path.startsWith("upyun://")) {
             bucket = path.substring(8);
+            bucket = entryParam.getValue("bucket", bucket).trim();
+        } else if ("s3".equals(source) && path.startsWith("s3://")) {
+            bucket = path.substring(5);
+            bucket = entryParam.getValue("bucket", bucket).trim();
+        } else if ("aws".equals(source) && path.startsWith("aws://")) {
+            bucket = path.substring(6);
             bucket = entryParam.getValue("bucket", bucket).trim();
         } else {
             bucket = entryParam.getValue("bucket").trim();
@@ -320,6 +328,7 @@ public class CommonParams {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
             String marker = null;
+            String start = null;
             String end = null;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
@@ -538,11 +547,11 @@ public class CommonParams {
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
-        boolean sourceFromList = DataSourceDef.ossListSource.contains(source);
+        boolean sourceFromList = DataSourceDef.cloudStorage.contains(source);
         if (useDefault && (indexMap.size() == 0 || ProcessUtils.needBucketAndKey(process) ||
                 (baseFilter != null && baseFilter.checkKeyCon()) ||
                 (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
-            if (DataSourceDef.fileSource.contains(source) || "terminal".equals(source)) {
+            if (DataSourceDef.fileList.contains(source) || "terminal".equals(source)) {
                 try {
                     setIndex("json".equals(parse) ? "key" : "0", "key");
                 } catch (IOException e) {
@@ -619,7 +628,7 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun|upyun)")) {
+            if (source.matches("(qiniu|tencent|aliyun|upyun|aws|s3)")) {
                 if (process == null || "".equals(process)) {
                     saveTotal = "true";
                 } else {

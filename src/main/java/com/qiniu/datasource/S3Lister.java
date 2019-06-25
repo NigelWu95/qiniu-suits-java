@@ -200,7 +200,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
 
     @Override
     public void close() {
-        s3Client = null;
+        s3Client.shutdown();
         s3ObjectSummaryList = null;
     }
 }
