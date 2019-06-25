@@ -18,13 +18,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 
-    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws SuitsException {
+    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.cosClient = cosClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
@@ -56,16 +54,6 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
     }
 
     @Override

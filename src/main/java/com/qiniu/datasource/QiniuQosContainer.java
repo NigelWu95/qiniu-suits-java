@@ -51,8 +51,8 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     }
 
     @Override
-    protected ILister<FileInfo> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<FileInfo> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         return new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()), bucket,
-                prefix, marker, end, null, unitLen);
+                prefix, marker, end, unitLen);
     }
 }

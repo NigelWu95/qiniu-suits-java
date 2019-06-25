@@ -18,13 +18,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
-    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws SuitsException {
+    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.ossClient = ossClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
@@ -56,16 +54,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
     }
 
     @Override

@@ -18,13 +18,11 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private boolean straight;
     private List<NOSObjectSummary> nosObjectList;
 
-    public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws SuitsException {
+    public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.nosClient = nosClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker(marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
@@ -56,16 +54,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
     }
 
     @Override

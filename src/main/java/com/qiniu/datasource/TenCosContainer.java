@@ -51,8 +51,8 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     }
 
     @Override
-    protected ILister<COSObjectSummary> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<COSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         return new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig), bucket, prefix,
-                marker, end, null, unitLen);
+                marker, end, unitLen);
     }
 }

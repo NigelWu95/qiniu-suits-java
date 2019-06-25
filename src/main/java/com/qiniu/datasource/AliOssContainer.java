@@ -54,8 +54,8 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     }
 
     @Override
-    protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
-                clientConfig), bucket, prefix, marker, end, null, unitLen);
+                clientConfig), bucket, prefix, marker, end, unitLen);
     }
 }

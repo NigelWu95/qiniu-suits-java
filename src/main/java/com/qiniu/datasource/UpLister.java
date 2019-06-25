@@ -69,14 +69,6 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void setDelimiter(String delimiter) {}
-
-    @Override
-    public String getDelimiter() {
-        return null;
-    }
-
-    @Override
     public void setLimit(int limit) {
         this.limit = limit;
     }

@@ -25,7 +25,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private List<FileInfo> fileInfoList;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
-                       String delimiter, int limit) throws SuitsException {
+                       int limit) throws SuitsException {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
@@ -65,16 +65,6 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        this.delimiter = delimiter;
-    }
-
-    @Override
-    public String getDelimiter() {
-        return delimiter;
     }
 
     @Override

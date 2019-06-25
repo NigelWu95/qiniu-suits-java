@@ -260,14 +260,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @return 返回生成的范型列举对象
      * @throws SuitsException 生成列举对象失败抛出的异常
      */
-    protected abstract ILister<E> getLister(String prefix, String marker, String end) throws SuitsException;
+    protected abstract ILister<E> getLister(String prefix, String marker, String start, String end) throws SuitsException;
 
     private ILister<E> generateLister(String prefix) throws SuitsException {
         int retry = retryTimes;
         String[] markerAndEnd = getMarkerAndEnd(prefix);
         while (true) {
             try {
-                return getLister(prefix, markerAndEnd[0], markerAndEnd[1]);
+                return getLister(prefix, markerAndEnd[0], null, markerAndEnd[1]);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
                 if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) throw e;

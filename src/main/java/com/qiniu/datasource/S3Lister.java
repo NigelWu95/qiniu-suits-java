@@ -18,13 +18,13 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     private boolean straight;
     private List<S3ObjectSummary> s3ObjectSummaryList;
 
-    public S3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String endPrefix, String delimiter,
+    public S3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
                     int max) throws SuitsException {
         this.s3Client = s3Client;
         this.listObjectsRequest = new ListObjectsV2Request();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
+        listObjectsRequest.setStartAfter(start);
         listObjectsRequest.setContinuationToken("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
@@ -60,16 +60,6 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
     }
 
     @Override

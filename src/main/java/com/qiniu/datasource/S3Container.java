@@ -56,12 +56,12 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     }
 
     @Override
-    protected ILister<S3ObjectSummary> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<S3ObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
                 .withRegion(region)
                 .withClientConfiguration(clientConfig)
                 .build();
-        return new S3Lister(s3Client, bucket, prefix, marker, end, null, unitLen);
+        return new S3Lister(s3Client, bucket, prefix, marker, start, end, unitLen);
     }
 }
