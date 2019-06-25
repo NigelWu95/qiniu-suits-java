@@ -11,9 +11,6 @@ import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
-import com.qiniu.sdk.FileItem;
-import com.qiniu.sdk.UpYunClient;
-import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.*;
 
 import java.io.IOException;

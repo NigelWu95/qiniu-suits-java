@@ -35,17 +35,14 @@ threads=30
 文件信息字段及顺序定义为：**key,hash,size,datetime,mime,type,status,md5,owner** (indexes 的默认字段及顺序即使用该字段列表)，默认使用七
 牛存储文件的信息字段进行定义，顺序固定，其释义及其他数据源方式对应关系如下：  
 
-|字段名|数据类型及含义| 输入行字段 |七牛云存储资源字段 |腾讯/阿里云存储资源字段|又拍云存储资源字段|  
-|-----|-----------|----------|---------------|-------------------|---------------|  
-|key| 字符串，文件名| indexes 的第1个索引| key| key| name|  
-|hash| 字符串，文件哈希值| indexes 的第2个索引| hash| etag| 无此含义字段|  
-|size| 长整型数字，文件大小，单位 kb| indexes 的第3个索引| fsize| size| length|  
-|datetime| 日期时间，格式需为 yyyy-MM-dd'T'HH:mm:ss.SSS（支持到纳秒精确度）| indexes 的第4个索引| putTime| lastModified| last_modified|  
-|mime| 字符串，mime 类型，也即 content-type| indexes 的第5个索引| mimeType| 无此含义字段| type|  
-|type| 整形数字或者字符串，资源存储类型| indexes 的第6个索引| type| storageClass（字符串）| 无此含义字段|  
-|status| 整形数字，资源访问状态| indexes 的第7个索引| status| 无此含义字段| 无此含义字段|  
-|md5| 字符串，文件 md5 值| indexes 的第8个索引| md5| 无此含义字段| 无此含义字段|  
-|owner| 字符串，文件终端标识符| indexes 的第9个索引| endUser| Owner-displayName| 无此含义字段|  
+|数据源      |key（文件名）    |hash（文件哈希）|size（文件大小 kb）|datetime（日期时间字符串）|mime（mime-type/content-type）|type（资源存储类型）|status（资源状态）|md5（文件 md5）|owner（终端标识符）|  
+|-----------|---------------|-------------|-----------------|-----------------------|-----------------------------|-----------------|---------------|-------------|-----------------|  
+|文件列表输入行|indexes第1个索引|indexes的第2个索引|indexes的第3个索引|indexes的第4个索引     |indexes的第5个索引             |indexes的第6个索引 |indexes的第7个索引|indexes的第8个索引|indexes的第9个索引|
+|七牛云存储   |key            |hash         |fsize            |putTime                |mimeType                     |type             |status         |md5          |endUser          |  
+|腾讯云存储   |key            |etag         |size             |lastModified           |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
+|阿里云存储   |key            |etag         |size             |lastModified           |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
+|又拍云存储   |name           |无此含义字段   |length           |last_modified          |type                         |无此含义字段        |无此含义字段      |无此含义字段  |无此含义字段        |  
+|AWS云存储/S3|key            |etag         |size             |lastModified           |无此含义字段                   |storageClass      |无此含义字段      |无此含义字段  |Owner.displayName |  
 
 #### # 关于 indexes 索引 
 `indexes` 是一个配置字段映射关系的参数，即规定用于从输入行中取出所需字段的索引名及映射到目标对象的字段名，程序会解析每一个键值对构成索引表，参数格式
@@ -104,7 +101,8 @@ prefix-right=
 |qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
 |tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
 |aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|upyun|`up-name=`<br>`up-pass=`<br>`| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
+|upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
+|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
 
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
