@@ -378,11 +378,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return listerList.parallelStream().map(lister -> {
             try {
                 if (lister.canStraight()) {
-                    try {
-                        execInThread(lister, atomicOrder.addAndGet(1));
-                    } catch (Exception e) {
-                        ThrowUtils.exit(exitBool, e);
-                    }
+                    execInThread(lister, atomicOrder.addAndGet(1));
                     return null;
                 } else { // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
                     return filteredNextList(lister, atomicOrder);
@@ -400,7 +396,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 //        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
 //            listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
 //        }
-        while (listerList != null && listerList.size() > 0) {
+        boolean oneMore = true;
+        while (listerList != null && listerList.size() > 0 && oneMore) {
+            if (listerList.size() >= threads) oneMore = false;
             listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
         }
 
