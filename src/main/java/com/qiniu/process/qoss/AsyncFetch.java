@@ -132,7 +132,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         try {
             if (url == null || "".equals(url)) {
-                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3F");
+                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
                 line.put(urlIndex, url);
                 key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
             } else {
