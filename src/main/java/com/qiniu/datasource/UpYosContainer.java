@@ -16,6 +16,8 @@ import com.qiniu.util.ThrowUtils;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +28,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     private String username;
     private String password;
     private UpYunConfig configuration;
+    private ConcurrentMap<Integer, Integer> orderMap = new ConcurrentHashMap<>();
 
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
@@ -78,25 +81,31 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 //        }
 //    }
 
-    private List<String> listing(UpLister lister, int order) throws Exception {
+    private List<String> listing(UpLister lister, AtomicInteger order) throws Exception {
         ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
+        Integer ord = order.addAndGet(1);
+        Integer rem = ord % 5000;
+        while (ord > 5000) {
+            if (orderMap.remove(rem) != null) ord = rem;
+        }
         // 持久化结果标识信息
-        String newOrder = String.valueOf(order);
-        IResultOutput<BufferedWriter> saver = getNewResultSaver(newOrder);
+        String orderStr = String.valueOf(ord);
+        IResultOutput<BufferedWriter> saver = getNewResultSaver(orderStr);
         try {
-            String record = "order " + newOrder + ": " + lister.getPrefix();
+            String record = "order " + orderStr + ": " + lister.getPrefix();
             export(lister, saver, lineProcessor);
             record += "\tsuccessfully done";
             System.out.println(record);
         } catch (Exception e) {
-            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
+            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tmarker: " +
                     lister.getMarker() + "\tend:" + lister.getEndPrefix());
-            e.printStackTrace();
+            throw e;
         } finally {
             lister.close();
             saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
         }
+        orderMap.put(ord, ord);
         return lister.getDirectories();
     }
 
@@ -113,7 +122,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 UpLister startLister = (UpLister) generateLister("");
-                prefixes = listing(startLister, order.addAndGet(1));
+                prefixes = listing(startLister, order);
             }
 //            else {
 //                if (prefixLeft) {
@@ -136,11 +145,11 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                             try {
                                 UpLister upLister = (UpLister) generateLister(prefix);
                                 if (upLister.hasNext() || upLister.getDirectories() != null) {
-                                    return listing(upLister, order.addAndGet(1));
+                                    return listing(upLister, order);
                                 } else {
                                     executorPool.execute(() -> {
                                         try {
-                                            listing(upLister, order.addAndGet(1));
+                                            listing(upLister, order);
                                         } catch (Exception e) {
                                             ThrowUtils.exit(exitBool, e);
                                         }
