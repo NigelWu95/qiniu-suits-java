@@ -173,10 +173,12 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (fileInfoList.size() + 1);
+        int expected = limit + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (fileInfoList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
+        while (hasNext() && times > 0 && futureList.size() < expected) {
             // 优化大量删除情况下的列举速度，去掉 size>0 的条件
 //            if (futureList.size() > 0)
                 times--;

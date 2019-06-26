@@ -402,7 +402,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
         }
 
-        if (listerList != null) {
+        if (listerList != null && listerList.size() > 0) {
             // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
             if (!lastListerUpdated.get()) {
                 ILister<E> lastLister =
