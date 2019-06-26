@@ -92,7 +92,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
                              String callbackBodyType, String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;
-        this.md5Index = md5Index == null ? "" : md5Index;
+        this.md5Index = md5Index;
         this.callbackUrl = callbackUrl;
         this.callbackBody = callbackBody;
         this.callbackBodyType = callbackBodyType;
