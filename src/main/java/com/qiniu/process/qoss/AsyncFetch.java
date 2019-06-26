@@ -129,14 +129,14 @@ public class AsyncFetch extends Base<Map<String, String>> {
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
-        String key = line.get("key");
+        String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         try {
             if (url == null || "".equals(url)) {
-                key = addPrefix + key;
                 url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3F");
                 line.put(urlIndex, url);
+                key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
             } else {
-                if (key != null) key = addPrefix + key;
+                if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
                 else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
             line.put("key", key);
