@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;

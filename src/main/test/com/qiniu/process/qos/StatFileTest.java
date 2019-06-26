@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.config.PropertiesFile;
@@ -10,11 +10,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+public class StatFileTest {
 
-public class ChangeStatusTest {
-
-    private ChangeStatus changeStatus;
+    private StatFile statFile;
 
     @Before
     public void init() throws IOException {
@@ -24,16 +22,15 @@ public class ChangeStatusTest {
         String bucket =
                 "note-video";
 //                propertiesFile.getValue("bucket");
-        changeStatus = new ChangeStatus(accessKey, secretKey, new Configuration(), bucket, 1, "../xhs");
+        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "../xhs", "tab", "\t");
     }
-
     @Test
     public void testSingleResult() {
         Map<String, String> map = new HashMap<String, String>(){{
-            put("key", "post/d6649026-952b-9f20-a542-29554f9f952d.html");
+            put("key", "4969afce9276446daa97be8a199cffd2.html");
         }};
         try {
-            String result = changeStatus.singleResult(map);
+            String result = statFile.singleResult(map);
             System.out.println(result);
         } catch (QiniuException e) {
             e.printStackTrace();

@@ -3,7 +3,7 @@ package com.qiniu.process.other;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.VideoTS;
 import com.qiniu.process.Base;
-import com.qiniu.process.qoss.M3U8Manager;
+import com.qiniu.process.qos.M3U8Manager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.RequestUtils;
 

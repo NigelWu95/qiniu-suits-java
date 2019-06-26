@@ -1,11 +1,10 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.Map;

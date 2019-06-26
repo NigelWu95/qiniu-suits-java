@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.http.Response;
@@ -8,8 +8,6 @@ import com.qiniu.util.Auth;
 import org.junit.Test;
 
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class AsyncFetchTest {
 

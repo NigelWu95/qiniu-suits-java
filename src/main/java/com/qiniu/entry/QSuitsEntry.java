@@ -12,7 +12,7 @@ import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.ExportTS;
 import com.qiniu.process.qdora.*;
-import com.qiniu.process.qoss.*;
+import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.OssUtils;

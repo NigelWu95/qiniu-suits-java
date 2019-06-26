@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
