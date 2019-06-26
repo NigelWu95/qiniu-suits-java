@@ -225,7 +225,7 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
-        String addKeyPrefix = commonParams.getRmKeyPrefix();
+        String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
         LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap, unitLen, threads);
