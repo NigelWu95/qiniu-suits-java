@@ -6,7 +6,6 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.HttpRespUtils;
 
 import java.util.List;
 
@@ -160,24 +159,23 @@ public class S3Lister implements ILister<S3ObjectSummary> {
 
     @Override
     public String currentEndKey() {
+//        int retry = 10;
+//        while (s3ObjectSummaryList.size() <= 0 && hasNext()) {
+//            try {
+//                ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
+//                listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
+//                listObjectsRequest.setStartAfter(null);
+//                s3ObjectSummaryList = result.getObjectSummaries();
+//            } catch (AmazonServiceException e) {
+//                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) ThrowUtils.exit(new AtomicBoolean(true), e);
+//            } catch (NullPointerException e) {
+//                ThrowUtils.exit(new AtomicBoolean(true), new Exception("lister maybe already closed, " + e.getMessage()));
+//            } catch (Exception ignored) {}
+//            retry--;
+//            if (retry <= 0) break;
+//        }
         S3ObjectSummary last = currentLast();
-        if (last != null) {
-            return last.getKey();
-        } else {
-            int retry = 5;
-            while (hasNext() && s3ObjectSummaryList.size() <= 0) {
-                try {
-                    doList();
-                    break;
-                } catch (SuitsException e) {
-                    retry--;
-                    if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500))
-                        throw new RuntimeException("get currentEndKey failed, " + e.getMessage());
-                }
-            }
-            last = currentLast();
-            return last != null ? last.getKey() : null;
-        }
+        return last != null ? last.getKey() : null;
     }
 
     @Override
