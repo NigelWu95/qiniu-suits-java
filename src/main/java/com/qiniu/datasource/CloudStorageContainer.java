@@ -336,9 +336,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return nextLevelList;
     }
 
-    private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix,
-                                                      AtomicBoolean lastListerUpdated) {
-        if (!lastListerUpdated.get()) {
+    private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix) {
+        AtomicBoolean lastUpdated = new AtomicBoolean(false);
+        if (!lastUpdated.get()) {
             ILister<E> lastLister =
             listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
 //            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
@@ -348,7 +348,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 lastLister.setPrefix(lastPrefix);
                 lastLister.updateMarkerBy(lastLister.currentLast());
                 lastLister.setStraight(true);
-                lastListerUpdated.set(true);
+                lastUpdated.set(true);
             }
         }
         return listerList.parallelStream().map(lister -> {
@@ -369,7 +369,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        AtomicBoolean lastUpdated = new AtomicBoolean(false);
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         orderMap = new ConcurrentHashMap<>();
@@ -418,7 +417,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         while (listerList != null && listerList.size() > 0) {
-            listerList = computeNextAndFilterList(listerList, lastPrefix, lastUpdated);
+            listerList = computeNextAndFilterList(listerList, lastPrefix);
         }
         executorPool.shutdown();
         while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
