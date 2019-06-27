@@ -206,39 +206,35 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
      * @param order 当前列举对象集的起始序号
-     * @throws Exception 操作失败抛出的异常
      */
-    public void execInThread(ILister<E> lister, int order) throws Exception {
-        // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-        // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-        ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
-        executorPool.execute(() -> {
-            Integer ord = order;
-            Integer rem = ord % 5000;
-            while (ord > 5000) {
-                if (orderMap.remove(rem) != null) ord = rem;
-            }
-            // 持久化结果标识信息
-            String newOrder = String.valueOf(ord);
-            IResultOutput<W> saver = null;
-            try {
-                saver = getNewResultSaver(newOrder);
-                String record = "order " + newOrder + ": " + lister.getPrefix();
-                export(lister, saver, lineProcessor);
-                record += "\tsuccessfully done";
-                System.out.println(record);
-                saver.closeWriters();
-                if (lineProcessor != null) lineProcessor.closeResource();
-                lister.close();
-                orderMap.put(ord, ord);
-            } catch (Exception e) {
-                System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
-                        lister.getMarker() + "\tend:" + lister.getEndPrefix());
-                if (saver != null) saver.closeWriters();
-                if (lineProcessor != null) lineProcessor.closeResource();
-                ThrowUtils.exit(exitBool, e);
-            }
-        });
+    protected void listing(ILister<E> lister, AtomicInteger order) {
+        Integer ord = order.addAndGet(1);
+        Integer rem = ord % 5000;
+        while (ord > 5000) {
+            if (orderMap.remove(rem) != null) ord = rem;
+        }
+        // 持久化结果标识信息
+        String newOrder = String.valueOf(ord);
+        IResultOutput<W> saver = null;
+        ILineProcess<T> lineProcessor = null;
+        try {
+            // 多线程情况下不要直接使用传入的 processor，因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
+            if (processor != null) lineProcessor = processor.clone();
+            saver = getNewResultSaver(newOrder);
+            String record = "order " + newOrder + ": " + lister.getPrefix();
+            export(lister, saver, lineProcessor);
+            orderMap.put(ord, ord);
+            record += "\tsuccessfully done";
+            System.out.println(record);
+        } catch (Exception e) {
+            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
+                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
+            e.printStackTrace();
+        } finally {
+            if (saver != null) saver.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+            lister.close();
+        }
     }
 
     /**
@@ -269,7 +265,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private String computePoint(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
+    private String computePoint(ILister<E> lister, boolean doFutureCheck) {
         boolean next;
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
@@ -311,11 +307,17 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
-    private List<ILister<E>> nextLevelLister(List<String> prefixes, String startPrefix, String point) throws SuitsException {
+    private List<ILister<E>> nextLevelLister(List<String> prefixes, String startPrefix, String point) {
         List<ILister<E>> nextLevelList = new ArrayList<>();
         for (String prefix : prefixes) {
             if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
-                ILister<E> generated = generateLister(startPrefix + prefix);
+                ILister<E> generated = null;
+                try {
+                    generated = generateLister(startPrefix + prefix);
+                } catch (SuitsException e) {
+                    System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
+                    e.printStackTrace();
+                }
                 if (generated != null && (generated.currents().size() > 0 || generated.hasNext())) nextLevelList.add(generated);
             }
         }
@@ -335,7 +337,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 .collect(Collectors.toList());
     }
 
-    private List<ILister<E>> filteredNextList(ILister<E> lister, AtomicInteger atomicOrder) throws Exception {
+    private List<ILister<E>> filteredNextList(ILister<E> lister, AtomicInteger order) {
         String point = computePoint(lister, true);
         List<ILister<E>> nextList;
         if (lister.getStraight()) {
@@ -352,7 +354,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             size--;
             ILister<E> eiLister = it.next();
             if(eiLister.canStraight()) {
-                execInThread(eiLister, atomicOrder.addAndGet(1));
+                executorPool.execute(() -> listing(lister, order));
                 it.remove();
             }
         }
@@ -360,12 +362,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix,
-                                                      AtomicBoolean lastListerUpdated, AtomicInteger atomicOrder) {
+                                                      AtomicBoolean lastListerUpdated, AtomicInteger order) {
         if (!lastListerUpdated.get()) {
             ILister<E> lastLister =
-            listerList.stream().max(Comparator.comparing(ILister::getPrefix))
-                    .get();
-//                    .ifPresent(lastLister -> {
+            listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
 //            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
             // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
             if (!lastLister.hasNext()) {
@@ -375,18 +375,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 lastLister.setStraight(true);
                 lastListerUpdated.set(true);
             }
-//                    });
         }
         return listerList.parallelStream().map(lister -> {
-            try {
-                if (lister.canStraight()) {
-                    execInThread(lister, atomicOrder.addAndGet(1));
-                    return null;
-                } else { // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-                    return filteredNextList(lister, atomicOrder);
-                }
-            } catch (Exception e) {
-                ThrowUtils.exit(exitBool, e); return null;
+            if (lister.canStraight()) {
+                executorPool.execute(() -> listing(lister, order));
+                return null;
+            } else {
+                // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
+                return filteredNextList(lister, order);
             }
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
@@ -394,7 +390,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
-    public void export() {
+    public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         AtomicBoolean lastUpdated = new AtomicBoolean(false);
@@ -402,43 +398,35 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         orderMap = new ConcurrentHashMap<>();
-        try {
-            List<ILister<E>> listerList = null;
-            if (prefixes == null || prefixes.size() == 0) {
-                ILister<E> startLister = generateLister("");
-                if (threads > 1) {
-                    String point = computePoint(startLister, false);
-                    if (!startLister.getStraight()) {
-                        listerList = parallelNextLevelLister(originPrefixList, startLister.getPrefix(), point);
-                        listerList.add(startLister);
-                    }
-                }
-                if (listerList == null) {
-                    startLister.setPrefix("");
-                    if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
-                    execInThread(startLister, order.get());
-                } else {
-                    while (listerList != null && listerList.size() > 0) {
-                        listerList = computeNextAndFilterList(listerList, "", lastUpdated, order);
-                    }
+        List<ILister<E>> listerList = null;
+        String lastPrefix = "";
+        if (prefixes == null || prefixes.size() == 0) {
+            ILister<E> startLister = generateLister("");
+            if (threads > 1) {
+                String point = computePoint(startLister, false);
+                if (!startLister.getStraight()) {
+                    listerList = parallelNextLevelLister(originPrefixList, startLister.getPrefix(), point);
+                    listerList.add(startLister);
                 }
             } else {
-                listerList = parallelNextLevelLister(prefixes, "", "");
-                if (prefixLeft) {
-                    ILister<E> firstLister = generateLister("");
-                    firstLister.setEndPrefix(prefixes.get(0));
-                    listerList.add(firstLister);
-                }
-                int mSize = prefixes.size() - 1;
-                while (listerList != null && listerList.size() > 0) {
-                    listerList = computeNextAndFilterList(listerList, prefixRight ? "" : prefixes.get(mSize), lastUpdated, order);
-                }
+                startLister.setPrefix("");
+                if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
+                executorPool.execute(() -> listing(startLister, order));
             }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) Thread.sleep(1000);
-            System.out.println(info + " finished");
-        } catch (Throwable throwable) {
-            ThrowUtils.exit(exitBool, throwable);
+        } else {
+            lastPrefix = prefixRight ? "" : prefixes.get(prefixes.size() - 1);
+            listerList = parallelNextLevelLister(prefixes, "", "");
+            if (prefixLeft) {
+                ILister<E> firstLister = generateLister("");
+                firstLister.setEndPrefix(prefixes.get(0));
+                listerList.add(firstLister);
+            }
         }
+        while (listerList != null && listerList.size() > 0) {
+            listerList = computeNextAndFilterList(listerList, lastPrefix, lastUpdated, order);
+        }
+        executorPool.shutdown();
+        while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        System.out.println(info + " finished");
     }
 }

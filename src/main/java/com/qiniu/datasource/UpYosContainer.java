@@ -3,7 +3,6 @@ package com.qiniu.datasource;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.YOSObjToMap;
 import com.qiniu.convert.YOSObjToString;
-import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
@@ -11,7 +10,6 @@ import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.OssUtils;
-import com.qiniu.util.ThrowUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -21,7 +19,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-//public class UpYosContainer implements IDataSource<ILister<FileItem>, IResultOutput<BufferedWriter>, Map<String, String>> {
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
 
     private String username;
@@ -79,95 +76,46 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 //        }
 //    }
 
-    private List<String> listing(UpLister lister, AtomicInteger order) throws Exception {
-        ILineProcess<Map<String, String>> lineProcessor = processor == null ? null : processor.clone();
-        Integer ord = order.addAndGet(1);
-        Integer rem = ord % 5000;
-        while (ord > 5000) {
-            if (orderMap.remove(rem) != null) ord = rem;
-        }
-        // 持久化结果标识信息
-        String orderStr = String.valueOf(ord);
-        IResultOutput<BufferedWriter> saver = getNewResultSaver(orderStr);
-        try {
-            String record = "order " + orderStr + ": " + lister.getPrefix();
-            export(lister, saver, lineProcessor);
-            record += "\tsuccessfully done";
-            System.out.println(record);
-        } catch (Exception e) {
-            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tmarker: " +
-                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
-            throw e;
-        } finally {
-            lister.close();
-            saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
-        }
-        orderMap.put(ord, ord);
-        return lister.getDirectories();
-    }
-
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
     @Override
-    public void export() {
+    public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         AtomicInteger order = new AtomicInteger(0);
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         orderMap = new ConcurrentHashMap<>();
-        try {
-            if (prefixes == null || prefixes.size() == 0) {
-                UpLister startLister = (UpLister) generateLister("");
-                prefixes = listing(startLister, order);
-            }
-//            else {
-//                if (prefixLeft) {
-//                    String minPrefix = prefixes.get(0);
-//                    UpLister firstLister = generateLister("");
-//                    firstLister.setEndPrefix(minPrefix);
-//                    listing(firstLister, order);
-//                    firstLister.getDirectories().parallelStream().filter(prefix -> prefix.compareTo(minPrefix) < 0)
-//                            .forEach(prefixes::add);
-//                }
-//                if (prefixRight) {
-//
-//                }
-//            }
-
-            AtomicBoolean loopMore = new AtomicBoolean(true);
-            while (prefixes != null && prefixes.size() > 0) {
-                prefixes = prefixes.parallelStream().filter(this::checkPrefix)
-                        .map(prefix -> {
-                            try {
-                                UpLister upLister = (UpLister) generateLister(prefix);
-                                if (upLister.hasNext() || upLister.getDirectories() != null) {
-                                    return listing(upLister, order);
-                                } else {
-                                    executorPool.execute(() -> {
-                                        try {
-                                            listing(upLister, order);
-                                        } catch (Exception e) {
-                                            ThrowUtils.exit(exitBool, e);
-                                        }
-                                    });
-                                    return null;
-                                }
-                            } catch (Exception e) {
-                                ThrowUtils.exit(exitBool, e);
-                                return null;
-                            }
-                        }).filter(Objects::nonNull)
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-                loopMore.set(false);
-            }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) Thread.sleep(1000);
-            System.out.println(info + " finished");
-        } catch (Throwable throwable) {
-            ThrowUtils.exit(exitBool, throwable);
+        if (prefixes == null || prefixes.size() == 0) {
+            UpLister startLister = (UpLister) generateLister("");
+            listing(startLister, order);
+            prefixes = startLister.getDirectories();
         }
+        AtomicBoolean loopMore = new AtomicBoolean(true);
+        while (prefixes != null && prefixes.size() > 0) {
+            prefixes = prefixes.parallelStream().filter(this::checkPrefix)
+                .map(prefix -> {
+                    try {
+                        UpLister upLister = (UpLister) generateLister(prefix);
+                        if (upLister.hasNext() || upLister.getDirectories() != null) {
+                            listing(upLister, order);
+                            return upLister.getDirectories();
+                        } else {
+                            executorPool.execute(() -> listing(upLister, order));
+                            return null;
+                        }
+                    } catch (SuitsException e) {
+                        e.printStackTrace();
+                        System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
+                        return null;
+                    }
+                }).filter(Objects::nonNull)
+                .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            loopMore.set(false);
+        }
+        executorPool.shutdown();
+        while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        System.out.println(info + " finished");
     }
 }
