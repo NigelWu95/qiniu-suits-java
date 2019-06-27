@@ -10,6 +10,7 @@ import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.OssUtils;
+import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -17,7 +18,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
 
@@ -83,21 +83,21 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        AtomicInteger order = new AtomicInteger(0);
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         orderMap = new ConcurrentHashMap<>();
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
+            int order = UniOrderUtils.getOrder();
             listing(startLister, order);
             prefixes = startLister.getDirectories();
         }
-        AtomicBoolean loopMore = new AtomicBoolean(true);
         while (prefixes != null && prefixes.size() > 0) {
             prefixes = prefixes.parallelStream().filter(this::checkPrefix)
                 .map(prefix -> {
                     try {
                         UpLister upLister = (UpLister) generateLister(prefix);
+                        int order = UniOrderUtils.getOrder();
                         if (upLister.hasNext() || upLister.getDirectories() != null) {
                             listing(upLister, order);
                             return upLister.getDirectories();
@@ -112,7 +112,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                     }
                 }).filter(Objects::nonNull)
                 .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-            loopMore.set(false);
         }
         executorPool.shutdown();
         while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
