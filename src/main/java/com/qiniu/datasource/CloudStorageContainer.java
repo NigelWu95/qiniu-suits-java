@@ -271,18 +271,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private String computePoint(ILister<E> lister, boolean doFutureCheck) throws SuitsException {
         boolean next;
-        int retry = retryTimes;
-        // 如果 endKey 为空的话表明 lister 没有后续的列表可以列举
-        while (true) {
-            try {
-                next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
-                break;
-            } catch (SuitsException e) {
-                System.out.println("check lister has future next retrying...\n" + e.getMessage());
-                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) throw e;
-                else if (retry <= 0 && e.getStatusCode() >= 500) throw e;
-                else retry--;
-            }
+        try {
+            next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
+        } catch (SuitsException e) {
+            next = lister.hasNext();
         }
         String startPrefix = lister.getPrefix();
         String point = "";
@@ -399,97 +391,47 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
-    private int obtainThreadsToRun(List<ILister<E>> listerList, int order, String lastPrefix) throws Exception {
-        AtomicInteger atomicOrder = new AtomicInteger(order);
-        AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
-//        listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
-//        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
-//            listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
-//        }
-        boolean oneMore = true;
-        while (listerList != null && listerList.size() > 0 && oneMore) {
-            if (listerList.size() >= threads) oneMore = false;
-            listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
-        }
-
-        if (listerList != null && listerList.size() > 0) {
-            // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-            if (!lastListerUpdated.get()) {
-                ILister<E> lastLister =
-                        listerList.stream().max(Comparator.comparing(ILister::getPrefix))
-                        .get();
-//                        .ifPresent(lastLister -> {
-//                System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
-                lastLister.setPrefix(lastPrefix);
-                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
-//                });
-            }
-            for (ILister<E> lister : listerList) execInThread(lister, atomicOrder.addAndGet(1));
-        }
-        return atomicOrder.get();
-    }
-
-    /**
-     * 根据 startLister 得到可并发的下一级 lister 对象集放入多线程执行列举
-     * @param startLister 已初始化的起始的 lister
-     * @param order lister 执行的起始序号
-     * @param lastPrefix 最后一段列举需要更新的前缀
-     * @return 此次计算并执行到的 lister 序号，用于后续可能继续向线程添加 lister 执行设置起始序号
-     * @throws Exception 下一级 lister 列表计算和多线程执行过程中可能产生的异常
-     */
-    private int computeToList(ILister<E> startLister, int order, String lastPrefix) throws Exception {
-        List<ILister<E>> listerList = null;
-        if (threads > 1) {
-            String point = computePoint(startLister, false);
-            if (!startLister.getStraight()) {
-                listerList = parallelNextLevelLister(originPrefixList, startLister.getPrefix(), point);
-                listerList.add(startLister);
-            }
-        }
-        if (listerList == null) {
-            startLister.setPrefix(lastPrefix);
-            if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
-            execInThread(startLister, order++);
-            return order;
-        } else {
-            AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
-            AtomicInteger atomicOrder = new AtomicInteger(order);
-            while (listerList != null && listerList.size() > 0) {
-                listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
-            }
-            return atomicOrder.get();
-//            return obtainThreadsToRun(listerList, order, lastPrefix);
-        }
-    }
-
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
     public void export() {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        int order = 0;
+        AtomicBoolean lastUpdated = new AtomicBoolean(false);
+        AtomicInteger order = new AtomicInteger(0);
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         orderMap = new ConcurrentHashMap<>();
         try {
+            List<ILister<E>> listerList = null;
             if (prefixes == null || prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
-                computeToList(startLister, order, "");
+                if (threads > 1) {
+                    String point = computePoint(startLister, false);
+                    if (!startLister.getStraight()) {
+                        listerList = parallelNextLevelLister(originPrefixList, startLister.getPrefix(), point);
+                        listerList.add(startLister);
+                    }
+                }
+                if (listerList == null) {
+                    startLister.setPrefix("");
+                    if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
+                    execInThread(startLister, order.get());
+                } else {
+                    while (listerList != null && listerList.size() > 0) {
+                        listerList = computeNextAndFilterList(listerList, "", lastUpdated, order);
+                    }
+                }
             } else {
-                List<ILister<E>> listerList = parallelNextLevelLister(prefixes, "", "");
+                listerList = parallelNextLevelLister(prefixes, "", "");
                 if (prefixLeft) {
                     ILister<E> firstLister = generateLister("");
                     firstLister.setEndPrefix(prefixes.get(0));
                     listerList.add(firstLister);
-//                    execInThread(firstLister, order++);
                 }
                 int mSize = prefixes.size() - 1;
-//                obtainThreadsToRun(listerList, order, prefixRight ? "" : prefixes.get(mSize));
-                AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
-                AtomicInteger atomicOrder = new AtomicInteger(order);
                 while (listerList != null && listerList.size() > 0) {
-                    listerList = computeNextAndFilterList(listerList, prefixRight ? "" : prefixes.get(mSize), lastListerUpdated, atomicOrder);
+                    listerList = computeNextAndFilterList(listerList, prefixRight ? "" : prefixes.get(mSize), lastUpdated, order);
                 }
             }
             executorPool.shutdown();
