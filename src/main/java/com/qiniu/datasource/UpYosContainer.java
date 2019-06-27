@@ -61,21 +61,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
-//    private void recursionListing(UpLister lister, IResultOutput<BufferedWriter> saver,
-//                                  ILineProcess<Map<String, String>> processor) throws IOException {
-//        export(lister, saver, processor);
-//        lister.close();
-//        List<String> directories = lister.getDirectories();
-//        if (directories != null) {
-//            for (String prefix : directories) {
-//                if (checkPrefix(prefix)) {
-//                    UpLister upLister = generateLister(lister.getPrefix() + "/" + prefix);
-//                    recursionListing(upLister, saver, processor);
-//                }
-//            }
-//        }
-//    }
-
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
