@@ -39,6 +39,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected Set<String> rmFields;
     protected ExecutorService executorPool; // 线程池
     protected AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    protected AtomicBoolean lastUpdated;
     protected ConcurrentMap<Integer, Integer> orderMap;
     protected List<String> originPrefixList = new ArrayList<>();
     protected ILineProcess<T> processor; // 定义的资源处理器
@@ -302,12 +303,29 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
+    private List<ILister<E>> nextLevelLister(List<String> prefixes, String startPrefix, String point) {
+        List<ILister<E>> nextLevelList = new ArrayList<>();
+        for (String prefix : prefixes) {
+            if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
+                ILister<E> generated = null;
+                try {
+                    generated = generateLister(startPrefix + prefix);
+                } catch (SuitsException e) {
+                    System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
+                    e.printStackTrace();
+                }
+                if (generated != null && (generated.currents().size() > 0 || generated.hasNext())) nextLevelList.add(generated);
+            }
+        }
+        return nextLevelList;
+    }
+
     private List<ILister<E>> filteredNextList(ILister<E> lister) {
         String point = computePoint(lister, true);
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (!lister.getStraight()) {
             nextLevelList.add(lister);
-            for (String prefix : originPrefixList) {
+            for (String prefix : prefixes) {
                 if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                     ILister<E> generated = null;
                     try {
@@ -337,7 +355,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix) {
-        AtomicBoolean lastUpdated = new AtomicBoolean(false);
         if (!lastUpdated.get()) {
             ILister<E> lastLister =
             listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
@@ -369,6 +386,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        lastUpdated = new AtomicBoolean(false);
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
         orderMap = new ConcurrentHashMap<>();
@@ -379,14 +397,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (threads > 1) {
                 String point = computePoint(startLister, false);
                 if (!startLister.getStraight()) {
-                    listerList = originPrefixList.parallelStream().filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
+                    listerList = originPrefixList.parallelStream()
+                        .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
                         .map(prefix -> {
                             try {
                                 return generateLister(prefix);
                             } catch (SuitsException e) {
                                 System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
-                                e.printStackTrace();
-                                return null;
+                                e.printStackTrace(); return null;
                             }
                         }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
                         .collect(Collectors.toList());
@@ -401,15 +419,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } else {
             lastPrefix = prefixRight ? "" : prefixes.get(prefixes.size() - 1);
             listerList = prefixes.parallelStream().filter(this::checkPrefix)
-                .map(prefix -> {
-                    try {
-                        return generateLister(prefix);
-                    } catch (SuitsException e) {
-                        ThrowUtils.exit(exitBool, e);
-                        return null;
-                    }
-                }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
-                .collect(Collectors.toList());
+                    .map(prefix -> {
+                        try {
+                            return generateLister(prefix);
+                        } catch (SuitsException e) {
+                            ThrowUtils.exit(exitBool, e);
+                            return null;
+                        }
+                    }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
+                    .collect(Collectors.toList());
             if (prefixLeft) {
                 ILister<E> firstLister = generateLister("");
                 firstLister.setEndPrefix(prefixes.get(0));
