@@ -307,7 +307,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (!lister.getStraight()) {
             nextLevelList.add(lister);
-            for (String prefix : prefixes) {
+            for (String prefix : originPrefixList) {
                 if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                     ILister<E> generated = null;
                     try {
@@ -379,7 +379,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (threads > 1) {
                 String point = computePoint(startLister, false);
                 if (!startLister.getStraight()) {
-                    listerList = prefixes.parallelStream().filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
+                    listerList = originPrefixList.parallelStream().filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
                         .map(prefix -> {
                             try {
                                 return generateLister(prefix);
