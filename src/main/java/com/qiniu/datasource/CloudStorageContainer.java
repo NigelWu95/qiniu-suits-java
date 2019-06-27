@@ -12,6 +12,8 @@ import com.qiniu.util.ThrowUtils;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +39,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected Set<String> rmFields;
     protected ExecutorService executorPool; // 线程池
     protected AtomicBoolean exitBool; // 多线程的原子操作 bool 值
+    protected ConcurrentMap<Integer, Integer> orderMap;
     protected List<String> originPrefixList = new ArrayList<>();
     protected ILineProcess<T> processor; // 定义的资源处理器
 
@@ -209,11 +212,17 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
         // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
         ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
-        // 持久化结果标识信息
-        String newOrder = String.valueOf(order);
-        IResultOutput<W> saver = getNewResultSaver(newOrder);
         executorPool.execute(() -> {
+            Integer ord = order;
+            Integer rem = ord % 5000;
+            while (ord > 5000) {
+                if (orderMap.remove(rem) != null) ord = rem;
+            }
+            // 持久化结果标识信息
+            String newOrder = String.valueOf(ord);
+            IResultOutput<W> saver = null;
             try {
+                saver = getNewResultSaver(newOrder);
                 String record = "order " + newOrder + ": " + lister.getPrefix();
                 export(lister, saver, lineProcessor);
                 record += "\tsuccessfully done";
@@ -221,10 +230,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 lister.close();
+                orderMap.put(ord, ord);
             } catch (Exception e) {
                 System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
                         lister.getMarker() + "\tend:" + lister.getEndPrefix());
-                saver.closeWriters();
+                if (saver != null) saver.closeWriters();
                 if (lineProcessor != null) lineProcessor.closeResource();
                 ThrowUtils.exit(exitBool, e);
             }
@@ -442,7 +452,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             execInThread(startLister, order++);
             return order;
         } else {
-            return obtainThreadsToRun(listerList, order, lastPrefix);
+            AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
+            AtomicInteger atomicOrder = new AtomicInteger(order);
+            while (listerList != null && listerList.size() > 0) {
+                listerList = computeNextAndFilterList(listerList, lastPrefix, lastListerUpdated, atomicOrder);
+            }
+            return atomicOrder.get();
+//            return obtainThreadsToRun(listerList, order, lastPrefix);
         }
     }
 
@@ -455,6 +471,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         int order = 0;
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
+        orderMap = new ConcurrentHashMap<>();
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 ILister<E> startLister = generateLister("");
@@ -468,7 +485,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 //                    execInThread(firstLister, order++);
                 }
                 int mSize = prefixes.size() - 1;
-                obtainThreadsToRun(listerList, order, prefixRight ? "" : prefixes.get(mSize));
+//                obtainThreadsToRun(listerList, order, prefixRight ? "" : prefixes.get(mSize));
+                AtomicBoolean lastListerUpdated = new AtomicBoolean(false);
+                AtomicInteger atomicOrder = new AtomicInteger(order);
+                while (listerList != null && listerList.size() > 0) {
+                    listerList = computeNextAndFilterList(listerList, prefixRight ? "" : prefixes.get(mSize), lastListerUpdated, atomicOrder);
+                }
 //                for (int i = 0; i < mSize; i++) {
 //                    String prefix = prefixes.get(i);
 //                    ILister<E> startLister = generateLister(prefix);

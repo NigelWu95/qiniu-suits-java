@@ -17,7 +17,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,7 +27,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     private String username;
     private String password;
     private UpYunConfig configuration;
-    private ConcurrentMap<Integer, Integer> orderMap = new ConcurrentHashMap<>();
 
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
@@ -119,6 +117,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         AtomicInteger order = new AtomicInteger(0);
         executorPool = Executors.newFixedThreadPool(threads);
         exitBool = new AtomicBoolean(false);
+        orderMap = new ConcurrentHashMap<>();
         try {
             if (prefixes == null || prefixes.size() == 0) {
                 UpLister startLister = (UpLister) generateLister("");
