@@ -129,10 +129,12 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (nosObjectList.size() + 1);
+        int expected = listObjectsRequest.getMaxKeys() + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (nosObjectList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<NOSObjectSummary> futureList = nosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
+        while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
             futureList.addAll(nosObjectList);

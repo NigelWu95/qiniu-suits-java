@@ -131,10 +131,12 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (ossObjectList.size() + 1);
+        int expected = listObjectsRequest.getMaxKeys() + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (ossObjectList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<OSSObjectSummary> futureList = ossObjectList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
+        while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
             futureList.addAll(ossObjectList);

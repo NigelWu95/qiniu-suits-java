@@ -491,13 +491,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 while (listerList != null && listerList.size() > 0) {
                     listerList = computeNextAndFilterList(listerList, prefixRight ? "" : prefixes.get(mSize), lastListerUpdated, atomicOrder);
                 }
-//                for (int i = 0; i < mSize; i++) {
-//                    String prefix = prefixes.get(i);
-//                    ILister<E> startLister = generateLister(prefix);
-//                    order = computeToList(startLister, order, prefix);
-//                }
-//                ILister<E> lastLister = generateLister(prefixes.get(mSize));
-//                computeToList(lastLister, order, prefixRight ? "" : lastLister.getPrefix());
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) Thread.sleep(1000);
