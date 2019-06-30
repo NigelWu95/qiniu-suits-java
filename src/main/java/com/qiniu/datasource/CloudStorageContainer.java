@@ -276,8 +276,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             int prefixLen = startPrefix.length();
             if (endKey == null) {
                 lister.setStraight(true);
-            } else if (endKey.length() > prefixLen) { // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个
-                // 字符，用于和预定义前缀列表进行比较，确定 lister 的 endPrefix
+            } else if (endKey.length() > prefixLen) {
+                // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符 point，用于和预定义前缀列表进行比较，确定
+                // lister 的 endPrefix
                 point = endKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
@@ -324,8 +325,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String point = computePoint(lister, true);
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (!lister.getStraight()) {
-            nextLevelList.add(lister);
-            for (String prefix : prefixes) {
+//            nextLevelList = nextLevelLister(originPrefixList, lister.getPrefix(), point);
+//            nextLevelList.add(lister);
+            for (String prefix : originPrefixList) {
                 if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                     ILister<E> generated = null;
                     try {
