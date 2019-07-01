@@ -77,7 +77,10 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            listObjectsRequest.setMarker(null);
+        } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
             for (int i = 0; i < size; i++) {

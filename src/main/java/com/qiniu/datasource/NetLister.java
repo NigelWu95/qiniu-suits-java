@@ -77,14 +77,17 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            listObjectsRequest.setMarker(null);
+        } else if (endKey.compareTo(endPrefix) > 0) {
+            listObjectsRequest.setMarker(null);
             int size = nosObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
             for (int i = 0; i < size; i++) {
                 if (nosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     nosObjectList = nosObjectList.subList(0, i);
-                    listObjectsRequest.setMarker(null);
                     return;
                 }
             }

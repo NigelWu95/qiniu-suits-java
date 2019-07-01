@@ -125,7 +125,10 @@ public class QiniuLister implements ILister<FileInfo> {
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
         // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            marker = null;
+        } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
             int size = fileInfoList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
