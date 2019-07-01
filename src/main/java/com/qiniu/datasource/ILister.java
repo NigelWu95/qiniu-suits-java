@@ -24,8 +24,6 @@ public interface ILister<E> {
 
     void setStraight(boolean straight);
 
-    boolean getStraight();
-
     boolean canStraight();
 
     void listForward() throws SuitsException;

@@ -71,11 +71,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }

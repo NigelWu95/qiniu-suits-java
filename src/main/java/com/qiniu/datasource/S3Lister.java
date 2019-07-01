@@ -77,11 +77,6 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }

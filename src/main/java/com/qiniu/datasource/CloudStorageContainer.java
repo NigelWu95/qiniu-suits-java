@@ -41,8 +41,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     protected AtomicBoolean lastUpdated;
     protected ConcurrentMap<Integer, Integer> orderMap;
-    protected List<String> originPrefixList = new ArrayList<>();
     protected ILineProcess<T> processor; // 定义的资源处理器
+    protected List<String> originPrefixList = new ArrayList<>();
+    public static String startPoint;
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
@@ -60,6 +61,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         originPrefixList.addAll(Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
         originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
+        startPoint = originPrefixList.get(0);
     }
 
     // 不调用则各参数使用默认值
@@ -269,7 +271,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             next = lister.hasNext();
         }
         String startPrefix = lister.getPrefix();
-        String point = "";
+        String point = null;
         if (next) {
             // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
             String endKey = lister.currentEndKey();
@@ -282,10 +284,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 point = endKey.substring(prefixLen, prefixLen + 1);
                 // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
                 if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+                    point = null;
                     lister.setStraight(true);
-                    // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀，并且加入 lister 到返回的列举对象集
+                // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀
                 } else if (point.compareTo(originPrefixList.get(0)) < 0) {
-                    lister.setEndPrefix(startPrefix + originPrefixList.get(0));
+                    point = startPoint;
+                    lister.setEndPrefix(startPrefix + startPoint);
                 } else {
                     insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
                         put("marker", lister.getMarker());
@@ -293,9 +297,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     lister.setEndPrefix(endKey);
                 }
             } else {
-                // 正常情况下存在 next 时最后一个文件对象不为空且其文件名不应为空，假如发生此情况直接将 lister 的结束位置设置到第一个预定义前
-                // 缀并加入返回的对象集
-                lister.setEndPrefix(startPrefix + originPrefixList.get(0));
+                point = startPoint;
+                // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
+                lister.setEndPrefix(startPrefix + startPoint);
             }
         } else {
             lister.setStraight(true);
@@ -324,7 +328,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private List<ILister<E>> filteredNextList(ILister<E> lister) {
         String point = computePoint(lister, true);
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
-        if (!lister.getStraight()) {
+        if (point != null) {
 //            nextLevelList = nextLevelLister(originPrefixList, lister.getPrefix(), point);
 //            nextLevelList.add(lister);
             for (String prefix : originPrefixList) {
@@ -396,9 +400,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String lastPrefix = "";
         if (prefixes == null || prefixes.size() == 0) {
             ILister<E> startLister = generateLister("");
+            boolean once = true;
             if (threads > 1) {
                 String point = computePoint(startLister, false);
-                if (!startLister.getStraight()) {
+                if (point != null) {
+                    once = false;
                     listerList = originPrefixList.parallelStream()
                         .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
                         .map(prefix -> {
@@ -412,7 +418,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         .collect(Collectors.toList());
                     listerList.add(startLister);
                 }
-            } else {
+            }
+            if (once) {
                 startLister.setPrefix("");
                 if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
                 int order = UniOrderUtils.getOrder();

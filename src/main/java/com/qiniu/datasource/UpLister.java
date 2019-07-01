@@ -84,11 +84,6 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
