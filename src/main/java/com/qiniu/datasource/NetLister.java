@@ -6,6 +6,7 @@ import com.netease.cloud.services.nos.model.ListObjectsRequest;
 import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.netease.cloud.services.nos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.OssUtils;
 
 import java.util.List;
@@ -80,6 +81,11 @@ public class NetLister implements ILister<NOSObjectSummary> {
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+                NOSObjectSummary last = currentLast();
+                if (last != null && endPrefix.equals(last.getKey()))
+                    nosObjectList.remove(last);
+            }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = nosObjectList.size();

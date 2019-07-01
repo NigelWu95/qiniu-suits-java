@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.JsonUtils;
 import com.qiniu.util.OssUtils;
 
@@ -179,6 +180,11 @@ public class UpLister implements ILister<FileItem> {
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             marker = null;
+            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
+                FileItem last = currentLast();
+                if (last != null && endPrefix.equals(last.key))
+                    fileItems.remove(last);
+            }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
             int size = fileItems.size();

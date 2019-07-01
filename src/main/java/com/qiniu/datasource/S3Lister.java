@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -86,6 +87,11 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setContinuationToken(null);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+                S3ObjectSummary last = currentLast();
+                if (last != null && endPrefix.equals(last.getKey()))
+                    s3ObjectList.remove(last);
+            }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setContinuationToken(null);
             int size = s3ObjectList.size();

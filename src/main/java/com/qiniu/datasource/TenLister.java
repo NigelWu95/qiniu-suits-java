@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
@@ -80,6 +81,11 @@ public class TenLister implements ILister<COSObjectSummary> {
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+                COSObjectSummary last = currentLast();
+                if (last != null && endPrefix.equals(last.getKey()))
+                    cosObjectList.remove(last);
+            }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
