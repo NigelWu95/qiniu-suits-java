@@ -172,10 +172,6 @@ public class S3Lister implements ILister<S3ObjectSummary> {
 //                listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
 //                listObjectsRequest.setStartAfter(null);
 //                s3ObjectSummaryList = result.getObjectSummaries();
-//            } catch (AmazonServiceException e) {
-//                if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0) ThrowUtils.exit(new AtomicBoolean(true), e);
-//            } catch (NullPointerException e) {
-//                ThrowUtils.exit(new AtomicBoolean(true), new Exception("lister maybe already closed, " + e.getMessage()));
 //            } catch (Exception ignored) {}
 //            retry--;
 //            if (retry <= 0) break;
