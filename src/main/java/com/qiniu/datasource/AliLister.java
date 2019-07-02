@@ -5,7 +5,6 @@ import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
-import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.util.OssUtils;
 

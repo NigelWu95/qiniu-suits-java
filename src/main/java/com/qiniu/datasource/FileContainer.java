@@ -171,7 +171,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             executorPool.execute(() -> reading(fileReader, order));
         }
         executorPool.shutdown();
-        while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        while (!executorPool.isTerminated())
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
         System.out.println(info + " finished");
     }
 }

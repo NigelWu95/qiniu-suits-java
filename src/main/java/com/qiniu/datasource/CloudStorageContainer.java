@@ -159,7 +159,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) {
             retry--;
         } else if (e.getStatusCode() == 429) {
-            try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException interruptEx) {
+                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
+                throw e;
+            }
         } else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) {
             throw e;
         } else {
@@ -320,29 +325,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
-    private List<ILister<E>> nextLevelLister(List<String> prefixes, String startPrefix, String point) {
-        List<ILister<E>> nextLevelList = new ArrayList<>();
-        for (String prefix : prefixes) {
-            if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
-                ILister<E> generated = null;
-                try {
-                    generated = generateLister(startPrefix + prefix);
-                } catch (SuitsException e) {
-                    System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
-                    e.printStackTrace();
-                }
-                if (generated != null && (generated.currents().size() > 0 || generated.hasNext())) nextLevelList.add(generated);
-            }
-        }
-        return nextLevelList;
-    }
-
     private List<ILister<E>> filteredNextList(ILister<E> lister) {
         String point = computePoint(lister, true);
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (point != null) {
-//            nextLevelList = nextLevelLister(originPrefixList, lister.getPrefix(), point);
-//            nextLevelList.add(lister);
             for (String prefix : originPrefixList) {
                 if (prefix.compareTo(point) >= 0 && checkPrefix(prefix)) {
                     ILister<E> generated = null;
@@ -471,7 +457,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList = computeNextAndFilterList(listerList, lastPrefix);
         }
         executorPool.shutdown();
-        while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        while (!executorPool.isTerminated())
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
         System.out.println(info + " finished");
     }
 }

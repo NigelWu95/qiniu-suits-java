@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;

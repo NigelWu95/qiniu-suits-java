@@ -17,6 +17,10 @@ public class SuitsException extends IOException {
         return statusCode;
     }
 
+    public void setError(String error) {
+        this.error = error;
+    }
+
     public String getError() {
         return error;
     }

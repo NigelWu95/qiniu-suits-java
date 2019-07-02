@@ -99,7 +99,8 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
         }
         executorPool.shutdown();
-        while (!executorPool.isTerminated()) try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        while (!executorPool.isTerminated())
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
         System.out.println(info + " finished");
     }
 }

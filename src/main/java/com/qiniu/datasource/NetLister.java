@@ -6,7 +6,6 @@ import com.netease.cloud.services.nos.model.ListObjectsRequest;
 import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.netease.cloud.services.nos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.OssUtils;
 
 import java.util.List;
