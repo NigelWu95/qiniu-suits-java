@@ -12,6 +12,7 @@ public class UniOrderUtils {
     public static int getOrder() {
         Integer ord = order.addAndGet(1);
         Integer rem = ord % 5000;
+        if (ord > 5000 && rem == 0) rem = 5000;
         while (ord > 5000) {
             if (orderMap.remove(rem) != null) ord = rem;
         }

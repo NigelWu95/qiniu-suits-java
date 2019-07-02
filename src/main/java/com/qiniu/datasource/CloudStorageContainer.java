@@ -8,7 +8,6 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LineUtils;
-import com.qiniu.util.ThrowUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.IOException;
@@ -156,6 +155,19 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
+    protected int listExceptionWithRetry(SuitsException e, int retry) throws SuitsException {
+        if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) {
+            retry--;
+        } else if (e.getStatusCode() == 429) {
+            try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+        } else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) {
+            throw e;
+        } else {
+            retry--;
+        }
+        return retry;
+    }
+
     /**
      * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
      * @param lister 已经初始化的 lister 对象
@@ -197,7 +209,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
-                    retry = ThrowUtils.listExceptionWithRetry(e, retry);
+                    retry = listExceptionWithRetry(e, retry);
                 }
             }
         }
@@ -258,7 +270,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
-                retry = ThrowUtils.listExceptionWithRetry(e, retry);
+                retry = listExceptionWithRetry(e, retry);
             }
         }
     }
@@ -387,6 +399,18 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     /**
+     * 程序退出方法，用于在多线程情况下某个线程出现异常时退出程序，如果同时多个线程抛出异常则通过 exitBool 来判断是否已经执行过退出程序，故只输出
+     * 一次异常信息
+     * @param exitBool 多线程的原子操作 bool 值，初始值应该为 false
+     * @param e 异常对象
+     */
+    synchronized static public void exit(AtomicBoolean exitBool, Throwable e) {
+        if (!exitBool.get()) e.printStackTrace();
+        exitBool.set(true);
+        System.exit(-1);
+    }
+
+    /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
     public void export() throws Exception {
@@ -432,7 +456,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         try {
                             return generateLister(prefix);
                         } catch (SuitsException e) {
-                            ThrowUtils.exit(exitBool, e);
+                            exit(exitBool, e);
                             return null;
                         }
                     }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
