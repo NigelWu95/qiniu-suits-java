@@ -13,19 +13,17 @@ import java.util.List;
 public class AliLister implements ILister<OSSObjectSummary> {
 
     private OSSClient ossClient;
-    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private String endPrefix;
     private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
-    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws SuitsException {
+    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.ossClient = ossClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
@@ -40,7 +38,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     public void setMarker(String marker) {
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
     }
 
     public String getMarker() {
@@ -48,24 +46,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endKeyPrefix) {
-        this.endPrefix = endKeyPrefix;
+    public void setEndPrefix(String endPrefix) {
+        this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
 
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
     }
 
     @Override
@@ -83,30 +71,32 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            listObjectsRequest.setMarker(null);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+                OSSObjectSummary last = currentLast();
+                if (last != null && endPrefix.equals(last.getKey()))
+                    ossObjectList.remove(last);
+            }
+        } else if (endKey.compareTo(endPrefix) > 0) {
+            listObjectsRequest.setMarker(null);
             int size = ossObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
             for (int i = 0; i < size; i++) {
                 if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     ossObjectList = ossObjectList.subList(0, i);
-                    listObjectsRequest.setMarker(null);
                     return;
                 }
             }
         }
-
     }
 
     private void doList() throws SuitsException {
@@ -144,11 +134,13 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (ossObjectList.size() + 1);
+        int expected = listObjectsRequest.getMaxKeys() + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (ossObjectList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<OSSObjectSummary> futureList = ossObjectList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+        while (hasNext() && times > 0 && futureList.size() < expected) {
+            times--;
             doList();
             futureList.addAll(ossObjectList);
         }
@@ -164,11 +156,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public OSSObjectSummary currentLast() {
         return ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
-//        if (last == null && hasNext()) {
-//            last = new OSSObjectSummary();
-//            last.setKey(getMarker());
-//        }
-//        return last;
     }
 
     @Override

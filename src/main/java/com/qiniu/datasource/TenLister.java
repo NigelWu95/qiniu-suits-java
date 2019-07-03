@@ -13,19 +13,17 @@ import java.util.List;
 public class TenLister implements ILister<COSObjectSummary> {
 
     private COSClient cosClient;
-    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private String endPrefix;
     private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 
-    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws SuitsException {
+    public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.cosClient = cosClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
@@ -40,7 +38,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     public void setMarker(String marker) {
-        listObjectsRequest.setMarker(marker);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
     }
 
     public String getMarker() {
@@ -48,24 +46,14 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endKeyPrefix) {
-        this.endPrefix = endKeyPrefix;
+    public void setEndPrefix(String endPrefix) {
+        this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
 
     @Override
     public String getEndPrefix() {
         return endPrefix;
-    }
-
-    @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
     }
 
     @Override
@@ -83,18 +71,21 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            listObjectsRequest.setMarker(null);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+                COSObjectSummary last = currentLast();
+                if (last != null && endPrefix.equals(last.getKey()))
+                    cosObjectList.remove(last);
+            }
+        } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
             for (int i = 0; i < size; i++) {
@@ -137,11 +128,13 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (cosObjectList.size() + 1);
+        int expected = listObjectsRequest.getMaxKeys() + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (cosObjectList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<COSObjectSummary> futureList = cosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+        while (hasNext() && times > 0 && futureList.size() < expected) {
+            times--;
             doList();
             futureList.addAll(cosObjectList);
         }
@@ -161,12 +154,7 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public String currentEndKey() {
-//        COSObjectSummary last = null;
-        if (hasNext()) {
-//            last = new COSObjectSummary();
-//            last.setKey(getMarker());
-            return getMarker();
-        }
+        if (hasNext()) return getMarker();
         COSObjectSummary last = currentLast();
         return last != null ? last.getKey() : null;
     }

@@ -10,19 +10,20 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.OssUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter, Map<String, String>> {
+public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedWriter, Map<String, String>> {
 
     private String accessKey;
     private String secretKey;
     private Configuration configuration;
 
-    public QiniuOssContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
-                             List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
+    public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
+                             List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
                              boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKey = accessKey;
@@ -51,8 +52,9 @@ public class QiniuOssContainer extends OssContainer<FileInfo, BufferedWriter, Ma
     }
 
     @Override
-    protected ILister<FileInfo> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<FileInfo> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+        if (marker == null || "".equals(marker)) marker = OssUtils.getQiniuMarker(start);
         return new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()), bucket,
-                prefix, marker, end, null, unitLen);
+                prefix, marker, end, unitLen);
     }
 }

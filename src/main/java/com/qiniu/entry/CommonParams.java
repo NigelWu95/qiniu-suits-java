@@ -11,9 +11,6 @@ import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
-import com.qiniu.sdk.FileItem;
-import com.qiniu.sdk.UpYunClient;
-import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -31,6 +28,8 @@ public class CommonParams {
     private String path;
     private String parse;
     private String separator;
+    private String s3AccessId;
+    private String s3SecretKey;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
     private String tencentSecretId;
@@ -41,7 +40,7 @@ public class CommonParams {
     private String upyunPassword;
     private String bucket;
     private String regionName;
-    private Map<String, String[]> prefixesMap;
+    private Map<String, Map<String, String>> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -62,6 +61,8 @@ public class CommonParams {
     private Set<String> rmFields;
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
+
+    public CommonParams() {}
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -90,6 +91,9 @@ public class CommonParams {
             } else if ("upyun".equals(source)) {
                 upyunUsername = entryParam.getValue("up-name").trim();
                 upyunPassword = entryParam.getValue("up-pass").trim();
+            } else if ("s3".equals(source) || "aws".equals(source)) {
+                s3AccessId = entryParam.getValue("s3-id").trim();
+                s3SecretKey = entryParam.getValue("s3-secret").trim();
             } else {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
@@ -257,20 +261,22 @@ public class CommonParams {
                 else if (path.startsWith("tencent://")) source = "tencent";
                 else if (path.startsWith("aliyun://")) source = "aliyun";
                 else if (path.startsWith("upyun://")) source = "upyun";
+                else if (path.startsWith("aws://")) source = "aws";
+                else if (path.startsWith("s3://")) source = "s3";
                 else source = "local";
             }
         }
         // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
-        if (!source.matches("(local|qiniu|tencent|aliyun|upyun)")) {
-            throw new IOException("please set the \"source\" conform to regex: (local|qiniu|tencent|aliyun|upyun)");
+        if (!source.matches("(local|qiniu|tencent|aliyun|upyun|aws|s3)")) {
+            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,aws,s3]");
         }
     }
 
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
-        if (!process.isEmpty() && DataSourceDef.ossListSource.contains(source) && !ProcessUtils.supportListSource(process)) {
+        if (!process.isEmpty() && DataSourceDef.cloudStorage.contains(source) && !ProcessUtils.supportListSource(process)) {
             throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
     }
@@ -292,6 +298,12 @@ public class CommonParams {
         } else if ("upyun".equals(source) && path.startsWith("upyun://")) {
             bucket = path.substring(8);
             bucket = entryParam.getValue("bucket", bucket).trim();
+        } else if ("s3".equals(source) && path.startsWith("s3://")) {
+            bucket = path.substring(5);
+            bucket = entryParam.getValue("bucket", bucket).trim();
+        } else if ("aws".equals(source) && path.startsWith("aws://")) {
+            bucket = path.substring(6);
+            bucket = entryParam.getValue("bucket", bucket).trim();
         } else {
             bucket = entryParam.getValue("bucket").trim();
         }
@@ -312,38 +324,38 @@ public class CommonParams {
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
-            String marker = null;
-            String end = null;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
+                Map<String, String> markerAndEnd = new HashMap<>();
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
-                    marker = jsonCfg.get("marker").getAsString();
+                    markerAndEnd.put("marker", jsonCfg.get("marker").getAsString());
                 } else {
                     if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
-                            marker = OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString());
+                            markerAndEnd.put("marker", OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
                         } else if ("tencent".equals(source)) {
-                            marker = OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString());
+                            markerAndEnd.put("marker", OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
                         } else if ("aliyun".equals(source)) {
-                            marker = OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString());
+                            markerAndEnd.put("marker", OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
                         } else if ("upyun".equals(source)) {
-                            UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), upyunUsername, upyunPassword);
-                            FileItem fileItem = upYunClient.getFileInfo(bucket, jsonCfg.get("start").getAsString());
-                            marker = OssUtils.getUpYunMarker(bucket, fileItem);
+                            String start = jsonCfg.get("start").getAsString();
+                            markerAndEnd.put("marker", OssUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
+                        } else if ("aws".equals(source) || "s3".equals(source)) {
+                            markerAndEnd.put("start", jsonCfg.get("start").getAsString());
                         }
                     }
                 }
                 if (jsonCfg.has("end") && !(jsonCfg.get("end") instanceof JsonNull))
-                    end = jsonCfg.get("end").getAsString();
-                prefixesMap.put(prefix, new String[]{marker, end});
+                    markerAndEnd.put("end", jsonCfg.get("end").getAsString());
+                prefixesMap.put(prefix, markerAndEnd);
             }
         } else {
             String[] prefixList = ParamsUtils.escapeSplit(prefixes);
             for (String prefix : prefixList) {
                 // 如果前面前面位置已存在该 prefix，则通过 remove 操作去重，使用后面的覆盖前面的
                 prefixesMap.remove(prefix);
-                prefixesMap.put(prefix, new String[]{"", ""});
+                prefixesMap.put(prefix, new HashMap<>());
             }
         }
     }
@@ -531,11 +543,11 @@ public class CommonParams {
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
-        boolean sourceFromList = DataSourceDef.ossListSource.contains(source);
+        boolean sourceFromList = DataSourceDef.cloudStorage.contains(source);
         if (useDefault && (indexMap.size() == 0 || ProcessUtils.needBucketAndKey(process) ||
                 (baseFilter != null && baseFilter.checkKeyCon()) ||
                 (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
-            if (DataSourceDef.fileSource.contains(source) || "terminal".equals(source)) {
+            if (DataSourceDef.fileList.contains(source) || "terminal".equals(source)) {
                 try {
                     setIndex("json".equals(parse) ? "key" : "0", "key");
                 } catch (IOException e) {
@@ -612,7 +624,7 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun|upyun)")) {
+            if (source.matches("(qiniu|tencent|aliyun|upyun|aws|s3)")) {
                 if (process == null || "".equals(process)) {
                     saveTotal = "true";
                 } else {
@@ -682,6 +694,14 @@ public class CommonParams {
         this.parse = parse;
     }
 
+    public void setS3AccessId(String s3AccessId) {
+        this.s3AccessId = s3AccessId;
+    }
+
+    public void setS3SecretKey(String s3SecretKey) {
+        this.s3SecretKey = s3SecretKey;
+    }
+
     public void setQiniuAccessKey(String qiniuAccessKey) {
         this.qiniuAccessKey = qiniuAccessKey;
     }
@@ -722,7 +742,7 @@ public class CommonParams {
         this.regionName = regionName;
     }
 
-    public void setPrefixesMap(Map<String, String[]> prefixesMap) {
+    public void setPrefixesMap(Map<String, Map<String, String>> prefixesMap) {
         this.prefixesMap = prefixesMap;
     }
 
@@ -834,6 +854,14 @@ public class CommonParams {
         return separator;
     }
 
+    public String getS3AccessId() {
+        return s3AccessId;
+    }
+
+    public String getS3SecretKey() {
+        return s3SecretKey;
+    }
+
     public String getQiniuAccessKey() {
         return qiniuAccessKey;
     }
@@ -878,7 +906,7 @@ public class CommonParams {
         return antiPrefixes;
     }
 
-    public Map<String, String[]> getPrefixesMap() {
+    public Map<String, Map<String, String>> getPrefixesMap() {
         return prefixesMap;
     }
 

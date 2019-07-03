@@ -1,6 +1,7 @@
 package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -150,6 +151,36 @@ public final class LineUtils {
                 case "owner":
                 case "endUser":
                     itemMap.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
+            }
+        }
+        return itemMap;
+    }
+
+    public static Map<String, String> getItemMap(S3ObjectSummary s3Object, Map<String, String> indexMap)
+            throws IOException {
+        if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        Map<String, String> itemMap = new HashMap<>();
+        for (String index : indexMap.keySet()) {
+            if (!fileInfoFields.contains(index)) {
+                throw new IOException("the index: " + index + " can't be found.");
+            }
+            switch (index) {
+                case "key": itemMap.put(indexMap.get(index), s3Object.getKey()); break;
+                case "hash":
+                case "etag":
+                    itemMap.put(indexMap.get(index), s3Object.getETag()); break;
+                case "size":
+                case "fsize":
+                    itemMap.put(indexMap.get(index), String.valueOf(s3Object.getSize())); break;
+                case "datetime":
+                    itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "timestamp":
+                case "putTime":
+                    itemMap.put(indexMap.get(index), String.valueOf(s3Object.getLastModified().getTime())); break;
+                case "type": itemMap.put(indexMap.get(index), s3Object.getStorageClass()); break;
+                case "owner":
+                case "endUser":
+                    itemMap.put(indexMap.get(index), s3Object.getOwner().getDisplayName()); break;
             }
         }
         return itemMap;
@@ -318,6 +349,41 @@ public final class LineUtils {
         if (rmFields == null || !rmFields.contains("type")) converted.append(ossObject.getStorageClass()).append(separator);
         if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && ossObject.getOwner() != null)
             converted.append(ossObject.getOwner().getDisplayName()).append(separator);
+        if (converted.length() <= separator.length()) throw new IOException("empty result.");
+        return converted.deleteCharAt(converted.length() - separator.length()).toString();
+    }
+
+    public static String toFormatString(S3ObjectSummary s3Object, Set<String> rmFields) throws IOException {
+        if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
+        JsonObject converted = new JsonObject();
+        if (rmFields == null || !rmFields.contains("key")) converted.addProperty("key", s3Object.getKey());
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("hash", s3Object.getETag());
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("size", s3Object.getSize());
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
+            converted.addProperty("datetime", DatetimeUtils.stringOf(s3Object.getLastModified()));
+        if (rmFields == null || !rmFields.contains("type")) converted.addProperty("type", s3Object.getStorageClass());
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && s3Object.getOwner() != null)
+            converted.addProperty("owner", s3Object.getOwner().getDisplayName());
+        if (converted.size() == 0) throw new IOException("empty result.");
+        return converted.toString();
+    }
+
+    public static String toFormatString(S3ObjectSummary s3Object, String separator, Set<String> rmFields)
+            throws IOException {
+        if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
+        StringBuilder converted = new StringBuilder();
+        if (rmFields == null || !rmFields.contains("key")) converted.append(s3Object.getKey()).append(separator);
+        if (rmFields == null || hashFields.stream().noneMatch(rmFields::contains))
+            converted.append(s3Object.getETag()).append(separator);
+        if (rmFields == null || sizeFields.stream().noneMatch(rmFields::contains))
+            converted.append(s3Object.getSize()).append(separator);
+        if (rmFields == null || timeFields.stream().noneMatch(rmFields::contains))
+            converted.append(DatetimeUtils.stringOf(s3Object.getLastModified())).append(separator);
+        if (rmFields == null || !rmFields.contains("type")) converted.append(s3Object.getStorageClass()).append(separator);
+        if ((rmFields == null || ownerFields.stream().noneMatch(rmFields::contains)) && s3Object.getOwner() != null)
+            converted.append(s3Object.getOwner().getDisplayName()).append(separator);
         if (converted.length() <= separator.length()) throw new IOException("empty result.");
         return converted.deleteCharAt(converted.length() - separator.length()).toString();
     }

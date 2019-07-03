@@ -12,4 +12,13 @@ public final class URLUtils {
         else if (url.endsWith("\t")) return (path.startsWith("/") ? path.substring(1) : path) + "\t";
         else return path.startsWith("/") ? path.substring(1) : path;
     }
+
+    public static String getSpaceEscapedURI(String uri) {
+//        if (uri == null || uri.isEmpty()) return "";
+//        else if (uri.endsWith(" ")) return uri.substring(0, uri.length() - 1) + "%20";
+//        else if (uri.endsWith("\t")) return uri.substring(0, uri.length() - 1) + "%09";
+//        else return uri;
+        if (uri == null || uri.isEmpty()) return "";
+        return uri.replaceAll(" ", "%20").replaceAll("\t", "%09");
+    }
 }

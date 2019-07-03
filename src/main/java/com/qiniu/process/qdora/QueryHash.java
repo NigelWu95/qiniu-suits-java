@@ -3,7 +3,7 @@ package com.qiniu.process.qdora;
 import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
-import com.qiniu.process.qoss.FileChecker;
+import com.qiniu.process.qos.FileChecker;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
@@ -93,7 +93,7 @@ public class QueryHash extends Base<Map<String, String>> {
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url =  line.get(urlIndex);
         if (url == null || "".equals(url)) {
-            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
         String qhash = fileChecker.getQHashBody(url);

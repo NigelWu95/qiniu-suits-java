@@ -18,13 +18,11 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private boolean straight;
     private List<NOSObjectSummary> nosObjectList;
 
-    public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix,
-                     String delimiter, int max) throws SuitsException {
+    public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.nosClient = nosClient;
         this.listObjectsRequest = new ListObjectsRequest();
         listObjectsRequest.setBucketName(bucket);
         listObjectsRequest.setPrefix(prefix);
-        listObjectsRequest.setDelimiter(delimiter);
         listObjectsRequest.setMarker(marker);
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
@@ -59,16 +57,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public void setDelimiter(String delimiter) {
-        listObjectsRequest.setDelimiter(delimiter);
-    }
-
-    @Override
-    public String getDelimiter() {
-        return listObjectsRequest.getDelimiter();
-    }
-
-    @Override
     public void setLimit(int limit) {
         listObjectsRequest.setMaxKeys(limit);
     }
@@ -83,25 +71,28 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            listObjectsRequest.setMarker(null);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+                NOSObjectSummary last = currentLast();
+                if (last != null && endPrefix.equals(last.getKey()))
+                    nosObjectList.remove(last);
+            }
+        } else if (endKey.compareTo(endPrefix) > 0) {
+            listObjectsRequest.setMarker(null);
             int size = nosObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
             for (int i = 0; i < size; i++) {
                 if (nosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
                     nosObjectList = nosObjectList.subList(0, i);
-                    listObjectsRequest.setMarker(null);
                     return;
                 }
             }
@@ -141,11 +132,13 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (nosObjectList.size() + 1);
+        int expected = listObjectsRequest.getMaxKeys() + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (nosObjectList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<NOSObjectSummary> futureList = nosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+        while (hasNext() && times > 0 && futureList.size() < expected) {
+            times--;
             doList();
             futureList.addAll(nosObjectList);
         }

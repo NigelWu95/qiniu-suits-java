@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
@@ -87,7 +87,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
-            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
         try {

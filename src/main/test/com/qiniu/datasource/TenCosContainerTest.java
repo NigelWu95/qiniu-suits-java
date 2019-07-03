@@ -10,9 +10,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TenOssContainerTest {
+public class TenCosContainerTest {
 
-    private TenOssContainer tenOssContainer;
+    private TenCosContainer tenCosContainer;
 
     @Before
     public void init() throws IOException {
@@ -23,13 +23,13 @@ public class TenOssContainerTest {
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         String bucket = propertiesFile.getValue("bucket");
-        tenOssContainer = new TenOssContainer(secretId, secretKey, clientConfig, bucket, null, null,
+        tenCosContainer = new TenCosContainer(secretId, secretKey, clientConfig, bucket, null, null,
                 false, false, null, 1000, 10);
-        tenOssContainer.setSaveOptions("../tencent", true, "tab", "\t", null);
+        tenCosContainer.setSaveOptions("../tencent", true, "tab", "\t", null);
     }
 
     @Test
     public void export() throws Exception {
-        tenOssContainer.export();
+        tenCosContainer.export();
     }
 }

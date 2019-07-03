@@ -7,16 +7,26 @@ import com.aliyun.oss.OSSException;
 import com.aliyun.oss.common.auth.CredentialsProvider;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
+import com.qcloud.cos.model.Bucket;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
+import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.sdk.FileItem;
+import com.qiniu.sdk.UpYunClient;
+import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -139,6 +149,7 @@ public class OssUtils {
     }
 
     public static String getQiniuMarker(String key) {
+        if (key == null || "".equals(key)) return null;
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("c", 0);
         jsonObject.addProperty("k", key);
@@ -154,9 +165,12 @@ public class OssUtils {
         return key;
     }
 
-//    public static String getUpYunMarker(String bucket, String key) {
-//        return new String(encoder.encode((bucket + "/@#" + key).getBytes()));
-//    }
+    public static String getUpYunMarker(String username, String password, String bucket, String key) throws SuitsException {
+        if (key == null || "".equals(key)) return null;
+        UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
+        FileItem fileItem = upYunClient.getFileInfo(bucket, key);
+        return getUpYunMarker(bucket, fileItem);
+    }
 
     public static String decodeQiniuMarker(String marker) {
         String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));
@@ -204,7 +218,9 @@ public class OssUtils {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         OSSClient ossClient = new OSSClient("oss-cn-shanghai.aliyuncs.com", credentialsProvider, clientConfiguration);
         try {
-            return ossClient.getBucketLocation(bucket);
+            String region = ossClient.getBucketLocation(bucket);
+            ossClient.shutdown();
+            return region;
         } catch (OSSException | ClientException e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -222,11 +238,29 @@ public class OssUtils {
         ClientConfig clientConfig = new ClientConfig();
         COSClient cosClient = new COSClient(cred, clientConfig);
         // 腾讯 cos sdk listBuckets 不进行分页列举，账号空间个数上限为 200，可一次性列举完
-        List<com.qcloud.cos.model.Bucket> list = cosClient.listBuckets();
-        for (com.qcloud.cos.model.Bucket eachBucket : list) {
-            if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
+        List<Bucket> list = cosClient.listBuckets();
+        String region = null;
+        for (Bucket eachBucket : list) {
+            if (eachBucket.getName().equals(bucket)) {
+                region = eachBucket.getLocation();
+                break;
+            }
         }
+        cosClient.shutdown();
+        if (region != null) return region;
         throw new IOException("can not find this bucket.");
+    }
+
+    public static String getS3Region(String s3AccessKeyId, String s3SecretKey, String bucket) {
+        AWSCredentials credentials = new BasicAWSCredentials(s3AccessKeyId, s3SecretKey);
+        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(credentials);
+        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
+                .withCredentials(credentialsProvider)
+                .withRegion(Regions.DEFAULT_REGION)
+                .build();
+        String region = s3Client.getBucketLocation(bucket);
+        s3Client.shutdown();
+        return region;
     }
 
     private static final String lineSeparator = System.getProperty("line.separator");

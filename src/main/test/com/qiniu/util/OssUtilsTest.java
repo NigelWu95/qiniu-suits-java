@@ -11,23 +11,35 @@ import static org.junit.Assert.*;
 public class OssUtilsTest {
 
     @Test
-    public void testGetAliOssRegion() throws IOException {
+    public void testGetTenCosRegion() throws IOException {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.tencent.properties");
         String secretId = propertiesFile.getValue("ten-id");
         String secretKey = propertiesFile.getValue("ten-secret");
         String bucket = propertiesFile.getValue("bucket");
         String region = OssUtils.getTenCosRegion(secretId, secretKey, bucket);
-        System.out.println(region);
+        System.out.println(bucket + "\t" + region);
     }
 
     @Test
-    public void testGetTenCosRegion() throws IOException {
+    public void testGetS3Region() throws IOException {
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.s3.properties");
+        String accessId = propertiesFile.getValue("s3-id");
+        String secretKey = propertiesFile.getValue("s3-secret");
+        String bucket = propertiesFile.getValue("bucket");
+        System.out.println(bucket + "\t" + OssUtils.getS3Region(accessId, secretKey, bucket + "1"));
+        System.out.println(bucket + "\t" + OssUtils.getS3Region(accessId, secretKey, bucket + "2"));
+        System.out.println(bucket + "\t" + OssUtils.getS3Region(accessId, secretKey, bucket + "3"));
+    }
+
+    @Test
+    public void testGetAliOssRegion() throws IOException {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.ali.properties");
         String accessKeyId = propertiesFile.getValue("ali-id");
         String accessKeySecret = propertiesFile.getValue("ali-secret");
         String bucket = propertiesFile.getValue("bucket");
-        String region = OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket);
-        System.out.println(region);
+        System.out.println(bucket + "\t" + OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket));
+        System.out.println(bucket + "\t" + OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "2"));
+        System.out.println(bucket + "\t" + OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "3"));
     }
 
     @Test

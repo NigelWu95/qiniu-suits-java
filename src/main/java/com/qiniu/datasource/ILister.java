@@ -18,17 +18,11 @@ public interface ILister<E> {
 
     String getEndPrefix();
 
-    void setDelimiter(String delimiter);
-
-    String getDelimiter();
-
     void setLimit(int limit);
 
     int getLimit();
 
     void setStraight(boolean straight);
-
-    boolean getStraight();
 
     boolean canStraight();
 

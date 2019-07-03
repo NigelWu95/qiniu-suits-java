@@ -19,9 +19,6 @@ public interface IDataSource<R, S, T> {
     // 直接使用 export(source, saver, processor) 方法时可以不设置 processor
     default void setProcessor(ILineProcess<T> processor) {}
 
-    // 将 source 按照 order 顺序放入线程池进行读取操作，由子类创建线程池在多线程情况下使用并实现
-    default void execInThread(R source, int order) throws Exception {}
-
     // 根据成员变量参数直接多线程处理数据源，由子类创建线程池在需要多线程情况下使用并实现
     default void export() throws Exception {}
 

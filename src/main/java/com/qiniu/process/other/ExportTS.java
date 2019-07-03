@@ -3,7 +3,7 @@ package com.qiniu.process.other;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.VideoTS;
 import com.qiniu.process.Base;
-import com.qiniu.process.qoss.M3U8Manager;
+import com.qiniu.process.qos.M3U8Manager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.RequestUtils;
 
@@ -90,7 +90,7 @@ public class ExportTS extends Base<Map<String, String>> {
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
-            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3F");
+            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
         try {

@@ -6,7 +6,7 @@ import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.SystemUtils;
+import com.qiniu.util.UniOrderUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
@@ -33,8 +32,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected String saveFormat;
     protected String saveSeparator;
     protected Set<String> rmFields;
-    private ExecutorService executorPool; // 线程池
-    private AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     private ILineProcess<T> processor; // 定义的资源处理器
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
@@ -135,33 +132,28 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    public void execInThread(IReader<E> reader, int order) throws Exception {
-        // 如果是第一个线程直接使用初始的 processor 对象，否则使用 clone 的 processor 对象，多线程情况下不要直接使用传入的 processor，
-        // 因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-        ILineProcess<T> lineProcessor = processor == null ? null : processor.clone();
-        // 持久化结果标识信息
-        String newOrder = String.valueOf(order);
-        IResultOutput<W> saver = getNewResultSaver(newOrder);
-        executorPool.execute(() -> {
+    protected void reading(IReader<E> reader, int order) {
+        String orderStr = String.valueOf(order);
+        ILineProcess<T> lineProcessor = null;
+        IResultOutput<W> saver = null;
+        try {
+            if (processor != null) lineProcessor = processor.clone();
+            saver = getNewResultSaver(orderStr);
+            String record = "order " + orderStr + ": " + reader.getName();
+            export(reader, saver, lineProcessor);
+            record += "\tsuccessfully done";
+            System.out.println(record);
+        } catch (Exception e) {
             try {
-                String record = "order " + newOrder + ": " + reader.getName();
-                export(reader, saver, lineProcessor);
-                record += "\tsuccessfully done";
-                System.out.println(record);
-                saver.closeWriters();
-                if (lineProcessor != null) lineProcessor.closeResource();
-                reader.close();
-            } catch (Exception e) {
-                try {
-                    System.out.println("order " + newOrder + ": " + reader.getName() + "\tnextLine:" + reader.readLine());
-                } catch (IOException io) {
-                    io.printStackTrace();
-                }
-                saver.closeWriters();
-                if (lineProcessor != null) lineProcessor.closeResource();
-                SystemUtils.exit(exitBool, e);
+                System.out.println("order " + orderStr + ": " + reader.getName() + "\tnextLine:" + reader.readLine());
+            } catch (IOException io) {
+                io.printStackTrace();
             }
-        });
+        } finally {
+            if (saver != null) saver.closeWriters();
+            if (lineProcessor != null) lineProcessor.closeResource();
+            reader.close();
+        }
     }
 
     protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
@@ -172,18 +164,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        executorPool = Executors.newFixedThreadPool(runningThreads);
-        exitBool = new AtomicBoolean(false);
-        try {
-            int order = 1;
-            for (IReader<E> fileReader : fileReaders) {
-                execInThread(fileReader, order++);
-            }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) Thread.sleep(1000);
-            System.out.println(info + " finished");
-        } catch (Throwable throwable) {
-            SystemUtils.exit(exitBool, throwable);
+        // 线程池
+        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
+        for (IReader<E> fileReader : fileReaders) {
+            int order = UniOrderUtils.getOrder();
+            executorPool.execute(() -> reading(fileReader, order));
         }
+        executorPool.shutdown();
+        while (!executorPool.isTerminated())
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+        System.out.println(info + " finished");
     }
 }

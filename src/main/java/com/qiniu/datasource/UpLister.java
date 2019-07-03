@@ -49,7 +49,7 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker == null ? "" : marker;
+        this.marker = marker;
     }
 
     @Override
@@ -69,14 +69,6 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void setDelimiter(String delimiter) {}
-
-    @Override
-    public String getDelimiter() {
-        return null;
-    }
-
-    @Override
     public void setLimit(int limit) {
         this.limit = limit;
     }
@@ -89,11 +81,6 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void setStraight(boolean straight) {
         this.straight = straight;
-    }
-
-    @Override
-    public boolean getStraight() {
-        return straight;
     }
 
     @Override
@@ -189,8 +176,15 @@ public class UpLister implements ILister<FileItem> {
 
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
-        // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            marker = null;
+            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
+                FileItem last = currentLast();
+                if (last != null && endPrefix.equals(last.key))
+                    fileItems.remove(last);
+            }
+        } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
             int size = fileItems.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
@@ -233,10 +227,12 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (fileItems.size() + 1);
+        int expected = limit + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (fileItems.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<FileItem> futureList = fileItems;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
+        while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
             futureList.addAll(fileItems);

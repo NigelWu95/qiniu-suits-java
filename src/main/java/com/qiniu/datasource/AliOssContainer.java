@@ -10,13 +10,14 @@ import com.qiniu.convert.OSSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.OssUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
+public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String accessKeyId;
     private String accessKeySecret;
@@ -24,8 +25,8 @@ public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWrit
     private String endpoint;
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
-                           String bucket, List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
-                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                           String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
@@ -54,8 +55,9 @@ public class AliOssContainer extends OssContainer<OSSObjectSummary, BufferedWrit
     }
 
     @Override
-    protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+        if (marker == null || "".equals(marker)) marker = OssUtils.getAliOssMarker(start);
         return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
-                clientConfig), bucket, prefix, marker, end, null, unitLen);
+                clientConfig), bucket, prefix, marker, end, unitLen);
     }
 }

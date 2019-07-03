@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
@@ -104,8 +104,7 @@ public class MoveFile extends Base<Map<String, String>> {
     public boolean validCheck(Map<String, String> line) {
         if (line.get("key") == null) return false;
         try {
-            String toKey = FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
-            line.put("to-key", addPrefix + toKey);
+            line.put("to-key", addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex)));
             return true;
         } catch (IOException e) {
             return false;

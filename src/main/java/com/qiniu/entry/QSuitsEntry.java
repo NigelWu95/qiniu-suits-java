@@ -12,7 +12,7 @@ import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.ExportTS;
 import com.qiniu.process.qdora.*;
-import com.qiniu.process.qoss.*;
+import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.OssUtils;
@@ -33,6 +33,7 @@ public class QSuitsEntry {
     private ClientConfig tenClientConfig;
     private ClientConfiguration aliClientConfig;
     private UpYunConfig upYunConfig;
+    private com.amazonaws.ClientConfiguration s3ClientConfig;
     private String source;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
@@ -179,15 +180,32 @@ public class QSuitsEntry {
         return upYunConfig;
     }
 
+    public com.amazonaws.ClientConfiguration getS3ClientConfig() {
+        return aliClientConfig == null ? getDefaultS3ClientConfig() : s3ClientConfig;
+    }
+
+    private com.amazonaws.ClientConfiguration getDefaultS3ClientConfig() {
+        com.amazonaws.ClientConfiguration clientConfig = new com.amazonaws.ClientConfiguration();
+        if (1000 * connectTimeout > clientConfig.getConnectionTimeout())
+            clientConfig.setConnectionTimeout(1000 * connectTimeout);
+        if (1000 * readTimeout > clientConfig.getSocketTimeout())
+            clientConfig.setSocketTimeout(1000 * readTimeout);
+        if (1000 * requestTimeout > clientConfig.getRequestTimeout())
+            clientConfig.setRequestTimeout(1000 * requestTimeout);
+        return clientConfig;
+    }
+
     public IDataSource getDataSource() throws IOException {
         if ("qiniu".equals(source)) {
-            return getQiniuOssContainer();
+            return getQiniuQosContainer();
         } else if ("tencent".equals(source)) {
-            return getTenOssContainer();
+            return getTenCosContainer();
         } else if ("aliyun".equals(source)) {
             return getAliOssContainer();
         } else if ("upyun".equals(source)) {
-            return getUpYunOssContainer();
+            return getUpYosContainer();
+        } else if ("aws".equals(source) || "s3".equals(source)) {
+            return getS3Container();
         } else if ("local".equals(source)) {
             return getLocalFileContainer();
         } else {
@@ -207,7 +225,7 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
-        String addKeyPrefix = commonParams.getRmKeyPrefix();
+        String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
         LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap, unitLen, threads);
@@ -216,32 +234,32 @@ public class QSuitsEntry {
         return localFileContainer;
     }
 
-    public QiniuOssContainer getQiniuOssContainer() {
+    public QiniuQosContainer getQiniuQosContainer() {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        QiniuOssContainer qiniuOssContainer = new QiniuOssContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
+        QiniuQosContainer qiniuQosContainer = new QiniuQosContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
                 bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        qiniuOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        qiniuOssContainer.setRetryTimes(retryTimes);
-        return qiniuOssContainer;
+        qiniuQosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        qiniuQosContainer.setRetryTimes(retryTimes);
+        return qiniuQosContainer;
     }
 
-    public TenOssContainer getTenOssContainer() throws IOException {
+    public TenCosContainer getTenCosContainer() throws IOException {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        TenOssContainer tenOssContainer = new TenOssContainer(secretId, secretKey, tenClientConfig, bucket,
+        TenCosContainer tenCosContainer = new TenCosContainer(secretId, secretKey, tenClientConfig, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        tenOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        tenOssContainer.setRetryTimes(retryTimes);
-        return tenOssContainer;
+        tenCosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        tenCosContainer.setRetryTimes(retryTimes);
+        return tenCosContainer;
     }
 
     public AliOssContainer getAliOssContainer() throws IOException {
@@ -256,7 +274,7 @@ public class QSuitsEntry {
             endPoint = "http://" + regionName + ".aliyuncs.com";
         }
         if (aliClientConfig == null) aliClientConfig = getDefaultAliClientConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -267,21 +285,37 @@ public class QSuitsEntry {
         return aliOssContainer;
     }
 
-    public UpYunOssContainer getUpYunOssContainer() {
+    public UpYosContainer getUpYosContainer() {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
-        Map<String, String[]> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
 //        boolean prefixLeft = commonParams.getPrefixLeft();
 //        boolean prefixRight = commonParams.getPrefixRight();
-        UpYunOssContainer upYunOssContainer = new UpYunOssContainer(username, password, upYunConfig, bucket,
+        UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket,
                 antiPrefixes, prefixesMap,
 //                prefixLeft, prefixRight,
                 indexMap, unitLen, threads);
-        upYunOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        upYunOssContainer.setRetryTimes(retryTimes);
-        return upYunOssContainer;
+        upYosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        upYosContainer.setRetryTimes(retryTimes);
+        return upYosContainer;
+    }
+
+    public S3Container getS3Container() {
+        String s3AccessId = commonParams.getS3AccessId();
+        String s3SecretKey = commonParams.getS3SecretKey();
+        if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        if (regionName == null || "".equals(regionName)) regionName = OssUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
+        S3Container s3Container = new S3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        s3Container.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        s3Container.setRetryTimes(retryTimes);
+        return s3Container;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
@@ -333,25 +367,25 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getChangeStatus(boolean single) throws IOException {
-        String status = ParamsUtils.checked(entryParam.getValue("status"), "status", "[01]");
+        String status = ParamsUtils.checked(entryParam.getValue("status").trim(), "status", "[01]");
         return single ? new ChangeStatus(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(status))
                 : new ChangeStatus(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType(boolean single) throws IOException {
-        String type = ParamsUtils.checked(entryParam.getValue("type"), "type", "[01]");
+        String type = ParamsUtils.checked(entryParam.getValue("type").trim(), "type", "[01]");
         return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(type))
                 : new ChangeType(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle(boolean single) throws IOException {
-        String days = ParamsUtils.checked(entryParam.getValue("days"), "days", "\\d+");
+        String days = ParamsUtils.checked(entryParam.getValue("days").trim(), "days", "\\d+");
         return single ? new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(days))
                 : new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, Integer.valueOf(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile(boolean single) throws IOException {
-        String toBucket = entryParam.getValue("to-bucket");
+        String toBucket = entryParam.getValue("to-bucket").trim();
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
@@ -362,11 +396,11 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getMoveFile(boolean single) throws IOException {
-        String toBucket = entryParam.getValue("to-bucket", null);
-        if ("move".equals(process) && toBucket == null) throw new IOException("no incorrect to-bucket, please set it.");
+        String toBucket = entryParam.getValue("to-bucket", "").trim();
+        if ("move".equals(process) && toBucket.isEmpty()) throw new IOException("no incorrect to-bucket, please set it.");
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
-        String force = entryParam.getValue("prefix-force", "false");
+        String force = entryParam.getValue("prefix-force", "false").trim();
         force = ParamsUtils.checked(force, "prefix-force", "(true|false)");
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, toBucket, toKeyIndex, addPrefix,
@@ -381,28 +415,28 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getAsyncFetch(boolean single) throws IOException {
-        String toBucket = entryParam.getValue("to-bucket");
-        String domain = entryParam.getValue("domain", null);
-        String protocol = entryParam.getValue("protocol", "http");
+        String toBucket = entryParam.getValue("to-bucket").trim();
+        String domain = entryParam.getValue("domain", "").trim();
+        String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String host = entryParam.getValue("host", null);
+        String host = entryParam.getValue("host", "").trim();
         String md5Index = indexMap.containsValue("md5") ? "md5" : null;
-        String callbackUrl = entryParam.getValue("callback-url", null);
-        String callbackBody = entryParam.getValue("callback-body", null);
-        String callbackBodyType = entryParam.getValue("callback-body-type", null);
-        String callbackHost = entryParam.getValue("callback-host", null);
-        String type = entryParam.getValue("file-type", "0");
-        String ignore = entryParam.getValue("ignore-same-key", "false");
+        String callbackUrl = entryParam.getValue("callback-url", "").trim();
+        String callbackBody = entryParam.getValue("callback-body", "").trim();
+        String callbackBodyType = entryParam.getValue("callback-body-type", "").trim();
+        String callbackHost = entryParam.getValue("callback-host", "").trim();
+        String type = entryParam.getValue("file-type", "0").trim();
+        String ignore = entryParam.getValue("ignore-same-key", "false").trim();
         ignore = ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = single ? new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
                 toBucket, domain, protocol, urlIndex, addPrefix, rmPrefix)
                 : new AsyncFetch(qiniuAccessKey, qiniuSecretKey, qiniuConfig, toBucket, domain, protocol, urlIndex,
                 addPrefix, rmPrefix, savePath);
-        if (host != null || md5Index != null || callbackUrl != null || callbackBody != null || callbackBodyType != null
-                || callbackHost != null || "1".equals(type) || "true".equals(ignore)) {
+        if (!host.isEmpty() || md5Index != null || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
+                !callbackBodyType.isEmpty() || !callbackHost.isEmpty() || "1".equals(type) || "true".equals(ignore)) {
             ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
                     callbackBodyType, callbackHost, Integer.valueOf(type), Boolean.valueOf(ignore));
         }
@@ -410,8 +444,8 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getQueryAvinfo(boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", null);
-        String protocol = entryParam.getValue("protocol", "http");
+        String domain = entryParam.getValue("domain", "").trim();
+        String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         return single ? new QueryAvinfo(qiniuConfig, domain, protocol, urlIndex)
@@ -420,11 +454,11 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getPfopCommand(boolean single) throws IOException {
         String avinfoIndex = indexMap.containsValue("avinfo") ? "avinfo" : null;
-        String duration = entryParam.getValue("duration", "false");
+        String duration = entryParam.getValue("duration", "false").trim();
         duration = ParamsUtils.checked(duration, "duration", "(true|false)");
-        String size = entryParam.getValue("size", "false");
+        String size = entryParam.getValue("size", "false").trim();
         size = ParamsUtils.checked(size, "size", "(true|false)");
-        String configJson = entryParam.getValue("pfop-config", null);
+        String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         return single ? new PfopCommand(qiniuConfig, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
                 configJson, pfopConfigs)
@@ -433,13 +467,13 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPfop(boolean single) throws IOException {
-        String pipeline = entryParam.getValue("pipeline", null);
-        String forcePublic = entryParam.getValue("force-public", "false");
-        if (pipeline == null && !"true".equals(forcePublic)) {
+        String pipeline = entryParam.getValue("pipeline", "").trim();
+        String forcePublic = entryParam.getValue("force-public", "false").trim();
+        if (pipeline.isEmpty() && !"true".equals(forcePublic)) {
             throw new IOException("please set pipeline, if you don't want to use" +
                     " private pipeline, please set the force-public as true.");
         }
-        String configJson = entryParam.getValue("pfop-config", null);
+        String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         String fopsIndex = indexMap.containsValue("fops") ? "fops" : null;
         return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, pipeline, configJson,
@@ -449,7 +483,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPfopResult(boolean single) throws IOException {
-        String protocol = entryParam.getValue("protocol", "http");
+        String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String persistentIdIndex = indexMap.containsValue("pid") ? "pid" : null;
         return single ? new QueryPfopResult(qiniuConfig, protocol, persistentIdIndex)
@@ -457,10 +491,10 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getQueryHash(boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", null);
-        String algorithm = entryParam.getValue("algorithm", "md5");
+        String domain = entryParam.getValue("domain", "").trim();
+        String algorithm = entryParam.getValue("algorithm", "md5").trim();
         algorithm = ParamsUtils.checked(algorithm, "algorithm", "(md5|sha1)");
-        String protocol = entryParam.getValue("protocol", "http");
+        String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         return single ? new QueryHash(qiniuConfig, algorithm, protocol, domain, urlIndex)
@@ -473,11 +507,11 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl(boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", null);
-        String protocol = entryParam.getValue("protocol", "http");
+        String domain = entryParam.getValue("domain", "").trim();
+        String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String expires = entryParam.getValue("expires", "3600");
+        String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires))
                 : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
@@ -489,8 +523,8 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getExportTs(boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", null);
-        String protocol = entryParam.getValue("protocol", "http");
+        String domain = entryParam.getValue("domain", "").trim();
+        String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         return single ? new ExportTS(qiniuConfig, domain, protocol, urlIndex)

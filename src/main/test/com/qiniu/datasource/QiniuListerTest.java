@@ -23,7 +23,7 @@ public class QiniuListerTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
-                "fragments/z1.yanyuvideo.room7", null, null, null, 10000);
+                "fragments/z1.yanyuvideo.room7", null, null, 10000);
     }
 
     @Test

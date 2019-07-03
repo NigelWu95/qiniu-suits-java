@@ -19,19 +19,17 @@ public class QiniuLister implements ILister<FileInfo> {
     private String prefix;
     private String marker;
     private String endPrefix;
-    private String delimiter;
     private int limit;
     private boolean straight;
     private List<FileInfo> fileInfoList;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
-                       String delimiter, int limit) throws SuitsException {
+                       int limit) throws SuitsException {
         this.bucketManager = bucketManager;
         this.bucket = bucket;
         this.prefix = prefix;
-        this.marker = marker;
+        this.marker = "".equals(marker) ? null : marker;
         this.endPrefix = endPrefix;
-        this.delimiter = delimiter;
         this.limit = limit;
         doList();
     }
@@ -48,7 +46,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public void setMarker(String marker) {
-        this.marker = marker == null ? "" : marker;
+        this.marker = "".equals(marker) ? null : marker;
     }
 
     @Override
@@ -68,16 +66,6 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void setDelimiter(String delimiter) {
-        this.delimiter = delimiter;
-    }
-
-    @Override
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    @Override
     public void setLimit(int limit) {
         this.limit = limit;
     }
@@ -93,28 +81,20 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public boolean getStraight() {
-        return straight;
-    }
-
-    @Override
     public boolean canStraight() {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    private List<FileInfo> getListResult(String prefix, String delimiter, String marker, int limit) throws IOException {
-        Response response = bucketManager.listV2(bucket, prefix, marker, limit, delimiter);
+    public List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
+        Response response = bucketManager.listV2(bucket, prefix, marker, limit, null);
         if (response.statusCode != 200) throw new QiniuException(response);
-        InputStream inputStream = null;
-        Reader reader = null;
-        BufferedReader bufferedReader = null;
+        InputStream inputStream = new BufferedInputStream(response.bodyStream());
+        Reader reader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        JsonObject jsonObject = null;
+        String line;
         try {
-            inputStream = new BufferedInputStream(response.bodyStream());
-            reader = new InputStreamReader(inputStream);
-            bufferedReader = new BufferedReader(reader);
-            List<FileInfo> fileInfoList = new ArrayList<>();
-            JsonObject jsonObject = null;
-            String line;
             while ((line = bufferedReader.readLine()) != null) {
                 jsonObject = JsonUtils.toJsonObject(line);
                 if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
@@ -129,9 +109,9 @@ public class QiniuLister implements ILister<FileInfo> {
             return fileInfoList;
         } finally {
             try {
-                if (bufferedReader != null) bufferedReader.close();
-                if (reader != null) reader.close();
-                if (inputStream != null) inputStream.close();
+                bufferedReader.close();
+                reader.close();
+                inputStream.close();
                 response.close();
             } catch (IOException e) {
                 bufferedReader = null;
@@ -145,7 +125,17 @@ public class QiniuLister implements ILister<FileInfo> {
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
         // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
-        if (endPrefix != null && !"".equals(endPrefix) && endKey != null && endKey.compareTo(endPrefix) >= 0) {
+        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey.compareTo(endPrefix) == 0) {
+            marker = null;
+            // 由于 CloudStorageContainer 中设置 endPrefix 后下一级会从 endPrefix 开始直接列举，所以 endPrefix 这个文件名会出现重复，
+            // 此处对其前者删除
+            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
+                FileInfo last = currentLast();
+                if (last != null && endPrefix.equals(last.key))
+                    fileInfoList.remove(last);
+            }
+        } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
             int size = fileInfoList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
@@ -161,7 +151,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     private void doList() throws SuitsException {
         try {
-            fileInfoList = getListResult(prefix, delimiter, marker, limit);
+            fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (QiniuException e) {
             throw new SuitsException(e.code(), LogUtils.getMessage(e));
@@ -188,11 +178,15 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
-        int times = 50000 / (fileInfoList.size() + 1);
+        int expected = limit + 1;
+        if (expected <= 10000) expected = 10001;
+        int times = 100000 / (fileInfoList.size() + 1) + 1;
         times = times > 10 ? 10 : times;
         List<FileInfo> futureList = fileInfoList;
-        while (hasNext() && times > 0 && futureList.size() < 10001) {
-            if (futureList.size() > 0) times--;
+        while (hasNext() && times > 0 && futureList.size() < expected) {
+            // 优化大量删除情况下的列举速度，去掉 size>0 的条件
+//            if (futureList.size() > 0)
+                times--;
             doList();
             futureList.addAll(fileInfoList);
         }

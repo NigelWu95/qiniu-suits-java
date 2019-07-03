@@ -10,19 +10,20 @@ import com.qiniu.convert.COSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.OssUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
+public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String secretId;
     private String secretKey;
     private ClientConfig clientConfig;
 
-    public TenOssContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
-                           List<String> antiPrefixes, Map<String, String[]> prefixesMap, boolean prefixLeft,
+    public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
+                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
                            boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
@@ -51,8 +52,9 @@ public class TenOssContainer extends OssContainer<COSObjectSummary, BufferedWrit
     }
 
     @Override
-    protected ILister<COSObjectSummary> getLister(String prefix, String marker, String end) throws SuitsException {
+    protected ILister<COSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+        if (marker == null || "".equals(marker)) marker = OssUtils.getTenCosMarker(start);
         return new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig), bucket, prefix,
-                marker, end, null, unitLen);
+                marker, end, unitLen);
     }
 }

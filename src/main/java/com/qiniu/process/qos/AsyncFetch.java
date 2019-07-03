@@ -1,4 +1,4 @@
-package com.qiniu.process.qoss;
+package com.qiniu.process.qos;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
@@ -92,7 +92,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
                              String callbackBodyType, String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;
-        this.md5Index = md5Index == null ? "" : md5Index;
+        this.md5Index = md5Index;
         this.callbackUrl = callbackUrl;
         this.callbackBody = callbackBody;
         this.callbackBodyType = callbackBodyType;
@@ -129,14 +129,14 @@ public class AsyncFetch extends Base<Map<String, String>> {
     @Override
     public String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
-        String key = line.get("key");
+        String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         try {
             if (url == null || "".equals(url)) {
-                key = addPrefix + key;
-                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3F");
+                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
                 line.put(urlIndex, url);
+                key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
             } else {
-                if (key != null) key = addPrefix + key;
+                if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
                 else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
             }
             line.put("key", key);
