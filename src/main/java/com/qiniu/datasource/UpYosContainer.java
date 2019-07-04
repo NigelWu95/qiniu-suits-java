@@ -10,6 +10,7 @@ import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
+import com.qiniu.util.JsonUtils;
 import com.qiniu.util.ListingUtils;
 import com.qiniu.util.UniOrderUtils;
 
@@ -91,8 +92,9 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                             return null;
                         }
                     } catch (SuitsException e) {
-                        ListingUtils.recordPrefixConfig(prefix, null);
-                        System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
+                        JsonObject json = JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+                        ListingUtils.recordPrefixConfig(prefix, json);
+                        System.out.println("generate lister failed by " + prefix + "\t" + json);
                         e.printStackTrace();
                         return null;
                     }

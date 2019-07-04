@@ -7,10 +7,7 @@ import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.LineUtils;
-import com.qiniu.util.ListingUtils;
-import com.qiniu.util.UniOrderUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -189,6 +186,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         int retry;
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || lister.hasNext()) {
+            JsonObject json = ListingUtils.continuePrefixConf(lister);
+            if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -238,6 +237,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             record += "\tsuccessfully done";
             System.out.println(record);
+            ListingUtils.removePrefixConfig(lister.getPrefix());
         } catch (Exception e) {
             JsonObject json = ListingUtils.continuePrefixConf(lister);
             ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
@@ -330,8 +330,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     try {
                         return generateLister(startPrefix + prefix);
                     } catch (SuitsException e) {
-                        ListingUtils.recordPrefixConfig(prefix, null);
-                        System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
+                        JsonObject json = JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+                        ListingUtils.recordPrefixConfig(prefix, json);
+                        System.out.println("generate lister failed by " + prefix + "\t" + json);
                         e.printStackTrace(); return null;
                     }
                 }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
@@ -433,8 +434,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             e.printStackTrace();
             if (listerList != null) {
                 for (ILister<E> lister : listerList) {
-                    JsonObject json = ListingUtils.continuePrefixConf(lister);
-                    if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+                    if (lister.currents() != null) {
+                        JsonObject json = ListingUtils.continuePrefixConf(lister);
+                        if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+                    }
                 }
             }
         } finally {

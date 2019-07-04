@@ -305,10 +305,10 @@ public class ListingUtils {
         JsonObject prefixConf;
         String start = lister.currentStartKey();
         if (start != null) {
-            prefixConf = new JsonObject();
+            prefixConf = prefixesJson.has(lister.getPrefix()) ? prefixesJson.getAsJsonObject(lister.getPrefix()) : new JsonObject();
             prefixConf.addProperty("start", start);
         } else if (lister.getMarker() != null && !"".equals(lister.getMarker())) {
-            prefixConf = new JsonObject();
+            prefixConf = prefixesJson.has(lister.getPrefix()) ? prefixesJson.getAsJsonObject(lister.getPrefix()) : new JsonObject();
             prefixConf.addProperty("marker", lister.getMarker());
         } else {
             return null;
