@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
-import com.qiniu.model.qoss.Qhash;
+import com.qiniu.model.qos.Qhash;
 import com.qiniu.storage.Configuration;
 
 import java.util.ArrayList;

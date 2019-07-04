@@ -159,6 +159,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return ossObjectList.size() > 0 ? ossObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         OSSObjectSummary last = currentLast();

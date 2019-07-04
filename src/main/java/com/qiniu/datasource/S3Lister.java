@@ -163,6 +163,11 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return s3ObjectList.size() > 0 ? s3ObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
 //        int retry = 10;
 //        while (s3ObjectSummaryList.size() <= 0 && hasNext()) {

@@ -1,4 +1,4 @@
-package com.qiniu.model.qoss;
+package com.qiniu.model.qos;
 
 public class Qhash {
 

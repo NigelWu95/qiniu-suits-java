@@ -153,6 +153,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return cosObjectList.size() > 0 ? cosObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         COSObjectSummary last = currentLast();

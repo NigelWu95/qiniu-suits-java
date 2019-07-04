@@ -24,6 +24,8 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
+import com.qiniu.datasource.ILister;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
@@ -293,5 +295,25 @@ public class OssUtils {
         }
 
         return null;
+    }
+
+    private static volatile JsonObject prefixesJson = new JsonObject();
+
+    public static JsonObject continuePrefixConf(ILister lister) {
+        JsonObject prefixConf = new JsonObject();
+        String start = lister.currentStartKey();
+        if (start == null) prefixConf.addProperty("marker", lister.getMarker());
+        else prefixConf.addProperty("start", start);
+        prefixConf.addProperty("end", lister.getEndPrefix());
+        return prefixConf;
+    }
+
+    public synchronized static void recordPrefixConfig(String prefix, JsonObject continueConf) {
+        prefixesJson.add(prefix, continueConf);
+    }
+
+    public static void writeContinuedPrefixConfig(String path) throws IOException {
+        FileSaveMapper saveMapper = new FileSaveMapper(path);
+        saveMapper.writeKeyFile("prefixes", JsonUtils.toString(prefixesJson), true);
     }
 }

@@ -36,6 +36,8 @@ public interface ILister<E> {
 
     E currentLast();
 
+    String currentStartKey();
+
     String currentEndKey();
 
     void updateMarkerBy(E object);
