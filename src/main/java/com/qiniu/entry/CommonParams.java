@@ -327,6 +327,10 @@ public class CommonParams {
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 Map<String, String> markerAndEnd = new HashMap<>();
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
+                if (jsonFile.getElement(prefix) instanceof JsonNull) {
+                    prefixesMap.put(prefix, null);
+                    continue;
+                }
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
                     markerAndEnd.put("marker", jsonCfg.get("marker").getAsString());
