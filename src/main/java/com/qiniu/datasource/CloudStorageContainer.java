@@ -39,9 +39,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected String saveSeparator;
     protected Set<String> rmFields;
     protected ExecutorService executorPool; // 线程池
-    protected AtomicBoolean exitBool; // 多线程的原子操作 bool 值
     protected AtomicBoolean lastUpdated;
-    protected ConcurrentMap<Integer, Integer> orderMap;
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
     public static String startPoint;
@@ -189,9 +187,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<String> writeList;
         List<E> objects = lister.currents();
         int retry;
-        boolean goon = objects.size() > 0 || lister.hasNext();
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
-        while (goon) {
+        while (objects.size() > 0 || lister.hasNext()) {
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -208,10 +205,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
             }
             retry = retryTimes;
-            goon = lister.hasNext();
-            while (goon) {
+            while (true) {
                 try {
-                    lister.listForward();
+                    lister.listForward(); // 要求 listForward 实现中先做 hashNext 判断，if (!hasNext) clear();
                     objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
@@ -328,7 +324,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
-    private List<ILister<E>> getListerListByPrefixes(String startPrefix, Stream<String> prefixesStream, String startPoint) {
+    protected List<ILister<E>> getListerListByPrefixes(String startPrefix, Stream<String> prefixesStream, String startPoint) {
         return prefixesStream.filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
                 .map(prefix -> {
                     try {

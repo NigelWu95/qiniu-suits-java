@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.YOSObjToMap;
 import com.qiniu.convert.YOSObjToString;
@@ -18,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
 
@@ -69,17 +71,15 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         executorPool = Executors.newFixedThreadPool(threads);
-        exitBool = new AtomicBoolean(false);
-        orderMap = new ConcurrentHashMap<>();
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
             int order = UniOrderUtils.getOrder();
             listing(startLister, order);
             prefixes = startLister.getDirectories();
         }
-        while (prefixes != null && prefixes.size() > 0) {
-            prefixes = prefixes.parallelStream().filter(this::checkPrefix)
-                .map(prefix -> {
+        try {
+            while (prefixes != null && prefixes.size() > 0) {
+                prefixes = prefixes.parallelStream().filter(this::checkPrefix).map(prefix -> {
                     try {
                         UpLister upLister = (UpLister) generateLister(prefix);
                         int order = UniOrderUtils.getOrder();
@@ -91,16 +91,22 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                             return null;
                         }
                     } catch (SuitsException e) {
-                        e.printStackTrace();
+                        ListingUtils.recordPrefixConfig(prefix, null);
                         System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
+                        e.printStackTrace();
                         return null;
                     }
-                }).filter(Objects::nonNull)
-                .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated())
+                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            System.out.println(info + " finished");
+        } catch (Throwable e) {
+            executorPool.shutdownNow();
+            e.printStackTrace();
+        } finally {
+            ListingUtils.writeContinuedPrefixConfig(savePath);
         }
-        executorPool.shutdown();
-        while (!executorPool.isTerminated())
-            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
-        System.out.println(info + " finished");
     }
 }

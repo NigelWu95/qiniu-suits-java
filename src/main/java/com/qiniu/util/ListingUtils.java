@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Base64.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ListingUtils {
 
@@ -317,6 +319,10 @@ public class ListingUtils {
 
     public synchronized static void recordPrefixConfig(String prefix, JsonObject continueConf) {
         prefixesJson.add(prefix, continueConf);
+    }
+
+    public synchronized static void removePrefixConfig(String prefix) {
+        prefixesJson.remove(prefix);
     }
 
     public static void writeContinuedPrefixConfig(String path) throws IOException {

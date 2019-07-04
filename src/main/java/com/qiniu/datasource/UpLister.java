@@ -282,6 +282,6 @@ public class UpLister implements ILister<FileItem> {
         marker = null;
         endPrefix = null;
         fileItems = null;
-        directories = null;
+//        directories = null;
     }
 }

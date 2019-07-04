@@ -1,5 +1,6 @@
 package com.qiniu.util;
 
+import com.google.gson.JsonObject;
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.sdk.FileItem;
 import org.junit.Test;
@@ -60,5 +61,13 @@ public class ListingUtilsTest {
         String marker2 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9+RkY4MDgwODE1OTE5QTE1MTAxNTkxQUZFMzdDNjAzRjcvQCM0MDI4OTY1QjU5MTUzNEI1MDE1OTFCQkVDMEU4MDQ5QS50eHQ=";
         System.out.println(ListingUtils.decodeUpYunMarker(marker1));
         System.out.println(ListingUtils.decodeUpYunMarker(marker2));
+    }
+
+    @Test
+    public void testPrefixConfig() {
+        ListingUtils.recordPrefixConfig("a", null);
+        JsonObject json = new JsonObject();
+        json.addProperty("start", "a");
+        ListingUtils.recordPrefixConfig("a", json);
     }
 }
