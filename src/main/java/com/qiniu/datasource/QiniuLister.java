@@ -211,14 +211,14 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public String currentEndKey() {
-        if (hasNext()) return OssUtils.decodeQiniuMarker(marker);
+        if (hasNext()) return ListingUtils.decodeQiniuMarker(marker);
         FileInfo last = currentLast();
         return last != null ? last.key : null;
     }
 
     @Override
     public void updateMarkerBy(FileInfo object) {
-        if (object != null) marker = OssUtils.getQiniuMarker(object.key);
+        if (object != null) marker = ListingUtils.getQiniuMarker(object.key);
     }
 
     @Override

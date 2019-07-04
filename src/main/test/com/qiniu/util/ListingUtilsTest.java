@@ -6,9 +6,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
-
-public class OssUtilsTest {
+public class ListingUtilsTest {
 
     @Test
     public void testGetTenCosRegion() throws IOException {
@@ -16,7 +14,7 @@ public class OssUtilsTest {
         String secretId = propertiesFile.getValue("ten-id");
         String secretKey = propertiesFile.getValue("ten-secret");
         String bucket = propertiesFile.getValue("bucket");
-        String region = OssUtils.getTenCosRegion(secretId, secretKey, bucket);
+        String region = ListingUtils.getTenCosRegion(secretId, secretKey, bucket);
         System.out.println(bucket + "\t" + region);
     }
 
@@ -26,9 +24,9 @@ public class OssUtilsTest {
         String accessId = propertiesFile.getValue("s3-id");
         String secretKey = propertiesFile.getValue("s3-secret");
         String bucket = propertiesFile.getValue("bucket");
-        System.out.println(bucket + "\t" + OssUtils.getS3Region(accessId, secretKey, bucket + "1"));
-        System.out.println(bucket + "\t" + OssUtils.getS3Region(accessId, secretKey, bucket + "2"));
-        System.out.println(bucket + "\t" + OssUtils.getS3Region(accessId, secretKey, bucket + "3"));
+        System.out.println(bucket + "\t" + ListingUtils.getS3Region(accessId, secretKey, bucket + "1"));
+        System.out.println(bucket + "\t" + ListingUtils.getS3Region(accessId, secretKey, bucket + "2"));
+        System.out.println(bucket + "\t" + ListingUtils.getS3Region(accessId, secretKey, bucket + "3"));
     }
 
     @Test
@@ -37,9 +35,9 @@ public class OssUtilsTest {
         String accessKeyId = propertiesFile.getValue("ali-id");
         String accessKeySecret = propertiesFile.getValue("ali-secret");
         String bucket = propertiesFile.getValue("bucket");
-        System.out.println(bucket + "\t" + OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket));
-        System.out.println(bucket + "\t" + OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "2"));
-        System.out.println(bucket + "\t" + OssUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "3"));
+        System.out.println(bucket + "\t" + ListingUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket));
+        System.out.println(bucket + "\t" + ListingUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "2"));
+        System.out.println(bucket + "\t" + ListingUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "3"));
     }
 
     @Test
@@ -49,18 +47,18 @@ public class OssUtilsTest {
         FileItem fileItem1 = new FileItem();
         fileItem1.key = name1;
         fileItem1.attribute = "folder";
-        System.out.println(OssUtils.getUpYunMarker(bucket, fileItem1));
+        System.out.println(ListingUtils.getUpYunMarker(bucket, fileItem1));
         String name2 = "wordSplit/xml/20161220/FF8080815919A15101591AFE37C603F7/4028965B591534B501591BBEC0E8049A.txt";
         FileItem fileItem2 = new FileItem();
         fileItem2.key = name2;
-        System.out.println(OssUtils.getUpYunMarker(bucket, fileItem2));
+        System.out.println(ListingUtils.getUpYunMarker(bucket, fileItem2));
     }
 
     @Test
     public void testDecodeUpYunMarker() {
         String marker1 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9AfkZGODA4MDgxNTkxOUExNTEwMTU5MTlEN0RDOEYwMDM2";
         String marker2 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9+RkY4MDgwODE1OTE5QTE1MTAxNTkxQUZFMzdDNjAzRjcvQCM0MDI4OTY1QjU5MTUzNEI1MDE1OTFCQkVDMEU4MDQ5QS50eHQ=";
-        System.out.println(OssUtils.decodeUpYunMarker(marker1));
-        System.out.println(OssUtils.decodeUpYunMarker(marker2));
+        System.out.println(ListingUtils.decodeUpYunMarker(marker1));
+        System.out.println(ListingUtils.decodeUpYunMarker(marker2));
     }
 }

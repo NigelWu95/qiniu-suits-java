@@ -9,7 +9,7 @@ import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
@@ -57,7 +57,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 
     @Override
     protected ILister<FileItem> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = OssUtils.getUpYunMarker(username, password, bucket, start);
+        if (marker == null || "".equals(marker)) marker = ListingUtils.getUpYunMarker(username, password, bucket, start);
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 

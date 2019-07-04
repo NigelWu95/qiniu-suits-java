@@ -7,7 +7,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -262,7 +262,7 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public String currentEndKey() {
-        if (hasNext()) return OssUtils.decodeUpYunMarker(marker);
+        if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
         FileItem last = currentLast();
         return last != null ? last.key : null;
     }
@@ -270,7 +270,7 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void updateMarkerBy(FileItem object) {
         if (object != null) {
-            marker = OssUtils.getUpYunMarker(bucket, object);
+            marker = ListingUtils.getUpYunMarker(bucket, object);
         }
     }
 

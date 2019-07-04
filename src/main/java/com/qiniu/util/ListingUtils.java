@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Base64.*;
 
-public class OssUtils {
+public class ListingUtils {
 
     public static Encoder encoder = java.util.Base64.getEncoder();
     public static Decoder decoder = java.util.Base64.getDecoder();

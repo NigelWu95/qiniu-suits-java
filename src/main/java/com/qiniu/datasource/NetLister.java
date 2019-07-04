@@ -6,7 +6,7 @@ import com.netease.cloud.services.nos.model.ListObjectsRequest;
 import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.netease.cloud.services.nos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 
 import java.util.List;
 
@@ -107,7 +107,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
             nosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ServiceException e) {
-            int code = OssUtils.NetStatusCode(e.getErrorCode(), -1);
+            int code = ListingUtils.NetStatusCode(e.getErrorCode(), -1);
             throw new SuitsException(code, e.getMessage());
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
@@ -170,7 +170,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     @Override
     public void updateMarkerBy(NOSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(OssUtils.getAliOssMarker(object.getKey()));
+        if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
     }
 
     @Override

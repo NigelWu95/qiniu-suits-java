@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.entry.CommonParams;
@@ -8,6 +9,7 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.LineUtils;
+import com.qiniu.util.ListingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.IOException;
@@ -241,8 +243,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             record += "\tsuccessfully done";
             System.out.println(record);
         } catch (Exception e) {
-            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\tmarker: " +
-                    lister.getMarker() + "\tend:" + lister.getEndPrefix());
+            JsonObject json = ListingUtils.continuePrefixConf(lister);
+            ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + json);
             e.printStackTrace();
         } finally {
             UniOrderUtils.returnOrder(order);
