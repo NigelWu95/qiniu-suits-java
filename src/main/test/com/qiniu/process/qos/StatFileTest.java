@@ -30,9 +30,9 @@ public class StatFileTest {
             put("key", "4969afce9276446daa97be8a199cffd2.html");
         }};
         try {
-            String result = statFile.singleResult(map);
+            String result = statFile.processLine(map);
             System.out.println(result);
-        } catch (QiniuException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

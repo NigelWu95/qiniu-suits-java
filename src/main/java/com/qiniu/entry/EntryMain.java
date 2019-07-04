@@ -61,12 +61,7 @@ public class EntryMain {
             IDataSource dataSource = qSuitsEntry.getDataSource();
             if (dataSource != null) {
                 dataSource.setProcessor(processor);
-                try {
-                    dataSource.export();
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    System.exit(-1);
-                }
+                dataSource.export();
             }
         }
         if (processor != null) processor.closeResource();

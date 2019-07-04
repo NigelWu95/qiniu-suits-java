@@ -82,12 +82,12 @@ public class ExportTS extends Base<Map<String, String>> {
     }
 
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
         fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");

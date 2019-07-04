@@ -80,7 +80,7 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");

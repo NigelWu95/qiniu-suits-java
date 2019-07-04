@@ -92,14 +92,14 @@ public class CopyFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws IOException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addCopyOp(bucket, line.get("key"), toBucket, line.get("to-key")));
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         String toKey = line.get("to-key");
         return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false));

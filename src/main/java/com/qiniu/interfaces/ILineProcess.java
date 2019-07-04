@@ -16,17 +16,17 @@ public interface ILineProcess<T> {
 
     default void updateSavePath(String savePath) throws IOException {}
 
-    boolean validCheck(Map<String, String> line);
-
-    String processLine(T line) throws IOException;
-
-    void processLine(List<T> list) throws IOException;
-
     default void setNextProcessor(ILineProcess<T> nextProcessor) {}
 
     default ILineProcess<T> getNextProcessor() {
         return null;
     }
+
+    boolean validCheck(Map<String, String> line);
+
+    String processLine(T line) throws IOException;
+
+    void processLine(List<T> list) throws IOException;
 
     void closeResource();
 }

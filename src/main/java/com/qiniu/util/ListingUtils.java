@@ -300,11 +300,18 @@ public class ListingUtils {
     private static volatile JsonObject prefixesJson = new JsonObject();
 
     public static JsonObject continuePrefixConf(ILister lister) {
-        JsonObject prefixConf = new JsonObject();
+        JsonObject prefixConf;
         String start = lister.currentStartKey();
-        if (start == null) prefixConf.addProperty("marker", lister.getMarker());
-        else prefixConf.addProperty("start", start);
-        prefixConf.addProperty("end", lister.getEndPrefix());
+        if (start != null) {
+            prefixConf = new JsonObject();
+            prefixConf.addProperty("start", start);
+        } else if (lister.getMarker() != null && !"".equals(lister.getMarker())) {
+            prefixConf = new JsonObject();
+            prefixConf.addProperty("marker", lister.getMarker());
+        } else {
+            return null;
+        }
+        if (lister.getEndPrefix() != null) prefixConf.addProperty("end", lister.getEndPrefix());
         return prefixConf;
     }
 
@@ -314,6 +321,6 @@ public class ListingUtils {
 
     public static void writeContinuedPrefixConfig(String path) throws IOException {
         FileSaveMapper saveMapper = new FileSaveMapper(path);
-        saveMapper.writeKeyFile("prefixes", JsonUtils.toString(prefixesJson), true);
+        saveMapper.writeKeyFile("prefixes", JsonUtils.toJson(prefixesJson), true);
     }
 }

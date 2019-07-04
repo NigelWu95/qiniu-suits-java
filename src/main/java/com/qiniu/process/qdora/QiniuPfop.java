@@ -103,7 +103,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             StringBuilder cmdBuilder = new StringBuilder();

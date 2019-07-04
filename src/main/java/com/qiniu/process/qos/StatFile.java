@@ -107,7 +107,7 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
+    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
             throws IOException {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<Map<String, String>> retryList = new ArrayList<>();
@@ -149,7 +149,7 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
         try {

@@ -127,7 +127,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String url = line.get(urlIndex);
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         try {

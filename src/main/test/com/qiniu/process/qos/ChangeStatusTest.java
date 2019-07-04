@@ -31,9 +31,9 @@ public class ChangeStatusTest {
             put("key", "post/d6649026-952b-9f20-a542-29554f9f952d.html");
         }};
         try {
-            String result = changeStatus.singleResult(map);
+            String result = changeStatus.processLine(map);
             System.out.println(result);
-        } catch (QiniuException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

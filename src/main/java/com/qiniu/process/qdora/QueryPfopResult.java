@@ -68,7 +68,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    public void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult;
             try {
@@ -97,7 +97,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String pid = line.get(pidIndex);
         return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }

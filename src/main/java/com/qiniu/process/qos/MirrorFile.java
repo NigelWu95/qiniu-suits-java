@@ -49,7 +49,7 @@ public class MirrorFile extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
         bucketManager.prefetch(bucket, key);
         return key;

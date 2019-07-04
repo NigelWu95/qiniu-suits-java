@@ -56,14 +56,14 @@ public class DeleteFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addDeleteOp(bucket, line.get("key")));
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
         return key + "\t" + HttpRespUtils.getResult(bucketManager.delete(bucket, key));
     }

@@ -14,7 +14,6 @@ import com.qiniu.util.UniOrderUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -329,12 +328,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
-    private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream, String startPoint) {
+    private List<ILister<E>> getListerListByPrefixes(String startPrefix, Stream<String> prefixesStream, String startPoint) {
         return prefixesStream.filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
                 .map(prefix -> {
                     try {
-                        return generateLister(prefix);
+                        return generateLister(startPrefix + prefix);
                     } catch (SuitsException e) {
+                        ListingUtils.recordPrefixConfig(prefix, null);
                         System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
                         e.printStackTrace(); return null;
                     }
@@ -346,7 +346,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String point = computePoint(lister, true);
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (point != null) {
-            nextLevelList.addAll(getListerListByPrefixes(originPrefixList.stream(), point));
+            nextLevelList.addAll(getListerListByPrefixes(lister.getPrefix(), originPrefixList.stream(), point));
         }
         Iterator<ILister<E>> it = nextLevelList.iterator();
         int size = nextLevelList.size();
@@ -396,44 +396,53 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        lastUpdated = new AtomicBoolean(false);
-        executorPool = Executors.newFixedThreadPool(threads);
-        exitBool = new AtomicBoolean(false);
-        orderMap = new ConcurrentHashMap<>();
-        List<ILister<E>> listerList = null;
+        ILister<E> startLister;
+        String point = "";
         String lastPrefix = "";
         if (prefixes == null || prefixes.size() == 0) {
-            ILister<E> startLister = generateLister("");
-            boolean once = true;
-            if (threads > 1) {
-                String point = computePoint(startLister, false);
-                if (point != null) {
-                    once = false;
-                    listerList = getListerListByPrefixes(originPrefixList.parallelStream(), point);
-                    listerList.add(startLister);
-                }
-            }
-            if (once) {
-                startLister.setPrefix("");
-                if (!startLister.hasNext()) startLister.updateMarkerBy(startLister.currentLast());
+            startLister = generateLister("");
+            if (threads > 1) point = computePoint(startLister, false);
+            if (point == null || "".equals(point)) {
                 int order = UniOrderUtils.getOrder();
-                executorPool.execute(() -> listing(startLister, order));
+                listing(startLister, order);
+                return;
+            } else {
+                prefixes = originPrefixList;
             }
         } else {
-            lastPrefix = prefixRight ? "" : prefixes.get(prefixes.size() - 1);
-            listerList = getListerListByPrefixes(prefixes.parallelStream(), "");
             if (prefixLeft) {
-                ILister<E> firstLister = generateLister("");
-                firstLister.setEndPrefix(prefixes.get(0));
-                listerList.add(firstLister);
+                startLister = generateLister("");
+                startLister.setEndPrefix(prefixes.get(0));
+            } else {
+                startLister = generateLister(prefixes.get(0));
+                prefixes = prefixes.subList(1, prefixes.size());
             }
+            lastPrefix = prefixRight ? "" : prefixes.get(prefixes.size() - 1);
         }
-        while (listerList != null && listerList.size() > 0) {
-            listerList = computeNextAndFilterList(listerList, lastPrefix);
+        lastUpdated = new AtomicBoolean(false);
+        executorPool = Executors.newFixedThreadPool(threads);
+        List<ILister<E>> listerList = null;
+        try {
+            listerList = getListerListByPrefixes("", prefixes.parallelStream(), point);
+            listerList.add(startLister);
+            while (listerList != null && listerList.size() > 0) {
+                listerList = computeNextAndFilterList(listerList, lastPrefix);
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated())
+                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            System.out.println(info + " finished");
+        } catch (Throwable e) {
+            executorPool.shutdownNow();
+            e.printStackTrace();
+            if (listerList != null) {
+                for (ILister<E> lister : listerList) {
+                    JsonObject json = ListingUtils.continuePrefixConf(lister);
+                    if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+                }
+            }
+        } finally {
+            ListingUtils.writeContinuedPrefixConfig(savePath);
         }
-        executorPool.shutdown();
-        while (!executorPool.isTerminated())
-            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
-        System.out.println(info + " finished");
     }
 }
