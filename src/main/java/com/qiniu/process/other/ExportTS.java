@@ -102,4 +102,14 @@ public class ExportTS extends Base<Map<String, String>> {
             throw new QiniuException(e, e.getMessage());
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        domain = null;
+        protocol = null;
+        urlIndex = null;
+        configuration = null;
+        m3U8Manager = null;
+    }
 }

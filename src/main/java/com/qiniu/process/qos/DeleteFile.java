@@ -67,4 +67,12 @@ public class DeleteFile extends Base<Map<String, String>> {
         String key = line.get("key");
         return key + "\t" + HttpRespUtils.getResult(bucketManager.delete(bucket, key));
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

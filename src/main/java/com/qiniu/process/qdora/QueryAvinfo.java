@@ -98,4 +98,14 @@ public class QueryAvinfo extends Base<Map<String, String>> {
             throw new QiniuException(null, "empty_result");
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        configuration = null;
+        mediaManager = null;
+        domain = null;
+        protocol = null;
+        urlIndex = null;
+    }
 }

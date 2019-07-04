@@ -74,4 +74,12 @@ public class ChangeStatus extends Base<Map<String, String>> {
         String key = line.get("key");
         return key + "\t" + status + "\t" + HttpRespUtils.getResult(bucketManager.changeStatus(bucket, key, status));
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

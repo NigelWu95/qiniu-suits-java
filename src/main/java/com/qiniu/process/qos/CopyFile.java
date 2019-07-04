@@ -104,4 +104,16 @@ public class CopyFile extends Base<Map<String, String>> {
         String toKey = line.get("to-key");
         return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false));
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        toBucket = null;
+        toKeyIndex = null;
+        addPrefix = null;
+        rmPrefix = null;
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

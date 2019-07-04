@@ -108,4 +108,14 @@ public class QueryHash extends Base<Map<String, String>> {
             throw new QiniuException(null, "empty_result");
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        configuration = null;
+        fileChecker = null;
+        domain = null;
+        protocol = null;
+        urlIndex = null;
+    }
 }

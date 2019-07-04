@@ -142,4 +142,13 @@ public class PfopCommand extends Base<Map<String, String>> {
         }
         return String.join("\n", resultList);
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        avinfoIndex = null;
+        pfopConfigs = null;
+        configuration = null;
+        mediaManager = null;
+    }
 }

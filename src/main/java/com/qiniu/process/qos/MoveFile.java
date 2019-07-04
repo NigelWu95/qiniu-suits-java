@@ -134,4 +134,16 @@ public class MoveFile extends Base<Map<String, String>> {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        toBucket = null;
+        toKeyIndex = null;
+        addPrefix = null;
+        rmPrefix = null;
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

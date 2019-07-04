@@ -272,6 +272,11 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void close() {
         upYunClient = null;
+        bucket = null;
+        prefix = null;
+        marker = null;
+        endPrefix = null;
         fileItems = null;
+        directories = null;
     }
 }

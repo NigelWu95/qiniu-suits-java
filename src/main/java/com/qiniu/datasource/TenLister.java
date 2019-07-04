@@ -166,7 +166,9 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void close() {
-        this.cosClient.shutdown();
-        this.cosObjectList = null;
+        cosClient.shutdown();
+        listObjectsRequest = null;
+        endPrefix = null;
+        cosObjectList = null;
     }
 }

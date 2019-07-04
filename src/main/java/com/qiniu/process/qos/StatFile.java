@@ -158,4 +158,15 @@ public class StatFile extends Base<Map<String, String>> {
             throw new QiniuException(e, e.getMessage());
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        format = null;
+        separator = null;
+        typeConverter = null;
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

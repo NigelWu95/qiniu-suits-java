@@ -96,4 +96,13 @@ public class PrivateUrl extends Base<Map<String, String>> {
             throw new QiniuException(e, e.getMessage());
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        auth = null;
+        domain = null;
+        protocol = null;
+        urlIndex = null;
+    }
 }

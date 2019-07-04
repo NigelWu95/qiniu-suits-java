@@ -97,6 +97,10 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 }
             }
         }
+        writerMap = null;
+        targetFileDir = null;
+        prefix = null;
+        suffix = null;
     }
 
     private void writeLine(String key, String item, boolean flush) throws IOException {

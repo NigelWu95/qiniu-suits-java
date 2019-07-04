@@ -77,4 +77,12 @@ public class ChangeType extends Base<Map<String, String>> {
         return key + "\t" + type + "\t" + HttpRespUtils.getResult(bucketManager.changeType(bucket, key, type == 0 ?
                 StorageType.COMMON : StorageType.INFREQUENCY));
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

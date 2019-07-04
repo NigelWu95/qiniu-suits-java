@@ -268,6 +268,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     }
 
     public void closeResource() {
+        authKey1 = null;
+        authKey2 = null;
+        bucket = null;
+        saveIndex = null;
+        savePath = null;
         if (fileSaveMapper != null) fileSaveMapper.closeWriters();
     }
 }

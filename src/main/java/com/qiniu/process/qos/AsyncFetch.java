@@ -146,4 +146,22 @@ public class AsyncFetch extends Base<Map<String, String>> {
         Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
         return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        domain = null;
+        protocol = null;
+        urlIndex = null;
+        addPrefix = null;
+        rmPrefix = null;
+        host = null;
+        md5Index = null;
+        callbackUrl = null;
+        callbackBody = null;
+        callbackBodyType = null;
+        callbackHost = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

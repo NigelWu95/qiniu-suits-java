@@ -119,4 +119,14 @@ public class QiniuPfop extends Base<Map<String, String>> {
             return key + "\t" + operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
         }
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        pfopParams = null;
+        pfopConfigs = null;
+        fopsIndex = null;
+        configuration = null;
+        operationManager = null;
+    }
 }

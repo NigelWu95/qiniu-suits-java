@@ -172,7 +172,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public void close() {
-        this.ossClient.shutdown();
-        this.ossObjectList = null;
+        ossClient.shutdown();
+        listObjectsRequest = null;
+        endPrefix = null;
+        ossObjectList = null;
     }
 }

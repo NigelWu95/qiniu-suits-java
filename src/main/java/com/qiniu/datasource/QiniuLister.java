@@ -219,6 +219,10 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void close() {
         bucketManager = null;
+        bucket = null;
+        prefix = null;
+        marker = null;
+        endPrefix = null;
         fileInfoList = null;
     }
 }

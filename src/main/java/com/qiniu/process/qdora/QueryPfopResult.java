@@ -101,4 +101,13 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         String pid = line.get(pidIndex);
         return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        configuration = null;
+        mediaManager = null;
+        protocol = null;
+        pidIndex = null;
+    }
 }

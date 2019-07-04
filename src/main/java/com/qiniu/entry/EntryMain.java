@@ -2,6 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.config.PropertiesFile;
+import com.qiniu.datasource.CloudStorageContainer;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.IEntryParam;
@@ -60,7 +61,12 @@ public class EntryMain {
             IDataSource dataSource = qSuitsEntry.getDataSource();
             if (dataSource != null) {
                 dataSource.setProcessor(processor);
-                dataSource.export();
+                try {
+                    dataSource.export();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
             }
         }
         if (processor != null) processor.closeResource();

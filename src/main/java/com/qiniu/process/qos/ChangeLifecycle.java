@@ -74,4 +74,12 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
         String key = line.get("key");
         return key + "\t" + days + "\t" + HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, key, days));
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
+    }
 }

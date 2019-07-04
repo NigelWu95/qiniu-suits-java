@@ -54,4 +54,11 @@ public class MirrorFile extends Base<Map<String, String>> {
         bucketManager.prefetch(bucket, key);
         return key;
     }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        configuration = null;
+        bucketManager = null;
+    }
 }

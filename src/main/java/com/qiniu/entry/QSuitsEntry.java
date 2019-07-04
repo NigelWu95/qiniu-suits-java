@@ -6,9 +6,12 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
+import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.ExportTS;
 import com.qiniu.process.qdora.*;
@@ -324,7 +327,20 @@ public class QSuitsEntry {
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         if (baseFilter != null || seniorFilter != null) {
-            processor = new MapProcess(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields);
+            processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
+                    saveSeparator, rmFields) {
+
+                public void updateSavePath(String savePath) throws IOException {
+                    this.savePath = savePath;
+                    this.fileSaveMapper.closeWriters();
+                    this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+                }
+
+                @Override
+                protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
+                    return new MapToString(saveFormat, saveSeparator, rmFields);
+                }
+            };
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {
