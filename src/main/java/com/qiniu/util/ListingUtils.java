@@ -305,10 +305,12 @@ public class ListingUtils {
         JsonObject prefixConf;
         String start = lister.currentStartKey();
         if (start != null) {
-            prefixConf = prefixesJson.has(lister.getPrefix()) ? prefixesJson.getAsJsonObject(lister.getPrefix()) : new JsonObject();
+            prefixConf = JsonUtils.isNull(prefixesJson.get(lister.getPrefix())) ?  new JsonObject() :
+                    prefixesJson.getAsJsonObject(lister.getPrefix());
             prefixConf.addProperty("start", start);
         } else if (lister.getMarker() != null && !"".equals(lister.getMarker())) {
-            prefixConf = prefixesJson.has(lister.getPrefix()) ? prefixesJson.getAsJsonObject(lister.getPrefix()) : new JsonObject();
+            prefixConf = JsonUtils.isNull(prefixesJson.get(lister.getPrefix())) ?  new JsonObject() :
+                    prefixesJson.getAsJsonObject(lister.getPrefix());
             prefixConf.addProperty("marker", lister.getMarker());
         } else {
             return null;
@@ -326,7 +328,8 @@ public class ListingUtils {
     }
 
     public static void writeContinuedPrefixConfig(String path) throws IOException {
+        FileSaveMapper.ext = ".json";
         FileSaveMapper saveMapper = new FileSaveMapper(path);
-        saveMapper.writeKeyFile("prefixes", JsonUtils.toJson(prefixesJson), true);
+        saveMapper.writeKeyFile(path.substring(path.lastIndexOf("/") + 1) + "-prefixes", JsonUtils.toJson(prefixesJson), true);
     }
 }

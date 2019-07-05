@@ -173,6 +173,18 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return retry;
     }
 
+    protected JsonObject recordLister(ILister<E> lister) {
+        JsonObject json = ListingUtils.continuePrefixConf(lister);
+        if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+        return json;
+    }
+
+    protected JsonObject recordListerByPrefix(String prefix) {
+        JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
+        ListingUtils.recordPrefixConfig(prefix, json);
+        return json;
+    }
+
     /**
      * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
      * @param lister 已经初始化的 lister 对象
@@ -189,8 +201,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         int retry;
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || lister.hasNext()) {
-            JsonObject json = ListingUtils.continuePrefixConf(lister);
-            if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+            recordLister(lister);
             if (saveTotal) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -242,9 +253,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             System.out.println(record);
             ListingUtils.removePrefixConfig(lister.getPrefix());
         } catch (Exception e) {
-            JsonObject json = ListingUtils.continuePrefixConf(lister);
-            if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
-            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + json);
+            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + recordLister(lister));
             e.printStackTrace();
         } finally {
             UniOrderUtils.returnOrder(order);
@@ -328,20 +337,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream) {
-        prefixesStream = prefixesStream.peek(prefix -> {
-            JsonObject json = prefixesMap.get(prefix) == null ? null :
-                    JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-            ListingUtils.recordPrefixConfig(prefix, json);
-        });
+        prefixesStream = prefixesStream.peek(this::recordListerByPrefix);
         return prefixesStream.filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
                 .map(prefix -> {
                     try {
                         return generateLister(prefix);
                     } catch (SuitsException e) {
-                        JsonObject json = prefixesMap.get(prefix) == null ? null :
-                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-                        ListingUtils.recordPrefixConfig(prefix, json);
-                        System.out.println("generate lister failed by " + prefix + "\t" + json);
+                        System.out.println("generate lister failed by " + prefix + "\t" + recordListerByPrefix(prefix));
                         e.printStackTrace(); return null;
                     }
                 }).filter(generated -> {
@@ -455,8 +457,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (listerList != null) {
                 for (ILister<E> lister : listerList) {
                     if (lister.currents() != null) {
-                        JsonObject json = ListingUtils.continuePrefixConf(lister);
-                        if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+                        recordLister(lister);
                     }
                 }
             }

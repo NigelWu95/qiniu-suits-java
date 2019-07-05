@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.YOSObjToMap;
 import com.qiniu.convert.YOSObjToString;
@@ -10,18 +9,14 @@ import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
-import com.qiniu.util.JsonUtils;
 import com.qiniu.util.ListingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
 
@@ -67,9 +62,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 
     private List<ILister<FileItem>> getListerListByPrefixes(List<String> prefixes) {
         for (String prefix : prefixes) {
-            JsonObject json = prefixesMap.get(prefix) == null ? null :
-                    JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-            ListingUtils.recordPrefixConfig(prefix, json);
+            recordListerByPrefix(prefix);
         }
         return prefixes.parallelStream().filter(this::checkPrefix)
                 .map(prefix -> {
@@ -84,10 +77,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                             return null;
                         }
                     } catch (SuitsException e) {
-                        JsonObject json = prefixesMap.get(prefix) == null ? null :
-                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-                        ListingUtils.recordPrefixConfig(prefix, json);
-                        System.out.println("generate lister failed by " + prefix + "\t" + json);
+                        System.out.println("generate lister failed by " + prefix + "\t" + recordListerByPrefix(prefix));
                         e.printStackTrace(); return null;
                     }
                 }).filter(Objects::nonNull)
@@ -151,10 +141,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             e.printStackTrace();
             if (listerList != null) {
                 for (ILister<FileItem> lister : listerList) {
-                    if (lister.currents() != null) {
-                        JsonObject json = ListingUtils.continuePrefixConf(lister);
-                        if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
-                    }
+                    if (lister.currents() != null) recordLister(lister);
                 }
             }
         } finally {

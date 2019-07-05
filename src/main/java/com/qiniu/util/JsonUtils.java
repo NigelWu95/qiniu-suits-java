@@ -4,12 +4,25 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.List;
+import java.util.Map;
 
 public final class JsonUtils {
 
     private static Gson gson = new Gson();
     private static Gson escapeGson = new GsonBuilder().disableHtmlEscaping().create();
     private static JsonParser jsonParser = new JsonParser();
+
+    public static boolean isNull(JsonElement jsonElement) {
+        return jsonElement == null || jsonElement instanceof JsonNull;
+    }
+
+    public static JsonObject getOrNew(JsonObject jsonObject, String key) {
+        if (jsonObject.has(key) && !isNull(jsonObject.get(key))) {
+            return jsonObject.getAsJsonObject(key);
+        } else {
+            return new JsonObject();
+        }
+    }
 
     public static <T> T fromJson(String jsonData, Class<T> clazz) {
         return gson.fromJson(jsonData, clazz);
@@ -37,6 +50,14 @@ public final class JsonUtils {
 
     public static String toJsonWithoutUrlEscape(Object srcObject) {
         return escapeGson.toJson(srcObject).replace("\\\\", "\\");
+    }
+
+    public static JsonObject toJsonObject(Map<String, String> map) {
+        JsonObject jsonObject = new JsonObject();
+        for (String key : map.keySet()) {
+            jsonObject.addProperty(key, map.get(key));
+        }
+        return jsonObject;
     }
 
     public static <T> List<T> fromJsonArray(JsonArray jsonElements, TypeToken<List<T>> typeToken) {
