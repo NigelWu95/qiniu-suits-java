@@ -65,8 +65,13 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
-    private List<ILister<FileItem>> getListerListByPrefixes(Stream<String> prefixesStream) {
-        return prefixesStream.filter(this::checkPrefix)
+    private List<ILister<FileItem>> getListerListByPrefixes(List<String> prefixes) {
+        for (String prefix : prefixes) {
+            JsonObject json = prefixesMap.get(prefix) == null ? null :
+                    JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+            ListingUtils.recordPrefixConfig(prefix, json);
+        }
+        return prefixes.parallelStream().filter(this::checkPrefix)
                 .map(prefix -> {
                     try {
                         UpLister upLister = (UpLister) generateLister(prefix);
@@ -79,7 +84,8 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                             return null;
                         }
                     } catch (SuitsException e) {
-                        JsonObject json = JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+                        JsonObject json = prefixesMap.get(prefix) == null ? null :
+                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
                         ListingUtils.recordPrefixConfig(prefix, json);
                         System.out.println("generate lister failed by " + prefix + "\t" + json);
                         e.printStackTrace(); return null;
@@ -104,12 +110,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         }
         List<ILister<FileItem>> listerList = null;
         try {
-            for (String prefix : prefixes) {
-                JsonObject json = prefixesMap.get(prefix) == null ? null :
-                        JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-                ListingUtils.recordPrefixConfig(prefix, json);
-            }
-            listerList = getListerListByPrefixes(prefixes.parallelStream());
+            listerList = getListerListByPrefixes(prefixes);
             while (listerList != null && listerList.size() > 0) {
                 prefixes = listerList.parallelStream().map(lister -> ((UpLister) lister).getDirectories())
                         .filter(Objects::nonNull)
@@ -117,8 +118,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 if (prefixes == null || prefixes.size() == 0) {
                     listerList = null;
                 } else {
-                    for (String prefix : prefixes) ListingUtils.recordPrefixConfig(prefix, null);
-                    listerList = getListerListByPrefixes(prefixes.parallelStream());
+                    listerList = getListerListByPrefixes(prefixes);
                 }
             }
 //            while (prefixes != null && prefixes.size() > 0) {

@@ -239,7 +239,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             ListingUtils.removePrefixConfig(lister.getPrefix());
         } catch (Exception e) {
             JsonObject json = ListingUtils.continuePrefixConf(lister);
-            ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+            if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + json);
             e.printStackTrace();
         } finally {
@@ -323,11 +323,16 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
-    private List<ILister<E>> getListerListByPrefixes(String startPrefix, Stream<String> prefixesStream, String startPoint) {
+    private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream) {
+        prefixesStream = prefixesStream.peek(prefix -> {
+            JsonObject json = prefixesMap.get(prefix) == null ? null :
+                    JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+            ListingUtils.recordPrefixConfig(prefix, json);
+        });
         return prefixesStream.filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
                 .map(prefix -> {
                     try {
-                        return generateLister(startPrefix + prefix);
+                        return generateLister(prefix);
                     } catch (SuitsException e) {
                         JsonObject json = prefixesMap.get(prefix) == null ? null :
                                 JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
@@ -335,7 +340,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         System.out.println("generate lister failed by " + prefix + "\t" + json);
                         e.printStackTrace(); return null;
                     }
-                }).filter(generated -> generated != null && (generated.currents().size() > 0 || generated.hasNext()))
+                }).filter(generated -> {
+                    if (generated == null) return false;
+                    else if (generated.currents().size() > 0 || generated.hasNext()) return true;
+                    else {
+                        ListingUtils.removePrefixConfig(generated.getPrefix());
+                        return false;
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
@@ -343,7 +355,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String point = computePoint(lister, true);
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (point != null) {
-            nextLevelList.addAll(getListerListByPrefixes(lister.getPrefix(), originPrefixList.stream(), point));
+            List<String> nextPrefixes = originPrefixList.stream()
+                    .filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
+                    .collect(Collectors.toList());
+            nextLevelList.addAll(getListerListByPrefixes(nextPrefixes.stream()));
         }
         Iterator<ILister<E>> it = nextLevelList.iterator();
         int size = nextLevelList.size();
@@ -420,7 +435,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         executorPool = Executors.newFixedThreadPool(threads);
         List<ILister<E>> listerList = null;
         try {
-            listerList = getListerListByPrefixes("", prefixes.parallelStream(), point);
+            prefixes = prefixes.parallelStream().filter(this::checkPrefix).collect(Collectors.toList());
+            listerList = getListerListByPrefixes(prefixes.parallelStream());
             listerList.add(startLister);
             while (listerList != null && listerList.size() > 0) {
                 listerList = computeNextAndFilterList(listerList, lastPrefix);
@@ -440,6 +456,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     }
                 }
             }
+            System.out.println("lastUpdated: " + lastUpdated.get());
         } finally {
             ListingUtils.writeContinuedPrefixConfig(savePath);
         }
