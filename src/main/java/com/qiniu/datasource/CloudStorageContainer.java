@@ -462,7 +462,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             System.out.println("lastUpdated: " + lastUpdated.get());
         } finally {
-            ListingUtils.writeContinuedPrefixConfig(savePath);
+            ListingUtils.writeContinuedPrefixConfig(savePath, "prefixes");
         }
     }
 }

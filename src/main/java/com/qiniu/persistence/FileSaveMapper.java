@@ -12,6 +12,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     private String prefix = "";
     private String suffix = "";
     public static String ext = ".txt";
+    public static boolean append = true;
     private int retryTimes = 5;
 
     public FileSaveMapper(String targetFileDir) throws IOException {
@@ -43,7 +44,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         while (retry > 0) {
             try {
                 if (!mkDirAndFile(resultFile)) throw new IOException("create result file " + resultFile + " failed.");
-                BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, true));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, append));
                 writerMap.put(key, writer);
                 retry = 0;
             } catch (IOException e) {

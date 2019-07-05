@@ -53,10 +53,13 @@ public final class FileUtils {
         }
     }
 
+    public static String pathSeparator = System.getProperty("file.separator");
+    public static String userHome = System.getProperty("user.home");
+
     public static String realPathWithUserHome(String pathStr) throws IOException {
         if (pathStr == null || "".equals(pathStr)) throw new IOException("the path is empty.");
-        if (pathStr.startsWith("~" + System.getProperty("file.separator"))) {
-            return System.getProperty("user.home") + pathStr.substring(1);
+        if (pathStr.startsWith("~" + pathSeparator)) {
+            return userHome + pathStr.substring(1);
         } else {
             return pathStr;
         }

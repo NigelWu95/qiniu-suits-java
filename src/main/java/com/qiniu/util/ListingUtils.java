@@ -327,9 +327,12 @@ public class ListingUtils {
         prefixesJson.remove(prefix);
     }
 
-    public static void writeContinuedPrefixConfig(String path) throws IOException {
+    public static void writeContinuedPrefixConfig(String path, String name) throws IOException {
         FileSaveMapper.ext = ".json";
-        FileSaveMapper saveMapper = new FileSaveMapper(path);
-        saveMapper.writeKeyFile(path.substring(path.lastIndexOf("/") + 1) + "-prefixes", JsonUtils.toJson(prefixesJson), true);
+        FileSaveMapper.append = false;
+        FileSaveMapper saveMapper = new FileSaveMapper(path + FileUtils.pathSeparator + "..");
+        saveMapper.writeKeyFile(path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name,
+                JsonUtils.toJson(prefixesJson), true);
+        saveMapper.closeWriters();
     }
 }
