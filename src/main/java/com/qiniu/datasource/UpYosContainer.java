@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
 
@@ -64,6 +65,29 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
+    private List<ILister<FileItem>> getListerListByPrefixes(Stream<String> prefixesStream) {
+        return prefixesStream.filter(this::checkPrefix)
+                .map(prefix -> {
+                    try {
+                        UpLister upLister = (UpLister) generateLister(prefix);
+                        int order = UniOrderUtils.getOrder();
+                        if (upLister.hasNext() || upLister.getDirectories() != null) {
+                            listing(upLister, order);
+                            return upLister;
+                        } else {
+                            executorPool.execute(() -> listing(upLister, order));
+                            return null;
+                        }
+                    } catch (SuitsException e) {
+                        JsonObject json = JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+                        ListingUtils.recordPrefixConfig(prefix, json);
+                        System.out.println("generate lister failed by " + prefix + "\t" + json);
+                        e.printStackTrace(); return null;
+                    }
+                }).filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
@@ -78,28 +102,46 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             listing(startLister, order);
             prefixes = startLister.getDirectories();
         }
+        List<ILister<FileItem>> listerList = null;
         try {
-            while (prefixes != null && prefixes.size() > 0) {
-                prefixes = prefixes.parallelStream().filter(this::checkPrefix).map(prefix -> {
-                    try {
-                        UpLister upLister = (UpLister) generateLister(prefix);
-                        int order = UniOrderUtils.getOrder();
-                        if (upLister.hasNext() || upLister.getDirectories() != null) {
-                            listing(upLister, order);
-                            return upLister.getDirectories();
-                        } else {
-                            executorPool.execute(() -> listing(upLister, order));
-                            return null;
-                        }
-                    } catch (SuitsException e) {
-                        JsonObject json = JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-                        ListingUtils.recordPrefixConfig(prefix, json);
-                        System.out.println("generate lister failed by " + prefix + "\t" + json);
-                        e.printStackTrace();
-                        return null;
-                    }
-                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            for (String prefix : prefixes) {
+                JsonObject json = prefixesMap.get(prefix) == null ? null :
+                        JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+                ListingUtils.recordPrefixConfig(prefix, json);
             }
+            listerList = getListerListByPrefixes(prefixes.parallelStream());
+            while (listerList != null && listerList.size() > 0) {
+                prefixes = listerList.parallelStream().map(lister -> ((UpLister) lister).getDirectories())
+                        .filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                if (prefixes == null || prefixes.size() == 0) {
+                    listerList = null;
+                } else {
+                    for (String prefix : prefixes) ListingUtils.recordPrefixConfig(prefix, null);
+                    listerList = getListerListByPrefixes(prefixes.parallelStream());
+                }
+            }
+//            while (prefixes != null && prefixes.size() > 0) {
+//                prefixes = prefixes.parallelStream().filter(this::checkPrefix).map(prefix -> {
+//                    try {
+//                        UpLister upLister = (UpLister) generateLister(prefix);
+//                        int order = UniOrderUtils.getOrder();
+//                        if (upLister.hasNext() || upLister.getDirectories() != null) {
+//                            listing(upLister, order);
+//                            return upLister.getDirectories();
+//                        } else {
+//                            executorPool.execute(() -> listing(upLister, order));
+//                            return null;
+//                        }
+//                    } catch (SuitsException e) {
+//                        JsonObject json = prefixesMap.get(prefix) == null ? null :
+//                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+//                        ListingUtils.recordPrefixConfig(prefix, json);
+//                        System.out.println("generate lister failed by " + prefix + "\t" + json);
+//                        e.printStackTrace(); return null;
+//                    }
+//                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+//            }
             executorPool.shutdown();
             while (!executorPool.isTerminated())
                 try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
@@ -107,6 +149,14 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
+            if (listerList != null) {
+                for (ILister<FileItem> lister : listerList) {
+                    if (lister.currents() != null) {
+                        JsonObject json = ListingUtils.continuePrefixConf(lister);
+                        if (json != null) ListingUtils.recordPrefixConfig(lister.getPrefix(), json);
+                    }
+                }
+            }
         } finally {
             ListingUtils.writeContinuedPrefixConfig(savePath);
         }

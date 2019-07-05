@@ -11,7 +11,6 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -324,13 +323,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return point;
     }
 
-    protected List<ILister<E>> getListerListByPrefixes(String startPrefix, Stream<String> prefixesStream, String startPoint) {
+    private List<ILister<E>> getListerListByPrefixes(String startPrefix, Stream<String> prefixesStream, String startPoint) {
         return prefixesStream.filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
                 .map(prefix -> {
                     try {
                         return generateLister(startPrefix + prefix);
                     } catch (SuitsException e) {
-                        JsonObject json = JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+                        JsonObject json = prefixesMap.get(prefix) == null ? null :
+                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
                         ListingUtils.recordPrefixConfig(prefix, json);
                         System.out.println("generate lister failed by " + prefix + "\t" + json);
                         e.printStackTrace(); return null;
