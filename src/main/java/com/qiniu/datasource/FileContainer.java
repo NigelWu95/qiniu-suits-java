@@ -1,11 +1,15 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
+import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.JsonUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.IOException;
@@ -33,6 +37,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected String saveSeparator;
     protected Set<String> rmFields;
     private ILineProcess<T> processor; // 定义的资源处理器
+
+    private static volatile JsonObject linesJson = new JsonObject();
+
+    public synchronized static void recordLines(String name, String line) {
+        linesJson.addProperty(name, line);
+    }
+
+    public synchronized static void removeRecordLine(String name) {
+        linesJson.remove(name);
+    }
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> indexMap, int unitLen, int threads) {
@@ -108,6 +122,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             if (line != null && !"".equals(line)) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
+                recordLines(reader.getName(), srcList.get(0));
                 convertedList = converter.convertToVList(srcList);
                 if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
                 if (saveTotal) {
@@ -143,11 +158,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             record += "\tsuccessfully done";
             System.out.println(record);
+            removeRecordLine(reader.getName());
         } catch (Exception e) {
             try {
-                System.out.println("order " + orderStr + ": " + reader.getName() + "\tnextLine:" + reader.readLine());
-            } catch (IOException io) {
-                io.printStackTrace();
+                System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + reader.readLine());
+            } catch (IOException ioE) {
+                ioE.printStackTrace();
             }
         } finally {
             if (saver != null) saver.closeWriters();
@@ -164,15 +180,26 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        // 线程池
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        for (IReader<E> fileReader : fileReaders) {
-            int order = UniOrderUtils.getOrder();
-            executorPool.execute(() -> reading(fileReader, order));
+        try {
+            for (IReader<E> fileReader : fileReaders) {
+                recordLines(fileReader.getName(), null);
+                int order = UniOrderUtils.getOrder();
+                executorPool.execute(() -> reading(fileReader, order));
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated())
+                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            System.out.println(info + " finished");
+        } catch (Throwable e) {
+            executorPool.shutdownNow();
+            e.printStackTrace();
+        } finally {
+            FileSaveMapper.append = false;
+            FileSaveMapper saveMapper = new FileSaveMapper(savePath + FileUtils.pathSeparator + "..");
+            saveMapper.writeKeyFile(savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1) + "-"
+                            + "lines", JsonUtils.toJson(linesJson), true);
+            saveMapper.closeWriters();
         }
-        executorPool.shutdown();
-        while (!executorPool.isTerminated())
-            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
-        System.out.println(info + " finished");
     }
 }
