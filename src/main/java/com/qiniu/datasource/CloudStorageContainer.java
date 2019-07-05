@@ -116,12 +116,16 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (size == 0) return;
             Iterator<String> iterator = prefixes.iterator();
             String temp = iterator.next();
+            String end;
             while (iterator.hasNext() && size > 0) {
                 size--;
                 String prefix = iterator.next();
                 if (prefix.startsWith(temp)) {
-                    iterator.remove();
-                    this.prefixesMap.remove(prefix);
+                    end = prefixesMap.get(temp).get("end");
+                    if (end == null || "".equals(end)) {
+                        iterator.remove();
+                        this.prefixesMap.remove(prefix);
+                    }
                 } else {
                     temp = prefix;
                 }
