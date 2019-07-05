@@ -338,23 +338,21 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream) {
         prefixesStream = prefixesStream.peek(this::recordListerByPrefix);
-        return prefixesStream.filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
-                .map(prefix -> {
-                    try {
-                        return generateLister(prefix);
-                    } catch (SuitsException e) {
-                        System.out.println("generate lister failed by " + prefix + "\t" + recordListerByPrefix(prefix));
-                        e.printStackTrace(); return null;
-                    }
-                }).filter(generated -> {
-                    if (generated == null) return false;
-                    else if (generated.currents().size() > 0 || generated.hasNext()) return true;
-                    else {
-                        ListingUtils.removePrefixConfig(generated.getPrefix());
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
+        return prefixesStream.map(prefix -> {
+            try {
+                return generateLister(prefix);
+            } catch (SuitsException e) {
+                System.out.println("generate lister failed by " + prefix + "\t" + recordListerByPrefix(prefix));
+                e.printStackTrace(); return null;
+            }
+        }).filter(generated -> {
+            if (generated == null) return false;
+            else if (generated.currents().size() > 0 || generated.hasNext()) return true;
+            else {
+                ListingUtils.removePrefixConfig(generated.getPrefix());
+                return false;
+            }
+        }).collect(Collectors.toList());
     }
 
     private List<ILister<E>> filteredNextList(ILister<E> lister) {
@@ -362,7 +360,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<ILister<E>> nextLevelList = new ArrayList<ILister<E>>(){{ add(lister); }};
         if (point != null) {
             List<String> nextPrefixes = originPrefixList.stream()
-                    .filter(prefix -> prefix.compareTo(startPoint) >= 0 && checkPrefix(prefix))
+                    .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
+                    .map(prefix -> prefix = lister.getPrefix() + prefix)
                     .collect(Collectors.toList());
             nextLevelList.addAll(getListerListByPrefixes(nextPrefixes.stream()));
         }
