@@ -337,7 +337,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream) {
-        prefixesStream = prefixesStream.peek(this::recordListerByPrefix);
         return prefixesStream.map(prefix -> {
             try {
                 return generateLister(prefix);
@@ -362,6 +361,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             List<String> nextPrefixes = originPrefixList.stream()
                     .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
                     .map(prefix -> prefix = lister.getPrefix() + prefix)
+                    .peek(this::recordListerByPrefix)
                     .collect(Collectors.toList());
             nextLevelList.addAll(getListerListByPrefixes(nextPrefixes.stream()));
         }
@@ -407,6 +407,34 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
+    private List<ILister<E>> prefixesRunning(ILister<E> startLister, String finalPoint, String lastPrefix) {
+        prefixes = prefixes.parallelStream()
+                .filter(prefix -> prefix.compareTo(finalPoint) >= 0 && checkPrefix(prefix))
+                .peek(this::recordListerByPrefix)
+                .collect(Collectors.toList());
+        List<ILister<E>> listerList = getListerListByPrefixes(prefixes.parallelStream());
+        listerList.add(startLister);
+//        while (listerList != null && listerList.size() > 0) {
+//            listerList = computeNextAndFilterList(listerList, lastPrefix);
+//        }
+        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+            listerList = computeNextAndFilterList(listerList, lastPrefix);
+        }
+        if (listerList != null && listerList.size() > 0) {
+            // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
+            if (!lastUpdated.get()) {
+                ILister<E> lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+                lastLister.setPrefix(lastPrefix);
+                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+            }
+            listerList.parallelStream().forEach(lister -> {
+                int order = UniOrderUtils.getOrder();
+                executorPool.execute(() -> listing(lister, order));
+            });
+        }
+        return listerList;
+    }
+
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
@@ -440,12 +468,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         executorPool = Executors.newFixedThreadPool(threads);
         List<ILister<E>> listerList = null;
         try {
-            prefixes = prefixes.parallelStream().filter(this::checkPrefix).collect(Collectors.toList());
-            listerList = getListerListByPrefixes(prefixes.parallelStream());
-            listerList.add(startLister);
-            while (listerList != null && listerList.size() > 0) {
-                listerList = computeNextAndFilterList(listerList, lastPrefix);
-            }
+            listerList = prefixesRunning(startLister, point, lastPrefix);
             executorPool.shutdown();
             while (!executorPool.isTerminated())
                 try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
@@ -455,9 +478,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             e.printStackTrace();
             if (listerList != null) {
                 for (ILister<E> lister : listerList) {
-                    if (lister.currents() != null) {
-                        recordLister(lister);
-                    }
+                    if (lister.currents() != null) recordLister(lister);
                 }
             }
             System.out.println("lastUpdated: " + lastUpdated.get());

@@ -61,9 +61,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     }
 
     private List<ILister<FileItem>> getListerListByPrefixes(List<String> prefixes) {
-        for (String prefix : prefixes) {
-            recordListerByPrefix(prefix);
-        }
+        for (String prefix : prefixes) recordListerByPrefix(prefix);
         return prefixes.parallelStream().filter(this::checkPrefix)
                 .map(prefix -> {
                     try {

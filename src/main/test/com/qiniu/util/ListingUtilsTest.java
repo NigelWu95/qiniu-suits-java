@@ -5,6 +5,7 @@ import com.qiniu.config.PropertiesFile;
 import com.qiniu.sdk.FileItem;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 
 public class ListingUtilsTest {
@@ -69,5 +70,18 @@ public class ListingUtilsTest {
         JsonObject json = new JsonObject();
         json.addProperty("start", "a");
         ListingUtils.recordPrefixConfig("a", json);
+    }
+
+    @Test
+    public void testWriteContinuedPrefixConfig() throws IOException {
+        File file = new File("./");
+        System.out.println(file);
+        System.out.println(file.exists());
+        System.out.println(file.isDirectory());
+        System.out.println(file.getCanonicalPath());
+        System.out.println(file.getAbsolutePath());
+        file = new File(file.getAbsolutePath());
+        System.out.println(file.getParent());
+        ListingUtils.writeContinuedPrefixConfig("./", "test");
     }
 }

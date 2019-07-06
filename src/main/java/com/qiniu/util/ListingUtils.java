@@ -31,6 +31,7 @@ import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.model.FileInfo;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -330,7 +331,9 @@ public class ListingUtils {
     public static void writeContinuedPrefixConfig(String path, String name) throws IOException {
         FileSaveMapper.ext = ".json";
         FileSaveMapper.append = false;
-        FileSaveMapper saveMapper = new FileSaveMapper(path + FileUtils.pathSeparator + "..");
+        path = new File(path).getCanonicalPath();
+        FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
         saveMapper.writeKeyFile(path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name,
                 JsonUtils.toJson(prefixesJson), true);
         saveMapper.closeWriters();
