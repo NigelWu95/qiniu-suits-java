@@ -407,38 +407,48 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
+    private void prefixListing(List<ILister<E>> listerList, String lastPrefix) {
+//        while (listerList != null && listerList.size() > 0) {
+//            listerList = computeNextAndFilterList(listerList, lastPrefix);
+//        }
+        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+            listerList = computeNextAndFilterList(listerList, lastPrefix);
+        }
+        if (listerList != null && listerList.size() > 0) {
+            // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
+            if (!lastUpdated.get()) {
+                ILister<E> lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+                lastLister.setPrefix(lastPrefix);
+                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
+            }
+            listerList.parallelStream().forEach(lister -> {
+                int order = UniOrderUtils.getOrder();
+                executorPool.execute(() -> listing(lister, order));
+            });
+        }
+    }
+
     private void concurrentListing(ILister<E> startLister, String finalPoint, String lastPrefix, String info) throws IOException {
         lastUpdated = new AtomicBoolean(false);
         executorPool = Executors.newFixedThreadPool(threads);
         List<ILister<E>> listerList = null;
         try {
-            prefixes = prefixes.parallelStream()
+            prefixes = prefixes.stream()
                     .filter(prefix -> prefix.compareTo(finalPoint) >= 0 && checkPrefix(prefix))
                     .peek(this::recordListerByPrefix)
                     .collect(Collectors.toList());
             listerList = getListerListByPrefixes(prefixes.parallelStream());
             listerList.add(startLister);
-//        while (listerList != null && listerList.size() > 0) {
-//            listerList = computeNextAndFilterList(listerList, lastPrefix);
-//        }
-            while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
-                listerList = computeNextAndFilterList(listerList, lastPrefix);
-            }
-            if (listerList != null && listerList.size() > 0) {
-                // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-                if (!lastUpdated.get()) {
-                    ILister<E> lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
-                    lastLister.setPrefix(lastPrefix);
-                    if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
-                }
-                listerList.parallelStream().forEach(lister -> {
-                    int order = UniOrderUtils.getOrder();
-                    executorPool.execute(() -> listing(lister, order));
-                });
-            }
+            prefixListing(listerList, lastPrefix);
             executorPool.shutdown();
-            while (!executorPool.isTerminated())
-                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            while (!executorPool.isTerminated()) {
+                try {
+                    System.out.println(listerList.stream().filter(ILister::hasNext).count());
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                    Thread.sleep(1000);
+                }
+            }
             System.out.println(info + " finished");
         } catch (Throwable e) {
             executorPool.shutdownNow();
