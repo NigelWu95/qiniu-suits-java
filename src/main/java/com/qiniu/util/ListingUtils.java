@@ -309,7 +309,7 @@ public class ListingUtils {
             prefixConf = JsonUtils.isNull(prefixesJson.get(lister.getPrefix())) ?  new JsonObject() :
                     prefixesJson.getAsJsonObject(lister.getPrefix());
             prefixConf.addProperty("start", start);
-        } else if (lister.getMarker() != null && !"".equals(lister.getMarker())) {
+        } else if (lister.hasNext()) {
             prefixConf = JsonUtils.isNull(prefixesJson.get(lister.getPrefix())) ?  new JsonObject() :
                     prefixesJson.getAsJsonObject(lister.getPrefix());
             prefixConf.addProperty("marker", lister.getMarker());

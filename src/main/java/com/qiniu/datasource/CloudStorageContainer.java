@@ -428,6 +428,27 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
+    private void checkListerInPool(List<ILister<E>> listerList, String lastPrefix, long startTime) {
+        long interval = (System.currentTimeMillis() - startTime) / 1000;
+        if (interval >= 3600) {
+            List<String> extremePrefixes = null;
+            for (ILister<E> lister : listerList) {
+                if (lister.hasNext()) {
+                    String endKey = lister.currentEndKey();
+                    String prefix = lister.getPrefix();
+                    lister.setEndPrefix(endKey);
+                    if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
+                    extremePrefixes.add(prefix);
+                    insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", endKey); }});
+                }
+            }
+            if (extremePrefixes != null && extremePrefixes.size() > 0) {
+                listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
+                prefixListing(listerList, lastPrefix);
+            }
+        }
+    }
+
     private void concurrentListing(ILister<E> startLister, String fPoint, String lastPrefix, String info) throws IOException {
         lastUpdated = new AtomicBoolean(false);
         executorPool = Executors.newFixedThreadPool(threads);
@@ -441,8 +462,20 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList.add(startLister);
             prefixListing(listerList, lastPrefix);
             executorPool.shutdown();
+            int unfinished = listerList.size();
+            int cValue = threads / 4;
+            long startTime;
             while (!executorPool.isTerminated()) {
                 try {
+                    if (unfinished > 0 && unfinished < cValue) {
+                        cValue = cValue / 2;
+                        startTime = System.currentTimeMillis();
+                        checkListerInPool(listerList, lastPrefix, startTime);
+                    } else {
+                        unfinished = 0;
+                        for (ILister<E> lister : listerList) if (lister.hasNext()) unfinished++;
+//                        System.out.println(unfinished);
+                    }
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                     Thread.sleep(1000);
