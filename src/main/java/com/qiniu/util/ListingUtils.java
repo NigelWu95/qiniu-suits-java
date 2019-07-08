@@ -37,8 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Base64.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class ListingUtils {
 
@@ -329,6 +327,7 @@ public class ListingUtils {
     }
 
     public static void writeContinuedPrefixConfig(String path, String name) throws IOException {
+        if (prefixesJson.size() <= 0) return;
         FileSaveMapper.ext = ".json";
         FileSaveMapper.append = false;
         path = new File(path).getCanonicalPath();

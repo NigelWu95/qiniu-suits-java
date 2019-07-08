@@ -69,7 +69,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes;
+        this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
     private void setIndexMapWithDefault(Map<String, String> indexMap) {
@@ -263,14 +263,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    /**
-     * 生成 prefix 前缀下的列举对象
-     * @param prefix 指定的前缀参数
-     * @param marker 指定的列举开始 marker
-     * @param end 指定的列举结束位置（文件名或文件名前缀）
-     * @return 返回生成的范型列举对象
-     * @throws SuitsException 生成列举对象失败抛出的异常
-     */
     protected abstract ILister<E> getLister(String prefix, String marker, String start, String end) throws SuitsException;
 
     protected ILister<E> generateLister(String prefix) throws SuitsException {
@@ -474,7 +466,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     } else {
                         unfinished = 0;
                         for (ILister<E> lister : listerList) if (lister.hasNext()) unfinished++;
-//                        System.out.println(unfinished);
                     }
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {

@@ -60,7 +60,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     }
 
     public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 3 : retryTimes;
+        this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
     public void updateSavePath(String savePath) throws IOException {
