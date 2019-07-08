@@ -46,7 +46,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -99,7 +99,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());

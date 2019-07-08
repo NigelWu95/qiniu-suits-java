@@ -46,7 +46,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endKeyPrefix) {
+    public synchronized void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
         checkedListWithEnd();
     }
@@ -100,7 +100,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             ObjectListing objectListing = nosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());

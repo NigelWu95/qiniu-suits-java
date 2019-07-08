@@ -55,7 +55,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -149,7 +149,7 @@ public class QiniuLister implements ILister<FileInfo> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();

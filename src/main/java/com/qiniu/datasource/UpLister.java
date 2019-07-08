@@ -58,7 +58,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -198,7 +198,7 @@ public class UpLister implements ILister<FileItem> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             fileItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
