@@ -51,7 +51,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -105,7 +105,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
             listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
@@ -163,6 +163,11 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return s3ObjectList.size() > 0 ? s3ObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
 //        int retry = 10;
 //        while (s3ObjectSummaryList.size() <= 0 && hasNext()) {
@@ -190,6 +195,8 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     @Override
     public void close() {
         s3Client.shutdown();
+        listObjectsRequest = null;
+        endPrefix = null;
         s3ObjectList = null;
     }
 }

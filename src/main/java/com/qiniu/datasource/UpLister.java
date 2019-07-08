@@ -7,7 +7,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -58,7 +58,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -198,7 +198,7 @@ public class UpLister implements ILister<FileItem> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             fileItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
@@ -256,8 +256,13 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
+    public String currentStartKey() {
+        return fileItems.size() > 0 ? fileItems.get(0).key : null;
+    }
+
+    @Override
     public String currentEndKey() {
-        if (hasNext()) return OssUtils.decodeUpYunMarker(marker);
+        if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
         FileItem last = currentLast();
         return last != null ? last.key : null;
     }
@@ -265,13 +270,18 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void updateMarkerBy(FileItem object) {
         if (object != null) {
-            marker = OssUtils.getUpYunMarker(bucket, object);
+            marker = ListingUtils.getUpYunMarker(bucket, object);
         }
     }
 
     @Override
     public void close() {
         upYunClient = null;
+        bucket = null;
+        prefix = null;
+        marker = null;
+        endPrefix = null;
         fileItems = null;
+//        directories = null;
     }
 }

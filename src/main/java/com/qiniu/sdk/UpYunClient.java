@@ -3,7 +3,7 @@ package com.qiniu.sdk;
 import com.qiniu.common.SuitsException;
 import com.qiniu.util.CharactersUtils;
 import com.qiniu.util.DatetimeUtils;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 import com.qiniu.util.URLUtils;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class UpYunClient {
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, ListingUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
                 userName, password, null));
         return conn;
     }
@@ -51,7 +51,7 @@ public class UpYunClient {
             conn.setUseCaches(false);
             String date = DatetimeUtils.getGMTDate();
             conn.setRequestProperty(UpYunConfig.DATE, date);
-            conn.setRequestProperty(UpYunConfig.AUTHORIZATION, OssUtils.upYunSign(UpYunConfig.METHOD_HEAD, date, uri, userName,
+            conn.setRequestProperty(UpYunConfig.AUTHORIZATION, ListingUtils.upYunSign(UpYunConfig.METHOD_HEAD, date, uri, userName,
                     password, null));
             conn.connect();
             int code = conn.getResponseCode();

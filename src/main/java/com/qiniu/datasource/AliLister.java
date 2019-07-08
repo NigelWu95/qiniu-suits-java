@@ -6,7 +6,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -99,17 +99,17 @@ public class AliLister implements ILister<OSSObjectSummary> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             ossObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
 //        } catch (ClientException e) {
-//            int code = OssUtils.AliStatusCode(e.getErrorCode(), -1);
+//            int code = ListingUtils.AliStatusCode(e.getErrorCode(), -1);
 //            throw new SuitsException(code, e.getMessage());
         } catch (ServiceException e) {
-            int code = OssUtils.AliStatusCode(e.getErrorCode(), -1);
+            int code = ListingUtils.AliStatusCode(e.getErrorCode(), -1);
             throw new SuitsException(code, e.getMessage());
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
@@ -159,6 +159,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return ossObjectList.size() > 0 ? ossObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         OSSObjectSummary last = currentLast();
@@ -167,12 +172,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public void updateMarkerBy(OSSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(OssUtils.getAliOssMarker(object.getKey()));
+        if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
     }
 
     @Override
     public void close() {
-        this.ossClient.shutdown();
-        this.ossObjectList = null;
+        ossClient.shutdown();
+        listObjectsRequest = null;
+        endPrefix = null;
+        ossObjectList = null;
     }
 }

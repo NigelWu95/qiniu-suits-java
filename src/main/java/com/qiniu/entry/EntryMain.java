@@ -2,6 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.config.PropertiesFile;
+import com.qiniu.datasource.CloudStorageContainer;
 import com.qiniu.datasource.IDataSource;
 import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.IEntryParam;

@@ -64,7 +64,7 @@ public class ChangeType extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addChangeTypeOps(bucket, type == 0 ? StorageType.COMMON :
                 StorageType.INFREQUENCY, line.get("key")));
@@ -72,9 +72,17 @@ public class ChangeType extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
         return key + "\t" + type + "\t" + HttpRespUtils.getResult(bucketManager.changeType(bucket, key, type == 0 ?
                 StorageType.COMMON : StorageType.INFREQUENCY));
+    }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
     }
 }

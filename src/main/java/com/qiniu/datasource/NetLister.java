@@ -6,7 +6,7 @@ import com.netease.cloud.services.nos.model.ListObjectsRequest;
 import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.netease.cloud.services.nos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endKeyPrefix) {
+    public synchronized void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
         checkedListWithEnd();
     }
@@ -100,14 +100,14 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             ObjectListing objectListing = nosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             nosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ServiceException e) {
-            int code = OssUtils.NetStatusCode(e.getErrorCode(), -1);
+            int code = ListingUtils.NetStatusCode(e.getErrorCode(), -1);
             throw new SuitsException(code, e.getMessage());
         } catch (NullPointerException e) {
             throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
@@ -157,6 +157,11 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return nosObjectList.size() > 0 ? nosObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         NOSObjectSummary last = currentLast();
@@ -165,12 +170,14 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     @Override
     public void updateMarkerBy(NOSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(OssUtils.getAliOssMarker(object.getKey()));
+        if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
     }
 
     @Override
     public void close() {
-        this.nosClient.shutdown();
-        this.nosObjectList = null;
+        nosClient.shutdown();
+        listObjectsRequest = null;
+        endPrefix = null;
+        nosObjectList = null;
     }
 }

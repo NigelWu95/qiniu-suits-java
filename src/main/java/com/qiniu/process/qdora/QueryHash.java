@@ -90,7 +90,7 @@ public class QueryHash extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String url =  line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
@@ -107,5 +107,15 @@ public class QueryHash extends Base<Map<String, String>> {
         } else {
             throw new QiniuException(null, "empty_result");
         }
+    }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        configuration = null;
+        fileChecker = null;
+        domain = null;
+        protocol = null;
+        urlIndex = null;
     }
 }

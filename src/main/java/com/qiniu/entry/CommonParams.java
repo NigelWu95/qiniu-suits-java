@@ -327,20 +327,24 @@ public class CommonParams {
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 Map<String, String> markerAndEnd = new HashMap<>();
                 if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
+                if (jsonFile.getElement(prefix) instanceof JsonNull) {
+                    prefixesMap.put(prefix, null);
+                    continue;
+                }
                 jsonCfg = jsonFile.getElement(prefix).getAsJsonObject();
                 if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
                     markerAndEnd.put("marker", jsonCfg.get("marker").getAsString());
                 } else {
                     if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
-                            markerAndEnd.put("marker", OssUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", ListingUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
                         } else if ("tencent".equals(source)) {
-                            markerAndEnd.put("marker", OssUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", ListingUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
                         } else if ("aliyun".equals(source)) {
-                            markerAndEnd.put("marker", OssUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", ListingUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
                         } else if ("upyun".equals(source)) {
                             String start = jsonCfg.get("start").getAsString();
-                            markerAndEnd.put("marker", OssUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
+                            markerAndEnd.put("marker", ListingUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
                         } else if ("aws".equals(source) || "s3".equals(source)) {
                             markerAndEnd.put("start", jsonCfg.get("start").getAsString());
                         }

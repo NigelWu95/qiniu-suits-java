@@ -112,7 +112,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws IOException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
@@ -125,7 +125,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         String toKey = line.get("to-key");
         if (toBucket == null || "".equals(toBucket)) {
@@ -133,5 +133,17 @@ public class MoveFile extends Base<Map<String, String>> {
         } else {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));
         }
+    }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        toBucket = null;
+        toKeyIndex = null;
+        addPrefix = null;
+        rmPrefix = null;
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
     }
 }

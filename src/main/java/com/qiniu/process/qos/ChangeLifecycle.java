@@ -63,15 +63,23 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
         return key + "\t" + days + "\t" + HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, key, days));
+    }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        batchOperations = null;
+        configuration = null;
+        bucketManager = null;
     }
 }

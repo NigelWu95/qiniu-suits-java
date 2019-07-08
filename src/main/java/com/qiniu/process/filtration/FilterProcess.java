@@ -144,7 +144,13 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
 
     public void closeResource() {
-        fileSaveMapper.closeWriters();
+        filter = null;
         if (nextProcessor != null) nextProcessor.closeResource();
+        savePath = null;
+        saveFormat = null;
+        saveSeparator = null;
+        rmFields = null;
+        fileSaveMapper.closeWriters();
+        typeConverter = null;
     }
 }

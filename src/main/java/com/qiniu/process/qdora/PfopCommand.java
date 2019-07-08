@@ -114,7 +114,7 @@ public class PfopCommand extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key;
         String info;
         Avinfo avinfo;
@@ -141,5 +141,14 @@ public class PfopCommand extends Base<Map<String, String>> {
             }
         }
         return String.join("\n", resultList);
+    }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        avinfoIndex = null;
+        pfopConfigs = null;
+        configuration = null;
+        mediaManager = null;
     }
 }

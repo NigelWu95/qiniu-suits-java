@@ -6,16 +6,19 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
 import com.qiniu.common.Zone;
+import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.ExportTS;
 import com.qiniu.process.qdora.*;
 import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
 
@@ -127,7 +130,7 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig() {
-        Zone zone = OssUtils.getQiniuRegion(regionName);
+        Zone zone = ListingUtils.getQiniuRegion(regionName);
         Configuration configuration = new Configuration(zone);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
@@ -140,7 +143,7 @@ public class QSuitsEntry {
     }
 
     private ClientConfig getDefaultTenClientConfig() throws IOException {
-        if (regionName == null || "".equals(regionName)) regionName = OssUtils.getTenCosRegion(
+        if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getTenCosRegion(
                 commonParams.getTencentSecretId(), commonParams.getTencentSecretKey(), bucket);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         if (1000 * connectTimeout > clientConfig.getConnectionTimeout())
@@ -266,7 +269,7 @@ public class QSuitsEntry {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
         String endPoint;
-        if (regionName == null || "".equals(regionName)) regionName = OssUtils.getAliOssRegion(accessId, accessSecret, bucket);
+        if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getAliOssRegion(accessId, accessSecret, bucket);
         if (regionName.matches("https?://.+")) {
             endPoint = regionName;
         } else {
@@ -310,7 +313,7 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (regionName == null || "".equals(regionName)) regionName = OssUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
+        if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
         S3Container s3Container = new S3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         s3Container.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
@@ -324,7 +327,20 @@ public class QSuitsEntry {
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         if (baseFilter != null || seniorFilter != null) {
-            processor = new MapProcess(baseFilter, seniorFilter, savePath, saveFormat, saveSeparator, rmFields);
+            processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
+                    saveSeparator, rmFields) {
+
+                public void updateSavePath(String savePath) throws IOException {
+                    this.savePath = savePath;
+                    this.fileSaveMapper.closeWriters();
+                    this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+                }
+
+                @Override
+                protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
+                    return new MapToString(saveFormat, saveSeparator, rmFields);
+                }
+            };
             processor.setNextProcessor(nextProcessor);
         } else {
             if ("filter".equals(process)) {

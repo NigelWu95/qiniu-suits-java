@@ -103,7 +103,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             StringBuilder cmdBuilder = new StringBuilder();
@@ -118,5 +118,15 @@ public class QiniuPfop extends Base<Map<String, String>> {
         } else {
             return key + "\t" + operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
         }
+    }
+
+    @Override
+    public void closeResource() {
+        super.closeResource();
+        pfopParams = null;
+        pfopConfigs = null;
+        fopsIndex = null;
+        configuration = null;
+        operationManager = null;
     }
 }

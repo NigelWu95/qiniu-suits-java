@@ -6,7 +6,7 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.ListingUtils;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -97,7 +97,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
@@ -153,6 +153,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
+    public String currentStartKey() {
+        return cosObjectList.size() > 0 ? cosObjectList.get(0).getKey() : null;
+    }
+
+    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         COSObjectSummary last = currentLast();
@@ -161,12 +166,14 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(OssUtils.getTenCosMarker(object.getKey()));
+        if (object != null) listObjectsRequest.setMarker(ListingUtils.getTenCosMarker(object.getKey()));
     }
 
     @Override
     public void close() {
-        this.cosClient.shutdown();
-        this.cosObjectList = null;
+        cosClient.shutdown();
+        listObjectsRequest = null;
+        endPrefix = null;
+        cosObjectList = null;
     }
 }

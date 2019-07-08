@@ -55,7 +55,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void setEndPrefix(String endPrefix) {
+    public synchronized void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -149,7 +149,7 @@ public class QiniuLister implements ILister<FileInfo> {
         }
     }
 
-    private void doList() throws SuitsException {
+    private synchronized void doList() throws SuitsException {
         try {
             fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
@@ -205,20 +205,29 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
+    public String currentStartKey() {
+        return fileInfoList.size() > 0 ? fileInfoList.get(0).key : null;
+    }
+
+    @Override
     public String currentEndKey() {
-        if (hasNext()) return OssUtils.decodeQiniuMarker(marker);
+        if (hasNext()) return ListingUtils.decodeQiniuMarker(marker);
         FileInfo last = currentLast();
         return last != null ? last.key : null;
     }
 
     @Override
     public void updateMarkerBy(FileInfo object) {
-        if (object != null) marker = OssUtils.getQiniuMarker(object.key);
+        if (object != null) marker = ListingUtils.getQiniuMarker(object.key);
     }
 
     @Override
     public void close() {
         bucketManager = null;
+        bucket = null;
+        prefix = null;
+        marker = null;
+        endPrefix = null;
         fileInfoList = null;
     }
 }

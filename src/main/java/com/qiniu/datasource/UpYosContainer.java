@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.YOSObjToMap;
 import com.qiniu.convert.YOSObjToString;
@@ -9,15 +10,15 @@ import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
-import com.qiniu.util.OssUtils;
+import com.qiniu.util.JsonUtils;
+import com.qiniu.util.ListingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
 
@@ -57,8 +58,82 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 
     @Override
     protected ILister<FileItem> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = OssUtils.getUpYunMarker(username, password, bucket, start);
+        if (marker == null || "".equals(marker)) marker = ListingUtils.getUpYunMarker(username, password, bucket, start);
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
+    }
+
+    private List<ILister<FileItem>> getListerListByPrefixes(List<String> prefixes) {
+        for (String prefix : prefixes) recordListerByPrefix(prefix);
+        return prefixes.parallelStream().filter(this::checkPrefix)
+                .map(prefix -> {
+                    try {
+                        UpLister upLister = (UpLister) generateLister(prefix);
+                        int order = UniOrderUtils.getOrder();
+                        if (upLister.hasNext() || upLister.getDirectories() != null) {
+                            listing(upLister, order);
+                            return upLister;
+                        } else {
+                            executorPool.execute(() -> listing(upLister, order));
+                            return null;
+                        }
+                    } catch (SuitsException e) {
+                        System.out.println("generate lister failed by " + prefix + "\t" + recordListerByPrefix(prefix));
+                        e.printStackTrace(); return null;
+                    }
+                }).filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private void concurrentListing(String info) throws IOException {
+        List<ILister<FileItem>> listerList = null;
+        try {
+            listerList = getListerListByPrefixes(prefixes);
+            while (listerList != null && listerList.size() > 0) {
+                prefixes = listerList.parallelStream().map(lister -> ((UpLister) lister).getDirectories())
+                        .filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                if (prefixes == null || prefixes.size() == 0) {
+                    listerList = null;
+                } else {
+                    listerList = getListerListByPrefixes(prefixes);
+                }
+            }
+//            while (prefixes != null && prefixes.size() > 0) {
+//                prefixes = prefixes.parallelStream().filter(this::checkPrefix).map(prefix -> {
+//                    try {
+//                        UpLister upLister = (UpLister) generateLister(prefix);
+//                        int order = UniOrderUtils.getOrder();
+//                        if (upLister.hasNext() || upLister.getDirectories() != null) {
+//                            listing(upLister, order);
+//                            return upLister.getDirectories();
+//                        } else {
+//                            executorPool.execute(() -> listing(upLister, order));
+//                            return null;
+//                        }
+//                    } catch (SuitsException e) {
+//                        JsonObject json = prefixesMap.get(prefix) == null ? null :
+//                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+//                        ListingUtils.recordPrefixConfig(prefix, json);
+//                        System.out.println("generate lister failed by " + prefix + "\t" + json);
+//                        e.printStackTrace(); return null;
+//                    }
+//                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+//            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated())
+                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            System.out.println(info + " finished");
+        } catch (Throwable e) {
+            executorPool.shutdownNow();
+            e.printStackTrace();
+            if (listerList != null) {
+                for (ILister<FileItem> lister : listerList) {
+                    if (lister.currents() != null) recordLister(lister);
+                }
+            }
+        } finally {
+            ListingUtils.writeContinuedPrefixConfig(savePath, "prefixes");
+        }
     }
 
     /**
@@ -69,38 +144,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         executorPool = Executors.newFixedThreadPool(threads);
-        exitBool = new AtomicBoolean(false);
-        orderMap = new ConcurrentHashMap<>();
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
             int order = UniOrderUtils.getOrder();
             listing(startLister, order);
             prefixes = startLister.getDirectories();
         }
-        while (prefixes != null && prefixes.size() > 0) {
-            prefixes = prefixes.parallelStream().filter(this::checkPrefix)
-                .map(prefix -> {
-                    try {
-                        UpLister upLister = (UpLister) generateLister(prefix);
-                        int order = UniOrderUtils.getOrder();
-                        if (upLister.hasNext() || upLister.getDirectories() != null) {
-                            listing(upLister, order);
-                            return upLister.getDirectories();
-                        } else {
-                            executorPool.execute(() -> listing(upLister, order));
-                            return null;
-                        }
-                    } catch (SuitsException e) {
-                        e.printStackTrace();
-                        System.out.println("generate lister by " + prefix + ": " + prefixesMap.get(prefix).toString() + "failed.");
-                        return null;
-                    }
-                }).filter(Objects::nonNull)
-                .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-        }
-        executorPool.shutdown();
-        while (!executorPool.isTerminated())
-            try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
-        System.out.println(info + " finished");
+        concurrentListing(info);
     }
 }
