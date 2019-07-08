@@ -88,37 +88,37 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         List<ILister<FileItem>> listerList = null;
         try {
             listerList = getListerListByPrefixes(prefixes);
-//            while (listerList != null && listerList.size() > 0) {
-//                prefixes = listerList.parallelStream().map(lister -> ((UpLister) lister).getDirectories())
-//                        .filter(Objects::nonNull)
-//                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-//                if (prefixes == null || prefixes.size() == 0) {
-//                    listerList = null;
-//                } else {
-//                    listerList = getListerListByPrefixes(prefixes);
-//                }
-//            }
-            while (prefixes != null && prefixes.size() > 0) {
-                prefixes = prefixes.parallelStream().filter(this::checkPrefix).map(prefix -> {
-                    try {
-                        UpLister upLister = (UpLister) generateLister(prefix);
-                        int order = UniOrderUtils.getOrder();
-                        if (upLister.hasNext() || upLister.getDirectories() != null) {
-                            listing(upLister, order);
-                            return upLister.getDirectories();
-                        } else {
-                            executorPool.execute(() -> listing(upLister, order));
-                            return null;
-                        }
-                    } catch (SuitsException e) {
-                        JsonObject json = prefixesMap.get(prefix) == null ? null :
-                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
-                        ListingUtils.recordPrefixConfig(prefix, json);
-                        System.out.println("generate lister failed by " + prefix + "\t" + json);
-                        e.printStackTrace(); return null;
-                    }
-                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            while (listerList != null && listerList.size() > 0) {
+                prefixes = listerList.parallelStream().map(lister -> ((UpLister) lister).getDirectories())
+                        .filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                if (prefixes == null || prefixes.size() == 0) {
+                    listerList = null;
+                } else {
+                    listerList = getListerListByPrefixes(prefixes);
+                }
             }
+//            while (prefixes != null && prefixes.size() > 0) {
+//                prefixes = prefixes.parallelStream().filter(this::checkPrefix).map(prefix -> {
+//                    try {
+//                        UpLister upLister = (UpLister) generateLister(prefix);
+//                        int order = UniOrderUtils.getOrder();
+//                        if (upLister.hasNext() || upLister.getDirectories() != null) {
+//                            listing(upLister, order);
+//                            return upLister.getDirectories();
+//                        } else {
+//                            executorPool.execute(() -> listing(upLister, order));
+//                            return null;
+//                        }
+//                    } catch (SuitsException e) {
+//                        JsonObject json = prefixesMap.get(prefix) == null ? null :
+//                                JsonUtils.toJsonObject(JsonUtils.toJsonWithoutUrlEscape(prefixesMap.get(prefix)));
+//                        ListingUtils.recordPrefixConfig(prefix, json);
+//                        System.out.println("generate lister failed by " + prefix + "\t" + json);
+//                        e.printStackTrace(); return null;
+//                    }
+//                }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+//            }
             executorPool.shutdown();
             while (!executorPool.isTerminated())
                 try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }

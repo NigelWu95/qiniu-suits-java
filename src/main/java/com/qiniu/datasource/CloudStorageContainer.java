@@ -428,13 +428,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private void concurrentListing(ILister<E> startLister, String finalPoint, String lastPrefix, String info) throws IOException {
+    private void concurrentListing(ILister<E> startLister, String fPoint, String lastPrefix, String info) throws IOException {
         lastUpdated = new AtomicBoolean(false);
         executorPool = Executors.newFixedThreadPool(threads);
         List<ILister<E>> listerList = null;
         try {
             prefixes = prefixes.stream()
-                    .filter(prefix -> prefix.compareTo(finalPoint) >= 0 && checkPrefix(prefix))
+                    .filter(prefix -> prefix.compareTo(fPoint) >= 0 && checkPrefix(prefix))
                     .peek(this::recordListerByPrefix)
                     .collect(Collectors.toList());
             listerList = getListerListByPrefixes(prefixes.parallelStream());
@@ -443,7 +443,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
                 try {
-                    System.out.println(listerList.stream().filter(ILister::hasNext).count());
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                     Thread.sleep(1000);
