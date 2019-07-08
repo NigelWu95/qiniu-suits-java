@@ -26,7 +26,7 @@ public final class HttpRespUtils {
             else if (code < 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
                 return times;
             } else if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614) || e.code() == 579) {
-                // 避免因为某些可忽略的状态码导致程序中断故先处理该异常
+                // 避免因为某些可暂时忽略和记录的状态码导致程序中断故先处理该异常返回 0
                 return 0;
             } else { // 如 631 状态码表示空间不存在，则不需要重试抛出异常
                 return -2;
@@ -46,7 +46,7 @@ public final class HttpRespUtils {
     public static int checkStatusCode(int code) {
         if (code == 200) {
             return 1;
-        } else if (code <= 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
+        } else if (code <= 0 || code == 406 || code == 429 || (code >= 500 && code < 600)) {
             return 0;
         } else {
             return -1;

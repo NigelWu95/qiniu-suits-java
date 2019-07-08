@@ -156,19 +156,26 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
     protected int listExceptionWithRetry(SuitsException e, int retry) throws SuitsException {
+        // date offset error 在部分数据源（如 upyun）中出现，可能是由于签名时间误差导致，可重试
         if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) {
             retry--;
-        } else if (e.getStatusCode() == 429) {
+//        } else if (e.getStatusCode() == 429) {
+//            try {
+//                Thread.sleep(3000);
+//            } catch (InterruptedException interruptEx) {
+//                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
+//                throw e;
+//            }
+        } else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) {
+            throw e;
+        } else {
+            retry--;
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException interruptEx) {
                 e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
                 throw e;
             }
-        } else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) {
-            throw e;
-        } else {
-            retry--;
         }
         return retry;
     }
