@@ -137,8 +137,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 } catch (QiniuException e) {
                     // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
                     // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
-                    retry = HttpRespUtils.checkException(e, 1);
-                    if (retry == -2) throw e;
+                    if (HttpRespUtils.checkException(e, 2) < -1) throw e;
                 }
                 srcList.clear();
             }
@@ -146,6 +145,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     }
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
+
+    private QiniuException exception = null;
 
     protected void reading(IReader<E> reader, int order) {
         String orderStr = String.valueOf(order);
@@ -159,6 +160,13 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             record += "\tsuccessfully done";
             System.out.println(record);
             removeRecordLine(reader.getName());
+        } catch (QiniuException e) {
+            exception = e;
+            try {
+                System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + reader.readLine());
+            } catch (IOException ioE) {
+                ioE.printStackTrace();
+            }
         } catch (Exception e) {
             try {
                 System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + reader.readLine());
@@ -188,18 +196,26 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 executorPool.execute(() -> reading(fileReader, order));
             }
             executorPool.shutdown();
-            while (!executorPool.isTerminated())
-                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            while (!executorPool.isTerminated()) {
+                try {
+                    if (exception != null) throw exception;
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                    Thread.sleep(1000);
+                }
+            }
             System.out.println(info + " finished");
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
         } finally {
-            FileSaveMapper.append = false;
-            FileSaveMapper saveMapper = new FileSaveMapper(savePath + FileUtils.pathSeparator + "..");
-            saveMapper.writeKeyFile(savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1) + "-"
-                            + "lines", JsonUtils.toJson(linesJson), true);
-            saveMapper.closeWriters();
+            if (linesJson.size() > 0) {
+                FileSaveMapper.append = false;
+                FileSaveMapper saveMapper = new FileSaveMapper(savePath + FileUtils.pathSeparator + "..");
+                saveMapper.writeKeyFile(savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1) + "-"
+                        + "lines", JsonUtils.toJson(linesJson), true);
+                saveMapper.closeWriters();
+            }
         }
     }
 }

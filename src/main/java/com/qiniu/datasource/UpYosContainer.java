@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.YOSObjToMap;
 import com.qiniu.convert.YOSObjToString;
@@ -10,7 +9,6 @@ import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
-import com.qiniu.util.JsonUtils;
 import com.qiniu.util.ListingUtils;
 import com.qiniu.util.UniOrderUtils;
 

@@ -259,7 +259,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             record += "\tsuccessfully done";
             System.out.println(record);
             ListingUtils.removePrefixConfig(lister.getPrefix());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + recordLister(lister));
             e.printStackTrace();
         } finally {
@@ -427,24 +427,21 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private void checkListerInPool(List<ILister<E>> listerList, String lastPrefix, long startTime) {
-        long interval = (System.currentTimeMillis() - startTime) / 1000;
-        if (interval >= 3600) {
-            List<String> extremePrefixes = null;
-            for (ILister<E> lister : listerList) {
-                if (lister.hasNext()) {
-                    String endKey = lister.currentEndKey();
-                    String prefix = lister.getPrefix();
-                    lister.setEndPrefix(endKey);
-                    if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
-                    extremePrefixes.add(prefix);
-                    insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", endKey); }});
-                }
+    private void checkListerInPool(List<ILister<E>> listerList, String lastPrefix) {
+        List<String> extremePrefixes = null;
+        for (ILister<E> lister : listerList) {
+            if (lister.hasNext()) {
+                String endKey = lister.currentEndKey();
+                String prefix = lister.getPrefix();
+                lister.setEndPrefix(endKey);
+                if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
+                extremePrefixes.add(prefix);
+                insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", endKey); }});
             }
-            if (extremePrefixes != null && extremePrefixes.size() > 0) {
-                listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
-                prefixListing(listerList, lastPrefix);
-            }
+        }
+        if (extremePrefixes != null && extremePrefixes.size() > 0) {
+            listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
+            prefixListing(listerList, lastPrefix);
         }
     }
 
@@ -461,22 +458,49 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList.add(startLister);
             prefixListing(listerList, lastPrefix);
             executorPool.shutdown();
-            int unfinished = listerList.size();
-            int cValue = threads / 4;
-            long startTime;
+            int cValue = threads / 10;
+            int count = 0;
+            boolean startCheck = false;
+            int unfinished;
+//            int unfinished = listerList.size();
+//            long startTime = Long.MAX_VALUE;
             while (!executorPool.isTerminated()) {
                 try {
-                    if (unfinished > 0 && unfinished < cValue) {
-                        cValue = cValue / 2;
-                        startTime = System.currentTimeMillis();
-                        checkListerInPool(listerList, lastPrefix, startTime);
+                    // 3600 次延时为 1 小时间隔，判断一次线程池情况
+                    if (count >= 3600) {
+                        count = 0;
+                        Iterator<ILister<E>> iterator = listerList.iterator();
+                        ILister<E> lister;
+                        while (iterator.hasNext()) {
+                            lister = iterator.next();
+                            if(!lister.hasNext()) iterator.remove();
+                        }
+                        unfinished = listerList.size();
+                        if (unfinished < cValue) {
+                            if (startCheck) {
+                                checkListerInPool(listerList, lastPrefix);
+                                startCheck = false;
+                            }
+                            startCheck = true;
+                            if (cValue > 3) cValue = cValue / 2;
+                        }
+                        System.out.printf("unfinished: %s, cValue: %s\n", unfinished, cValue);
                     } else {
-                        unfinished = 0;
-                        for (ILister<E> lister : listerList) if (lister.hasNext()) unfinished++;
+                        Thread.sleep(1000); // 延时 1s 并计次
+                        count++;
                     }
-                    Thread.sleep(1000);
+//                    if (unfinished > 0 && unfinished < cValue) {
+//                        cValue = cValue / 2;
+//                        checkListerInPool(listerList, lastPrefix, startTime);
+//                        startTime = System.currentTimeMillis();
+//                    } else {
+//                        unfinished = 0;
+//                        for (ILister<E> lister : listerList) if (lister.hasNext()) unfinished++;
+//                    }
+//                    Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                     Thread.sleep(1000);
+                    count++;
                 }
             }
             System.out.println(info + " finished");
