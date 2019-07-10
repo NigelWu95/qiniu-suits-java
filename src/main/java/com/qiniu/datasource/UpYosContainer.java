@@ -130,7 +130,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 }
             }
         } finally {
-            ListingUtils.writeContinuedPrefixConfig(savePath, "prefixes");
+            writeContinuedPrefixConfig(savePath, "prefixes");
         }
     }
 

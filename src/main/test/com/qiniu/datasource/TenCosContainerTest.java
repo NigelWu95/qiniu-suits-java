@@ -1,13 +1,16 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
 import com.qiniu.config.PropertiesFile;
+import com.qiniu.util.ListingUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 
 public class TenCosContainerTest {
@@ -31,5 +34,28 @@ public class TenCosContainerTest {
     @Test
     public void export() throws Exception {
         tenCosContainer.export();
+    }
+
+
+
+    @Test
+    public void testPrefixConfig() {
+        tenCosContainer.recordPrefixConfig("a", null);
+        JsonObject json = new JsonObject();
+        json.addProperty("start", "a");
+        tenCosContainer.recordPrefixConfig("a", json);
+    }
+
+    @Test
+    public void testWriteContinuedPrefixConfig() throws IOException {
+        File file = new File("./");
+        System.out.println(file);
+        System.out.println(file.exists());
+        System.out.println(file.isDirectory());
+        System.out.println(file.getCanonicalPath());
+        System.out.println(file.getAbsolutePath());
+        file = new File(file.getAbsolutePath());
+        System.out.println(file.getParent());
+        tenCosContainer.writeContinuedPrefixConfig("./", "test");
     }
 }
