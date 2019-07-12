@@ -160,31 +160,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    protected int listExceptionWithRetry(SuitsException e, int retry) throws SuitsException {
-        // date offset error 在部分数据源（如 upyun）中出现，可能是由于签名时间误差导致，可重试
-        if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) {
-            retry--;
-//        } else if (e.getStatusCode() == 429) {
-//            try {
-//                Thread.sleep(3000);
-//            } catch (InterruptedException interruptEx) {
-//                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
-//                throw e;
-//            }
-        } else if (HttpRespUtils.checkStatusCode(e.getStatusCode()) < 0 || (retry <= 0 && e.getStatusCode() >= 500)) {
-            throw e;
-        } else {
-            retry--;
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException interruptEx) {
-                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
-                throw e;
-            }
-        }
-        return retry;
-    }
-
     private volatile JsonObject prefixesJson = new JsonObject();
 
     public synchronized JsonObject continuePrefixConf(ILister lister) {
@@ -290,7 +265,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     break;
                 } catch (SuitsException e) {
                     System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
-                    retry = listExceptionWithRetry(e, retry);
+                    retry = HttpRespUtils.listExceptionWithRetry(e, retry);
                 }
             }
         }
@@ -343,7 +318,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
-                retry = listExceptionWithRetry(e, retry);
+                retry = HttpRespUtils.listExceptionWithRetry(e, retry);
             }
         }
     }
@@ -439,50 +414,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         return nextLevelList;
-    }
-
-    private List<ILister<E>> computeNextAndFilterList(List<ILister<E>> listerList, String lastPrefix) {
-//        if (!lastUpdated.get()) {
-//            ILister<E> lastLister =
-//            listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
-////            System.out.println("lastLister: " + lastLister.getPrefix() + "\t" + lastLister.currents().size() + "\t" + lastLister.hasNext());
-//            // 得到计算后的最后一个列举对象，如果不存在 next 则说明该对象是下一级的末尾（最靠近结束位置）列举对象，更新其末尾设置
-//            if (!lastLister.hasNext()) {
-//                // 全局结尾则设置前缀为空，否则设置前缀为起始值
-//                lastLister.setPrefix(lastPrefix);
-//                lastLister.updateMarkerBy(lastLister.currentLast());
-//                lastLister.setStraight(true);
-//                lastUpdated.set(true);
-//            }
-//        }
-        return listerList.parallelStream().map(lister -> {
-            if (lister.canStraight()) {
-                int order = UniOrderUtils.getOrder();
-                executorPool.execute(() -> listing(lister, order));
-                return null;
-            } else {
-                // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-                return filteredNextList(lister);
-            }
-        }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-    }
-
-    private void prefixListing(List<ILister<E>> listerList, String lastPrefix) {
-        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
-            listerList = computeNextAndFilterList(listerList, lastPrefix);
-        }
-        if (listerList != null && listerList.size() > 0) {
-            // 如果末尾的 lister 尚未更新末尾设置则需要对此时的最后一个列举对象进行末尾设置的更新
-//            if (!lastUpdated.get()) {
-//                ILister<E> lastLister = listerList.stream().max(Comparator.comparing(ILister::getPrefix)).get();
-//                lastLister.setPrefix(lastPrefix);
-//                if (!lastLister.hasNext()) lastLister.updateMarkerBy(lastLister.currentLast());
-//            }
-            listerList.parallelStream().forEach(lister -> {
-                int order = UniOrderUtils.getOrder();
-                executorPool.execute(() -> listing(lister, order));
-            });
-        }
     }
 
     private void concurrentListing(List<ILister<E>> listerList) {

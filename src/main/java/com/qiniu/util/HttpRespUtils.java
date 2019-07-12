@@ -1,6 +1,7 @@
 package com.qiniu.util;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
 
 public final class HttpRespUtils {
@@ -51,6 +52,38 @@ public final class HttpRespUtils {
         } else {
             return -1;
         }
+    }
+
+    public static int listExceptionWithRetry(SuitsException e, int retry) throws SuitsException {
+        // date offset error 在部分数据源（如 upyun）中出现，可能是由于签名时间误差导致，可重试
+        if (e.getStatusCode() == 401 && e.getMessage().contains("date offset error")) {
+            retry--;
+        } else if (e.getStatusCode() == 429 || e.getStatusCode() == 509 || e.getStatusCode() == 571 || e.getStatusCode() == 573) {
+            retry--;
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException interruptEx) {
+                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
+                throw e;
+            }
+        } else if (e.getStatusCode() >= 500 && e.getStatusCode() < 600) {
+            if (retry < 0) throw e;
+            else {
+                retry--;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException interruptEx) {
+                    e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
+                    throw e;
+                }
+                return retry;
+            }
+        } else if (e.getStatusCode() >= 400 && e.getStatusCode() != 406) {
+            throw e;
+        } else {
+            retry--;
+        }
+        return retry;
     }
 
     /**
