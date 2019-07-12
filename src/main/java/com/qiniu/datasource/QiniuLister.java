@@ -228,6 +228,6 @@ public class QiniuLister implements ILister<FileInfo> {
         prefix = null;
         marker = null;
         endPrefix = null;
-        fileInfoList = null;
+        fileInfoList.clear();
     }
 }

@@ -178,6 +178,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
         nosClient.shutdown();
         listObjectsRequest = null;
         endPrefix = null;
-        nosObjectList = null;
+        nosObjectList.clear();
     }
 }
