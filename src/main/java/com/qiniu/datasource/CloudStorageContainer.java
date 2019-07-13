@@ -211,9 +211,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private void updatePrefixAndEnd(ILister<E> lister) {
-        if (lister.getPrefix().startsWith("export-parquet/date=2019-07-")) {
-            System.out.println();
-        }
         if (!lister.hasNext() && prefixAndEndedMap.containsKey(lister.getPrefix())) {
             if (lister.getEndPrefix() == null || "".equals(lister.getEndPrefix())) {
                 prefixAndEndedMap.get(lister.getPrefix()).put("start", lister.currentEndKey());
@@ -522,7 +519,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
             listerList = getListerListByPrefixes(phraseLastPrefixes.parallelStream());
-            threads = phraseLastPrefixes.size();
+            threads = listerList.size();
             concurrentListing(listerList);
             while (!executorPool.isTerminated()) {
                 try {
