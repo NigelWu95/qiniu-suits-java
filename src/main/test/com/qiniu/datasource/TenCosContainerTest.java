@@ -36,14 +36,11 @@ public class TenCosContainerTest {
         tenCosContainer.export();
     }
 
-
-
     @Test
     public void testPrefixConfig() {
-        tenCosContainer.recordPrefixConfig("a", null);
+        tenCosContainer.recordListerByPrefix("a");
         JsonObject json = new JsonObject();
         json.addProperty("start", "a");
-        tenCosContainer.recordPrefixConfig("a", json);
     }
 
     @Test
