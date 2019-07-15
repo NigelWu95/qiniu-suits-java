@@ -195,8 +195,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name;
         saveMapper.writeKeyFile(fileName, prefixesJson.toString(), true);
         saveMapper.closeWriters();
-        System.out.printf("please check the prefixes breakpoint in %s%s\n, it can be used for one more time " +
-                "listing remaining files.", fileName, FileSaveMapper.ext);
+        System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
+                "listing remaining files.\n", fileName, FileSaveMapper.ext);
     }
 
     JsonObject recordLister(ILister<E> lister) {
@@ -506,21 +506,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList = concurrentListing(listerList);
             List<String> extremePrefixes = checkListerInPool(listerList);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
+                for (String extremePrefix : extremePrefixes) recordListerByPrefix(extremePrefix);
                 listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
                 listerList = concurrentListing(listerList);
                 extremePrefixes = checkListerInPool(listerList);
             }
-//            if (extremePrefixes != null && extremePrefixes.size() > 0) {
-//                listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
-//                concurrentListing(listerList);
-//                while (!executorPool.isTerminated()) {
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException ignored) {
-//                        Thread.sleep(1000);
-//                    }
-//                }
-//            }
             List<String> phraseLastPrefixes = new ArrayList<>();
             for (Map.Entry<String, Map<String, String>> stringMapEntry : prefixAndEndedMap.entrySet()) {
                 String prefix = stringMapEntry.getKey().substring(0, stringMapEntry.getKey().length() - 1);
