@@ -84,6 +84,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     }
 
     private void concurrentListing() throws IOException {
+        executorPool = Executors.newFixedThreadPool(threads);
         List<UpLister> listerList = null;
         try {
             listerList = getListerListByPrefixes(prefixes);
@@ -126,7 +127,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        executorPool = Executors.newFixedThreadPool(threads);
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
             int order = UniOrderUtils.getOrder();

@@ -39,7 +39,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected String saveSeparator;
     protected Set<String> rmFields;
     protected ExecutorService executorPool; // 线程池
-    protected AtomicBoolean lastUpdated;
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
     public static String startPoint;
@@ -416,7 +415,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private void concurrentListing(List<ILister<E>> listerList) {
+    private List<ILister<E>> concurrentListing(List<ILister<E>> listerList) {
         executorPool = Executors.newFixedThreadPool(threads);
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             listerList = listerList.parallelStream().map(lister -> {
@@ -437,6 +436,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             });
         }
         executorPool.shutdown();
+        return listerList;
     }
 
     private List<String> checkListerInPool(List<ILister<E>> listerList) throws Exception {
@@ -458,6 +458,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     }
                     unfinished = listerList.size();
                     if (unfinished < cValue) {
+                        if (unfinished < 5) startCheck = true;
                         if (startCheck) {
                             System.out.println("to re-split prefixes...");
                             for (ILister<E> lister : listerList) {
@@ -476,7 +477,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         startCheck = true;
                         if (cValue > 3) cValue = cValue / 2;
                     }
-                    System.out.println(unfinished);
                     System.out.printf("unfinished: %s, cValue: %s\n", unfinished, cValue);
                 } else {
                     Thread.sleep(1000); // 延时 1s 并计次
@@ -503,19 +503,24 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixAndEndedMap.put(lastLister.getPrefix(), new HashMap<>());
             }
             if (startLister != null) listerList.add(startLister);
-            concurrentListing(listerList);
+            listerList = concurrentListing(listerList);
             List<String> extremePrefixes = checkListerInPool(listerList);
-            if (extremePrefixes != null && extremePrefixes.size() > 0) {
+            while (extremePrefixes != null && extremePrefixes.size() > 0) {
                 listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
-                concurrentListing(listerList);
-                while (!executorPool.isTerminated()) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
-                        Thread.sleep(1000);
-                    }
-                }
+                listerList = concurrentListing(listerList);
+                extremePrefixes = checkListerInPool(listerList);
             }
+//            if (extremePrefixes != null && extremePrefixes.size() > 0) {
+//                listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
+//                concurrentListing(listerList);
+//                while (!executorPool.isTerminated()) {
+//                    try {
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException ignored) {
+//                        Thread.sleep(1000);
+//                    }
+//                }
+//            }
             List<String> phraseLastPrefixes = new ArrayList<>();
             for (Map.Entry<String, Map<String, String>> stringMapEntry : prefixAndEndedMap.entrySet()) {
                 String prefix = stringMapEntry.getKey().substring(0, stringMapEntry.getKey().length() - 1);
@@ -542,7 +547,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     if (lister.currents() != null) recordLister(lister);
                 }
             }
-            System.out.println("lastUpdated: " + lastUpdated.get());
         } finally {
             writeContinuedPrefixConfig(savePath, "prefixes");
         }
