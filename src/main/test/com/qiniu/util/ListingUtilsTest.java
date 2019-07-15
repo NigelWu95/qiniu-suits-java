@@ -63,25 +63,4 @@ public class ListingUtilsTest {
         System.out.println(ListingUtils.decodeUpYunMarker(marker1));
         System.out.println(ListingUtils.decodeUpYunMarker(marker2));
     }
-
-    @Test
-    public void testPrefixConfig() {
-        ListingUtils.recordPrefixConfig("a", null);
-        JsonObject json = new JsonObject();
-        json.addProperty("start", "a");
-        ListingUtils.recordPrefixConfig("a", json);
-    }
-
-    @Test
-    public void testWriteContinuedPrefixConfig() throws IOException {
-        File file = new File("./");
-        System.out.println(file);
-        System.out.println(file.exists());
-        System.out.println(file.isDirectory());
-        System.out.println(file.getCanonicalPath());
-        System.out.println(file.getAbsolutePath());
-        file = new File(file.getAbsolutePath());
-        System.out.println(file.getParent());
-        ListingUtils.writeContinuedPrefixConfig("./", "test");
-    }
 }

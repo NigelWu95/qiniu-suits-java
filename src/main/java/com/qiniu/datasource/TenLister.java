@@ -174,6 +174,6 @@ public class TenLister implements ILister<COSObjectSummary> {
         cosClient.shutdown();
         listObjectsRequest = null;
         endPrefix = null;
-        cosObjectList = null;
+        cosObjectList.clear();
     }
 }

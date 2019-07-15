@@ -77,7 +77,7 @@ public class CommonParams {
         path = entryParam.getValue("path", "");
         setSource();
         setProcess();
-        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
+        setRetryTimes(entryParam.getValue("retry-times", "5").trim());
         if (source.matches("(local|terminal)")) {
             parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
@@ -139,7 +139,7 @@ public class CommonParams {
         requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
         process = entryParam.getValue("process").trim();
         source = "terminal";
-        setRetryTimes(entryParam.getValue("retry-times", "3").trim());
+        setRetryTimes(entryParam.getValue("retry-times", "5").trim());
         parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
         setSeparator(entryParam.getValue("separator", ""));
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);

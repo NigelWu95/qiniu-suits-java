@@ -180,6 +180,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
         ossClient.shutdown();
         listObjectsRequest = null;
         endPrefix = null;
-        ossObjectList = null;
+        ossObjectList.clear();
     }
 }

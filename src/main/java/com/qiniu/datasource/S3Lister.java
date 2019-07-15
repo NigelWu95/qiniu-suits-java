@@ -197,6 +197,6 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         s3Client.shutdown();
         listObjectsRequest = null;
         endPrefix = null;
-        s3ObjectList = null;
+        s3ObjectList.clear();
     }
 }

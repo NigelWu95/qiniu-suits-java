@@ -37,8 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Base64.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class ListingUtils {
 
@@ -298,44 +296,5 @@ public class ListingUtils {
         }
 
         return null;
-    }
-
-    private static volatile JsonObject prefixesJson = new JsonObject();
-
-    public static JsonObject continuePrefixConf(ILister lister) {
-        JsonObject prefixConf;
-        String start = lister.currentStartKey();
-        if (start != null) {
-            prefixConf = JsonUtils.isNull(prefixesJson.get(lister.getPrefix())) ?  new JsonObject() :
-                    prefixesJson.getAsJsonObject(lister.getPrefix());
-            prefixConf.addProperty("start", start);
-        } else if (lister.getMarker() != null && !"".equals(lister.getMarker())) {
-            prefixConf = JsonUtils.isNull(prefixesJson.get(lister.getPrefix())) ?  new JsonObject() :
-                    prefixesJson.getAsJsonObject(lister.getPrefix());
-            prefixConf.addProperty("marker", lister.getMarker());
-        } else {
-            return null;
-        }
-        if (lister.getEndPrefix() != null) prefixConf.addProperty("end", lister.getEndPrefix());
-        return prefixConf;
-    }
-
-    public synchronized static void recordPrefixConfig(String prefix, JsonObject continueConf) {
-        prefixesJson.add(prefix, continueConf);
-    }
-
-    public synchronized static void removePrefixConfig(String prefix) {
-        prefixesJson.remove(prefix);
-    }
-
-    public static void writeContinuedPrefixConfig(String path, String name) throws IOException {
-        FileSaveMapper.ext = ".json";
-        FileSaveMapper.append = false;
-        path = new File(path).getCanonicalPath();
-        FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
-        saveMapper.writeKeyFile(path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name,
-                JsonUtils.toJson(prefixesJson), true);
-        saveMapper.closeWriters();
     }
 }
