@@ -505,20 +505,31 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList = concurrentListing(listerList);
             List<String> extremePrefixes = checkListerInPool(listerList);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
-                listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
-                listerList = concurrentListing(listerList);
+                listerList = getListerListByPrefixes(extremePrefixes.parallelStream()).parallelStream()
+                        .map(this::filteredNextList).filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                if (listerList != null && listerList.size() > 0) {
+                    executorPool = Executors.newFixedThreadPool(threads);
+                    listerList.parallelStream().forEach(lister -> {
+                        int order = UniOrderUtils.getOrder();
+                        executorPool.execute(() -> listing(lister, order));
+                    });
+                    executorPool.shutdown();
+                }
                 extremePrefixes = checkListerInPool(listerList);
             }
             List<String> phraseLastPrefixes = new ArrayList<>();
             for (Map.Entry<String, Map<String, String>> stringMapEntry : prefixAndEndedMap.entrySet()) {
                 String prefix = stringMapEntry.getKey().substring(0, stringMapEntry.getKey().length() - 1);
                 phraseLastPrefixes.add(prefix);
+                System.out.printf("prefix: %s, end: %s\n", prefix, stringMapEntry.getValue());
                 insertIntoPrefixesMap(prefix, stringMapEntry.getValue());
             }
             for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
             listerList = getListerListByPrefixes(phraseLastPrefixes.parallelStream());
             threads = listerList.size();
-            concurrentListing(listerList);
+            System.out.printf("threads: %s\n", threads);
+            if (threads > 0) concurrentListing(listerList);
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
