@@ -35,8 +35,8 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public String getBucket() {
+        return bucket;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -85,7 +85,7 @@ public class QiniuLister implements ILister<FileInfo> {
         return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
-    public List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
+    private List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, null);
         if (response.statusCode != 200) throw new QiniuException(response);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
@@ -149,7 +149,7 @@ public class QiniuLister implements ILister<FileInfo> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
@@ -163,7 +163,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -195,7 +195,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public List<FileInfo> currents() {
+    public synchronized List<FileInfo> currents() {
         return fileInfoList;
     }
 
@@ -219,6 +219,13 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void updateMarkerBy(FileInfo object) {
         if (object != null) marker = ListingUtils.getQiniuMarker(object.key);
+    }
+
+    @Override
+    public synchronized String truncate() {
+        String endKey = currentEndKey();
+        setEndPrefix(endKey);
+        return endKey;
     }
 
     @Override

@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.qiniu.config.JsonFile;
 import com.qiniu.process.Base;
-import com.qiniu.sdk.OperationManager;
+import com.qiniu.processing.OperationManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 

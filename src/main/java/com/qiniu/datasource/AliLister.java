@@ -29,8 +29,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
         doList();
     }
 
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    @Override
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     public String getPrefix() {
@@ -46,7 +47,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -99,7 +100,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
@@ -119,7 +120,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -149,7 +150,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public List<OSSObjectSummary> currents() {
+    public synchronized List<OSSObjectSummary> currents() {
         return ossObjectList;
     }
 
@@ -173,6 +174,13 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public void updateMarkerBy(OSSObjectSummary object) {
         if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
+    }
+
+    @Override
+    public synchronized String truncate() {
+        String endKey = currentEndKey();
+        setEndPrefix(endKey);
+        return endKey;
     }
 
     @Override

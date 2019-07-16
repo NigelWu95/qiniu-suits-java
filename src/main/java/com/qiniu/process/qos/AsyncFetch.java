@@ -111,7 +111,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
-                        callbackHost, String.valueOf(fileType)) :
+                        callbackHost, fileType) :
                 bucketManager.asynFetch(url, bucket, key);
     }
 

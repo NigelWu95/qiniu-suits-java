@@ -29,8 +29,9 @@ public class TenLister implements ILister<COSObjectSummary> {
         doList();
     }
 
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    @Override
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     public String getPrefix() {
@@ -46,7 +47,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -97,7 +98,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
@@ -113,7 +114,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -143,7 +144,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public List<COSObjectSummary> currents() {
+    public synchronized List<COSObjectSummary> currents() {
         return cosObjectList;
     }
 
@@ -167,6 +168,13 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void updateMarkerBy(COSObjectSummary object) {
         if (object != null) listObjectsRequest.setMarker(ListingUtils.getTenCosMarker(object.getKey()));
+    }
+
+    @Override
+    public synchronized String truncate() {
+        String endKey = currentEndKey();
+        setEndPrefix(endKey);
+        return endKey;
     }
 
     @Override

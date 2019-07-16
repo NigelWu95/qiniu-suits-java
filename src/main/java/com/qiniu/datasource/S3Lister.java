@@ -31,8 +31,8 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -105,7 +105,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
             listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
@@ -122,7 +122,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -153,7 +153,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public List<S3ObjectSummary> currents() {
+    public synchronized List<S3ObjectSummary> currents() {
         return s3ObjectList;
     }
 
@@ -190,6 +190,13 @@ public class S3Lister implements ILister<S3ObjectSummary> {
             listObjectsRequest.setContinuationToken(null);
             listObjectsRequest.setStartAfter(object.getKey());
         }
+    }
+
+    @Override
+    public synchronized String truncate() {
+        String endKey = currentEndKey();
+        setEndPrefix(endKey);
+        return endKey;
     }
 
     @Override

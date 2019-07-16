@@ -38,8 +38,8 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public String getBucket() {
+        return bucket;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -198,7 +198,7 @@ public class UpLister implements ILister<FileItem> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             fileItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
@@ -212,7 +212,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -242,7 +242,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public List<FileItem> currents() {
+    public synchronized List<FileItem> currents() {
         return fileItems;
     }
 
@@ -272,6 +272,13 @@ public class UpLister implements ILister<FileItem> {
         if (object != null) {
             marker = ListingUtils.getUpYunMarker(bucket, object);
         }
+    }
+
+    @Override
+    public synchronized String truncate() {
+        String endKey = currentEndKey();
+        setEndPrefix(endKey);
+        return endKey;
     }
 
     @Override

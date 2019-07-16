@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ILister<E> {
 
-    void setPrefix(String prefix);
+    String getBucket();
 
     String getPrefix();
 
@@ -41,6 +41,8 @@ public interface ILister<E> {
     String currentEndKey();
 
     void updateMarkerBy(E object);
+
+    String truncate();
 
     /**
      * 关闭掉使用的资源

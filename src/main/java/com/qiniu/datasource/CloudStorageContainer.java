@@ -463,13 +463,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                             System.out.println("to re-split prefixes...");
                             for (ILister<E> lister : listerList) {
                                 if (lister.hasNext()) {
-                                    String endKey = lister.currentEndKey();
+                                    String lastKey = lister.truncate();
                                     String prefix = lister.getPrefix();
-                                    lister.setEndPrefix(endKey);
                                     if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                                     extremePrefixes.add(prefix);
                                     recordListerByPrefix(prefix);
-                                    insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", endKey); }});
+                                    insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", lastKey); }});
                                 }
                             }
                             startCheck = false;
@@ -506,7 +505,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             listerList = concurrentListing(listerList);
             List<String> extremePrefixes = checkListerInPool(listerList);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
-                for (String extremePrefix : extremePrefixes) recordListerByPrefix(extremePrefix);
                 listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
                 listerList = concurrentListing(listerList);
                 extremePrefixes = checkListerInPool(listerList);

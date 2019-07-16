@@ -29,8 +29,9 @@ public class NetLister implements ILister<NOSObjectSummary> {
         doList();
     }
 
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    @Override
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     public String getPrefix() {
@@ -46,7 +47,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endKeyPrefix) {
+    public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
         checkedListWithEnd();
     }
@@ -100,7 +101,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ObjectListing objectListing = nosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
@@ -117,7 +118,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -147,7 +148,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public List<NOSObjectSummary> currents() {
+    public synchronized List<NOSObjectSummary> currents() {
         return nosObjectList;
     }
 
@@ -171,6 +172,13 @@ public class NetLister implements ILister<NOSObjectSummary> {
     @Override
     public void updateMarkerBy(NOSObjectSummary object) {
         if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
+    }
+
+    @Override
+    public synchronized String truncate() {
+        String endKey = currentEndKey();
+        setEndPrefix(endKey);
+        return endKey;
     }
 
     @Override
