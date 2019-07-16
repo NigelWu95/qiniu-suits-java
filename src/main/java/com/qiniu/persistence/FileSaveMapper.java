@@ -79,7 +79,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
             while (retry > 0) {
                 try {
                     if (writerMap.get(entry.getKey()) != null) writerMap.get(entry.getKey()).close();
-                    File file = new File(targetFileDir, entry.getKey());
+                    File file = new File(targetFileDir, prefix + entry.getKey() + this.suffix + ext);
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
                         if (reader.readLine() == null) {
