@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -215,8 +214,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (!lister.hasNext() && prefixAndEndedMap.containsKey(lister.getPrefix())) {
             if (lister.getEndPrefix() == null || "".equals(lister.getEndPrefix())) {
                 prefixAndEndedMap.get(lister.getPrefix()).put("start", lister.currentEndKey());
-            } else {
-                prefixAndEndedMap.remove(lister.getPrefix());
             }
         }
     }
@@ -334,34 +331,30 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             // 如果存在 next 且当前获取的最后一个对象文件名不为空，则可以根据最后一个对象的文件名计算后续的前缀字符
             String endKey = lister.currentEndKey();
             int prefixLen = startPrefix.length();
-            if (endKey == null) {
-                lister.setStraight(true);
-            } else if (endKey.length() > prefixLen) {
-                // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符 point，用于和预定义前缀列表进行比较，确定
-                // lister 的 endPrefix
-                point = endKey.substring(prefixLen, prefixLen + 1);
-                // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
-                if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
-                    point = null;
-                    lister.setStraight(true);
-                // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀
-                } else if (point.compareTo(originPrefixList.get(0)) < 0) {
-                    point = startPoint;
-                    lister.setEndPrefix(startPrefix + startPoint);
+            if (endKey != null) {
+                if (endKey.length() > prefixLen) {
+                    // 如果最后一个对象的文件名长度大于 prefixLen，则可以取出从当前前缀开始的下一个字符 point，用于和预定义前缀列表进行比较，
+                    // 确定 lister 的 endPrefix
+                    point = endKey.substring(prefixLen, prefixLen + 1);
+                    // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
+                    if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+                        point = null;
+                        // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀
+                    } else if (point.compareTo(originPrefixList.get(0)) < 0) {
+                        point = startPoint;
+                        lister.setEndPrefix(startPrefix + startPoint);
+                    } else {
+                        insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
+                            put("marker", lister.getMarker());
+                        }});
+                        lister.setEndPrefix(endKey);
+                    }
                 } else {
-                    insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
-                        put("marker", lister.getMarker());
-                    }});
-                    lister.setEndPrefix(endKey);
+                    point = startPoint;
+                    // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
+                    lister.setEndPrefix(startPrefix + startPoint);
                 }
-            } else {
-                point = startPoint;
-                // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
-                lister.setEndPrefix(startPrefix + startPoint);
             }
-        } else {
-            lister.setStraight(true);
-//            lister.setEndPrefix(endKey);
         }
         return point;
     }
@@ -391,8 +384,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private List<ILister<E>> filteredNextList(ILister<E> lister) {
         String point = computePoint(lister, true);
-        int order = UniOrderUtils.getOrder();
-        executorPool.execute(() -> listing(lister, order));
+        executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
         if (point != null) {
             List<String> nextPrefixes = originPrefixList.stream()
                     .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
@@ -402,10 +394,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             List<ILister<E>> nextLevelList = getListerListByPrefixes(nextPrefixes.stream());
             Iterator<ILister<E>> it = nextLevelList.iterator();
             while (it.hasNext()) {
-                ILister<E> eiLister = it.next();
-                if(eiLister.canStraight()) {
-                    int eOrder = UniOrderUtils.getOrder();
-                    executorPool.execute(() -> listing(eiLister, eOrder));
+                ILister<E> nLister = it.next();
+                if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
+                    executorPool.execute(() -> listing(nLister, UniOrderUtils.getOrder()));
                     it.remove();
                 }
             }
@@ -413,30 +404,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } else {
             return null;
         }
-    }
-
-    private List<ILister<E>> finalTaskToPool(List<ILister<E>> listerList) {
-        executorPool = Executors.newFixedThreadPool(threads);
-        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
-            listerList = listerList.parallelStream().map(lister -> {
-                if (lister.canStraight()) {
-                    int order = UniOrderUtils.getOrder();
-                    executorPool.execute(() -> listing(lister, order));
-                    return null;
-                } else {
-                    // 对非 canStraight 的列举对象进行下一级的检索，得到更深层次前缀的可并发列举对象
-                    return filteredNextList(lister);
-                }
-            }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-        }
-        if (listerList != null && listerList.size() > 0) {
-            listerList.parallelStream().forEach(lister -> {
-                int order = UniOrderUtils.getOrder();
-                executorPool.execute(() -> listing(lister, order));
-            });
-        }
-        executorPool.shutdown();
-        return listerList;
     }
 
     private List<String> checkListerInPool(List<ILister<E>> listerList) throws Exception {
@@ -489,10 +456,42 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return extremePrefixes;
     }
 
-    private void concurrentListing(List<ILister<E>> listerList) throws Exception {
+    private List<String> lastEndedPrefixes() {
+        List<String> phraseLastPrefixes = new ArrayList<>(prefixAndEndedMap.keySet());
+        phraseLastPrefixes.sort(Comparator.reverseOrder());
+        phraseLastPrefixes.remove("");
+        String lastPrefix;
+        Map<String, String> prefixMap;
+        for (String prefix : phraseLastPrefixes) {
+            lastPrefix = prefix.substring(0, prefix.length() - 1);
+            prefixMap = prefixAndEndedMap.get(lastPrefix);
+            if (prefixMap != null && prefixMap.size() == 0) {
+                prefixAndEndedMap.put(lastPrefix, prefixAndEndedMap.get(prefix));
+                prefixAndEndedMap.remove(prefix);
+            }
+        }
+        phraseLastPrefixes = new ArrayList<>(prefixAndEndedMap.keySet());
+        for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
+        return phraseLastPrefixes;
+    }
+
+    private void concurrentListing(ILister<E> startLister) throws Exception {
+        List<ILister<E>> listerList = null;
         try {
-            listerList.addAll(getListerListByPrefixes(prefixes.parallelStream()));
-            listerList = finalTaskToPool(listerList);
+            executorPool = Executors.newFixedThreadPool(threads);
+            if (startLister != null && (startLister.currents().size() > 0 || startLister.hasNext())) {
+                executorPool.execute(() -> listing(startLister, UniOrderUtils.getOrder()));
+            }
+            listerList = getListerListByPrefixes(prefixes.parallelStream());
+            while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+                listerList = listerList.parallelStream().map(this::filteredNextList).filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            }
+            if (listerList != null && listerList.size() > 0) {
+                listerList.parallelStream().forEach(lister ->
+                    executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
+            }
+            executorPool.shutdown();
             List<String> extremePrefixes = checkListerInPool(listerList);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
                 executorPool = Executors.newFixedThreadPool(threads);
@@ -500,26 +499,22 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         .map(this::filteredNextList).filter(Objects::nonNull)
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
                 if (listerList != null && listerList.size() > 0) {
-                    listerList.parallelStream().forEach(lister -> {
-                        int order = UniOrderUtils.getOrder();
-                        executorPool.execute(() -> listing(lister, order));
-                    });
+                    listerList.parallelStream().forEach(lister ->
+                        executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
                 }
                 executorPool.shutdown();
                 extremePrefixes = checkListerInPool(listerList);
             }
-            List<String> phraseLastPrefixes = new ArrayList<>();
-            for (Map.Entry<String, Map<String, String>> stringMapEntry : prefixAndEndedMap.entrySet()) {
-                String prefix = stringMapEntry.getKey().substring(0, stringMapEntry.getKey().length() - 1);
-                phraseLastPrefixes.add(prefix);
-                System.out.printf("prefix: %s, %s\n", prefix, stringMapEntry.getValue());
-                insertIntoPrefixesMap(prefix, stringMapEntry.getValue());
-            }
-            for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
+            List<String> phraseLastPrefixes = lastEndedPrefixes();
             listerList = getListerListByPrefixes(phraseLastPrefixes.parallelStream());
             threads = listerList.size();
             System.out.printf("threads: %s\n", threads);
-            if (threads > 0) finalTaskToPool(listerList);
+            if (threads > 0) {
+                executorPool = Executors.newFixedThreadPool(threads);
+                listerList.parallelStream().forEach(lister ->
+                    executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
+                executorPool.shutdown();
+            }
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
@@ -547,7 +542,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        List<ILister<E>> listerList = new ArrayList<>();
         ILister<E> startLister;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
@@ -576,8 +570,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixes = prefixes.subList(1, prefixes.size());
             }
         }
-        if (startLister != null && (startLister.currents().size() > 0 || startLister.hasNext())) listerList.add(startLister);
+        if (prefixRight) prefixAndEndedMap.put("", new HashMap<>());
         for (String prefix : prefixes) recordListerByPrefix(prefix);
-        concurrentListing(listerList);
+        concurrentListing(startLister);
     }
 }
