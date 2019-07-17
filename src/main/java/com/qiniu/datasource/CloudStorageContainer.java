@@ -415,7 +415,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private List<ILister<E>> concurrentListing(List<ILister<E>> listerList) {
+    private List<ILister<E>> finalTaskToPool(List<ILister<E>> listerList) {
         executorPool = Executors.newFixedThreadPool(threads);
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             listerList = listerList.parallelStream().map(lister -> {
@@ -489,47 +489,37 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return extremePrefixes;
     }
 
-    private void concurrentListing(ILister<E> startLister, String fPoint) throws IOException {
-        List<ILister<E>> listerList = null;
+    private void concurrentListing(List<ILister<E>> listerList) throws Exception {
         try {
-            prefixes = prefixes.stream()
-                    .filter(prefix -> prefix.compareTo(fPoint) >= 0 && checkPrefix(prefix))
-                    .peek(this::recordListerByPrefix)
-                    .collect(Collectors.toList());
-            listerList = getListerListByPrefixes(prefixes.parallelStream());
-            if (prefixRight) {
-                ILister<E> lastLister = listerList.get(listerList.size() - 1);
-                prefixAndEndedMap.put(lastLister.getPrefix(), new HashMap<>());
-            }
-            if (startLister != null) listerList.add(startLister);
-            listerList = concurrentListing(listerList);
+            listerList.addAll(getListerListByPrefixes(prefixes.parallelStream()));
+            listerList = finalTaskToPool(listerList);
             List<String> extremePrefixes = checkListerInPool(listerList);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
+                executorPool = Executors.newFixedThreadPool(threads);
                 listerList = getListerListByPrefixes(extremePrefixes.parallelStream()).parallelStream()
                         .map(this::filteredNextList).filter(Objects::nonNull)
                         .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
                 if (listerList != null && listerList.size() > 0) {
-                    executorPool = Executors.newFixedThreadPool(threads);
                     listerList.parallelStream().forEach(lister -> {
                         int order = UniOrderUtils.getOrder();
                         executorPool.execute(() -> listing(lister, order));
                     });
-                    executorPool.shutdown();
                 }
+                executorPool.shutdown();
                 extremePrefixes = checkListerInPool(listerList);
             }
             List<String> phraseLastPrefixes = new ArrayList<>();
             for (Map.Entry<String, Map<String, String>> stringMapEntry : prefixAndEndedMap.entrySet()) {
                 String prefix = stringMapEntry.getKey().substring(0, stringMapEntry.getKey().length() - 1);
                 phraseLastPrefixes.add(prefix);
-                System.out.printf("prefix: %s, end: %s\n", prefix, stringMapEntry.getValue());
+                System.out.printf("prefix: %s, %s\n", prefix, stringMapEntry.getValue());
                 insertIntoPrefixesMap(prefix, stringMapEntry.getValue());
             }
             for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
             listerList = getListerListByPrefixes(phraseLastPrefixes.parallelStream());
             threads = listerList.size();
             System.out.printf("threads: %s\n", threads);
-            if (threads > 0) concurrentListing(listerList);
+            if (threads > 0) finalTaskToPool(listerList);
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
@@ -557,17 +547,25 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        List<ILister<E>> listerList = new ArrayList<>();
         ILister<E> startLister;
-        String point = "";
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
-            if (threads > 1) point = computePoint(startLister, false);
-            if (point == null || "".equals(point)) {
+            if (threads > 1) {
+                String point = computePoint(startLister, false);
+                if (point == null) {
+                    threads = 1;
+                } else {
+                    prefixes = originPrefixList.stream()
+                            .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
+                            .collect(Collectors.toList());
+                    prefixRight = true;
+                }
+            }
+            if (threads <= 1) {
                 int order = UniOrderUtils.getOrder();
                 listing(startLister, order);
                 return;
-            } else {
-                prefixes = originPrefixList;
             }
         } else {
             if (prefixLeft) {
@@ -578,6 +576,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixes = prefixes.subList(1, prefixes.size());
             }
         }
-        concurrentListing(startLister, point);
+        if (startLister != null && (startLister.currents().size() > 0 || startLister.hasNext())) listerList.add(startLister);
+        for (String prefix : prefixes) recordListerByPrefix(prefix);
+        concurrentListing(listerList);
     }
 }
