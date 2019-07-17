@@ -85,7 +85,10 @@ public class EntryMain {
                 File file = new File(configFiles.get(i));
                 if (file.exists()) {
                     configFilePath = configFiles.get(i);
+                    if (i < 3) System.out.printf("use default config file: %s\n", configFilePath);
                     break;
+                } else if (i >= 3) {
+                    System.out.printf("no such config file: %s\n", configFiles.get(i));
                 }
             }
             if (configFilePath == null) throw new IOException("there is no config file detected.");
