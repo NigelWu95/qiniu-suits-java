@@ -20,7 +20,6 @@ public class QiniuLister implements ILister<FileInfo> {
     private String marker;
     private String endPrefix;
     private int limit;
-    private boolean straight;
     private List<FileInfo> fileInfoList;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -73,16 +72,6 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public int getLimit() {
         return limit;
-    }
-
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
     }
 
     private List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {

@@ -66,16 +66,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
     private void checkedListWithEnd() {
         String endKey = currentEndKey();
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;

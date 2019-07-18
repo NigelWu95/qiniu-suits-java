@@ -78,16 +78,6 @@ public class UpLister implements ILister<FileItem> {
         return limit;
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
     private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
         StringBuilder text = new StringBuilder();
         List<FileItem> fileItems = new ArrayList<>();
