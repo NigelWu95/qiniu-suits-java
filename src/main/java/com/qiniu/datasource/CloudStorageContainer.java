@@ -210,16 +210,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return json;
     }
 
-    private void updatePrefixAndEnd(ILister<E> lister) {
-        if (lister.getPrefix().startsWith("export-parquet/date=2018-11-0"))
-            System.out.println();
-        if (!lister.hasNext() && prefixAndEndedMap.containsKey(lister.getPrefix())) {
-//            if (lister.getEndPrefix() == null || "".equals(lister.getEndPrefix())) {
-                prefixAndEndedMap.get(lister.getPrefix()).put("start", lister.currentEndKey());
-//            }
-        }
-    }
-
     /**
      * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
      * @param lister 已经初始化的 lister 对象
@@ -234,7 +224,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<String> writeList;
         List<E> objects = lister.currents();
         int retry;
-        if (objects.size() <= 0) updatePrefixAndEnd(lister);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || lister.hasNext()) {
             recordLister(lister);
@@ -256,7 +245,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             retry = retryTimes;
             while (true) {
                 try {
-                    updatePrefixAndEnd(lister);
+                    if (objects.size() <= 0 || !lister.hasNext()) {
+                        if (prefixAndEndedMap.containsKey(lister.getPrefix())) {
+                            prefixAndEndedMap.get(lister.getPrefix()).put("start", lister.currentEndKey());
+                        }
+                    }
                     lister.listForward(); // 要求 listForward 实现中先做 hashNext 判断，if (!hasNext) clear();
                     objects = lister.currents();
                     break;
