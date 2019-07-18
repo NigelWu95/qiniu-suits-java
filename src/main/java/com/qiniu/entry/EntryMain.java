@@ -68,42 +68,35 @@ public class EntryMain {
     }
 
     public static Map<String, String> getEntryParams(String[] args, Map<String, String> preSetMap) throws IOException {
-        Map<String, String> paramsMap;
-        List<String> configFiles = new ArrayList<String>(){{
-            add("resources" + System.getProperty("file.separator") + "application.config");
-            add("resources" + System.getProperty("file.separator") + ".application.config");
-            add("resources" + System.getProperty("file.separator") + ".application.properties");
-        }};
-        boolean paramFromConfig = true;
         if (args != null && args.length > 0) {
-            if (args[0].startsWith("-config=")) configFiles.add(args[0].split("=")[1]);
-            else paramFromConfig = false;
-        }
-        String configFilePath = null;
-        if (paramFromConfig) {
+            Map<String, String> paramsMap = ParamsUtils.toParamsMap(args, preSetMap);
+            if (paramsMap.containsKey("config")) {
+                return ParamsUtils.toParamsMap(paramsMap.get("config"));
+            } else {
+                return paramsMap;
+            }
+        } else {
+            String configFilePath = null;
+            List<String> configFiles = new ArrayList<String>(){{
+                add("resources" + System.getProperty("file.separator") + "application.config");
+                add("resources" + System.getProperty("file.separator") + ".application.config");
+                add("resources" + System.getProperty("file.separator") + ".application.properties");
+            }};
             for (int i = configFiles.size() - 1; i >= 0; i--) {
                 File file = new File(configFiles.get(i));
                 if (file.exists()) {
                     configFilePath = configFiles.get(i);
-                    if (i < 3) System.out.printf("use default config file: %s\n", configFilePath);
+                    System.out.printf("use default config file: %s\n", configFilePath);
                     break;
-                } else if (i >= 3) {
-                    System.out.printf("no such config file: %s\n", configFiles.get(i));
                 }
             }
-            if (configFilePath == null) throw new IOException("there is no config file detected.");
-            else paramFromConfig = true;
-        }
-        if (paramFromConfig) {
-            if (configFilePath.endsWith(".properties")) {
-                paramsMap = ParamsUtils.toParamsMap(new PropertiesFile(configFilePath).getProperties());
+            if (configFilePath == null) {
+                throw new IOException("there is no config file detected.");
+            } else if (configFilePath.endsWith(".properties")) {
+                return ParamsUtils.toParamsMap(new PropertiesFile(configFilePath).getProperties());
             } else {
-                paramsMap = ParamsUtils.toParamsMap(configFilePath);
+                return ParamsUtils.toParamsMap(configFilePath);
             }
-        } else {
-            paramsMap = ParamsUtils.toParamsMap(args, preSetMap);
-            paramsMap.putAll(ParamsUtils.toParamsMap(args, preSetMap));
         }
-        return paramsMap;
     }
 }

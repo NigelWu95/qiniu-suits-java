@@ -350,6 +350,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     lister.setEndPrefix(startPrefix + startPoint);
                 }
             }
+        } else if (lister.currents().size() <= 0) {
+            prefixAndEndedMap.remove(lister.getPrefix());
         }
         return point;
     }
