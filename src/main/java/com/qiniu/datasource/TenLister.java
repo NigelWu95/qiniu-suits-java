@@ -15,7 +15,6 @@ public class TenLister implements ILister<COSObjectSummary> {
     private COSClient cosClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
-    private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {

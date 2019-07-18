@@ -14,7 +14,6 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     private AmazonS3 s3Client;
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
-    private boolean straight;
     private List<S3ObjectSummary> s3ObjectList;
 
     public S3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,

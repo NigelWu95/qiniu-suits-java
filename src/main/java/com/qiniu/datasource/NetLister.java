@@ -15,7 +15,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private NosClient nosClient;
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
-    private boolean straight;
     private List<NOSObjectSummary> nosObjectList;
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {

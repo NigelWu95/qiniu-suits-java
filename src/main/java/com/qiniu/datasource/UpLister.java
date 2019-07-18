@@ -22,7 +22,6 @@ public class UpLister implements ILister<FileItem> {
     private String marker;
     private String endPrefix;
     private int limit;
-    private boolean straight;
     private List<FileItem> fileItems;
     private List<String> directories;
 

@@ -15,7 +15,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private OSSClient ossClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
-    private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
