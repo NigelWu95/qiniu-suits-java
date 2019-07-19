@@ -111,10 +111,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
         if (prefixesMap == null) {
             this.prefixesMap = new HashMap<>();
+            if (antiPrefixes != null && antiPrefixes.size() > 0) {
+                prefixes = originPrefixList.stream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
+            }
         } else {
             this.prefixesMap = prefixesMap;
-            prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix)
-                    .sorted().collect(Collectors.toList());
+            prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
             int size = prefixes.size();
             if (size == 0) return;
             Iterator<String> iterator = prefixes.iterator();
@@ -282,12 +284,17 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     ILister<E> generateLister(String prefix) throws SuitsException {
         int retry = retryTimes;
-        Map<String, String> map;
-        if (prefixesMap.containsKey(prefix) && prefixesMap.get(prefix) != null) map = prefixesMap.get(prefix);
-        else map = new HashMap<>();
-        String marker = map.get("marker");
-        String start = map.get("start");
-        String end = map.get("end");
+        Map<String, String> map = prefixesMap.get(prefix);
+        String marker;
+        String start;
+        String end;
+        if (map == null) {
+            marker = start = end = null;
+        } else {
+            marker = map.get("marker");
+            start = map.get("start");
+            end = map.get("end");
+        }
         while (true) {
             try {
                 return getLister(prefix, marker, start, end);
@@ -532,8 +539,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixes = prefixes.subList(1, prefixes.size());
             }
         }
+        executorPool = Executors.newFixedThreadPool(threads);
         try {
-            executorPool = Executors.newFixedThreadPool(threads);
             if (startLister != null && (startLister.currents().size() > 0 || startLister.hasNext())) {
                 executorPool.execute(() -> listing(startLister, UniOrderUtils.getOrder()));
             }
