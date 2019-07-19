@@ -448,22 +448,18 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         phraseLastPrefixes.sort(Comparator.reverseOrder());
         String lastPrefix;
         Map<String, String> prefixMap;
+        Map<String, String> lastPrefixMap;
         for (String prefix : phraseLastPrefixes) {
+            prefixMap = prefixAndEndedMap.get(prefix);
+            if (prefixMap.size() == 0) prefixMap.put("end", prefix);
             lastPrefix = prefix.substring(0, prefix.length() - 1);
-            prefixMap = prefixAndEndedMap.get(lastPrefix);
-            if (prefixMap != null) {
-//                if (prefixMap.size() == 0) {
-                    prefixAndEndedMap.put(lastPrefix, prefixAndEndedMap.get(prefix));
-                    prefixAndEndedMap.remove(prefix);
-//                }
+            lastPrefixMap = prefixAndEndedMap.get(lastPrefix);
+            if (lastPrefixMap != null) {
+                prefixAndEndedMap.put(lastPrefix, prefixMap);
+                prefixAndEndedMap.remove(prefix);
             } else {
-                if ("".equals(lastPrefix)) {
-                    if (prefixRight) {
-                        prefixAndEndedMap.put(lastPrefix, prefixAndEndedMap.get(prefix));
-                        prefixAndEndedMap.remove(prefix);
-                    }
-                } else {
-                    prefixAndEndedMap.put(lastPrefix, prefixAndEndedMap.get(prefix));
+                if (!"".equals(lastPrefix) || prefixRight) {
+                    prefixAndEndedMap.put(lastPrefix, prefixMap);
                     prefixAndEndedMap.remove(prefix);
                 }
             }
