@@ -275,6 +275,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } catch (Throwable e) {
             e.printStackTrace();
             System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + prefixesJson.get(lister.getPrefix()));
+            Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
+            if (map != null) map.put("start", lister.currentEndKey());
         } finally {
             UniOrderUtils.returnOrder(order);
             if (saver != null) saver.closeWriters();
@@ -345,8 +347,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     lister.setEndPrefix(startPrefix + startPoint);
                 }
             }
-        } else if (lister.currents().size() <= 0) {
-            prefixAndEndedMap.remove(lister.getPrefix());
         }
         return point;
     }
@@ -369,31 +369,36 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).collect(Collectors.toList());
         if (nextLevelList.size() > 0) {
             ILister<E> lastLister = nextLevelList.get(nextLevelList.size() - 1);
-            prefixAndEndedMap.put(lastLister.getPrefix(), new HashMap<>());
+            Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
+            if (map == null) map = new HashMap<>();
+            prefixAndEndedMap.put(lastLister.getPrefix(), map);
+        }
+        Iterator<ILister<E>> it = nextLevelList.iterator();
+        while (it.hasNext()) {
+            ILister<E> nLister = it.next();
+            if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
+                executorPool.execute(() -> listing(nLister, UniOrderUtils.getOrder()));
+                it.remove();
+            }
         }
         return nextLevelList;
     }
 
-    private List<ILister<E>> filteredNextList(ILister<E> lister) {
-        String point = computePoint(lister, true);
-        executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
-        if (point != null) {
-            List<String> nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(point) >= 0)
-                    .map(prefix -> prefix = lister.getPrefix() + prefix).filter(this::checkPrefix)
-                    .peek(this::recordListerByPrefix).collect(Collectors.toList());
-            List<ILister<E>> nextLevelList = getListerListByPrefixes(nextPrefixes.stream());
-            Iterator<ILister<E>> it = nextLevelList.iterator();
-            while (it.hasNext()) {
-                ILister<E> nLister = it.next();
-                if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
-                    executorPool.execute(() -> listing(nLister, UniOrderUtils.getOrder()));
-                    it.remove();
-                }
+    private List<ILister<E>> computeToNextLevel(List<ILister<E>> listerList) {
+        return listerList.parallelStream().map(lister -> {
+            String point = computePoint(lister, true);
+            if (lister.hasNext() || lister.currents().size() > 0) {
+                executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
             }
-            return nextLevelList;
-        } else {
-            return null;
-        }
+            if (point != null) {
+                List<String> nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(point) >= 0)
+                        .map(prefix -> prefix = lister.getPrefix() + prefix).filter(this::checkPrefix)
+                        .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                return getListerListByPrefixes(nextPrefixes.stream());
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
     private List<String> checkListerInPool(List<ILister<E>> listerList) throws Exception {
@@ -454,7 +459,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> lastPrefixMap;
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
-            if (prefixMap.size() == 0) prefixMap.put("end", prefix);
+            if (prefixMap.size() == 0) {
+                prefixAndEndedMap.remove(prefix);
+                continue;
+            }
+            removePrefixConfig(prefix);
             lastPrefix = prefix.substring(0, prefix.length() - 1);
             lastPrefixMap = prefixAndEndedMap.get(lastPrefix);
             if (lastPrefixMap != null) {
@@ -477,9 +486,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<String> extremePrefixes = checkListerInPool(listerList);
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(threads);
-            listerList = getListerListByPrefixes(extremePrefixes.parallelStream()).parallelStream()
-                    .map(this::filteredNextList).filter(Objects::nonNull)
-                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
+            listerList = computeToNextLevel(listerList);
             if (listerList != null && listerList.size() > 0) {
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
             }
@@ -544,8 +552,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             for (String prefix : prefixes) recordListerByPrefix(prefix);
             List<ILister<E>> listerList = getListerListByPrefixes(prefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
-                listerList = listerList.parallelStream().map(this::filteredNextList).filter(Objects::nonNull)
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
