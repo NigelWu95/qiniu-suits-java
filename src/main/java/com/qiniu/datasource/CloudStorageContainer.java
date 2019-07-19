@@ -42,6 +42,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected List<String> originPrefixList = new ArrayList<>();
     public static String startPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
@@ -264,9 +265,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             // 多线程情况下不要直接使用传入的 processor，因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             if (processor != null) lineProcessor = processor.clone();
             saver = getNewResultSaver(newOrder);
+            saverMap.put(newOrder, saver);
             String record = "order " + newOrder + ": " + lister.getPrefix();
             export(lister, saver, lineProcessor);
             removePrefixConfig(lister.getPrefix());
+            saverMap.remove(newOrder);
             record += "\tsuccessfully done";
             System.out.println(record);
         } catch (Throwable e) {
@@ -553,6 +556,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
+            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) saverEntry.getValue().closeWriters();
         } finally {
             writeContinuedPrefixConfig(savePath, "prefixes");
         }

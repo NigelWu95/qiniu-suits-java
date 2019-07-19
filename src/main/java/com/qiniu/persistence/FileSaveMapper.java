@@ -74,11 +74,15 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     synchronized public void closeWriters() {
+        int retry;
+        BufferedWriter bufferedWriter;
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
-            int retry = retryTimes;
+            retry = retryTimes;
             while (retry > 0) {
                 try {
-                    if (writerMap.get(entry.getKey()) != null) writerMap.get(entry.getKey()).close();
+                    bufferedWriter = writerMap.get(entry.getKey());
+                    if (bufferedWriter != null) bufferedWriter.close();
+                    writerMap.remove(entry.getKey());
                     File file = new File(targetFileDir, prefix + entry.getKey() + this.suffix + ext);
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
