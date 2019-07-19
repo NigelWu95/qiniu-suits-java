@@ -108,7 +108,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             List<String> directories;
             if (listerList != null) {
                 for (UpLister lister : listerList) {
-                    if (lister.currents() != null) recordLister(lister);
                     directories = lister.getDirectories();
                     if (directories != null) {
                         for (String directory : directories) recordListerByPrefix(directory);
