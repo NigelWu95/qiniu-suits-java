@@ -230,7 +230,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 recordPrefixConfig(lister.getPrefix(), json);
                 if (objects.size() <= 0) map = prefixAndEndedMap.get(lister.getPrefix());
             } else {
-                removePrefixConfig(lister.getPrefix());
                 map = prefixAndEndedMap.get(lister.getPrefix());
             }
             if (map != null) map.put("start", lister.currentEndKey());
@@ -267,6 +266,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             saver = getNewResultSaver(newOrder);
             String record = "order " + newOrder + ": " + lister.getPrefix();
             export(lister, saver, lineProcessor);
+            removePrefixConfig(lister.getPrefix());
             record += "\tsuccessfully done";
             System.out.println(record);
         } catch (Throwable e) {
@@ -375,11 +375,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String point = computePoint(lister, true);
         executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
         if (point != null) {
-            List<String> nextPrefixes = originPrefixList.stream()
-                    .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
-                    .map(prefix -> prefix = lister.getPrefix() + prefix)
-                    .peek(this::recordListerByPrefix)
-                    .collect(Collectors.toList());
+            List<String> nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(point) >= 0)
+                    .map(prefix -> prefix = lister.getPrefix() + prefix).filter(this::checkPrefix)
+                    .peek(this::recordListerByPrefix).collect(Collectors.toList());
             List<ILister<E>> nextLevelList = getListerListByPrefixes(nextPrefixes.stream());
             Iterator<ILister<E>> it = nextLevelList.iterator();
             while (it.hasNext()) {
