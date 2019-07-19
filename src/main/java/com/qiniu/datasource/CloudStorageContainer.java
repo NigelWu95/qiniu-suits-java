@@ -42,7 +42,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected List<String> originPrefixList = new ArrayList<>();
     public static String startPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
+    ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {

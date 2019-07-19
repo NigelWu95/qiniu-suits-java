@@ -127,6 +127,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
+            for (Map.Entry<String, IResultOutput<BufferedWriter>> saverEntry : saverMap.entrySet()) saverEntry.getValue().closeWriters();
         } finally {
             writeContinuedPrefixConfig(savePath, "prefixes");
         }
