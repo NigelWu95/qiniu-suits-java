@@ -389,6 +389,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             String point = computePoint(lister, true);
             if (lister.hasNext() || lister.currents().size() > 0) {
                 executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
+            } else {
+                removePrefixConfig(lister.getPrefix());
+                lister.close();
             }
             if (point != null) {
                 List<String> nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(point) >= 0)
@@ -546,8 +549,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
         executorPool = Executors.newFixedThreadPool(threads);
         try {
-            if (startLister != null && (startLister.currents().size() > 0 || startLister.hasNext())) {
+            if (startLister.currents().size() > 0 || startLister.hasNext()) {
                 executorPool.execute(() -> listing(startLister, UniOrderUtils.getOrder()));
+            } else {
+                startLister.close();
             }
             for (String prefix : prefixes) recordListerByPrefix(prefix);
             List<ILister<E>> listerList = getListerListByPrefixes(prefixes.parallelStream());
