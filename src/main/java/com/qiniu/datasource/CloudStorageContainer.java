@@ -548,6 +548,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             executorPool.shutdown();
             waitAndTailListing(listerList);
+            System.out.println(info + " finished.");
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();

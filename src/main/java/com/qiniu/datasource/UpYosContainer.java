@@ -83,42 +83,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 .collect(Collectors.toList());
     }
 
-    private void concurrentListing() throws IOException {
-        executorPool = Executors.newFixedThreadPool(threads);
-        List<UpLister> listerList = null;
-        try {
-            listerList = getListerListByPrefixes(prefixes);
-            while (listerList != null && listerList.size() > 0) {
-                prefixes = listerList.parallelStream().map(UpLister::getDirectories)
-                        .filter(Objects::nonNull)
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-                if (prefixes == null || prefixes.size() == 0) {
-                    listerList = null;
-                } else {
-                    listerList = getListerListByPrefixes(prefixes);
-                }
-            }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated())
-                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
-            System.out.println("finished.");
-        } catch (Throwable e) {
-            executorPool.shutdownNow();
-            e.printStackTrace();
-            List<String> directories;
-            if (listerList != null) {
-                for (UpLister lister : listerList) {
-                    directories = lister.getDirectories();
-                    if (directories != null) {
-                        for (String directory : directories) recordListerByPrefix(directory);
-                    }
-                }
-            }
-        } finally {
-            writeContinuedPrefixConfig(savePath, "prefixes");
-        }
-    }
-
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
@@ -132,6 +96,39 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             listing(startLister, order);
             prefixes = startLister.getDirectories();
         }
-        concurrentListing();
+        executorPool = Executors.newFixedThreadPool(threads);
+        try {
+            List<UpLister> listerList = getListerListByPrefixes(prefixes);
+            while (listerList != null && listerList.size() > 0) {
+                try {
+                    prefixes = listerList.parallelStream().map(UpLister::getDirectories)
+                            .filter(Objects::nonNull)
+                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+                } catch (Throwable e) {
+                    List<String> directories;
+                    for (UpLister lister : listerList) {
+                        directories = lister.getDirectories();
+                        if (directories != null) {
+                            for (String directory : directories) recordListerByPrefix(directory);
+                        }
+                    }
+                    throw e;
+                }
+                if (prefixes == null || prefixes.size() == 0) {
+                    listerList = null;
+                } else {
+                    listerList = getListerListByPrefixes(prefixes);
+                }
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated())
+                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            System.out.println(info + " finished.");
+        } catch (Throwable e) {
+            executorPool.shutdownNow();
+            e.printStackTrace();
+        } finally {
+            writeContinuedPrefixConfig(savePath, "prefixes");
+        }
     }
 }
