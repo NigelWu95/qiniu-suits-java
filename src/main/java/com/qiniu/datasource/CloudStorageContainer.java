@@ -115,6 +115,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (antiPrefixes != null && antiPrefixes.size() > 0) {
                 prefixes = originPrefixList.stream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
             }
+            prefixRight = true;
         } else {
             this.prefixesMap = prefixesMap;
             prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
@@ -310,7 +311,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private String computePoint(ILister<E> lister, boolean doFutureCheck) {
+    private List<String> moreValidPrefixes(ILister<E> lister, boolean doFutureCheck) {
         boolean next;
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
@@ -348,7 +349,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 }
             }
         }
-        return point;
+        if (point != null) {
+            String finalPoint = point;
+            return originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                    .map(prefix -> lister.getPrefix() + prefix).filter(this::checkPrefix)
+                    .peek(this::recordListerByPrefix).collect(Collectors.toList());
+        } else {
+            return null;
+        }
     }
 
     private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream) {
@@ -386,17 +394,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private List<ILister<E>> computeToNextLevel(List<ILister<E>> listerList) {
         return listerList.parallelStream().map(lister -> {
-            String point = computePoint(lister, true);
+            List<String> nextPrefixes = moreValidPrefixes(lister, true);
             if (lister.hasNext() || lister.currents().size() > 0) {
                 executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
             } else {
                 removePrefixConfig(lister.getPrefix());
                 lister.close();
             }
-            if (point != null) {
-                List<String> nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(point) >= 0)
-                        .map(prefix -> prefix = lister.getPrefix() + prefix).filter(this::checkPrefix)
-                        .peek(this::recordListerByPrefix).collect(Collectors.toList());
+            if (nextPrefixes != null) {
                 return getListerListByPrefixes(nextPrefixes.stream());
             } else {
                 return null;
@@ -523,15 +528,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
             if (threads > 1) {
-                String point = computePoint(startLister, false);
-                if (point == null) {
-                    threads = 1;
-                } else {
-                    prefixes = originPrefixList.stream()
-                            .filter(prefix -> prefix.compareTo(point) >= 0 && checkPrefix(prefix))
-                            .collect(Collectors.toList());
-                    prefixRight = true;
-                }
+                prefixes = moreValidPrefixes(startLister, false);
+                if (prefixes == null) threads = 1;
             }
             if (threads <= 1) {
                 int order = UniOrderUtils.getOrder();
@@ -546,6 +544,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 startLister = generateLister(prefixes.get(0));
                 prefixes = prefixes.subList(1, prefixes.size());
             }
+            for (String prefix : prefixes) recordListerByPrefix(prefix);
         }
         executorPool = Executors.newFixedThreadPool(threads);
         try {
@@ -554,7 +553,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             } else {
                 startLister.close();
             }
-            for (String prefix : prefixes) recordListerByPrefix(prefix);
             List<ILister<E>> listerList = getListerListByPrefixes(prefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
                 listerList = computeToNextLevel(listerList);

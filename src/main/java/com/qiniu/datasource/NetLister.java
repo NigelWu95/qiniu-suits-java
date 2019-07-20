@@ -147,11 +147,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public String currentStartKey() {
-        return nosObjectList.size() > 0 ? nosObjectList.get(0).getKey() : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         NOSObjectSummary last = currentLast();

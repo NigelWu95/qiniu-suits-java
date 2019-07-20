@@ -245,11 +245,6 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public String currentStartKey() {
-        return fileItems.size() > 0 ? fileItems.get(0).key : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
         FileItem last = currentLast();
