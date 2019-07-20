@@ -539,6 +539,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return;
             }
         } else {
+            for (String prefix : prefixes) recordListerByPrefix(prefix);
             if (prefixLeft) {
                 startLister = generateLister("");
                 startLister.setEndPrefix(prefixes.get(0));
@@ -546,13 +547,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 startLister = generateLister(prefixes.get(0));
                 prefixes = prefixes.subList(1, prefixes.size());
             }
-            for (String prefix : prefixes) recordListerByPrefix(prefix);
         }
         executorPool = Executors.newFixedThreadPool(threads);
         try {
             if (startLister.currents().size() > 0 || startLister.hasNext()) {
                 executorPool.execute(() -> listing(startLister, UniOrderUtils.getOrder()));
             } else {
+                removePrefixConfig(startLister.getPrefix());
                 startLister.close();
             }
             List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
