@@ -242,8 +242,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
-                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...\n" + e.getMessage());
+                    System.out.println(e.getMessage());
                     retry = HttpRespUtils.listExceptionWithRetry(e, retry);
+                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...");
                 }
             }
             hasNext = lister.hasNext();
@@ -305,8 +306,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
-                System.out.println("generate lister by prefix:" + prefix + " retrying...\n" + e.getMessage());
+                System.out.println(e.getMessage());
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
+                System.out.println("generate lister by prefix:" + prefix + " retrying...");
             }
         }
     }
@@ -359,7 +361,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private List<ILister<E>> getListerListByPrefixes(Stream<String> prefixesStream) {
+    private List<ILister<E>> filteredListerByPrefixes(Stream<String> prefixesStream) {
         List<ILister<E>> nextLevelList = prefixesStream.map(prefix -> {
             try {
                 return generateLister(prefix);
@@ -402,7 +404,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 lister.close();
             }
             if (nextPrefixes != null) {
-                return getListerListByPrefixes(nextPrefixes.stream());
+                return filteredListerByPrefixes(nextPrefixes.stream());
             } else {
                 return null;
             }
@@ -494,7 +496,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<String> extremePrefixes = checkListerInPool(listerList);
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(threads);
-            listerList = getListerListByPrefixes(extremePrefixes.parallelStream());
+            listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
             listerList = computeToNextLevel(listerList);
             if (listerList != null && listerList.size() > 0) {
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
@@ -503,9 +505,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             extremePrefixes = checkListerInPool(listerList);
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
-        listerList = getListerListByPrefixes(phraseLastPrefixes.parallelStream());
-        if (listerList.size() > 0) {
-            executorPool = Executors.newFixedThreadPool(listerList.size());
+        if (phraseLastPrefixes.size() > 0) {
+            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
+            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
             listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
             executorPool.shutdown();
         }
@@ -553,7 +555,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             } else {
                 startLister.close();
             }
-            List<ILister<E>> listerList = getListerListByPrefixes(prefixes.parallelStream());
+            List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
                 listerList = computeToNextLevel(listerList);
             }
