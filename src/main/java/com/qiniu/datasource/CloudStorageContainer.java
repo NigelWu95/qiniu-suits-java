@@ -49,9 +49,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
-        setPrefixesAndMap(prefixesMap);
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
+        setPrefixesAndMap(prefixesMap);
         setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
@@ -114,6 +114,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             this.prefixesMap = new HashMap<>();
             if (antiPrefixes != null && antiPrefixes.size() > 0) {
                 prefixes = originPrefixList.stream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
+                prefixLeft = true;
             }
             prefixRight = true;
         } else {
@@ -242,9 +243,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
-                    System.out.println(e.getMessage());
                     retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying...");
+                    System.out.println(e.getMessage() + "list objects by prefix:" + lister.getPrefix() + " retrying...");
                 }
             }
             hasNext = lister.hasNext();
@@ -306,9 +306,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
-                System.out.println(e.getMessage());
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                System.out.println("generate lister by prefix:" + prefix + " retrying...");
+                System.out.println(e.getMessage() + "generate lister by prefix:" + prefix + " retrying...");
             }
         }
     }
@@ -349,6 +348,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
                     lister.setEndPrefix(startPrefix + startPoint);
                 }
+            } else {
+                return moreValidPrefixes(lister, true);
             }
         }
         if (point != null) {
@@ -394,15 +395,19 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return nextLevelList;
     }
 
+    private void processNodeLister(ILister<E> lister) {
+        if (lister.currents().size() > 0 || lister.hasNext()) {
+            executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
+        } else {
+            removePrefixConfig(lister.getPrefix());
+            lister.close();
+        }
+    }
+
     private List<ILister<E>> computeToNextLevel(List<ILister<E>> listerList) {
         return listerList.parallelStream().map(lister -> {
             List<String> nextPrefixes = moreValidPrefixes(lister, true);
-            if (lister.hasNext() || lister.currents().size() > 0) {
-                executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
-            } else {
-                removePrefixConfig(lister.getPrefix());
-                lister.close();
-            }
+            processNodeLister(lister);
             if (nextPrefixes != null) {
                 return filteredListerByPrefixes(nextPrefixes.stream());
             } else {
@@ -526,7 +531,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
-        ILister<E> startLister;
+        ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
             if (threads > 1) {
@@ -541,21 +546,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } else {
             for (String prefix : prefixes) recordListerByPrefix(prefix);
             if (prefixLeft) {
+                insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
                 startLister = generateLister("");
-                startLister.setEndPrefix(prefixes.get(0));
-            } else {
-                startLister = generateLister(prefixes.get(0));
-                prefixes = prefixes.subList(1, prefixes.size());
             }
         }
         executorPool = Executors.newFixedThreadPool(threads);
         try {
-            if (startLister.currents().size() > 0 || startLister.hasNext()) {
-                executorPool.execute(() -> listing(startLister, UniOrderUtils.getOrder()));
-            } else {
-                removePrefixConfig(startLister.getPrefix());
-                startLister.close();
-            }
+            if (startLister != null) processNodeLister(startLister);
             List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
                 listerList = computeToNextLevel(listerList);
