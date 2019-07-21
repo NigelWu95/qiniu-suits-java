@@ -17,7 +17,7 @@ public class SuitsException extends IOException {
     }
 
     public SuitsException(Exception e, int statusCode, String error) {
-        super(statusCode + error, e);
+        super(statusCode + ", " + error, e);
         this.statusCode = statusCode;
     }
 

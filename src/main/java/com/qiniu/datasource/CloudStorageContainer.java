@@ -244,7 +244,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     break;
                 } catch (SuitsException e) {
                     retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                    System.out.println(e.getMessage() + "list objects by prefix:" + lister.getPrefix() + " retrying...");
+                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying... " + e.getMessage());
                 }
             }
             hasNext = lister.hasNext();
@@ -307,7 +307,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                System.out.println(e.getMessage() + "generate lister by prefix:" + prefix + " retrying...");
+                System.out.println("generate lister by prefix:" + prefix + " retrying... " + e.getMessage());
             }
         }
     }
