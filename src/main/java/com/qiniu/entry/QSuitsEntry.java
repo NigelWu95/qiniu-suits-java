@@ -380,6 +380,7 @@ public class QSuitsEntry {
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数
             processor.setRetryTimes(retryTimes);
         }
+        if (!"qiniu".equals(source)) ListingUtils.checkQiniuAuth(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket);
         return processor;
     }
 

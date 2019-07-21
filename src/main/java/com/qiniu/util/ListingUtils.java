@@ -23,11 +23,14 @@ import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.Bucket;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
+import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -196,6 +199,13 @@ public class ListingUtils {
         String keyString = new String(decoder.decode(marker));
         int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
         return keyString.substring(index).replaceAll("(/~|/@~|/@#)", "/");
+    }
+
+    public static void checkQiniuAuth(String accessKey, String secretKey, Configuration configuration, String bucket)
+            throws QiniuException {
+        BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        bucketManager.listFilesV2(bucket, null, null, 1, null);
+        bucketManager = null;
     }
 
     public static Zone getQiniuRegion(String regionName) {
