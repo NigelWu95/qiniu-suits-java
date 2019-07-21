@@ -22,8 +22,6 @@ public interface ILineProcess<T> {
         return null;
     }
 
-    boolean validCheck(Map<String, String> line);
-
     String processLine(T line) throws IOException;
 
     void processLine(List<T> list) throws IOException;

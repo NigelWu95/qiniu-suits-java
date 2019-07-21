@@ -46,12 +46,12 @@ public class DeleteFile extends Base<Map<String, String>> {
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
+    protected boolean validCheck(Map<String, String> line) {
         return line.get("key") != null;
     }
 

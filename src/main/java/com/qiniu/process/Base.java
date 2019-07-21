@@ -85,9 +85,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @param line 输入的 line
      * @return 返回需要记录的信息字符串
      */
-    public abstract String resultInfo(T line);
+    protected abstract String resultInfo(T line);
 
-    public boolean validCheck(T line) {
+    protected boolean validCheck(T line) {
         return true;
     }
 
@@ -151,7 +151,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         List<String> errorLineList = new ArrayList<>();
         lineList = lineList.stream().filter(line -> {
             if (line == null || !validCheck(line)) {
-                errorLineList.add(line + "\tempty target key's value in line.");
+                errorLineList.add(line + " is empty or not valid.");
                 return false;
             } else {
                 return true;
@@ -227,7 +227,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
             if (line == null || !validCheck(line)) {
-                fileSaveMapper.writeError(line + "\tempty target key's value in line.", false);
+                fileSaveMapper.writeError(line + " is empty or not valid.", false);
                 continue;
             }
             retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
@@ -255,9 +255,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public String processLine(T line) throws IOException {
         try {
+            if (!validCheck(line)) throw new IOException(line + " is not valid.");
             return singleResult(line);
         } catch (NullPointerException e) {
-            throw new IOException("the processor may be already closed.");
+            throw new IOException("input is empty or the processor may be already closed.");
         }
     }
 
@@ -271,7 +272,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             if (batchSize > 1) batchProcess(lineList, retryTimes);
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
-            throw new IOException("the processor may be already closed.");
+            throw new IOException("input is empty or the processor may be already closed.");
         }
     }
 
@@ -282,5 +283,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         saveIndex = null;
         savePath = null;
         if (fileSaveMapper != null) fileSaveMapper.closeWriters();
+        fileSaveMapper = null;
     }
 }

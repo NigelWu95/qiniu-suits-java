@@ -70,12 +70,12 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
+    protected boolean validCheck(Map<String, String> line) {
         String url = line.get(urlIndex);
         return line.get("key") != null || (url != null && !url.isEmpty());
     }
