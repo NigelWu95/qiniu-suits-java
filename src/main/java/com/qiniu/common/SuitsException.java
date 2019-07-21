@@ -5,23 +5,23 @@ import java.io.IOException;
 public class SuitsException extends IOException {
 
     private int statusCode;
-    private String error;
+
+    public SuitsException(Exception e, int statusCode) {
+        super(e);
+        this.statusCode = statusCode;
+    }
 
     public SuitsException(int statusCode, String error) {
         super("code: " + statusCode + ", error: " + error);
         this.statusCode = statusCode;
-        this.error = error;
+    }
+
+    public SuitsException(Exception e, int statusCode, String error) {
+        super(error, e);
+        this.statusCode = statusCode;
     }
 
     public int getStatusCode() {
         return statusCode;
-    }
-
-    public void setError(String error) {
-        this.error = error;
-    }
-
-    public String getError() {
-        return error;
     }
 }

@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
@@ -95,16 +96,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             ossObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
-//        } catch (ClientException e) {
-//            int code = ListingUtils.AliStatusCode(e.getErrorCode(), -1);
-//            throw new SuitsException(code, e.getMessage());
+        } catch (ClientException e) {
+            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (ServiceException e) {
-            int code = ListingUtils.AliStatusCode(e.getErrorCode(), -1);
-            throw new SuitsException(code, e.getMessage());
+            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 

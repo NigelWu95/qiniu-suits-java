@@ -63,8 +63,7 @@ public final class HttpRespUtils {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException interruptEx) {
-                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
-                throw e;
+                e.addSuppressed(interruptEx);
             }
         } else if (e.getStatusCode() >= 500 && e.getStatusCode() < 600) {
             if (retry < 0) throw e;
@@ -73,7 +72,7 @@ public final class HttpRespUtils {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException interruptEx) {
-                    e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
+                    e.addSuppressed(interruptEx);
                     throw e;
                 }
                 return retry;

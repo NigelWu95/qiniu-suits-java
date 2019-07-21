@@ -94,11 +94,11 @@ public class TenLister implements ILister<COSObjectSummary> {
             cosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (CosServiceException e) {
-            throw new SuitsException(e.getStatusCode(), e.getMessage());
+            throw new SuitsException(e, e.getStatusCode());
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 
