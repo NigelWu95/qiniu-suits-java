@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -103,6 +104,8 @@ public class S3Lister implements ILister<S3ObjectSummary> {
             checkedListWithEnd();
         } catch (AmazonServiceException e) {
             throw new SuitsException(e, e.getStatusCode());
+        } catch (SdkClientException e) {
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

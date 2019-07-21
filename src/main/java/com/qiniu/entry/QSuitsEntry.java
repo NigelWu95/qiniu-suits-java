@@ -143,7 +143,7 @@ public class QSuitsEntry {
         return tenClientConfig == null ? getDefaultTenClientConfig() : tenClientConfig;
     }
 
-    private ClientConfig getDefaultTenClientConfig() throws IOException {
+    private ClientConfig getDefaultTenClientConfig() throws SuitsException {
         if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getTenCosRegion(
                 commonParams.getTencentSecretId(), commonParams.getTencentSecretKey(), bucket);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
@@ -251,7 +251,7 @@ public class QSuitsEntry {
         return qiniuQosContainer;
     }
 
-    public TenCosContainer getTenCosContainer() throws IOException {
+    public TenCosContainer getTenCosContainer() throws SuitsException {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
@@ -266,7 +266,7 @@ public class QSuitsEntry {
         return tenCosContainer;
     }
 
-    public AliOssContainer getAliOssContainer() throws IOException {
+    public AliOssContainer getAliOssContainer() throws SuitsException {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
         String endPoint;
