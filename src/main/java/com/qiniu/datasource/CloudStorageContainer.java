@@ -382,6 +382,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             ILister<E> lastLister = nextLevelList.get(nextLevelList.size() - 1);
             Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
             if (map == null) map = new HashMap<>();
+            map.remove("marker");
             prefixAndEndedMap.put(lastLister.getPrefix(), map);
         }
         Iterator<ILister<E>> it = nextLevelList.iterator();
