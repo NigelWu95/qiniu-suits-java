@@ -24,11 +24,15 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
 
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
-                             boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                             boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
+        QiniuLister qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration),
+                bucket, null, null, null, 1);
+        qiniuLister.close();
+        qiniuLister = null;
     }
 
     @Override

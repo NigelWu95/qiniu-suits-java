@@ -27,11 +27,15 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, int unitLen, int threads) {
+                          Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
         this.configuration = configuration;
+        UpLister upLister = new UpLister(new UpYunClient(configuration, username, password), bucket, null,
+                null, null, 1);
+        upLister.close();
+        upLister = null;
     }
 
     @Override

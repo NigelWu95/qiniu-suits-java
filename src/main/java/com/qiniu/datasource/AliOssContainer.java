@@ -26,12 +26,17 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
                            String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
-                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
+            throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
         this.clientConfig = clientConfig;
         this.endpoint = endpoint;
+        AliLister aliLister = new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
+                clientConfig), bucket, null, null, null, 1);
+        aliLister.close();
+        aliLister = null;
     }
 
     @Override

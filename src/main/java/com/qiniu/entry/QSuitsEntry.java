@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
+import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
@@ -184,7 +185,7 @@ public class QSuitsEntry {
     }
 
     public com.amazonaws.ClientConfiguration getS3ClientConfig() {
-        return aliClientConfig == null ? getDefaultS3ClientConfig() : s3ClientConfig;
+        return s3ClientConfig == null ? getDefaultS3ClientConfig() : s3ClientConfig;
     }
 
     private com.amazonaws.ClientConfiguration getDefaultS3ClientConfig() {
@@ -237,7 +238,7 @@ public class QSuitsEntry {
         return localFileContainer;
     }
 
-    public QiniuQosContainer getQiniuQosContainer() {
+    public QiniuQosContainer getQiniuQosContainer() throws SuitsException {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
@@ -288,7 +289,7 @@ public class QSuitsEntry {
         return aliOssContainer;
     }
 
-    public UpYosContainer getUpYosContainer() {
+    public UpYosContainer getUpYosContainer() throws SuitsException {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
@@ -305,7 +306,7 @@ public class QSuitsEntry {
         return upYosContainer;
     }
 
-    public S3Container getS3Container() {
+    public S3Container getS3Container() throws SuitsException {
         String s3AccessId = commonParams.getS3AccessId();
         String s3SecretKey = commonParams.getS3SecretKey();
         if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();

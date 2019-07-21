@@ -27,12 +27,21 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
 
     public S3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
                        String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
-                       boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                       boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
+            throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
         this.region = region;
+        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                .withRegion(region)
+                .withClientConfiguration(clientConfig)
+                .build();
+        S3Lister s3Lister = new S3Lister(s3Client, bucket, null, null, null, null, 1);
+        s3Lister.close();
+        s3Lister = null;
     }
 
     @Override

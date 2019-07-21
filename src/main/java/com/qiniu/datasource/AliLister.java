@@ -2,6 +2,7 @@ package com.qiniu.datasource;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
@@ -98,6 +99,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
             checkedListWithEnd();
         } catch (ClientException e) {
             throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+        } catch (OSSException e) {
+            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (ServiceException e) {
             throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {

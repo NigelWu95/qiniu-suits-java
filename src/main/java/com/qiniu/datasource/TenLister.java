@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
 import com.qcloud.cos.COSClient;
+import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
@@ -95,6 +96,8 @@ public class TenLister implements ILister<COSObjectSummary> {
             checkedListWithEnd();
         } catch (CosServiceException e) {
             throw new SuitsException(e, e.getStatusCode());
+        } catch (CosClientException e) {
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

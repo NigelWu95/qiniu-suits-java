@@ -24,11 +24,15 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
-                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
+        TenLister tenLister = new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig),
+                bucket, null, null, null, 1);
+        tenLister.close();
+        tenLister = null;
     }
 
     @Override

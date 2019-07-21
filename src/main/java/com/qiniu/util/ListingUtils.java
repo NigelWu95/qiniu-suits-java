@@ -1,9 +1,6 @@
 package com.qiniu.util;
 
-import com.aliyun.oss.ClientConfiguration;
-import com.aliyun.oss.ClientException;
-import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.OSSException;
+import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.CredentialsProvider;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.model.OSSObjectSummary;
@@ -19,19 +16,23 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
+import com.qcloud.cos.exception.CosClientException;
+import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.Bucket;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qcloud.cos.model.ListObjectsRequest;
 import com.qiniu.common.Constants;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
-import com.qiniu.datasource.ILister;
-import com.qiniu.persistence.FileSaveMapper;
+import com.qiniu.datasource.UpLister;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
+import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -121,6 +122,56 @@ public class ListingUtils {
 
     public static int NetStatusCode(String error, int Default) {
         return aliStatus.getOrDefault(error, Default);
+    }
+
+    public static void checkQiniuAuth(String accessKey, String secretKey, Configuration configuration, String bucket)
+            throws SuitsException {
+        BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        try {
+            bucketManager.listFiles(bucket, null, null, 1, null);
+        } catch (QiniuException e) {
+            throw new SuitsException(e, e.code(), LogUtils.getMessage(e));
+        } finally {
+            bucketManager = null;
+        }
+    }
+
+    public static void checkAliAuth(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig,
+                                    String endpoint, String bucket) throws SuitsException {
+        OSSClient ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), clientConfig);
+        try {
+            ossClient.listObjects(new com.aliyun.oss.model.ListObjectsRequest(bucket).withMaxKeys(1));
+        } catch (ClientException e) {
+            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+        } catch (OSSException e) {
+            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+        } catch (ServiceException e) {
+            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+        } finally {
+            ossClient.shutdown();
+            ossClient = null;
+        }
+    }
+
+    public static void checkTenAuth(String secretId, String secretKey, ClientConfig clientConfig, String bucket)
+            throws SuitsException {
+        COSClient cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig);
+        try {
+            cosClient.listObjects(new ListObjectsRequest().withBucketName(bucket).withMaxKeys(1));
+        } catch (CosServiceException e) {
+            throw new SuitsException(e, e.getStatusCode());
+        } catch (CosClientException e) {
+            throw new SuitsException(e, -1);
+        } finally {
+            cosClient.shutdown();
+            cosClient = null;
+        }
+    }
+
+    public static void checkUpAuth(String username, String password, UpYunConfig configuration, String bucket)
+            throws SuitsException {
+        UpLister upLister = new UpLister(new UpYunClient(configuration, username, password), bucket, null,
+                null, null, 1);
     }
 
     public static String getQiniuMarker(FileInfo fileInfo) {
