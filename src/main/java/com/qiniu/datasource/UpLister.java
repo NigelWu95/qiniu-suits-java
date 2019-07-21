@@ -10,7 +10,6 @@ import com.qiniu.util.JsonUtils;
 import com.qiniu.util.ListingUtils;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,89 +77,43 @@ public class UpLister implements ILister<FileItem> {
     }
 
     private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
-        StringBuilder text = new StringBuilder();
         List<FileItem> fileItems = new ArrayList<>();
-        HttpURLConnection conn = null;
-        int code;
-        InputStream is = null;
-        InputStreamReader sr = null;
-        BufferedReader br = null;
-        try {
-            conn = upYunClient.listFilesConnection(bucket, prefix);
-            conn.setRequestProperty("x-list-iter", marker);
-            conn.setRequestProperty("x-list-limit", String.valueOf(limit));
-            conn.setRequestProperty("Accept", "application/json");
-            conn.connect();
-            code = conn.getResponseCode();
-//        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
-            is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-            sr = new InputStreamReader(is);
-            br = new BufferedReader(sr);
-            char[] chars = new char[4096];
-            int length;
-            while ((length = br.read(chars)) != -1) {
-                text.append(chars, 0, length);
-            }
-            if (code == 200) {
-//                this.marker = conn.getHeaderField("x-upyun-list-iter");
-//                String result = text.toString();
-//                String[] lines = result.split("\n");
-//                for (String line : lines) {
-//                    if (line.indexOf("\t") > 0) {
-//                        FileItem fileItem = new FileItem(line);
-//                        if ("N".equals(fileItem.attribute)) fileItems.add(fileItem);
-//                        else directories.add(fileItem.key);
-//                    }
-//                }
-                JsonObject returnJson = JsonUtils.toJsonObject(text.toString());
-                this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
-                if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
-                if (returnJson.has("files") && returnJson.get("files").isJsonArray()) {
-                    JsonArray files = returnJson.get("files").getAsJsonArray();
-                    JsonObject object;
-                    String attribute;
-                    String totalName;
-                    for (JsonElement item : files) {
-                        object = item.getAsJsonObject();
-                        attribute = object.get("type").getAsString();
-                        totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
-                                prefix + "/" + object.get("name").getAsString();
-                        if ("folder".equals(attribute)) {
-                            if (directories == null) {
-                                directories = new ArrayList<>();
-                                directories.add(totalName);
-                            } else {
-                                directories.add(totalName);
-                            }
-                        } else {
-                            FileItem fileItem = new FileItem();
-                            fileItem.key = totalName;
-                            fileItem.attribute = attribute;
-                            fileItem.size = object.get("length").getAsLong();
-                            fileItem.timeSeconds = object.get("last_modified").getAsLong();
-                            fileItems.add(fileItem);
-                        }
+        String result = upYunClient.listFiles(bucket, prefix, marker, limit);
+        if (result.length() == 0) {
+            this.marker = null;
+            return fileItems;
+        }
+        JsonObject returnJson = JsonUtils.toJsonObject(result);
+        this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
+        if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker)) this.marker = null;
+        JsonArray files = returnJson.get("files").getAsJsonArray();
+        if (files.size() > 0) {
+            JsonObject object;
+            String attribute;
+            String totalName;
+            for (JsonElement item : files) {
+                object = item.getAsJsonObject();
+                attribute = object.get("type").getAsString();
+                totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
+                        prefix + "/" + object.get("name").getAsString();
+                if ("folder".equals(attribute)) {
+                    if (directories == null) {
+                        directories = new ArrayList<>();
+                        directories.add(totalName);
+                    } else {
+                        directories.add(totalName);
                     }
+                } else {
+                    FileItem fileItem = new FileItem();
+                    fileItem.key = totalName;
+                    fileItem.attribute = attribute;
+                    fileItem.size = object.get("length").getAsLong();
+                    fileItem.timeSeconds = object.get("last_modified").getAsLong();
+                    fileItems.add(fileItem);
                 }
-                return fileItems;
-            } else if (code == 404) {
-                this.marker = null;
-                return fileItems;
-            } else {
-                throw new SuitsException(code, text.toString());
-            }
-        } finally {
-            try {
-                if (conn != null) conn.disconnect();
-                if (br != null) br.close();
-                if (sr != null) sr.close();
-                if (is != null) is.close();
-            } catch (IOException e) {
-                br = null;
-                sr = null;
-                is = null;
             }
         }
+        return fileItems;
     }
 
     private void checkedListWithEnd() {

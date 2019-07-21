@@ -169,8 +169,13 @@ public class ListingUtils {
     public static String getUpYunMarker(String username, String password, String bucket, String key) throws SuitsException {
         if (key == null || "".equals(key)) return null;
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
-        FileItem fileItem = upYunClient.getFileInfo(bucket, key);
-        return getUpYunMarker(bucket, fileItem);
+        try {
+            return getUpYunMarker(bucket, upYunClient.getFileInfo(bucket, key));
+        } catch (IOException e) {
+            throw new SuitsException(e, -1);
+        } finally {
+            upYunClient = null;
+        }
     }
 
     public static String decodeQiniuMarker(String marker) {

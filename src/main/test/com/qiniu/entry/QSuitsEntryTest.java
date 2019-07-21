@@ -90,7 +90,6 @@ public class QSuitsEntryTest {
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor;
         processor = qSuitsEntry.whichNextProcessor(true);
-        processor.validCheck(commonParams.getMapLine());
         System.out.println(processor.processLine(commonParams.getMapLine()));
     }
 

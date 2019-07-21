@@ -32,10 +32,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         this.username = username;
         this.password = password;
         this.configuration = configuration;
-        UpLister upLister = new UpLister(new UpYunClient(configuration, username, password), bucket, null,
-                null, null, 1);
-        upLister.close();
-        upLister = null;
     }
 
     @Override
