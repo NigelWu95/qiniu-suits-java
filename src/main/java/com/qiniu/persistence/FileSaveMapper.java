@@ -76,7 +76,6 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     synchronized public void closeWriters() {
         int retry;
         BufferedWriter bufferedWriter;
-        if (writerMap == null) return;
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
             retry = retryTimes;
             while (retry > 0) {
@@ -103,7 +102,6 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
             }
         }
         if (writerMap.size() <= 0) {
-            writerMap = null;
             targetFileDir = null;
             prefix = null;
             suffix = null;
