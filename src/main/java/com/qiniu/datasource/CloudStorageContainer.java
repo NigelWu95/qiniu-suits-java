@@ -441,8 +441,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                             System.out.println("to re-split prefixes...");
                             for (ILister<E> lister : listerList) {
                                 if (lister.hasNext()) {
-                                    String lastKey = lister.truncate();
                                     String prefix = lister.getPrefix();
+                                    String lastKey = lister.truncate();
+                                    if (lastKey == null) continue;
                                     if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                                     extremePrefixes.add(prefix);
                                     recordListerByPrefix(prefix);
