@@ -21,14 +21,14 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires,
                       String savePath, int saveIndex) throws IOException {
-        super("aliprivate", secretId, secretKey, bucket, savePath, saveIndex);
+        super("tenprivate", secretId, secretKey, bucket, savePath, saveIndex);
         this.region = region;
         expiration = new Date(System.currentTimeMillis() + expires);
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, long expires) {
-        super("aliprivate", secretId, secretKey, bucket);
+        super("tenprivate", secretId, secretKey, bucket);
         this.region = endpoint;
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
     }
@@ -74,10 +74,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         URL url = cosClient.generatePresignedUrl(bucket, key, expiration);
         if (nextProcessor != null) {
             line.put("url", url.toString());
-            return nextProcessor.processLine(line);
-        } else {
-            return url.toString();
+            nextProcessor.processLine(line);
         }
+        return url.toString();
     }
 
     @Override
