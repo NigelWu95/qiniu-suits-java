@@ -121,7 +121,7 @@ public class UpLister implements ILister<FileItem> {
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             marker = null;
-            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
+            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
                 FileItem last = currentLast();
                 if (last != null && endPrefix.equals(last.key))
                     fileItems.remove(last);

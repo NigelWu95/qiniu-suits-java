@@ -443,12 +443,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                             System.out.println("to re-split prefixes...");
                             for (ILister<E> lister : listerList) {
                                 String prefix = lister.getPrefix();
-                                String endMarker = lister.truncate();
-                                if (endMarker == null) continue;
+                                String nextMarker = lister.truncate();
+                                if (nextMarker == null) continue;
                                 if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                                 extremePrefixes.add(prefix);
-                                recordListerByPrefix(prefix);
-                                insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", endMarker); }});
+                                insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
                             }
                             startCheck = false;
                         }

@@ -76,7 +76,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setContinuationToken(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
                 S3ObjectSummary last = currentLast();
                 if (last != null && endPrefix.equals(last.getKey()))
                     s3ObjectList.remove(last);

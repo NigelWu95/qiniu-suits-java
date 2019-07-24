@@ -187,7 +187,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public synchronized List<FileInfo> currents() {
+    public List<FileInfo> currents() {
         return fileInfoList;
     }
 
