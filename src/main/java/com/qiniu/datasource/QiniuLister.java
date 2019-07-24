@@ -112,17 +112,20 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
         // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             marker = null;
             // 由于 CloudStorageContainer 中设置 endPrefix 后下一级会从 endPrefix 开始直接列举，所以 endPrefix 这个文件名会出现重复，
             // 此处对其前者删除
-            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
-                FileInfo last = currentLast();
-                if (last != null && endPrefix.equals(last.key))
-                    fileInfoList.remove(last);
+            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
+                if (fileInfoList.size() > 0) {
+                    int lastIndex = fileInfoList.size() - 1;
+                    FileInfo last = fileInfoList.get(lastIndex);
+                    if (endPrefix.equals(last.key)) fileInfoList.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
@@ -196,8 +199,8 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public String currentEndKey() {
         if (hasNext()) return ListingUtils.decodeQiniuMarker(marker);
-        FileInfo last = currentLast();
-        return last != null ? last.key : null;
+        if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
+        return null;
     }
 
     @Override
@@ -207,9 +210,12 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public synchronized String truncate() {
-        String endKey = currentEndKey();
-        setEndPrefix(endKey);
-        return endKey;
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = marker;
+            marker = null;
+        }
+        return truncateMarker;
     }
 
     @Override

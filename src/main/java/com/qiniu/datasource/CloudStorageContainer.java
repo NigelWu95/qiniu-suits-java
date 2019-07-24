@@ -40,7 +40,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
-    public static String startPoint;
+    public static String firstPoint;
+    private String lastPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>();
     ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
 
@@ -58,9 +59,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveTotal = true; // 默认全记录保存
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
-        originPrefixList.addAll(Arrays.asList((" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
+        originPrefixList.addAll(Arrays.asList(("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
         originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
-        startPoint = originPrefixList.get(0);
+        firstPoint = originPrefixList.get(0);
+        lastPoint = originPrefixList.get(originPrefixList.size() - 1);
     }
 
     // 不调用则各参数使用默认值
@@ -331,12 +333,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     // 确定 lister 的 endPrefix
                     point = endKey.substring(prefixLen, prefixLen + 1);
                     // 如果此时下一个字符比预定义的最后一个前缀大的话（如中文文件名的情况）说明后续根据预定义前缀再检索无意义，则直接返回即可
-                    if (point.compareTo(originPrefixList.get(originPrefixList.size() - 1)) > 0) {
+                    if (point.compareTo(lastPoint) > 0) {
                         point = null;
-                        // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀
-                    } else if (point.compareTo(originPrefixList.get(0)) < 0) {
-                        point = startPoint;
-                        lister.setEndPrefix(startPrefix + startPoint);
+                    // 如果 point 比第一个预定义前缀小则设置 lister 的结束位置到第一个预定义前缀
+                    } else if (point.compareTo(firstPoint) < 0) {
+                        point = firstPoint;
+                        lister.setEndPrefix(startPrefix + firstPoint);
                     } else {
                         insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
                             put("marker", lister.getMarker());
@@ -344,9 +346,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         lister.setEndPrefix(endKey);
                     }
                 } else {
-                    point = startPoint;
+                    point = firstPoint;
                     // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
-                    lister.setEndPrefix(startPrefix + startPoint);
+                    lister.setEndPrefix(startPrefix + firstPoint);
                 }
             } else {
                 return moreValidPrefixes(lister, true);
@@ -441,12 +443,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                             System.out.println("to re-split prefixes...");
                             for (ILister<E> lister : listerList) {
                                 String prefix = lister.getPrefix();
-                                String lastKey = lister.truncate();
-                                if (lastKey == null) continue;
+                                String endMarker = lister.truncate();
+                                if (endMarker == null) continue;
                                 if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                                 extremePrefixes.add(prefix);
                                 recordListerByPrefix(prefix);
-                                insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", lastKey); }});
+                                insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", endMarker); }});
                             }
                             startCheck = false;
                         }
