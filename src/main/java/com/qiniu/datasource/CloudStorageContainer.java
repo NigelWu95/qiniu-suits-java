@@ -440,15 +440,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         if (startCheck) {
                             System.out.println("to re-split prefixes...");
                             for (ILister<E> lister : listerList) {
-                                if (lister.hasNext()) {
-                                    String prefix = lister.getPrefix();
-                                    String lastKey = lister.truncate();
-                                    if (lastKey == null) continue;
-                                    if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
-                                    extremePrefixes.add(prefix);
-                                    recordListerByPrefix(prefix);
-                                    insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", lastKey); }});
-                                }
+                                String prefix = lister.getPrefix();
+                                String lastKey = lister.truncate();
+                                if (lastKey == null) continue;
+                                if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
+                                extremePrefixes.add(prefix);
+                                recordListerByPrefix(prefix);
+                                insertIntoPrefixesMap(prefix, new HashMap<String, String>() {{ put("start", lastKey); }});
                             }
                             startCheck = false;
                         }
