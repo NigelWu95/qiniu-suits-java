@@ -30,11 +30,7 @@ public interface ILister<E> {
 
     List<E> currents();
 
-    E currentLast();
-
     String currentEndKey();
-
-    void updateMarkerBy(E object);
 
     String truncate();
 

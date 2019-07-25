@@ -192,20 +192,10 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public FileInfo currentLast() {
-        return fileInfoList.size() > 0 ? fileInfoList.get(fileInfoList.size() - 1) : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return ListingUtils.decodeQiniuMarker(marker);
         if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
         return null;
-    }
-
-    @Override
-    public void updateMarkerBy(FileInfo object) {
-        if (object != null) marker = ListingUtils.getQiniuMarker(object.key);
     }
 
     @Override

@@ -196,22 +196,10 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public FileItem currentLast() {
-        return fileItems.size() > 0 ? fileItems.get(fileItems.size() - 1) : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
         if (fileItems.size() > 0) return fileItems.get(fileItems.size() - 1).key;
         return null;
-    }
-
-    @Override
-    public void updateMarkerBy(FileItem object) {
-        if (object != null) {
-            marker = ListingUtils.getUpYunMarker(bucket, object);
-        }
     }
 
     @Override

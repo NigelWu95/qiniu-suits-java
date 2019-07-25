@@ -149,20 +149,10 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public OSSObjectSummary currentLast() {
-        return ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
         if (ossObjectList.size() > 0) return ossObjectList.get(ossObjectList.size() - 1).getKey();
         return null;
-    }
-
-    @Override
-    public void updateMarkerBy(OSSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
     }
 
     @Override

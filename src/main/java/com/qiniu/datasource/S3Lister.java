@@ -155,22 +155,9 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public S3ObjectSummary currentLast() {
-        return s3ObjectList.size() > 0 ? s3ObjectList.get(s3ObjectList.size() - 1) : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (s3ObjectList.size() > 0) return s3ObjectList.get(s3ObjectList.size() - 1).getKey();
         return null;
-    }
-
-    @Override
-    public void updateMarkerBy(S3ObjectSummary object) {
-        if (object != null) {
-            listObjectsRequest.setContinuationToken(null);
-            listObjectsRequest.setStartAfter(object.getKey());
-        }
     }
 
     @Override
