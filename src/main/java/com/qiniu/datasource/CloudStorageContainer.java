@@ -419,49 +419,46 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
-    private List<String> checkListerInPool(List<ILister<E>> listerList, int cValue) throws Exception {
+    private List<String> checkListerInPool(List<ILister<E>> listerList) throws Exception {
         List<String> extremePrefixes = null;
+        int cValue = threads < 10 ? 3 : threads / 2;
+        int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 50 ? threads / 10 :
+                threads >= 10 ? 3 : 1;
         int count = 0;
         boolean startCheck = false;
-        int unfinished;
+        ILister<E> iLister;
+        Iterator<ILister<E>> iterator;
         while (!executorPool.isTerminated()) {
             try {
-                // 3600 次延时为 1 小时间隔，判断一次线程池情况
-                if (count >= 3600) {
-                    count = 0;
-                    Iterator<ILister<E>> iterator = listerList.iterator();
-                    ILister<E> iLister;
+                if (count >= 300) {
+                    iterator = listerList.iterator();
                     while (iterator.hasNext()) {
                         iLister = iterator.next();
                         if(!iLister.hasNext()) iterator.remove();
                     }
-                    unfinished = listerList.size();
-                    if (unfinished < cValue) {
-                        if (unfinished < 5) startCheck = true;
-                        if (startCheck) {
-                            System.out.println("to re-split prefixes...");
-                            for (ILister<E> lister : listerList) {
-                                String prefix = lister.getPrefix();
-                                String nextMarker = lister.truncate();
-                                if (nextMarker == null) continue;
-                                if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
-                                extremePrefixes.add(prefix);
-                                insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
-                            }
-                            startCheck = false;
+                    if (startCheck && listerList.size() <= tiny) {
+                        System.out.printf("unfinished: %s, cValue: %s\nto re-split prefixes...", listerList.size(), cValue);
+                        for (ILister<E> lister : listerList) {
+                            String prefix = lister.getPrefix();
+                            String nextMarker = lister.truncate();
+                            if (nextMarker == null) continue;
+                            if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
+                            extremePrefixes.add(prefix);
+                            insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
                         }
-                        startCheck = true;
-                        if (cValue > 3) cValue = cValue / 2;
                     }
-                    System.out.printf("unfinished: %s, cValue: %s\n", unfinished, cValue);
-                } else {
-                    Thread.sleep(1000); // 延时 1s 并计次
-                    count++;
+                    if (startCheck || listerList.size() > cValue) {
+                        count = 0;
+                    } else {
+                        startCheck = true;
+                        count = listerList.size() <= tiny ? -1800 : -3200;
+                    }
                 }
+                Thread.sleep(1000);
             } catch (InterruptedException ignored) {
                 Thread.sleep(1000);
-                count++;
             }
+            count++;
         }
         return extremePrefixes;
     }
@@ -498,19 +495,18 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private void waitAndTailListing(List<ILister<E>> listerList) throws Exception {
-        int cValue = threads / 10;
-        List<String> extremePrefixes = checkListerInPool(listerList, cValue);
+        List<String> extremePrefixes = checkListerInPool(listerList);
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(threads);
             listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
-            while (listerList != null && listerList.size() > 0 && listerList.size() < cValue) {
+            while (listerList != null && listerList.size() > 0 && listerList.size() <= threads) {
                 listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
             }
             executorPool.shutdown();
-            extremePrefixes = checkListerInPool(listerList, cValue);
+            extremePrefixes = checkListerInPool(listerList);
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
         if (phraseLastPrefixes.size() > 0) {
