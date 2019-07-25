@@ -72,7 +72,7 @@ public final class HttpRespUtils {
                 }
                 return retry;
             }
-        } else if (e.getStatusCode() >= 400 && e.getStatusCode() != 406) {
+        } else if ((e.getStatusCode() >= 400 && e.getStatusCode() != 406) || e.getStatusCode() >= 600) {
             throw e;
         } else {
             retry--;

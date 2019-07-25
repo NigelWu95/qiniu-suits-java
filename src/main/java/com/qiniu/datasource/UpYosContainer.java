@@ -28,11 +28,15 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, int unitLen, int threads) {
+                          Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
         this.configuration = configuration;
+        UpLister upLister = new UpLister(new UpYunClient(configuration, username, password), bucket, null,
+                null, null, unitLen);
+        upLister.close();
+        upLister = null;
     }
 
     @Override
@@ -61,27 +65,27 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
-    private List<UpLister> getListerListByPrefixes(List<String> prefixes) {
-        for (String prefix : prefixes) recordListerByPrefix(prefix);
-        return prefixes.parallelStream().filter(this::checkPrefix)
-                .map(prefix -> {
-                    UpLister upLister;
-                    try {
-                        upLister = (UpLister) generateLister(prefix);
-                    } catch (SuitsException e) {
-                        System.out.println("generate lister failed by " + prefix + "\t" + prefixesMap.get(prefix));
-                        e.printStackTrace(); return null;
-                    }
-                    int order = UniOrderUtils.getOrder();
-                    if (upLister.hasNext() || upLister.getDirectories() != null) {
-                        listing(upLister, order);
-                        return upLister;
-                    } else {
-                        executorPool.execute(() -> listing(upLister, order));
-                        return null;
-                    }
-                }).filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    private List<String> listAndGetNextPrefixes(List<String> prefixes) {
+        return prefixes.parallelStream().map(prefix -> {
+                UpLister upLister;
+                try {
+                    upLister = (UpLister) generateLister(prefix);
+                } catch (SuitsException e) {
+                    System.out.println("generate lister failed by " + prefix + "\t" + prefixesMap.get(prefix));
+                    e.printStackTrace(); return null;
+                }
+                if (upLister.hasNext() || upLister.getDirectories() != null) {
+                    listing(upLister, UniOrderUtils.getOrder());
+                    if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) return null;
+                    else if (hasAntiPrefixes) return upLister.getDirectories().parallelStream()
+                            .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
+                    else return upLister.getDirectories();
+                } else {
+                    executorPool.execute(() -> listing(upLister, UniOrderUtils.getOrder()));
+                    return null;
+                }
+            }).filter(Objects::nonNull)
+            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
     /**
@@ -95,31 +99,16 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             UpLister startLister = (UpLister) generateLister("");
             int order = UniOrderUtils.getOrder();
             listing(startLister, order);
-            prefixes = startLister.getDirectories();
+            if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) return;
+            else if (hasAntiPrefixes) prefixes = startLister.getDirectories().parallelStream()
+                    .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
+            else prefixes = startLister.getDirectories();
         }
         executorPool = Executors.newFixedThreadPool(threads);
         try {
-            List<UpLister> listerList = getListerListByPrefixes(prefixes);
-            while (listerList != null && listerList.size() > 0) {
-                try {
-                    prefixes = listerList.parallelStream().map(UpLister::getDirectories)
-                            .filter(Objects::nonNull)
-                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-                } catch (Throwable e) {
-                    List<String> directories;
-                    for (UpLister lister : listerList) {
-                        directories = lister.getDirectories();
-                        if (directories != null) {
-                            for (String directory : directories) recordListerByPrefix(directory);
-                        }
-                    }
-                    throw e;
-                }
-                if (prefixes == null || prefixes.size() == 0) {
-                    listerList = null;
-                } else {
-                    listerList = getListerListByPrefixes(prefixes);
-                }
+            prefixes = listAndGetNextPrefixes(prefixes);
+            while (prefixes != null && prefixes.size() > 0) {
+                prefixes = listAndGetNextPrefixes(prefixes);
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated())

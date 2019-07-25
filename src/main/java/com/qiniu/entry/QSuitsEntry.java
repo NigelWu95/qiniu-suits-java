@@ -289,7 +289,7 @@ public class QSuitsEntry {
         return aliOssContainer;
     }
 
-    public UpYosContainer getUpYosContainer() {
+    public UpYosContainer getUpYosContainer() throws SuitsException {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();

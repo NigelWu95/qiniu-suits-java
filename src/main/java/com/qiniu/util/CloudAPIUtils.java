@@ -174,8 +174,8 @@ public class CloudAPIUtils {
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
         try {
             return getUpYunMarker(bucket, upYunClient.getFileInfo(bucket, key));
-        } catch (IOException e) {
-            throw new SuitsException(e, -1);
+        } catch (Exception e) {
+            throw new SuitsException(e, 848);
         } finally {
             upYunClient = null;
         }

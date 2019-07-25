@@ -24,6 +24,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     protected String bucket;
     protected List<String> antiPrefixes;
+    protected boolean hasAntiPrefixes = false;
     protected Map<String, Map<String, String>> prefixesMap;
     protected List<String> prefixes;
     protected boolean prefixLeft;
@@ -51,6 +52,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
+        if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
         setPrefixesAndMap(prefixesMap);
@@ -94,6 +96,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void updateSettings(CommonParams commonParams) {
         bucket = commonParams.getBucket();
         antiPrefixes = commonParams.getAntiPrefixes();
+        if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
         setPrefixesAndMap(commonParams.getPrefixesMap());
         prefixLeft = commonParams.getPrefixLeft();
         prefixRight = commonParams.getPrefixRight();
@@ -115,7 +118,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
         if (prefixesMap == null) {
             this.prefixesMap = new HashMap<>();
-            if (antiPrefixes != null && antiPrefixes.size() > 0) {
+            if (hasAntiPrefixes) {
                 prefixes = originPrefixList.stream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
                 prefixLeft = true;
             }
@@ -155,11 +158,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     boolean checkPrefix(String prefix) {
         if (prefix == null || "".equals(prefix)) return false;
-        if (antiPrefixes == null) antiPrefixes = new ArrayList<>();
-        for (String antiPrefix : antiPrefixes) {
-            if (prefix.startsWith(antiPrefix)) return false;
+        if (hasAntiPrefixes) {
+            for (String antiPrefix : antiPrefixes) {
+                if (prefix.startsWith(antiPrefix)) return false;
+            }
+            return true;
+        } else {
+            return true;
         }
-        return true;
     }
 
     protected abstract ITypeConvert<E, T> getNewConverter();
