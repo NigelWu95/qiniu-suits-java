@@ -419,9 +419,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
-    private List<String> checkListerInPool(List<ILister<E>> listerList) throws Exception {
+    private List<String> checkListerInPool(List<ILister<E>> listerList, int cValue) throws Exception {
         List<String> extremePrefixes = null;
-        int cValue = threads / 10;
         int count = 0;
         boolean startCheck = false;
         int unfinished;
@@ -499,18 +498,19 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private void waitAndTailListing(List<ILister<E>> listerList) throws Exception {
-        List<String> extremePrefixes = checkListerInPool(listerList);
+        int cValue = threads / 10;
+        List<String> extremePrefixes = checkListerInPool(listerList, cValue);
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(threads);
             listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
-            while (listerList != null && listerList.size() > 0 && listerList.size() < 5) {
+            while (listerList != null && listerList.size() > 0 && listerList.size() < cValue) {
                 listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
             }
             executorPool.shutdown();
-            extremePrefixes = checkListerInPool(listerList);
+            extremePrefixes = checkListerInPool(listerList, cValue);
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
         if (phraseLastPrefixes.size() > 0) {
