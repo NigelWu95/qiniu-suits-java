@@ -67,14 +67,17 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
             if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                COSObjectSummary last = currentLast();
-                if (last != null && endPrefix.equals(last.getKey()))
-                    cosObjectList.remove(last);
+                if (cosObjectList.size() > 0) {
+                    int lastIndex = cosObjectList.size() - 1;
+                    COSObjectSummary last = cosObjectList.get(lastIndex);
+                    if (endPrefix.equals(last.getKey())) cosObjectList.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
@@ -136,7 +139,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public synchronized List<COSObjectSummary> currents() {
+    public List<COSObjectSummary> currents() {
         return cosObjectList;
     }
 
@@ -148,8 +151,8 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
-        COSObjectSummary last = currentLast();
-        return last != null ? last.getKey() : null;
+        if (cosObjectList.size() > 0) return cosObjectList.get(cosObjectList.size() - 1).getKey();
+        return null;
     }
 
     @Override
@@ -159,9 +162,12 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public synchronized String truncate() {
-        String endKey = currentEndKey();
-        setEndPrefix(endKey);
-        return endKey;
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = listObjectsRequest.getMarker();
+            listObjectsRequest.setMarker(null);
+        }
+        return truncateMarker;
     }
 
     @Override

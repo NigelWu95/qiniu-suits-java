@@ -72,14 +72,19 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setContinuationToken(null);
             if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                S3ObjectSummary last = currentLast();
-                if (last != null && endPrefix.equals(last.getKey()))
-                    s3ObjectList.remove(last);
+                s3ObjectList.remove(s3ObjectList.size() - 1);
+//                if (s3ObjectList.size() > 0) {
+//                    int lastIndex = s3ObjectList.size() - 1;
+//                    S3ObjectSummary last = s3ObjectList.get(lastIndex);
+//                    if (endPrefix.equals(last.getKey()))
+//                        s3ObjectList.remove(lastIndex);
+//                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setContinuationToken(null);
@@ -145,7 +150,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public synchronized List<S3ObjectSummary> currents() {
+    public List<S3ObjectSummary> currents() {
         return s3ObjectList;
     }
 
@@ -156,19 +161,8 @@ public class S3Lister implements ILister<S3ObjectSummary> {
 
     @Override
     public String currentEndKey() {
-//        int retry = 10;
-//        while (s3ObjectSummaryList.size() <= 0 && hasNext()) {
-//            try {
-//                ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
-//                listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
-//                listObjectsRequest.setStartAfter(null);
-//                s3ObjectSummaryList = result.getObjectSummaries();
-//            } catch (Exception ignored) {}
-//            retry--;
-//            if (retry <= 0) break;
-//        }
-        S3ObjectSummary last = currentLast();
-        return last != null ? last.getKey() : null;
+        if (s3ObjectList.size() > 0) return s3ObjectList.get(s3ObjectList.size() - 1).getKey();
+        return null;
     }
 
     @Override
@@ -181,9 +175,12 @@ public class S3Lister implements ILister<S3ObjectSummary> {
 
     @Override
     public synchronized String truncate() {
-        String endKey = currentEndKey();
-        setEndPrefix(endKey);
-        return endKey;
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = listObjectsRequest.getContinuationToken();
+            listObjectsRequest.setContinuationToken(null);
+        }
+        return truncateMarker;
     }
 
     @Override
