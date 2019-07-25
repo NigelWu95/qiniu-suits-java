@@ -7,6 +7,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,6 +29,8 @@ public class MoveFile extends Base<Map<String, String>> {
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -40,6 +43,8 @@ public class MoveFile extends Base<Map<String, String>> {
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,

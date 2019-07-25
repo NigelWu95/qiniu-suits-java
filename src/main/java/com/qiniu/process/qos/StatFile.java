@@ -12,6 +12,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class StatFile extends Base<Map<String, String>> {
         super("stat", accessKey, secretKey, bucket);
         set(configuration, format, separator);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
@@ -41,6 +43,7 @@ public class StatFile extends Base<Map<String, String>> {
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,

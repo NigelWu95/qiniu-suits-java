@@ -28,6 +28,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
@@ -35,6 +36,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         super("pfop", accessKey, secretKey, bucket);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,

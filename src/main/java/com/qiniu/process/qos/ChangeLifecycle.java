@@ -7,6 +7,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,11 +20,13 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days) {
+    public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days)
+            throws IOException{
         super("lifecycle", accessKey, secretKey, bucket);
         this.days = days;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
@@ -34,6 +37,7 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeLifecycle(String accessKey, String secretKey, Configuration configuration, String bucket, int days,

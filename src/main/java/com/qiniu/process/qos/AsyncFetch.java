@@ -34,6 +34,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket);
         set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
@@ -42,6 +43,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,

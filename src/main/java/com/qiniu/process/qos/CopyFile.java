@@ -7,6 +7,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,10 +24,12 @@ public class CopyFile extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String toKeyIndex, String addPrefix, String rmPrefix) {
+                    String toKeyIndex, String addPrefix, String rmPrefix) throws IOException {
         super("copy", accessKey, secretKey, bucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -36,6 +39,8 @@ public class CopyFile extends Base<Map<String, String>> {
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,

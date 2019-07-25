@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Base64.*;
 
-public class ListingUtils {
+public class CloudAPIUtils {
 
     public static Encoder encoder = java.util.Base64.getEncoder();
     public static Decoder decoder = java.util.Base64.getDecoder();
@@ -201,7 +201,17 @@ public class ListingUtils {
         return keyString.substring(index).replaceAll("(/~|/@~|/@#)", "/");
     }
 
-    public static void checkQiniuAuth(String accessKey, String secretKey, Configuration configuration, String bucket)
+    public static void checkQiniu(Auth auth) throws QiniuException {
+        BucketManager bucketManager = new BucketManager(auth, new Configuration());
+        bucketManager.buckets();
+        bucketManager = null;
+    }
+
+    public static void checkQiniu(BucketManager bucketManager, String bucket) throws QiniuException {
+        bucketManager.listFilesV2(bucket, null, null, 1, null);
+    }
+
+    public static void checkQiniu(String accessKey, String secretKey, Configuration configuration, String bucket)
             throws QiniuException {
         BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         bucketManager.listFilesV2(bucket, null, null, 1, null);
@@ -236,11 +246,11 @@ public class ListingUtils {
         try {
             return ossClient.getBucketLocation(bucket);
         } catch (ClientException e) {
-            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (OSSException e) {
-            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (ServiceException e) {
-            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
         } finally {
             ossClient.shutdown();
             ossClient = null;

@@ -6,7 +6,6 @@ import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
 import com.qiniu.config.PropertiesFile;
-import com.qiniu.util.ListingUtils;
 import org.junit.Before;
 import org.junit.Test;
 

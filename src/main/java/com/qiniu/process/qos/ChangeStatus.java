@@ -7,6 +7,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,11 +20,13 @@ public class ChangeStatus extends Base<Map<String, String>> {
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status) {
+    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status)
+            throws IOException {
         super("status", accessKey, secretKey, bucket);
         this.status = status;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -34,6 +37,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,

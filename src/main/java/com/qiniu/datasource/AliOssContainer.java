@@ -10,7 +10,7 @@ import com.qiniu.convert.OSSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
 
     @Override
     protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = ListingUtils.getAliOssMarker(start);
+        if (marker == null || "".equals(marker)) marker = CloudAPIUtils.getAliOssMarker(start);
         return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
                 clientConfig), bucket, prefix, marker, end, unitLen);
     }

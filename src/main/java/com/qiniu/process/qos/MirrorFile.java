@@ -5,6 +5,7 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -14,10 +15,11 @@ public class MirrorFile extends Base<Map<String, String>> {
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket) {
+    public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
         super("mirror", accessKey, secretKey, bucket);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
@@ -25,6 +27,7 @@ public class MirrorFile extends Base<Map<String, String>> {
         super("mirror", accessKey, secretKey, bucket, savePath, saveIndex);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)

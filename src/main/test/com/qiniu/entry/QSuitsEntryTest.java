@@ -111,7 +111,7 @@ public class QSuitsEntryTest {
         CommonParams commonParams = new CommonParams(paramsMap);
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor = qSuitsEntry.whichNextProcessor(true);
-        InputSource inputSource = qSuitsEntry.getScannerSource();
+        InputSource inputSource = qSuitsEntry.getInputSource();
         inputSource.export(System.in, processor);
     }
 

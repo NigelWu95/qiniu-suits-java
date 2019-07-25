@@ -337,14 +337,14 @@ public class CommonParams {
                 } else {
                     if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
-                            markerAndEnd.put("marker", ListingUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", CloudAPIUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
                         } else if ("tencent".equals(source)) {
-                            markerAndEnd.put("marker", ListingUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", CloudAPIUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
                         } else if ("aliyun".equals(source)) {
-                            markerAndEnd.put("marker", ListingUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", CloudAPIUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
                         } else if ("upyun".equals(source)) {
                             String start = jsonCfg.get("start").getAsString();
-                            markerAndEnd.put("marker", ListingUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
+                            markerAndEnd.put("marker", CloudAPIUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
                         } else if ("aws".equals(source) || "s3".equals(source)) {
                             markerAndEnd.put("start", jsonCfg.get("start").getAsString());
                         }

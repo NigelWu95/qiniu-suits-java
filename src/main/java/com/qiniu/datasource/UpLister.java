@@ -7,7 +7,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -197,7 +197,7 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public String currentEndKey() {
-        if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
+        if (hasNext()) return CloudAPIUtils.decodeUpYunMarker(marker);
         if (fileItems.size() > 0) return fileItems.get(fileItems.size() - 1).key;
         return null;
     }

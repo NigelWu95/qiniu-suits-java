@@ -8,6 +8,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,11 +21,13 @@ public class ChangeType extends Base<Map<String, String>> {
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type) {
+    public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type)
+            throws IOException {
         super("type", accessKey, secretKey, bucket);
         this.type = type;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
@@ -35,6 +38,7 @@ public class ChangeType extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,

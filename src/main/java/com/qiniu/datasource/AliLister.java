@@ -8,7 +8,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.util.List;
 
@@ -101,11 +101,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
             ossObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ClientException e) {
-            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (OSSException e) {
-            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (ServiceException e) {
-            throw new SuitsException(e, ListingUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
