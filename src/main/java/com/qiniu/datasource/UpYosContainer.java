@@ -77,9 +77,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 if (upLister.hasNext() || upLister.getDirectories() != null) {
                     listing(upLister, UniOrderUtils.getOrder());
                     if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) return null;
-                    else if (hasAntiPrefixes) return upLister.getDirectories().parallelStream()
+                    else if (hasAntiPrefixes) return upLister.getDirectories().stream()
                             .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
-                    else return upLister.getDirectories();
+                    else {
+                        for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
+                        return upLister.getDirectories();
+                    }
                 } else {
                     executorPool.execute(() -> listing(upLister, UniOrderUtils.getOrder()));
                     return null;
@@ -102,7 +105,10 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) return;
             else if (hasAntiPrefixes) prefixes = startLister.getDirectories().parallelStream()
                     .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
-            else prefixes = startLister.getDirectories();
+            else {
+                for (String dir : startLister.getDirectories()) recordListerByPrefix(dir);
+                prefixes = startLister.getDirectories();
+            }
         }
         executorPool = Executors.newFixedThreadPool(threads);
         try {
