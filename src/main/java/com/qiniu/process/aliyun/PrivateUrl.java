@@ -4,6 +4,7 @@ import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -23,12 +24,15 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.endpoint = endpoint;
         expiration = new Date(System.currentTimeMillis() + expires);
         ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
+        CloudAPIUtils.checkAliyun(ossClient);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires) {
         super("aliprivate", accessKeyId, accessKeySecret, bucket);
         this.endpoint = endpoint;
+        expiration = new Date(System.currentTimeMillis() + expires);
         ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
+        CloudAPIUtils.checkAliyun(ossClient);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,

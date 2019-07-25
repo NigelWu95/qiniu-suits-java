@@ -6,6 +6,7 @@ import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.region.Region;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -25,12 +26,15 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.region = region;
         expiration = new Date(System.currentTimeMillis() + expires);
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
+        CloudAPIUtils.checkTencent(cosClient);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, long expires) {
         super("tenprivate", secretId, secretKey, bucket);
         this.region = endpoint;
+        expiration = new Date(System.currentTimeMillis() + expires);
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
+        CloudAPIUtils.checkTencent(cosClient);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, long expires,

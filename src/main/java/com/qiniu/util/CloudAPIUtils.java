@@ -218,6 +218,18 @@ public class CloudAPIUtils {
         bucketManager = null;
     }
 
+    public static void checkAliyun(OSSClient ossClient) {
+        ossClient.listBuckets();
+    }
+
+    public static void checkTencent(COSClient cosClient) {
+        cosClient.listBuckets();
+    }
+
+    public static void checkAws(AmazonS3 s3Client) {
+        s3Client.listBuckets();
+    }
+
     public static Zone getQiniuRegion(String regionName) {
         if (regionName == null) return Zone.autoZone();
         switch (regionName) {
