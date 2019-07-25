@@ -117,14 +117,17 @@ public class UpLister implements ILister<FileItem> {
     }
 
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             marker = null;
             if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
-                FileItem last = currentLast();
-                if (last != null && endPrefix.equals(last.key))
-                    fileItems.remove(last);
+                if (fileItems.size() > 0) {
+                    int lastIndex = fileItems.size() - 1;
+                    FileItem last = fileItems.get(lastIndex);
+                    if (endPrefix.equals(last.key)) fileItems.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
@@ -184,7 +187,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public synchronized List<FileItem> currents() {
+    public List<FileItem> currents() {
         return fileItems;
     }
 
@@ -200,8 +203,8 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public String currentEndKey() {
         if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
-        FileItem last = currentLast();
-        return last != null ? last.key : null;
+        if (fileItems.size() > 0) return fileItems.get(fileItems.size() - 1).key;
+        return null;
     }
 
     @Override
@@ -213,9 +216,12 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public synchronized String truncate() {
-        String endKey = currentEndKey();
-        setEndPrefix(endKey);
-        return endKey;
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = marker;
+            marker = null;
+        }
+        return truncateMarker;
     }
 
     @Override
