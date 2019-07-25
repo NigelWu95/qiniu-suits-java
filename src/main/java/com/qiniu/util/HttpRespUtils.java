@@ -18,17 +18,12 @@ public final class HttpRespUtils {
         times--;
         if (e.response != null) {
             int code = e.code();
-            e.response.close();
-            if (times <= 0) {
-                if (code == 599) return -2; // 如果经过重试之后响应的是 599 状态码则抛出异常
-                else return -1;
-            }
-            // 429 和 573 为请求过多的状态码，可以进行重试
-            else if (code < 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
-                return times;
+            if (times <= 0 && code == 599) {
+                return -2; // 如果重试次数为 0 且响应的是 599 状态码则抛出异常
+            } else if (code < 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
+                return times; // 429 和 573 为请求过多的状态码，可以进行重试
             } else if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614) || e.code() == 579) {
-                // 避免因为某些可暂时忽略和记录的状态码导致程序中断故先处理该异常返回 0
-                return 0;
+                return 0; // 避免因为某些可暂时忽略和记录的状态码导致程序中断故先处理该异常返回 0
             } else { // 如 631 状态码表示空间不存在，则不需要重试抛出异常
                 return -2;
             }

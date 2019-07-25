@@ -44,6 +44,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private String lastPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>();
     ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
+    ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
@@ -186,7 +187,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         saveMapper.writeKeyFile(fileName, prefixesJson.toString(), true);
         saveMapper.closeWriters();
         System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
-                "listing remaining files.\n", fileName, FileSaveMapper.ext);
+                "listing remained files.\n", fileName, FileSaveMapper.ext);
     }
 
     JsonObject recordListerByPrefix(String prefix) {
@@ -227,6 +228,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 }
             } catch (QiniuException e) {
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                e.response.close();
             }
             if (hasNext) {
                 JsonObject json = JsonUtils.getOrNew(prefixesJson, lister.getPrefix());
@@ -262,23 +264,24 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     void listing(ILister<E> lister, int order) {
         // 持久化结果标识信息
-        String newOrder = String.valueOf(order);
+        String orderStr = String.valueOf(order);
         IResultOutput<W> saver = null;
         ILineProcess<T> lineProcessor = null;
         try {
             // 多线程情况下不要直接使用传入的 processor，因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
-            if (processor != null) lineProcessor = processor.clone();
-            saver = getNewResultSaver(newOrder);
-            saverMap.put(newOrder, saver);
-            String record = "order " + newOrder + ": " + lister.getPrefix();
+            if (processor != null) {
+                lineProcessor = processor.clone();
+                processorMap.put(orderStr, lineProcessor);
+            }
+            saver = getNewResultSaver(orderStr);
+            saverMap.put(orderStr, saver);
             export(lister, saver, lineProcessor);
             removePrefixConfig(lister.getPrefix());
-            saverMap.remove(newOrder);
-            record += "\tsuccessfully done";
-            System.out.println(record);
+            saverMap.remove(orderStr);
+            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tsuccessfully done");
         } catch (Throwable e) {
             e.printStackTrace();
-            System.out.println("order " + newOrder + ": " + lister.getPrefix() + "\t" + prefixesJson.get(lister.getPrefix()));
+            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + prefixesJson.get(lister.getPrefix()));
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
@@ -565,7 +568,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) saverEntry.getValue().closeWriters();
+            ILineProcess<T> processor;
+            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
+                saverEntry.getValue().closeWriters();
+                processor = processorMap.get(saverEntry.getKey());
+                if (processor != null) processor.closeResource();
+            }
         } finally {
             writeContinuedPrefixConfig(savePath, "prefixes");
         }

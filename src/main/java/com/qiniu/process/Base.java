@@ -189,6 +189,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                                     .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                             throw e;
                         }
+                        e.response.close();
                     }
                 }
             }
@@ -248,6 +249,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                                 .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                         throw e;
                     }
+                    e.response.close();
                 }
             }
         }

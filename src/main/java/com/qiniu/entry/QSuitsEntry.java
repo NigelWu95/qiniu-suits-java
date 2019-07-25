@@ -217,7 +217,7 @@ public class QSuitsEntry {
         }
     }
 
-    public InputSource getScannerSource() {
+    public InputSource getInputSource() {
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getRmKeyPrefix();
@@ -289,7 +289,7 @@ public class QSuitsEntry {
         return aliOssContainer;
     }
 
-    public UpYosContainer getUpYosContainer() throws SuitsException {
+    public UpYosContainer getUpYosContainer() {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
@@ -356,6 +356,7 @@ public class QSuitsEntry {
     public ILineProcess<Map<String, String>> whichNextProcessor(boolean single) throws Exception {
         ILineProcess<Map<String, String>> processor = null;
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
+        if (!"qiniu".equals(source)) ListingUtils.checkQiniuAuth(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket);
         switch (process) {
             case "status": processor = getChangeStatus(single); break;
             case "type": processor = getChangeType(single); break;
@@ -380,7 +381,6 @@ public class QSuitsEntry {
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数
             processor.setRetryTimes(retryTimes);
         }
-        if (!"qiniu".equals(source)) ListingUtils.checkQiniuAuth(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket);
         return processor;
     }
 

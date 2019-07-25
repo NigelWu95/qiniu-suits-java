@@ -53,7 +53,7 @@ public class EntryMain {
                 System.out.println(processor.processLine(commonParams.getMapLine()));
             }
         } else if (interactive) {
-            InputSource inputSource = qSuitsEntry.getScannerSource();
+            InputSource inputSource = qSuitsEntry.getInputSource();
             inputSource.export(System.in, processor);
         } else {
             IDataSource dataSource = qSuitsEntry.getDataSource();

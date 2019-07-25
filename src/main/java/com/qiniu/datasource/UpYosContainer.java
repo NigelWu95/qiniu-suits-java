@@ -3,6 +3,7 @@ package com.qiniu.datasource;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.YOSObjToMap;
 import com.qiniu.convert.YOSObjToString;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
@@ -27,7 +28,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                          Map<String, String> indexMap, int unitLen, int threads) {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
@@ -127,7 +128,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-            for (Map.Entry<String, IResultOutput<BufferedWriter>> saverEntry : saverMap.entrySet()) saverEntry.getValue().closeWriters();
+            ILineProcess<Map<String, String>> processor;
+            for (Map.Entry<String, IResultOutput<BufferedWriter>> saverEntry : saverMap.entrySet()) {
+                saverEntry.getValue().closeWriters();
+                processor = processorMap.get(saverEntry.getKey());
+                if (processor != null) processor.closeResource();
+            }
         } finally {
             writeContinuedPrefixConfig(savePath, "prefixes");
         }
