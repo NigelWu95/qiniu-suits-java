@@ -49,6 +49,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(authKey1, authKey2), new ClientConfig(new Region(region)));
+        if (nextProcessor != null) cosPrivateUrl.nextProcessor = nextProcessor.clone();
         return cosPrivateUrl;
     }
 

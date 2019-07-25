@@ -1,6 +1,7 @@
 package com.qiniu.process.qos;
 
 import com.qiniu.common.QiniuException;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;
 
@@ -14,6 +15,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     private String protocol;
     private String urlIndex;
     private long expires;
+    private ILineProcess<Map<String, String>> nextProcessor;
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
                       String savePath, int saveIndex) throws IOException {
@@ -69,6 +71,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl privateUrl = (PrivateUrl)super.clone();
         privateUrl.auth = Auth.create(authKey1, authKey2);
+        if (nextProcessor != null) privateUrl.nextProcessor = nextProcessor.clone();
         return privateUrl;
     }
 
@@ -91,7 +94,12 @@ public class PrivateUrl extends Base<Map<String, String>> {
             line.put(urlIndex, url);
         }
         try {
-            return auth.privateDownloadUrl(url, expires);
+            url = auth.privateDownloadUrl(url, expires);
+            if (nextProcessor != null) {
+                line.put("url", url);
+                nextProcessor.processLine(line);
+            }
+            return url;
         } catch (Exception e) {
             throw new QiniuException(e, e.getMessage());
         }

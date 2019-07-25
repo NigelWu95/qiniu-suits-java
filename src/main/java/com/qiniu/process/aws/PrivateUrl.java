@@ -59,6 +59,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(authKey1, authKey2)))
                 .withRegion(region)
                 .build();
+        if (nextProcessor != null) awsPrivateUrl.nextProcessor = nextProcessor.clone();
         return awsPrivateUrl;
     }
 

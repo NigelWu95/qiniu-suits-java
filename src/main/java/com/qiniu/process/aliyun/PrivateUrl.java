@@ -47,6 +47,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl ossPrivateUrl = (PrivateUrl)super.clone();
         ossPrivateUrl.ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(authKey1, authKey2), null);
+        if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
         return ossPrivateUrl;
     }
 
