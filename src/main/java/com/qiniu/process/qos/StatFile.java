@@ -110,16 +110,10 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
-            throws IOException {
+    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result) throws Exception {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<Map<String, String>> retryList = new ArrayList<>();
-        JsonArray jsonArray;
-        try {
-            jsonArray = new Gson().fromJson(result, JsonArray.class);
-        } catch (JsonParseException e) {
-            throw new IOException("parse to json array error.");
-        }
+        JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
         JsonObject jsonObject;
         JsonObject data;
         for (int j = 0; j < processList.size(); j++) {
@@ -152,14 +146,10 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
         fileInfo.key = line.get("key");
-        try {
-            return (String) typeConverter.convertToV(fileInfo);
-        } catch (IOException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
+        return (String) typeConverter.convertToV(fileInfo);
     }
 
     @Override

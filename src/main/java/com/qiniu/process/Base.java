@@ -94,7 +94,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * 对 lineList 执行 batch 的操作，因为默认是实现单个资源请求的操作，部分操作不支持 batch，因此需要 batch 操作时子类需要重写该方法。
      * @param lineList 代执行的文件信息列表
      * @return 返回执行响应信息的字符串
-     * @throws QiniuException 执行失败抛出的异常
+     * @throws Exception 执行失败抛出的异常
      */
     protected String batchResult(List<T> lineList) throws Exception {
         throw new IOException("no default batch operation, please implements batch processing by yourself.");
@@ -105,7 +105,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @param processList batch 操作的资源列表
      * @param result batch 操作之后的响应结果
      * @return 返回需要进行重试的记录列表
-     * @throws IOException 写入结果失败抛出的异常
+     * @throws Exception 处理结果失败抛出的异常
      */
     protected List<T> parseBatchResult(List<T> processList, String result) throws Exception {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
@@ -201,18 +201,18 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * 单个文件进行操作的方法，返回操作的结果字符串，要求子类必须实现该方法，支持单个资源依次请求操作
      * @param line 输入 line
      * @return 操作结果的字符串
-     * @throws IOException 操作失败时的返回
+     * @throws Exception 操作失败时的返回
      */
-    abstract protected String singleResult(T line) throws IOException;
+    abstract protected String singleResult(T line) throws Exception;
 
     /**
      * 处理 singleProcess 执行的结果，默认情况下直接使用 resultInfo 拼接 result 成一行执行持久化写入，部分 process 可能对结果做进一步判断
      * 需要重写该方法
      * @param line 输入的 map 数据
      * @param result singleResult 的结果字符串
-     * @throws IOException 写入结果失败抛出异常
+     * @throws Exception 处理结果失败抛出异常
      */
-    protected void parseSingleResult(T line, String result) throws IOException {
+    protected void parseSingleResult(T line, String result) throws Exception {
         fileSaveMapper.writeSuccess(result, false);
     }
 
@@ -256,7 +256,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                                 false); break;
                         case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
                                 .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                        throw e;
+                        throw qiniuException;
                     }
                     if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
                 }
@@ -268,8 +268,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         try {
             if (!validCheck(line)) throw new IOException(line + " is not valid.");
             return singleResult(line);
-        } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.");
+        } catch (Exception e) {
+            throw new IOException("input is empty or the processor may be already closed.", e);
         }
     }
 
@@ -283,7 +283,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             if (batchSize > 1) batchProcess(lineList, retryTimes);
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.");
+            throw new IOException("input is empty or the processor may be already closed.", e);
         }
     }
 

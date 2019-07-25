@@ -1,7 +1,5 @@
 package com.qiniu.process.qdora;
 
-import com.google.gson.JsonParseException;
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.process.qos.FileChecker;
 import com.qiniu.storage.Configuration;
@@ -90,7 +88,7 @@ public class QueryHash extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url =  line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
@@ -99,13 +97,9 @@ public class QueryHash extends Base<Map<String, String>> {
         String qhash = fileChecker.getQHashBody(url);
         if (qhash != null && !"".equals(qhash)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
-            try {
-                return url + "\t" + JsonUtils.toJson(qhash);
-            } catch (JsonParseException e) {
-                throw new QiniuException(e, e.getMessage());
-            }
+            return url + "\t" + JsonUtils.toJson(qhash);
         } else {
-            throw new QiniuException(null, "empty_result");
+            throw new IOException(line + " only has empty_result");
         }
     }
 

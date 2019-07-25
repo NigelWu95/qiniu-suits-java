@@ -1,6 +1,5 @@
 package com.qiniu.process.filtration;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineFilter;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
@@ -107,13 +106,13 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     public String processLine(T line) throws IOException {
         try {
             if (filter.doFilter(line)) {
-                if (nextProcessor == null) return String.valueOf(true);
+                if (nextProcessor == null) return String.valueOf(line);
                 else return nextProcessor.processLine(line);
             } else {
                 return "false";
             }
         } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -124,7 +123,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
             } catch (Exception e) {
-                throw new QiniuException(e, e.getMessage());
+                throw new IOException(e.getMessage(), e);
             }
         }
         // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。

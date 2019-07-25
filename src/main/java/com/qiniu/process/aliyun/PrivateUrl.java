@@ -71,13 +71,13 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     @Override
-    public String singleResult(Map<String, String> line) throws IOException {
+    public String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
         // 生成以GET方法访问的签名URL，访客可以直接通过浏览器访问相关内容。
         URL url = ossClient.generatePresignedUrl(bucket, key, expiration);
         if (nextProcessor != null) {
             line.put("url", url.toString());
-            nextProcessor.processLine(line);
+            return nextProcessor.processLine(line);
         }
         return url.toString();
     }

@@ -129,22 +129,18 @@ public class AsyncFetch extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
-        try {
-            if (url == null || "".equals(url)) {
-                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
-                line.put(urlIndex, url);
-                key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
-            } else {
-                if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
-                else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
-            }
-            line.put("key", key);
-        } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+        if (url == null || "".equals(url)) {
+            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
+            line.put(urlIndex, url);
+            key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
+        } else {
+            if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+            else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
         }
+        line.put("key", key);
         Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
         return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }

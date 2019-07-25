@@ -1,5 +1,6 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -117,7 +118,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
         batchOperations.clearOps();
         lineList.forEach(line -> {
             if (toBucket == null || "".equals(toBucket)) {
@@ -130,7 +131,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
         String toKey = line.get("to-key");
         if (toBucket == null || "".equals(toBucket)) {

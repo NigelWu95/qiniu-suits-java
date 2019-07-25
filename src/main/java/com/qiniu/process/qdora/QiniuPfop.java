@@ -3,6 +3,7 @@ package com.qiniu.process.qdora;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
 import com.qiniu.process.Base;
 import com.qiniu.processing.OperationManager;
@@ -105,7 +106,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String key = line.get("key");
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             StringBuilder cmdBuilder = new StringBuilder();

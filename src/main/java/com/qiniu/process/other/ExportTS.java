@@ -1,6 +1,5 @@
 package com.qiniu.process.other;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.VideoTS;
 import com.qiniu.process.Base;
 import com.qiniu.process.qos.M3U8Manager;
@@ -78,29 +77,19 @@ public class ExportTS extends Base<Map<String, String>> {
 
     @Override
     protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+        String url = line.get(urlIndex);
+        return line.get("key") != null || (url != null && !url.isEmpty());
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        fileSaveMapper.writeSuccess(result, false);
-    }
-
-    @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
-        try {
-            return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream()
-                    .map(VideoTS::toString).collect(Collectors.toList()));
-        } catch (QiniuException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
+        return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream()
+                .map(VideoTS::toString).collect(Collectors.toList()));
     }
 
     @Override

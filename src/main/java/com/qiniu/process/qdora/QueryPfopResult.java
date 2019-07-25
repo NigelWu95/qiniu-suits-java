@@ -1,6 +1,5 @@
 package com.qiniu.process.qdora;
 
-import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
@@ -68,14 +67,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+    protected void parseSingleResult(Map<String, String> line, String result) throws Exception {
         if (result != null && !"".equals(result)) {
-            PfopResult pfopResult;
-            try {
-                pfopResult = JsonUtils.fromJson(result, PfopResult.class);
-            } catch (JsonParseException e) {
-                throw new QiniuException(e, e.getMessage());
-            }
+            PfopResult pfopResult = JsonUtils.fromJson(result, PfopResult.class);
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
                 if (item.code == 0)
@@ -92,12 +86,12 @@ public class QueryPfopResult extends Base<Map<String, String>> {
                         JsonUtils.toJsonWithoutUrlEscape(item), false);
             }
         } else {
-            throw new QiniuException(null, "empty_result");
+            throw new IOException(line + " only has empty_result");
         }
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws QiniuException {
         String pid = line.get(pidIndex);
         return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }

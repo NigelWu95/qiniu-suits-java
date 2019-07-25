@@ -89,22 +89,18 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
-        try {
-            url = auth.privateDownloadUrl(url, expires);
-            if (nextProcessor != null) {
-                line.put("url", url);
-                nextProcessor.processLine(line);
-            }
-            return url;
-        } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+        url = auth.privateDownloadUrl(url, expires);
+        if (nextProcessor != null) {
+            line.put("url", url);
+            return nextProcessor.processLine(line);
         }
+        return url;
     }
 
     @Override
