@@ -24,11 +24,17 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
 
+    public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter) throws Exception {
+        this.processName = "filter";
+        this.filter = newFilter(baseFilter, seniorFilter);
+        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+        this.typeConverter = newTypeConverter();
+    }
+
     public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
                          String saveFormat, String saveSeparator, Set<String> rmFields, int saveIndex)
             throws Exception {
-        this.processName = "filter";
-        this.filter = newFilter(baseFilter, seniorFilter);
+        this(baseFilter, seniorFilter);
         this.savePath = savePath;
         this.saveFormat = saveFormat;
         this.saveSeparator = saveSeparator;
@@ -91,12 +97,10 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     @SuppressWarnings("unchecked")
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
+        if (nextProcessor != null) mapFilter.nextProcessor = nextProcessor.clone();
         try {
             mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
             mapFilter.typeConverter = newTypeConverter();
-            if (nextProcessor != null) {
-                mapFilter.nextProcessor = nextProcessor.clone();
-            }
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }

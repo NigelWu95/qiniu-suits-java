@@ -1,6 +1,5 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;

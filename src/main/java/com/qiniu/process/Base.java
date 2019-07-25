@@ -32,8 +32,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.bucket = bucket;
     }
 
-    public Base(String processName, String accessKey, String secretKey, String bucket,
-                String savePath, int saveIndex) throws IOException {
+    public Base(String processName, String accessKey, String secretKey, String bucket, String savePath, int saveIndex)
+            throws IOException {
         this(processName, accessKey, secretKey, bucket);
         this.saveIndex = new AtomicInteger(saveIndex);
         this.savePath = savePath;
@@ -64,13 +64,14 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
-        this.fileSaveMapper.closeWriters();
+        if (fileSaveMapper != null) fileSaveMapper.closeWriters();
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
     }
 
     @SuppressWarnings("unchecked")
     public Base<T> clone() throws CloneNotSupportedException {
         Base<T> base = (Base<T>)super.clone();
+        if (fileSaveMapper == null) return base;
         try {
             base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
         } catch (IOException e) {
