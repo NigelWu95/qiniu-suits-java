@@ -2,7 +2,6 @@ package com.qiniu.process;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileSaveMapper;
@@ -97,7 +96,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 返回执行响应信息的字符串
      * @throws QiniuException 执行失败抛出的异常
      */
-    protected String batchResult(List<T> lineList) throws IOException {
+    protected String batchResult(List<T> lineList) throws Exception {
         throw new IOException("no default batch operation, please implements batch processing by yourself.");
     }
 
@@ -108,15 +107,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @return 返回需要进行重试的记录列表
      * @throws IOException 写入结果失败抛出的异常
      */
-    protected List<T> parseBatchResult(List<T> processList, String result) throws IOException {
+    protected List<T> parseBatchResult(List<T> processList, String result) throws Exception {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
-        List<T> retryList = new ArrayList<>();
-        JsonArray jsonArray;
-        try {
-            jsonArray = JsonUtils.fromJson(result, JsonArray.class);
-        } catch (JsonParseException e) {
-            throw new IOException("parse to json array error.");
-        }
+        List<T> retryList = null;
+        JsonArray jsonArray = JsonUtils.fromJson(result, JsonArray.class);
         JsonObject jsonObject;
         for (int j = 0; j < processList.size(); j++) {
             jsonObject = jsonArray.get(j).getAsJsonObject();
@@ -127,6 +121,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
                         break;
                     case 0:
+                        if (retryList == null) retryList = new ArrayList<>();
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
@@ -163,34 +158,40 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         String result;
         int retry;
         for (int i = 0; i < times; i++) {
+            retry = retryTimes;
             processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
-            if (processList.size() > 0) {
-                retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
-                // 加上 processList.size() > 0 的选择原因是会在每一次处理 batch 操作的结果时将需要重试的记录加入重试列表进行返回，并且在
-                // 没有异常的情况下当前的 processList 会执行到没有重试记录返回时才结束
-                while (retry > 0 || processList.size() > 0) {
-                    try {
-                        result = batchResult(processList);
-                        processList = parseBatchResult(processList, result);
+            // 加上 processList.size() > 0 的选择原因是会在每一次处理 batch 操作的结果时将需要重试的记录加入重试列表进行返回，并且在
+            // 没有异常的情况下当前的 processList 会执行到没有重试记录返回时才结束，parseBatchResult 会返回可以重试的列表，无重试记录则返回
+            // 空，重试次数小于 0 时设置 processList = null
+            while (processList != null) {
+                try {
+                    result = batchResult(processList);
+                    processList = parseBatchResult(processList, result);
+                } catch (Exception e) {
+                    QiniuException qiniuException = null;
+                    String message;
+                    if (e instanceof QiniuException) {
+                        qiniuException = (QiniuException) e;
+                        retry = HttpRespUtils.checkException(qiniuException, retry);
+                        message = LogUtils.getMessage(qiniuException);
+                    } else {
                         retry = 0;
-                    } catch (QiniuException e) {
-                        retry = HttpRespUtils.checkException(e, retry);
-                        String message = LogUtils.getMessage(e);
-                        System.out.println(message);
-                        switch (retry) { // 实际上 batch 操作产生异常经过 checkException 不会出现返回 0 的情况
-                            case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
-                                    .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                            break;
-                            case -1: fileSaveMapper.writeKeyFile("need_retry", String.join("\n", processList
-                                    .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                            break;
-                            case -2: fileSaveMapper.writeError(String.join("\n", lineList
-                                    .subList(batchSize * i, lineList.size()).stream()
-                                    .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                            throw e;
-                        }
-                        e.response.close();
+                        message = e.getMessage();
                     }
+                    System.out.println(message);
+                    switch (retry) {
+                        case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
+                                .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                                processList = null; break;
+                        case -1: fileSaveMapper.writeKeyFile("need_retry", String.join("\n", processList
+                                .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                                processList = null; break;
+                        case -2: fileSaveMapper.writeError(String.join("\n", lineList
+                                .subList(batchSize * i, lineList.size()).stream()
+                                .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                        throw qiniuException;
+                    }
+                    if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
                 }
             }
         }
@@ -231,25 +232,33 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                 fileSaveMapper.writeError(line + " is empty or not valid.", false);
                 continue;
             }
-            retry = retryTimes + 1; // 不执行重试的话本身需要一次执行机会
+            retry = retryTimes;
             while (retry > 0) {
                 try {
                     result = singleResult(line);
                     parseSingleResult(line, result);
                     retry = 0;
-                } catch (QiniuException e) {
-                    retry = HttpRespUtils.checkException(e, retry);
-                    String message = LogUtils.getMessage(e);
+                } catch (Exception e) {
+                    QiniuException qiniuException = null;
+                    String message;
+                    if (e instanceof QiniuException) {
+                        qiniuException = (QiniuException) e;
+                        retry = HttpRespUtils.checkException(qiniuException, retry);
+                        message = LogUtils.getMessage(qiniuException);
+                    } else {
+                        retry = 0;
+                        message = e.getMessage();
+                    }
                     System.out.println(message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
-                        case -1: fileSaveMapper.writeKeyFile("need_retry", resultInfo(line) + "\t" + message, false);
-                        break;
+                        case -1: fileSaveMapper.writeKeyFile("need_retry", resultInfo(line) + "\t" + message,
+                                false); break;
                         case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
                                 .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                         throw e;
                     }
-                    e.response.close();
+                    if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
                 }
             }
         }
