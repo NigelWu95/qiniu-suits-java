@@ -503,7 +503,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(threads);
             listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
-            listerList = computeToNextLevel(listerList);
+            while (listerList != null && listerList.size() > 0 && listerList.size() < 5) {
+                listerList = computeToNextLevel(listerList);
+            }
             if (listerList != null && listerList.size() > 0) {
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
             }
