@@ -34,7 +34,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         this.password = password;
         this.configuration = configuration;
         UpLister upLister = new UpLister(new UpYunClient(configuration, username, password), bucket, null,
-                null, null, unitLen);
+                null, null, 1);
         upLister.close();
         upLister = null;
     }
@@ -111,8 +111,14 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 prefixes = listAndGetNextPrefixes(prefixes);
             }
             executorPool.shutdown();
-            while (!executorPool.isTerminated())
-                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
+            while (!executorPool.isTerminated()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                    int i = 0;
+                    while (i < 1000) i++;
+                }
+            }
             System.out.println(info + " finished.");
         } catch (Throwable e) {
             executorPool.shutdownNow();

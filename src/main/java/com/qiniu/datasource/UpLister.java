@@ -79,37 +79,40 @@ public class UpLister implements ILister<FileItem> {
     private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
         List<FileItem> fileItems = new ArrayList<>();
         String result = upYunClient.listFiles(bucket, prefix, marker, limit);
-        if (result.length() == 0) {
+        if (result == null || result.isEmpty()) {
             this.marker = null;
             return fileItems;
         }
         JsonObject returnJson = JsonUtils.toJsonObject(result);
         this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
         if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker)) this.marker = null;
-        JsonArray files = returnJson.get("files").getAsJsonArray();
-        if (files.size() > 0) {
-            JsonObject object;
-            String attribute;
-            String totalName;
-            for (JsonElement item : files) {
-                object = item.getAsJsonObject();
-                attribute = object.get("type").getAsString();
-                totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
-                        prefix + "/" + object.get("name").getAsString();
-                if ("folder".equals(attribute)) {
-                    if (directories == null) {
-                        directories = new ArrayList<>();
-                        directories.add(totalName);
+        JsonElement jsonElement = returnJson.get("files");
+        if (jsonElement instanceof JsonArray) {
+            JsonArray files = returnJson.get("files").getAsJsonArray();
+            if (files.size() > 0) {
+                JsonObject object;
+                String attribute;
+                String totalName;
+                for (JsonElement item : files) {
+                    object = item.getAsJsonObject();
+                    attribute = object.get("type").getAsString();
+                    totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
+                            prefix + "/" + object.get("name").getAsString();
+                    if ("folder".equals(attribute)) {
+                        if (directories == null) {
+                            directories = new ArrayList<>();
+                            directories.add(totalName);
+                        } else {
+                            directories.add(totalName);
+                        }
                     } else {
-                        directories.add(totalName);
+                        FileItem fileItem = new FileItem();
+                        fileItem.key = totalName;
+                        fileItem.attribute = attribute;
+                        fileItem.size = object.get("length").getAsLong();
+                        fileItem.timeSeconds = object.get("last_modified").getAsLong();
+                        fileItems.add(fileItem);
                     }
-                } else {
-                    FileItem fileItem = new FileItem();
-                    fileItem.key = totalName;
-                    fileItem.attribute = attribute;
-                    fileItem.size = object.get("length").getAsLong();
-                    fileItem.timeSeconds = object.get("last_modified").getAsLong();
-                    fileItems.add(fileItem);
                 }
             }
         }

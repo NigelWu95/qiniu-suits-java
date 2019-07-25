@@ -97,9 +97,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         bucket = commonParams.getBucket();
         antiPrefixes = commonParams.getAntiPrefixes();
         if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
-        setPrefixesAndMap(commonParams.getPrefixesMap());
         prefixLeft = commonParams.getPrefixLeft();
         prefixRight = commonParams.getPrefixRight();
+        setPrefixesAndMap(commonParams.getPrefixesMap());
         setIndexMapWithDefault(commonParams.getIndexMap());
         unitLen = commonParams.getUnitLen();
         retryTimes = commonParams.getRetryTimes();
@@ -118,11 +118,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
         if (prefixesMap == null) {
             this.prefixesMap = new HashMap<>();
+            prefixLeft = true;
+            prefixRight = true;
             if (hasAntiPrefixes) {
                 prefixes = originPrefixList.stream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
-                prefixLeft = true;
             }
-            prefixRight = true;
         } else {
             this.prefixesMap = prefixesMap;
             prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
@@ -465,7 +465,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 }
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
-                Thread.sleep(1000);
+                int i = 0;
+                while (i < 1000) i++;
             }
             count++;
         }
@@ -528,7 +529,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
-                Thread.sleep(1000);
+                int i = 0;
+                while (i < 1000) i++;
             }
         }
     }

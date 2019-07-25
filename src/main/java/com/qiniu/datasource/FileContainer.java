@@ -197,7 +197,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
-                    Thread.sleep(1000);
+                    int i = 0;
+                    while (i < 1000) i++;
                 }
             }
             System.out.println(info + " finished");

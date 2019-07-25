@@ -67,7 +67,7 @@ public class UpYunClient {
         if (code == 200) {
             return text.toString();
         } else {
-            throw new SuitsException(code, text.toString());
+            throw new SuitsException(code, text.toString() + "\t" + directory + "\t" + marker);
         }
     }
 
