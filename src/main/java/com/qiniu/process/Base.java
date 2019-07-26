@@ -64,8 +64,9 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public void updateSavePath(String savePath) throws IOException {
         this.savePath = savePath;
-        if (fileSaveMapper != null) fileSaveMapper.closeWriters();
-        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+        if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
+        else fileSaveMapper.closeWriters();
+        fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
     }
 
     @SuppressWarnings("unchecked")

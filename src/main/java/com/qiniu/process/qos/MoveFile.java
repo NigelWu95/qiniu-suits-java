@@ -171,6 +171,7 @@ public class MoveFile extends Base<Map<String, String>> {
         addPrefix = null;
         rmPrefix = null;
         batchOperations = null;
+        errorLineList = null;
         configuration = null;
         bucketManager = null;
     }

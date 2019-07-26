@@ -104,6 +104,7 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         batchOperations = null;
+        errorLineList = null;
         configuration = null;
         bucketManager = null;
     }

@@ -180,6 +180,7 @@ public class StatFile extends Base<Map<String, String>> {
         separator = null;
         typeConverter = null;
         batchOperations = null;
+        errorLineList = null;
         configuration = null;
         bucketManager = null;
     }
