@@ -74,6 +74,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     synchronized public void closeWriters() {
+        if (writerMap == null) return;
         int retry;
         BufferedWriter bufferedWriter;
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
@@ -82,7 +83,6 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 try {
                     bufferedWriter = writerMap.get(entry.getKey());
                     if (bufferedWriter != null) bufferedWriter.close();
-                    writerMap.remove(entry.getKey());
                     File file = new File(targetFileDir, prefix + entry.getKey() + this.suffix + ext);
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -101,11 +101,10 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 }
             }
         }
-        if (writerMap.size() <= 0) {
-            targetFileDir = null;
-            prefix = null;
-            suffix = null;
-        }
+        writerMap = null;
+        targetFileDir = null;
+        prefix = null;
+        suffix = null;
     }
 
     private void writeLine(String key, String item, boolean flush) throws IOException {
