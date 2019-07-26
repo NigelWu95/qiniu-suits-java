@@ -110,6 +110,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws Exception 处理结果失败抛出的异常
      */
     protected List<T> parseBatchResult(List<T> processList, String result) throws Exception {
+        if (processList.size() <= 0) return null;
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = null;
         JsonArray jsonArray = JsonUtils.fromJson(result, JsonArray.class);
@@ -154,7 +155,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             // 加上 processList.size() > 0 的选择原因是会在每一次处理 batch 操作的结果时将需要重试的记录加入重试列表进行返回，并且在
             // 没有异常的情况下当前的 processList 会执行到没有重试记录返回时才结束，parseBatchResult 会返回可以重试的列表，无重试记录则返回
             // 空，重试次数小于 0 时设置 processList = null
-            while (processList != null) {
+            while (processList != null && processList.size() > 0) {
                 try {
                     processList = putBatchOperations(processList);
                     result = batchResult(processList);

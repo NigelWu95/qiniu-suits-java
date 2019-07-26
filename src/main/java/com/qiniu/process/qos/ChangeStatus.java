@@ -10,7 +10,6 @@ import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +17,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     private int status;
     private BatchOperations batchOperations;
-    private List<String> errorLineList;
+    private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
@@ -37,7 +36,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.status = status;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
-        this.errorLineList = new ArrayList<>();
+        this.lines = new ArrayList<>();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
@@ -56,7 +55,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
         changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         changeStatus.batchOperations = new BatchOperations();
-        changeStatus.errorLineList = new ArrayList<>();
+        changeStatus.lines = new ArrayList<>();
         return changeStatus;
     }
 
@@ -66,30 +65,25 @@ public class ChangeStatus extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batchOperations.clearOps();
-        Iterator<Map<String, String>> iterator = processList.iterator();
-        Map<String, String> line;
+        lines.clear();
         String key;
-        while (iterator.hasNext()) {
-            line = iterator.next();
-            key = line.get("key");
+        for (Map<String, String> map : processList) {
+            key = map.get("key");
             if (key != null) {
+                lines.add(map);
                 batchOperations.addChangeStatusOps(bucket, status, key);
             } else {
-                iterator.remove();
-                errorLineList.add("no key in " + line);
+                fileSaveMapper.writeError("no key in " + map, false);
             }
         }
-        if (errorLineList.size() > 0) {
-            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
-            errorLineList.clear();
-        }
-        return processList;
+        return lines;
     }
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
@@ -104,7 +98,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         batchOperations = null;
-        errorLineList = null;
+        lines = null;
         configuration = null;
         bucketManager = null;
     }

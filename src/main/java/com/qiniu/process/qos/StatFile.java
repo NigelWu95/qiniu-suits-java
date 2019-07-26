@@ -15,7 +15,6 @@ import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ public class StatFile extends Base<Map<String, String>> {
     private String separator;
     private ITypeConvert typeConverter;
     private BatchOperations batchOperations;
-    private List<String> errorLineList;
+    private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
@@ -43,7 +42,7 @@ public class StatFile extends Base<Map<String, String>> {
         set(configuration, format, separator);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
-        this.errorLineList = new ArrayList<>();
+        this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
@@ -77,7 +76,7 @@ public class StatFile extends Base<Map<String, String>> {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         statFile.batchOperations = new BatchOperations();
-        statFile.errorLineList = new ArrayList<>();
+        statFile.lines = new ArrayList<>();
         if (batchSize > 1) {
             try {
                 statFile.typeConverter = new JsonToString(format, separator, null);
@@ -100,38 +99,34 @@ public class StatFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batchOperations.clearOps();
-        Iterator<Map<String, String>> iterator = processList.iterator();
-        Map<String, String> line;
+        lines.clear();
         String key;
-        while (iterator.hasNext()) {
-            line = iterator.next();
-            key = line.get("key");
+        for (Map<String, String> map : processList) {
+            key = map.get("key");
             if (key != null) {
+                lines.add(map);
                 batchOperations.addStatOps(bucket, key);
             } else {
-                iterator.remove();
-                errorLineList.add("no key in " + line);
+                fileSaveMapper.writeError("no key in " + map, false);
             }
         }
-        if (errorLineList.size() > 0) {
-            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
-            errorLineList.clear();
-        }
-        return processList;
+        return lines;
     }
 
     @Override
     public String batchResult(List<Map<String, String>> lineList) throws IOException {
+        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result) throws Exception {
+        if (processList.size() <= 0) return null;
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
-        List<Map<String, String>> retryList = new ArrayList<>();
+        List<Map<String, String>> retryList = null;
         JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
         JsonObject jsonObject;
         JsonObject data;
@@ -150,6 +145,7 @@ public class StatFile extends Base<Map<String, String>> {
                         fileSaveMapper.writeSuccess((String) typeConverter.convertToV(data), false);
                         break;
                     case 0:
+                        if (retryList == null) retryList = new ArrayList<>();
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
@@ -180,7 +176,7 @@ public class StatFile extends Base<Map<String, String>> {
         separator = null;
         typeConverter = null;
         batchOperations = null;
-        errorLineList = null;
+        lines = null;
         configuration = null;
         bucketManager = null;
     }

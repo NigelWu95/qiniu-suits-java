@@ -11,7 +11,6 @@ import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +22,7 @@ public class MoveFile extends Base<Map<String, String>> {
     private String addPrefix;
     private String rmPrefix;
     private BatchOperations batchOperations;
-    private List<String> errorLineList;
+    private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
@@ -47,7 +46,7 @@ public class MoveFile extends Base<Map<String, String>> {
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
-        this.errorLineList = new ArrayList<>();
+        this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
         CloudAPIUtils.checkQiniu(bucketManager, toBucket);
@@ -103,7 +102,7 @@ public class MoveFile extends Base<Map<String, String>> {
         MoveFile moveFile = (MoveFile)super.clone();
         moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         moveFile.batchOperations = new BatchOperations();
-        moveFile.errorLineList = new ArrayList<>();
+        moveFile.lines = new ArrayList<>();
         return moveFile;
     }
 
@@ -113,49 +112,43 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batchOperations.clearOps();
-        Iterator<Map<String, String>> iterator = processList.iterator();
-        Map<String, String> line;
+        lines.clear();
         String key;
         String toKey;
-        while (iterator.hasNext()) {
-            line = iterator.next();
-            key = line.get("key");
+        for (Map<String, String> map : processList) {
+            key = map.get("key");
             if (key != null) {
                 try {
-                    toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
+                    toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                    lines.add(map);
                     if (isRename) {
                         batchOperations.addRenameOp(bucket, key, toKey);
                     } else {
                         batchOperations.addMoveOp(bucket, key, toBucket, toKey);
                     }
                 } catch (IOException e) {
-                    iterator.remove();
-                    errorLineList.add("no " + toKeyIndex + " in " + line);
+                    fileSaveMapper.writeError("no " + toKeyIndex + " in " + map, false);
                 }
             } else {
-                iterator.remove();
-                errorLineList.add("no key in " + line);
+                fileSaveMapper.writeError("no key in " + map, false);
             }
         }
-        if (errorLineList.size() > 0) {
-            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
-            errorLineList.clear();
-        }
-        return processList;
+        return lines;
     }
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
-        String toKey = line.get(toKeyIndex);
-        if (key == null || toKey == null) throw new IOException("no key or to-key in " + line);
+        if (key == null) throw new IOException("no key in " + line);
+        String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
         if (isRename) {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey));
         } else {
@@ -171,7 +164,7 @@ public class MoveFile extends Base<Map<String, String>> {
         addPrefix = null;
         rmPrefix = null;
         batchOperations = null;
-        errorLineList = null;
+        lines = null;
         configuration = null;
         bucketManager = null;
     }
