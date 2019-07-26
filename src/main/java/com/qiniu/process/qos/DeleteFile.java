@@ -17,6 +17,7 @@ import java.util.Map;
 public class DeleteFile extends Base<Map<String, String>> {
 
     private BatchOperations batchOperations;
+    private List<String> errorLineList;
     private Configuration configuration;
     private BucketManager bucketManager;
 
@@ -32,6 +33,7 @@ public class DeleteFile extends Base<Map<String, String>> {
         super("delete", accessKey, secretKey, bucket, savePath, saveIndex);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.errorLineList = new ArrayList<>();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
@@ -56,7 +58,7 @@ public class DeleteFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) {
+    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batchOperations.clearOps();
         Iterator<Map<String, String>> iterator = processList.iterator();
         Map<String, String> line;
@@ -70,6 +72,10 @@ public class DeleteFile extends Base<Map<String, String>> {
                 iterator.remove();
                 errorLineList.add("no key in " + line);
             }
+        }
+        if (errorLineList.size() > 0) {
+            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
+            errorLineList.clear();
         }
         return processList;
     }

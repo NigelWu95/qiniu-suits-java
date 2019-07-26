@@ -23,6 +23,7 @@ public class MoveFile extends Base<Map<String, String>> {
     private String addPrefix;
     private String rmPrefix;
     private BatchOperations batchOperations;
+    private List<String> errorLineList;
     private Configuration configuration;
     private BucketManager bucketManager;
 
@@ -46,6 +47,7 @@ public class MoveFile extends Base<Map<String, String>> {
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.errorLineList = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
         CloudAPIUtils.checkQiniu(bucketManager, toBucket);
@@ -111,7 +113,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     @Override
-    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) {
+    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batchOperations.clearOps();
         Iterator<Map<String, String>> iterator = processList.iterator();
         Map<String, String> line;
@@ -136,6 +138,10 @@ public class MoveFile extends Base<Map<String, String>> {
                 iterator.remove();
                 errorLineList.add("no key in " + line);
             }
+        }
+        if (errorLineList.size() > 0) {
+            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
+            errorLineList.clear();
         }
         return processList;
     }

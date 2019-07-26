@@ -24,7 +24,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
-    protected List<String> errorLineList = new ArrayList<>();
 
     public Base(String processName, String authKey1, String authKey2, String bucket) {
         this.processName = processName;
@@ -88,7 +87,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     protected abstract String resultInfo(T line);
 
-    protected List<T> putBatchOperations(List<T> processList) {
+    protected List<T> putBatchOperations(List<T> processList) throws IOException {
         return processList;
     }
 
@@ -186,10 +185,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
                 }
             }
-        }
-        if (errorLineList.size() > 0) {
-            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
-            errorLineList.clear();
         }
     }
 
