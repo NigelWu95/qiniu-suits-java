@@ -1,6 +1,5 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -10,6 +9,8 @@ import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +53,8 @@ public class ChangeStatus extends Base<Map<String, String>> {
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
         changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
-        if (batchSize > 1) changeStatus.batchOperations = new BatchOperations();
+        changeStatus.batchOperations = new BatchOperations();
+        changeStatus.errorLineList = new ArrayList<>();
         return changeStatus;
     }
 
@@ -62,20 +64,33 @@ public class ChangeStatus extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) {
+        batchOperations.clearOps();
+        Iterator<Map<String, String>> iterator = processList.iterator();
+        Map<String, String> line;
+        String key;
+        while (iterator.hasNext()) {
+            line = iterator.next();
+            key = line.get("key");
+            if (key != null) {
+                batchOperations.addChangeStatusOps(bucket, status, key);
+            } else {
+                iterator.remove();
+                errorLineList.add("no key in " + line);
+            }
+        }
+        return processList;
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
         return key + "\t" + status + "\t" + HttpRespUtils.getResult(bucketManager.changeStatus(bucket, key, status));
     }
 

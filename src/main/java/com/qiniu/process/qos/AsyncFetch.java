@@ -123,12 +123,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        String url = line.get(urlIndex);
-        return line.get("key") != null || (url != null && !url.isEmpty());
-    }
-
-    @Override
     protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变

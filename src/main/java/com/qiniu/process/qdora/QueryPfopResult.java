@@ -62,11 +62,6 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        return line.get(pidIndex) != null;
-    }
-
-    @Override
     protected void parseSingleResult(Map<String, String> line, String result) throws Exception {
         if (result != null && !"".equals(result)) {
             PfopResult pfopResult = JsonUtils.fromJson(result, PfopResult.class);

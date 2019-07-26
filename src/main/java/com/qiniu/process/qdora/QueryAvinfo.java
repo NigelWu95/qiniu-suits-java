@@ -72,12 +72,6 @@ public class QueryAvinfo extends Base<Map<String, String>> {
         return line.get(urlIndex);
     }
 
-    @Override
-    protected boolean validCheck(Map<String, String> line) {
-        String url = line.get(urlIndex);
-        return line.get("key") != null || (url != null && !url.isEmpty());
-    }
-
     protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {

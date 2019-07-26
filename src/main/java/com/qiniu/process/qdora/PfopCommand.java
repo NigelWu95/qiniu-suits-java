@@ -108,11 +108,6 @@ public class PfopCommand extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
-    }
-
-    @Override
     protected String singleResult(Map<String, String> line) throws Exception {
         String key;
         String info;

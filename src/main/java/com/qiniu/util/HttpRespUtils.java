@@ -4,6 +4,8 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
 
+import java.io.IOException;
+
 public final class HttpRespUtils {
 
     /**
@@ -84,10 +86,10 @@ public final class HttpRespUtils {
      * 将 Response 对象转换成为结果字符串
      * @param response 得到的 Response 对象
      * @return Response body 转换的 String 对象
-     * @throws QiniuException Response 非正常响应的情况下抛出的异常
+     * @throws IOException Response 非正常响应的情况下抛出的异常
      */
-    public static String getResult(Response response) throws QiniuException {
-        if (response == null) throw new QiniuException(null, "empty response");
+    public static String getResult(Response response) throws IOException {
+        if (response == null) throw new IOException("empty response");
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         String responseBody = response.bodyString();
         response.close();

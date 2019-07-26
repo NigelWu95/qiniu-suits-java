@@ -61,11 +61,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        return true;
-    }
-
-    @Override
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
     }

@@ -1,7 +1,6 @@
 package com.qiniu.process.qos;
 
 import com.google.gson.*;
-import com.qiniu.common.QiniuException;
 import com.qiniu.convert.JsonToString;
 import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
@@ -16,6 +15,7 @@ import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -74,8 +74,9 @@ public class StatFile extends Base<Map<String, String>> {
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        statFile.batchOperations = new BatchOperations();
+        statFile.errorLineList = new ArrayList<>();
         if (batchSize > 1) {
-            statFile.batchOperations = new BatchOperations();
             try {
                 statFile.typeConverter = new JsonToString(format, separator, null);
             } catch (IOException e) {
@@ -97,14 +98,26 @@ public class StatFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) {
+        batchOperations.clearOps();
+        Iterator<Map<String, String>> iterator = processList.iterator();
+        Map<String, String> line;
+        String key;
+        while (iterator.hasNext()) {
+            line = iterator.next();
+            key = line.get("key");
+            if (key != null) {
+                batchOperations.addStatOps(bucket, key);
+            } else {
+                iterator.remove();
+                errorLineList.add("no key in " + line);
+            }
+        }
+        return processList;
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
+    public String batchResult(List<Map<String, String>> lineList) throws IOException {
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
@@ -147,8 +160,10 @@ public class StatFile extends Base<Map<String, String>> {
     @Override
     @SuppressWarnings("unchecked")
     protected String singleResult(Map<String, String> line) throws IOException {
-        FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
-        fileInfo.key = line.get("key");
+        String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
+        FileInfo fileInfo = bucketManager.stat(bucket, key);
+        fileInfo.key = key;
         return (String) typeConverter.convertToV(fileInfo);
     }
 

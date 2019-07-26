@@ -1,6 +1,5 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
@@ -47,13 +46,9 @@ public class MirrorFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
-    }
-
-    @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
         bucketManager.prefetch(bucket, key);
         return key;
     }

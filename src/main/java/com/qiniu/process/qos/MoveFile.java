@@ -1,6 +1,5 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -11,11 +10,14 @@ import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 public class MoveFile extends Base<Map<String, String>> {
 
+    private boolean isRename = false;
     private String toBucket;
     private String toKeyIndex;
     private String addPrefix;
@@ -28,6 +30,7 @@ public class MoveFile extends Base<Map<String, String>> {
                     String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket);
+        if ("rename".equals(processName)) isRename = true;
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
@@ -38,8 +41,8 @@ public class MoveFile extends Base<Map<String, String>> {
                     String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket,
-                savePath, saveIndex);
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket, savePath, saveIndex);
+        if ("rename".equals(processName)) isRename = true;
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
@@ -97,44 +100,57 @@ public class MoveFile extends Base<Map<String, String>> {
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
         moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
-        if (batchSize > 1) moveFile.batchOperations = new BatchOperations();
+        moveFile.batchOperations = new BatchOperations();
+        moveFile.errorLineList = new ArrayList<>();
         return moveFile;
     }
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get("to-key");
+        return line.get("key") + "\t" + line.get(toKeyIndex);
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        if (line.get("key") == null) return false;
-        try {
-            line.put("to-key", addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex)));
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
+    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) {
         batchOperations.clearOps();
-        lineList.forEach(line -> {
-            if (toBucket == null || "".equals(toBucket)) {
-                batchOperations.addRenameOp(bucket, line.get("key"), line.get("to-key"));
+        Iterator<Map<String, String>> iterator = processList.iterator();
+        Map<String, String> line;
+        String key;
+        String toKey;
+        while (iterator.hasNext()) {
+            line = iterator.next();
+            key = line.get("key");
+            if (key != null) {
+                try {
+                    toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
+                    if (isRename) {
+                        batchOperations.addRenameOp(bucket, key, toKey);
+                    } else {
+                        batchOperations.addMoveOp(bucket, key, toBucket, toKey);
+                    }
+                } catch (IOException e) {
+                    iterator.remove();
+                    errorLineList.add("no " + toKeyIndex + " in " + line);
+                }
             } else {
-                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, line.get("to-key"));
+                iterator.remove();
+                errorLineList.add("no key in " + line);
             }
-        });
+        }
+        return processList;
+    }
+
+    @Override
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
-        String toKey = line.get("to-key");
-        if (toBucket == null || "".equals(toBucket)) {
+        String toKey = line.get(toKeyIndex);
+        if (key == null || toKey == null) throw new IOException("no key or to-key in " + line);
+        if (isRename) {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey));
         } else {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));

@@ -414,7 +414,11 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getMoveFile(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket", "").trim();
-        if ("move".equals(process) && toBucket.isEmpty()) throw new IOException("no incorrect to-bucket, please set it.");
+        if ("move".equals(process)) {
+            if (toBucket.isEmpty()) throw new IOException("no incorrect to-bucket, please set it.");
+        } else {
+            toBucket = null;
+        }
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String force = entryParam.getValue("prefix-force", "false").trim();

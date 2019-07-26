@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
-    private String processName;
+    protected String processName;
     protected String authKey1;
     protected String authKey2;
     protected String bucket;
@@ -24,6 +24,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
+    protected List<String> errorLineList = new ArrayList<>();
 
     public Base(String processName, String authKey1, String authKey2, String bucket) {
         this.processName = processName;
@@ -87,8 +88,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     protected abstract String resultInfo(T line);
 
-    protected boolean validCheck(T line) {
-        return true;
+    protected List<T> putBatchOperations(List<T> processList) {
+        return processList;
     }
 
     /**
@@ -143,17 +144,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws IOException 处理失败可能抛出的异常
      */
     private void batchProcess(List<T> lineList, int retryTimes) throws IOException {
-        // 先进行过滤修改
-        List<String> errorLineList = new ArrayList<>();
-        lineList = lineList.stream().filter(line -> {
-            if (line == null || !validCheck(line)) {
-                errorLineList.add(line + " is empty or not valid.");
-                return false;
-            } else {
-                return true;
-            }
-        }).collect(Collectors.toList());
-        if (errorLineList.size() > 0) fileSaveMapper.writeError(String.join("\n", errorLineList), false);
         int times = lineList.size()/batchSize + 1;
         List<T> processList;
         String result;
@@ -166,6 +156,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             // 空，重试次数小于 0 时设置 processList = null
             while (processList != null) {
                 try {
+                    processList = putBatchOperations(processList);
                     result = batchResult(processList);
                     processList = parseBatchResult(processList, result);
                 } catch (Exception e) {
@@ -195,6 +186,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
                 }
             }
+        }
+        if (errorLineList.size() > 0) {
+            fileSaveMapper.writeError(String.join("\n", errorLineList), false);
+            errorLineList.clear();
         }
     }
 
@@ -229,10 +224,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         T line;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
-            if (line == null || !validCheck(line)) {
-                fileSaveMapper.writeError(line + " is empty or not valid.", false);
-                continue;
-            }
             retry = retryTimes;
             while (retry > 0) {
                 try {
@@ -267,7 +258,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public String processLine(T line) throws IOException {
         try {
-            if (!validCheck(line)) throw new IOException(line + " is not valid.");
             return singleResult(line);
         } catch (Exception e) {
             throw new IOException("input is empty or the processor may be already closed.", e);

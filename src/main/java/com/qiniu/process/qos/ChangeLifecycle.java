@@ -1,6 +1,5 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -10,6 +9,8 @@ import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +53,8 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     public ChangeLifecycle clone() throws CloneNotSupportedException {
         ChangeLifecycle changeLifecycle = (ChangeLifecycle)super.clone();
         changeLifecycle.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
-        if (batchSize > 1) changeLifecycle.batchOperations = new BatchOperations();
+        changeLifecycle.batchOperations = new BatchOperations();
+        changeLifecycle.errorLineList = new ArrayList<>();
         return changeLifecycle;
     }
 
@@ -62,20 +64,33 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     }
 
     @Override
-    protected boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+    synchronized protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) {
+        batchOperations.clearOps();
+        Iterator<Map<String, String>> iterator = processList.iterator();
+        Map<String, String> line;
+        String key;
+        while (iterator.hasNext()) {
+            line = iterator.next();
+            key = line.get("key");
+            if (key != null) {
+                batchOperations.addDeleteAfterDaysOps(bucket, days, key);
+            } else {
+                iterator.remove();
+                errorLineList.add("no key in " + line);
+            }
+        }
+        return processList;
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addDeleteAfterDaysOps(bucket, days, line.get("key")));
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
         return key + "\t" + days + "\t" + HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, key, days));
     }
 
