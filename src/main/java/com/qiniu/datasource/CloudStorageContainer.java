@@ -116,7 +116,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
-        if (prefixesMap == null) {
+        if (prefixesMap == null || prefixesMap.size() <= 0) {
             this.prefixesMap = new HashMap<>();
             prefixLeft = true;
             prefixRight = true;
