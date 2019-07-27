@@ -56,7 +56,11 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     @Override
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
-        File sourceFile = new File(FileUtils.realPathWithUserHome(path));
+        path = FileUtils.realPathWithUserHome(path);
+        if (path.equals(FileUtils.realPathWithUserHome(savePath))) {
+            throw new IOException("the save-path can not be same as path.");
+        }
+        File sourceFile = new File(path);
         if (sourceFile.isDirectory()) {
             File[] fs = sourceFile.listFiles();
             if (fs == null) throw new IOException("The current path you gave may be incorrect: " + path);

@@ -61,7 +61,7 @@ public final class FileUtils {
         if (pathStr.startsWith("~" + pathSeparator)) {
             return userHome + pathStr.substring(1);
         } else {
-            return pathStr;
+            return new File(pathStr).getCanonicalPath();
         }
     }
 
