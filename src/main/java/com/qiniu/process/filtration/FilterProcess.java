@@ -26,8 +26,6 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter) throws Exception {
         this.processName = "filter";
         this.filter = newFilter(baseFilter, seniorFilter);
-        this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
-        this.typeConverter = newTypeConverter();
     }
 
     public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
