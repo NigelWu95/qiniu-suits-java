@@ -29,7 +29,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
 
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
-                             boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                             boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -61,16 +61,12 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     }
 
     @Override
-    protected ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException {
+    protected ITypeConvert<FileInfo, String> getNewStringConverter() {
         IStringFormat<FileInfo> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
-        } else if ("csv".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
-        } else if ("tab".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         } else {
-            throw new IOException("please check your format for map to string.");
+            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileInfo, String>() {
             @Override

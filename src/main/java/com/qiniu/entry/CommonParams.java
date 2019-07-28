@@ -62,7 +62,11 @@ public class CommonParams {
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
 
-    public CommonParams() {}
+    public static Set<String> lineFormats = new HashSet<String>(){{
+        add("csv");
+        add("tab");
+        add("json");
+    }};
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果

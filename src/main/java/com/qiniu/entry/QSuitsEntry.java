@@ -226,7 +226,7 @@ public class QSuitsEntry {
         return new InputSource(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
-    public LocalFileContainer getLocalFileContainer() {
+    public LocalFileContainer getLocalFileContainer() throws IOException {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
@@ -239,7 +239,7 @@ public class QSuitsEntry {
         return localFileContainer;
     }
 
-    public QiniuQosContainer getQiniuQosContainer() throws SuitsException {
+    public QiniuQosContainer getQiniuQosContainer() throws IOException {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
@@ -252,7 +252,7 @@ public class QSuitsEntry {
         return qiniuQosContainer;
     }
 
-    public TenCosContainer getTenCosContainer() throws SuitsException {
+    public TenCosContainer getTenCosContainer() throws IOException {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
@@ -267,7 +267,7 @@ public class QSuitsEntry {
         return tenCosContainer;
     }
 
-    public AliOssContainer getAliOssContainer() throws SuitsException {
+    public AliOssContainer getAliOssContainer() throws IOException {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
         String endPoint;
@@ -290,7 +290,7 @@ public class QSuitsEntry {
         return aliOssContainer;
     }
 
-    public UpYosContainer getUpYosContainer() throws SuitsException {
+    public UpYosContainer getUpYosContainer() throws IOException {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
@@ -306,7 +306,7 @@ public class QSuitsEntry {
         return upYosContainer;
     }
 
-    public S3Container getS3Container() throws SuitsException {
+    public S3Container getS3Container() throws IOException {
         String s3AccessId = commonParams.getS3AccessId();
         String s3SecretKey = commonParams.getS3SecretKey();
         if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();

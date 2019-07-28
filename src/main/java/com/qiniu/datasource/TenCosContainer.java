@@ -29,7 +29,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
-                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;
@@ -64,18 +64,13 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     }
 
     @Override
-    protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() throws IOException {
+    protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() {
         IStringFormat<COSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
-        } else if ("csv".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
-        } else if ("tab".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         } else {
-            throw new IOException("please check your format for map to string.");
+            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
-
         return new Converter<COSObjectSummary, String>() {
             @Override
             public String convertToV(COSObjectSummary line) throws IOException {

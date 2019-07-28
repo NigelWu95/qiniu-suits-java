@@ -33,7 +33,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                          Map<String, String> indexMap, int unitLen, int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
@@ -70,16 +70,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     }
 
     @Override
-    protected ITypeConvert<FileItem, String> getNewStringConverter() throws IOException {
+    protected ITypeConvert<FileItem, String> getNewStringConverter() {
         IStringFormat<FileItem> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
-        } else if ("csv".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
-        } else if ("tab".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         } else {
-            throw new IOException("please check your format for map to string.");
+            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileItem, String>() {
             @Override

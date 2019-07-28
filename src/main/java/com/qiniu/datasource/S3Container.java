@@ -34,7 +34,7 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     public S3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
                        String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                        boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
-            throws SuitsException {
+            throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
@@ -74,16 +74,12 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     }
 
     @Override
-    protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() throws IOException {
+    protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() {
         IStringFormat<S3ObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
-        } else if ("csv".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
-        } else if ("tab".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         } else {
-            throw new IOException("please check your format for map to string.");
+            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<S3ObjectSummary, String>() {
             @Override

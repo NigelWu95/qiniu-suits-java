@@ -20,6 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.qiniu.entry.CommonParams.lineFormats;
+
 public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
@@ -48,7 +50,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
-                                 boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) {
+                                 boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen,
+                                 int threads) throws IOException {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
@@ -66,6 +69,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
         firstPoint = originPrefixList.get(0);
         lastPoint = originPrefixList.get(originPrefixList.size() - 1);
+        if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
     }
 
     // 不调用则各参数使用默认值
