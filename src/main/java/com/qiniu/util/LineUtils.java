@@ -60,13 +60,12 @@ public final class LineUtils {
     }};
 
     final static public Set<String> intFields = new HashSet<String>(){{
-        add("status");
+        addAll(statusFields);
     }};
 
     final static public Set<String> longFields = new HashSet<String>(){{
         addAll(sizeFields);
-        add("timestamp");
-        add("putTime");
+        addAll(timestampFields);
     }};
 
     // 为了保证字段按照设置的顺序来读取，故使用 ArrayList

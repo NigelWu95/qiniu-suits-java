@@ -15,10 +15,16 @@ public class YOSObjToString extends Converter<FileItem, String> {
 
     public YOSObjToString(String format, String separator, List<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
-        fields = LineUtils.getFields(new ArrayList<>(LineUtils.defaultFileFields), rmFields);
-        fields.removeAll(LineUtils.mimeFields);
-        fields.removeAll(LineUtils.statusFields);
-        fields.removeAll(LineUtils.md5Fields);
+        fields = LineUtils.getFields(new ArrayList<String>(){{
+            addAll(LineUtils.defaultFileFields);
+        }}, new ArrayList<String>(){{
+            if (rmFields != null) addAll(rmFields);
+            addAll(LineUtils.etagFields);
+            addAll(LineUtils.mimeFields);
+            addAll(LineUtils.typeFields);
+            addAll(LineUtils.statusFields);
+            addAll(LineUtils.md5Fields);
+        }});
         if ("json".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, fields);
         } else if ("csv".equals(format)) {
