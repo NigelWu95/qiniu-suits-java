@@ -7,11 +7,11 @@ import java.util.Map;
 
 public class StringMapPair implements KeyValuePair<String, Map<String, String>> {
 
-    private Map<String, String> stringMap;
+    private Map<String, String> stringMap = new HashMap<>();
 
     @Override
     public void put(String key, String value) {
-        stringMap = new HashMap<>();
+        stringMap.put(key, value);
     }
 
     @Override
@@ -27,5 +27,10 @@ public class StringMapPair implements KeyValuePair<String, Map<String, String>> 
     @Override
     public Map<String, String> getProtoEntity() {
         return stringMap;
+    }
+
+    @Override
+    public int size() {
+        return stringMap.size();
     }
 }

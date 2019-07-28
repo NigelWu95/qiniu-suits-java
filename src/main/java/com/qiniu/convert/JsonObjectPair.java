@@ -5,11 +5,7 @@ import com.qiniu.interfaces.KeyValuePair;
 
 public class JsonObjectPair implements KeyValuePair<String, JsonObject> {
 
-    private JsonObject jsonObject;
-
-    public JsonObjectPair() {
-        jsonObject = new JsonObject();
-    }
+    private JsonObject jsonObject = new JsonObject();
 
     @Override
     public void put(String key, String value) {
@@ -29,5 +25,10 @@ public class JsonObjectPair implements KeyValuePair<String, JsonObject> {
     @Override
     public JsonObject getProtoEntity() {
         return jsonObject;
+    }
+
+    @Override
+    public int size() {
+        return jsonObject.size();
     }
 }

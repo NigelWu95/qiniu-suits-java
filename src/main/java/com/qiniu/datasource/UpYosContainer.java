@@ -1,9 +1,11 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
-import com.qiniu.convert.YOSObjToMap;
-import com.qiniu.convert.YOSObjToString;
+import com.qiniu.convert.Converter;
+import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringMapPair;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
@@ -11,6 +13,7 @@ import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.LineUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
@@ -24,6 +27,8 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     private String username;
     private String password;
     private UpYunConfig configuration;
+    private Map<String, String> indexPair;
+    private List<String> fields;
 
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
@@ -37,6 +42,16 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 null, null, 1);
         upLister.close();
         upLister = null;
+        indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
+        for (String etagField : LineUtils.etagFields) indexPair.remove(etagField);
+        for (String typeField : LineUtils.typeFields) indexPair.remove(typeField);
+        for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
+        for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
+        for (String ownerField : LineUtils.ownerFields) indexPair.remove(ownerField);
+        fields = new ArrayList<>();
+        for (String defaultFileField : LineUtils.defaultFileFields) {
+            if (indexPair.containsKey(defaultFileField)) fields.add(defaultFileField);
+        }
     }
 
     @Override
@@ -46,12 +61,32 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 
     @Override
     protected ITypeConvert<FileItem, Map<String, String>> getNewConverter() {
-        return new YOSObjToMap(indexMap);
+        return new Converter<FileItem, Map<String, String>>() {
+            @Override
+            public Map<String, String> convertToV(FileItem line) throws IOException {
+                return LineUtils.getPair(line, indexPair, new StringMapPair());
+            }
+        };
     }
 
     @Override
     protected ITypeConvert<FileItem, String> getNewStringConverter() throws IOException {
-        return new YOSObjToString(saveFormat, saveSeparator, rmFields);
+        IStringFormat<FileItem> stringFormatter;
+        if ("json".equals(saveFormat)) {
+            stringFormatter = line -> LineUtils.getPair(line, indexPair, new JsonObjectPair()).toString();
+        } else if ("csv".equals(saveFormat)) {
+            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
+        } else if ("tab".equals(saveFormat)) {
+            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
+        } else {
+            throw new IOException("please check your format for map to string.");
+        }
+        return new Converter<FileItem, String>() {
+            @Override
+            public String convertToV(FileItem line) throws IOException {
+                return stringFormatter.toFormatString(line);
+            }
+        };
     }
 
     @Override

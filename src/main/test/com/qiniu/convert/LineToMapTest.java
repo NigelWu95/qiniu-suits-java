@@ -14,8 +14,8 @@ public class LineToMapTest {
         MapToString mapToString1;
         MapToString mapToString2;
         try {
-            mapToString1 = new MapToString("csv", "\t", null);
-            mapToString2 = new MapToString("csv", "\t", null);
+            mapToString1 = new MapToString("csv", "\t", null, null);
+            mapToString2 = new MapToString("csv", "\t", null, null);
             mapToString1.convertToVList(new ArrayList<Map<String, String>>(){{
                 add(new HashMap<>());
                 add(new HashMap<>());

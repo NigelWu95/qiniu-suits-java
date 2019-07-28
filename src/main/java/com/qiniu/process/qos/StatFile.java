@@ -1,17 +1,13 @@
 package com.qiniu.process.qos;
 
 import com.google.gson.*;
-import com.qiniu.convert.StatJsonToString;
-import com.qiniu.convert.QOSObjToString;
-import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.http.Response;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.Auth;
-import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,24 +18,26 @@ public class StatFile extends Base<Map<String, String>> {
 
     private String format;
     private String separator;
-    private ITypeConvert typeConverter;
+    private List<String> rmFields;
+    private List<String> statJsonFields;
+    private IStringFormat<JsonObject> stringFormatter;
     private BatchOperations batchOperations;
     private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String format,
-                    String separator) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
+                    String format, String separator) throws IOException {
         super("stat", accessKey, secretKey, bucket);
-        set(configuration, format, separator);
+        set(configuration, rmFields, format, separator);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator, int saveIndex) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
+                    String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, bucket, savePath, saveIndex);
-        set(configuration, format, separator);
+        set(configuration, rmFields, format, separator);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
@@ -47,12 +45,12 @@ public class StatFile extends Base<Map<String, String>> {
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
+                    String savePath, String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, rmFields, savePath, format, separator, 0);
     }
 
-    private void set(Configuration configuration, String format, String separator) throws IOException {
+    private void set(Configuration configuration, List<String> rmFields, String format, String separator) throws IOException {
         this.configuration = configuration;
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
@@ -60,8 +58,36 @@ public class StatFile extends Base<Map<String, String>> {
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for converting result string.");
         }
-        if (batchSize > 1) typeConverter = new StatJsonToString(format, separator, null);
-        else typeConverter = new QOSObjToString(format, separator, null);
+        stringFormatter = getNewStatJsonFormatter(rmFields);
+    }
+
+    private IStringFormat<JsonObject> getNewStatJsonFormatter(List<String> rmFields) throws IOException {
+        IStringFormat<JsonObject> stringFormatter;
+        if (statJsonFields == null) {
+            statJsonFields = LineUtils.getFields(new ArrayList<String>() {{
+                add("key");
+                add("hash");
+                add("fsize");
+                add("putTime");
+                add("mimeType");
+                add("type");
+                add("status");
+                add("md5");
+                add("endUser");
+                add("_id");
+            }}, rmFields);
+        }
+        if ("json".equals(format)) {
+            stringFormatter = JsonObject::toString;
+        } else if ("csv".equals(format)) {
+            stringFormatter = line -> LineUtils.toFormatString(line, ",", statJsonFields);
+        } else if ("tab".equals(format)) {
+            stringFormatter = line -> LineUtils.toFormatString(line, separator, statJsonFields);
+        } else {
+            throw new IOException("please check your format for map to string.");
+        }
+        this.rmFields = rmFields;
+        return stringFormatter;
     }
 
     public void updateFormat(String format) {
@@ -77,18 +103,10 @@ public class StatFile extends Base<Map<String, String>> {
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         statFile.batchOperations = new BatchOperations();
         statFile.lines = new ArrayList<>();
-        if (batchSize > 1) {
-            try {
-                statFile.typeConverter = new StatJsonToString(format, separator, null);
-            } catch (IOException e) {
-                throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
-            }
-        } else {
-            try {
-                statFile.typeConverter = new QOSObjToString(format, separator, null);
-            } catch (IOException e) {
-                throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
-            }
+        try {
+            stringFormatter = getNewStatJsonFormatter(rmFields);
+        } catch (IOException e) {
+            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return statFile;
     }
@@ -142,7 +160,7 @@ public class StatFile extends Base<Map<String, String>> {
                 switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         data.addProperty("key", processList.get(j).get("key"));
-                        fileSaveMapper.writeSuccess((String) typeConverter.convertToV(data), false);
+                        fileSaveMapper.writeSuccess(stringFormatter.toFormatString(data), false);
                         break;
                     case 0:
                         if (retryList == null) retryList = new ArrayList<>();
@@ -164,9 +182,11 @@ public class StatFile extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("no key in " + line);
-        FileInfo fileInfo = bucketManager.stat(bucket, key);
-        fileInfo.key = key;
-        return (String) typeConverter.convertToV(fileInfo);
+        Response response = bucketManager.statResponse(bucket, key);
+        JsonObject statJson = JsonUtils.toJsonObject(response.bodyString());
+        statJson.addProperty("key", key);
+        response.close();
+        return stringFormatter.toFormatString(statJson);
     }
 
     @Override
@@ -174,7 +194,7 @@ public class StatFile extends Base<Map<String, String>> {
         super.closeResource();
         format = null;
         separator = null;
-        typeConverter = null;
+        stringFormatter = null;
         batchOperations = null;
         lines = null;
         configuration = null;

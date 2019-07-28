@@ -506,7 +506,7 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        List<String> keys = Arrays.asList("key,hash,size,datetime,mime,type,status,md5,owner".split(","));
+        List<String> keys = LineUtils.defaultFileFields;
         String indexes = entryParam.getValue("indexes", "").trim();
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);

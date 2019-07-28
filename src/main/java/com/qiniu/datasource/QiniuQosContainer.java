@@ -1,8 +1,10 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
-import com.qiniu.convert.QOSObjToMap;
-import com.qiniu.convert.QOSObjToString;
+import com.qiniu.convert.Converter;
+import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringMapPair;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
@@ -11,6 +13,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.LineUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -21,6 +24,8 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     private String accessKey;
     private String secretKey;
     private Configuration configuration;
+    private Map<String, String> indexPair;
+    private List<String> fields;
 
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
@@ -33,6 +38,11 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
                 bucket, null, null, null, 1);
         qiniuLister.close();
         qiniuLister = null;
+        indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
+        fields = new ArrayList<>();
+        for (String defaultFileField : LineUtils.defaultFileFields) {
+            if (indexPair.containsKey(defaultFileField)) fields.add(defaultFileField);
+        }
     }
 
     @Override
@@ -42,12 +52,32 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
 
     @Override
     protected ITypeConvert<FileInfo, Map<String, String>> getNewConverter() {
-        return new QOSObjToMap(indexMap);
+        return new Converter<FileInfo, Map<String, String>>() {
+            @Override
+            public Map<String, String> convertToV(FileInfo line) throws IOException {
+                return LineUtils.getPair(line, indexPair, new StringMapPair());
+            }
+        };
     }
 
     @Override
     protected ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException {
-        return new QOSObjToString(saveFormat, saveSeparator, rmFields);
+        IStringFormat<FileInfo> stringFormatter;
+        if ("json".equals(saveFormat)) {
+            stringFormatter = line -> LineUtils.getPair(line, indexPair, new JsonObjectPair()).toString();
+        } else if ("csv".equals(saveFormat)) {
+            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
+        } else if ("tab".equals(saveFormat)) {
+            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
+        } else {
+            throw new IOException("please check your format for map to string.");
+        }
+        return new Converter<FileInfo, String>() {
+            @Override
+            public String convertToV(FileInfo line) throws IOException {
+                return stringFormatter.toFormatString(line);
+            }
+        };
     }
 
     @Override

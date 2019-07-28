@@ -112,33 +112,15 @@ public final class LineUtils {
         return fields;
     }
 
-    public static Map<String, String> getItemMap(FileInfo fileInfo, Map<String, String> indexMap) throws IOException {
-        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
-        Map<String, String> itemMap = new HashMap<>();
-        for (String index : indexMap.keySet()) {
-            switch (index) {
-                case "key": itemMap.put(indexMap.get(index), fileInfo.key); break;
-                case "hash":
-                case "etag": itemMap.put(indexMap.get(index), fileInfo.hash); break;
-                case "size":
-                case "fsize": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
-                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
-                case "timestamp":
-                case "putTime": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.putTime)); break;
-                case "mime":
-                case "mimeType": itemMap.put(indexMap.get(index), fileInfo.mimeType); break;
-                case "type": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
-                case "status": itemMap.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
-                case "md5": itemMap.put(indexMap.get(index), fileInfo.md5); break;
-                case "owner":
-                case "endUser": if (fileInfo.endUser != null) itemMap.put(indexMap.get(index), fileInfo.endUser); break;
-                default: throw new IOException("the index: " + index + " can't be found in Qiniu fileInfo.");
-            }
-        }
-        return itemMap;
+    public static Map<String, String> getReversedIndexMap(Map<String, String> map, List<String> rmFields) {
+        Map<String, String> indexMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : map.entrySet()) indexMap.put(entry.getValue(), entry.getKey());
+        if (rmFields == null) return indexMap;
+        for (String rmField : rmFields) indexMap.remove(rmField);
+        return indexMap;
     }
 
-    public static <T> T getItemMap(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+    public static <T> T getPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
             throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
         for (String index : indexMap.keySet()) {
@@ -158,119 +140,122 @@ public final class LineUtils {
                 case "md5": keyValuePair.put(indexMap.get(index), fileInfo.md5); break;
                 case "owner":
                 case "endUser": if (fileInfo.endUser != null) keyValuePair.put(indexMap.get(index), fileInfo.endUser); break;
-                default: throw new IOException("the index: " + index + " can't be found in Qiniu fileInfo.");
+                default: throw new IOException("Qiniu fileInfo doesn't have field: " + index);
             }
         }
+        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
         return keyValuePair.getProtoEntity();
     }
 
-    public static Map<String, String> getItemMap(COSObjectSummary cosObject, Map<String, String> indexMap) throws IOException {
+    public static <T> T getPair(COSObjectSummary cosObject, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+            throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
-        Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": itemMap.put(indexMap.get(index), cosObject.getKey()); break;
+                case "key": keyValuePair.put(indexMap.get(index), cosObject.getKey()); break;
                 case "hash":
-                case "etag": itemMap.put(indexMap.get(index), cosObject.getETag()); break;
+                case "etag": keyValuePair.put(indexMap.get(index), cosObject.getETag()); break;
                 case "size":
-                case "fsize": itemMap.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
-                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
+                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": itemMap.put(indexMap.get(index), String.valueOf(cosObject.getLastModified().getTime())); break;
+                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(cosObject.getLastModified().getTime())); break;
                 case "mime":
                 case "mimeType": break;
-                case "type": itemMap.put(indexMap.get(index), cosObject.getStorageClass()); break;
+                case "type": keyValuePair.put(indexMap.get(index), cosObject.getStorageClass()); break;
                 case "status": break;
                 case "md5": break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
-                    itemMap.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
-                default: throw new IOException("the index: " + index + " can't be found in COSObjectSummary.");
+                    keyValuePair.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
+                default: throw new IOException("COSObjectSummary doesn't have field: " + index);
             }
         }
-        return itemMap;
+        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return keyValuePair.getProtoEntity();
     }
 
-    public static Map<String, String> getItemMap(OSSObjectSummary ossObject, Map<String, String> indexMap)
+    public static <T> T getPair(OSSObjectSummary ossObject, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
             throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
-        Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": itemMap.put(indexMap.get(index), ossObject.getKey()); break;
+                case "key": keyValuePair.put(indexMap.get(index), ossObject.getKey()); break;
                 case "hash":
-                case "etag": itemMap.put(indexMap.get(index), ossObject.getETag()); break;
+                case "etag": keyValuePair.put(indexMap.get(index), ossObject.getETag()); break;
                 case "size":
-                case "fsize": itemMap.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
-                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
+                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": itemMap.put(indexMap.get(index), String.valueOf(ossObject.getLastModified().getTime())); break;
+                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(ossObject.getLastModified().getTime())); break;
                 case "mime":
                 case "mimeType": break;
-                case "type": itemMap.put(indexMap.get(index), ossObject.getStorageClass()); break;
+                case "type": keyValuePair.put(indexMap.get(index), ossObject.getStorageClass()); break;
                 case "status": break;
                 case "md5": break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
-                    itemMap.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
-                default: throw new IOException("the index: " + index + " can't be found in OSSObjectSummary.");
+                    keyValuePair.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
+                default: throw new IOException("OSSObjectSummary doesn't have field: " + index);
             }
         }
-        return itemMap;
+        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return keyValuePair.getProtoEntity();
     }
 
-    public static Map<String, String> getItemMap(S3ObjectSummary s3Object, Map<String, String> indexMap)
+    public static <T> T getPair(S3ObjectSummary s3Object, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
             throws IOException {
         if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty s3ObjectSummary or key.");
-        Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": itemMap.put(indexMap.get(index), s3Object.getKey()); break;
+                case "key": keyValuePair.put(indexMap.get(index), s3Object.getKey()); break;
                 case "hash":
-                case "etag": itemMap.put(indexMap.get(index), s3Object.getETag()); break;
+                case "etag": keyValuePair.put(indexMap.get(index), s3Object.getETag()); break;
                 case "size":
-                case "fsize": itemMap.put(indexMap.get(index), String.valueOf(s3Object.getSize())); break;
-                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(s3Object.getSize())); break;
+                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": itemMap.put(indexMap.get(index), String.valueOf(s3Object.getLastModified().getTime())); break;
+                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(s3Object.getLastModified().getTime())); break;
                 case "mime":
                 case "mimeType": break;
-                case "type": itemMap.put(indexMap.get(index), s3Object.getStorageClass()); break;
+                case "type": keyValuePair.put(indexMap.get(index), s3Object.getStorageClass()); break;
                 case "status": break;
                 case "md5": break;
                 case "owner":
-                case "endUser": if (s3Object.getOwner() != null) itemMap.put(indexMap.get(index),
+                case "endUser": if (s3Object.getOwner() != null) keyValuePair.put(indexMap.get(index),
                         s3Object.getOwner().getDisplayName()); break;
-                default: throw new IOException("the index: " + index + " can't be found in S3ObjectSummary.");
+                default: throw new IOException("S3ObjectSummary doesn't have field: " + index);
             }
         }
-        return itemMap;
+        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return keyValuePair.getProtoEntity();
     }
 
-    public static Map<String, String> getItemMap(FileItem fileItem, Map<String, String> indexMap) throws IOException {
+    public static <T> T getPair(FileItem fileItem, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+            throws IOException {
         if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
-        Map<String, String> itemMap = new HashMap<>();
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": itemMap.put(indexMap.get(index), fileItem.key); break;
+                case "key": keyValuePair.put(indexMap.get(index), fileItem.key); break;
                 case "hash":
                 case "etag": break;
                 case "size":
-                case "fsize": itemMap.put(indexMap.get(index), String.valueOf(fileItem.size)); break;
-                case "datetime": itemMap.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
+                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(fileItem.size)); break;
+                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
                 case "timestamp":
-                case "putTime": itemMap.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
+                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
                 case "mime":
-                case "mimeType": itemMap.put(indexMap.get(index), fileItem.attribute); break;
+                case "mimeType": keyValuePair.put(indexMap.get(index), fileItem.attribute); break;
                 case "type": break;
                 case "status": break;
                 case "md5": break;
                 case "owner":
                 case "endUser": break;
-                default: throw new IOException("the index: " + index + " can't be found in Upyun fileItem.");
+                default: throw new IOException("Upyun fileItem doesn't have field: " + index);
             }
         }
-        return itemMap;
+        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return keyValuePair.getProtoEntity();
     }
 
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap) throws IOException {
@@ -307,34 +292,6 @@ public final class LineUtils {
         return itemMap;
     }
 
-    public static String toFormatString(FileInfo fileInfo, List<String> fields) throws IOException {
-        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
-        JsonObject converted = new JsonObject();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.addProperty("key", fileInfo.key); break;
-                case "hash":
-                case "etag": converted.addProperty("hash", fileInfo.hash); break;
-                case "size":
-                case "fsize": converted.addProperty("size", fileInfo.fsize); break;
-                case "datetime": converted.addProperty("datetime", DatetimeUtils.stringOf(fileInfo.putTime, 10000000));
-                    break;
-                case "timestamp":
-                case "putTime": converted.addProperty("timestamp", fileInfo.putTime); break;
-                case "mime":
-                case "mimeType": converted.addProperty("mime", fileInfo.mimeType); break;
-                case "type": converted.addProperty("type", fileInfo.type); break;
-                case "status": converted.addProperty("status", fileInfo.status); break;
-                case "md5": converted.addProperty("md5", fileInfo.md5); break;
-                case "owner":
-                case "endUser": if (fileInfo.endUser != null) converted.addProperty("owner", fileInfo.endUser); break;
-                default: throw new IOException("Qiniu fileInfo has not field: " + field);
-            }
-        }
-        if (converted.size() == 0) throw new IOException("empty result string.");
-        return converted.toString();
-    }
-
     public static String toFormatString(FileInfo fileInfo, String separator, List<String> fields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         StringBuilder converted = new StringBuilder();
@@ -363,31 +320,6 @@ public final class LineUtils {
         return converted.substring(0, converted.length() - separator.length());
     }
 
-    public static String toFormatString(COSObjectSummary cosObject, List<String> fields) throws IOException {
-        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
-        JsonObject converted = new JsonObject();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.addProperty("key", cosObject.getKey()); break;
-                case "hash":
-                case "etag": converted.addProperty("hash", cosObject.getETag()); break;
-                case "size":
-                case "fsize": converted.addProperty("size", cosObject.getSize()); break;
-                case "datetime": converted.addProperty("datetime", DatetimeUtils.stringOf(cosObject.getLastModified()));
-                    break;
-                case "timestamp":
-                case "putTime": converted.addProperty("timestamp", cosObject.getLastModified().getTime()); break;
-                case "type": converted.addProperty("type", cosObject.getStorageClass()); break;
-                case "owner":
-                case "endUser": if (cosObject.getOwner() != null)
-                    converted.addProperty("owner", cosObject.getOwner().getDisplayName()); break;
-                default: throw new IOException("COSObjectSummary has not field: " + field);
-            }
-        }
-        if (converted.size() == 0) throw new IOException("empty result string.");
-        return converted.toString();
-    }
-
     public static String toFormatString(COSObjectSummary cosObject, String separator, List<String> fields) throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
@@ -411,31 +343,6 @@ public final class LineUtils {
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
         return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(OSSObjectSummary ossObject, List<String> fields) throws IOException {
-        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
-        JsonObject converted = new JsonObject();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.addProperty("key", ossObject.getKey()); break;
-                case "hash":
-                case "etag": converted.addProperty("hash", ossObject.getETag()); break;
-                case "size":
-                case "fsize": converted.addProperty("size", ossObject.getSize()); break;
-                case "datetime": converted.addProperty("datetime", DatetimeUtils.stringOf(ossObject.getLastModified()));
-                    break;
-                case "timestamp":
-                case "putTime": converted.addProperty("timestamp", ossObject.getLastModified().getTime()); break;
-                case "type": converted.addProperty("type", ossObject.getStorageClass()); break;
-                case "owner":
-                case "endUser": if (ossObject.getOwner() != null)
-                    converted.addProperty("owner", ossObject.getOwner().getDisplayName()); break;
-                default: throw new IOException("OSSObjectSummary has not field: " + field);
-            }
-        }
-        if (converted.size() == 0) throw new IOException("empty result string.");
-        return converted.toString();
     }
 
     public static String toFormatString(OSSObjectSummary ossObject, String separator, List<String> fields) throws IOException {
@@ -463,31 +370,6 @@ public final class LineUtils {
         return converted.substring(0, converted.length() - separator.length());
     }
 
-    public static String toFormatString(S3ObjectSummary s3Object, List<String> fields) throws IOException {
-        if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
-        JsonObject converted = new JsonObject();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.addProperty("key", s3Object.getKey()); break;
-                case "hash":
-                case "etag": converted.addProperty("hash", s3Object.getETag()); break;
-                case "size":
-                case "fsize": converted.addProperty("size", s3Object.getSize()); break;
-                case "datetime": converted.addProperty("datetime", DatetimeUtils.stringOf(s3Object.getLastModified()));
-                    break;
-                case "timestamp":
-                case "putTime": converted.addProperty("timestamp", s3Object.getLastModified().getTime()); break;
-                case "type": converted.addProperty("type", s3Object.getStorageClass()); break;
-                case "owner":
-                case "endUser": if (s3Object.getOwner() != null)
-                    converted.addProperty("owner", s3Object.getOwner().getDisplayName()); break;
-                default: throw new IOException("S3ObjectSummary has not field: " + field);
-            }
-        }
-        if (converted.size() == 0) throw new IOException("empty result string.");
-        return converted.toString();
-    }
-
     public static String toFormatString(S3ObjectSummary s3Object, String separator, List<String> fields)
             throws IOException {
         if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
@@ -512,26 +394,6 @@ public final class LineUtils {
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
         return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(FileItem fileItem, List<String> fields) throws IOException {
-        if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
-        JsonObject converted = new JsonObject();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.addProperty("key", fileItem.key); break;
-                case "size":
-                case "fsize": converted.addProperty("size", fileItem.size); break;
-                case "datetime": converted.addProperty("datetime", DatetimeUtils.stringOf(fileItem.timeSeconds));
-                case "timestamp":
-                case "putTime": converted.addProperty("timestamp", fileItem.timeSeconds); break;
-                case "mime":
-                case "mimeType": converted.addProperty("mime", fileItem.attribute); break;
-                default: throw new IOException("Upyun fileItem has not field: " + field);
-            }
-        }
-        if (converted.size() == 0) throw new IOException("empty result string.");
-        return converted.toString();
     }
 
     public static String toFormatString(FileItem fileItem, String separator, List<String> fields) throws IOException {
