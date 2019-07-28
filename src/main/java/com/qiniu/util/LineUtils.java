@@ -247,38 +247,40 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap) throws IOException {
+    public static <T> T getPair(JsonObject json, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
-        Map<String, String> itemMap = new HashMap<>();
         JsonElement jsonElement;
         for (String index : indexMap.keySet()) {
             jsonElement = json.get(index);
             if (jsonElement == null || jsonElement instanceof JsonNull) {
                 throw new IOException("the index: " + index + " can't be found in " + json);
             } else {
-                itemMap.put(indexMap.get(index), JsonUtils.toString(jsonElement));
+                pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
             }
         }
-        return itemMap;
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
-    public static Map<String, String> getItemMap(String line, Map<String, String> indexMap) throws IOException {
+    public static <T> T getPair(String line, Map<String, String> indexMap, KeyValuePair<String, T> pair) throws IOException {
         if (line == null) throw new IOException("empty json line.");
         JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
-        return getItemMap(parsed, indexMap);
+        return getPair(parsed, indexMap, pair);
     }
 
-    public static Map<String, String> getItemMap(String line, String separator, Map<String, String> indexMap) throws IOException {
+    public static <T> T getPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
         if (line == null) throw new IOException("empty string line.");
         String[] items = line.split(separator);
-        Map<String, String> itemMap = new HashMap<>();
         int position;
         for (String index : indexMap.keySet()) {
             position = Integer.valueOf(index);
-            if (items.length > position) itemMap.put(indexMap.get(index), items[position]);
+            if (items.length > position) pair.put(indexMap.get(index), items[position]);
             else throw new IOException("the index: " + index + " can't be found in " + line);
         }
-        return itemMap;
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
     public static String toFormatString(FileInfo fileInfo, String separator, List<String> fields) throws IOException {

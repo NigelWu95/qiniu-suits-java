@@ -15,11 +15,11 @@ public class LineToMap extends Converter<String, Map<String, String>> {
             throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(parseType)) {
-            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getItemMap(line, indexMap));
+            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getPair(line, indexMap, new StringMapPair()));
         } else if ("csv".equals(parseType)) {
-            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getItemMap(line, ",", indexMap));
+            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getPair(line, ",", indexMap, new StringMapPair()));
         } else if ("tab".equals(parseType)) {
-            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getItemMap(line, separator, indexMap));
+            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.getPair(line, separator, indexMap, new StringMapPair()));
         } else {
             throw new IOException("please check your format for line to map.");
         }
