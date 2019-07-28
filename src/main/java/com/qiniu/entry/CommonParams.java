@@ -507,11 +507,8 @@ public class CommonParams {
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
         List<String> keys = Arrays.asList("key,hash,size,datetime,mime,type,status,md5,owner".split(","));
-        boolean useDefault = false;
         String indexes = entryParam.getValue("indexes", "").trim();
-        if ("".equals(indexes)) {
-            useDefault = true;
-        } else if (indexes.startsWith("[") && indexes.endsWith("]")) {
+        if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
             String[] strings = ParamsUtils.escapeSplit(indexes, false);
             for (int i = 0; i < strings.length; i++) {
@@ -525,7 +522,7 @@ public class CommonParams {
             }
         } else if (indexes.startsWith("[") || indexes.endsWith("]")) {
             throw new IOException("please check your indexes, set it as \"[key1:index1,key2:index2,...]\".");
-        } else {
+        } else if (!"".equals(indexes)) {
             String[] indexList = ParamsUtils.escapeSplit(indexes);
             if (indexList.length > 9) {
                 throw new IOException("the file info's index length is too long.");
@@ -548,51 +545,49 @@ public class CommonParams {
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
         boolean sourceFromList = DataSourceDef.cloudStorage.contains(source);
-        if (useDefault && (indexMap.size() == 0 || ProcessUtils.needBucketAndKey(process) ||
-                (baseFilter != null && baseFilter.checkKeyCon()) ||
-                (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
-            if (DataSourceDef.fileList.contains(source) || "terminal".equals(source)) {
-                try {
-                    setIndex("json".equals(parse) ? "key" : "0", "key");
-                } catch (IOException e) {
-                    throw new IOException("you need to set indexes with key's index not default value, " +
-                            "because the default key's" + e.getMessage());
-                }
-            } else if (sourceFromList) {
-                indexMap.put("key", "key");
+        boolean useDefault = false;
+        boolean fieldIndex = "json".equals(parse) || "object".equals(parse);
+        if (indexMap.size() == 0) {
+            useDefault = true;
+            if (sourceFromList) {
+                for (String key : keys) setIndex(key, key);
+            } else if (fieldIndex) {
+                setIndex("key", "key");
+            } else {
+                setIndex("0", "key");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
-                if (useDefault && sourceFromList) indexMap.put("key", "key");
+                if (useDefault) setIndex(fieldIndex ? "key" : "0", "key");
                 else throw new IOException("f-[x] filter for file key must get the key's index in indexes settings.");
             }
-            if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
-                if (useDefault && sourceFromList) indexMap.put("mime", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
-            }
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
-                if (useDefault && sourceFromList) indexMap.put("datetime", "datetime");
+                if (useDefault) setIndex(fieldIndex ? "datetime" : "3", "datetime");
                 else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
             }
+            if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
+                if (useDefault) setIndex(fieldIndex ? "mime" : "4", "mime");
+                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
+            }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
-                if (useDefault && sourceFromList) indexMap.put("type", "type");
+                if (useDefault) setIndex(fieldIndex ? "type" : "5", "type");
                 else throw new IOException("f-type filter must get the type's index in indexes settings.");
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
-                if (useDefault && sourceFromList) indexMap.put("status", "status");
+                if (useDefault) setIndex(fieldIndex ? "status" : "6", "status");
                 else throw new IOException("f-status filter must get the status's index in indexes settings.");
             }
         }
         if (seniorFilter != null) {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
-                    if (useDefault && sourceFromList) indexMap.put("key", "key");
+                    if (useDefault) setIndex(fieldIndex ? "key" : "0", "key");
                     else throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                 }
                 if (!indexMap.containsValue("mime")) {
-                    if (useDefault && sourceFromList) indexMap.put("mime", "mime");
+                    if (useDefault) setIndex(fieldIndex ? "mime" : "4", "mime");
                     else throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
                 }
             }
