@@ -58,7 +58,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
         return new Converter<COSObjectSummary, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(COSObjectSummary line) throws IOException {
-                return LineUtils.getPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexPair, new StringMapPair());
             }
         };
     }
@@ -67,7 +67,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() throws IOException {
         IStringFormat<COSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.getPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else if ("csv".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
         } else if ("tab".equals(saveFormat)) {

@@ -120,7 +120,7 @@ public final class LineUtils {
         return indexMap;
     }
 
-    public static <T> T getPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
         for (String index : indexMap.keySet()) {
@@ -147,7 +147,7 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(COSObjectSummary cosObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(COSObjectSummary cosObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         for (String index : indexMap.keySet()) {
@@ -173,7 +173,7 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(OSSObjectSummary ossObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(OSSObjectSummary ossObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
         for (String index : indexMap.keySet()) {
@@ -199,7 +199,7 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(S3ObjectSummary s3Object, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(S3ObjectSummary s3Object, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty s3ObjectSummary or key.");
         for (String index : indexMap.keySet()) {
@@ -225,7 +225,7 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(FileItem fileItem, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(FileItem fileItem, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
         for (String index : indexMap.keySet()) {
@@ -247,7 +247,7 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(JsonObject json, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(JsonObject json, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
         JsonElement jsonElement;
@@ -263,13 +263,13 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(String line, Map<String, String> indexMap, KeyValuePair<String, T> pair) throws IOException {
+    public static <T> T toPair(String line, Map<String, String> indexMap, KeyValuePair<String, T> pair) throws IOException {
         if (line == null) throw new IOException("empty json line.");
         JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
-        return getPair(parsed, indexMap, pair);
+        return toPair(parsed, indexMap, pair);
     }
 
-    public static <T> T getPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+    public static <T> T toPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (line == null) throw new IOException("empty string line.");
         String[] items = line.split(separator);
@@ -283,7 +283,7 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(Map<String, String> line, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+    public static <T> T toPair(Map<String, String> line, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         String value;
         for (String field : fields) {

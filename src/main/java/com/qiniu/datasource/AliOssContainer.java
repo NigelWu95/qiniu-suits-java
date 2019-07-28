@@ -63,7 +63,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
         return new Converter<OSSObjectSummary, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(OSSObjectSummary line) throws IOException {
-                return LineUtils.getPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexPair, new StringMapPair());
             }
         };
     }
@@ -72,7 +72,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     protected ITypeConvert<OSSObjectSummary, String> getNewStringConverter() throws IOException {
         IStringFormat<OSSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.getPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else if ("csv".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
         } else if ("tab".equals(saveFormat)) {

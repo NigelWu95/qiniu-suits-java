@@ -55,7 +55,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
         return new Converter<FileInfo, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(FileInfo line) throws IOException {
-                return LineUtils.getPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexPair, new StringMapPair());
             }
         };
     }
@@ -64,7 +64,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     protected ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException {
         IStringFormat<FileInfo> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.getPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else if ("csv".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
         } else if ("tab".equals(saveFormat)) {

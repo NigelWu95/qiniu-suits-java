@@ -68,7 +68,7 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
         return new Converter<S3ObjectSummary, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(S3ObjectSummary line) throws IOException {
-                return LineUtils.getPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexPair, new StringMapPair());
             }
         };
     }
@@ -77,7 +77,7 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() throws IOException {
         IStringFormat<S3ObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.getPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else if ("csv".equals(saveFormat)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
         } else if ("tab".equals(saveFormat)) {

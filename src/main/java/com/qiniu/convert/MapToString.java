@@ -13,7 +13,7 @@ public class MapToString extends Converter<Map<String, String>, String> {
     public MapToString(String format, String separator, List<String> fields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(format)) {
-            stringFormatter = line -> LineUtils.getPair(line, fields, new JsonObjectPair()).toString();
+            stringFormatter = line -> LineUtils.toPair(line, fields, new JsonObjectPair()).toString();
         } else if ("csv".equals(format)) {
             stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
         } else if ("tab".equals(format)) {
