@@ -22,7 +22,7 @@ public class StatFileTest {
         String bucket =
                 "note-video";
 //                propertiesFile.getValue("bucket");
-        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "../xhs", "tab", "\t");
+        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, null, "../xhs", "tab", "\t");
     }
     @Test
     public void testSingleResult() {

@@ -120,142 +120,131 @@ public final class LineUtils {
         return indexMap;
     }
 
-    public static <T> T getPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+    public static <T> T getPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": keyValuePair.put(indexMap.get(index), fileInfo.key); break;
+                case "key": pair.put(indexMap.get(index), fileInfo.key); break;
                 case "hash":
-                case "etag": keyValuePair.put(indexMap.get(index), fileInfo.hash); break;
+                case "etag": pair.put(indexMap.get(index), fileInfo.hash); break;
                 case "size":
-                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
-                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "fsize": pair.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
                 case "timestamp":
-                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.putTime)); break;
+                case "putTime": pair.put(indexMap.get(index), String.valueOf(fileInfo.putTime)); break;
                 case "mime":
-                case "mimeType": keyValuePair.put(indexMap.get(index), fileInfo.mimeType); break;
-                case "type": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
-                case "status": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
-                case "md5": keyValuePair.put(indexMap.get(index), fileInfo.md5); break;
+                case "mimeType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
+                case "type": pair.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
+                case "status": pair.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
+                case "md5": pair.put(indexMap.get(index), fileInfo.md5); break;
                 case "owner":
-                case "endUser": if (fileInfo.endUser != null) keyValuePair.put(indexMap.get(index), fileInfo.endUser); break;
+                case "endUser": if (fileInfo.endUser != null) pair.put(indexMap.get(index), fileInfo.endUser); break;
                 default: throw new IOException("Qiniu fileInfo doesn't have field: " + index);
             }
         }
-        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
-        return keyValuePair.getProtoEntity();
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(COSObjectSummary cosObject, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+    public static <T> T getPair(COSObjectSummary cosObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": keyValuePair.put(indexMap.get(index), cosObject.getKey()); break;
+                case "key": pair.put(indexMap.get(index), cosObject.getKey()); break;
                 case "hash":
-                case "etag": keyValuePair.put(indexMap.get(index), cosObject.getETag()); break;
+                case "etag": pair.put(indexMap.get(index), cosObject.getETag()); break;
                 case "size":
-                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
-                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "fsize": pair.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(cosObject.getLastModified().getTime())); break;
-                case "mime":
-                case "mimeType": break;
-                case "type": keyValuePair.put(indexMap.get(index), cosObject.getStorageClass()); break;
-                case "status": break;
-                case "md5": break;
+                case "putTime": pair.put(indexMap.get(index), String.valueOf(cosObject.getLastModified().getTime())); break;
+//                case "mime": case "mimeType": break;
+                case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
+//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
-                    keyValuePair.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
+                    pair.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
                 default: throw new IOException("COSObjectSummary doesn't have field: " + index);
             }
         }
-        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
-        return keyValuePair.getProtoEntity();
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(OSSObjectSummary ossObject, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+    public static <T> T getPair(OSSObjectSummary ossObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": keyValuePair.put(indexMap.get(index), ossObject.getKey()); break;
+                case "key": pair.put(indexMap.get(index), ossObject.getKey()); break;
                 case "hash":
-                case "etag": keyValuePair.put(indexMap.get(index), ossObject.getETag()); break;
+                case "etag": pair.put(indexMap.get(index), ossObject.getETag()); break;
                 case "size":
-                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
-                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "fsize": pair.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(ossObject.getLastModified().getTime())); break;
-                case "mime":
-                case "mimeType": break;
-                case "type": keyValuePair.put(indexMap.get(index), ossObject.getStorageClass()); break;
-                case "status": break;
-                case "md5": break;
+                case "putTime": pair.put(indexMap.get(index), String.valueOf(ossObject.getLastModified().getTime())); break;
+//                case "mime": case "mimeType": break;
+                case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
+//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
-                    keyValuePair.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
+                    pair.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
                 default: throw new IOException("OSSObjectSummary doesn't have field: " + index);
             }
         }
-        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
-        return keyValuePair.getProtoEntity();
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(S3ObjectSummary s3Object, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+    public static <T> T getPair(S3ObjectSummary s3Object, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty s3ObjectSummary or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": keyValuePair.put(indexMap.get(index), s3Object.getKey()); break;
+                case "key": pair.put(indexMap.get(index), s3Object.getKey()); break;
                 case "hash":
-                case "etag": keyValuePair.put(indexMap.get(index), s3Object.getETag()); break;
+                case "etag": pair.put(indexMap.get(index), s3Object.getETag()); break;
                 case "size":
-                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(s3Object.getSize())); break;
-                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "fsize": pair.put(indexMap.get(index), String.valueOf(s3Object.getSize())); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(s3Object.getLastModified().getTime())); break;
-                case "mime":
-                case "mimeType": break;
-                case "type": keyValuePair.put(indexMap.get(index), s3Object.getStorageClass()); break;
-                case "status": break;
-                case "md5": break;
+                case "putTime": pair.put(indexMap.get(index), String.valueOf(s3Object.getLastModified().getTime())); break;
+//                case "mime": case "mimeType": break;
+                case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
+//                case "status": case "md5": break;
                 case "owner":
-                case "endUser": if (s3Object.getOwner() != null) keyValuePair.put(indexMap.get(index),
+                case "endUser": if (s3Object.getOwner() != null) pair.put(indexMap.get(index),
                         s3Object.getOwner().getDisplayName()); break;
                 default: throw new IOException("S3ObjectSummary doesn't have field: " + index);
             }
         }
-        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
-        return keyValuePair.getProtoEntity();
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
-    public static <T> T getPair(FileItem fileItem, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+    public static <T> T getPair(FileItem fileItem, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": keyValuePair.put(indexMap.get(index), fileItem.key); break;
-                case "hash":
-                case "etag": break;
+                case "key": pair.put(indexMap.get(index), fileItem.key); break;
+//                case "hash": case "etag": break;
                 case "size":
-                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(fileItem.size)); break;
-                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
+                case "fsize": pair.put(indexMap.get(index), String.valueOf(fileItem.size)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
                 case "timestamp":
-                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
+                case "putTime": pair.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
                 case "mime":
-                case "mimeType": keyValuePair.put(indexMap.get(index), fileItem.attribute); break;
-                case "type": break;
-                case "status": break;
-                case "md5": break;
-                case "owner":
-                case "endUser": break;
+                case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
+//                case "type": case "status": case "md5": case "owner": case "endUser": break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + index);
             }
         }
-        if (keyValuePair.size() == 0) throw new IOException("empty result keyValuePair.");
-        return keyValuePair.getProtoEntity();
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 
     public static Map<String, String> getItemMap(JsonObject json, Map<String, String> indexMap) throws IOException {

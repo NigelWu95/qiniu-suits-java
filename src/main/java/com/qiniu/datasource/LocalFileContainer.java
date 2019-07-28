@@ -24,7 +24,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
 
     @Override
     protected ITypeConvert<Map<String, String>, String> getNewStringConverter() throws IOException {
-        return new MapToString(saveFormat, saveSeparator, indexMap, rmFields);
+        return new MapToString(saveFormat, saveSeparator, fields);
     }
 
     @Override
