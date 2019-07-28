@@ -37,7 +37,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
-    protected Set<String> rmFields;
+    protected List<String> rmFields;
     protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
@@ -69,7 +69,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
@@ -84,7 +84,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private void setIndexMapWithDefault(Map<String, String> indexMap) {
         if (indexMap == null || indexMap.size() == 0) {
             if (this.indexMap == null) this.indexMap = new HashMap<>();
-            for (String fileInfoField : LineUtils.fileInfoFields) {
+            for (String fileInfoField : LineUtils.defaultFileFields) {
                 this.indexMap.put(fileInfoField, fileInfoField);
             }
         } else {

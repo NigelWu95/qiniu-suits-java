@@ -19,7 +19,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected String saveFormat;
     protected String saveSeparator;
-    protected Set<String> rmFields;
+    protected List<String> rmFields;
     protected int saveIndex;
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
@@ -32,7 +32,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
 
     public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
-                         String saveFormat, String saveSeparator, Set<String> rmFields, int saveIndex)
+                         String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
             throws Exception {
         this(baseFilter, seniorFilter);
         this.savePath = savePath;
@@ -45,7 +45,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
 
     public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath, String saveFormat,
-                         String saveSeparator, Set<String> rmFields) throws Exception {
+                         String saveSeparator, List<String> rmFields) throws Exception {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 

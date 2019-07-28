@@ -52,7 +52,7 @@ public class QSuitsEntry {
     private String savePath;
     private String saveFormat;
     private String saveSeparator;
-    private Set<String> rmFields;
+    private List<String> rmFields;
 
     public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;

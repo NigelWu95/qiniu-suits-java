@@ -58,7 +58,7 @@ public class CommonParams {
     private String saveTag;
     private String saveFormat;
     private String saveSeparator;
-    private Set<String> rmFields;
+    private List<String> rmFields;
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
 
@@ -654,10 +654,11 @@ public class CommonParams {
     }
 
     private void setRmFields(String param) {
-        String[] fields = param.split(",");
-        if (fields.length == 0) rmFields = null;
-        else {
-            rmFields = new HashSet<>();
+        if (param == null || "".equals(param)) {
+            rmFields = null;
+        } else {
+            String[] fields = param.split(",");
+            rmFields = new ArrayList<>();
             Collections.addAll(rmFields, fields);
         }
     }
@@ -810,7 +811,7 @@ public class CommonParams {
         this.saveFormat = saveFormat;
     }
 
-    public void setRmFields(Set<String> rmFields) {
+    public void setRmFields(List<String> rmFields) {
         this.rmFields = rmFields;
     }
 
@@ -974,7 +975,7 @@ public class CommonParams {
         return saveSeparator;
     }
 
-    public Set<String> getRmFields() {
+    public List<String> getRmFields() {
         return rmFields;
     }
 

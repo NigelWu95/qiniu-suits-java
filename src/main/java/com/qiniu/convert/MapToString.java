@@ -9,15 +9,17 @@ import java.util.*;
 public class MapToString extends Converter<Map<String, String>, String> {
 
     private IStringFormat<Map<String, String>> stringFormatter;
+    private List<String> fields;
 
-    public MapToString(String format, String separator, Set<String> rmFields) throws IOException {
+    public MapToString(String format, String separator, List<String> rmFields) throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
+        fields = LineUtils.getFields(new ArrayList<>(LineUtils.defaultFileFields), rmFields);
         if ("json".equals(format)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, rmFields);
+            stringFormatter = line -> LineUtils.toFormatString(line, fields);
         } else if ("csv".equals(format)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, ",", rmFields);
+            stringFormatter = line -> LineUtils.toFormatString(line, ",", fields);
         } else if ("tab".equals(format)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, separator, rmFields);
+            stringFormatter = line -> LineUtils.toFormatString(line, separator, fields);
         } else {
             throw new IOException("please check your format for map to string.");
         }

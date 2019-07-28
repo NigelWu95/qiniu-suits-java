@@ -4,13 +4,14 @@ import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 public interface IDataSource<R, S, T> {
 
     String getSourceName();
 
-    void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields);
+    void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields);
 
     void updateSettings(CommonParams commonParams);
 

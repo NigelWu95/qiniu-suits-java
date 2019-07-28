@@ -7,7 +7,6 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileUtils;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
 import java.util.*;
 

@@ -9,7 +9,6 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.JsonUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.File;
@@ -17,7 +16,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +36,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
-    protected Set<String> rmFields;
+    protected List<String> rmFields;
     private ILineProcess<T> processor; // 定义的资源处理器
     ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
@@ -57,7 +55,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
+    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
         this.savePath = savePath;
         this.saveTotal = saveTotal;
         this.saveFormat = format;
@@ -133,7 +131,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (stringConverter.errorSize() > 0)
-                        saver.writeKeyFile("string-error", stringConverter.errorLines(), false);
+                        saver.writeKeyFile("failed", stringConverter.errorLines(), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {

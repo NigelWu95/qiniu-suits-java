@@ -1,7 +1,7 @@
 package com.qiniu.process.qos;
 
 import com.google.gson.*;
-import com.qiniu.convert.JsonToString;
+import com.qiniu.convert.StatJsonToString;
 import com.qiniu.convert.QOSObjToString;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.Base;
@@ -60,7 +60,7 @@ public class StatFile extends Base<Map<String, String>> {
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for converting result string.");
         }
-        if (batchSize > 1) typeConverter = new JsonToString(format, separator, null);
+        if (batchSize > 1) typeConverter = new StatJsonToString(format, separator, null);
         else typeConverter = new QOSObjToString(format, separator, null);
     }
 
@@ -79,7 +79,7 @@ public class StatFile extends Base<Map<String, String>> {
         statFile.lines = new ArrayList<>();
         if (batchSize > 1) {
             try {
-                statFile.typeConverter = new JsonToString(format, separator, null);
+                statFile.typeConverter = new StatJsonToString(format, separator, null);
             } catch (IOException e) {
                 throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
             }
