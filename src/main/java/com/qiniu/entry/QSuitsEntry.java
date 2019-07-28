@@ -297,8 +297,7 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
 //        boolean prefixLeft = commonParams.getPrefixLeft();
 //        boolean prefixRight = commonParams.getPrefixRight();
-        UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket,
-                antiPrefixes, prefixesMap,
+        UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket, antiPrefixes, prefixesMap,
 //                prefixLeft, prefixRight,
                 indexMap, unitLen, threads);
         upYosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
@@ -339,7 +338,7 @@ public class QSuitsEntry {
 
                 @Override
                 protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
-                    return new MapToString(saveFormat, saveSeparator, rmFields);
+                    return new MapToString(saveFormat, saveSeparator, indexMap, rmFields);
                 }
             };
             processor.setNextProcessor(nextProcessor);

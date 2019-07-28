@@ -7,6 +7,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.storage.model.FileInfo;
 
@@ -135,6 +136,32 @@ public final class LineUtils {
             }
         }
         return itemMap;
+    }
+
+    public static <T> T getItemMap(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> keyValuePair)
+            throws IOException {
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "key": keyValuePair.put(indexMap.get(index), fileInfo.key); break;
+                case "hash":
+                case "etag": keyValuePair.put(indexMap.get(index), fileInfo.hash); break;
+                case "size":
+                case "fsize": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
+                case "datetime": keyValuePair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "timestamp":
+                case "putTime": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.putTime)); break;
+                case "mime":
+                case "mimeType": keyValuePair.put(indexMap.get(index), fileInfo.mimeType); break;
+                case "type": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
+                case "status": keyValuePair.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
+                case "md5": keyValuePair.put(indexMap.get(index), fileInfo.md5); break;
+                case "owner":
+                case "endUser": if (fileInfo.endUser != null) keyValuePair.put(indexMap.get(index), fileInfo.endUser); break;
+                default: throw new IOException("the index: " + index + " can't be found in Qiniu fileInfo.");
+            }
+        }
+        return keyValuePair.getProtoEntity();
     }
 
     public static Map<String, String> getItemMap(COSObjectSummary cosObject, Map<String, String> indexMap) throws IOException {
@@ -283,7 +310,6 @@ public final class LineUtils {
     public static String toFormatString(FileInfo fileInfo, List<String> fields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         JsonObject converted = new JsonObject();
-        int len = fileInfo.getClass().getFields().length;
         for (String field : fields) {
             switch (field) {
                 case "key": converted.addProperty("key", fileInfo.key); break;
