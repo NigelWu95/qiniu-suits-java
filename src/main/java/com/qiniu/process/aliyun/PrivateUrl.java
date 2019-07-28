@@ -68,6 +68,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
         // 生成以GET方法访问的签名URL，访客可以直接通过浏览器访问相关内容。
         URL url = ossClient.generatePresignedUrl(bucket, key, expiration);
         if (nextProcessor != null) {

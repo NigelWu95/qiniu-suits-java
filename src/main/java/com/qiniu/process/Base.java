@@ -256,8 +256,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public String processLine(T line) throws IOException {
         try {
             return singleResult(line);
-        } catch (Exception e) {
+        } catch (NullPointerException e) {
             throw new IOException("input is empty or the processor may be already closed.", e);
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -272,6 +274,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
             throw new IOException("input is empty or the processor may be already closed.", e);
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
         }
     }
 

@@ -63,7 +63,7 @@ public class PfopCommand extends Base<Map<String, String>> {
                 this.pfopConfigs.add(jsonObject);
             }
         } else {
-            throw new IOException("please set the pfop-config.");
+            throw new IOException("please set valid pfop-configs.");
         }
     }
 
@@ -91,7 +91,7 @@ public class PfopCommand extends Base<Map<String, String>> {
                 this.pfopConfigs.add(jsonObject);
             }
         } else {
-            throw new IOException("please set the pfop-config or fops-index.");
+            throw new IOException("please set valid pfop-configs.");
         }
     }
 
@@ -119,6 +119,7 @@ public class PfopCommand extends Base<Map<String, String>> {
         for (JsonObject pfopConfig : pfopConfigs) {
             scale = JsonUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
+            if (key == null) throw new IOException("no key in " + line);
             info = line.get(avinfoIndex);
             if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
             avinfo = mediaManager.getAvinfoByJson(info);

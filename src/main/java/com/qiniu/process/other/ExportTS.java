@@ -79,7 +79,9 @@ public class ExportTS extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
-            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
+            String key = line.get("key");
+            if (key == null) throw new IOException("no key in " + line);
+            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
         return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream()
