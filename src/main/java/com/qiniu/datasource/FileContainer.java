@@ -108,7 +108,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
-        ITypeConvert<T, String> stringConverter = getNewStringConverter();
+        ITypeConvert<T, String> stringConverter = saveTotal ? getNewStringConverter() : null;
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
         List<String> writeList;
@@ -130,7 +130,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 convertedList = converter.convertToVList(srcList);
                 if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
-                if (saveTotal) {
+                if (stringConverter != null) {
                     writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (stringConverter.errorSize() > 0)

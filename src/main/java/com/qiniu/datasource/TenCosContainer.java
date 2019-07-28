@@ -38,14 +38,6 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
                 bucket, null, null, null, 1);
         tenLister.close();
         tenLister = null;
-        indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
-        for (String mimeField : LineUtils.mimeFields) indexPair.remove(mimeField);
-        for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
-        for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
-        fields = new ArrayList<>();
-        for (String defaultFileField : LineUtils.defaultFileFields) {
-            if (indexPair.containsKey(defaultFileField)) fields.add(defaultFileField);
-        }
     }
 
     @Override
@@ -58,7 +50,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
         return new Converter<COSObjectSummary, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(COSObjectSummary line) throws IOException {
-                return LineUtils.toPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexMap, new StringMapPair());
             }
         };
     }
@@ -67,8 +59,24 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() {
         IStringFormat<COSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
+            if (indexPair == null) {
+                indexPair = LineUtils.getReversedIndexMap(indexMap, new ArrayList<String>(){{
+                    addAll(rmFields);
+                    addAll(LineUtils.mimeFields);
+                    addAll(LineUtils.statusFields);
+                    addAll(LineUtils.md5Fields);
+                }});
+            }
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
+            if (fields == null) {
+                fields = LineUtils.getFields(new ArrayList<>(LineUtils.defaultFileFields), new ArrayList<String>(){{
+                    addAll(rmFields);
+                    addAll(LineUtils.mimeFields);
+                    addAll(LineUtils.statusFields);
+                    addAll(LineUtils.md5Fields);
+                }});
+            }
             stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<COSObjectSummary, String>() {

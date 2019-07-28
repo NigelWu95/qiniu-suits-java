@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class S3Container extends CloudStorageContainer<S3ObjectSummary, BufferedWriter, Map<String, String>> {
+public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, BufferedWriter, Map<String, String>> {
 
     private String accessKeyId;
     private String secretKey;
@@ -31,9 +31,9 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     private Map<String, String> indexPair;
     private List<String> fields;
 
-    public S3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
-                       String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
-                       boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
+    public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
+                          String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                          boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
             throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
@@ -45,17 +45,9 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
                 .withRegion(region)
                 .withClientConfiguration(clientConfig)
                 .build();
-        S3Lister s3Lister = new S3Lister(s3Client, bucket, null, null, null, null, 1);
-        s3Lister.close();
-        s3Lister = null;
-        indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
-        for (String mimeField : LineUtils.mimeFields) indexPair.remove(mimeField);
-        for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
-        for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
-        fields = new ArrayList<>();
-        for (String defaultFileField : LineUtils.defaultFileFields) {
-            if (indexPair.containsKey(defaultFileField)) fields.add(defaultFileField);
-        }
+        AwsS3Lister awsS3Lister = new AwsS3Lister(s3Client, bucket, null, null, null, null, 1);
+        awsS3Lister.close();
+        awsS3Lister = null;
     }
 
     @Override
@@ -68,7 +60,7 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
         return new Converter<S3ObjectSummary, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(S3ObjectSummary line) throws IOException {
-                return LineUtils.toPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexMap, new StringMapPair());
             }
         };
     }
@@ -77,8 +69,24 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
     protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() {
         IStringFormat<S3ObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
+            if (indexPair == null) {
+                indexPair = LineUtils.getReversedIndexMap(indexMap, new ArrayList<String>(){{
+                    addAll(rmFields);
+                    addAll(LineUtils.mimeFields);
+                    addAll(LineUtils.statusFields);
+                    addAll(LineUtils.md5Fields);
+                }});
+            }
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
+            if (fields == null) {
+                fields = LineUtils.getFields(new ArrayList<>(LineUtils.defaultFileFields), new ArrayList<String>(){{
+                    addAll(rmFields);
+                    addAll(LineUtils.mimeFields);
+                    addAll(LineUtils.statusFields);
+                    addAll(LineUtils.md5Fields);
+                }});
+            }
             stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<S3ObjectSummary, String>() {
@@ -101,6 +109,6 @@ public class S3Container extends CloudStorageContainer<S3ObjectSummary, Buffered
                 .withRegion(region)
                 .withClientConfiguration(clientConfig)
                 .build();
-        return new S3Lister(s3Client, bucket, prefix, marker, start, end, unitLen);
+        return new AwsS3Lister(s3Client, bucket, prefix, marker, start, end, unitLen);
     }
 }

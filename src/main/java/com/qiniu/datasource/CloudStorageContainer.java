@@ -195,7 +195,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<E, T> converter = getNewConverter();
-        ITypeConvert<E, String> stringConverter = getNewStringConverter();
+        ITypeConvert<E, String> stringConverter = saveTotal ? getNewStringConverter() : null;
         List<T> convertedList;
         List<String> writeList;
         List<E> objects = lister.currents();
@@ -204,7 +204,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> map = null;
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
-            if (saveTotal) {
+            if (stringConverter != null) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                 if (stringConverter.errorSize() > 0) saver.writeKeyFile("string-error", stringConverter.errorLines(), false);

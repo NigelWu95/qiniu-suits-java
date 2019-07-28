@@ -64,7 +64,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new Converter<FileItem, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(FileItem line) throws IOException {
-                return LineUtils.toPair(line, indexPair, new StringMapPair());
+                return LineUtils.toPair(line, indexMap, new StringMapPair());
             }
         };
     }
@@ -73,8 +73,28 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     protected ITypeConvert<FileItem, String> getNewStringConverter() {
         IStringFormat<FileItem> stringFormatter;
         if ("json".equals(saveFormat)) {
+            if (indexPair == null) {
+                indexPair = LineUtils.getReversedIndexMap(indexMap, new ArrayList<String>(){{
+                    addAll(rmFields);
+                    addAll(LineUtils.etagFields);
+                    addAll(LineUtils.typeFields);
+                    addAll(LineUtils.statusFields);
+                    addAll(LineUtils.md5Fields);
+                    addAll(LineUtils.ownerFields);
+                }});
+            }
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
+            if (fields == null) {
+                fields = LineUtils.getFields(new ArrayList<>(LineUtils.defaultFileFields), new ArrayList<String>(){{
+                    addAll(rmFields);
+                    addAll(LineUtils.etagFields);
+                    addAll(LineUtils.typeFields);
+                    addAll(LineUtils.statusFields);
+                    addAll(LineUtils.md5Fields);
+                    addAll(LineUtils.ownerFields);
+                }});
+            }
             stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileItem, String>() {

@@ -306,7 +306,7 @@ public class QSuitsEntry {
         return upYosContainer;
     }
 
-    public S3Container getS3Container() throws IOException {
+    public AwsS3Container getS3Container() throws IOException {
         String s3AccessId = commonParams.getS3AccessId();
         String s3SecretKey = commonParams.getS3SecretKey();
         if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();
@@ -315,11 +315,11 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
-        S3Container s3Container = new S3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
+        AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        s3Container.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        s3Container.setRetryTimes(retryTimes);
-        return s3Container;
+        awsS3Container.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        awsS3Container.setRetryTimes(retryTimes);
+        return awsS3Container;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {

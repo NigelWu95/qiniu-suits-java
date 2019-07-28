@@ -61,30 +61,13 @@ public class StatFile extends Base<Map<String, String>> {
         stringFormatter = getNewStatJsonFormatter(rmFields);
     }
 
-    private IStringFormat<JsonObject> getNewStatJsonFormatter(List<String> rmFields) throws IOException {
+    private IStringFormat<JsonObject> getNewStatJsonFormatter(List<String> rmFields) {
         IStringFormat<JsonObject> stringFormatter;
-        if (statJsonFields == null) {
-            statJsonFields = LineUtils.getFields(new ArrayList<String>() {{
-                add("key");
-                add("hash");
-                add("fsize");
-                add("putTime");
-                add("mimeType");
-                add("type");
-                add("status");
-                add("md5");
-                add("endUser");
-                add("_id");
-            }}, rmFields);
-        }
+        if (statJsonFields == null) statJsonFields = LineUtils.getFields(new ArrayList<>(LineUtils.statFileFields), rmFields);
         if ("json".equals(format)) {
             stringFormatter = JsonObject::toString;
-        } else if ("csv".equals(format)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, ",", statJsonFields);
-        } else if ("tab".equals(format)) {
-            stringFormatter = line -> LineUtils.toFormatString(line, separator, statJsonFields);
         } else {
-            throw new IOException("please check your format for map to string.");
+            stringFormatter = line -> LineUtils.toFormatString(line, separator, statJsonFields);
         }
         this.rmFields = rmFields;
         return stringFormatter;
@@ -103,11 +86,7 @@ public class StatFile extends Base<Map<String, String>> {
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
         statFile.batchOperations = new BatchOperations();
         statFile.lines = new ArrayList<>();
-        try {
-            stringFormatter = getNewStatJsonFormatter(rmFields);
-        } catch (IOException e) {
-            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
-        }
+        statFile.stringFormatter = getNewStatJsonFormatter(rmFields);
         return statFile;
     }
 
