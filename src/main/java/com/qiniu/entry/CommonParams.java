@@ -519,9 +519,9 @@ public class CommonParams {
                 if (strings[i].matches(".+:.+")) {
                     String[] keyIndex = ParamsUtils.escapeSplit(strings[i], ':');
                     if (keyIndex.length != 2) throw new IOException("incorrect key:index pattern: " + strings[i]);
-                    indexMap.put(keyIndex[1], keyIndex[0]);
+                    setIndex(keyIndex[1], keyIndex[0]);
                 } else {
-                    indexMap.put(strings[i], keys.get(i));
+                    setIndex(strings[i], keys.get(i));
                 }
             }
         } else if (indexes.startsWith("[") || indexes.endsWith("]")) {

@@ -92,7 +92,7 @@ public final class ConvertingUtils {
         addAll(ownerFields);
     }};
 
-    final static public Set<String> statFileFields = new HashSet<String>(){{
+    final static public List<String> statFileFields = new ArrayList<String>(){{
         add("key");
         add("hash");
         add("fsize");
@@ -103,6 +103,10 @@ public final class ConvertingUtils {
         add("md5");
         add("endUser");
         add("_id");
+    }};
+
+    final static public Set<String> statFieldsSet = new HashSet<String>(){{
+        addAll(statFileFields);
     }};
 
     public static List<String> getFields(List<String> fields, List<String> rmFields) {
@@ -136,15 +140,15 @@ public final class ConvertingUtils {
                 case "hash":
                 case "etag": pair.put(indexMap.get(index), fileInfo.hash); break;
                 case "size":
-                case "fsize": pair.put(indexMap.get(index), String.valueOf(fileInfo.fsize)); break;
+                case "fsize": pair.put(indexMap.get(index), fileInfo.fsize); break;
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), String.valueOf(fileInfo.putTime)); break;
+                case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
                 case "mime":
                 case "mimeType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
-                case "type": pair.put(indexMap.get(index), String.valueOf(fileInfo.type)); break;
-                case "status": pair.put(indexMap.get(index), String.valueOf(fileInfo.status)); break;
-                case "md5": pair.put(indexMap.get(index), fileInfo.md5); break;
+                case "type": pair.put(indexMap.get(index), fileInfo.type); break;
+                case "status": pair.put(indexMap.get(index), fileInfo.status); break;
+                case "md5": if (fileInfo.md5 != null) pair.put(indexMap.get(index), fileInfo.md5); break;
                 case "owner":
                 case "endUser": if (fileInfo.endUser != null) pair.put(indexMap.get(index), fileInfo.endUser); break;
                 default: throw new IOException("Qiniu fileInfo doesn't have field: " + index);
@@ -163,10 +167,10 @@ public final class ConvertingUtils {
                 case "hash":
                 case "etag": pair.put(indexMap.get(index), cosObject.getETag()); break;
                 case "size":
-                case "fsize": pair.put(indexMap.get(index), String.valueOf(cosObject.getSize())); break;
+                case "fsize": pair.put(indexMap.get(index), cosObject.getSize()); break;
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), String.valueOf(cosObject.getLastModified().getTime())); break;
+                case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified().getTime()); break;
 //                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
 //                case "status": case "md5": break;
@@ -189,10 +193,10 @@ public final class ConvertingUtils {
                 case "hash":
                 case "etag": pair.put(indexMap.get(index), ossObject.getETag()); break;
                 case "size":
-                case "fsize": pair.put(indexMap.get(index), String.valueOf(ossObject.getSize())); break;
+                case "fsize": pair.put(indexMap.get(index), ossObject.getSize()); break;
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), String.valueOf(ossObject.getLastModified().getTime())); break;
+                case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified().getTime()); break;
 //                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
 //                case "status": case "md5": break;
@@ -215,10 +219,10 @@ public final class ConvertingUtils {
                 case "hash":
                 case "etag": pair.put(indexMap.get(index), s3Object.getETag()); break;
                 case "size":
-                case "fsize": pair.put(indexMap.get(index), String.valueOf(s3Object.getSize())); break;
+                case "fsize": pair.put(indexMap.get(index), s3Object.getSize()); break;
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), String.valueOf(s3Object.getLastModified().getTime())); break;
+                case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified().getTime()); break;
 //                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
 //                case "status": case "md5": break;
@@ -240,10 +244,10 @@ public final class ConvertingUtils {
                 case "key": pair.put(indexMap.get(index), fileItem.key); break;
 //                case "hash": case "etag": break;
                 case "size":
-                case "fsize": pair.put(indexMap.get(index), String.valueOf(fileItem.size)); break;
+                case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), String.valueOf(fileItem.timeSeconds)); break;
+                case "putTime": pair.put(indexMap.get(index), fileItem.timeSeconds); break;
                 case "mime":
                 case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
 //                case "type": case "status": case "md5": case "owner": case "endUser": break;
@@ -455,7 +459,7 @@ public final class ConvertingUtils {
         for (String field : fields) {
             value = json.get(field);
             if (value == null || value instanceof JsonNull) {
-                if (!statFileFields.contains(field))
+                if (!statFieldsSet.contains(field))
                     throw new IOException("the field: " + field + " can't be found in " + json);
             } else {
                 if (longFields.contains(field)) converted.append(value.getAsLong()).append(separator);
