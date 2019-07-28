@@ -3,7 +3,6 @@ package com.qiniu.datasource;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
-import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
@@ -31,15 +30,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected List<String> prefixes;
     protected boolean prefixLeft;
     protected boolean prefixRight;
-    protected Map<String, String> indexMap;
     protected int unitLen;
     protected int threads;
     protected int retryTimes = 5;
-    protected String savePath;
     protected boolean saveTotal;
+    protected String savePath;
     protected String saveFormat;
     protected String saveSeparator;
     protected List<String> rmFields;
+    protected Map<String, String> indexMap;
     protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
@@ -59,10 +58,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
         setPrefixesAndMap(prefixesMap);
-        setIndexMapWithDefault(indexMap);
         this.unitLen = unitLen;
         this.threads = threads;
         this.saveTotal = true; // 默认全记录保存
+        setIndexMapWithDefault(indexMap);
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         originPrefixList.addAll(Arrays.asList(("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
@@ -94,25 +93,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } else {
             this.indexMap = indexMap;
         }
-    }
-
-    // 通过 commonParams 来更新基本参数
-    public void updateSettings(CommonParams commonParams) {
-        bucket = commonParams.getBucket();
-        antiPrefixes = commonParams.getAntiPrefixes();
-        if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
-        prefixLeft = commonParams.getPrefixLeft();
-        prefixRight = commonParams.getPrefixRight();
-        setPrefixesAndMap(commonParams.getPrefixesMap());
-        setIndexMapWithDefault(commonParams.getIndexMap());
-        unitLen = commonParams.getUnitLen();
-        retryTimes = commonParams.getRetryTimes();
-        threads = commonParams.getThreads();
-        savePath = commonParams.getSavePath();
-        saveTotal = commonParams.getSaveTotal();
-        saveFormat = commonParams.getSaveFormat();
-        saveSeparator = commonParams.getSaveSeparator();
-        rmFields = commonParams.getRmFields();
     }
 
     public void setProcessor(ILineProcess<T> processor) {

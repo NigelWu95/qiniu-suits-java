@@ -48,7 +48,7 @@ public class CommonParams {
     private String rmKeyPrefix;
     private BaseFilter<Map<String, String>> baseFilter;
     private SeniorFilter<Map<String, String>> seniorFilter;
-    private HashMap<String, String> indexMap;
+    private Map<String, String> indexMap;
     private int unitLen;
     private int threads;
     private int batchSize;
@@ -938,7 +938,7 @@ public class CommonParams {
         return seniorFilter;
     }
 
-    public HashMap<String, String> getIndexMap() {
+    public Map<String, String> getIndexMap() {
         return indexMap;
     }
 
