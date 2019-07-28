@@ -14,11 +14,10 @@ import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -60,7 +59,7 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
         return new Converter<S3ObjectSummary, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(S3ObjectSummary line) throws IOException {
-                return LineUtils.toPair(line, indexMap, new StringMapPair());
+                return ConvertingUtils.toPair(line, indexMap, new StringMapPair());
             }
         };
     }
@@ -69,16 +68,16 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() {
         IStringFormat<S3ObjectSummary> stringFormatter;
         if (indexPair == null) {
-            indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
-            for (String mimeField : LineUtils.mimeFields) indexPair.remove(mimeField);
-            for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
-            for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
+            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+            for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
+            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
         }
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = LineUtils.getValueFields(indexPair);
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
+            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
+            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<S3ObjectSummary, String>() {
             @Override

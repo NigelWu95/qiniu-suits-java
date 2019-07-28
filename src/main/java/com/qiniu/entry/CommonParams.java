@@ -510,7 +510,7 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        List<String> keys = LineUtils.defaultFileFields;
+        List<String> keys = ConvertingUtils.defaultFileFields;
         String indexes = entryParam.getValue("indexes", "").trim();
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);

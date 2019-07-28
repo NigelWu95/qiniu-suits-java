@@ -9,7 +9,7 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.File;
@@ -54,7 +54,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.unitLen = unitLen;
         this.threads = threads;
         this.saveTotal = false; // 默认全记录不保存
-        fields = LineUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+        fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
     }
 
     // 不调用则各参数使用默认值

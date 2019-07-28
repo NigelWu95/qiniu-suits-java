@@ -13,7 +13,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.CloudAPIUtils;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -50,7 +50,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
         return new Converter<FileInfo, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(FileInfo line) throws IOException {
-                return LineUtils.toPair(line, indexMap, new StringMapPair());
+                return ConvertingUtils.toPair(line, indexMap, new StringMapPair());
             }
         };
     }
@@ -58,12 +58,12 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     @Override
     protected ITypeConvert<FileInfo, String> getNewStringConverter() {
         IStringFormat<FileInfo> stringFormatter;
-        if (indexPair == null) indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
+        if (indexPair == null) indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = LineUtils.getValueFields(indexPair);
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
+            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
+            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileInfo, String>() {
             @Override

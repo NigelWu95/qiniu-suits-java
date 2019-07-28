@@ -87,7 +87,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private void setIndexMapWithDefault(Map<String, String> indexMap) {
         if (indexMap == null || indexMap.size() == 0) {
             if (this.indexMap == null) this.indexMap = new HashMap<>();
-            for (String fileInfoField : LineUtils.defaultFileFields) {
+            for (String fileInfoField : ConvertingUtils.defaultFileFields) {
                 this.indexMap.put(fileInfoField, fileInfoField);
             }
         } else {

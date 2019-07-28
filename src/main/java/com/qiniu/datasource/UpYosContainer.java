@@ -13,7 +13,7 @@ import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.CloudAPIUtils;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
@@ -54,7 +54,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new Converter<FileItem, Map<String, String>>() {
             @Override
             public Map<String, String> convertToV(FileItem line) throws IOException {
-                return LineUtils.toPair(line, indexMap, new StringMapPair());
+                return ConvertingUtils.toPair(line, indexMap, new StringMapPair());
             }
         };
     }
@@ -63,18 +63,18 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     protected ITypeConvert<FileItem, String> getNewStringConverter() {
         IStringFormat<FileItem> stringFormatter;
         if (indexPair == null) {
-            indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
-            for (String etagField : LineUtils.etagFields) indexPair.remove(etagField);
-            for (String typeField : LineUtils.typeFields) indexPair.remove(typeField);
-            for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
-            for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
-            for (String ownerField : LineUtils.ownerFields) indexPair.remove(ownerField);
+            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+            for (String etagField : ConvertingUtils.etagFields) indexPair.remove(etagField);
+            for (String typeField : ConvertingUtils.typeFields) indexPair.remove(typeField);
+            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
+            for (String ownerField : ConvertingUtils.ownerFields) indexPair.remove(ownerField);
         }
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = LineUtils.getValueFields(indexPair);
-            stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
+            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
+            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileItem, String>() {
             @Override

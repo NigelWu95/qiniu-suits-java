@@ -20,7 +20,7 @@ import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.CloudAPIUtils;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
 
@@ -328,7 +328,7 @@ public class QSuitsEntry {
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         if (baseFilter != null || seniorFilter != null) {
-            List<String> fields = LineUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+            List<String> fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
             processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
                     saveSeparator, rmFields) {
                 public void updateSavePath(String savePath) throws IOException {

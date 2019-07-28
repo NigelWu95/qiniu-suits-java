@@ -63,11 +63,11 @@ public class StatFile extends Base<Map<String, String>> {
 
     private IStringFormat<JsonObject> getNewStatJsonFormatter(List<String> rmFields) {
         IStringFormat<JsonObject> stringFormatter;
-        if (statJsonFields == null) statJsonFields = LineUtils.getFields(new ArrayList<>(LineUtils.statFileFields), rmFields);
+        if (statJsonFields == null) statJsonFields = ConvertingUtils.getFields(new ArrayList<>(ConvertingUtils.statFileFields), rmFields);
         if ("json".equals(format)) {
             stringFormatter = JsonObject::toString;
         } else {
-            stringFormatter = line -> LineUtils.toFormatString(line, separator, statJsonFields);
+            stringFormatter = line -> ConvertingUtils.toFormatString(line, separator, statJsonFields);
         }
         this.rmFields = rmFields;
         return stringFormatter;

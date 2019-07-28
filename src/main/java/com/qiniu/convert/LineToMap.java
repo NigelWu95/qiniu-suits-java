@@ -2,7 +2,7 @@ package com.qiniu.convert;
 
 import com.qiniu.interfaces.ILineParser;
 import com.qiniu.util.FileUtils;
-import com.qiniu.util.LineUtils;
+import com.qiniu.util.ConvertingUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,11 +15,11 @@ public class LineToMap extends Converter<String, Map<String, String>> {
             throws IOException {
         if (separator == null) throw new IOException("separator can not be null.");
         if ("json".equals(parseType)) {
-            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.toPair(line, indexMap, new StringMapPair()));
+            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, indexMap, new StringMapPair()));
         } else if ("csv".equals(parseType)) {
-            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.toPair(line, ",", indexMap, new StringMapPair()));
+            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, ",", indexMap, new StringMapPair()));
         } else if ("tab".equals(parseType)) {
-            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, LineUtils.toPair(line, separator, indexMap, new StringMapPair()));
+            this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, separator, indexMap, new StringMapPair()));
         } else {
             throw new IOException("please check your format for line to map.");
         }

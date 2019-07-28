@@ -14,7 +14,7 @@ import com.qiniu.storage.model.FileInfo;
 import java.io.IOException;
 import java.util.*;
 
-public final class LineUtils {
+public final class ConvertingUtils {
 
     final static public Set<String> etagFields = new HashSet<String>(){{
         add("hash");
@@ -107,18 +107,7 @@ public final class LineUtils {
 
     public static List<String> getFields(List<String> fields, List<String> rmFields) {
         if (rmFields == null) return fields;
-        for (String rmField : rmFields) {
-            if (LineUtils.etagFields.contains(rmField)) fields.removeAll(LineUtils.etagFields);
-            else if (LineUtils.sizeFields.contains(rmField)) fields.removeAll(LineUtils.sizeFields);
-            else if (LineUtils.datetimeFields.contains(rmField)) fields.removeAll(LineUtils.datetimeFields);
-            else if (LineUtils.timestampFields.contains(rmField)) fields.removeAll(LineUtils.timestampFields);
-            else if (LineUtils.mimeFields.contains(rmField)) fields.removeAll(LineUtils.mimeFields);
-            else if (LineUtils.statusFields.contains(rmField)) fields.removeAll(LineUtils.statusFields);
-            else if (LineUtils.typeFields.contains(rmField)) fields.removeAll(LineUtils.typeFields);
-            else if (LineUtils.md5Fields.contains(rmField)) fields.removeAll(LineUtils.md5Fields);
-            else if (LineUtils.ownerFields.contains(rmField)) fields.removeAll(LineUtils.ownerFields);
-            else fields.remove(rmField);
-        }
+        for (String rmField : rmFields) fields.remove(rmField);
         return fields;
     }
 
@@ -130,7 +119,7 @@ public final class LineUtils {
         return indexMap;
     }
 
-    public static List<String> getValueFields(Map<String, String> indexMap) {
+    public static List<String> getKeyOrderFields(Map<String, String> indexMap) {
         List<String> fields = new ArrayList<>();
         for (String fileField : fileFields) {
             if (indexMap.containsKey(fileField)) fields.add(fileField);
@@ -396,8 +385,7 @@ public final class LineUtils {
         return converted.substring(0, converted.length() - separator.length());
     }
 
-    public static String toFormatString(S3ObjectSummary s3Object, String separator, List<String> fields)
-            throws IOException {
+    public static String toFormatString(S3ObjectSummary s3Object, String separator, List<String> fields) throws IOException {
         if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
         StringBuilder converted = new StringBuilder();
         for (String field : fields) {
