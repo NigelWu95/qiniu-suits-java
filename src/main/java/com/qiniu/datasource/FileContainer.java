@@ -53,14 +53,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
+        // default save parameters
         this.saveTotal = false; // 默认全记录不保存
+        this.savePath = "result";
+        this.saveFormat = "tab";
+        this.saveSeparator = "\t";
         fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
-        this.savePath = savePath;
+    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
+        this.savePath = savePath;
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;

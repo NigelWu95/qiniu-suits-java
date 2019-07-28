@@ -27,7 +27,7 @@ public class TenCosContainerTest {
         String bucket = propertiesFile.getValue("bucket");
         tenCosContainer = new TenCosContainer(secretId, secretKey, clientConfig, bucket, null, null,
                 false, false, null, 1000, 10);
-        tenCosContainer.setSaveOptions("../tencent", true, "tab", "\t", null);
+        tenCosContainer.setSaveOptions(true, "../tencent", "tab", "\t", null);
     }
 
     @Test

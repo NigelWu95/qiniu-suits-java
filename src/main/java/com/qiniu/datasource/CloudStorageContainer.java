@@ -50,7 +50,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen,
-                                 int threads) throws IOException {
+                                 int threads) {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
@@ -60,7 +60,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         setPrefixesAndMap(prefixesMap);
         this.unitLen = unitLen;
         this.threads = threads;
+        // default save parameters
         this.saveTotal = true; // 默认全记录保存
+        this.savePath = "result";
+        this.saveFormat = "tab";
+        this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
@@ -68,14 +72,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
         firstPoint = originPrefixList.get(0);
         lastPoint = originPrefixList.get(originPrefixList.size() - 1);
-        if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields) {
-        this.savePath = savePath;
+    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
+            throws IOException {
         this.saveTotal = saveTotal;
+        this.savePath = savePath;
         this.saveFormat = format;
+        if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;
         this.rmFields = rmFields;
     }
@@ -207,7 +212,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (stringConverter != null) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                if (stringConverter.errorSize() > 0) saver.writeKeyFile("string-error", stringConverter.errorLines(), false);
+                if (stringConverter.errorSize() > 0) saver.writeKeyFile("error", stringConverter.errorLines(), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {

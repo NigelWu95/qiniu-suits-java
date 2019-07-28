@@ -32,7 +32,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
                            String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                            boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
-            throws IOException {
+            throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;

@@ -9,7 +9,7 @@ public interface IDataSource<R, S, T> {
 
     String getSourceName();
 
-    void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, List<String> rmFields);
+    void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields) throws IOException;
 
     void export(R source, S saver, ILineProcess<T> processor) throws IOException;
 
