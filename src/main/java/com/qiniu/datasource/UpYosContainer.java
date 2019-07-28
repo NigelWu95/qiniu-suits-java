@@ -42,16 +42,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 null, null, 1);
         upLister.close();
         upLister = null;
-        indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
-        for (String etagField : LineUtils.etagFields) indexPair.remove(etagField);
-        for (String typeField : LineUtils.typeFields) indexPair.remove(typeField);
-        for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
-        for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
-        for (String ownerField : LineUtils.ownerFields) indexPair.remove(ownerField);
-        fields = new ArrayList<>();
-        for (String defaultFileField : LineUtils.defaultFileFields) {
-            if (indexPair.containsKey(defaultFileField)) fields.add(defaultFileField);
-        }
     }
 
     @Override
@@ -72,29 +62,18 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     @Override
     protected ITypeConvert<FileItem, String> getNewStringConverter() {
         IStringFormat<FileItem> stringFormatter;
+        if (indexPair == null) {
+            indexPair = LineUtils.getReversedIndexMap(indexMap, rmFields);
+            for (String etagField : LineUtils.etagFields) indexPair.remove(etagField);
+            for (String typeField : LineUtils.typeFields) indexPair.remove(typeField);
+            for (String statusField : LineUtils.statusFields) indexPair.remove(statusField);
+            for (String md5Field : LineUtils.md5Fields) indexPair.remove(md5Field);
+            for (String ownerField : LineUtils.ownerFields) indexPair.remove(ownerField);
+        }
         if ("json".equals(saveFormat)) {
-            if (indexPair == null) {
-                indexPair = LineUtils.getReversedIndexMap(indexMap, new ArrayList<String>(){{
-                    addAll(rmFields);
-                    addAll(LineUtils.etagFields);
-                    addAll(LineUtils.typeFields);
-                    addAll(LineUtils.statusFields);
-                    addAll(LineUtils.md5Fields);
-                    addAll(LineUtils.ownerFields);
-                }});
-            }
             stringFormatter = line -> LineUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) {
-                fields = LineUtils.getFields(new ArrayList<>(LineUtils.defaultFileFields), new ArrayList<String>(){{
-                    addAll(rmFields);
-                    addAll(LineUtils.etagFields);
-                    addAll(LineUtils.typeFields);
-                    addAll(LineUtils.statusFields);
-                    addAll(LineUtils.md5Fields);
-                    addAll(LineUtils.ownerFields);
-                }});
-            }
+            if (fields == null) fields = LineUtils.getValueFields(indexPair);
             stringFormatter = line -> LineUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileItem, String>() {

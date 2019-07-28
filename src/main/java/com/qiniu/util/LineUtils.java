@@ -28,12 +28,9 @@ public final class LineUtils {
 
     final static public Set<String> datetimeFields = new HashSet<String>(){{
         add("datetime");
-        add("timestamp");
-        add("putTime");
     }};
 
     final static public Set<String> timestampFields = new HashSet<String>(){{
-        add("datetime");
         add("timestamp");
         add("putTime");
     }};
@@ -82,6 +79,19 @@ public final class LineUtils {
         add("owner");
     }};
 
+    final static public List<String> fileFields = new ArrayList<String>(){{
+        add("key");
+        addAll(etagFields);
+        addAll(sizeFields);
+        addAll(datetimeFields);
+        addAll(timestampFields);
+        addAll(mimeFields);
+        addAll(typeFields);
+        addAll(statusFields);
+        addAll(md5Fields);
+        addAll(ownerFields);
+    }};
+
     final static public Set<String> statFileFields = new HashSet<String>(){{
         add("key");
         add("hash");
@@ -118,6 +128,14 @@ public final class LineUtils {
         if (rmFields == null) return indexMap;
         for (String rmField : rmFields) indexMap.remove(rmField);
         return indexMap;
+    }
+
+    public static List<String> getValueFields(Map<String, String> indexMap) {
+        List<String> fields = new ArrayList<>();
+        for (String fileField : fileFields) {
+            if (indexMap.containsKey(fileField)) fields.add(fileField);
+        }
+        return fields;
     }
 
     public static <T> T toPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
