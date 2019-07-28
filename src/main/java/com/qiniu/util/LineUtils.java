@@ -283,6 +283,23 @@ public final class LineUtils {
         return pair.getProtoEntity();
     }
 
+    public static <T> T getPair(Map<String, String> line, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (line == null) throw new IOException("empty string map.");
+        String value;
+        for (String field : fields) {
+            value = line.get(field);
+            if (value != null) {
+                if (longFields.contains(field)) pair.put(field, Long.valueOf(value));
+                else if (intFields.contains(field)) pair.put(field, Integer.valueOf(value));
+                else pair.put(field, value);
+            } else {
+                throw new IOException("the field: " + field + " can't be found in " + line);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result string.");
+        return pair.getProtoEntity();
+    }
+
     public static String toFormatString(FileInfo fileInfo, String separator, List<String> fields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
         StringBuilder converted = new StringBuilder();
@@ -405,24 +422,6 @@ public final class LineUtils {
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
         return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(Map<String, String> line, List<String> fields) throws IOException {
-        if (line == null) throw new IOException("empty string map.");
-        JsonObject converted = new JsonObject();
-        String value;
-        for (String field : fields) {
-            value = line.get(field);
-            if (value != null) {
-                if (longFields.contains(field)) converted.addProperty(field, Long.valueOf(value));
-                else if (intFields.contains(field)) converted.addProperty(field, Integer.valueOf(value));
-                else converted.addProperty(field, value);
-            } else {
-                throw new IOException("the field: " + field + " can't be found in " + line);
-            }
-        }
-        if (converted.size() == 0) throw new IOException("empty result string.");
-        return converted.toString();
     }
 
     public static String toFormatString(Map<String, String> line, String separator, List<String> fields) throws IOException {
