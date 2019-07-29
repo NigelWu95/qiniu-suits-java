@@ -515,6 +515,10 @@ public class CommonParams {
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
             String[] strings = ParamsUtils.escapeSplit(indexes, false);
+            if (strings.length == 10) {
+                keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
+                keys.add(4, "timestamp");
+            }
             for (int i = 0; i < strings.length; i++) {
                 if (strings[i].matches(".+:.+")) {
                     String[] keyIndex = ParamsUtils.escapeSplit(strings[i], ':');
@@ -528,8 +532,11 @@ public class CommonParams {
             throw new IOException("please check your indexes, set it as \"[key1:index1,key2:index2,...]\".");
         } else if (!"".equals(indexes)) {
             String[] indexList = ParamsUtils.escapeSplit(indexes);
-            if (indexList.length > 9) {
+            if (indexList.length > 10) {
                 throw new IOException("the file info's index length is too long.");
+            } else if (indexList.length > 9) {
+                keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
+                keys.add(4, "timestamp");
             } else {
                 for (int i = 0; i < indexList.length; i++) {
                     setIndex(indexList[i], keys.get(i));
