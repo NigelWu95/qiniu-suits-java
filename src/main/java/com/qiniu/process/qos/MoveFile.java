@@ -21,6 +21,7 @@ public class MoveFile extends Base<Map<String, String>> {
     private String toKeyIndex;
     private String addPrefix;
     private String rmPrefix;
+    private boolean defaultToKey = false;
     private BatchOperations batchOperations;
     private List<Map<String, String>> lines;
     private Configuration configuration;
@@ -64,9 +65,13 @@ public class MoveFile extends Base<Map<String, String>> {
         this.configuration = configuration;
         this.toBucket = toBucket;
         if (toKeyIndex == null || "".equals(toKeyIndex)) {
-            this.toKeyIndex = "key";
-            if (toBucket == null || "".equals(toBucket)) {
-                // rename 操作时未设置 new-key 的条件判断
+            if ((addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix))) {
+                throw new IOException("no toKeyIndex and no valid addPrefix or rmPrefix.");
+            } else {
+                this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
+                defaultToKey = true;
+            }
+            if (isRename) { // rename 操作时未设置 new-key 的条件判断
                 if (forceIfOnlyPrefix) {
                     if (addPrefix == null || "".equals(addPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
@@ -121,7 +126,13 @@ public class MoveFile extends Base<Map<String, String>> {
             key = map.get("key");
             if (key != null) {
                 try {
-                    toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+
+                    if (defaultToKey) {
+                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+                    } else {
+                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                    }
+                    map.put(toKeyIndex, toKey);
                     lines.add(map);
                     if (isRename) {
                         batchOperations.addRenameOp(bucket, key, toKey);

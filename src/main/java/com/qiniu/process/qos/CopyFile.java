@@ -20,6 +20,7 @@ public class CopyFile extends Base<Map<String, String>> {
     private String toKeyIndex;
     private String addPrefix;
     private String rmPrefix;
+    private boolean defaultToKey = false;
     private BatchOperations batchOperations;
     private List<Map<String, String>> lines;
     private Configuration configuration;
@@ -51,11 +52,20 @@ public class CopyFile extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, toBucket, toKeyIndex, keyPrefix, rmPrefix, savePath, 0);
     }
 
-    private void set(Configuration configuration, String toBucket, String toKeyIndex, String addPrefix, String rmPrefix) {
+    private void set(Configuration configuration, String toBucket, String toKeyIndex, String addPrefix, String rmPrefix)
+            throws IOException {
         this.configuration = configuration;
         this.toBucket = toBucket;
-        // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "key"
-        this.toKeyIndex = toKeyIndex == null || "".equals(toKeyIndex) ? "key" : toKeyIndex;
+        if (toKeyIndex == null || "".equals(toKeyIndex)) {
+            if ((addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix))) {
+                throw new IOException("no toKeyIndex and no valid addPrefix or rmPrefix.");
+            } else {
+                this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
+                defaultToKey = true;
+            }
+        } else {
+            this.toKeyIndex = toKeyIndex;
+        }
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
     }
@@ -99,7 +109,12 @@ public class CopyFile extends Base<Map<String, String>> {
             key = map.get("key");
             if (key != null) {
                 try {
-                    toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                    if (defaultToKey) {
+                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+                    } else {
+                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                    }
+                    map.put(toKeyIndex, toKey);
                     lines.add(map);
                     batchOperations.addCopyOp(bucket, key, toBucket, toKey);
                 } catch (IOException e) {
