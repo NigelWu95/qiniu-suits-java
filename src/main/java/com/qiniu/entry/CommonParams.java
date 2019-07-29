@@ -82,27 +82,11 @@ public class CommonParams {
         setSource();
         setProcess();
         setRetryTimes(entryParam.getValue("retry-times", "5").trim());
-        if ("tencent".equals(source) || ProcessUtils.needTencentAuth(process)) {
-            tencentSecretId = entryParam.getValue("ten-id").trim();
-            tencentSecretKey = entryParam.getValue("ten-secret").trim();
-        } else if ("aliyun".equals(source) || ProcessUtils.needAliyunAuth(process)) {
-            aliyunAccessId = entryParam.getValue("ali-id").trim();
-            aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
-        } else if ("upyun".equals(source)) {
-            upyunUsername = entryParam.getValue("up-name").trim();
-            upyunPassword = entryParam.getValue("up-pass").trim();
-        } else if ("s3".equals(source) || "aws".equals(source) || ProcessUtils.needAwsS3Auth(process)) {
-            s3AccessId = entryParam.getValue("s3-id").trim();
-            s3SecretKey = entryParam.getValue("s3-secret").trim();
-        } else if (ProcessUtils.needQiniuAuth(process)) {
-            qiniuAccessKey = entryParam.getValue("ak").trim();
-            qiniuSecretKey = entryParam.getValue("sk").trim();
-        }
         if (source.matches("(local|terminal)")) {
             parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
         } else {
-            if (qiniuAccessKey == null && (source == null || "qiniu".equals(source) || "".equals(source))) {
+            if ("qiniu".equals(source) || "".equals(source)) {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
             }
@@ -115,10 +99,26 @@ public class CommonParams {
             setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         }
-
-        if (ProcessUtils.needBucket(process)) {
-            bucket = entryParam.getValue("bucket").trim();
+        if ("tencent".equals(source) || ProcessUtils.needTencentAuth(process)) {
+            tencentSecretId = entryParam.getValue("ten-id").trim();
+            tencentSecretKey = entryParam.getValue("ten-secret").trim();
+            setRegion();
+        } else if ("aliyun".equals(source) || ProcessUtils.needAliyunAuth(process)) {
+            aliyunAccessId = entryParam.getValue("ali-id").trim();
+            aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+            setRegion();
+        } else if ("upyun".equals(source)) {
+            upyunUsername = entryParam.getValue("up-name").trim();
+            upyunPassword = entryParam.getValue("up-pass").trim();
+        } else if ("s3".equals(source) || "aws".equals(source) || ProcessUtils.needAwsS3Auth(process)) {
+            s3AccessId = entryParam.getValue("s3-id").trim();
+            s3SecretKey = entryParam.getValue("s3-secret").trim();
+            setRegion();
+        } else if (source == null || "qiniu".equals(source) || "".equals(source) || ProcessUtils.needQiniuAuth(process)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
         }
+        if (bucket == null && ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setBaseFilter();
@@ -150,20 +150,23 @@ public class CommonParams {
         setSeparator(entryParam.getValue("separator", ""));
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
-        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
         if (ProcessUtils.needTencentAuth(process)) {
             tencentSecretId = entryParam.getValue("ten-id").trim();
             tencentSecretKey = entryParam.getValue("ten-secret").trim();
+            regionName = entryParam.getValue("region", "").trim();
         } else if (ProcessUtils.needAliyunAuth(process)) {
             aliyunAccessId = entryParam.getValue("ali-id").trim();
             aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+            regionName = entryParam.getValue("region", "").trim();
         } else if (ProcessUtils.needAwsS3Auth(process)) {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
+            regionName = entryParam.getValue("region", "").trim();
         } else if (ProcessUtils.needQiniuAuth(process)) {
             qiniuAccessKey = entryParam.getValue("ak").trim();
             qiniuSecretKey = entryParam.getValue("sk").trim();
         }
+        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
         setIndexMap();
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
         String line = entryParam.getValue("line", null);
@@ -296,32 +299,23 @@ public class CommonParams {
         }
     }
 
+    private void setRegion() {
+        if (regionName == null || "".equals(regionName)) regionName = entryParam.getValue("region", "").trim();
+    }
+
     /**
      * 支持从路径方式上解析出 bucket，如果主动设置 bucket 则替换路径中的值
      * @throws IOException 解析 bucket 参数失败抛出异常
      */
     private void setBucket() throws IOException {
-        if ("qiniu".equals(source) && path.startsWith("qiniu://")) {
-            bucket = path.substring(8);
-            bucket = entryParam.getValue("bucket", bucket).trim();
-        } else if ("tencent".equals(source) && path.startsWith("tencent://")) {
-            bucket = path.substring(10);
-            bucket = entryParam.getValue("bucket", bucket).trim();
-        } else if ("aliyun".equals(source) && path.startsWith("aliyun://")) {
-            bucket = path.substring(9);
-            bucket = entryParam.getValue("bucket", bucket).trim();
-        } else if ("upyun".equals(source) && path.startsWith("upyun://")) {
-            bucket = path.substring(8);
-            bucket = entryParam.getValue("bucket", bucket).trim();
-        } else if ("s3".equals(source) && path.startsWith("s3://")) {
-            bucket = path.substring(5);
-            bucket = entryParam.getValue("bucket", bucket).trim();
-        } else if ("aws".equals(source) && path.startsWith("aws://")) {
-            bucket = path.substring(6);
-            bucket = entryParam.getValue("bucket", bucket).trim();
-        } else {
-            bucket = entryParam.getValue("bucket").trim();
-        }
+        if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
+        else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
+        else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
+        else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
+        else if ("s3".equals(source) && path.startsWith("s3://")) bucket = path.substring(5);
+        else if ("aws".equals(source) && path.startsWith("aws://")) bucket = path.substring(6);
+        if (bucket == null) bucket = entryParam.getValue("bucket").trim();
+        else bucket = entryParam.getValue("bucket", bucket).trim();
     }
 
     private void setSeparator(String separator) {
