@@ -453,22 +453,14 @@ public class CommonParams {
         List<String> antiKeyInnerList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyInner));
         List<String> antiKeyRegexList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyRegex));
         List<String> antiMimeTypeList = Arrays.asList(ParamsUtils.escapeSplit(antiMimeType));
-        try {
-            baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
-                    antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
-                    putTimeMin, putTimeMax, type, status) {
-                @Override
-                protected boolean checkItem(Map<String, String> item, String key) {
-                    return item == null || item.get(key) == null;
-                }
-                @Override
-                protected String valueFrom(Map<String, String> item, String key) {
-                    return item.get(key);
-                }
-            };
-        } catch (IOException e) {
-            baseFilter = null;
-        }
+        baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
+                antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
+                putTimeMin, putTimeMax, type, status) {
+            @Override
+            protected String valueFrom(Map<String, String> item, String key) {
+                return item.get(key);
+            }
+        };
     }
 
     private void setSeniorFilter() throws IOException {
@@ -477,16 +469,12 @@ public class CommonParams {
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
         checkRewrite = ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
-        try {
-            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
-                @Override
-                protected String valueFrom(Map<String, String> item, String key) {
-                    return item != null ? item.get(key) : null;
-                }
-            };
-        } catch (IOException e) {
-            seniorFilter = null;
-        }
+        seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
+            @Override
+            protected String valueFrom(Map<String, String> item, String key) {
+                return item.get(key);
+            }
+        };
     }
 
     private void setIndex(String index, String indexName) throws IOException {

@@ -69,9 +69,7 @@ public abstract class BaseFilter<T> {
     }
 
     public boolean filterKey(T item) {
-        if (checkItem(item, "key")) {
-            return false;
-        } else {
+        try {
             String key = valueFrom(item, "key");
             boolean result = false;
             if (checkList(keyPrefix)) {
@@ -104,38 +102,45 @@ public abstract class BaseFilter<T> {
             }
             if (checkList(antiKeyRegex)) result = antiKeyRegex.stream().noneMatch(key::matches);
             return result;
+        } catch (Exception e) {
+            return false;
         }
     }
 
     public boolean filterMimeType(T item) {
-        if (checkItem(item, "mime")) {
-            return false;
-        } else {
+        try {
             String mType = valueFrom(item, "mime");
             return (checkList(mimeType) || mimeType.stream().anyMatch(mType::contains))
                     && (checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains));
+        } catch (Exception e) {
+            return false;
         }
     }
 
     public boolean filterDatetime(T item) {
-        if (checkItem(item, "datetime")) return false;
-        else {
+        try {
             LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "datetime"));
             return localDateTime.compareTo(datetimeMax) <= 0 && localDateTime.compareTo(datetimeMin) >= 0;
+        } catch (Exception e) {
+            return false;
         }
     }
 
     public boolean filterType(T item) {
-        if (checkItem(item, "type")) return false;
-        else return valueFrom(item, "type").equals(type);
+        try {
+            return valueFrom(item, "type").equals(type);
+        } catch (NullPointerException e) {
+            return false;
+        }
     }
 
     public boolean filterStatus(T item) {
-        if (checkItem(item, "status")) return false;
-        else return valueFrom(item, "status").equals(status);
+        try {
+            return valueFrom(item, "status").equals(status);
+        } catch (NullPointerException e) {
+            return false;
+        }
     }
-
-    protected abstract boolean checkItem(T item, String key);
 
     protected abstract String valueFrom(T item, String key);
 }

@@ -54,34 +54,46 @@ public abstract class SeniorFilter<T> {
         String key;
         List<T> filteredList = new ArrayList<>();
         for (T line : lineList) {
-            key = valueFrom(line, "key");
-            if (key != null && key.contains(".")) {
-                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
-                if (extMimeList.parallelStream().anyMatch(extMime ->
-                        finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
-                    continue;
-                }
-                if (extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
-                        finalKeyMimePair.equalsIgnoreCase(extMime))) {
+            try {
+                key = valueFrom(line, "key");
+                if (key.contains(".")) {
+                    String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
+                    if (extMimeList.parallelStream().anyMatch(extMime ->
+                            finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
+                        continue;
+                    }
+                    if (extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
+                            finalKeyMimePair.equalsIgnoreCase(extMime))) {
+                        filteredList.add(line);
+                    }
+                } else {
                     filteredList.add(line);
                 }
+            } catch (Exception e) {
+                filteredList.add(line);
             }
         }
         return filteredList;
     }
 
     public boolean checkMimeType(T line) {
-        String key = valueFrom(line, "key");
-        if (line != null && key != null && key.contains(".")) {
-            String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
-            if (extMimeList.parallelStream().anyMatch(extMime ->
-                    finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
-                return false;
+        String key = null;
+        try {
+            key = valueFrom(line, "key");
+            if (key.contains(".")) {
+                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
+                if (extMimeList.parallelStream().anyMatch(extMime ->
+                        finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
+                    return false;
+                }
+                return extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
+                        finalKeyMimePair.equalsIgnoreCase(extMime));
+            } else {
+                return true;
             }
-            return extMimeTypeList.parallelStream().noneMatch(extMime -> finalKeyMimePair.startsWith(extMime) ||
-                    finalKeyMimePair.equalsIgnoreCase(extMime));
+        } catch (Exception e) {
+            return key != null;
         }
-        return false;
     }
 
     protected abstract String valueFrom(T item, String key);
