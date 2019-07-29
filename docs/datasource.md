@@ -19,7 +19,7 @@
 ```
 source=qiniu/tencent/aliyun/local
 path=
-indexes=key,hash,fsize
+indexes=key,etag,fsize
 unit-len=10000
 threads=30
 ```  
@@ -32,17 +32,17 @@ threads=30
 |threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
 
 #### # 关于文件信息字段  
-文件信息字段及顺序定义为：**key,hash,size,datetime,mime,type,status,md5,owner** (indexes 的默认字段及顺序即使用该字段列表)，默认使用七
+文件信息字段及顺序定义为：**key,etag,size,datetime,mime,type,status,md5,owner** (indexes 的默认字段及顺序即使用该字段列表)，默认使用七
 牛存储文件的信息字段进行定义，顺序固定，其释义及其他数据源方式对应关系如下：  
 
-|数据源      |key（文件名）    |hash（文件哈希）|size（文件大小 kb）|datetime（日期时间字符串）|mime（mime-type/content-type）|type（资源存储类型）|status（资源状态）|md5（文件 md5）|owner（终端标识符）|  
-|-----------|---------------|-------------|-----------------|-----------------------|-----------------------------|-----------------|---------------|-------------|-----------------|  
+|数据源      |key（文件名）    |etag（文件唯一值）|size（文件大小 kb）|datetime（日期时间字符串）|mime（mime-type/content-type）|type（资源存储类型）|status（资源状态）|md5（文件 md5）|owner（终端标识符）|  
+|-----------|---------------|---------------|-----------------|-----------------------|-----------------------------|-----------------|---------------|-------------|-----------------|  
 |文件列表输入行|indexes第1个索引|indexes的第2个索引|indexes的第3个索引|indexes的第4个索引     |indexes的第5个索引             |indexes的第6个索引 |indexes的第7个索引|indexes的第8个索引|indexes的第9个索引|
-|七牛云存储   |key            |hash         |fsize            |putTime                |mimeType                     |type             |status         |md5          |endUser          |  
-|腾讯云存储   |key            |etag         |size             |lastModified           |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
-|阿里云存储   |key            |etag         |size             |lastModified           |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
-|又拍云存储   |name           |无此含义字段   |length           |last_modified          |type                         |无此含义字段        |无此含义字段      |无此含义字段  |无此含义字段        |  
-|AWS云存储/S3|key            |etag         |size             |lastModified           |无此含义字段                   |storageClass      |无此含义字段      |无此含义字段  |Owner.displayName |  
+|七牛云存储   |key            |eatg（hash）    |fsize            |putTime                |mimeType                     |type             |status         |md5          |endUser          |  
+|腾讯云存储   |key            |etag           |size             |lastModified           |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
+|阿里云存储   |key            |etag           |size             |lastModified           |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
+|又拍云存储   |name           |无此含义字段     |length           |last_modified          |type                         |无此含义字段        |无此含义字段      |无此含义字段  |无此含义字段        |  
+|AWS云存储/S3|key            |etag           |size             |lastModified           |无此含义字段                   |storageClass      |无此含义字段      |无此含义字段  |Owner.displayName |  
 
 #### # 关于 indexes 索引 
 `indexes` 是一个配置字段映射关系的参数，即规定用于从输入行中取出所需字段的索引名及映射到目标对象的字段名，程序会解析每一个键值对构成索引表，参数格式
@@ -52,9 +52,9 @@ threads=30
 key,size:key,datetime。因此 `indexes` 可以设置多个键值对，每个键值对都表示程序中字段与输入行中索引的对应关系，即`<key>:<index>`。`<key>`
 即为表示实际含义的对象字段名，`<index>` 可以为数字或字符串，即将输入行按照一种格式解析后可以读取对象字段值的索引，为数字时表示输入行可分隔为 value
 数组，采用数组下标的方式读取目标值，为字符串时可以是 json 行的原始字段名。  
-事实上，`indexes` 还有一种默认设置方式，即默认包含 9 个字段：**key,hash,size,datetime,mime,type,status,md5,owner**，只需要按顺序设置 9 
-个字段的索引即可，此时可以不需要中括号 []，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 hash，以此类推，或者输入行为 json 
-时如 `indexes=key,hash,size,datetime,mime,type` 表示从这些字段依次取出 key,hash,size,datetime,mime,type 这些值。  
+事实上，`indexes` 还有一种默认设置方式，即默认包含 9 个字段：**key,etag,size,datetime,mime,type,status,md5,owner**，只需要按顺序设置 9 
+个字段的索引即可，此时可以不需要中括号 []，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 etag，以此类推，或者输入行为 json 
+时如 `indexes=key,etag,size,datetime,mime,type` 表示从这些字段依次取出 key,etag,size,datetime,mime,type 这些值。  
 **默认情况：**  
 （1）当数据源为 [file](#2-file-文件内容读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
 `0`，输入格式为 `json` 时索引只有 `key`，需要指定更多字段时可按照[indexes 规范](##-关于-indexes-索引)设置，例如为数字列表:`0,1,2,3,...`
