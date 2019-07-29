@@ -267,6 +267,17 @@ public class QSuitsEntry {
         return tenCosContainer;
     }
 
+    public com.qiniu.process.tencent.PrivateUrl getTencentPrivateUrl(boolean single) throws IOException {
+        String secretId = commonParams.getTencentSecretId();
+        String secretKey = commonParams.getTencentSecretKey();
+        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getTenCosRegion(
+                commonParams.getTencentSecretId(), commonParams.getTencentSecretKey(), bucket);
+        String expires = entryParam.getValue("expires", "3600").trim();
+        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, regionName, Long.valueOf(expires)) :
+                new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, regionName, Long.valueOf(expires), savePath);
+    }
+
     public AliOssContainer getAliOssContainer() throws IOException {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
@@ -288,6 +299,23 @@ public class QSuitsEntry {
         aliOssContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         aliOssContainer.setRetryTimes(retryTimes);
         return aliOssContainer;
+    }
+
+    public com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
+        String accessId = commonParams.getAliyunAccessId();
+        String accessSecret = commonParams.getAliyunAccessSecret();
+        String endPoint;
+        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, bucket);
+        if (regionName.matches("https?://.+")) {
+            endPoint = regionName;
+        } else {
+            if (!regionName.startsWith("oss-")) regionName = "oss-" + regionName;
+            endPoint = "http://" + regionName + ".aliyuncs.com";
+        }
+        String expires = entryParam.getValue("expires", "3600").trim();
+        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires)) :
+                new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires), savePath);
     }
 
     public UpYosContainer getUpYosContainer() throws IOException {
@@ -320,6 +348,16 @@ public class QSuitsEntry {
         awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         awsS3Container.setRetryTimes(retryTimes);
         return awsS3Container;
+    }
+
+    public com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
+        String s3AccessId = commonParams.getS3AccessId();
+        String s3SecretKey = commonParams.getS3SecretKey();
+        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
+        String expires = entryParam.getValue("expires", "3600").trim();
+        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        return single ? new com.qiniu.process.aws.PrivateUrl(s3AccessId, s3SecretKey, bucket, regionName, Long.valueOf(expires)) :
+            new com.qiniu.process.aws.PrivateUrl(s3AccessId, s3SecretKey, bucket, regionName, Long.valueOf(expires), savePath);
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
@@ -373,6 +411,11 @@ public class QSuitsEntry {
             case "privateurl": processor = getPrivateUrl(single); break;
             case "mirror": processor = getMirrorFile(single); break;
             case "exportts": processor = getExportTs(single); break;
+            case "tenprivate": processor = getTencentPrivateUrl(single); break;
+            case "awsprivate": processor = getAwsS3PrivateUrl(single); break;
+            case "aliprivate": processor = getAliyunPrivateUrl(single); break;
+            case "": break;
+            default: throw new IOException("unsupported process.");
         }
         if (processor != null) {
             if (ProcessUtils.canBatch(processor.getProcessName())) processor.setBatchSize(commonParams.getBatchSize());

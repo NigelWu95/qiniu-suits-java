@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.qiniu.entry.CommonParams.lineFormats;
+
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
     private String filePath;
@@ -62,10 +64,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields) {
+    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
+            throws IOException {
         this.saveTotal = saveTotal;
         this.savePath = savePath;
         this.saveFormat = format;
+        if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;
         this.rmFields = rmFields;
     }

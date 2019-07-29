@@ -46,8 +46,8 @@ ignore-same-key=
 |ignore-same-key| true/false|（暂未启用）为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
 
 ### 关于 url-index 和 md5-index
-当使用 file 源且 parse=tab/csv 时下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 key 字段加上 domain 的
-方式访问源文件地址，key 下标用 indexes 参数设置，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
+当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
 
 ## 命令行参数方式
 ```

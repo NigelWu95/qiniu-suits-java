@@ -15,11 +15,11 @@ public abstract class SeniorFilter<T> {
     final private String checkName;
     private Set<String> extMimeList;
     private Set<String> extMimeTypeList;
-    private static List<String> checkList = new ArrayList<String>(){{
-        add("ext-mime");
-    }};
 
     public SeniorFilter(String checkName, String configPath, boolean rewrite) throws IOException {
+        List<String> checkList = new ArrayList<String>() {{
+            add("ext-mime");
+        }};
         if (!checkList.contains(checkName)) throw new IOException("unsupported check operation: " + checkName);
         this.checkName = checkName;
         this.extMimeList = new HashSet<>();

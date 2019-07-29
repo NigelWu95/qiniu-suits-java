@@ -82,23 +82,27 @@ public class CommonParams {
         setSource();
         setProcess();
         setRetryTimes(entryParam.getValue("retry-times", "5").trim());
+        if ("tencent".equals(source) || ProcessUtils.needTencentAuth(process)) {
+            tencentSecretId = entryParam.getValue("ten-id").trim();
+            tencentSecretKey = entryParam.getValue("ten-secret").trim();
+        } else if ("aliyun".equals(source) || ProcessUtils.needAliyunAuth(process)) {
+            aliyunAccessId = entryParam.getValue("ali-id").trim();
+            aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+        } else if ("upyun".equals(source)) {
+            upyunUsername = entryParam.getValue("up-name").trim();
+            upyunPassword = entryParam.getValue("up-pass").trim();
+        } else if ("s3".equals(source) || "aws".equals(source) || ProcessUtils.needAwsS3Auth(process)) {
+            s3AccessId = entryParam.getValue("s3-id").trim();
+            s3SecretKey = entryParam.getValue("s3-secret").trim();
+        } else if (ProcessUtils.needQiniuAuth(process)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
+        }
         if (source.matches("(local|terminal)")) {
             parse = ParamsUtils.checked(entryParam.getValue("parse", "tab").trim(), "parse", "(csv|tab|json)");
             setSeparator(entryParam.getValue("separator", ""));
         } else {
-            if ("tencent".equals(source)) {
-                tencentSecretId = entryParam.getValue("ten-id").trim();
-                tencentSecretKey = entryParam.getValue("ten-secret").trim();
-            } else if ("aliyun".equals(source)) {
-                aliyunAccessId = entryParam.getValue("ali-id").trim();
-                aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
-            } else if ("upyun".equals(source)) {
-                upyunUsername = entryParam.getValue("up-name").trim();
-                upyunPassword = entryParam.getValue("up-pass").trim();
-            } else if ("s3".equals(source) || "aws".equals(source)) {
-                s3AccessId = entryParam.getValue("s3-id").trim();
-                s3SecretKey = entryParam.getValue("s3-secret").trim();
-            } else {
+            if (qiniuAccessKey == null && (source == null || "qiniu".equals(source) || "".equals(source))) {
                 qiniuAccessKey = entryParam.getValue("ak").trim();
                 qiniuSecretKey = entryParam.getValue("sk").trim();
             }
@@ -112,10 +116,8 @@ public class CommonParams {
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         }
 
-        if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
-        if (ProcessUtils.needAuth(process)) {
-            qiniuAccessKey = entryParam.getValue("ak").trim();
-            qiniuSecretKey = entryParam.getValue("sk").trim();
+        if (ProcessUtils.needBucket(process)) {
+            bucket = entryParam.getValue("bucket").trim();
         }
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
@@ -148,8 +150,17 @@ public class CommonParams {
         setSeparator(entryParam.getValue("separator", ""));
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
-        if (ProcessUtils.needBucketAndKey(process)) bucket = entryParam.getValue("bucket").trim();
-        if (ProcessUtils.needAuth(process)) {
+        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
+        if (ProcessUtils.needTencentAuth(process)) {
+            tencentSecretId = entryParam.getValue("ten-id").trim();
+            tencentSecretKey = entryParam.getValue("ten-secret").trim();
+        } else if (ProcessUtils.needAliyunAuth(process)) {
+            aliyunAccessId = entryParam.getValue("ali-id").trim();
+            aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+        } else if (ProcessUtils.needAwsS3Auth(process)) {
+            s3AccessId = entryParam.getValue("s3-id").trim();
+            s3SecretKey = entryParam.getValue("s3-secret").trim();
+        } else if (ProcessUtils.needQiniuAuth(process)) {
             qiniuAccessKey = entryParam.getValue("ak").trim();
             qiniuSecretKey = entryParam.getValue("sk").trim();
         }

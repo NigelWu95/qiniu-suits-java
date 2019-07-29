@@ -26,7 +26,7 @@ public final class ProcessUtils {
     public static Set<String> needAvinfoProcesses = new HashSet<String>(){{
         add("pfopcmd");
     }};
-    public static Set<String> needBucketAnKeyProcesses = new HashSet<String>(){{
+    public static Set<String> qiniuProcessesWithBucket = new HashSet<String>(){{
         add("status");
         add("type");
         add("lifecycle");
@@ -38,11 +38,6 @@ public final class ProcessUtils {
         add("pfop");
         add("stat");
     }};
-    public static Set<String> needAuthProcesses = new HashSet<String>(){{
-        addAll(needBucketAnKeyProcesses);
-        add("asyncfetch");
-        add("privateurl");
-    }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
         add("type");
@@ -53,8 +48,28 @@ public final class ProcessUtils {
         add("delete");
         add("stat");
     }};
+    public static Set<String> tenProcesses = new HashSet<String>(){{
+        add("tenprivate");
+    }};
+    public static Set<String> awsProcesses = new HashSet<String>(){{
+        add("awsprivate");
+    }};
+    public static Set<String> aliProcesses = new HashSet<String>(){{
+        add("aliprivate");
+    }};
+    public static Set<String> needBucketProcesses = new HashSet<String>(){{
+        addAll(qiniuProcessesWithBucket);
+        addAll(tenProcesses);
+        addAll(awsProcesses);
+        addAll(aliProcesses);
+    }};
+    public static Set<String> needQiniuAuthProcesses = new HashSet<String>(){{
+        addAll(qiniuProcessesWithBucket);
+        add("asyncfetch");
+        add("privateurl");
+    }};
     public static Set<String> supportListSourceProcesses = new HashSet<String>(){{
-        addAll(needAuthProcesses);
+        addAll(needQiniuAuthProcesses);
         add("qhash");
         add("avinfo");
         add("exportts");
@@ -66,15 +81,15 @@ public final class ProcessUtils {
         add("rename");
         add("delete");
     }};
-    public static Set<String> processes = new HashSet<String>(){{
-        addAll(needUrlProcesses);
-        addAll(needToKeyProcesses);
-        addAll(needFopsProcesses);
-        addAll(needPidProcesses);
-        addAll(needAvinfoProcesses);
-        addAll(needBucketAnKeyProcesses);
-        addAll(supportListSourceProcesses);
-    }};
+//    public static Set<String> processes = new HashSet<String>(){{
+//        addAll(needUrlProcesses);
+//        addAll(needToKeyProcesses);
+//        addAll(needFopsProcesses);
+//        addAll(needPidProcesses);
+//        addAll(needAvinfoProcesses);
+//        addAll(needBucketAnKeyProcesses);
+//        addAll(supportListSourceProcesses);
+//    }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
@@ -96,12 +111,24 @@ public final class ProcessUtils {
         return needAvinfoProcesses.contains(process);
     }
 
-    public static boolean needBucketAndKey(String process) {
-        return needBucketAnKeyProcesses.contains(process);
+    public static boolean needBucket(String process) {
+        return needBucketProcesses.contains(process);
     }
 
-    public static boolean needAuth(String process) {
-        return needAuthProcesses.contains(process);
+    public static boolean needQiniuAuth(String process) {
+        return needQiniuAuthProcesses.contains(process);
+    }
+
+    public static boolean needTencentAuth(String process) {
+        return tenProcesses.contains(process);
+    }
+
+    public static boolean needAliyunAuth(String process) {
+        return aliProcesses.contains(process);
+    }
+
+    public static boolean needAwsS3Auth(String process) {
+        return awsProcesses.contains(process);
     }
 
     public static boolean canBatch(String process) {
@@ -116,7 +143,7 @@ public final class ProcessUtils {
         return dangerousProcesses.contains(process);
     }
 
-    public static boolean isSupportedProcess(String process) {
-        return processes.contains(process);
-    }
+//    public static boolean isSupportedProcess(String process) {
+//        return processes.contains(process);
+//    }
 }

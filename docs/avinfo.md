@@ -21,8 +21,8 @@ url-index=
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 
 ### 关于 url-index
-当使用 file 源且 parse=tab/csv 时下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 key 字段加上 domain 的
-方式访问源文件地址，key 下标用 indexes 参数设置。  
+当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
 
 ## 命令行方式
 ```
