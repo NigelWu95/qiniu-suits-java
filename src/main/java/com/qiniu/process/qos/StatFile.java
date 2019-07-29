@@ -1,17 +1,13 @@
 package com.qiniu.process.qos;
 
 import com.google.gson.*;
-import com.qiniu.common.QiniuException;
-import com.qiniu.convert.JsonToString;
-import com.qiniu.convert.QOSObjToString;
-import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.http.Response;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
-import com.qiniu.storage.model.FileInfo;
-import com.qiniu.util.Auth;
-import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,33 +18,39 @@ public class StatFile extends Base<Map<String, String>> {
 
     private String format;
     private String separator;
-    private ITypeConvert typeConverter;
+    private List<String> rmFields;
+    private List<String> statJsonFields;
+    private IStringFormat<JsonObject> stringFormatter;
     private BatchOperations batchOperations;
+    private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String format,
-                    String separator) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
+                    String format, String separator) throws IOException {
         super("stat", accessKey, secretKey, bucket);
-        set(configuration, format, separator);
+        set(configuration, rmFields, format, separator);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator, int saveIndex) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
+                    String savePath, String format, String separator, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, bucket, savePath, saveIndex);
-        set(configuration, format, separator);
+        set(configuration, rmFields, format, separator);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
-                    String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, 0);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
+                    String savePath, String format, String separator) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, rmFields, savePath, format, separator, 0);
     }
 
-    private void set(Configuration configuration, String format, String separator) throws IOException {
+    private void set(Configuration configuration, List<String> rmFields, String format, String separator) throws IOException {
         this.configuration = configuration;
         this.format = format;
         if ("csv".equals(format) || "tab".equals(format)) {
@@ -56,8 +58,19 @@ public class StatFile extends Base<Map<String, String>> {
         } else if (!"json".equals(this.format)) {
             throw new IOException("please check your format for converting result string.");
         }
-        if (batchSize > 1) typeConverter = new JsonToString(format, separator, null);
-        else typeConverter = new QOSObjToString(format, separator, null);
+        stringFormatter = getNewStatJsonFormatter(rmFields);
+    }
+
+    private IStringFormat<JsonObject> getNewStatJsonFormatter(List<String> rmFields) {
+        IStringFormat<JsonObject> stringFormatter;
+        if (statJsonFields == null) statJsonFields = ConvertingUtils.getFields(new ArrayList<>(ConvertingUtils.statFileFields), rmFields);
+        if ("json".equals(format)) {
+            stringFormatter = JsonObject::toString;
+        } else {
+            stringFormatter = line -> ConvertingUtils.toFormatString(line, separator, statJsonFields);
+        }
+        this.rmFields = rmFields;
+        return stringFormatter;
     }
 
     public void updateFormat(String format) {
@@ -71,52 +84,47 @@ public class StatFile extends Base<Map<String, String>> {
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
-        if (batchSize > 1) {
-            statFile.batchOperations = new BatchOperations();
-            try {
-                statFile.typeConverter = new JsonToString(format, separator, null);
-            } catch (IOException e) {
-                throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
-            }
-        } else {
-            try {
-                statFile.typeConverter = new QOSObjToString(format, separator, null);
-            } catch (IOException e) {
-                throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
-            }
-        }
+        statFile.batchOperations = new BatchOperations();
+        statFile.lines = new ArrayList<>();
+        statFile.stringFormatter = getNewStatJsonFormatter(rmFields);
         return statFile;
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
+        batchOperations.clearOps();
+        lines.clear();
+        String key;
+        for (Map<String, String> map : processList) {
+            key = map.get("key");
+            if (key != null) {
+                lines.add(map);
+                batchOperations.addStatOps(bucket, key);
+            } else {
+                fileSaveMapper.writeError("no key in " + map, false);
+            }
+        }
+        return lines;
     }
 
     @Override
-    synchronized public String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addStatOps(bucket, line.get("key")));
+    public String batchResult(List<Map<String, String>> lineList) throws IOException {
+        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result)
-            throws IOException {
+    protected List<Map<String, String>> parseBatchResult(List<Map<String, String>> processList, String result) throws Exception {
+        if (processList.size() <= 0) return null;
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
-        List<Map<String, String>> retryList = new ArrayList<>();
-        JsonArray jsonArray;
-        try {
-            jsonArray = new Gson().fromJson(result, JsonArray.class);
-        } catch (JsonParseException e) {
-            throw new IOException("parse to json array error.");
-        }
+        List<Map<String, String>> retryList = null;
+        JsonArray jsonArray = new Gson().fromJson(result, JsonArray.class);
         JsonObject jsonObject;
         JsonObject data;
         for (int j = 0; j < processList.size(); j++) {
@@ -131,9 +139,10 @@ public class StatFile extends Base<Map<String, String>> {
                 switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                     case 1:
                         data.addProperty("key", processList.get(j).get("key"));
-                        fileSaveMapper.writeSuccess((String) typeConverter.convertToV(data), false);
+                        fileSaveMapper.writeSuccess(stringFormatter.toFormatString(data), false);
                         break;
                     case 0:
+                        if (retryList == null) retryList = new ArrayList<>();
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
@@ -149,14 +158,14 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected String singleResult(Map<String, String> line) throws QiniuException {
-        FileInfo fileInfo = bucketManager.stat(bucket, line.get("key"));
-        fileInfo.key = line.get("key");
-        try {
-            return (String) typeConverter.convertToV(fileInfo);
-        } catch (IOException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
+    protected String singleResult(Map<String, String> line) throws Exception {
+        String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
+        Response response = bucketManager.statResponse(bucket, key);
+        JsonObject statJson = JsonUtils.toJsonObject(response.bodyString());
+        statJson.addProperty("key", key);
+        response.close();
+        return stringFormatter.toFormatString(statJson);
     }
 
     @Override
@@ -164,8 +173,9 @@ public class StatFile extends Base<Map<String, String>> {
         super.closeResource();
         format = null;
         separator = null;
-        typeConverter = null;
+        stringFormatter = null;
         batchOperations = null;
+        lines = null;
         configuration = null;
         bucketManager = null;
     }

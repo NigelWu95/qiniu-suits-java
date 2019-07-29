@@ -1,12 +1,14 @@
 package com.qiniu.datasource;
 
+import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.util.List;
 
@@ -15,7 +17,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private OSSClient ossClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
-    private boolean straight;
     private List<OSSObjectSummary> ossObjectList;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -29,8 +30,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
         doList();
     }
 
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    @Override
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     public String getPrefix() {
@@ -46,7 +48,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -65,25 +67,18 @@ public class AliLister implements ILister<OSSObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
-                OSSObjectSummary last = currentLast();
-                if (last != null && endPrefix.equals(last.getKey()))
-                    ossObjectList.remove(last);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
+                if (ossObjectList.size() > 0) {
+                    int lastIndex = ossObjectList.size() - 1;
+                    OSSObjectSummary last = ossObjectList.get(lastIndex);
+                    if (endPrefix.equals(last.getKey())) ossObjectList.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
@@ -99,27 +94,27 @@ public class AliLister implements ILister<OSSObjectSummary> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ObjectListing objectListing = ossClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             ossObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
-//        } catch (ClientException e) {
-//            int code = ListingUtils.AliStatusCode(e.getErrorCode(), -1);
-//            throw new SuitsException(code, e.getMessage());
+        } catch (ClientException e) {
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
+        } catch (OSSException e) {
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (ServiceException e) {
-            int code = ListingUtils.AliStatusCode(e.getErrorCode(), -1);
-            throw new SuitsException(code, e.getMessage());
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -154,25 +149,20 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public OSSObjectSummary currentLast() {
-        return ossObjectList.size() > 0 ? ossObjectList.get(ossObjectList.size() - 1) : null;
-    }
-
-    @Override
-    public String currentStartKey() {
-        return ossObjectList.size() > 0 ? ossObjectList.get(0).getKey() : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
-        OSSObjectSummary last = currentLast();
-        return last != null ? last.getKey() : null;
+        if (ossObjectList.size() > 0) return ossObjectList.get(ossObjectList.size() - 1).getKey();
+        return null;
     }
 
     @Override
-    public void updateMarkerBy(OSSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(ListingUtils.getAliOssMarker(object.getKey()));
+    public synchronized String truncate() {
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = listObjectsRequest.getMarker();
+            listObjectsRequest.setMarker(null);
+        }
+        return truncateMarker;
     }
 
     @Override

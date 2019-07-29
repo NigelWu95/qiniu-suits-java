@@ -1,15 +1,19 @@
 package com.qiniu.datasource;
 
 import com.qiniu.common.SuitsException;
-import com.qiniu.convert.YOSObjToMap;
-import com.qiniu.convert.YOSObjToString;
+import com.qiniu.convert.Converter;
+import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringMapPair;
+import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
@@ -23,15 +27,21 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     private String username;
     private String password;
     private UpYunConfig configuration;
+    private Map<String, String> indexPair;
+    private List<String> fields;
 
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, int unitLen, int threads) {
+                          Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
         this.configuration = configuration;
+        UpLister upLister = new UpLister(new UpYunClient(configuration, username, password), bucket, null,
+                null, null, 1);
+        upLister.close();
+        upLister = null;
     }
 
     @Override
@@ -41,12 +51,37 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 
     @Override
     protected ITypeConvert<FileItem, Map<String, String>> getNewConverter() {
-        return new YOSObjToMap(indexMap);
+        return new Converter<FileItem, Map<String, String>>() {
+            @Override
+            public Map<String, String> convertToV(FileItem line) throws IOException {
+                return ConvertingUtils.toPair(line, indexMap, new StringMapPair());
+            }
+        };
     }
 
     @Override
-    protected ITypeConvert<FileItem, String> getNewStringConverter() throws IOException {
-        return new YOSObjToString(saveFormat, saveSeparator, rmFields);
+    protected ITypeConvert<FileItem, String> getNewStringConverter() {
+        IStringFormat<FileItem> stringFormatter;
+        if (indexPair == null) {
+            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+            for (String etagField : ConvertingUtils.etagFields) indexPair.remove(etagField);
+            for (String typeField : ConvertingUtils.typeFields) indexPair.remove(typeField);
+            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
+            for (String ownerField : ConvertingUtils.ownerFields) indexPair.remove(ownerField);
+        }
+        if ("json".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+        } else {
+            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
+            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
+        }
+        return new Converter<FileItem, String>() {
+            @Override
+            public String convertToV(FileItem line) throws IOException {
+                return stringFormatter.toFormatString(line);
+            }
+        };
     }
 
     @Override
@@ -56,68 +91,34 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
 
     @Override
     protected ILister<FileItem> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = ListingUtils.getUpYunMarker(username, password, bucket, start);
+        if (marker == null || "".equals(marker)) marker = CloudAPIUtils.getUpYunMarker(username, password, bucket, start);
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
-    private List<UpLister> getListerListByPrefixes(List<String> prefixes) {
-        for (String prefix : prefixes) recordListerByPrefix(prefix);
-        return prefixes.parallelStream().filter(this::checkPrefix)
-                .map(prefix -> {
-                    UpLister upLister;
-                    try {
-                        upLister = (UpLister) generateLister(prefix);
-                    } catch (SuitsException e) {
-                        System.out.println("generate lister failed by " + prefix + "\t" + prefixesMap.get(prefix));
-                        e.printStackTrace(); return null;
+    private List<String> listAndGetNextPrefixes(List<String> prefixes) {
+        return prefixes.parallelStream().map(prefix -> {
+                UpLister upLister;
+                try {
+                    upLister = (UpLister) generateLister(prefix);
+                } catch (SuitsException e) {
+                    System.out.println("generate lister failed by " + prefix + "\t" + prefixesMap.get(prefix));
+                    e.printStackTrace(); return null;
+                }
+                if (upLister.hasNext() || upLister.getDirectories() != null) {
+                    listing(upLister, UniOrderUtils.getOrder());
+                    if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) return null;
+                    else if (hasAntiPrefixes) return upLister.getDirectories().stream()
+                            .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
+                    else {
+                        for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
+                        return upLister.getDirectories();
                     }
-                    int order = UniOrderUtils.getOrder();
-                    if (upLister.hasNext() || upLister.getDirectories() != null) {
-                        listing(upLister, order);
-                        return upLister;
-                    } else {
-                        executorPool.execute(() -> listing(upLister, order));
-                        return null;
-                    }
-                }).filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    private void concurrentListing() throws IOException {
-        executorPool = Executors.newFixedThreadPool(threads);
-        List<UpLister> listerList = null;
-        try {
-            listerList = getListerListByPrefixes(prefixes);
-            while (listerList != null && listerList.size() > 0) {
-                prefixes = listerList.parallelStream().map(UpLister::getDirectories)
-                        .filter(Objects::nonNull)
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-                if (prefixes == null || prefixes.size() == 0) {
-                    listerList = null;
                 } else {
-                    listerList = getListerListByPrefixes(prefixes);
+                    executorPool.execute(() -> listing(upLister, UniOrderUtils.getOrder()));
+                    return null;
                 }
-            }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated())
-                try { Thread.sleep(1000); } catch (InterruptedException ignored) { Thread.sleep(1000); }
-            System.out.println("finished.");
-        } catch (Throwable e) {
-            executorPool.shutdownNow();
-            e.printStackTrace();
-            List<String> directories;
-            if (listerList != null) {
-                for (UpLister lister : listerList) {
-                    if (lister.currents() != null) recordLister(lister);
-                    directories = lister.getDirectories();
-                    if (directories != null) {
-                        for (String directory : directories) recordListerByPrefix(directory);
-                    }
-                }
-            }
-        } finally {
-            writeContinuedPrefixConfig(savePath, "prefixes");
-        }
+            }).filter(Objects::nonNull)
+            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
     /**
@@ -131,8 +132,41 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             UpLister startLister = (UpLister) generateLister("");
             int order = UniOrderUtils.getOrder();
             listing(startLister, order);
-            prefixes = startLister.getDirectories();
+            if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) return;
+            else if (hasAntiPrefixes) prefixes = startLister.getDirectories().parallelStream()
+                    .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
+            else {
+                for (String dir : startLister.getDirectories()) recordListerByPrefix(dir);
+                prefixes = startLister.getDirectories();
+            }
         }
-        concurrentListing();
+        executorPool = Executors.newFixedThreadPool(threads);
+        try {
+            prefixes = listAndGetNextPrefixes(prefixes);
+            while (prefixes != null && prefixes.size() > 0) {
+                prefixes = listAndGetNextPrefixes(prefixes);
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                    int i = 0;
+                    while (i < 1000) i++;
+                }
+            }
+            System.out.println(info + " finished.");
+        } catch (Throwable e) {
+            executorPool.shutdownNow();
+            e.printStackTrace();
+            ILineProcess<Map<String, String>> processor;
+            for (Map.Entry<String, IResultOutput<BufferedWriter>> saverEntry : saverMap.entrySet()) {
+                saverEntry.getValue().closeWriters();
+                processor = processorMap.get(saverEntry.getKey());
+                if (processor != null) processor.closeResource();
+            }
+        } finally {
+            writeContinuedPrefixConfig(savePath, "prefixes");
+        }
     }
 }

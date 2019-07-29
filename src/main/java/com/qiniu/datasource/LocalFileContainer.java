@@ -7,7 +7,6 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileUtils;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
 import java.util.*;
 
@@ -25,7 +24,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
 
     @Override
     protected ITypeConvert<Map<String, String>, String> getNewStringConverter() throws IOException {
-        return new MapToString(saveFormat, saveSeparator, rmFields);
+        return new MapToString(saveFormat, saveSeparator, fields);
     }
 
     @Override
@@ -56,7 +55,11 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     @Override
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
-        File sourceFile = new File(FileUtils.realPathWithUserHome(path));
+        path = FileUtils.realPathWithUserHome(path);
+        if (path.equals(FileUtils.realPathWithUserHome(savePath))) {
+            throw new IOException("the save-path can not be same as path.");
+        }
+        File sourceFile = new File(path);
         if (sourceFile.isDirectory()) {
             File[] fs = sourceFile.listFiles();
             if (fs == null) throw new IOException("The current path you gave may be incorrect: " + path);

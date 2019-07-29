@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
+import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
@@ -18,7 +19,8 @@ import com.qiniu.process.qdora.*;
 import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
 
@@ -51,7 +53,7 @@ public class QSuitsEntry {
     private String savePath;
     private String saveFormat;
     private String saveSeparator;
-    private Set<String> rmFields;
+    private List<String> rmFields;
 
     public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
@@ -130,7 +132,7 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig() {
-        Zone zone = ListingUtils.getQiniuRegion(regionName);
+        Zone zone = CloudAPIUtils.getQiniuRegion(regionName);
         Configuration configuration = new Configuration(zone);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
@@ -142,8 +144,8 @@ public class QSuitsEntry {
         return tenClientConfig == null ? getDefaultTenClientConfig() : tenClientConfig;
     }
 
-    private ClientConfig getDefaultTenClientConfig() throws IOException {
-        if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getTenCosRegion(
+    private ClientConfig getDefaultTenClientConfig() throws SuitsException {
+        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getTenCosRegion(
                 commonParams.getTencentSecretId(), commonParams.getTencentSecretKey(), bucket);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         if (1000 * connectTimeout > clientConfig.getConnectionTimeout())
@@ -184,7 +186,7 @@ public class QSuitsEntry {
     }
 
     public com.amazonaws.ClientConfiguration getS3ClientConfig() {
-        return aliClientConfig == null ? getDefaultS3ClientConfig() : s3ClientConfig;
+        return s3ClientConfig == null ? getDefaultS3ClientConfig() : s3ClientConfig;
     }
 
     private com.amazonaws.ClientConfiguration getDefaultS3ClientConfig() {
@@ -216,7 +218,7 @@ public class QSuitsEntry {
         }
     }
 
-    public InputSource getScannerSource() {
+    public InputSource getInputSource() {
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getRmKeyPrefix();
@@ -224,7 +226,7 @@ public class QSuitsEntry {
         return new InputSource(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
-    public LocalFileContainer getLocalFileContainer() {
+    public LocalFileContainer getLocalFileContainer() throws IOException {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
@@ -232,12 +234,12 @@ public class QSuitsEntry {
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
         LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap, unitLen, threads);
-        localFileContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;
     }
 
-    public QiniuQosContainer getQiniuQosContainer() {
+    public QiniuQosContainer getQiniuQosContainer() throws IOException {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
         Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
@@ -245,7 +247,7 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         QiniuQosContainer qiniuQosContainer = new QiniuQosContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
                 bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        qiniuQosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        qiniuQosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         qiniuQosContainer.setRetryTimes(retryTimes);
         return qiniuQosContainer;
     }
@@ -260,7 +262,7 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         TenCosContainer tenCosContainer = new TenCosContainer(secretId, secretKey, tenClientConfig, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        tenCosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        tenCosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         tenCosContainer.setRetryTimes(retryTimes);
         return tenCosContainer;
     }
@@ -269,7 +271,7 @@ public class QSuitsEntry {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
         String endPoint;
-        if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getAliOssRegion(accessId, accessSecret, bucket);
+        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, bucket);
         if (regionName.matches("https?://.+")) {
             endPoint = regionName;
         } else {
@@ -283,12 +285,12 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         AliOssContainer aliOssContainer = new AliOssContainer(accessId, accessSecret, aliClientConfig, endPoint, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        aliOssContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        aliOssContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         aliOssContainer.setRetryTimes(retryTimes);
         return aliOssContainer;
     }
 
-    public UpYosContainer getUpYosContainer() {
+    public UpYosContainer getUpYosContainer() throws IOException {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
@@ -296,16 +298,15 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
 //        boolean prefixLeft = commonParams.getPrefixLeft();
 //        boolean prefixRight = commonParams.getPrefixRight();
-        UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket,
-                antiPrefixes, prefixesMap,
+        UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket, antiPrefixes, prefixesMap,
 //                prefixLeft, prefixRight,
                 indexMap, unitLen, threads);
-        upYosContainer.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
+        upYosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         upYosContainer.setRetryTimes(retryTimes);
         return upYosContainer;
     }
 
-    public S3Container getS3Container() {
+    public AwsS3Container getS3Container() throws IOException {
         String s3AccessId = commonParams.getS3AccessId();
         String s3SecretKey = commonParams.getS3SecretKey();
         if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();
@@ -313,12 +314,12 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (regionName == null || "".equals(regionName)) regionName = ListingUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
-        S3Container s3Container = new S3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
+        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
+        AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
                 antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
-        s3Container.setSaveOptions(savePath, saveTotal, saveFormat, saveSeparator, rmFields);
-        s3Container.setRetryTimes(retryTimes);
-        return s3Container;
+        awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
+        awsS3Container.setRetryTimes(retryTimes);
+        return awsS3Container;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
@@ -327,18 +328,17 @@ public class QSuitsEntry {
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         if (baseFilter != null || seniorFilter != null) {
+            List<String> fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
             processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
                     saveSeparator, rmFields) {
-
                 public void updateSavePath(String savePath) throws IOException {
                     this.savePath = savePath;
                     this.fileSaveMapper.closeWriters();
                     this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
                 }
-
                 @Override
                 protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
-                    return new MapToString(saveFormat, saveSeparator, rmFields);
+                    return new MapToString(saveFormat, saveSeparator, fields);
                 }
             };
             processor.setNextProcessor(nextProcessor);
@@ -413,7 +413,11 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getMoveFile(boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket", "").trim();
-        if ("move".equals(process) && toBucket.isEmpty()) throw new IOException("no incorrect to-bucket, please set it.");
+        if ("move".equals(process)) {
+            if (toBucket.isEmpty()) throw new IOException("no incorrect to-bucket, please set it.");
+        } else {
+            toBucket = null;
+        }
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String force = entryParam.getValue("prefix-force", "false").trim();
@@ -518,8 +522,8 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
-        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, saveFormat, saveSeparator)
-                : new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, savePath, saveFormat, saveSeparator);
+        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, rmFields, saveFormat, saveSeparator)
+                : new StatFile(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket, rmFields, savePath, saveFormat, saveSeparator);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl(boolean single) throws IOException {

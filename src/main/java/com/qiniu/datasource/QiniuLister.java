@@ -20,7 +20,6 @@ public class QiniuLister implements ILister<FileInfo> {
     private String marker;
     private String endPrefix;
     private int limit;
-    private boolean straight;
     private List<FileInfo> fileInfoList;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -35,8 +34,8 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public String getBucket() {
+        return bucket;
     }
 
     @Override
@@ -55,7 +54,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -75,17 +74,7 @@ public class QiniuLister implements ILister<FileInfo> {
         return limit;
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
-    public List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
+    private List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, null);
         if (response.statusCode != 200) throw new QiniuException(response);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
@@ -123,17 +112,20 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
         // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             marker = null;
             // 由于 CloudStorageContainer 中设置 endPrefix 后下一级会从 endPrefix 开始直接列举，所以 endPrefix 这个文件名会出现重复，
             // 此处对其前者删除
-            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
-                FileInfo last = currentLast();
-                if (last != null && endPrefix.equals(last.key))
-                    fileInfoList.remove(last);
+            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
+                if (fileInfoList.size() > 0) {
+                    int lastIndex = fileInfoList.size() - 1;
+                    FileInfo last = fileInfoList.get(lastIndex);
+                    if (endPrefix.equals(last.key)) fileInfoList.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
@@ -149,21 +141,21 @@ public class QiniuLister implements ILister<FileInfo> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (QiniuException e) {
-            throw new SuitsException(e.code(), LogUtils.getMessage(e));
+            throw new SuitsException(e, e.code(), LogUtils.getMessage(e));
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -200,25 +192,20 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public FileInfo currentLast() {
-        return fileInfoList.size() > 0 ? fileInfoList.get(fileInfoList.size() - 1) : null;
-    }
-
-    @Override
-    public String currentStartKey() {
-        return fileInfoList.size() > 0 ? fileInfoList.get(0).key : null;
-    }
-
-    @Override
     public String currentEndKey() {
-        if (hasNext()) return ListingUtils.decodeQiniuMarker(marker);
-        FileInfo last = currentLast();
-        return last != null ? last.key : null;
+        if (hasNext()) return CloudAPIUtils.decodeQiniuMarker(marker);
+        if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
+        return null;
     }
 
     @Override
-    public void updateMarkerBy(FileInfo object) {
-        if (object != null) marker = ListingUtils.getQiniuMarker(object.key);
+    public synchronized String truncate() {
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = marker;
+            marker = null;
+        }
+        return truncateMarker;
     }
 
     @Override

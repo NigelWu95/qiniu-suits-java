@@ -2,7 +2,6 @@ package com.qiniu.interfaces;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 public interface ILineProcess<T> {
 
@@ -21,8 +20,6 @@ public interface ILineProcess<T> {
     default ILineProcess<T> getNextProcessor() {
         return null;
     }
-
-    boolean validCheck(Map<String, String> line);
 
     String processLine(T line) throws IOException;
 

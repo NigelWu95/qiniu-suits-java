@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ILister<E> {
 
-    void setPrefix(String prefix);
+    String getBucket();
 
     String getPrefix();
 
@@ -22,10 +22,6 @@ public interface ILister<E> {
 
     int getLimit();
 
-    void setStraight(boolean straight);
-
-    boolean canStraight();
-
     void listForward() throws SuitsException;
 
     boolean hasNext();
@@ -34,13 +30,9 @@ public interface ILister<E> {
 
     List<E> currents();
 
-    E currentLast();
-
-    String currentStartKey();
-
     String currentEndKey();
 
-    void updateMarkerBy(E object);
+    String truncate();
 
     /**
      * 关闭掉使用的资源

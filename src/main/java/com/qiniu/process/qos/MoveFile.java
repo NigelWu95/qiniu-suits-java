@@ -7,18 +7,23 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class MoveFile extends Base<Map<String, String>> {
 
+    private boolean isRename = false;
     private String toBucket;
     private String toKeyIndex;
     private String addPrefix;
     private String rmPrefix;
+    private boolean defaultToKey = false;
     private BatchOperations batchOperations;
+    private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
@@ -26,20 +31,26 @@ public class MoveFile extends Base<Map<String, String>> {
                     String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket);
+        if ("rename".equals(processName)) isRename = true;
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
-        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket,
-                savePath, saveIndex);
+        super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket, savePath, saveIndex);
+        if ("rename".equals(processName)) isRename = true;
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -54,9 +65,13 @@ public class MoveFile extends Base<Map<String, String>> {
         this.configuration = configuration;
         this.toBucket = toBucket;
         if (toKeyIndex == null || "".equals(toKeyIndex)) {
-            this.toKeyIndex = "key";
-            if (toBucket == null || "".equals(toBucket)) {
-                // rename 操作时未设置 new-key 的条件判断
+            if ((addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix))) {
+                throw new IOException("no toKeyIndex and no valid addPrefix or rmPrefix.");
+            } else {
+                this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
+                defaultToKey = true;
+            }
+            if (isRename) { // rename 操作时未设置 new-key 的条件判断
                 if (forceIfOnlyPrefix) {
                     if (addPrefix == null || "".equals(addPrefix))
                         throw new IOException("although prefix-force is true, but the add-prefix is empty.");
@@ -91,44 +106,61 @@ public class MoveFile extends Base<Map<String, String>> {
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
         moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
-        if (batchSize > 1) moveFile.batchOperations = new BatchOperations();
+        moveFile.batchOperations = new BatchOperations();
+        moveFile.lines = new ArrayList<>();
         return moveFile;
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get("to-key");
+    protected String resultInfo(Map<String, String> line) {
+        return line.get("key") + "\t" + line.get(toKeyIndex);
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        if (line.get("key") == null) return false;
-        try {
-            line.put("to-key", addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex)));
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batchOperations.clearOps();
-        lineList.forEach(line -> {
-            if (toBucket == null || "".equals(toBucket)) {
-                batchOperations.addRenameOp(bucket, line.get("key"), line.get("to-key"));
+        lines.clear();
+        String key;
+        String toKey;
+        for (Map<String, String> map : processList) {
+            key = map.get("key");
+            if (key != null) {
+                try {
+
+                    if (defaultToKey) {
+                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+                    } else {
+                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                    }
+                    map.put(toKeyIndex, toKey);
+                    lines.add(map);
+                    if (isRename) {
+                        batchOperations.addRenameOp(bucket, key, toKey);
+                    } else {
+                        batchOperations.addMoveOp(bucket, key, toBucket, toKey);
+                    }
+                } catch (IOException e) {
+                    fileSaveMapper.writeError("no " + toKeyIndex + " in " + map, false);
+                }
             } else {
-                batchOperations.addMoveOp(bucket, line.get("key"), toBucket, line.get("to-key"));
+                fileSaveMapper.writeError("no key in " + map, false);
             }
-        });
+        }
+        return lines;
+    }
+
+    @Override
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
-        String toKey = line.get("to-key");
-        if (toBucket == null || "".equals(toBucket)) {
+        if (key == null) throw new IOException("no key in " + line);
+        String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
+        if (isRename) {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey));
         } else {
             return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));
@@ -143,6 +175,7 @@ public class MoveFile extends Base<Map<String, String>> {
         addPrefix = null;
         rmPrefix = null;
         batchOperations = null;
+        lines = null;
         configuration = null;
         bucketManager = null;
     }

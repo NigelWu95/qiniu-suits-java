@@ -21,25 +21,25 @@ public class ObjectToMapTest {
     private List<FileInfo> fileInfoList;
     private ITypeConvert<FileInfo, Map<String, String>> mapConverter;
 
-    @Before
-    public void init() throws Exception {
-        IEntryParam entryParam = new ParamsConfig(new PropertiesFile("resources/.application.properties").getProperties());
-        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
-        mapConverter = new QOSObjToMap(qSuitsEntry.getCommonParams().getIndexMap());
-        String accessKey = entryParam.getValue("ak");
-        String secretKey = entryParam.getValue("sk");
-        String bucket = entryParam.getValue("bucket");
-        QiniuLister qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
-                null, null, null, 10000);
-        fileInfoList = qiniuLister.currents();
-    }
-
-    @Test
-    public void testConvertToVList() {
-        List<Map<String, String>> mapList = mapConverter.convertToVList(fileInfoList);
-        System.out.println(mapList);
-        System.out.println(mapConverter.errorSize());
-        System.out.println(mapConverter.errorLines());
-        System.out.println(mapConverter.errorSize());
-    }
+//    @Before
+//    public void init() throws Exception {
+//        IEntryParam entryParam = new ParamsConfig(new PropertiesFile("resources/.application.properties").getProperties());
+//        QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam);
+//        mapConverter = new QOSObjToMap(qSuitsEntry.getCommonParams().getIndexMap());
+//        String accessKey = entryParam.getValue("ak");
+//        String secretKey = entryParam.getValue("sk");
+//        String bucket = entryParam.getValue("bucket");
+//        QiniuLister qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
+//                null, null, null, 10000);
+//        fileInfoList = qiniuLister.currents();
+//    }
+//
+//    @Test
+//    public void testConvertToVList() {
+//        List<Map<String, String>> mapList = mapConverter.convertToVList(fileInfoList);
+//        System.out.println(mapList);
+//        System.out.println(mapConverter.errorSize());
+//        System.out.println(mapConverter.errorLines());
+//        System.out.println(mapConverter.errorSize());
+//    }
 }

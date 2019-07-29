@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 import static org.junit.Assert.*;
 
@@ -32,5 +33,15 @@ public class FileUtilsTest {
 //        System.out.println(FileUtils.contentType("/Users/wubingheng/Downloads/20190525_00-20190530_08.numbers"));
 //        System.out.println(FileUtils.contentType("/Users/wubingheng/Downloads/OPPO-百度功能验收报告v1.2.docx"));
 //        System.out.println(FileUtils.contentType("/Users/wubingheng/Projects/Github/temp/xaz"));
+        System.out.println(new File("./Downloads").getCanonicalPath());
+        System.out.println(new File("./Downloads").getAbsolutePath());
+        System.out.println(new File("~/Downloads").getCanonicalPath());
+        System.out.println(new File("~/Downloads").getAbsolutePath());
+        System.out.println(new File("../Downloads").getCanonicalPath());
+        System.out.println(new File("../Downloads").getAbsolutePath());
+        System.out.println(new File("~/Downloads").getParent());
+        System.out.println(new File("~/Downloads").getName());
+        System.out.println(new File("~/Downloads").getPath());
+        System.out.println(System.getProperty("user.home") + System.getProperty("file.separator") + "Downloads");
     }
 }

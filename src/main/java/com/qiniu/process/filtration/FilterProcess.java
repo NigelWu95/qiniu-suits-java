@@ -1,6 +1,5 @@
 package com.qiniu.process.filtration;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.ILineFilter;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
@@ -10,8 +9,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
@@ -21,16 +18,20 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected String savePath;
     protected String saveFormat;
     protected String saveSeparator;
-    protected Set<String> rmFields;
+    protected List<String> rmFields;
     protected int saveIndex;
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
 
-    public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
-                         String saveFormat, String saveSeparator, Set<String> rmFields, int saveIndex)
-            throws Exception {
+    public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter) throws Exception {
         this.processName = "filter";
         this.filter = newFilter(baseFilter, seniorFilter);
+    }
+
+    public FilterProcess(BaseFilter<T> baseFilter, SeniorFilter<T> seniorFilter, String savePath,
+                         String saveFormat, String saveSeparator, List<String> rmFields, int saveIndex)
+            throws Exception {
+        this(baseFilter, seniorFilter);
         this.savePath = savePath;
         this.saveFormat = saveFormat;
         this.saveSeparator = saveSeparator;
@@ -41,7 +42,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
 
     public FilterProcess(BaseFilter<T> filter, SeniorFilter<T> checker, String savePath, String saveFormat,
-                         String saveSeparator, Set<String> rmFields) throws Exception {
+                         String saveSeparator, List<String> rmFields) throws Exception {
         this(filter, checker, savePath, saveFormat, saveSeparator, rmFields, 0);
     }
 
@@ -93,33 +94,26 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     @SuppressWarnings("unchecked")
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
+        if (nextProcessor != null) mapFilter.nextProcessor = nextProcessor.clone();
         try {
             mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
             mapFilter.typeConverter = newTypeConverter();
-            if (nextProcessor != null) {
-                mapFilter.nextProcessor = nextProcessor.clone();
-            }
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return mapFilter;
     }
 
-    @Override
-    public boolean validCheck(Map<String, String> line) {
-        return true;
-    }
-
     public String processLine(T line) throws IOException {
         try {
             if (filter.doFilter(line)) {
-                if (nextProcessor == null) return String.valueOf(true);
+                if (nextProcessor == null) return String.valueOf(line);
                 else return nextProcessor.processLine(line);
             } else {
                 return "false";
             }
         } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -130,7 +124,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
             } catch (Exception e) {
-                throw new QiniuException(e, e.getMessage());
+                throw new IOException(e.getMessage(), e);
             }
         }
         // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。

@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.qiniu.config.JsonFile;
 import com.qiniu.process.Base;
-import com.qiniu.sdk.OperationManager;
+import com.qiniu.processing.OperationManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
@@ -28,6 +28,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
@@ -35,6 +36,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         super("pfop", accessKey, secretKey, bucket);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
@@ -93,18 +95,14 @@ public class QiniuPfop extends Base<Map<String, String>> {
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
-    }
-
-    @Override
-    protected String singleResult(Map<String, String> line) throws IOException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             StringBuilder cmdBuilder = new StringBuilder();
             for (JsonObject pfopConfig : pfopConfigs) {
@@ -116,7 +114,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
             cmdBuilder.deleteCharAt(cmdBuilder.length() - 1);
             return key + "\t" + operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams);
         } else {
-            return key + "\t" + operationManager.pfop(bucket, line.get("key"), line.get(fopsIndex), pfopParams);
+            String fops = line.get(fopsIndex);
+            if (fops == null) throw new IOException("no fops in " + line);
+            return key + "\t" + operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);
         }
     }
 

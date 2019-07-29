@@ -1,12 +1,12 @@
 package com.qiniu.datasource;
 
 import com.qcloud.cos.COSClient;
+import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.util.ListingUtils;
 
 import java.util.List;
 
@@ -15,7 +15,6 @@ public class TenLister implements ILister<COSObjectSummary> {
     private COSClient cosClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
-    private boolean straight;
     private List<COSObjectSummary> cosObjectList;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -29,8 +28,9 @@ public class TenLister implements ILister<COSObjectSummary> {
         doList();
     }
 
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    @Override
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     public String getPrefix() {
@@ -46,7 +46,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -65,25 +65,18 @@ public class TenLister implements ILister<COSObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
-                COSObjectSummary last = currentLast();
-                if (last != null && endPrefix.equals(last.getKey()))
-                    cosObjectList.remove(last);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
+                if (cosObjectList.size() > 0) {
+                    int lastIndex = cosObjectList.size() - 1;
+                    COSObjectSummary last = cosObjectList.get(lastIndex);
+                    if (endPrefix.equals(last.getKey())) cosObjectList.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
@@ -97,23 +90,25 @@ public class TenLister implements ILister<COSObjectSummary> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ObjectListing objectListing = cosClient.listObjects(listObjectsRequest);
             listObjectsRequest.setMarker(objectListing.getNextMarker());
             cosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (CosServiceException e) {
-            throw new SuitsException(e.getStatusCode(), e.getMessage());
+            throw new SuitsException(e, e.getStatusCode());
+        } catch (CosClientException e) {
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -148,25 +143,20 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public COSObjectSummary currentLast() {
-        return cosObjectList.size() > 0 ? cosObjectList.get(cosObjectList.size() - 1) : null;
-    }
-
-    @Override
-    public String currentStartKey() {
-        return cosObjectList.size() > 0 ? cosObjectList.get(0).getKey() : null;
-    }
-
-    @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
-        COSObjectSummary last = currentLast();
-        return last != null ? last.getKey() : null;
+        if (cosObjectList.size() > 0) return cosObjectList.get(cosObjectList.size() - 1).getKey();
+        return null;
     }
 
     @Override
-    public void updateMarkerBy(COSObjectSummary object) {
-        if (object != null) listObjectsRequest.setMarker(ListingUtils.getTenCosMarker(object.getKey()));
+    public synchronized String truncate() {
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = listObjectsRequest.getMarker();
+            listObjectsRequest.setMarker(null);
+        }
+        return truncateMarker;
     }
 
     @Override

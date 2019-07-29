@@ -4,6 +4,8 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
 
+import java.io.IOException;
+
 public final class HttpRespUtils {
 
     /**
@@ -18,17 +20,12 @@ public final class HttpRespUtils {
         times--;
         if (e.response != null) {
             int code = e.code();
-            e.response.close();
-            if (times <= 0) {
-                if (code == 599) return -2; // 如果经过重试之后响应的是 599 状态码则抛出异常
-                else return -1;
-            }
-            // 429 和 573 为请求过多的状态码，可以进行重试
-            else if (code < 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
-                return times;
+            if (times <= 0 && code == 599) {
+                return -2; // 如果重试次数为 0 且响应的是 599 状态码则抛出异常
+            } else if (code < 0 || code == 406 || code == 429 || (code >= 500 && code < 600 && code != 579)) {
+                return times; // 429 和 573 为请求过多的状态码，可以进行重试
             } else if ((e.code() >= 400 && e.code() <= 499) || (e.code() >= 612 && e.code() <= 614) || e.code() == 579) {
-                // 避免因为某些可暂时忽略和记录的状态码导致程序中断故先处理该异常返回 0
-                return 0;
+                return 0; // 避免因为某些可暂时忽略和记录的状态码导致程序中断故先处理该异常返回 0
             } else { // 如 631 状态码表示空间不存在，则不需要重试抛出异常
                 return -2;
             }
@@ -63,8 +60,7 @@ public final class HttpRespUtils {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException interruptEx) {
-                e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
-                throw e;
+                e.addSuppressed(interruptEx);
             }
         } else if (e.getStatusCode() >= 500 && e.getStatusCode() < 600) {
             if (retry < 0) throw e;
@@ -73,12 +69,12 @@ public final class HttpRespUtils {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException interruptEx) {
-                    e.setError(e.getMessage() + "\t" + interruptEx.getMessage());
+                    e.addSuppressed(interruptEx);
                     throw e;
                 }
                 return retry;
             }
-        } else if (e.getStatusCode() >= 400 && e.getStatusCode() != 406) {
+        } else if ((e.getStatusCode() >= 400 && e.getStatusCode() != 406) || e.getStatusCode() >= 600) {
             throw e;
         } else {
             retry--;
@@ -90,10 +86,10 @@ public final class HttpRespUtils {
      * 将 Response 对象转换成为结果字符串
      * @param response 得到的 Response 对象
      * @return Response body 转换的 String 对象
-     * @throws QiniuException Response 非正常响应的情况下抛出的异常
+     * @throws IOException Response 非正常响应的情况下抛出的异常
      */
-    public static String getResult(Response response) throws QiniuException {
-        if (response == null) throw new QiniuException(null, "empty response");
+    public static String getResult(Response response) throws IOException {
+        if (response == null) throw new IOException("empty response");
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         String responseBody = response.bodyString();
         response.close();

@@ -7,10 +7,9 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
-import com.qiniu.util.ListingUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +21,6 @@ public class UpLister implements ILister<FileItem> {
     private String marker;
     private String endPrefix;
     private int limit;
-    private boolean straight;
     private List<FileItem> fileItems;
     private List<String> directories;
 
@@ -38,8 +36,8 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public String getBucket() {
+        return bucket;
     }
 
     @Override
@@ -58,7 +56,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -78,111 +76,61 @@ public class UpLister implements ILister<FileItem> {
         return limit;
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
     private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
-        StringBuilder text = new StringBuilder();
         List<FileItem> fileItems = new ArrayList<>();
-        HttpURLConnection conn = null;
-        int code;
-        InputStream is = null;
-        InputStreamReader sr = null;
-        BufferedReader br = null;
-        try {
-            conn = upYunClient.listFilesConnection(bucket, prefix);
-            conn.setRequestProperty("x-list-iter", marker);
-            conn.setRequestProperty("x-list-limit", String.valueOf(limit));
-            conn.setRequestProperty("Accept", "application/json");
-            conn.connect();
-            code = conn.getResponseCode();
-//        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
-            is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-            sr = new InputStreamReader(is);
-            br = new BufferedReader(sr);
-            char[] chars = new char[4096];
-            int length;
-            while ((length = br.read(chars)) != -1) {
-                text.append(chars, 0, length);
-            }
-            if (code == 200) {
-//                this.marker = conn.getHeaderField("x-upyun-list-iter");
-//                String result = text.toString();
-//                String[] lines = result.split("\n");
-//                for (String line : lines) {
-//                    if (line.indexOf("\t") > 0) {
-//                        FileItem fileItem = new FileItem(line);
-//                        if ("N".equals(fileItem.attribute)) fileItems.add(fileItem);
-//                        else directories.add(fileItem.key);
-//                    }
-//                }
-                JsonObject returnJson = JsonUtils.toJsonObject(text.toString());
-                this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
-                if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker) || text.length() == 0) this.marker = null;
-                if (returnJson.has("files") && returnJson.get("files").isJsonArray()) {
-                    JsonArray files = returnJson.get("files").getAsJsonArray();
-                    JsonObject object;
-                    String attribute;
-                    String totalName;
-                    for (JsonElement item : files) {
-                        object = item.getAsJsonObject();
-                        attribute = object.get("type").getAsString();
-                        totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
-                                prefix + "/" + object.get("name").getAsString();
-                        if ("folder".equals(attribute)) {
-                            if (directories == null) {
-                                directories = new ArrayList<>();
-                                directories.add(totalName);
-                            } else {
-                                directories.add(totalName);
-                            }
+        String result = upYunClient.listFiles(bucket, prefix, marker, limit);
+        if (result == null || result.isEmpty()) {
+            this.marker = null;
+            return fileItems;
+        }
+        JsonObject returnJson = JsonUtils.toJsonObject(result);
+        this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
+        if ("g2gCZAAEbmV4dGQAA2VvZg".equals(this.marker)) this.marker = null;
+        JsonElement jsonElement = returnJson.get("files");
+        if (jsonElement instanceof JsonArray) {
+            JsonArray files = returnJson.get("files").getAsJsonArray();
+            if (files.size() > 0) {
+                JsonObject object;
+                String attribute;
+                String totalName;
+                for (JsonElement item : files) {
+                    object = item.getAsJsonObject();
+                    attribute = object.get("type").getAsString();
+                    totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
+                            prefix + "/" + object.get("name").getAsString();
+                    if ("folder".equals(attribute)) {
+                        if (directories == null) {
+                            directories = new ArrayList<>();
+                            directories.add(totalName);
                         } else {
-                            FileItem fileItem = new FileItem();
-                            fileItem.key = totalName;
-                            fileItem.attribute = attribute;
-                            fileItem.size = object.get("length").getAsLong();
-                            fileItem.timeSeconds = object.get("last_modified").getAsLong();
-                            fileItems.add(fileItem);
+                            directories.add(totalName);
                         }
+                    } else {
+                        FileItem fileItem = new FileItem();
+                        fileItem.key = totalName;
+                        fileItem.attribute = attribute;
+                        fileItem.size = object.get("length").getAsLong();
+                        fileItem.timeSeconds = object.get("last_modified").getAsLong();
+                        fileItems.add(fileItem);
                     }
                 }
-                return fileItems;
-            } else if (code == 404) {
-                this.marker = null;
-                return fileItems;
-            } else {
-                throw new SuitsException(code, text.toString());
-            }
-        } finally {
-            try {
-                if (conn != null) conn.disconnect();
-                if (br != null) br.close();
-                if (sr != null) sr.close();
-                if (is != null) is.close();
-            } catch (IOException e) {
-                br = null;
-                sr = null;
-                is = null;
             }
         }
+        return fileItems;
     }
 
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             marker = null;
-            if (endPrefix.equals(prefix + CloudStorageContainer.startPoint)) {
-                FileItem last = currentLast();
-                if (last != null && endPrefix.equals(last.key))
-                    fileItems.remove(last);
+            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
+                if (fileItems.size() > 0) {
+                    int lastIndex = fileItems.size() - 1;
+                    FileItem last = fileItems.get(lastIndex);
+                    if (endPrefix.equals(last.key)) fileItems.remove(lastIndex);
+                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
@@ -198,21 +146,21 @@ public class UpLister implements ILister<FileItem> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             fileItems = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (SuitsException e) {
             throw e;
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -251,27 +199,20 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public FileItem currentLast() {
-        return fileItems.size() > 0 ? fileItems.get(fileItems.size() - 1) : null;
-    }
-
-    @Override
-    public String currentStartKey() {
-        return fileItems.size() > 0 ? fileItems.get(0).key : null;
-    }
-
-    @Override
     public String currentEndKey() {
-        if (hasNext()) return ListingUtils.decodeUpYunMarker(marker);
-        FileItem last = currentLast();
-        return last != null ? last.key : null;
+        if (hasNext()) return CloudAPIUtils.decodeUpYunMarker(marker);
+        if (fileItems.size() > 0) return fileItems.get(fileItems.size() - 1).key;
+        return null;
     }
 
     @Override
-    public void updateMarkerBy(FileItem object) {
-        if (object != null) {
-            marker = ListingUtils.getUpYunMarker(bucket, object);
+    public synchronized String truncate() {
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = marker;
+            marker = null;
         }
+        return truncateMarker;
     }
 
     @Override

@@ -1,14 +1,15 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.CloudAPIUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,14 +17,17 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     private int status;
     private BatchOperations batchOperations;
+    private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status) {
+    public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status)
+            throws IOException {
         super("status", accessKey, secretKey, bucket);
         this.status = status;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -32,8 +36,10 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.status = status;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
+        this.lines = new ArrayList<>();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -48,30 +54,43 @@ public class ChangeStatus extends Base<Map<String, String>> {
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
         changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
-        if (batchSize > 1) changeStatus.batchOperations = new BatchOperations();
+        changeStatus.batchOperations = new BatchOperations();
+        changeStatus.lines = new ArrayList<>();
         return changeStatus;
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
+        batchOperations.clearOps();
+        lines.clear();
+        String key;
+        for (Map<String, String> map : processList) {
+            key = map.get("key");
+            if (key != null) {
+                lines.add(map);
+                batchOperations.addChangeStatusOps(bucket, status, key);
+            } else {
+                fileSaveMapper.writeError("no key in " + map, false);
+            }
+        }
+        return lines;
     }
 
     @Override
-    synchronized protected String batchResult(List<Map<String, String>> lineList) throws QiniuException {
-        batchOperations.clearOps();
-        lineList.forEach(line -> batchOperations.addChangeStatusOps(bucket, status, line.get("key")));
+    protected String batchResult(List<Map<String, String>> lineList) throws IOException {
+        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
+        if (key == null) throw new IOException("no key in " + line);
         return key + "\t" + status + "\t" + HttpRespUtils.getResult(bucketManager.changeStatus(bucket, key, status));
     }
 
@@ -79,6 +98,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         batchOperations = null;
+        lines = null;
         configuration = null;
         bucketManager = null;
     }

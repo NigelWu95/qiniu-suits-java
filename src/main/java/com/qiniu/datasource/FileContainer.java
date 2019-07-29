@@ -9,14 +9,16 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.JsonUtils;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.UniOrderUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,18 +37,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected boolean saveTotal;
     protected String saveFormat;
     protected String saveSeparator;
-    protected Set<String> rmFields;
+    protected List<String> rmFields;
+    protected List<String> fields;
     private ILineProcess<T> processor; // 定义的资源处理器
-
-    private static volatile JsonObject linesJson = new JsonObject();
-
-    public synchronized static void recordLines(String name, String line) {
-        linesJson.addProperty(name, line);
-    }
-
-    public synchronized static void removeRecordLine(String name) {
-        linesJson.remove(name);
-    }
+    ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
+    ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> indexMap, int unitLen, int threads) {
@@ -58,13 +53,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
+        // default save parameters
         this.saveTotal = false; // 默认全记录不保存
+        this.savePath = "result";
+        this.saveFormat = "tab";
+        this.saveSeparator = "\t";
+        fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
     }
 
     // 不调用则各参数使用默认值
-    public void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields) {
-        this.savePath = savePath;
+    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields) {
         this.saveTotal = saveTotal;
+        this.savePath = savePath;
         this.saveFormat = format;
         this.saveSeparator = separator;
         this.rmFields = rmFields;
@@ -100,9 +100,19 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
+    private static volatile JsonObject linesJson = new JsonObject();
+
+    private synchronized static void recordLines(String name, String line) {
+        linesJson.addProperty(name, line);
+    }
+
+    private synchronized static void removeRecordLine(String name) {
+        linesJson.remove(name);
+    }
+
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
-        ITypeConvert<T, String> stringConverter = getNewStringConverter();
+        ITypeConvert<T, String> stringConverter = saveTotal ? getNewStringConverter() : null;
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
         List<String> writeList;
@@ -122,14 +132,13 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             if (line != null && !"".equals(line)) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
-                recordLines(reader.getName(), srcList.get(0));
                 convertedList = converter.convertToVList(srcList);
                 if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
-                if (saveTotal) {
+                if (stringConverter != null) {
                     writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (stringConverter.errorSize() > 0)
-                        saver.writeKeyFile("string-error", stringConverter.errorLines(), false);
+                        saver.writeKeyFile("failed", stringConverter.errorLines(), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -138,7 +147,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
                     // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
                     if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                    e.response.close();
                 }
+                recordLines(reader.getName(), line);
                 srcList.clear();
             }
         }
@@ -146,33 +157,24 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    private QiniuException exception = null;
-
-    protected void reading(IReader<E> reader, int order) {
+    void reading(IReader<E> reader, int order) {
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
         IResultOutput<W> saver = null;
         try {
-            if (processor != null) lineProcessor = processor.clone();
+            if (processor != null) {
+                lineProcessor = processor.clone();
+                processorMap.put(orderStr, lineProcessor);
+            }
             saver = getNewResultSaver(orderStr);
-            String record = "order " + orderStr + ": " + reader.getName();
+            saverMap.put(orderStr, saver);
             export(reader, saver, lineProcessor);
-            record += "\tsuccessfully done";
-            System.out.println(record);
             removeRecordLine(reader.getName());
-        } catch (QiniuException e) {
-            exception = e;
-            try {
-                System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + reader.readLine());
-            } catch (IOException ioE) {
-                ioE.printStackTrace();
-            }
-        } catch (Exception e) {
-            try {
-                System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + reader.readLine());
-            } catch (IOException ioE) {
-                ioE.printStackTrace();
-            }
+            saverMap.remove(orderStr);
+            System.out.println("order " + orderStr + ": " + reader.getName() + "\tsuccessfully done");
+        } catch (Throwable e) {
+            e.printStackTrace();
+            System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + linesJson.get(reader.getName()));
         } finally {
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
@@ -198,23 +200,33 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
                 try {
-                    if (exception != null) throw exception;
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
-                    Thread.sleep(1000);
+                    int i = 0;
+                    while (i < 1000) i++;
                 }
             }
             System.out.println(info + " finished");
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
+            ILineProcess<T> processor;
+            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
+                saverEntry.getValue().closeWriters();
+                processor = processorMap.get(saverEntry.getKey());
+                if (processor != null) processor.closeResource();
+            }
         } finally {
             if (linesJson.size() > 0) {
+                FileSaveMapper.ext = ".json";
                 FileSaveMapper.append = false;
-                FileSaveMapper saveMapper = new FileSaveMapper(savePath + FileUtils.pathSeparator + "..");
-                saveMapper.writeKeyFile(savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1) + "-"
-                        + "lines", JsonUtils.toJson(linesJson), true);
+                String path = new File(savePath).getCanonicalPath();
+                FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+                String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
+                saveMapper.writeKeyFile(fileName, linesJson.toString(), true);
                 saveMapper.closeWriters();
+                System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
+                        "reading remained lines.\n", fileName, FileSaveMapper.ext);
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -9,16 +10,15 @@ import com.qiniu.common.SuitsException;
 
 import java.util.List;
 
-public class S3Lister implements ILister<S3ObjectSummary> {
+public class AwsS3Lister implements ILister<S3ObjectSummary> {
 
     private AmazonS3 s3Client;
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
-    private boolean straight;
     private List<S3ObjectSummary> s3ObjectList;
 
-    public S3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
-                    int max) throws SuitsException {
+    public AwsS3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
+                       int max) throws SuitsException {
         this.s3Client = s3Client;
         this.listObjectsRequest = new ListObjectsV2Request();
         listObjectsRequest.setBucketName(bucket);
@@ -31,8 +31,8 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public void setPrefix(String prefix) {
-        listObjectsRequest.setPrefix(prefix);
+    public String getBucket() {
+        return listObjectsRequest.getBucketName();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public synchronized void setEndPrefix(String endPrefix) {
+    public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
         checkedListWithEnd();
     }
@@ -71,25 +71,20 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         return listObjectsRequest.getMaxKeys();
     }
 
-    @Override
-    public void setStraight(boolean straight) {
-        this.straight = straight;
-    }
-
-    @Override
-    public boolean canStraight() {
-        return straight || !hasNext() || (endPrefix != null && !"".equals(endPrefix));
-    }
-
     private void checkedListWithEnd() {
+        if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
-        if (endPrefix == null || "".equals(endPrefix) || endKey == null) return;
+        if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setContinuationToken(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.startPoint)) {
-                S3ObjectSummary last = currentLast();
-                if (last != null && endPrefix.equals(last.getKey()))
-                    s3ObjectList.remove(last);
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
+                s3ObjectList.remove(s3ObjectList.size() - 1);
+//                if (s3ObjectList.size() > 0) {
+//                    int lastIndex = s3ObjectList.size() - 1;
+//                    S3ObjectSummary last = s3ObjectList.get(lastIndex);
+//                    if (endPrefix.equals(last.getKey()))
+//                        s3ObjectList.remove(lastIndex);
+//                }
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setContinuationToken(null);
@@ -105,7 +100,7 @@ public class S3Lister implements ILister<S3ObjectSummary> {
         }
     }
 
-    private synchronized void doList() throws SuitsException {
+    private void doList() throws SuitsException {
         try {
             ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
             listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
@@ -113,16 +108,18 @@ public class S3Lister implements ILister<S3ObjectSummary> {
             s3ObjectList = result.getObjectSummaries();
             checkedListWithEnd();
         } catch (AmazonServiceException e) {
-            throw new SuitsException(e.getStatusCode(), e.getMessage());
+            throw new SuitsException(e, e.getStatusCode());
+        } catch (SdkClientException e) {
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
-            throw new SuitsException(400000, "lister maybe already closed, " + e.getMessage());
+            throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
-            throw new SuitsException(-1, "failed, " + e.getMessage());
+            throw new SuitsException(e, -1, "listing failed");
         }
     }
 
     @Override
-    public void listForward() throws SuitsException {
+    public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
         } else {
@@ -158,38 +155,19 @@ public class S3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public S3ObjectSummary currentLast() {
-        return s3ObjectList.size() > 0 ? s3ObjectList.get(s3ObjectList.size() - 1) : null;
-    }
-
-    @Override
-    public String currentStartKey() {
-        return s3ObjectList.size() > 0 ? s3ObjectList.get(0).getKey() : null;
-    }
-
-    @Override
     public String currentEndKey() {
-//        int retry = 10;
-//        while (s3ObjectSummaryList.size() <= 0 && hasNext()) {
-//            try {
-//                ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
-//                listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
-//                listObjectsRequest.setStartAfter(null);
-//                s3ObjectSummaryList = result.getObjectSummaries();
-//            } catch (Exception ignored) {}
-//            retry--;
-//            if (retry <= 0) break;
-//        }
-        S3ObjectSummary last = currentLast();
-        return last != null ? last.getKey() : null;
+        if (s3ObjectList.size() > 0) return s3ObjectList.get(s3ObjectList.size() - 1).getKey();
+        return null;
     }
 
     @Override
-    public void updateMarkerBy(S3ObjectSummary object) {
-        if (object != null) {
+    public synchronized String truncate() {
+        String truncateMarker = null;
+        if (hasNext()) {
+            truncateMarker = listObjectsRequest.getContinuationToken();
             listObjectsRequest.setContinuationToken(null);
-            listObjectsRequest.setStartAfter(object.getKey());
         }
+        return truncateMarker;
     }
 
     @Override

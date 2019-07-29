@@ -1,7 +1,5 @@
 package com.qiniu.process.qdora;
 
-import com.google.gson.JsonParseException;
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
@@ -70,32 +68,24 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
-    @Override
-    public boolean validCheck(Map<String, String> line) {
-        String url = line.get(urlIndex);
-        return line.get("key") != null || (url != null && !url.isEmpty());
-    }
-
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
-            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
+            String key = line.get("key");
+            if (key == null) throw new IOException("no key in " + line);
+            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
         String avinfo = mediaManager.getAvinfoBody(url);
         if (avinfo != null && !"".equals(avinfo)) {
             // 由于响应的 body 为多行需经过格式化处理为一行字符串
-            try {
-                return url + "\t" + JsonUtils.toJson(avinfo);
-            } catch (JsonParseException e) {
-                throw new QiniuException(e, e.getMessage());
-            }
+            return url + "\t" + JsonUtils.toJson(avinfo);
         } else {
-            throw new QiniuException(null, "empty_result");
+            throw new IOException(line + " only has empty_result");
         }
     }
 

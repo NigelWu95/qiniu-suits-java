@@ -48,7 +48,7 @@ public class CommonParams {
     private String rmKeyPrefix;
     private BaseFilter<Map<String, String>> baseFilter;
     private SeniorFilter<Map<String, String>> seniorFilter;
-    private HashMap<String, String> indexMap;
+    private Map<String, String> indexMap;
     private int unitLen;
     private int threads;
     private int batchSize;
@@ -58,11 +58,15 @@ public class CommonParams {
     private String saveTag;
     private String saveFormat;
     private String saveSeparator;
-    private Set<String> rmFields;
+    private List<String> rmFields;
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
 
-    public CommonParams() {}
+    public static Set<String> lineFormats = new HashSet<String>(){{
+        add("csv");
+        add("tab");
+        add("json");
+    }};
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -337,14 +341,14 @@ public class CommonParams {
                 } else {
                     if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
                         if ("qiniu".equals(source)) {
-                            markerAndEnd.put("marker", ListingUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", CloudAPIUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
                         } else if ("tencent".equals(source)) {
-                            markerAndEnd.put("marker", ListingUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", CloudAPIUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
                         } else if ("aliyun".equals(source)) {
-                            markerAndEnd.put("marker", ListingUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
+                            markerAndEnd.put("marker", CloudAPIUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
                         } else if ("upyun".equals(source)) {
                             String start = jsonCfg.get("start").getAsString();
-                            markerAndEnd.put("marker", ListingUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
+                            markerAndEnd.put("marker", CloudAPIUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
                         } else if ("aws".equals(source) || "s3".equals(source)) {
                             markerAndEnd.put("start", jsonCfg.get("start").getAsString());
                         }
@@ -506,29 +510,33 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        List<String> keys = Arrays.asList("key,hash,size,datetime,mime,type,status,md5,owner".split(","));
-        boolean useDefault = false;
+        List<String> keys = ConvertingUtils.defaultFileFields;
         String indexes = entryParam.getValue("indexes", "").trim();
-        if ("".equals(indexes)) {
-            useDefault = true;
-        } else if (indexes.startsWith("[") && indexes.endsWith("]")) {
+        if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
             String[] strings = ParamsUtils.escapeSplit(indexes, false);
+            if (strings.length == 10) {
+                keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
+                keys.add(4, "timestamp");
+            }
             for (int i = 0; i < strings.length; i++) {
                 if (strings[i].matches(".+:.+")) {
                     String[] keyIndex = ParamsUtils.escapeSplit(strings[i], ':');
                     if (keyIndex.length != 2) throw new IOException("incorrect key:index pattern: " + strings[i]);
-                    indexMap.put(keyIndex[1], keyIndex[0]);
+                    setIndex(keyIndex[1], keyIndex[0]);
                 } else {
-                    indexMap.put(strings[i], keys.get(i));
+                    setIndex(strings[i], keys.get(i));
                 }
             }
         } else if (indexes.startsWith("[") || indexes.endsWith("]")) {
             throw new IOException("please check your indexes, set it as \"[key1:index1,key2:index2,...]\".");
-        } else {
+        } else if (!"".equals(indexes)) {
             String[] indexList = ParamsUtils.escapeSplit(indexes);
-            if (indexList.length > 9) {
+            if (indexList.length > 10) {
                 throw new IOException("the file info's index length is too long.");
+            } else if (indexList.length > 9) {
+                keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
+                keys.add(4, "timestamp");
             } else {
                 for (int i = 0; i < indexList.length; i++) {
                     setIndex(indexList[i], keys.get(i));
@@ -548,51 +556,49 @@ public class CommonParams {
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
         boolean sourceFromList = DataSourceDef.cloudStorage.contains(source);
-        if (useDefault && (indexMap.size() == 0 || ProcessUtils.needBucketAndKey(process) ||
-                (baseFilter != null && baseFilter.checkKeyCon()) ||
-                (seniorFilter != null && seniorFilter.checkExtMime()))) { // 默认索引包含 key
-            if (DataSourceDef.fileList.contains(source) || "terminal".equals(source)) {
-                try {
-                    setIndex("json".equals(parse) ? "key" : "0", "key");
-                } catch (IOException e) {
-                    throw new IOException("you need to set indexes with key's index not default value, " +
-                            "because the default key's" + e.getMessage());
-                }
-            } else if (sourceFromList) {
-                indexMap.put("key", "key");
+        boolean useDefault = false;
+        boolean fieldIndex = "json".equals(parse) || "object".equals(parse);
+        if (indexMap.size() == 0) {
+            useDefault = true;
+            if (sourceFromList) {
+                for (String key : keys) setIndex(key, key);
+            } else if (fieldIndex) {
+                setIndex("key", "key");
+            } else {
+                setIndex("0", "key");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
-                if (useDefault && sourceFromList) indexMap.put("key", "key");
+                if (useDefault) setIndex(fieldIndex ? "key" : "0", "key");
                 else throw new IOException("f-[x] filter for file key must get the key's index in indexes settings.");
             }
-            if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
-                if (useDefault && sourceFromList) indexMap.put("mime", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
-            }
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
-                if (useDefault && sourceFromList) indexMap.put("datetime", "datetime");
+                if (useDefault) setIndex(fieldIndex ? "datetime" : "3", "datetime");
                 else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
             }
+            if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
+                if (useDefault) setIndex(fieldIndex ? "mime" : "4", "mime");
+                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
+            }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
-                if (useDefault && sourceFromList) indexMap.put("type", "type");
+                if (useDefault) setIndex(fieldIndex ? "type" : "5", "type");
                 else throw new IOException("f-type filter must get the type's index in indexes settings.");
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
-                if (useDefault && sourceFromList) indexMap.put("status", "status");
+                if (useDefault) setIndex(fieldIndex ? "status" : "6", "status");
                 else throw new IOException("f-status filter must get the status's index in indexes settings.");
             }
         }
         if (seniorFilter != null) {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
-                    if (useDefault && sourceFromList) indexMap.put("key", "key");
+                    if (useDefault) setIndex(fieldIndex ? "key" : "0", "key");
                     else throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                 }
                 if (!indexMap.containsValue("mime")) {
-                    if (useDefault && sourceFromList) indexMap.put("mime", "mime");
+                    if (useDefault) setIndex(fieldIndex ? "mime" : "4", "mime");
                     else throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
                 }
             }
@@ -654,10 +660,11 @@ public class CommonParams {
     }
 
     private void setRmFields(String param) {
-        String[] fields = param.split(",");
-        if (fields.length == 0) rmFields = null;
-        else {
-            rmFields = new HashSet<>();
+        if (param == null || "".equals(param)) {
+            rmFields = null;
+        } else {
+            String[] fields = param.split(",");
+            rmFields = new ArrayList<>();
             Collections.addAll(rmFields, fields);
         }
     }
@@ -810,7 +817,7 @@ public class CommonParams {
         this.saveFormat = saveFormat;
     }
 
-    public void setRmFields(Set<String> rmFields) {
+    public void setRmFields(List<String> rmFields) {
         this.rmFields = rmFields;
     }
 
@@ -938,7 +945,7 @@ public class CommonParams {
         return seniorFilter;
     }
 
-    public HashMap<String, String> getIndexMap() {
+    public Map<String, String> getIndexMap() {
         return indexMap;
     }
 
@@ -974,7 +981,7 @@ public class CommonParams {
         return saveSeparator;
     }
 
-    public Set<String> getRmFields() {
+    public List<String> getRmFields() {
         return rmFields;
     }
 

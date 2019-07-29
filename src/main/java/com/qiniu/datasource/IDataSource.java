@@ -1,18 +1,15 @@
 package com.qiniu.datasource;
 
-import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 
 public interface IDataSource<R, S, T> {
 
     String getSourceName();
 
-    void setSaveOptions(String savePath, boolean saveTotal, String format, String separator, Set<String> rmFields);
-
-    void updateSettings(CommonParams commonParams);
+    void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields) throws IOException;
 
     void export(R source, S saver, ILineProcess<T> processor) throws IOException;
 

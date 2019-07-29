@@ -34,6 +34,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket);
         set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
@@ -42,6 +43,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
@@ -111,38 +113,29 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
         return hasCustomArgs ?
                 bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
-                        callbackHost, String.valueOf(fileType)) :
+                        callbackHost, fileType) :
                 bucketManager.asynFetch(url, bucket, key);
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(urlIndex);
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        String url = line.get(urlIndex);
-        return line.get("key") != null || (url != null && !url.isEmpty());
-    }
-
-    @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
-        try {
-            if (url == null || "".equals(url)) {
-                url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
-                line.put(urlIndex, url);
-                key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
-            } else {
-                if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
-                else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
-            }
-            line.put("key", key);
-        } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+        if (url == null || "".equals(url)) {
+            if (key == null) throw new IOException("no key in " + line);
+            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
+            line.put(urlIndex, url);
+            key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
+        } else {
+            if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+            else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
         }
+        line.put("key", key);
         Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
         return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
     }

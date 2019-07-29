@@ -1,12 +1,11 @@
 package com.qiniu.util;
 
-import com.aliyun.oss.ClientConfiguration;
-import com.aliyun.oss.ClientException;
-import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.OSSException;
+import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.CredentialsProvider;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -19,26 +18,28 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
+import com.qcloud.cos.exception.CosClientException;
+import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.Bucket;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
+import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
-import com.qiniu.datasource.ILister;
-import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
+import com.qiniu.storage.BucketManager;
+import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Base64.*;
 
-public class ListingUtils {
+public class CloudAPIUtils {
 
     public static Encoder encoder = java.util.Base64.getEncoder();
     public static Decoder decoder = java.util.Base64.getDecoder();
@@ -171,8 +172,13 @@ public class ListingUtils {
     public static String getUpYunMarker(String username, String password, String bucket, String key) throws SuitsException {
         if (key == null || "".equals(key)) return null;
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
-        FileItem fileItem = upYunClient.getFileInfo(bucket, key);
-        return getUpYunMarker(bucket, fileItem);
+        try {
+            return getUpYunMarker(bucket, upYunClient.getFileInfo(bucket, key));
+        } catch (Exception e) {
+            throw new SuitsException(e, 848);
+        } finally {
+            upYunClient = null;
+        }
     }
 
     public static String decodeQiniuMarker(String marker) {
@@ -193,6 +199,35 @@ public class ListingUtils {
         String keyString = new String(decoder.decode(marker));
         int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
         return keyString.substring(index).replaceAll("(/~|/@~|/@#)", "/");
+    }
+
+    public static void checkQiniu(Auth auth) throws QiniuException {
+        BucketManager bucketManager = new BucketManager(auth, new Configuration());
+        bucketManager.buckets();
+        bucketManager = null;
+    }
+
+    public static void checkQiniu(BucketManager bucketManager, String bucket) throws QiniuException {
+        bucketManager.listFilesV2(bucket, null, null, 1, null);
+    }
+
+    public static void checkQiniu(String accessKey, String secretKey, Configuration configuration, String bucket)
+            throws QiniuException {
+        BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+        bucketManager.listFilesV2(bucket, null, null, 1, null);
+        bucketManager = null;
+    }
+
+    public static void checkAliyun(OSSClient ossClient) {
+        ossClient.listBuckets();
+    }
+
+    public static void checkTencent(COSClient cosClient) {
+        cosClient.listBuckets();
+    }
+
+    public static void checkAws(AmazonS3 s3Client) {
+        s3Client.listBuckets();
     }
 
     public static Zone getQiniuRegion(String regionName) {
@@ -216,16 +251,23 @@ public class ListingUtils {
         }
     }
 
-    public static String getAliOssRegion(String accessKeyId, String accessKeySecret, String bucket) throws IOException {
+    public static String getAliOssRegion(String accessKeyId, String accessKeySecret, String bucket) throws SuitsException {
         CredentialsProvider credentialsProvider = new DefaultCredentialProvider(accessKeyId, accessKeySecret);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         OSSClient ossClient = new OSSClient("oss-cn-shanghai.aliyuncs.com", credentialsProvider, clientConfiguration);
         try {
-            String region = ossClient.getBucketLocation(bucket);
+            return ossClient.getBucketLocation(bucket);
+        } catch (ClientException e) {
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
+        } catch (OSSException e) {
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+        } catch (ServiceException e) {
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
+        } finally {
             ossClient.shutdown();
-            return region;
-        } catch (OSSException | ClientException e) {
-            throw new IOException(e.getMessage(), e);
+            ossClient = null;
+            clientConfiguration = null;
+            credentialsProvider = null;
         }
 //        OSSClient ossClient = new OSSClient("oss.aliyuncs.com", credentialsProvider, clientConfiguration);
 //        // 阿里 oss sdk listBuckets 能迭代列举出所有空间
@@ -233,37 +275,56 @@ public class ListingUtils {
 //        for (com.aliyun.oss.model.Bucket eachBucket : list) {
 //            if (eachBucket.getName().equals(bucket)) return eachBucket.getLocation();
 //        }
-//        throw new IOException("can not find this bucket.");
+//        throw new SuitsException(-1, "can not find this bucket.");
     }
 
-    public static String getTenCosRegion(String secretId, String secretKey, String bucket) throws IOException {
+    public static String getTenCosRegion(String secretId, String secretKey, String bucket) throws SuitsException {
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig();
         COSClient cosClient = new COSClient(cred, clientConfig);
         // 腾讯 cos sdk listBuckets 不进行分页列举，账号空间个数上限为 200，可一次性列举完
-        List<Bucket> list = cosClient.listBuckets();
-        String region = null;
-        for (Bucket eachBucket : list) {
-            if (eachBucket.getName().equals(bucket)) {
-                region = eachBucket.getLocation();
-                break;
+        try {
+            List<Bucket> list = cosClient.listBuckets();
+            String region = null;
+            for (Bucket eachBucket : list) {
+                if (eachBucket.getName().equals(bucket)) {
+                    region = eachBucket.getLocation();
+                    break;
+                }
             }
+            if (region != null) return region;
+        } catch (CosServiceException e) {
+            throw new SuitsException(e, e.getStatusCode());
+        } catch (CosClientException e) {
+            throw new SuitsException(e, -1);
+        } finally {
+            cosClient.shutdown();
+            cosClient = null;
+            clientConfig = null;
+            cred = null;
         }
-        cosClient.shutdown();
-        if (region != null) return region;
-        throw new IOException("can not find this bucket.");
+        throw new SuitsException(400, "can not find this bucket.");
     }
 
-    public static String getS3Region(String s3AccessKeyId, String s3SecretKey, String bucket) {
+    public static String getS3Region(String s3AccessKeyId, String s3SecretKey, String bucket) throws SuitsException {
         AWSCredentials credentials = new BasicAWSCredentials(s3AccessKeyId, s3SecretKey);
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(credentials);
         AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withRegion(Regions.DEFAULT_REGION)
                 .build();
-        String region = s3Client.getBucketLocation(bucket);
-        s3Client.shutdown();
-        return region;
+        try {
+            return s3Client.getBucketLocation(bucket);
+        } catch (AmazonServiceException e) {
+            throw new SuitsException(e, e.getStatusCode());
+        } catch (SdkClientException e) {
+            throw new SuitsException(e, -1);
+        } finally {
+            s3Client.shutdown();
+            s3Client = null;
+            credentialsProvider = null;
+            credentials = null;
+        }
     }
 
     private static final String lineSeparator = System.getProperty("line.separator");

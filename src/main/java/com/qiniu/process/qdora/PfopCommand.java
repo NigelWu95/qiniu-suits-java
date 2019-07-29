@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import com.qiniu.common.QiniuException;
 import com.qiniu.config.JsonFile;
 import com.qiniu.model.qdora.Avinfo;
 import com.qiniu.model.qdora.VideoStream;
@@ -64,7 +63,7 @@ public class PfopCommand extends Base<Map<String, String>> {
                 this.pfopConfigs.add(jsonObject);
             }
         } else {
-            throw new IOException("please set the pfop-config.");
+            throw new IOException("please set valid pfop-configs.");
         }
     }
 
@@ -92,7 +91,7 @@ public class PfopCommand extends Base<Map<String, String>> {
                 this.pfopConfigs.add(jsonObject);
             }
         } else {
-            throw new IOException("please set the pfop-config or fops-index.");
+            throw new IOException("please set valid pfop-configs.");
         }
     }
 
@@ -104,17 +103,12 @@ public class PfopCommand extends Base<Map<String, String>> {
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get("key") + "\t" + line.get(avinfoIndex);
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        return line.get("key") != null;
-    }
-
-    @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String key;
         String info;
         Avinfo avinfo;
@@ -125,19 +119,16 @@ public class PfopCommand extends Base<Map<String, String>> {
         for (JsonObject pfopConfig : pfopConfigs) {
             scale = JsonUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>(){});
             key = line.get("key");
+            if (key == null) throw new IOException("no key in " + line);
             info = line.get(avinfoIndex);
-            try {
-                if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
-                avinfo = mediaManager.getAvinfoByJson(info);
-                if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
-                if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
-                videoStream = avinfo.getVideoStream();
-                if (videoStream == null) throw new Exception("videoStream is null.");
-                if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
-                    resultList.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
-                }
-            } catch (Exception e) {
-                throw new QiniuException(e, e.getMessage());
+            if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
+            avinfo = mediaManager.getAvinfoByJson(info);
+            if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
+            if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
+            videoStream = avinfo.getVideoStream();
+            if (videoStream == null) throw new IOException("videoStream is null.");
+            if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
+                resultList.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
             }
         }
         return String.join("\n", resultList);

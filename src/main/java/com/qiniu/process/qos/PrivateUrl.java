@@ -1,6 +1,6 @@
 package com.qiniu.process.qos;
 
-import com.qiniu.common.QiniuException;
+import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.*;
 
@@ -14,18 +14,21 @@ public class PrivateUrl extends Base<Map<String, String>> {
     private String protocol;
     private String urlIndex;
     private long expires;
-
-    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
-                      String savePath, int saveIndex) throws IOException {
-        super("privateurl", accessKey, secretKey, null, savePath, saveIndex);
-        this.auth = Auth.create(accessKey, secretKey);
-        set(domain, protocol, urlIndex, expires);
-    }
+    private ILineProcess<Map<String, String>> nextProcessor;
 
     public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires)
             throws IOException {
         super("privateurl", accessKey, secretKey, null);
         this.auth = Auth.create(accessKey, secretKey);
+        CloudAPIUtils.checkQiniu(auth);
+        set(domain, protocol, urlIndex, expires);
+    }
+
+    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, long expires,
+                      String savePath, int saveIndex) throws IOException {
+        super("privateurl", accessKey, secretKey, null, savePath, saveIndex);
+        this.auth = Auth.create(accessKey, secretKey);
+        CloudAPIUtils.checkQiniu(auth);
         set(domain, protocol, urlIndex, expires);
     }
 
@@ -69,32 +72,30 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl privateUrl = (PrivateUrl)super.clone();
         privateUrl.auth = Auth.create(authKey1, authKey2);
+        if (nextProcessor != null) privateUrl.nextProcessor = nextProcessor.clone();
         return privateUrl;
     }
 
     @Override
-    public String resultInfo(Map<String, String> line) {
+    protected String resultInfo(Map<String, String> line) {
         return line.get(urlIndex);
     }
 
     @Override
-    public boolean validCheck(Map<String, String> line) {
-        String url = line.get(urlIndex);
-        return line.get("key") != null || (url != null && !url.isEmpty());
-    }
-
-    @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
-            url = protocol + "://" + domain + "/" + line.get("key").replaceAll("\\?", "%3f");
+            String key = line.get("key");
+            if (key == null) throw new IOException("no key in " + line);
+            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
-        try {
-            return auth.privateDownloadUrl(url, expires);
-        } catch (Exception e) {
-            throw new QiniuException(e, e.getMessage());
+        url = auth.privateDownloadUrl(url, expires);
+        if (nextProcessor != null) {
+            line.put("url", url);
+            return nextProcessor.processLine(line);
         }
+        return url;
     }
 
     @Override
