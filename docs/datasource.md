@@ -4,20 +4,19 @@
 从支持的数据源中读入资源信息列表，部分数据源需要指定行解析方式或所需格式分隔符，读取指定位置的字段作为输入值进行下一步处理。**目前支持的数据源类型分为
 几大类型：云存储列举(list)、文件内容读取(file)**。  
 
-## 配置文件选项
-通过 **source=** 或者 **path=** 来指定具体的数据源地址，例如:  
-`source=qiniu` 表示从七牛存储空间列举出资源列表  
-`source=local` 表示从本地文件按行读取资源列表  
-如果使用 `source` 参数则无需再进行数据源的自动判断且需要显式指定 `bucket` 参数  
-**在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定则根据 path 参数来自动判断：  
+## 配置文件
+数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
-`path=../<file-path>` 表示从本地文件中读取资源列表  
-当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**，配置文件示例可参考 [配置模板](../resources/application.config)  
+`path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表  
+`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表  
+`path=<filepath>` 表示从本地目录（或文件）中读取资源列表  
+未设置数据源时则默认从七牛空间进行列举**，配置文件示例可参考 [配置模板](../resources/application.config)  
 
 ### 1 公共参数
 ```
-source=qiniu/tencent/aliyun/local
+source=qiniu/tencent/aliyun/local/...
 path=
 indexes=key,etag,fsize
 unit-len=10000
@@ -25,7 +24,7 @@ threads=30
 ```  
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
-|source| 字符串 qiniu/tencent/local | 选择从[云存储空间列举]还是从[本地路径文件中读取]资源列表|  
+|source| 字符串 qiniu/tencent/local/... | 选择从[云存储空间列举]还是从[本地路径文件中读取]资源列表|  
 |path| 输入源路径字符串| 资源列表路径，本地数据源时填写本地文件或者目录路径，云存储数据源时可填写"qiniu://\<bucket\>"、"tencent://\<bucket\>" 等|  
 |indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标|  
 |unit-len| 整型数字| 表示一次读取的文件个数（读取或列举长度，不同数据源有不同默认值），对应与读取文件时每次处理的行数或者列举请求时设置的 limit 参数|  
@@ -102,7 +101,7 @@ prefix-right=
 |tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
 |aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
 |upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
-|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS S3 Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
 
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  

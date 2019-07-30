@@ -3,7 +3,7 @@
 ## 简介
 对空间中的音视频资源查询 avinfo 元信息。参考：[七牛音视频元信息查询](https://developer.qiniu.com/dora/manual/1247/audio-and-video-metadata-information-avinfo)  
 
-## 配置文件选项
+## 配置文件
 **操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 配置参数

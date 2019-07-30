@@ -3,7 +3,7 @@
 ## 简介
 对空间中的资源进行镜像源更新。参考：[七牛空间资源镜像更新](https://developer.qiniu.com/kodo/api/1293/prefetch)
 
-## 配置文件选项
+## 配置文件
 **操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 配置参数

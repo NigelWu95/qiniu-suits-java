@@ -3,7 +3,7 @@
 ## 简介
 对文件列表进行异步抓取保存到目标空间。参考：[七牛异步第三方资源抓取](https://developer.qiniu.com/kodo/api/4097/asynch-fetch)  
 
-## 配置文件选项
+## 配置文件
 **操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 功能配置参数

@@ -7,7 +7,7 @@
 - [阿里](#七牛配置参数)参考：[私有空间资源签名](https://help.aliyun.com/document_detail/31857.html)  
 - [AWS](#七牛配置参数)参考：[私有空间资源签名](https://docs.aws.amazon.com/zh_cn/general/latest/gr/signing_aws_api_requests.html#rest-and-query-requests)  
 
-## 配置文件选项
+## 配置文件
 **操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 七牛配置参数
