@@ -102,8 +102,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
             checkedListWithEnd();
         } catch (ClientException e) {
             throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
-        } catch (OSSException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (ServiceException e) {
             throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {

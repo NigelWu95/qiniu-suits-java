@@ -395,10 +395,10 @@ public class QSuitsEntry {
             case "mirror": processor = getMirrorFile(single); break;
             case "exportts": processor = getExportTs(indexMap, single); break;
             case "tenprivate": processor = getTencentPrivateUrl(single); break;
-            case "s3private": processor = getAwsS3PrivateUrl(single); break;
+            case "s3private": case "awsprivate": processor = getAwsS3PrivateUrl(single); break;
             case "aliprivate": processor = getAliyunPrivateUrl(single); break;
             case "filter": case "": break;
-            default: throw new IOException("unsupported process.");
+            default: throw new IOException("unsupported process: " + process);
         }
         if (processor != null) {
             if (ProcessUtils.canBatch(processor.getProcessName())) processor.setBatchSize(commonParams.getBatchSize());
@@ -581,7 +581,8 @@ public class QSuitsEntry {
         String secretId = entryParam.getValue("ten-id", commonParams.getTencentSecretId());
         String secretKey = entryParam.getValue("ten-secret", commonParams.getTencentSecretKey());
         String tenBucket = entryParam.getValue("ten-bucket", bucket);
-        String region = entryParam.getValue("ten-region", CloudAPIUtils.getTenCosRegion(secretId, secretKey, tenBucket));
+        String region = entryParam.getValue("ten-region", regionName);
+        if (region == null || "".equals(region)) region = CloudAPIUtils.getTenCosRegion(secretId, secretKey, tenBucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, region, Long.valueOf(expires)) :
@@ -592,7 +593,8 @@ public class QSuitsEntry {
         String accessId = entryParam.getValue("ali-id", commonParams.getAliyunAccessId());
         String accessSecret = entryParam.getValue("ali-secret", commonParams.getAliyunAccessSecret());
         String aliBucket = entryParam.getValue("ali-bucket", bucket);
-        String region = entryParam.getValue("ali-region", CloudAPIUtils.getAliOssRegion(accessId, accessSecret, aliBucket));
+        String region = entryParam.getValue("ali-region", regionName);
+        if (region == null || "".equals(region)) region = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
         String endPoint;
         if (region.matches("https?://.+")) {
             endPoint = region;
@@ -610,7 +612,8 @@ public class QSuitsEntry {
         String accessId = entryParam.getValue("s3-id", commonParams.getS3AccessId());
         String secretKey = entryParam.getValue("s3-secret", commonParams.getS3SecretKey());
         String s3Bucket = entryParam.getValue("s3-bucket", bucket);
-        String region = entryParam.getValue("s3-region", CloudAPIUtils.getS3Region(accessId, secretKey, s3Bucket));
+        String region = entryParam.getValue("s3-region", regionName);
+        if (region == null || "".equals(region)) region = CloudAPIUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, bucket, region, Long.valueOf(expires)) :

@@ -43,9 +43,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         CloudAPIUtils.checkAws(s3Client);
     }
 
-    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
+    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String region, long expires,
                       String savePath) throws IOException {
-        this(accessKeyId, accessKeySecret, bucket, endpoint, expires, savePath, 0);
+        this(accessKeyId, accessKeySecret, bucket, region, expires, savePath, 0);
     }
 
     public void updateEndpoint(String region) {

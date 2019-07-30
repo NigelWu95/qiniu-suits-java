@@ -68,8 +68,9 @@ public final class ProcessUtils {
         add("asyncfetch");
         add("privateurl");
     }};
-    public static Set<String> supportListSourceProcesses = new HashSet<String>(){{
+    public static Set<String> supportStorageSource = new HashSet<String>(){{
         addAll(needQiniuAuthProcesses);
+        addAll(needBucketProcesses);
         add("qhash");
         add("avinfo");
         add("exportts");
@@ -135,8 +136,8 @@ public final class ProcessUtils {
         return canBatchProcesses.contains(process);
     }
 
-    public static boolean supportListSource(String process) {
-        return supportListSourceProcesses.contains(process);
+    public static boolean supportStorageSource(String process) {
+        return supportStorageSource.contains(process);
     }
 
     public static boolean isDangerous(String process) {

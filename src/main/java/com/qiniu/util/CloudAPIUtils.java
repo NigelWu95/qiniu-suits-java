@@ -288,11 +288,9 @@ public final class CloudAPIUtils {
         try {
             return ossClient.getBucketLocation(bucket);
         } catch (ClientException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
-        } catch (OSSException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } finally {
             ossClient.shutdown();
             ossClient = null;
@@ -324,9 +322,9 @@ public final class CloudAPIUtils {
             }
             if (region != null) return region;
         } catch (CosServiceException e) {
-            throw new SuitsException(e, e.getStatusCode());
+            throw new SuitsException(e, e.getStatusCode(), "get tencent region failed");
         } catch (CosClientException e) {
-            throw new SuitsException(e, -1);
+            throw new SuitsException(e, -1, "get tencent region failed");
         } finally {
             cosClient.shutdown();
             cosClient = null;
@@ -346,9 +344,9 @@ public final class CloudAPIUtils {
         try {
             return s3Client.getBucketLocation(bucket);
         } catch (AmazonServiceException e) {
-            throw new SuitsException(e, e.getStatusCode());
+            throw new SuitsException(e, e.getStatusCode(), "get s3 region failed");
         } catch (SdkClientException e) {
-            throw new SuitsException(e, -1);
+            throw new SuitsException(e, -1, "get s3 region failed");
         } finally {
             s3Client.shutdown();
             s3Client = null;

@@ -278,12 +278,12 @@ public class CommonParams {
         } else if ("aliyun".equals(source)) {
             aliyunAccessId = entryParam.getValue("ali-id").trim();
             aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
-        } else if ("s3".equals(source)) {
-            s3AccessId = entryParam.getValue("s3-id").trim();
-            s3SecretKey = entryParam.getValue("s3-secret").trim();
         } else if ("upyun".equals(source)) {
             upyunUsername = entryParam.getValue("up-name").trim();
             upyunPassword = entryParam.getValue("up-pass").trim();
+        } else if ("s3".equals(source) || "aws".equals(source)) {
+            s3AccessId = entryParam.getValue("s3-id").trim();
+            s3SecretKey = entryParam.getValue("s3-secret").trim();
         } else {
             qiniuAccessKey = entryParam.getValue("ak", "").trim();
             qiniuSecretKey = entryParam.getValue("sk", "").trim();
@@ -292,7 +292,7 @@ public class CommonParams {
 
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
-        if (!process.isEmpty() && CloudAPIUtils.isStorageSource(source) && !ProcessUtils.supportListSource(process)) {
+        if (!process.isEmpty() && CloudAPIUtils.isStorageSource(source) && !ProcessUtils.supportStorageSource(process)) {
             throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
         if (ProcessUtils.needQiniuAuth(process)) {
@@ -319,7 +319,7 @@ public class CommonParams {
         else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
         else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
         else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
-        else if ("s3".equals(source)) {
+        else if ("s3".equals(source) || "aws".equals(source)) {
             if (path.startsWith("s3://")) bucket = path.substring(5);
             else if (path.startsWith("aws://")) bucket = path.substring(6);
         }
@@ -333,6 +333,7 @@ public class CommonParams {
 
     private void setPrivateType() throws IOException {
         privateType = entryParam.getValue("private", "").trim();
+        if ("".equals(privateType)) return;
         boolean isStorageSource = CloudAPIUtils.isStorageSource(source);
         switch (privateType) {
             case "qiniu":
@@ -351,7 +352,8 @@ public class CommonParams {
                 }
                 break;
             case "s3":
-                if (!"s3".equals(source) && isStorageSource) {
+            case "aws":
+                if (!("s3".equals(source) || "aws".equals(source)) && isStorageSource) {
                     throw new IOException("the privateType: " + privateType + " can not match source: " + source);
                 }
                 break;
@@ -390,7 +392,7 @@ public class CommonParams {
                         } else if ("upyun".equals(source)) {
                             String start = jsonCfg.get("start").getAsString();
                             markerAndEnd.put("marker", CloudAPIUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
-                        } else if ("s3".equals(source)) {
+                        } else if ("s3".equals(source) || "aws".equals(source)) {
                             markerAndEnd.put("start", jsonCfg.get("start").getAsString());
                         }
                     }
