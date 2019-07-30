@@ -63,7 +63,7 @@ key,size:key,datetime。因此 `indexes` 可以设置多个键值对，每个键
 （2）当数据源为 [list](#3-list-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 `key` 的下标，如
 果存在 process 操作则自动保留 `key` 字段或者根据过滤条件的字段进行添加，也可按照[indexes 规范](##-关于-indexes-索引)自行设置。  
 
-### 2 file 文件内容读取
+### 2 file 文本文件行读取
 ```
 parse=tab/json
 separator=\t
@@ -79,7 +79,7 @@ rm-keyPrefix=
 |add-keyPrefix| 字符串|将解析出的 key 字段加上指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 少了前缀的情况，补上前缀才能获取到资源|  
 |rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 `/` 前缀|  
 
-### 3 list 云存储列举  
+### 3 storage 云存储列举  
 ```
 <密钥配置>
 region=

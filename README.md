@@ -88,7 +88,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为两种类型：云存储列举(list)、文件内容读取(file)，可以通过 **path= 来指定数据源地址：  
+数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表  
@@ -97,7 +97,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `path=<filepath>` 表示从本地目录（或文件）中读取资源列表  
 未设置数据源时则默认从七牛空间进行列举**，配置文件示例可参考 [配置模板](resources/application.config)  
 
-#### list 云存储列举  
+#### storage 云存储列举  
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 30，1 亿以内文件可以不增加线程，通常云存储空间列举的必须参数包括密钥、空间名(通过
 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)：  
 
@@ -108,7 +108,7 @@ path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设
 |aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
 |upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
 |aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
-#### file 文件内容读取  
+#### file 文本文件行读取  
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
 `separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
