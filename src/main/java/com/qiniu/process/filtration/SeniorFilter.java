@@ -55,6 +55,7 @@ public abstract class SeniorFilter<T> {
         List<T> filteredList = new ArrayList<>();
         for (T line : lineList) {
             try {
+                if (line == null) continue;
                 key = valueFrom(line, "key");
                 if (key.contains(".")) {
                     String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");

@@ -70,6 +70,7 @@ public abstract class BaseFilter<T> {
 
     public boolean filterKey(T item) {
         try {
+            if (item == null) return false;
             String key = valueFrom(item, "key");
             boolean result = false;
             if (checkList(keyPrefix)) {
@@ -103,42 +104,46 @@ public abstract class BaseFilter<T> {
             if (checkList(antiKeyRegex)) result = antiKeyRegex.stream().noneMatch(key::matches);
             return result;
         } catch (Exception e) {
-            return false;
+            return true;
         }
     }
 
     public boolean filterMimeType(T item) {
         try {
+            if (item == null) return false;
             String mType = valueFrom(item, "mime");
             return (checkList(mimeType) || mimeType.stream().anyMatch(mType::contains))
                     && (checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains));
         } catch (Exception e) {
-            return false;
+            return true;
         }
     }
 
     public boolean filterDatetime(T item) {
         try {
+            if (item == null) return false;
             LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "datetime"));
             return localDateTime.compareTo(datetimeMax) <= 0 && localDateTime.compareTo(datetimeMin) >= 0;
         } catch (Exception e) {
-            return false;
+            return true;
         }
     }
 
     public boolean filterType(T item) {
         try {
+            if (item == null) return false;
             return valueFrom(item, "type").equals(type);
         } catch (NullPointerException e) {
-            return false;
+            return true;
         }
     }
 
     public boolean filterStatus(T item) {
         try {
+            if (item == null) return false;
             return valueFrom(item, "status").equals(status);
         } catch (NullPointerException e) {
-            return false;
+            return true;
         }
     }
 
