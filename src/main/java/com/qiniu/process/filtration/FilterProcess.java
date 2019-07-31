@@ -104,6 +104,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
         if (nextProcessor != null) mapFilter.nextProcessor = nextProcessor.clone();
+        if (fileSaveMapper == null) return mapFilter;
         try {
             mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
             mapFilter.typeConverter = newTypeConverter();
@@ -157,7 +158,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         saveFormat = null;
         saveSeparator = null;
         rmFields = null;
-        fileSaveMapper.closeWriters();
+        if (fileSaveMapper != null) fileSaveMapper.closeWriters();
+        fileSaveMapper = null;
         typeConverter = null;
     }
 }
