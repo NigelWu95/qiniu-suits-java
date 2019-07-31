@@ -198,9 +198,9 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
 进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。  
 **默认情况：**  
-（1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。  
-（3）保存结果的路径 **（save-path）默认使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
+（1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
+（2）云存储数据源时默认设置 save-total=true。  
+（3）保存结果的路径 **默认（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  

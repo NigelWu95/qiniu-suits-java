@@ -372,7 +372,7 @@ public class QSuitsEntry {
                     processor = getTencentPrivateUrl(single);
                 } else if ("aliyun".equals(privateType)) {
                     processor = getAliyunPrivateUrl(single);
-                } else if ("s3".equals(privateType)) {
+                } else if ("s3".equals(privateType) || "aws".equals(privateType)) {
                     processor = getAwsS3PrivateUrl(single);
                 } else {
                     throw new IOException("unsupported private process: " + privateType + " for asyncfetch's url.");

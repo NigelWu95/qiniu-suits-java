@@ -251,6 +251,7 @@ public class CommonParams {
         // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
+        else if ("aws".equals(source)) source = "s3";
         if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3)")) {
             throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,s3]");
         }
@@ -286,7 +287,7 @@ public class CommonParams {
         } else if ("upyun".equals(source)) {
             upyunUsername = entryParam.getValue("up-name").trim();
             upyunPassword = entryParam.getValue("up-pass").trim();
-        } else if ("s3".equals(source) || "aws".equals(source)) {
+        } else if ("s3".equals(source)) {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
         } else {
@@ -325,11 +326,11 @@ public class CommonParams {
         else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
         else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
         else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
-        else if ("s3".equals(source) || "aws".equals(source)) {
+        else if ("s3".equals(source)) {
             if (path.startsWith("s3://")) bucket = path.substring(5);
             else if (path.startsWith("aws://")) bucket = path.substring(6);
         }
-        if (bucket == null) bucket = entryParam.getValue("bucket").trim();
+        if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
         else bucket = entryParam.getValue("bucket", bucket).trim();
     }
 
@@ -352,9 +353,9 @@ public class CommonParams {
                     throw new IOException("the privateType: " + privateType + " can not match source: " + source);
                 }
                 break;
-            case "s3":
             case "aws":
-                if (!("s3".equals(source) || "aws".equals(source)) && isStorageSource) {
+            case "s3":
+                if (!"s3".equals(source) && isStorageSource) {
                     throw new IOException("the privateType: " + privateType + " can not match source: " + source);
                 }
                 break;
@@ -701,13 +702,16 @@ public class CommonParams {
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
-            if (source.matches("(qiniu|tencent|aliyun|upyun|s3)")) {
-                if (process == null || "".equals(process)) {
-                    saveTotal = "true";
-                } else {
-                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
-                    else saveTotal = "false";
-                }
+            if (isStorageSource) {
+                saveTotal = "true";
+
+//（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。
+//                if (process == null || "".equals(process)) {
+//                    saveTotal = "true";
+//                } else {
+//                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
+//                    else saveTotal = "false";
+//                }
             } else {
                 if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
                 else saveTotal = "true";

@@ -7,25 +7,25 @@
 
 ### 配置参数
 ```
+save-total=
 save-path=
 save-format=
 save-separator=
-save-total=
 rm-fields=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
+|save-total| true/false| 用于选择是否直接保存数据源完整输出结果，针对存在下一步处理过程时是否需要保存原始数据，如列举空间文件并修改文件类型时是否保存完整的列举结果，或者存在过滤条件时是否保存过滤之前的结果|  
 |save-path| local file 相对路径字符串| 表示保存结果的文件路径|  
 |save-format| json/tab/csv| 结果保存格式，将每一条结果记录格式化为对应格式，默认为 tab 格式（减小输出结果的体积）|  
 |save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
-|save-total| true/false| 用于选择是否直接保存数据源完整输出结果，针对存在下一步处理过程时是否需要保存原始数据，如列举空间文件并修改文件类型时是否保存完整的列举结果，或者存在过滤条件时是否保存过滤之前的结果|  
 |rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
 
 **rm-fields 对应的字段名列表应为资源元信息字段 key,hash,size,datetime,mime,type,status,md5,owner 及自定义字段名中的一个或几个。**  
 
 **默认情况：**  
-（1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。  
+（1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
+（2）云存储数据源时默认设置 save-total=true。  
 （3）保存结果的路径 **默认（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
 
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
