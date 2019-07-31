@@ -599,44 +599,44 @@ public class CommonParams {
         if (indexMap.size() == 0) {
             useDefault = true;
             if (isStorageSource) {
-                for (String key : keys) setIndex(key, key);
+                for (String key : keys) indexMap.put(key, key);
             } else if (fieldIndex) {
-                setIndex("key", "key");
+                indexMap.put("key", "key");
             } else {
-                setIndex("0", "key");
+                indexMap.put("0", "key");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
-                if (useDefault) setIndex(fieldIndex ? "key" : "0", "key");
+                if (useDefault) indexMap.put(fieldIndex ? "key" : "0", "key");
                 else throw new IOException("f-[x] filter for file key must get the key's index in indexes settings.");
             }
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
-                if (useDefault) setIndex(fieldIndex ? "datetime" : "3", "datetime");
+                if (useDefault) indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
                 else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
             }
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
-                if (useDefault) setIndex(fieldIndex ? "mime" : "4", "mime");
+                if (useDefault) indexMap.put(fieldIndex ? "mime" : "4", "mime");
                 else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
             }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
-                if (useDefault) setIndex(fieldIndex ? "type" : "5", "type");
+                if (useDefault) indexMap.put(fieldIndex ? "type" : "5", "type");
                 else throw new IOException("f-type filter must get the type's index in indexes settings.");
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
-                if (useDefault) setIndex(fieldIndex ? "status" : "6", "status");
+                if (useDefault) indexMap.put(fieldIndex ? "status" : "6", "status");
                 else throw new IOException("f-status filter must get the status's index in indexes settings.");
             }
         }
         if (seniorFilter != null) {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
-                    if (useDefault) setIndex(fieldIndex ? "key" : "0", "key");
+                    if (useDefault) indexMap.put(fieldIndex ? "key" : "0", "key");
                     else throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                 }
                 if (!indexMap.containsValue("mime")) {
-                    if (useDefault) setIndex(fieldIndex ? "mime" : "4", "mime");
+                    if (useDefault) indexMap.put(fieldIndex ? "mime" : "4", "mime");
                     else throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
                 }
             }
