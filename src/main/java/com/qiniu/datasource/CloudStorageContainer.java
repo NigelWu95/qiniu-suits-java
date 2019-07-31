@@ -496,6 +496,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 threads >= 10 ? 3 : 1;
         List<String> extremePrefixes = checkListerInPool(listerList, cValue, tiny);
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
+            for (String prefix : extremePrefixes) recordListerByPrefix(prefix);
             executorPool = Executors.newFixedThreadPool(threads);
             listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() <= threads) {
