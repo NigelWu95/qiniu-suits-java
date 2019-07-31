@@ -48,8 +48,16 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
         for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
         for (String ownerField : ConvertingUtils.ownerFields) indexPair.remove(ownerField);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
+        if (fields == null || fields.size() == 0) {
+            this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        } else {
+            this.fields = fields;
+            this.fields.removeAll(ConvertingUtils.etagFields);
+            this.fields.removeAll(ConvertingUtils.typeFields);
+            this.fields.removeAll(ConvertingUtils.statusFields);
+            this.fields.removeAll(ConvertingUtils.md5Fields);
+            this.fields.removeAll(ConvertingUtils.ownerFields);
+        }
     }
 
     @Override

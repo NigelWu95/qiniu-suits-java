@@ -549,21 +549,32 @@ public class CommonParams {
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
         toStringFields = new ArrayList<>();
-        List<String> keys = ConvertingUtils.defaultFileFields;
+        List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
+        int fieldsMode = 0;
+        if ("upyun".equals(source)) {
+            fieldsMode = 1;
+            keys.remove(ConvertingUtils.defaultEtagField);
+            keys.remove(ConvertingUtils.defaultTypeField);
+            keys.remove(ConvertingUtils.defaultStatusField);
+            keys.remove(ConvertingUtils.defaultMd5Field);
+            keys.remove(ConvertingUtils.defaultOwnerField);
+        } else if (isStorageSource && !"qiniu".equals(source)) {
+            fieldsMode = 2;
+            keys.remove(ConvertingUtils.defaultMimeField);
+            keys.remove(ConvertingUtils.defaultStatusField);
+            keys.remove(ConvertingUtils.defaultMd5Field);
+        }
         String indexes = entryParam.getValue("indexes", "").trim();
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
             String[] strings = ParamsUtils.escapeSplit(indexes, false);
-            if (strings.length == 10) {
-                keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
-                keys.add(4, "timestamp");
-            }
             for (int i = 0; i < strings.length; i++) {
                 if (strings[i].matches(".+:.+")) {
                     String[] keyIndex = ParamsUtils.escapeSplit(strings[i], ':');
                     if (keyIndex.length != 2) throw new IOException("incorrect key:index pattern: " + strings[i]);
                     setIndex(keyIndex[1], keyIndex[0]);
                 } else {
+                    if (i >= keys.size()) throw new IOException("the index is out of default fields size.");
                     setIndex(strings[i], keys.get(i));
                 }
             }
@@ -571,14 +582,17 @@ public class CommonParams {
             throw new IOException("please check your indexes, set it as \"[key1:index1,key2:index2,...]\".");
         } else if (!"".equals(indexes)) {
             String[] indexList = ParamsUtils.escapeSplit(indexes);
-            if (indexList.length > 10) {
-                throw new IOException("the file info's index length is too long.");
-            } else if (indexList.length > 9) {
-                keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
-                keys.add(4, "timestamp");
+            if (indexList.length > keys.size()) {
+                throw new IOException("the file info's index length is too long than default: " + keys);
             } else {
                 for (int i = 0; i < indexList.length; i++) {
-                    setIndex(indexList[i], keys.get(i));
+                    if ("timestamp".equals(indexList[i])) {
+                        indexMap.put(indexList[i], "timestamp");
+                        toStringFields.add("timestamp");
+                        keys.add(i, "timestamp");
+                    } else {
+                        setIndex(indexList[i], keys.get(i));
+                    }
                 }
             }
         }
@@ -628,24 +642,30 @@ public class CommonParams {
             }
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                    toStringFields.add("mime");
+                    if (fieldsMode != 2) {
+                        indexMap.put(fieldIndex ? "mime" : "4", "mime");
+                        toStringFields.add("mime");
+                    }
                 } else {
                     throw new IOException("f-mime filter must get the mime's index in indexes settings.");
                 }
             }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "type" : "5", "type");
-                    toStringFields.add("type");
+                    if (fieldsMode != 1) {
+                        indexMap.put(fieldIndex ? "type" : "5", "type");
+                        toStringFields.add("type");
+                    }
                 } else {
                     throw new IOException("f-type filter must get the type's index in indexes settings.");
                 }
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "status" : "6", "status");
-                    toStringFields.add("status");
+                    if (fieldsMode == 0) {
+                        indexMap.put(fieldIndex ? "status" : "6", "status");
+                        toStringFields.add("status");
+                    }
                 } else {
                     throw new IOException("f-status filter must get the status's index in indexes settings.");
                 }
@@ -663,8 +683,10 @@ public class CommonParams {
                 }
                 if (!indexMap.containsValue("mime")) {
                     if (useDefault) {
-                        indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                        toStringFields.add("mime");
+                        if (fieldsMode != 2) {
+                            indexMap.put(fieldIndex ? "mime" : "4", "mime");
+                            toStringFields.add("mime");
+                        }
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
                     }
