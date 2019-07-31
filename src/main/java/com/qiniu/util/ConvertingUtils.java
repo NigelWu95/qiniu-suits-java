@@ -90,6 +90,7 @@ public final class ConvertingUtils {
         addAll(statusFields);
         addAll(md5Fields);
         addAll(ownerFields);
+        add("_id");
     }};
 
     final static public List<String> statFileFields = new ArrayList<String>(){{
@@ -105,8 +106,8 @@ public final class ConvertingUtils {
         add("_id");
     }};
 
-    final static public Set<String> statFieldsSet = new HashSet<String>(){{
-        addAll(statFileFields);
+    final static public Set<String> allFieldsSet = new HashSet<String>(){{
+        addAll(fileFields);
     }};
 
     public static List<String> getFields(List<String> fields, List<String> rmFields) {
@@ -445,7 +446,7 @@ public final class ConvertingUtils {
                 else if (intFields.contains(field)) converted.append(Integer.valueOf(value)).append(separator);
                 else converted.append(value).append(separator);
             } else {
-                throw new IOException("the field: " + field + " can't be found in " + line);
+                if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + line);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
@@ -459,8 +460,7 @@ public final class ConvertingUtils {
         for (String field : fields) {
             value = json.get(field);
             if (value == null || value instanceof JsonNull) {
-                if (!statFieldsSet.contains(field))
-                    throw new IOException("the field: " + field + " can't be found in " + json);
+                if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + json);
             } else {
                 if (longFields.contains(field)) converted.append(value.getAsLong()).append(separator);
                 else if (intFields.contains(field)) converted.append(value.getAsInt()).append(separator);

@@ -36,10 +36,10 @@ public class CommonParams {
     private String upyunPassword;
     private String s3AccessId;
     private String s3SecretKey;
+    private String bucket;
     private String parse;
     private String separator;
     private String process;
-    private String bucket;
     private String privateType;
     private String regionName;
     private Map<String, Map<String, String>> prefixesMap;
@@ -51,6 +51,7 @@ public class CommonParams {
     private BaseFilter<Map<String, String>> baseFilter;
     private SeniorFilter<Map<String, String>> seniorFilter;
     private Map<String, String> indexMap;
+    private List<String> toStringFields;
     private int unitLen;
     private int threads;
     private int batchSize;
@@ -82,12 +83,9 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
-        setProcess();
-        setBucket();
-        setPrivateType();
-        regionName = entryParam.getValue("region", "").trim();
         if (isStorageSource) {
             setAuthKey();
+            setBucket();
             setAntiPrefixes();
             String prefixes = entryParam.getValue("prefixes", null);
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
@@ -97,6 +95,9 @@ public class CommonParams {
             setParse();
             setSeparator();
         }
+        setProcess();
+        setPrivateType();
+        regionName = entryParam.getValue("region", "").trim();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setBaseFilter();
@@ -119,11 +120,10 @@ public class CommonParams {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
-        setProcess();
-        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
-        regionName = entryParam.getValue("region", "").trim();
         setParse();
         setSeparator();
+        setProcess();
+        regionName = entryParam.getValue("region", "").trim();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setIndexMap();
@@ -313,6 +313,7 @@ public class CommonParams {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
         }
+        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
     }
 
     /**
@@ -320,20 +321,16 @@ public class CommonParams {
      * @throws IOException 解析 bucket 参数失败抛出异常
      */
     private void setBucket() throws IOException {
-        if (isStorageSource) {
-            if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
-            else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
-            else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
-            else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
-            else if ("s3".equals(source) || "aws".equals(source)) {
-                if (path.startsWith("s3://")) bucket = path.substring(5);
-                else if (path.startsWith("aws://")) bucket = path.substring(6);
-            }
-            if (bucket == null) bucket = entryParam.getValue("bucket").trim();
-            else bucket = entryParam.getValue("bucket", bucket).trim();
-        } else  {
-            if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
+        if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
+        else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
+        else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
+        else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
+        else if ("s3".equals(source) || "aws".equals(source)) {
+            if (path.startsWith("s3://")) bucket = path.substring(5);
+            else if (path.startsWith("aws://")) bucket = path.substring(6);
         }
+        if (bucket == null) bucket = entryParam.getValue("bucket").trim();
+        else bucket = entryParam.getValue("bucket", bucket).trim();
     }
 
     private void setPrivateType() throws IOException {
@@ -549,6 +546,7 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
+        toStringFields = new ArrayList<>();
         List<String> keys = ConvertingUtils.defaultFileFields;
         String indexes = entryParam.getValue("indexes", "").trim();
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
@@ -589,8 +587,7 @@ public class CommonParams {
         if (ProcessUtils.needFops(process))
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
         if (ProcessUtils.needPid(process))
-            setIndex(entryParam.getValue("pid-index", entryParam.getValue("persistentId-index",
-                    "")).trim(), "pid");
+            setIndex(entryParam.getValue("pid-index", entryParam.getValue("persistentId-index", "")).trim(), "pid");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
@@ -738,14 +735,6 @@ public class CommonParams {
         this.source = source;
     }
 
-    public void setProcess(String process) {
-        this.process = process;
-    }
-
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
     public void setQiniuAccessKey(String qiniuAccessKey) {
         this.qiniuAccessKey = qiniuAccessKey;
     }
@@ -786,12 +775,20 @@ public class CommonParams {
         this.upyunPassword = upyunPassword;
     }
 
+    public void setBucket(String bucket) {
+        this.bucket = bucket;
+    }
+
     public void setParse(String parse) {
         this.parse = parse;
     }
 
     public void setSeparator(String separator) {
         this.separator = separator;
+    }
+
+    public void setProcess(String process) {
+        this.process = process;
     }
 
     public void setPrivateType(String privateType) {
@@ -902,14 +899,6 @@ public class CommonParams {
         return source;
     }
 
-    public String getProcess() {
-        return process;
-    }
-
-    public String getBucket() {
-        return bucket;
-    }
-
     public String getQiniuAccessKey() {
         return qiniuAccessKey;
     }
@@ -950,12 +939,20 @@ public class CommonParams {
         return upyunPassword;
     }
 
+    public String getBucket() {
+        return bucket;
+    }
+
     public String getParse() {
         return parse;
     }
 
     public String getSeparator() {
         return separator;
+    }
+
+    public String getProcess() {
+        return process;
     }
 
     public String getPrivateType() {
