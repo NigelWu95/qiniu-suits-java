@@ -31,8 +31,8 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
                            String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
-                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
-            throws SuitsException {
+                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
+                           int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
@@ -42,6 +42,12 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
                 clientConfig), bucket, null, null, null, 1);
         aliLister.close();
         aliLister = null;
+        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+        for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
+        for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+        for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
     }
 
     @Override
@@ -62,16 +68,9 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     @Override
     protected ITypeConvert<OSSObjectSummary, String> getNewStringConverter() {
         IStringFormat<OSSObjectSummary> stringFormatter;
-        if (indexPair == null) {
-            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-            for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
-            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
-            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
-        }
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
             stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<OSSObjectSummary, String>() {

@@ -6,7 +6,8 @@
 改/查/迁移/转码等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
-- [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效[并发列举](docs/datasource.md#3-list-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效[并发列举](docs/datasource.md#3-storage-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 数据迁移[数据迁移](docs/data_migration.md)，针对不同数据源向七牛空间迁移数据  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
@@ -88,27 +89,27 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为几大类型：云存储列举(list)、文件内容读取(file)，可以通过 **source=** 来指定数据源，例如:  
-`source=qiniu` 表示从七牛存储空间列举出资源列表  
-`source=local` 表示从本地文件按行读取资源列表  
-如果使用 `source` 参数则需要显式指定 `bucket` 或者 `path` 参数来指明具体的数据源地址  
-**在 v2.11 以上版本，取消了设置 source 参数的强制性，如果不显式指定 source 则根据 path 参数来自动判断：  
+数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
-`path=../<file-path>` 表示从本地文件中读取资源列表  
-当无 source 和 path 路径进行判断时则默认认为从七牛空间进行列举**，配置文件示例可参考 [配置模板](resources/application.config)  
-#### list 云存储列举  
+`path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表  
+`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表  
+`path=<filepath>` 表示从本地目录（或文件）中读取资源列表  
+未设置数据源时则默认从七牛空间进行列举**，配置文件示例可参考 [配置模板](resources/application.config)  
+
+#### storage 云存储列举  
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 30，1 亿以内文件可以不增加线程，通常云存储空间列举的必须参数包括密钥、空间名(通过
 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)：  
 
 |list 源|             密钥和 region 字段         |                  对应关系和描述               |  
 |------|---------------------------------------|---------------------------------------------|  
-|qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
-|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
-|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
+|qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
+|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
+|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
 |upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
-|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
-#### file 文件内容读取  
+|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+#### file 文本文件行读取  
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
 `separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
@@ -124,7 +125,7 @@ path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设
 `f-inner=` 表示**选择**文件名包含该部分字符的文件  
 `f-regex=` 表示**选择**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-mime=` 表示**选择**符合该 mime 类型的文件  
-`f-type=` 表示**选择**符合该存储类型的文件, 为 0（标准存储） 或 1（低频存储）  
+`f-type=` 表示**选择**符合该存储类型的文件，参考[关于 f-type](##-关于-f-type)|  
 `f-status=` 表示**选择**符合该存储状态的文件, 为 0（启用） 或 1（禁用）  
 `f-date-scale` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为：2018-08-01 00:00:00，[特殊规则](#f-date-scale)  
 `f-anti-prefix=` 表示**排除**文件名符合该前缀的文件  
@@ -132,6 +133,12 @@ path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设
 `f-anti-inner=` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex=` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime=` 表示**排除**该 mime 类型的文件  
+
+#### # 关于 f-type
+|存储源|type 参数类型|具体值                   |
+|-----|-----------|------------------------|
+|七牛  | 整型      |0 表示标准存储；1 表示低频存储|
+|其他  | 字符串     |如：Standard 表示标准存储  |  
 
 #### 特殊字符
 特殊字符包括: `, \ =` 如有参数值本身包含特殊字符需要进行转义：`\, \\ \=`  
@@ -192,9 +199,9 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
 进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。  
 **默认情况：**  
-（1）本地文件数据源时默认如果存在 process 或者 filter 设置则为 false，反之则为 true（说明可能是单纯格式转换）。  
-（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。  
-（3）保存结果的路径 **（save-path）默认使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
+（1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
+（2）云存储数据源时默认设置 save-total=true。  
+（3）保存结果的路径 **默认（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
 **--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  

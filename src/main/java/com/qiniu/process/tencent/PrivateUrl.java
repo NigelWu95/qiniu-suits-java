@@ -29,9 +29,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         CloudAPIUtils.checkTencent(cosClient);
     }
 
-    public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, long expires) {
+    public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires) {
         super("tenprivate", secretId, secretKey, bucket);
-        this.region = endpoint;
+        this.region = region;
         expiration = new Date(System.currentTimeMillis() + expires);
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
         CloudAPIUtils.checkTencent(cosClient);
@@ -50,6 +50,11 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expiration = new Date(System.currentTimeMillis() + expires);
     }
 
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
+        this.nextProcessor = nextProcessor;
+        if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_with_" + processName;
+    }
+
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(authKey1, authKey2), new ClientConfig(new Region(region)));
@@ -60,11 +65,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public String resultInfo(Map<String, String> line) {
         return line.get("key");
-    }
-
-    @Override
-    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
-        this.nextProcessor = nextProcessor;
     }
 
     @Override
@@ -86,6 +86,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         region = null;
         expiration = null;
         cosClient = null;
+        if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }
 }

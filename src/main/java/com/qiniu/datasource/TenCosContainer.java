@@ -29,7 +29,8 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
-                           boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                           boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
+                           int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;
@@ -38,6 +39,12 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
                 bucket, null, null, null, 1);
         tenLister.close();
         tenLister = null;
+        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+        for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
+        for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+        for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
     }
 
     @Override
@@ -58,12 +65,6 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     @Override
     protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() {
         IStringFormat<COSObjectSummary> stringFormatter;
-        if (indexPair == null) {
-            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-            for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
-            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
-            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
-        }
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {

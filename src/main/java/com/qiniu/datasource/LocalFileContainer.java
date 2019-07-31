@@ -13,8 +13,8 @@ import java.util.*;
 public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter, Map<String, String>> {
 
     public LocalFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
-                              String rmKeyPrefix, Map<String, String> indexMap, int unitLen, int threads) {
-        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap, unitLen, threads);
+                              String rmKeyPrefix, Map<String, String> indexMap, List<String> fields, int unitLen, int threads) {
+        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap, fields, unitLen, threads);
     }
 
     @Override

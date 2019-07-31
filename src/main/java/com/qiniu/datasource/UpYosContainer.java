@@ -33,7 +33,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
@@ -42,6 +42,14 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 null, null, 1);
         upLister.close();
         upLister = null;
+        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+        for (String etagField : ConvertingUtils.etagFields) indexPair.remove(etagField);
+        for (String typeField : ConvertingUtils.typeFields) indexPair.remove(typeField);
+        for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+        for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
+        for (String ownerField : ConvertingUtils.ownerFields) indexPair.remove(ownerField);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
     }
 
     @Override
@@ -62,18 +70,9 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     @Override
     protected ITypeConvert<FileItem, String> getNewStringConverter() {
         IStringFormat<FileItem> stringFormatter;
-        if (indexPair == null) {
-            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-            for (String etagField : ConvertingUtils.etagFields) indexPair.remove(etagField);
-            for (String typeField : ConvertingUtils.typeFields) indexPair.remove(typeField);
-            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
-            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
-            for (String ownerField : ConvertingUtils.ownerFields) indexPair.remove(ownerField);
-        }
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
             stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileItem, String>() {

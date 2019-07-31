@@ -3,7 +3,7 @@
 ## 简介
 对空间中的资源修改状态。参考：[七牛空间资源更新状态](https://developer.qiniu.com/kodo/api/4173/modify-the-file-status)/[批量更新状态](https://developer.qiniu.com/kodo/api/1250/batch)
 
-## 配置文件选项
+## 配置文件
 **操作通常需要指定数据源，默认表示从七牛空间列举文件执行操作，如非默认或需更多条件，请先[配置数据源](../docs/datasource.md)**  
 
 ### 可选参数

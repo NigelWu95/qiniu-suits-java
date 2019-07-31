@@ -69,6 +69,11 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expires = expires;
     }
 
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
+        this.nextProcessor = nextProcessor;
+        if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_with_" + processName;
+    }
+
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl privateUrl = (PrivateUrl)super.clone();
         privateUrl.auth = Auth.create(authKey1, authKey2);
@@ -105,5 +110,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         domain = null;
         protocol = null;
         urlIndex = null;
+        if (nextProcessor != null) nextProcessor.closeResource();
+        nextProcessor = null;
     }
 }

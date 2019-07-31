@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
@@ -19,7 +20,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     protected String saveFormat;
     protected String saveSeparator;
     protected List<String> rmFields;
-    protected int saveIndex;
+    protected AtomicInteger saveIndex;
     protected FileSaveMapper fileSaveMapper;
     protected ITypeConvert<T, String> typeConverter;
 
@@ -36,7 +37,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.saveFormat = saveFormat;
         this.saveSeparator = saveSeparator;
         this.rmFields = rmFields;
-        this.saveIndex = saveIndex;
+        this.saveIndex = new AtomicInteger(saveIndex);
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
         this.typeConverter = newTypeConverter();
     }
@@ -77,14 +78,23 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         };
     }
 
-    protected abstract ITypeConvert<T, String> newTypeConverter() throws IOException;
+    protected ITypeConvert<T, String> newTypeConverter() throws IOException {
+        return null;
+    }
 
     public String getProcessName() {
         return this.processName;
     }
 
+    public void updateSavePath(String savePath) throws IOException {
+        this.savePath = savePath;
+        if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
+        else fileSaveMapper.closeWriters();
+        fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+    }
     public void setNextProcessor(ILineProcess<T> nextProcessor) {
         this.nextProcessor = nextProcessor;
+        if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_after_" + processName;
     }
 
     public ILineProcess<T> getNextProcessor() {
@@ -95,8 +105,9 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
         if (nextProcessor != null) mapFilter.nextProcessor = nextProcessor.clone();
+        if (fileSaveMapper == null) return mapFilter;
         try {
-            mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(++saveIndex));
+            mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
             mapFilter.typeConverter = newTypeConverter();
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
@@ -112,6 +123,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             } else {
                 return "false";
             }
+        } catch (NullPointerException e) {
+            throw new IOException("input is empty or the processor may be already closed.", e);
         } catch (Exception e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -123,6 +136,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         for (T line : list) {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
+            } catch (NullPointerException e) {
+                throw new IOException("input is empty or the processor may be already closed.", e);
             } catch (Exception e) {
                 throw new IOException(e.getMessage(), e);
             }
@@ -144,7 +159,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         saveFormat = null;
         saveSeparator = null;
         rmFields = null;
-        fileSaveMapper.closeWriters();
+        if (fileSaveMapper != null) fileSaveMapper.closeWriters();
+        fileSaveMapper = null;
         typeConverter = null;
     }
 }

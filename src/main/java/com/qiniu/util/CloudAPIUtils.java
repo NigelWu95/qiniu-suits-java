@@ -34,12 +34,42 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Base64.*;
 
-public class CloudAPIUtils {
+public final class CloudAPIUtils {
+
+    public static String QINIU = "qiniu";
+    public static String TENCENT = "tencent";
+    public static String ALIYUN = "aliyun";
+    public static String AWSS3 = "s3";
+    public static String UPYUN = "upyun";
+    public static String NETYUN = "netease";
+    public static String LOCAL = "local";
+    public static String TYPE_Storage = "storage";
+    public static String TYPE_File = "file";
+
+    public static Map<String, String> datasourceMap = new HashMap<String, String>(){{
+        put(QINIU, TYPE_Storage);
+        put(TENCENT, TYPE_Storage);
+        put(ALIYUN, TYPE_Storage);
+        put(AWSS3, TYPE_Storage);
+        put(UPYUN, TYPE_Storage);
+        put(NETYUN, TYPE_Storage);
+        put(LOCAL, TYPE_File);
+    }};
+
+    public static String getSourceType(String source) {
+        return datasourceMap.get(source);
+    }
+
+    public static boolean isStorageSource(String source) {
+        return TYPE_Storage.equals(getSourceType(source));
+    }
+
+    public static boolean isFileSource(String source) {
+        return TYPE_File.equals(getSourceType(source));
+    }
 
     public static Encoder encoder = java.util.Base64.getEncoder();
     public static Decoder decoder = java.util.Base64.getDecoder();
@@ -258,11 +288,9 @@ public class CloudAPIUtils {
         try {
             return ossClient.getBucketLocation(bucket);
         } catch (ClientException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
-        } catch (OSSException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } finally {
             ossClient.shutdown();
             ossClient = null;
@@ -294,9 +322,9 @@ public class CloudAPIUtils {
             }
             if (region != null) return region;
         } catch (CosServiceException e) {
-            throw new SuitsException(e, e.getStatusCode());
+            throw new SuitsException(e, e.getStatusCode(), "get tencent region failed");
         } catch (CosClientException e) {
-            throw new SuitsException(e, -1);
+            throw new SuitsException(e, -1, "get tencent region failed");
         } finally {
             cosClient.shutdown();
             cosClient = null;
@@ -316,9 +344,9 @@ public class CloudAPIUtils {
         try {
             return s3Client.getBucketLocation(bucket);
         } catch (AmazonServiceException e) {
-            throw new SuitsException(e, e.getStatusCode());
+            throw new SuitsException(e, e.getStatusCode(), "get s3 region failed");
         } catch (SdkClientException e) {
-            throw new SuitsException(e, -1);
+            throw new SuitsException(e, -1, "get s3 region failed");
         } finally {
             s3Client.shutdown();
             s3Client = null;

@@ -3,7 +3,7 @@
 ## 简介
 根据已经获取到的音视频资源的 avinfo 信息，来设置规则判断进行某种自定义的转码并自定义转码后的文件名。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)
 
-## 配置文件选项
+## 配置文件
 **操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 配置参数
