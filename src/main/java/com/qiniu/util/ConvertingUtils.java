@@ -66,17 +66,26 @@ public final class ConvertingUtils {
         addAll(timestampFields);
     }};
 
+    final static public String defaultEtagField = "etag";
+    final static public String defaultSizeField = "size";
+    final static public String defaultDatetimeField = "datetime";
+    final static public String defaultMimeField = "mime";
+    final static public String defaultTypeField = "type";
+    final static public String defaultStatusField = "status";
+    final static public String defaultMd5Field = "md5";
+    final static public String defaultOwnerField = "owner";
+
     // 为了保证字段按照设置的顺序来读取，故使用 ArrayList
     final static public List<String> defaultFileFields = new ArrayList<String>(){{
         add("key");
-        add("etag");
-        add("size");
-        add("datetime");
-        add("mime");
-        add("type");
-        add("status");
-        add("md5");
-        add("owner");
+        add(defaultEtagField);
+        add(defaultSizeField);
+        add(defaultDatetimeField);
+        add(defaultMimeField);
+        add(defaultTypeField);
+        add(defaultStatusField);
+        add(defaultMd5Field);
+        add(defaultOwnerField);
     }};
 
     final static public List<String> fileFields = new ArrayList<String>(){{
@@ -333,7 +342,7 @@ public final class ConvertingUtils {
                 case "md5": converted.append(fileInfo.md5).append(separator); break;
                 case "owner":
                 case "endUser": if (fileInfo.endUser != null) converted.append(fileInfo.endUser).append(separator); break;
-                default: throw new IOException("Qiniu fileInfo has not field: " + field);
+                default: throw new IOException("Qiniu fileInfo doesn't have field: " + field);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
@@ -358,7 +367,7 @@ public final class ConvertingUtils {
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
                     converted.append(cosObject.getOwner().getDisplayName()).append(separator); break;
-                default: throw new IOException("COSObjectSummary has not field: " + field);
+                default: throw new IOException("COSObjectSummary doesn't have field: " + field);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
@@ -383,7 +392,7 @@ public final class ConvertingUtils {
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
                     converted.append(ossObject.getOwner().getDisplayName()).append(separator); break;
-                default: throw new IOException("OSSObjectSummary has not field: " + field);
+                default: throw new IOException("OSSObjectSummary doesn't have field: " + field);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
@@ -408,7 +417,7 @@ public final class ConvertingUtils {
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null)
                     converted.append(s3Object.getOwner().getDisplayName()).append(separator); break;
-                default: throw new IOException("S3ObjectSummary has not field: " + field);
+                default: throw new IOException("S3ObjectSummary doesn't have field: " + field);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
@@ -428,7 +437,7 @@ public final class ConvertingUtils {
                 case "putTime": converted.append(fileItem.timeSeconds).append(separator); break;
                 case "mime":
                 case "mimeType": converted.append(fileItem.attribute).append(separator); break;
-                default: throw new IOException("Upyun fileItem has not field: " + field);
+                default: throw new IOException("Upyun fileItem doesn't have field: " + field);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");
