@@ -417,11 +417,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
-    private List<String> checkListerInPool(List<ILister<E>> listerList) throws Exception {
+    private List<String> checkListerInPool(List<ILister<E>> listerList, int cValue, int tiny) {
         List<String> extremePrefixes = null;
-        int cValue = threads < 10 ? 3 : threads / 2;
-        int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 50 ? threads / 10 :
-                threads >= 10 ? 3 : 1;
         int count = 0;
         boolean startCheck = false;
         ILister<E> iLister;
@@ -493,8 +490,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return phraseLastPrefixes;
     }
 
-    private void waitAndTailListing(List<ILister<E>> listerList) throws Exception {
-        List<String> extremePrefixes = checkListerInPool(listerList);
+    private void waitAndTailListing(List<ILister<E>> listerList) {
+        int cValue = threads < 10 ? 3 : threads / 2;
+        int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 50 ? threads / 10 :
+                threads >= 10 ? 3 : 1;
+        List<String> extremePrefixes = checkListerInPool(listerList, cValue, tiny);
         while (extremePrefixes != null && extremePrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(threads);
             listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
@@ -505,7 +505,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
             }
             executorPool.shutdown();
-            extremePrefixes = checkListerInPool(listerList);
+            extremePrefixes = checkListerInPool(listerList, cValue, tiny);
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
         if (phraseLastPrefixes.size() > 0) {
