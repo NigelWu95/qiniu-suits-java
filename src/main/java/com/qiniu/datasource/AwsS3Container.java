@@ -32,8 +32,8 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
 
     public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
                           String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
-                          boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads)
-            throws SuitsException {
+                          boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
+                          int unitLen, int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
@@ -47,6 +47,12 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
         AwsS3Lister awsS3Lister = new AwsS3Lister(s3Client, bucket, null, null, null, null, 1);
         awsS3Lister.close();
         awsS3Lister = null;
+        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+        for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
+        for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
+        for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
     }
 
     @Override
@@ -67,16 +73,9 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     @Override
     protected ITypeConvert<S3ObjectSummary, String> getNewStringConverter() {
         IStringFormat<S3ObjectSummary> stringFormatter;
-        if (indexPair == null) {
-            indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-            for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
-            for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
-            for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
-        }
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
             stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<S3ObjectSummary, String>() {

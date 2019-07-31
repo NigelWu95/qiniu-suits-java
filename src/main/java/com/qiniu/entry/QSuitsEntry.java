@@ -245,7 +245,8 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         QiniuQosContainer qiniuQosContainer = new QiniuQosContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig,
-                bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+                bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(),
+                unitLen, threads);
         qiniuQosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         qiniuQosContainer.setRetryTimes(retryTimes);
         return qiniuQosContainer;
@@ -260,7 +261,7 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         TenCosContainer tenCosContainer = new TenCosContainer(secretId, secretKey, tenClientConfig, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
         tenCosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         tenCosContainer.setRetryTimes(retryTimes);
         return tenCosContainer;
@@ -283,7 +284,7 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         AliOssContainer aliOssContainer = new AliOssContainer(accessId, accessSecret, aliClientConfig, endPoint, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
         aliOssContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         aliOssContainer.setRetryTimes(retryTimes);
         return aliOssContainer;
@@ -299,7 +300,7 @@ public class QSuitsEntry {
 //        boolean prefixRight = commonParams.getPrefixRight();
         UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket, antiPrefixes, prefixesMap,
 //                prefixLeft, prefixRight,
-                indexMap, unitLen, threads);
+                indexMap, commonParams.getToStringFields(), unitLen, threads);
         upYosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         upYosContainer.setRetryTimes(retryTimes);
         return upYosContainer;
@@ -315,7 +316,7 @@ public class QSuitsEntry {
         boolean prefixRight = commonParams.getPrefixRight();
         if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
         AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
-                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+                antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
         awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         awsS3Container.setRetryTimes(retryTimes);
         return awsS3Container;

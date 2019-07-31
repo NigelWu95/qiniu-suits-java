@@ -29,7 +29,8 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
 
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
-                             boolean prefixRight, Map<String, String> indexMap, int unitLen, int threads) throws SuitsException {
+                             boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
+                             int threads) throws SuitsException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -38,6 +39,9 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
                 bucket, null, null, null, 1);
         qiniuLister.close();
         qiniuLister = null;
+        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
     }
 
     @Override
@@ -58,11 +62,9 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     @Override
     protected ITypeConvert<FileInfo, String> getNewStringConverter() {
         IStringFormat<FileInfo> stringFormatter;
-        if (indexPair == null) indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
             stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
         }
         return new Converter<FileInfo, String>() {
