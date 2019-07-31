@@ -25,8 +25,7 @@ public class CommonParams {
     private int requestTimeout;
     private String path;
     private String source;
-    private String parse;
-    private String separator;
+    private boolean isStorageSource;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
     private String tencentSecretId;
@@ -37,10 +36,12 @@ public class CommonParams {
     private String upyunPassword;
     private String s3AccessId;
     private String s3SecretKey;
+    private String parse;
+    private String separator;
     private String process;
     private String bucket;
-    private String regionName;
     private String privateType;
+    private String regionName;
     private Map<String, Map<String, String>> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
@@ -81,18 +82,21 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
-        setParse();
-        setSeparator();
-        setAuthKey();
         setProcess();
         setBucket();
-        regionName = entryParam.getValue("region", "").trim();
         setPrivateType();
-        setAntiPrefixes();
-        String prefixes = entryParam.getValue("prefixes", null);
-        setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
-        setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
-        setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
+        regionName = entryParam.getValue("region", "").trim();
+        if (isStorageSource) {
+            setAuthKey();
+            setAntiPrefixes();
+            String prefixes = entryParam.getValue("prefixes", null);
+            setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
+            setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
+            setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
+        } else {
+            setParse();
+            setSeparator();
+        }
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setBaseFilter();
@@ -115,11 +119,11 @@ public class CommonParams {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
-        setParse();
-        setSeparator();
         setProcess();
         if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
         regionName = entryParam.getValue("region", "").trim();
+        setParse();
+        setSeparator();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setIndexMap();
@@ -250,6 +254,7 @@ public class CommonParams {
         if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3)")) {
             throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,s3]");
         }
+        isStorageSource = CloudAPIUtils.isStorageSource(source);
     }
 
     private void setParse() throws IOException {
@@ -292,7 +297,7 @@ public class CommonParams {
 
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
-        if (!process.isEmpty() && CloudAPIUtils.isStorageSource(source) && !ProcessUtils.supportStorageSource(process)) {
+        if (!process.isEmpty() && isStorageSource && !ProcessUtils.supportStorageSource(process)) {
             throw new IOException("the process: " + process + " don't support getting source line from list.");
         }
         if (ProcessUtils.needQiniuAuth(process)) {
@@ -315,26 +320,25 @@ public class CommonParams {
      * @throws IOException 解析 bucket 参数失败抛出异常
      */
     private void setBucket() throws IOException {
-        if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
-        else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
-        else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
-        else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
-        else if ("s3".equals(source) || "aws".equals(source)) {
-            if (path.startsWith("s3://")) bucket = path.substring(5);
-            else if (path.startsWith("aws://")) bucket = path.substring(6);
-        }
-        if (CloudAPIUtils.isFileSource(source)) {
-            if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
-        } else {
+        if (isStorageSource) {
+            if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
+            else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
+            else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
+            else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
+            else if ("s3".equals(source) || "aws".equals(source)) {
+                if (path.startsWith("s3://")) bucket = path.substring(5);
+                else if (path.startsWith("aws://")) bucket = path.substring(6);
+            }
             if (bucket == null) bucket = entryParam.getValue("bucket").trim();
             else bucket = entryParam.getValue("bucket", bucket).trim();
+        } else  {
+            if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
         }
     }
 
     private void setPrivateType() throws IOException {
         privateType = entryParam.getValue("private", "").trim();
         if ("".equals(privateType)) return;
-        boolean isStorageSource = CloudAPIUtils.isStorageSource(source);
         switch (privateType) {
             case "qiniu":
                 if (!"qiniu".equals(source) && isStorageSource) {
@@ -529,14 +533,14 @@ public class CommonParams {
             throw new IOException("index: " + index + " is already used by \"" + indexMap.get(index) + "-index=" + index + "\"");
         }
         if (index != null && !"".equals(index) && !"-1".equals(index)) {
-            if ("json".equals(parse) || "object".equals(parse)) {
-                indexMap.put(index, indexName);
-            } else if ("tab".equals(parse) || "csv".equals(parse)) {
+            if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (index.matches("\\d+")) {
                     indexMap.put(index, indexName);
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
+            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
+                indexMap.put(index, indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
@@ -590,12 +594,11 @@ public class CommonParams {
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
-        boolean storageSource = CloudAPIUtils.isStorageSource(source);
         boolean useDefault = false;
-        boolean fieldIndex = "json".equals(parse) || "object".equals(parse);
+        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);
         if (indexMap.size() == 0) {
             useDefault = true;
-            if (storageSource) {
+            if (isStorageSource) {
                 for (String key : keys) setIndex(key, key);
             } else if (fieldIndex) {
                 setIndex("key", "key");
@@ -735,8 +738,12 @@ public class CommonParams {
         this.source = source;
     }
 
-    public void setParse(String parse) {
-        this.parse = parse;
+    public void setProcess(String process) {
+        this.process = process;
+    }
+
+    public void setBucket(String bucket) {
+        this.bucket = bucket;
     }
 
     public void setQiniuAccessKey(String qiniuAccessKey) {
@@ -779,20 +786,20 @@ public class CommonParams {
         this.upyunPassword = upyunPassword;
     }
 
-    public void setProcess(String process) {
-        this.process = process;
+    public void setParse(String parse) {
+        this.parse = parse;
     }
 
-    public void setRegionName(String regionName) {
-        this.regionName = regionName;
+    public void setSeparator(String separator) {
+        this.separator = separator;
     }
 
     public void setPrivateType(String privateType) {
         this.privateType = privateType;
     }
 
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
+    public void setRegionName(String regionName) {
+        this.regionName = regionName;
     }
 
     public void setPrefixesMap(Map<String, Map<String, String>> prefixesMap) {
@@ -895,12 +902,12 @@ public class CommonParams {
         return source;
     }
 
-    public String getParse() {
-        return parse;
+    public String getProcess() {
+        return process;
     }
 
-    public String getSeparator() {
-        return separator;
+    public String getBucket() {
+        return bucket;
     }
 
     public String getQiniuAccessKey() {
@@ -943,20 +950,20 @@ public class CommonParams {
         return upyunPassword;
     }
 
-    public String getProcess() {
-        return process;
+    public String getParse() {
+        return parse;
     }
 
-    public String getBucket() {
-        return bucket;
-    }
-
-    public String getRegionName() {
-        return regionName;
+    public String getSeparator() {
+        return separator;
     }
 
     public String getPrivateType() {
         return privateType;
+    }
+
+    public String getRegionName() {
+        return regionName;
     }
 
     public List<String> getAntiPrefixes() {
