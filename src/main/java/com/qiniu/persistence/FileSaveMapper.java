@@ -74,7 +74,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     synchronized public void closeWriters() {
-        if (writerMap == null) return;
+        if (writerMap.size() <= 0) return;
         int retry;
         BufferedWriter bufferedWriter;
         for (Map.Entry<String, BufferedWriter> entry : writerMap.entrySet()) {
@@ -101,16 +101,19 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 }
             }
         }
-        writerMap = null;
+        writerMap.clear();
         targetFileDir = null;
         prefix = null;
         suffix = null;
     }
 
     private void writeLine(String key, String item, boolean flush) throws IOException {
-        getWriter(key).write(item);
-        getWriter(key).newLine();
-        if (flush) getWriter(key).flush();
+        BufferedWriter bufferedWriter = getWriter(key);
+        if (bufferedWriter != null) {
+            bufferedWriter.write(item);
+            bufferedWriter.newLine();
+            if (flush) bufferedWriter.flush();
+        }
     }
 
     private void doWrite(String key, String item, boolean flush) throws IOException {

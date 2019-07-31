@@ -163,7 +163,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     @Override
     public void close() {
         nosClient.shutdown();
-        listObjectsRequest = null;
+//        listObjectsRequest = null;
         endPrefix = null;
         nosObjectList.clear();
     }
