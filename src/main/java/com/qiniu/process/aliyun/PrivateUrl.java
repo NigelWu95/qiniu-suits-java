@@ -48,6 +48,11 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expiration = new Date(System.currentTimeMillis() + expires);
     }
 
+    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
+        this.nextProcessor = nextProcessor;
+        if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_with_" + processName;
+    }
+
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl ossPrivateUrl = (PrivateUrl)super.clone();
         ossPrivateUrl.ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(authKey1, authKey2), null);
@@ -58,11 +63,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public String resultInfo(Map<String, String> line) {
         return line.get("key");
-    }
-
-    @Override
-    public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
-        this.nextProcessor = nextProcessor;
     }
 
     @Override
@@ -84,6 +84,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         endpoint = null;
         expiration = null;
         ossClient = null;
+        if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }
 }

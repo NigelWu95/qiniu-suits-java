@@ -94,6 +94,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     }
     public void setNextProcessor(ILineProcess<T> nextProcessor) {
         this.nextProcessor = nextProcessor;
+        if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_after_" + processName;
     }
 
     public ILineProcess<T> getNextProcessor() {

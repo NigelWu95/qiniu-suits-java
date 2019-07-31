@@ -193,15 +193,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         List<IReader<E>> fileReaders = getFileReaders(filePath);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String process = null;
-        if (processor != null) {
-            if (processor.getNextProcessor() != null) {
-                process = processor.getNextProcessor().getProcessName() + " with " + processor.getProcessName();
-            } else {
-                process = processor.getProcessName();
-            }
-        }
-        String info = "read objects from file(s): " + filePath + (process == null ? "" : " and " + process);
+        String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         try {

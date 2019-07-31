@@ -528,15 +528,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * 根据当前参数值创建多线程执行数据源导出工作
      */
     public void export() throws Exception {
-        String process = null;
-        if (processor != null) {
-            if (processor.getNextProcessor() != null) {
-                process = processor.getNextProcessor().getProcessName() + " with " + processor.getProcessName();
-            } else {
-                process = processor.getProcessName();
-            }
-        }
-        String info = "list objects from bucket: " + bucket + (process == null ? "" : " and " + process);
+        String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {

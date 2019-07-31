@@ -367,25 +367,25 @@ public class QSuitsEntry {
             case "asyncfetch":
                 String privateType = commonParams.getPrivateType();
                 if ("qiniu".equals(privateType)) {
-                    processor = getPrivateUrl(indexMap, true);
+                    processor = getPrivateUrl(indexMap, single);
                 } else if ("tencent".equals(privateType)) {
-                    processor = getTencentPrivateUrl(true);
+                    processor = getTencentPrivateUrl(single);
                 } else if ("aliyun".equals(privateType)) {
-                    processor = getAliyunPrivateUrl(true);
+                    processor = getAliyunPrivateUrl(single);
                 } else if ("s3".equals(privateType)) {
-                    processor = getAwsS3PrivateUrl(true);
+                    processor = getAwsS3PrivateUrl(single);
                 } else {
-                    throw new IOException("the datasource: " + source + "doesn't has \"private\" process.");
+                    throw new IOException("unsupported private process: " + privateType + " for asyncfetch's url.");
                 }
                 if (processor != null) {
                     ILineProcess<Map<String, String>> fetchProcessor = getAsyncFetch(new HashMap<String, String>(){{
                         putAll(indexMap);
                         put("url", "url");
-                    }}, single);
+                    }}, true);
                     fetchProcessor.setRetryTimes(retryTimes);
                     processor.setNextProcessor(fetchProcessor);
                 } else {
-                    processor = getAsyncFetch(indexMap, single);
+                    processor = getAsyncFetch(indexMap, true);
                 }
                 break;
             case "avinfo": processor = getQueryAvinfo(indexMap, single); break;
