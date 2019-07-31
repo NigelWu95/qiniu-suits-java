@@ -173,7 +173,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     @Override
     public void close() {
         s3Client.shutdown();
-        listObjectsRequest = null;
+//        listObjectsRequest = null;
         endPrefix = null;
         s3ObjectList.clear();
     }
