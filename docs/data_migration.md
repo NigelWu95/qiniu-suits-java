@@ -92,7 +92,7 @@ url-index=
 本地的文件列表作为数据源时需要考虑解析方式和字段下标，参考：[文本文件数据源](datasource.md#2-file-文本文件行读取)  
 
 ### filter
-当需要对数据源的文件进行筛选之后再迁移，则需要配置 filter 参数，参考：[filter](filter.md)  
+当需要对数据源的文件进行筛选之后再迁移，则需要配置 filter 参数，参考：[filter 配置](filter.md)  
 
 ### asyncfetch 其他配置
 asyncfetch 操作支持回调等参数，具体使用参考：[asyncfetch 配置](asyncfetch.md)  
