@@ -46,7 +46,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
-                         Map<String, String> indexMap, int unitLen, int threads) {
+                         Map<String, String> indexMap, List<String> fields, int unitLen, int threads) {
         this.filePath = filePath;
         this.parse = parse;
         this.separator = separator;
@@ -60,7 +60,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.savePath = "result";
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
-        fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+        else this.fields = fields;
     }
 
     // 不调用则各参数使用默认值

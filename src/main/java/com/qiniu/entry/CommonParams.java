@@ -533,6 +533,7 @@ public class CommonParams {
             if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (index.matches("\\d+")) {
                     indexMap.put(index, indexName);
+                    toStringFields.add(indexName);
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
@@ -596,45 +597,76 @@ public class CommonParams {
         if (indexMap.size() == 0) {
             useDefault = true;
             if (isStorageSource) {
+                toStringFields = keys;
                 for (String key : keys) indexMap.put(key, key);
             } else if (fieldIndex) {
                 indexMap.put("key", "key");
+                toStringFields.add("key");
             } else {
                 indexMap.put("0", "key");
+                toStringFields.add("key");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
-                if (useDefault) indexMap.put(fieldIndex ? "key" : "0", "key");
-                else throw new IOException("f-[x] filter for file key must get the key's index in indexes settings.");
+                if (useDefault) {
+                    indexMap.put(fieldIndex ? "key" : "0", "key");
+                    toStringFields.add("key");
+                } else {
+                    throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
+                }
             }
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
-                if (useDefault) indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
-                else throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
+                if (useDefault) {
+                    indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
+                    toStringFields.add("datetime");
+                } else {
+                    throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
+                }
             }
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
-                if (useDefault) indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                else throw new IOException("f-mime filter must get the mime's index in indexes settings.");
+                if (useDefault) {
+                    indexMap.put(fieldIndex ? "mime" : "4", "mime");
+                    toStringFields.add("mime");
+                } else {
+                    throw new IOException("f-mime filter must get the mime's index in indexes settings.");
+                }
             }
             if (baseFilter.checkTypeCon() && !indexMap.containsValue("type")) {
-                if (useDefault) indexMap.put(fieldIndex ? "type" : "5", "type");
-                else throw new IOException("f-type filter must get the type's index in indexes settings.");
+                if (useDefault) {
+                    indexMap.put(fieldIndex ? "type" : "5", "type");
+                    toStringFields.add("type");
+                } else {
+                    throw new IOException("f-type filter must get the type's index in indexes settings.");
+                }
             }
             if (baseFilter.checkStatusCon() && !indexMap.containsValue("status")) {
-                if (useDefault) indexMap.put(fieldIndex ? "status" : "6", "status");
-                else throw new IOException("f-status filter must get the status's index in indexes settings.");
+                if (useDefault) {
+                    indexMap.put(fieldIndex ? "status" : "6", "status");
+                    toStringFields.add("status");
+                } else {
+                    throw new IOException("f-status filter must get the status's index in indexes settings.");
+                }
             }
         }
         if (seniorFilter != null) {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
-                    if (useDefault) indexMap.put(fieldIndex ? "key" : "0", "key");
-                    else throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
+                    if (useDefault) {
+                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                        toStringFields.add("key");
+                    } else {
+                        throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
+                    }
                 }
                 if (!indexMap.containsValue("mime")) {
-                    if (useDefault) indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                    else throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
+                    if (useDefault) {
+                        indexMap.put(fieldIndex ? "mime" : "4", "mime");
+                        toStringFields.add("mime");
+                    } else {
+                        throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
+                    }
                 }
             }
         }
@@ -835,6 +867,10 @@ public class CommonParams {
         this.indexMap = indexMap;
     }
 
+    public void setToStringFields(List<String> toStringFields) {
+        this.toStringFields = toStringFields;
+    }
+
     public void setUnitLen(int unitLen) {
         this.unitLen = unitLen;
     }
@@ -997,6 +1033,10 @@ public class CommonParams {
 
     public Map<String, String> getIndexMap() {
         return indexMap;
+    }
+
+    public List<String> getToStringFields() {
+        return toStringFields;
     }
 
     public int getUnitLen() {

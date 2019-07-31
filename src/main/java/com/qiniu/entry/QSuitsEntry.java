@@ -232,7 +232,7 @@ public class QSuitsEntry {
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
         LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, indexMap, unitLen, threads);
+                rmKeyPrefix, indexMap, commonParams.getToStringFields(), unitLen, threads);
         localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;
@@ -327,13 +327,15 @@ public class QSuitsEntry {
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         ILineProcess<Map<String, String>> processor;
         if (baseFilter != null || seniorFilter != null) {
-            List<String> fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+            List<String> fields = commonParams.getToStringFields();
+            if (fields == null || fields.size() == 0) fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
             if (nextProcessor == null) {
+                List<String> finalFields = fields;
                 processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
                         saveSeparator, rmFields) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
-                        return new MapToString(saveFormat, saveSeparator, fields);
+                        return new MapToString(saveFormat, saveSeparator, finalFields);
                     }
                 };
             } else {
