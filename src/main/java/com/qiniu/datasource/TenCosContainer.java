@@ -40,17 +40,8 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
         tenLister.close();
         tenLister = null;
         indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        for (String mimeField : ConvertingUtils.mimeFields) indexPair.remove(mimeField);
-        for (String statusField : ConvertingUtils.statusFields) indexPair.remove(statusField);
-        for (String md5Field : ConvertingUtils.md5Fields) indexPair.remove(md5Field);
-        if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        } else {
-            this.fields = fields;
-            this.fields.removeAll(ConvertingUtils.mimeFields);
-            this.fields.removeAll(ConvertingUtils.statusFields);
-            this.fields.removeAll(ConvertingUtils.md5Fields);
-        }
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
     }
 
     @Override
