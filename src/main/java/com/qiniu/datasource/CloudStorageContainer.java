@@ -173,21 +173,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         prefixesJson.remove(prefix);
     }
 
-    void writeContinuedPrefixConfig(String path, String name) throws IOException {
-        if (prefixesJson.size() <= 0) return;
-        FileSaveMapper.ext = ".json";
-        FileSaveMapper.append = false;
-        path = new File(path).getCanonicalPath();
-        FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
-        String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name;
-        saveMapper.addWriter(fileName);
-        saveMapper.writeToKey(fileName, prefixesJson.toString(), true);
-        saveMapper.closeWriters();
-        System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
-                "listing remained files.\n", fileName, FileSaveMapper.ext);
-    }
-
     JsonObject recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
         recordPrefixConfig(prefix, json);
@@ -532,17 +517,29 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private void endAction() throws IOException {
+    void endAction() throws IOException {
         ILineProcess<T> processor;
         for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
-        writeContinuedPrefixConfig(savePath, "prefixes");
+        if (prefixesJson.size() > 0) {
+            FileSaveMapper.ext = ".json";
+            FileSaveMapper.append = false;
+            String path = new File(savePath).getCanonicalPath();
+            FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
+            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
+            saveMapper.addWriter(fileName);
+            saveMapper.writeToKey(fileName, prefixesJson.toString(), true);
+            saveMapper.closeWriters();
+            System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
+                    "listing remained objects.\n", fileName, FileSaveMapper.ext);
+        }
     }
 
-    private void ctrlC() {
+    void ctrlC() {
         SignalHandler handler = signal -> {
             try {
                 endAction();

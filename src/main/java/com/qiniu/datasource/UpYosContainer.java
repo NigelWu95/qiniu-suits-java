@@ -4,7 +4,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringMapPair;
-import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
@@ -135,6 +134,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             }
         }
         executorPool = Executors.newFixedThreadPool(threads);
+        ctrlC();
         try {
             prefixes = listAndGetNextPrefixes(prefixes);
             while (prefixes != null && prefixes.size() > 0) {
@@ -150,17 +150,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 }
             }
             System.out.println(info + " finished.");
+            endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-            ILineProcess<Map<String, String>> processor;
-            for (Map.Entry<String, IResultOutput<BufferedWriter>> saverEntry : saverMap.entrySet()) {
-                saverEntry.getValue().closeWriters();
-                processor = processorMap.get(saverEntry.getKey());
-                if (processor != null) processor.closeResource();
-            }
-        } finally {
-            writeContinuedPrefixConfig(savePath, "prefixes");
+            endAction();
+            System.exit(-1);
         }
     }
 }
