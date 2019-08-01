@@ -8,6 +8,8 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.*;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -525,6 +527,29 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
+    private void endAction() throws IOException {
+        ILineProcess<T> processor;
+        for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
+            saverEntry.getValue().closeWriters();
+            processor = processorMap.get(saverEntry.getKey());
+            if (processor != null) processor.closeResource();
+        }
+        writeContinuedPrefixConfig(savePath, "prefixes");
+    }
+
+    void ctrlC() {
+        SignalHandler handler = signal -> {
+            try {
+                endAction();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.exit(0);
+        };
+        // 设置INT信号(Ctrl+C中断执行)交给指定的信号处理器处理，废掉系统自带的功能
+        Signal.handle(new Signal("INT"), handler);
+    }
+
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
@@ -551,6 +576,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         executorPool = Executors.newFixedThreadPool(threads);
+        ctrlC();
         try {
             if (startLister != null) processNodeLister(startLister);
             List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
@@ -566,14 +592,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-            ILineProcess<T> processor;
-            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
-                saverEntry.getValue().closeWriters();
-                processor = processorMap.get(saverEntry.getKey());
-                if (processor != null) processor.closeResource();
-            }
         } finally {
-            writeContinuedPrefixConfig(savePath, "prefixes");
+            endAction();
         }
     }
 }
