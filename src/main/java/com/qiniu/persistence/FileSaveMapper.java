@@ -23,7 +23,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         this(targetFileDir);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
-        for (String targetWriter : Collections.singleton("success")) addWriter(targetWriter);
+        for (String targetWriter : "success,error".split(",")) addWriter(targetWriter);
     }
 
     public void setRetryTimes(int retryTimes) {
@@ -38,13 +38,25 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         return suffix;
     }
 
-    private void addWriter(String key) throws IOException {
-        File resultFile = new File(targetFileDir, prefix + key + this.suffix + ext);
+    synchronized public void addWriter(String key) throws IOException {
+        BufferedWriter writer = writerMap.get(key);
+        if (writer != null) throw new IOException("this writer is already exists.");
+        File fDir = new File(targetFileDir);
+        boolean firExists = fDir.exists();
+        File resultFile = new File(fDir, prefix + key + this.suffix + ext);
+        boolean resultFileExists = resultFile.exists();
         int retry = retryTimes;
         while (retry > 0) {
             try {
-                if (!mkDirAndFile(resultFile)) throw new IOException("create result file " + resultFile + " failed.");
-                BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, append));
+                if (!firExists) {
+                    firExists = fDir.mkdirs();
+                    if (!firExists) throw new IOException("create result directory: " + targetFileDir + " failed.");
+                }
+                if (!resultFileExists) {
+                    resultFileExists = resultFile.createNewFile();
+                    if (!resultFileExists) throw new IOException("create result file " + resultFile + " failed.");
+                }
+                writer = new BufferedWriter(new FileWriter(resultFile, append));
                 writerMap.put(key, writer);
                 retry = 0;
             } catch (IOException e) {
@@ -55,22 +67,8 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         }
     }
 
-    private boolean mkDirAndFile(File filePath) throws IOException {
-        boolean success = filePath.getParentFile().exists();
-        if (!success) {
-            success = filePath.getParentFile().mkdirs();
-            if (!success) return false;
-        }
-        success = filePath.exists();
-        if (!success) {
-            return filePath.createNewFile();
-        } else {
-            return true;
-        }
-    }
-
-    public BufferedWriter getWriter(String key) {
-        return writerMap.get(key);
+    synchronized public void addWriters(List<String> writers) throws IOException {
+        for (String targetWriter : writers) addWriter(targetWriter);
     }
 
     synchronized public void closeWriters() {
@@ -107,44 +105,39 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         suffix = null;
     }
 
-    private void writeLine(String key, String item, boolean flush) throws IOException {
-        BufferedWriter bufferedWriter = getWriter(key);
-        if (bufferedWriter != null) {
-            bufferedWriter.write(item);
-            bufferedWriter.newLine();
-            if (flush) bufferedWriter.flush();
-        }
-    }
-
-    private void doWrite(String key, String item, boolean flush) throws IOException {
+    synchronized private void doWrite(String key, String item, boolean flush) throws IOException {
         int count = retryTimes;
-        while (count > 0) {
-            try {
-                writeLine(key, item, flush);
-                count = 0;
-            } catch (IOException e) {
-                count--;
-                if (count <= 0) throw e;
+        BufferedWriter bufferedWriter = writerMap.get(key);
+        if (bufferedWriter != null) {
+            while (count > 0) {
+                try {
+                    bufferedWriter.write(item);
+                    bufferedWriter.newLine();
+                    if (flush) bufferedWriter.flush();
+                    count = 0;
+                } catch (IOException e) {
+                    count--;
+                    if (count <= 0) throw e;
+                }
             }
+        } else {
+            throw new IOException("the writer is not exists now.");
         }
-    }
-
-    private boolean notHasWriter(String key) {
-        return !writerMap.containsKey(key);
     }
 
     // 如果 item 为 null 的话则不进行写入，flush 参数无效
-    synchronized public void writeKeyFile(String key, String item, boolean flush) throws IOException {
-        if (notHasWriter(key)) addWriter(key);
+    public void writeToKey(String key, String item, boolean flush) throws IOException {
         if (item != null) doWrite(key, item, flush);
+        else throw new IOException("can't write empty.");
     }
 
-    synchronized public void writeSuccess(String item, boolean flush) throws IOException {
+    public void writeSuccess(String item, boolean flush) throws IOException {
         if (item != null) doWrite("success", item, flush);
+        else throw new IOException("can't write empty.");
     }
 
-    synchronized public void writeError(String item, boolean flush) throws IOException {
-        if (notHasWriter("error")) addWriter("error");
+    public void writeError(String item, boolean flush) throws IOException {
         if (item != null) doWrite("error", item, flush);
+        else throw new IOException("can't write empty.");
     }
 }

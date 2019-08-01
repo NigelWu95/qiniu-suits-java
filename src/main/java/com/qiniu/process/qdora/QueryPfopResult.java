@@ -21,6 +21,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         super("pfopresult", "", "", null);
         set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
+        this.fileSaveMapper.addWriter("waiting");
+        this.fileSaveMapper.addWriter("notify_failed");
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
@@ -28,6 +30,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         super("pfopresult", "", "", null, savePath, saveIndex);
         set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
+        this.fileSaveMapper.addWriter("waiting");
+        this.fileSaveMapper.addWriter("notify_failed");
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
@@ -42,6 +46,12 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         else this.pidIndex = pidIndex;
     }
 
+    public void updateSavePath(String savePath) throws IOException {
+        super.updateSavePath(savePath);
+        this.fileSaveMapper.addWriter("waiting");
+        this.fileSaveMapper.addWriter("notify_failed");
+    }
+
     public void updateProtocol(String protocol) {
         this.protocol = protocol;
     }
@@ -53,6 +63,12 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
         pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);
+        try {
+            pfopResult.fileSaveMapper.addWriter("waiting");
+            pfopResult.fileSaveMapper.addWriter("notify_failed");
+        } catch (IOException e) {
+            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
+        }
         return pfopResult;
     }
 
@@ -74,10 +90,10 @@ public class QueryPfopResult extends Base<Map<String, String>> {
                     fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
                             JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else if (item.code == 4)
-                    fileSaveMapper.writeKeyFile("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
+                    fileSaveMapper.writeToKey("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
                             JsonUtils.toJsonWithoutUrlEscape(item), false);
                 else
-                    fileSaveMapper.writeKeyFile("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
+                    fileSaveMapper.writeToKey("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
                         JsonUtils.toJsonWithoutUrlEscape(item), false);
             }
         } else {

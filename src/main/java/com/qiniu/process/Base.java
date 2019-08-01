@@ -38,6 +38,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.saveIndex = new AtomicInteger(saveIndex);
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+        this.fileSaveMapper.addWriter("need_retry");
     }
 
     public String getProcessName() {
@@ -67,6 +68,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
         else fileSaveMapper.closeWriters();
         fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+        fileSaveMapper.addWriter("need_retry");
     }
 
     @SuppressWarnings("unchecked")
@@ -75,6 +77,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         if (fileSaveMapper == null) return base;
         try {
             base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+            base.fileSaveMapper.addWriter("need_retry");
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
@@ -176,7 +179,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
                                 .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                                 processList = null; break;
-                        case -1: fileSaveMapper.writeKeyFile("need_retry", String.join("\n", processList
+                        case -1: fileSaveMapper.writeToKey("need_retry", String.join("\n", processList
                                 .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
                                 processList = null; break;
                         case -2: fileSaveMapper.writeError(String.join("\n", lineList
@@ -241,7 +244,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     System.out.println(message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
-                        case -1: fileSaveMapper.writeKeyFile("need_retry", resultInfo(line) + "\t" + message,
+                        case -1: fileSaveMapper.writeToKey("need_retry", resultInfo(line) + "\t" + message,
                                 false); break;
                         case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
                                 .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);

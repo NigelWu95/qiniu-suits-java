@@ -52,6 +52,6 @@ public class TenCosContainerTest {
         System.out.println(file.getAbsolutePath());
         file = new File(file.getAbsolutePath());
         System.out.println(file.getParent());
-        tenCosContainer.writeContinuedPrefixConfig("./", "test");
+        tenCosContainer.endAction();
     }
 }

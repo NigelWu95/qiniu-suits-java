@@ -11,6 +11,8 @@ import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.UniOrderUtils;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -117,7 +119,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
-        ITypeConvert<T, String> stringConverter = saveTotal ? getNewStringConverter() : null;
+        ITypeConvert<T, String> stringConverter = null;
+        if (saveTotal) {
+            stringConverter = getNewStringConverter();
+            saver.addWriter("failed");
+        }
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
         List<String> writeList;
@@ -143,7 +149,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (stringConverter.errorSize() > 0)
-                        saver.writeKeyFile("failed", stringConverter.errorLines(), false);
+                        saver.writeToKey("failed", stringConverter.errorLines(), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -187,6 +193,39 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
+    private void endAction() throws IOException {
+        ILineProcess<T> processor;
+        for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
+            saverEntry.getValue().closeWriters();
+            processor = processorMap.get(saverEntry.getKey());
+            if (processor != null) processor.closeResource();
+        }
+        if (linesJson.size() > 0) {
+            FileSaveMapper.ext = ".json";
+            FileSaveMapper.append = false;
+            String path = new File(savePath).getCanonicalPath();
+            FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
+            saveMapper.writeToKey(fileName, linesJson.toString(), true);
+            saveMapper.closeWriters();
+            System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
+                    "reading remained lines.\n", fileName, FileSaveMapper.ext);
+        }
+    }
+
+    private void ctrlC() {
+        SignalHandler handler = signal -> {
+            try {
+                endAction();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.exit(0);
+        };
+        // 设置INT信号(Ctrl+C中断执行)交给指定的信号处理器处理，废掉系统自带的功能
+        Signal.handle(new Signal("INT"), handler);
+    }
+
     protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
 
     public void export() throws Exception {
@@ -196,6 +235,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
+        ctrlC();
         try {
             for (IReader<E> fileReader : fileReaders) {
                 recordLines(fileReader.getName(), null);
@@ -212,27 +252,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 }
             }
             System.out.println(info + " finished");
+            endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-            ILineProcess<T> processor;
-            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
-                saverEntry.getValue().closeWriters();
-                processor = processorMap.get(saverEntry.getKey());
-                if (processor != null) processor.closeResource();
-            }
-        } finally {
-            if (linesJson.size() > 0) {
-                FileSaveMapper.ext = ".json";
-                FileSaveMapper.append = false;
-                String path = new File(savePath).getCanonicalPath();
-                FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-                String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
-                saveMapper.writeKeyFile(fileName, linesJson.toString(), true);
-                saveMapper.closeWriters();
-                System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
-                        "reading remained lines.\n", fileName, FileSaveMapper.ext);
-            }
+            endAction();
+            System.exit(-1);
         }
     }
 }

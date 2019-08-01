@@ -63,10 +63,11 @@ sk=
 ```
 java -jar qsuits-x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
+**备注2**：命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。  
 **2. 命令行执行器 qsuits（by golang）**  
 由于 qsuits-java 基于 java 编写，命令行运行时需要提供 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的二进制可执行文件用
-来代理 qsuits-java 的功能，即 qsuits 执行器（基于 golang 编写和编译）：https://github.com/NigelWu95/qsuits-exec-go/tree/master/bin，
-下载执行器后可直接以 `qsuits <parameters>` 方式运行，支持所有 qsuits-java 提供的处理参数，且用法一致。如：
+来代理 qsuits-java 的功能，即 qsuits 执行器（基于 golang 编写和编译）：https://github.com/NigelWu95/qsuits-exec-go/tree/master/bin
+，下载执行器后可直接以 `qsuits <parameters>` 方式运行，支持所有 qsuits-java 提供的处理参数，且用法一致。如：
 ```
 qsuits -config=config.txt
 ```  
@@ -218,7 +219,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `read-timeout=120` socket 读取超时时间，程序默认 120s  
 `request-timeout=60` 网络请求超时时间，程序默认 60s  
 
-### 补充
+### 8 错误及异常
 1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。
 2. 一般情况下，命令行输出异常信息如 socket timeout 超时为正常现象，如：
 ```
@@ -235,3 +236,15 @@ java.net.SocketTimeoutException: timeout
 与（1）类似，内存溢出导致无法继续创建更多线程或对象。  
 （3）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
 请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  
+
+### 9 断点续操作
+7.1 版本开始支持断点记录，在程序运行后出现异常导致终止或部分数据源路径错误或者是 INT 信号(命令行 Ctrl+C 中断执行)终止程序时，会记录数据导出中断的
+位置，记录的信息可用于下次直接从未完成处继续导出数据，而不需要全部重新开始。尤其在对云存储空间列举文件列表时，特大量文件列表导出耗时可能会比较长，可能
+存在断点续操作的需求，续操作说明：  
+1. 如果存在续操作的需要，程序终止时会输出续操作的记录信息路径，如存储空间文件列举操作终止时可能输出：  
+`please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
+表示在 <filename>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，<filename> 表示文件名。
+2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
+为前缀配置文件: prefix-config=<breakpoint_filepath> 即可。【该项参数请和其他参数保持一致放在命令行或配置文件中。】  
+3. 对于 file 数据源产生的断点文件记录了读取的文本行，如果需要使用断点则需要检查对应文件中文本行位置再做截取，目前没有实现自动检测方式。
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。

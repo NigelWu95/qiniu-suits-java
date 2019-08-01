@@ -2,7 +2,6 @@ package com.qiniu.datasource;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.OSSException;
 import com.aliyun.oss.ServiceException;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;

@@ -8,6 +8,8 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.persistence.IResultOutput;
 import com.qiniu.util.*;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -171,20 +173,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         prefixesJson.remove(prefix);
     }
 
-    void writeContinuedPrefixConfig(String path, String name) throws IOException {
-        if (prefixesJson.size() <= 0) return;
-        FileSaveMapper.ext = ".json";
-        FileSaveMapper.append = false;
-        path = new File(path).getCanonicalPath();
-        FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
-        String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name;
-        saveMapper.writeKeyFile(fileName, prefixesJson.toString(), true);
-        saveMapper.closeWriters();
-        System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
-                "listing remained files.\n", fileName, FileSaveMapper.ext);
-    }
-
     JsonObject recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
         recordPrefixConfig(prefix, json);
@@ -200,7 +188,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<E, T> converter = getNewConverter();
-        ITypeConvert<E, String> stringConverter = saveTotal ? getNewStringConverter() : null;
+        ITypeConvert<E, String> stringConverter = null;
+        if (saveTotal) {
+            stringConverter = getNewStringConverter();
+            saver.addWriter("failed");
+        }
         List<T> convertedList;
         List<String> writeList;
         List<E> objects = lister.currents();
@@ -212,7 +204,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (stringConverter != null) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                if (stringConverter.errorSize() > 0) saver.writeKeyFile("error", stringConverter.errorLines(), false);
+                if (stringConverter.errorSize() > 0) saver.writeToKey("failed", stringConverter.errorLines(), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
@@ -525,6 +517,41 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
+    void endAction() throws IOException {
+        ILineProcess<T> processor;
+        for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
+            saverEntry.getValue().closeWriters();
+            processor = processorMap.get(saverEntry.getKey());
+            if (processor != null) processor.closeResource();
+        }
+        if (prefixesJson.size() > 0) {
+            FileSaveMapper.ext = ".json";
+            FileSaveMapper.append = false;
+            String path = new File(savePath).getCanonicalPath();
+            FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
+            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
+            saveMapper.addWriter(fileName);
+            saveMapper.writeToKey(fileName, prefixesJson.toString(), true);
+            saveMapper.closeWriters();
+            System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
+                    "listing remained objects.\n", fileName, FileSaveMapper.ext);
+        }
+    }
+
+    void ctrlC() {
+        SignalHandler handler = signal -> {
+            try {
+                endAction();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.exit(0);
+        };
+        // 设置INT信号(Ctrl+C中断执行)交给指定的信号处理器处理，废掉系统自带的功能
+        Signal.handle(new Signal("INT"), handler);
+    }
+
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
@@ -551,6 +578,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         executorPool = Executors.newFixedThreadPool(threads);
+        ctrlC();
         try {
             if (startLister != null) processNodeLister(startLister);
             List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
@@ -563,17 +591,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             executorPool.shutdown();
             waitAndTailListing(listerList);
             System.out.println(info + " finished.");
+            endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-            ILineProcess<T> processor;
-            for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
-                saverEntry.getValue().closeWriters();
-                processor = processorMap.get(saverEntry.getKey());
-                if (processor != null) processor.closeResource();
-            }
-        } finally {
-            writeContinuedPrefixConfig(savePath, "prefixes");
+            endAction();
+            System.exit(-1);
         }
     }
 }

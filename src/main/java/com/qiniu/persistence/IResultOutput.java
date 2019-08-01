@@ -1,6 +1,7 @@
 package com.qiniu.persistence;
 
 import java.io.*;
+import java.util.List;
 
 public interface IResultOutput<T> {
 
@@ -10,11 +11,13 @@ public interface IResultOutput<T> {
 
     String getSuffix();
 
-    T getWriter(String key);
+    void addWriter(String key) throws IOException;
+
+    void addWriters(List<String> writers) throws IOException;
 
     void closeWriters();
 
-    void writeKeyFile(String key, String item, boolean flush) throws IOException;
+    void writeToKey(String key, String item, boolean flush) throws IOException;
 
     void writeSuccess(String item, boolean flush) throws IOException;
 
