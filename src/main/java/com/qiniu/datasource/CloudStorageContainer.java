@@ -537,7 +537,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         writeContinuedPrefixConfig(savePath, "prefixes");
     }
 
-    void ctrlC() {
+    private void ctrlC() {
         SignalHandler handler = signal -> {
             try {
                 endAction();
@@ -589,11 +589,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             executorPool.shutdown();
             waitAndTailListing(listerList);
             System.out.println(info + " finished.");
+            endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-        } finally {
             endAction();
+            System.exit(-1);
         }
     }
 }

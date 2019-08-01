@@ -209,7 +209,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
-    void ctrlC() {
+    private void ctrlC() {
         SignalHandler handler = signal -> {
             try {
                 endAction();
@@ -248,12 +248,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 }
             }
             System.out.println(info + " finished");
+            endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
             e.printStackTrace();
-
-        } finally {
             endAction();
+            System.exit(-1);
         }
     }
 }

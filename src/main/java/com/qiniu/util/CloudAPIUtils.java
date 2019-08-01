@@ -75,6 +75,7 @@ public final class CloudAPIUtils {
     public static Decoder decoder = java.util.Base64.getDecoder();
 
     public static Map<String, Integer> aliStatus = new HashMap<String, Integer>(){{
+        put("InvalidResponse", 400); // 测试过程中发现的异常响应
         put("UnknownHost", 400); // 错误的 region 等
         put("AccessDenied", 403);// 拒绝访问
         put("BucketAlreadyExists", 409);// 存储空间已经存在
