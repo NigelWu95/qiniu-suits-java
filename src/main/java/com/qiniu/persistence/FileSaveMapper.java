@@ -41,11 +41,21 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     synchronized public void addWriter(String key) throws IOException {
         BufferedWriter writer = writerMap.get(key);
         if (writer != null) throw new IOException("this writer is already exists.");
-        File resultFile = new File(targetFileDir, prefix + key + this.suffix + ext);
+        File fDir = new File(targetFileDir);
+        boolean firExists = fDir.exists();
+        File resultFile = new File(fDir, prefix + key + this.suffix + ext);
+        boolean resultFileExists = resultFile.exists();
         int retry = retryTimes;
         while (retry > 0) {
             try {
-                if (!mkDirAndFile(resultFile)) throw new IOException("create result file " + resultFile + " failed.");
+                if (!firExists) {
+                    firExists = fDir.mkdirs();
+                    if (!firExists) throw new IOException("create result directory: " + targetFileDir + " failed.");
+                }
+                if (!resultFileExists) {
+                    resultFileExists = resultFile.createNewFile();
+                    if (!resultFileExists) throw new IOException("create result file " + resultFile + " failed.");
+                }
                 writer = new BufferedWriter(new FileWriter(resultFile, append));
                 writerMap.put(key, writer);
                 retry = 0;
@@ -59,20 +69,6 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
 
     synchronized public void addWriters(List<String> writers) throws IOException {
         for (String targetWriter : writers) addWriter(targetWriter);
-    }
-
-    private boolean mkDirAndFile(File filePath) throws IOException {
-        boolean success = filePath.getParentFile().exists();
-        if (!success) {
-            success = filePath.getParentFile().mkdirs();
-            if (!success) return false;
-        }
-        success = filePath.exists();
-        if (!success) {
-            return filePath.createNewFile();
-        } else {
-            return true;
-        }
     }
 
     synchronized public void closeWriters() {

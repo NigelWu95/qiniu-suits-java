@@ -115,4 +115,18 @@ public final class FileUtils {
         }
         return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
     }
+
+    public static boolean mkDirAndFile(File filePath) throws IOException {
+        boolean success = filePath.getParentFile().exists();
+        if (!success) {
+            success = filePath.getParentFile().mkdirs();
+            if (!success) return false;
+        }
+        success = filePath.exists();
+        if (!success) {
+            return filePath.createNewFile();
+        } else {
+            return true;
+        }
+    }
 }
