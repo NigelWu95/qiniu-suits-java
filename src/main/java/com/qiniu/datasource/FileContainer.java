@@ -119,7 +119,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
-        ITypeConvert<T, String> stringConverter = saveTotal ? getNewStringConverter() : null;
+        ITypeConvert<T, String> stringConverter = null;
+        if (saveTotal) {
+            stringConverter = getNewStringConverter();
+            saver.addWriter("failed");
+        }
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
         List<String> writeList;
@@ -145,7 +149,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     writeList = stringConverter.convertToVList(convertedList);
                     if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                     if (stringConverter.errorSize() > 0)
-                        saver.writeKeyFile("failed", stringConverter.errorLines(), false);
+                        saver.writeToKey("failed", stringConverter.errorLines(), false);
                 }
                 // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
@@ -202,7 +206,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
-            saveMapper.writeKeyFile(fileName, linesJson.toString(), true);
+            saveMapper.writeToKey(fileName, linesJson.toString(), true);
             saveMapper.closeWriters();
             System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
                     "reading remained lines.\n", fileName, FileSaveMapper.ext);

@@ -17,7 +17,7 @@ public interface IResultOutput<T> {
 
     void closeWriters();
 
-    void writeKeyFile(String key, String item, boolean flush) throws IOException;
+    void writeToKey(String key, String item, boolean flush) throws IOException;
 
     void writeSuccess(String item, boolean flush) throws IOException;
 

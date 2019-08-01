@@ -130,7 +130,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     // 如果 item 为 null 的话则不进行写入，flush 参数无效
-    public void writeKeyFile(String key, String item, boolean flush) throws IOException {
+    public void writeToKey(String key, String item, boolean flush) throws IOException {
         if (item != null) doWrite(key, item, flush);
         else throw new IOException("can't write empty.");
     }

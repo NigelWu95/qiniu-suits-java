@@ -181,7 +181,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
 //        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
         String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-" + name;
-        saveMapper.writeKeyFile(fileName, prefixesJson.toString(), true);
+        saveMapper.addWriter(fileName);
+        saveMapper.writeToKey(fileName, prefixesJson.toString(), true);
         saveMapper.closeWriters();
         System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
                 "listing remained files.\n", fileName, FileSaveMapper.ext);
@@ -202,7 +203,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<E, T> converter = getNewConverter();
-        ITypeConvert<E, String> stringConverter = saveTotal ? getNewStringConverter() : null;
+        ITypeConvert<E, String> stringConverter = null;
+        if (saveTotal) {
+            stringConverter = getNewStringConverter();
+            saver.addWriter("failed");
+        }
         List<T> convertedList;
         List<String> writeList;
         List<E> objects = lister.currents();
@@ -214,7 +219,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (stringConverter != null) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                if (stringConverter.errorSize() > 0) saver.writeKeyFile("error", stringConverter.errorLines(), false);
+                if (stringConverter.errorSize() > 0) saver.writeToKey("failed", stringConverter.errorLines(), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
             try {
