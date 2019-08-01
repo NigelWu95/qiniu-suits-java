@@ -75,10 +75,12 @@ public class StatFile extends Base<Map<String, String>> {
 
     public void updateFormat(String format) {
         this.format = format;
+        stringFormatter = getNewStatJsonFormatter(rmFields);
     }
 
     public void updateSeparator(String separator) {
         this.separator = separator;
+        stringFormatter = getNewStatJsonFormatter(rmFields);
     }
 
     public StatFile clone() throws CloneNotSupportedException {
