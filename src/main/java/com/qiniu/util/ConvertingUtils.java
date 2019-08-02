@@ -339,7 +339,7 @@ public final class ConvertingUtils {
                 case "mimeType": converted.append(fileInfo.mimeType).append(separator); break;
                 case "type": converted.append(fileInfo.type).append(separator); break;
                 case "status": converted.append(fileInfo.status).append(separator); break;
-                case "md5": converted.append(fileInfo.md5).append(separator); break;
+                case "md5": if (fileInfo.md5 != null) converted.append(fileInfo.md5).append(separator); break;
                 case "owner":
                 case "endUser": if (fileInfo.endUser != null) converted.append(fileInfo.endUser).append(separator); break;
                 default: throw new IOException("Qiniu fileInfo doesn't have field: " + field);

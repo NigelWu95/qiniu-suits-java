@@ -38,6 +38,10 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         return suffix;
     }
 
+    synchronized public void preAddWriter(String key) {
+        writerMap.put(key, null);
+    }
+
     synchronized public void addWriter(String key) throws IOException {
         BufferedWriter writer = writerMap.get(key);
         if (writer != null) throw new IOException("this writer is already exists.");
@@ -65,10 +69,6 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
             }
 
         }
-    }
-
-    synchronized public void addWriters(List<String> writers) throws IOException {
-        for (String targetWriter : writers) addWriter(targetWriter);
     }
 
     synchronized public void closeWriters() {
@@ -121,7 +121,27 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 }
             }
         } else {
-            throw new IOException("the writer is not exists now.");
+            if (writerMap.containsKey(key)) {
+                File resultFile = new File(targetFileDir, prefix + key + this.suffix + ext);
+                boolean resultFileExists = resultFile.exists();
+                int retry = retryTimes;
+                while (retry > 0) {
+                    try {
+                        if (!resultFileExists) {
+                            resultFileExists = resultFile.createNewFile();
+                            if (!resultFileExists) throw new IOException("create result file " + resultFile + " failed.");
+                        }
+                        bufferedWriter = new BufferedWriter(new FileWriter(resultFile, append));
+                        writerMap.put(key, bufferedWriter);
+                        retry = 0;
+                    } catch (IOException e) {
+                        retry--;
+                        if (retry <= 0) throw e;
+                    }
+                }
+            } else {
+                throw new IOException("the writer is not exists now.");
+            }
         }
     }
 
