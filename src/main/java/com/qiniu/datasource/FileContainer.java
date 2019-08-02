@@ -122,7 +122,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ITypeConvert<T, String> stringConverter = null;
         if (saveTotal) {
             stringConverter = getNewStringConverter();
-            saver.addWriter("failed");
+            saver.preAddWriter("failed");
         }
         List<String> srcList = new ArrayList<>();
         List<T> convertedList;
@@ -206,6 +206,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
+            saveMapper.addWriter(fileName);
             saveMapper.writeToKey(fileName, linesJson.toString(), true);
             saveMapper.closeWriters();
             System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +

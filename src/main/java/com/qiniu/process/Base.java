@@ -38,7 +38,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.saveIndex = new AtomicInteger(saveIndex);
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
-        this.fileSaveMapper.addWriter("need_retry");
+        this.fileSaveMapper.preAddWriter("need_retry");
     }
 
     public String getProcessName() {
@@ -68,7 +68,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
         else fileSaveMapper.closeWriters();
         fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
-        fileSaveMapper.addWriter("need_retry");
+        fileSaveMapper.preAddWriter("need_retry");
     }
 
     @SuppressWarnings("unchecked")
@@ -77,7 +77,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         if (fileSaveMapper == null) return base;
         try {
             base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
-            base.fileSaveMapper.addWriter("need_retry");
+            base.fileSaveMapper.preAddWriter("need_retry");
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }

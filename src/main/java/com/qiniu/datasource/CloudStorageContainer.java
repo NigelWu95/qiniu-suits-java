@@ -183,7 +183,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
             stringConverter = getNewStringConverter();
-            saver.addWriter("failed");
+            saver.preAddWriter("failed");
         }
         List<T> convertedList;
         List<String> writeList;
