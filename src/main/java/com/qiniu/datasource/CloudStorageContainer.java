@@ -457,6 +457,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String lastPrefix;
         Map<String, String> prefixMap;
         Map<String, String> lastPrefixMap;
+        String firstEndPrefix = prefixes == null || prefixes.size() == 0 ? "" : prefixes.get(0);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
             if (prefixMap.size() == 0) {
@@ -470,7 +471,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixAndEndedMap.put(lastPrefix, prefixMap);
                 prefixAndEndedMap.remove(prefix);
             } else {
-                if (!"".equals(lastPrefix) || prefixRight) {
+                if (prefix.equals(firstEndPrefix) || "".equals(lastPrefix)) {
+                    if (prefixRight) {
+                        prefixAndEndedMap.put("", prefixMap);
+                        prefixAndEndedMap.remove(prefix);
+                    }
+                } else {
                     prefixAndEndedMap.put(lastPrefix, prefixMap);
                     prefixAndEndedMap.remove(prefix);
                 }
