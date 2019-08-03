@@ -99,10 +99,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 }
                 if (upLister.hasNext() || upLister.getDirectories() != null) {
                     listing(upLister, UniOrderUtils.getOrder());
-                    if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) return null;
-                    else if (hasAntiPrefixes) return upLister.getDirectories().stream()
-                            .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
-                    else {
+                    if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
+                        return null;
+                    } else if (hasAntiPrefixes) {
+                        return upLister.getDirectories().stream().filter(this::checkPrefix)
+                                .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                    } else {
                         for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
                         return upLister.getDirectories();
                     }

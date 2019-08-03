@@ -1,6 +1,7 @@
 package com.qiniu.datasource;
 
 import com.google.gson.JsonObject;
+import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILineProcess;
@@ -163,20 +164,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    private volatile JsonObject prefixesJson = new JsonObject();
+    private JsonRecorder recorder = new JsonRecorder();
 
-    private synchronized void recordPrefixConfig(String prefix, JsonObject continueConf) {
-        prefixesJson.add(prefix, continueConf);
-    }
-
-    private synchronized void removePrefixConfig(String prefix) {
-        prefixesJson.remove(prefix);
-    }
-
-    JsonObject recordListerByPrefix(String prefix) {
+    void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
-        recordPrefixConfig(prefix, json);
-        return json;
+        recorder.put(prefix, json);
     }
 
     /**
@@ -191,7 +183,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
             stringConverter = getNewStringConverter();
-            saver.addWriter("failed");
+            saver.preAddWriter("failed");
         }
         List<T> convertedList;
         List<String> writeList;
@@ -218,10 +210,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 e.response.close();
             }
             if (hasNext) {
-                JsonObject json = JsonUtils.getOrNew(prefixesJson, lister.getPrefix());
+                JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
                 json.addProperty("marker", lister.getMarker());
                 json.addProperty("end", lister.getEndPrefix());
-                recordPrefixConfig(lister.getPrefix(), json);
+                recorder.put(lister.getPrefix(), json);
                 if (objects.size() <= 0) map = prefixAndEndedMap.get(lister.getPrefix());
             } else {
                 map = prefixAndEndedMap.get(lister.getPrefix());
@@ -263,12 +255,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             saver = getNewResultSaver(orderStr);
             saverMap.put(orderStr, saver);
             export(lister, saver, lineProcessor);
-            removePrefixConfig(lister.getPrefix());
+            recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
             System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tsuccessfully done");
         } catch (Throwable e) {
             e.printStackTrace();
-            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + prefixesJson.get(lister.getPrefix()));
+            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + recorder.get(lister.getPrefix()));
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
@@ -366,7 +358,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (generated == null) return false;
             else if (generated.currents().size() > 0 || generated.hasNext()) return true;
             else {
-                removePrefixConfig(generated.getPrefix());
+                recorder.remove(generated.getPrefix());
                 return false;
             }
         }).collect(Collectors.toList());
@@ -392,7 +384,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
         } else {
-            removePrefixConfig(lister.getPrefix());
+            recorder.remove(lister.getPrefix());
             lister.close();
         }
     }
@@ -457,20 +449,26 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String lastPrefix;
         Map<String, String> prefixMap;
         Map<String, String> lastPrefixMap;
+        String firstEndPrefix = prefixes == null || prefixes.size() == 0 ? "" : prefixes.get(0);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
             if (prefixMap.size() == 0) {
                 prefixAndEndedMap.remove(prefix);
                 continue;
             }
-            removePrefixConfig(prefix);
+            recorder.remove(prefix);
             lastPrefix = prefix.substring(0, prefix.length() - 1);
             lastPrefixMap = prefixAndEndedMap.get(lastPrefix);
             if (lastPrefixMap != null) {
                 prefixAndEndedMap.put(lastPrefix, prefixMap);
                 prefixAndEndedMap.remove(prefix);
             } else {
-                if (!"".equals(lastPrefix) || prefixRight) {
+                if (prefix.equals(firstEndPrefix) || "".equals(lastPrefix)) {
+                    if (prefixRight) {
+                        prefixAndEndedMap.put("", prefixMap);
+                        prefixAndEndedMap.remove(prefix);
+                    }
+                } else {
                     prefixAndEndedMap.put(lastPrefix, prefixMap);
                     prefixAndEndedMap.remove(prefix);
                 }
@@ -524,7 +522,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
-        if (prefixesJson.size() > 0) {
+        if (recorder.size() > 0) {
             FileSaveMapper.ext = ".json";
             FileSaveMapper.append = false;
             String path = new File(savePath).getCanonicalPath();
@@ -532,7 +530,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 //        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
             saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, prefixesJson.toString(), true);
+            saveMapper.writeToKey(fileName, recorder.toString(), true);
             saveMapper.closeWriters();
             System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
                     "listing remained objects.\n", fileName, FileSaveMapper.ext);

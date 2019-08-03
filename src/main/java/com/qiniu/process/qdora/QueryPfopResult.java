@@ -21,8 +21,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         super("pfopresult", "", "", null);
         set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
-        this.fileSaveMapper.addWriter("waiting");
-        this.fileSaveMapper.addWriter("notify_failed");
+        this.fileSaveMapper.preAddWriter("waiting");
+        this.fileSaveMapper.preAddWriter("notify_failed");
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
@@ -30,8 +30,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         super("pfopresult", "", "", null, savePath, saveIndex);
         set(configuration, protocol, persistentIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
-        this.fileSaveMapper.addWriter("waiting");
-        this.fileSaveMapper.addWriter("notify_failed");
+        this.fileSaveMapper.preAddWriter("waiting");
+        this.fileSaveMapper.preAddWriter("notify_failed");
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
@@ -48,8 +48,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     public void updateSavePath(String savePath) throws IOException {
         super.updateSavePath(savePath);
-        this.fileSaveMapper.addWriter("waiting");
-        this.fileSaveMapper.addWriter("notify_failed");
+        this.fileSaveMapper.preAddWriter("waiting");
+        this.fileSaveMapper.preAddWriter("notify_failed");
     }
 
     public void updateProtocol(String protocol) {
@@ -63,12 +63,8 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
         pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);
-        try {
-            pfopResult.fileSaveMapper.addWriter("waiting");
-            pfopResult.fileSaveMapper.addWriter("notify_failed");
-        } catch (IOException e) {
-            throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
-        }
+        pfopResult.fileSaveMapper.preAddWriter("waiting");
+        pfopResult.fileSaveMapper.preAddWriter("notify_failed");
         return pfopResult;
     }
 

@@ -11,9 +11,9 @@ public interface IResultOutput<T> {
 
     String getSuffix();
 
-    void addWriter(String key) throws IOException;
+    void preAddWriter(String key);
 
-    void addWriters(List<String> writers) throws IOException;
+    void addWriter(String key) throws IOException;
 
     void closeWriters();
 
