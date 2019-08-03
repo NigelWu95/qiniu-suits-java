@@ -115,7 +115,7 @@ prefix-right=
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
 
 **备注：** 又拍云存储的列举不支持 prefix-left 和 prefix-right 参数，同时又拍云存储强制目录结构以 "/" 作为分隔符，不支持任意前缀列举，设置 
-prefixes 的情况下必须是有效率的目录名 
+prefixes 的情况下必须是有效的目录名 
 
 #### # 关于多前缀列举
 prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果设
