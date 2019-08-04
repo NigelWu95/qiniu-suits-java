@@ -1,4 +1,4 @@
-package com.qiniu.process.qos;
+package com.qiniu.process.other;
 
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
@@ -13,7 +13,7 @@ public class M3U8Manager {
 
     private Client client;
     private String protocol;
-    final private List<String> m3u8ContentTypes = new ArrayList<String>(){{
+    final private static List<String> m3u8ContentTypes = new ArrayList<String>(){{
         add("application/x-mpegurl");
         add("application/vnd.apple.mpegurl");
     }};
@@ -68,7 +68,8 @@ public class M3U8Manager {
 
     public List<VideoTS> getVideoTSListByUrl(String m3u8Url) throws IOException {
         Response response = client.get(m3u8Url);
-        if (m3u8ContentTypes.contains(response.contentType())) {
+        String contentType = response.contentType();
+        if (m3u8ContentTypes.contains(contentType)) {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(response.bodyStream()));
             List<VideoTS> ret = getVideoTSList(bufferedReader, m3u8Url.substring(m3u8Url.indexOf("://") + 3,
                     m3u8Url.indexOf("/", 9)));
@@ -78,7 +79,7 @@ public class M3U8Manager {
         } else {
             response.close();
             // 说明不是 m3u8 文件
-            throw new IOException(m3u8Url + " 's content-type is " + response.contentType() + ", not a m3u8 type.");
+            throw new IOException(m3u8Url + " 's content-type is " + contentType + ", not a m3u8 type.");
         }
     }
 

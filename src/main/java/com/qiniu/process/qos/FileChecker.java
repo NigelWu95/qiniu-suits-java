@@ -15,7 +15,7 @@ public class FileChecker {
     private Client client;
     private String algorithm;
     private String protocol;
-    final private List<String> algorithms = new ArrayList<String>(){{
+    final private static List<String> algorithms = new ArrayList<String>(){{
         add("md5");
         add("sha1");
     }};

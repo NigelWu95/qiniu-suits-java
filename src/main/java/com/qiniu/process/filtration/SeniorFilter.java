@@ -15,6 +15,7 @@ public abstract class SeniorFilter<T> {
     final private String checkName;
     private Set<String> extMimeList;
     private Set<String> extMimeTypeList;
+    private static JsonFile defaultCheckJson;
 
     public SeniorFilter(String checkName, String configPath, boolean rewrite) throws IOException {
         List<String> checkList = new ArrayList<String>() {{
@@ -32,8 +33,8 @@ public abstract class SeniorFilter<T> {
             );
         }
         if (checkExtMime() && !rewrite) {
-            JsonFile jsonFile = new JsonFile("check.json");
-            JsonObject extMime = jsonFile.getElement("ext-mime").getAsJsonObject();
+            if (defaultCheckJson == null) defaultCheckJson = new JsonFile("check.json");
+            JsonObject extMime = defaultCheckJson.getElement("ext-mime").getAsJsonObject();
             List<String> defaultList = JsonUtils.fromJsonArray(extMime.get("image").getAsJsonArray(),
                     new TypeToken<List<String>>(){});
             defaultList.addAll(JsonUtils.fromJsonArray(extMime.get("audio").getAsJsonArray(),

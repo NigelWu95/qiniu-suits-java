@@ -7,6 +7,8 @@ public interface IResultOutput<T> {
 
     void setRetryTimes(int retryTimes);
 
+    String getSavePath();
+
     String getPrefix();
 
     String getSuffix();

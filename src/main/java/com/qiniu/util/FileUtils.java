@@ -60,6 +60,8 @@ public final class FileUtils {
         if (pathStr == null || "".equals(pathStr)) throw new IOException("the path is empty.");
         if (pathStr.startsWith("~" + pathSeparator)) {
             return userHome + pathStr.substring(1);
+        } else if (pathStr.startsWith("\\~") || pathStr.startsWith("\\-")) {
+            return pathStr.substring(1);
         } else {
             return new File(pathStr).getCanonicalPath();
         }
@@ -117,9 +119,10 @@ public final class FileUtils {
     }
 
     public static boolean mkDirAndFile(File filePath) throws IOException {
-        boolean success = filePath.getParentFile().exists();
+        File parent = filePath.getParentFile();
+        boolean success = parent.exists();
         if (!success) {
-            success = filePath.getParentFile().mkdirs();
+            success = parent.mkdirs();
             if (!success) return false;
         }
         success = filePath.exists();

@@ -113,7 +113,7 @@ public class QSuitsEntry {
         this.rmFields = commonParams.getRmFields();
         this.process = commonParams.getProcess();
         this.retryTimes = commonParams.getRetryTimes();
-        this.savePath = commonParams.getSavePath() + commonParams.getSaveTag();
+        this.savePath = commonParams.getSavePath();
         this.saveFormat = commonParams.getSaveFormat();
         this.saveSeparator = commonParams.getSaveSeparator();
     }

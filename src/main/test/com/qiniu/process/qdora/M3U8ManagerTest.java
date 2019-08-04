@@ -1,7 +1,7 @@
 package com.qiniu.process.qdora;
 
 import com.qiniu.model.qdora.VideoTS;
-import com.qiniu.process.qos.M3U8Manager;
+import com.qiniu.process.other.M3U8Manager;
 import org.junit.Test;
 
 import java.io.IOException;
