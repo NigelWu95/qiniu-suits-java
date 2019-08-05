@@ -28,7 +28,7 @@ public class ImageCensor extends Base<Map<String, String>> {
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
                        String urlIndex, Scenes scenes, String savePath, int saveIndex) throws IOException {
-        super("imagecensor", "", "", null, savePath, saveIndex);
+        super("imagecensor", accesskey, secretKey, null, savePath, saveIndex);
         set(configuration, domain, protocol, urlIndex, scenes);
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }

@@ -143,14 +143,18 @@ public class CensorManager {
         paramsJson.remove("hook_url");
     }
 
-    public CensorResult censorResult(String jobId) throws QiniuException {
+    public String censorString(String jobId) throws QiniuException {
         String queryUrl = "http://ai.qiniuapi.com/v3/jobs/video/" + jobId;
         String token = "Qiniu " + auth.signRequestV2(queryUrl, "GET", null, null);
         headers.put("Authorization", token);
         Response response = client.get(queryUrl, headers);
         if (response.statusCode != 200) throw new QiniuException(response);
-        CensorResult result = JsonUtils.fromJson(response.bodyString(), CensorResult.class);
+        String result = response.bodyString();
         response.close();
         return result;
+    }
+
+    public CensorResult censorResult(String jobId) throws QiniuException {
+        return JsonUtils.fromJson(censorString(jobId), CensorResult.class);
     }
 }
