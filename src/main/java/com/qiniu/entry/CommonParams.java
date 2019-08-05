@@ -481,7 +481,6 @@ public class CommonParams {
         }
         String type = entryParam.getValue("f-type", "").trim();
         String status = entryParam.getValue("f-status", "").trim();
-        if (!"".equals(type)) type = ParamsUtils.checked(type, "f-type", "[01]");
         if (!"".equals(status)) status = ParamsUtils.checked(status, "f-status", "[01]");
 
         List<String> keyPrefixList = Arrays.asList(ParamsUtils.escapeSplit(keyPrefix));
