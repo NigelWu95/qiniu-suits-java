@@ -21,7 +21,7 @@ public class VideoCensor extends Base<Map<String, String>> {
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
                        String urlIndex, Scenes scenes, int interval, String saverBucket, String saverPrefix, String hookUrl)
             throws IOException {
-        super("imagecensor", accesskey, secretKey, null);
+        super("videocensor", accesskey, secretKey, null);
         set(configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }
@@ -29,7 +29,7 @@ public class VideoCensor extends Base<Map<String, String>> {
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
                        String urlIndex, Scenes scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
                        String savePath, int saveIndex) throws IOException {
-        super("imagecensor", accesskey, secretKey, null, savePath, saveIndex);
+        super("videocensor", accesskey, secretKey, null, savePath, saveIndex);
         set(configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }
