@@ -2,6 +2,7 @@ package com.qiniu.process.qai;
 
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.util.Auth;
+import com.qiniu.util.JsonUtils;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -16,13 +17,13 @@ public class CensorManagerTest {
         String secretKey = propertiesFile.getValue("sk");
         Auth auth = Auth.create(accessKey, secretKey);
         CensorManager censorManager = new CensorManager(auth);
-//        String result = censorManager.doVideoCensor("http://p3l1d5mx4.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
-//                Scenes.PULP, 0, null, null, null);
+//        String result = censorManager.doVideoCensor("http://xx.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
+//                Scenes.PULP, 10, "temp", "test-censor", "http://xx.com");
 //        System.out.println(result);
 ////        String
 //                result = censorManager.doImageCensor("http://7xlv47.com1.z0.glb.clouddn.com/pulpsexy.jpg", Scenes.PULP);
 //        System.out.println(result);
-        System.out.println(censorManager.censorResult("5d4809a757d7d50008b66074").result);
+        System.out.println(JsonUtils.toJson(censorManager.censorResult("5d480ea3244bbb000818d0f4")));
     }
 
 }

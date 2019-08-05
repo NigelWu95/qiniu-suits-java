@@ -41,7 +41,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     private void set(Configuration configuration, String protocol, String pidIndex) throws IOException {
         this.configuration = configuration;
-        this.protocol = protocol;
+        this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
         if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentId-index.");
         else this.pidIndex = pidIndex;
     }

@@ -24,7 +24,6 @@ public class CensorManager {
     private StringMap headers;
     private static String imageCensorUrl = "http://ai.qiniuapi.com/v3/image/censor";
     private static String videoCensorUrl = "http://ai.qiniuapi.com/v3/video/censor";
-    private static String censorResultUrl ="http://ai.qiniuapi.com/v3/jobs/video/";
     private static JsonArray pulpJsonArray = new JsonArray();
     private static JsonArray terrorJsonArray = new JsonArray();
     private static JsonArray politicianJsonArray = new JsonArray();
@@ -43,7 +42,7 @@ public class CensorManager {
         pulp_terror_politicianJsonArray.add("terror");
         pulp_terror_politicianJsonArray.add("politician");
     }
-    private static Map<Scenes, JsonArray> scenesMap = new HashMap<Scenes, JsonArray>(){{
+    public static Map<Scenes, JsonArray> scenesMap = new HashMap<Scenes, JsonArray>(){{
         put(Scenes.PULP, pulpJsonArray);
         put(Scenes.TERROR, terrorJsonArray);
         put(Scenes.POLITICIAN, politicianJsonArray);
@@ -84,7 +83,7 @@ public class CensorManager {
     }
 
     synchronized public String doVideoCensor(String url, Scenes scenes, int interval, String saverBucket, String saverPrefix,
-                                               String hookUrl) throws QiniuException {
+                                             String hookUrl) throws QiniuException {
         uriJson.addProperty("uri", url);
         bodyJson.add("data", uriJson);
         paramsJson.add("scenes", scenesMap.get(scenes));
@@ -112,6 +111,30 @@ public class CensorManager {
         return result;
     }
 
+    synchronized private String doCensor(String requestUrl, String url, JsonObject paramsJson) throws QiniuException {
+        uriJson.addProperty("uri", url);
+        bodyJson.add("data", uriJson);
+        bodyJson.add("params", paramsJson);
+        byte[] body = bodyJson.toString().getBytes();
+        bodyJson.remove("data");
+        bodyJson.remove("params");
+        String token = "Qiniu " + auth.signRequestV2(requestUrl, "POST", body, "application/json");
+        headers.put("Authorization", token);
+        Response response = client.post(requestUrl, body, headers, Client.JsonMime);
+        if (response.statusCode != 200) throw new QiniuException(response);
+        String result = response.bodyString();
+        response.close();
+        return result;
+    }
+
+    public String doImageCensor(String url, JsonObject paramsJson) throws QiniuException {
+        return doCensor(imageCensorUrl, url, paramsJson);
+    }
+
+    public String doVideoCensor(String url, JsonObject paramsJson) throws QiniuException {
+        return doCensor(videoCensorUrl, url, paramsJson);
+    }
+
     private void jsonClear() {
         bodyJson.remove("data");
         bodyJson.remove("params");
@@ -121,7 +144,7 @@ public class CensorManager {
     }
 
     public CensorResult censorResult(String jobId) throws QiniuException {
-        String queryUrl = censorResultUrl + jobId;
+        String queryUrl = "http://ai.qiniuapi.com/v3/jobs/video/" + jobId;
         String token = "Qiniu " + auth.signRequestV2(queryUrl, "GET", null, null);
         headers.put("Authorization", token);
         Response response = client.get(queryUrl, headers);
