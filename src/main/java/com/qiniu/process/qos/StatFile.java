@@ -108,7 +108,7 @@ public class StatFile extends Base<Map<String, String>> {
                 lines.add(map);
                 batchOperations.addStatOps(bucket, key);
             } else {
-                fileSaveMapper.writeError("no key in " + map, false);
+                fileSaveMapper.writeError("key is not exists or empty in " + map, false);
             }
         }
         return lines;
@@ -162,7 +162,7 @@ public class StatFile extends Base<Map<String, String>> {
     @SuppressWarnings("unchecked")
     protected String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
-        if (key == null) throw new IOException("no key in " + line);
+        if (key == null) throw new IOException("key is not exists or empty in " + line);
         Response response = bucketManager.statResponse(bucket, key);
         JsonObject statJson = JsonUtils.toJsonObject(response.bodyString());
         statJson.addProperty("key", key);

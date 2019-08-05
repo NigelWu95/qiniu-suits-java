@@ -1,6 +1,5 @@
 package com.qiniu.process.qdora;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.model.qdora.Item;
 import com.qiniu.model.qdora.PfopResult;
 import com.qiniu.process.Base;
@@ -100,8 +99,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String pid = line.get(pidIndex);
+        if (pid == null || pid.isEmpty()) throw new IOException("key is not exists or empty in " + line);
         return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }
 

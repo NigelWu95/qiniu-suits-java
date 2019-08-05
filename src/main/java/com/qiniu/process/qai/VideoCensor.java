@@ -108,7 +108,7 @@ public class VideoCensor extends Base<Map<String, String>> {
         String url = line.get(urlIndex);
         if (url == null || "".equals(url)) {
             String key = line.get("key");
-            if (key == null) throw new IOException("no key in " + line);
+            if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
             return key + "\t" + url + "\t" + censorManager.doVideoCensor(url, paramsJson);

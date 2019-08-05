@@ -1,6 +1,5 @@
 package com.qiniu.process.qai;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
@@ -83,8 +82,9 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws QiniuException {
+    protected String singleResult(Map<String, String> line) throws IOException {
         String jobId = line.get(jobIdIndex);
+        if (jobId == null || jobId.isEmpty()) throw new IOException("key is not exists or empty in " + line);
         StringBuilder result = new StringBuilder();
         for (String key : line.keySet()) result.append(line.get(key)).append("\t");
         return result.append(censorManager.censorString(jobId)).toString();
