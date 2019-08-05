@@ -85,7 +85,9 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws QiniuException {
         String jobId = line.get(jobIdIndex);
-        return jobId + "\t" + censorManager.censorString(jobId);
+        StringBuilder result = new StringBuilder();
+        for (String key : line.keySet()) result.append(line.get(key)).append("\t");
+        return result.append(censorManager.censorString(jobId)).toString();
     }
 
     @Override

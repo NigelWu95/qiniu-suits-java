@@ -111,8 +111,9 @@ public class VideoCensor extends Base<Map<String, String>> {
             if (key == null) throw new IOException("no key in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
+            return key + "\t" + url + "\t" + censorManager.doVideoCensor(url, paramsJson);
         }
-        return censorManager.doVideoCensor(url, paramsJson);
+        return url + "\t" + censorManager.doVideoCensor(url, paramsJson);
     }
 
     @Override

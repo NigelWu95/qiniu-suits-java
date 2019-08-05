@@ -122,7 +122,7 @@ public class PfopCommand extends Base<Map<String, String>> {
             if (key == null) throw new IOException("no key in " + line);
             info = line.get(avinfoIndex);
             if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
-            avinfo = mediaManager.getAvinfoByJson(info);
+            avinfo = mediaManager.getAvinfoByJson(JsonUtils.fromJson(info, JsonObject.class));
             if (hasDuration) other.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
             if (hasSize) other.append("\t").append(Long.valueOf(avinfo.getFormat().size));
             videoStream = avinfo.getVideoStream();

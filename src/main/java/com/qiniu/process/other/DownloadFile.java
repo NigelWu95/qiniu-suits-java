@@ -103,7 +103,7 @@ public class DownloadFile extends Base<Map<String, String>> {
         String url = line.get(urlIndex);
         String key = line.get("key");
         if (url == null || "".equals(url)) {
-            if (key == null) throw new IOException("no key in " + line);
+            if (key == null || "".equals(key)) throw new IOException("key is not exists or empty in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
             key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名

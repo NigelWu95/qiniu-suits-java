@@ -76,8 +76,8 @@ public class CensorManager {
         String token = "Qiniu " + auth.signRequestV2(imageCensorUrl, "POST", body, "application/json");
         headers.put("Authorization", token);
         Response response = client.post(imageCensorUrl, body, headers, Client.JsonMime);
-        if (response.statusCode != 200) throw new QiniuException(response);
         String result = response.bodyString();
+        if (response.statusCode != 200 || result.isEmpty()) throw new QiniuException(response);
         response.close();
         return result;
     }
@@ -105,8 +105,8 @@ public class CensorManager {
         String token = "Qiniu " + auth.signRequestV2(videoCensorUrl, "POST", body, "application/json");
         headers.put("Authorization", token);
         Response response = client.post(videoCensorUrl, body, headers, Client.JsonMime);
-        if (response.statusCode != 200) throw new QiniuException(response);
         String result = response.bodyString();
+        if (response.statusCode != 200 || result.isEmpty()) throw new QiniuException(response);
         response.close();
         return result;
     }
@@ -121,8 +121,8 @@ public class CensorManager {
         String token = "Qiniu " + auth.signRequestV2(requestUrl, "POST", body, "application/json");
         headers.put("Authorization", token);
         Response response = client.post(requestUrl, body, headers, Client.JsonMime);
-        if (response.statusCode != 200) throw new QiniuException(response);
         String result = response.bodyString();
+        if (response.statusCode != 200 || result.isEmpty()) throw new QiniuException(response);
         response.close();
         return result;
     }
@@ -148,8 +148,8 @@ public class CensorManager {
         String token = "Qiniu " + auth.signRequestV2(queryUrl, "GET", null, null);
         headers.put("Authorization", token);
         Response response = client.get(queryUrl, headers);
-        if (response.statusCode != 200) throw new QiniuException(response);
         String result = response.bodyString();
+        if (response.statusCode != 200 || result.isEmpty()) throw new QiniuException(response);
         response.close();
         return result;
     }

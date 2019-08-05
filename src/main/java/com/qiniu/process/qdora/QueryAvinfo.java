@@ -79,14 +79,9 @@ public class QueryAvinfo extends Base<Map<String, String>> {
             if (key == null) throw new IOException("no key in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
+            return key + "\t" + url + "\t" + JsonUtils.toJson(mediaManager.getAvinfoBody(url));
         }
-        String avinfo = mediaManager.getAvinfoBody(url);
-        if (avinfo != null && !"".equals(avinfo)) {
-            // 由于响应的 body 为多行需经过格式化处理为一行字符串
-            return url + "\t" + JsonUtils.toJson(avinfo);
-        } else {
-            throw new IOException(line + " only has empty_result");
-        }
+        return url + "\t" + JsonUtils.toJson(mediaManager.getAvinfoBody(url));
     }
 
     @Override
