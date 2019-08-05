@@ -18,7 +18,7 @@ url-index=0
 |-----|-------|-----|  
 |process=qhash| 查询qhash时设置为qhash| 表示查询资源 hash 值操作|  
 |algorithm| md5/sha1| 查询 qhash 使用的算法,默认为 md5|  
-|domain| 域名字符串| 用于拼接文件名生成链接的域名，数据源为 file 且指定 url-index 时无需设置|  
+|domain| 域名字符串| 用于拼接文件名生成链接的域名，当指定 url-index 时无需设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 

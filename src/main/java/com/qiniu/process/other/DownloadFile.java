@@ -30,6 +30,15 @@ public class DownloadFile extends Base<Map<String, String>> {
     }
 
     public DownloadFile(Configuration configuration, String domain, String protocol, String urlIndex, String host,
+                        String downPath, String addPrefix, String rmPrefix) throws IOException {
+        super("download", "", "", null);
+        if (downPath == null || "".equals(downPath)) preDown = true;
+        else this.savePath = FileUtils.realPathWithUserHome(downPath);
+        set(configuration, domain, protocol, urlIndex, host, preDown, addPrefix, rmPrefix);
+        downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
+    }
+
+    public DownloadFile(Configuration configuration, String domain, String protocol, String urlIndex, String host,
                         boolean preDown, String addPrefix, String rmPrefix, String savePath) throws IOException {
         this(configuration, domain, protocol, urlIndex, host, preDown, addPrefix, rmPrefix, savePath, 0);
     }
@@ -106,7 +115,8 @@ public class DownloadFile extends Base<Map<String, String>> {
         if (preDown) {
             downloader.download(url, headers);
         } else {
-            downloader.download(url, fileSaveMapper.getSavePath() + FileUtils.pathSeparator + key, headers);
+            downloader.download(url, (fileSaveMapper == null ? savePath : fileSaveMapper.getSavePath()) +
+                    FileUtils.pathSeparator + key, headers);
         }
         return "success";
     }
