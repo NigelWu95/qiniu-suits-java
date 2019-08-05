@@ -5,6 +5,7 @@ import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.FileUtils;
+import com.qiniu.util.StringMap;
 
 import java.io.*;
 
@@ -24,9 +25,9 @@ public class HttpDownloader {
         this.client = new Client(configuration);
     }
 
-    public void download(String url, String filepath) throws IOException {
-        Response response = client.get(url);
-        if (response.statusCode >= 200 && response.statusCode < 300) {
+    public File download(String url, String filepath, StringMap headers) throws IOException {
+        Response response = client.get(url, headers);
+        if (response.statusCode == 200 || response.statusCode == 206) {
             File file = new File(filepath);
             if (file.exists()) {
                 throw new IOException("file: " + filepath + " is already exists.");
@@ -43,6 +44,40 @@ public class HttpDownloader {
                 while ((byteRead = inputStream.read(buffer)) > -1) {
                     writer.write(buffer, 0, byteRead);
                 }
+            } finally {
+                response.close();
+            }
+            return file;
+        } else {
+            throw new QiniuException(response);
+        }
+    }
+
+    public File download(String url, File file, boolean append, StringMap headers) throws IOException {
+        Response response = client.get(url, headers);
+        if (response.statusCode == 200 || response.statusCode == 206) {
+            byte[] buffer = new byte[4096];
+            int byteRead;
+            try (FileOutputStream writer = new FileOutputStream(file, append);
+                 InputStream inputStream = response.bodyStream()) {
+                while ((byteRead = inputStream.read(buffer)) > -1) {
+                    writer.write(buffer, 0, byteRead);
+                }
+            } finally {
+                response.close();
+            }
+            return file;
+        } else {
+            throw new QiniuException(response);
+        }
+    }
+
+    public void download(String url, StringMap headers) throws IOException {
+        Response response = client.get(url, headers);
+        if (response.statusCode == 200 || response.statusCode == 206) {
+            byte[] buffer = new byte[4096];
+            try (InputStream inputStream = response.bodyStream()) {
+                while ((inputStream.read(buffer)) > -1);
             } finally {
                 response.close();
             }

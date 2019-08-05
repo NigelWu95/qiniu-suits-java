@@ -11,7 +11,7 @@ public class DownloadFileTest {
     public void testProcessLine() {
         try {
             DownloadFile downloadFile = new DownloadFile(null, null, null, "url",
-                    null, null, "\\~");
+                    null, true, null, null, "\\~");
             downloadFile.processLine(new HashMap<String, String>(){{
                 put("url", "http://p3l1d5mx4.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o");
             }});
