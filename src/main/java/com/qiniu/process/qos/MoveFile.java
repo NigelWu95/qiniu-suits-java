@@ -84,7 +84,7 @@ public class MoveFile extends Base<Map<String, String>> {
             this.toKeyIndex = toKeyIndex;
         }
         this.addPrefix = addPrefix == null ? "" : addPrefix;
-        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
+        this.rmPrefix = rmPrefix;
     }
 
     public void updateToBucket(String toBucket) {
@@ -96,7 +96,7 @@ public class MoveFile extends Base<Map<String, String>> {
     }
 
     public void updateAddPrefix(String addPrefix) {
-        this.addPrefix = addPrefix;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
     }
 
     public void updateRmPrefix(String rmPrefix) {

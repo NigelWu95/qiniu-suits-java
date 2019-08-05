@@ -8,23 +8,23 @@ import java.util.*;
 public class FileSaveMapper implements IResultOutput<BufferedWriter> {
 
     private Map<String, BufferedWriter> writerMap = new HashMap<>();
-    private String targetFileDir = null;
+    private String savePath = null;
     private String prefix = "";
     private String suffix = "";
     public static String ext = ".txt";
     public static boolean append = true;
     private int retryTimes = 5;
 
-    public FileSaveMapper(String targetFileDir) throws IOException {
-        this.targetFileDir = FileUtils.realPathWithUserHome(targetFileDir);
-        File fDir = new File(targetFileDir);
+    public FileSaveMapper(String savePath) throws IOException {
+        this.savePath = FileUtils.realPathWithUserHome(savePath);
+        File fDir = new File(this.savePath);
         boolean firExists = fDir.exists();
         int retry = retryTimes;
         while (retry > 0) {
             try {
                 if (!firExists) {
                     firExists = fDir.mkdirs();
-                    if (!firExists) throw new IOException("create result directory: " + targetFileDir + " failed.");
+                    if (!firExists) throw new IOException("create result directory: " + savePath + " failed.");
                 }
                 retry = 0;
             } catch (IOException e) {
@@ -34,8 +34,8 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         }
     }
 
-    public FileSaveMapper(String targetFileDir, String prefix, String suffix) throws IOException {
-        this(targetFileDir);
+    public FileSaveMapper(String savePath, String prefix, String suffix) throws IOException {
+        this(savePath);
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
         for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
@@ -43,6 +43,10 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
+    }
+
+    public String getSavePath() {
+        return savePath;
     }
 
     public String getPrefix() {
@@ -58,7 +62,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     private BufferedWriter add(String key) throws IOException {
-        File resultFile = new File(targetFileDir, prefix + key + this.suffix + ext);
+        File resultFile = new File(savePath, prefix + key + this.suffix + ext);
         boolean resultFileExists = resultFile.exists();
         int retry = retryTimes;
         BufferedWriter writer = null;
@@ -95,7 +99,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 try {
                     bufferedWriter = writerMap.get(entry.getKey());
                     if (bufferedWriter != null) bufferedWriter.close();
-                    File file = new File(targetFileDir, prefix + entry.getKey() + this.suffix + ext);
+                    File file = new File(savePath, prefix + entry.getKey() + this.suffix + ext);
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
                         if (reader.readLine() == null) {
@@ -114,7 +118,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
             }
         }
         writerMap.clear();
-        targetFileDir = null;
+        savePath = null;
         prefix = null;
         suffix = null;
     }

@@ -68,7 +68,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
             this.urlIndex = urlIndex;
         }
         this.addPrefix = addPrefix == null ? "" : addPrefix;
-        this.rmPrefix = rmPrefix == null ? "" : rmPrefix;
+        this.rmPrefix = rmPrefix;
     }
 
     public void updateDomain(String domain) {
@@ -84,7 +84,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
     }
 
     public void updateAddPrefix(String addPrefix) {
-        this.addPrefix = addPrefix;
+        this.addPrefix = addPrefix == null ? "" : addPrefix;
     }
 
     public void updateRmPrefix(String rmPrefix) {

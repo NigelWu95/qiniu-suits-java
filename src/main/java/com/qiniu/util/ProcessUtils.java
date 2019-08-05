@@ -11,6 +11,10 @@ public final class ProcessUtils {
         add("qhash");
         add("avinfo");
         add("exportts");
+        add("tenprivate");
+        add("awsprivate");
+        add("aliprivate");
+        add("download");
     }};
     public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
@@ -74,10 +78,12 @@ public final class ProcessUtils {
         add("qhash");
         add("avinfo");
         add("exportts");
+        add("download");
         add("filter");
     }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
         add("status");
+        add("lifecycle");
         add("move");
         add("rename");
         add("delete");

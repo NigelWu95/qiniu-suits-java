@@ -6,7 +6,6 @@ import com.qiniu.util.FileUtils;
 import com.qiniu.util.JsonUtils;
 
 import java.io.*;
-import java.util.Properties;
 import java.util.Set;
 
 public class JsonFile {
