@@ -15,6 +15,8 @@ public final class ProcessUtils {
         add("awsprivate");
         add("aliprivate");
         add("download");
+        add("imagecensor");
+        add("videocensor");
     }};
     public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
@@ -24,8 +26,9 @@ public final class ProcessUtils {
     public static Set<String> needFopsProcesses = new HashSet<String>(){{
         add("pfop");
     }};
-    public static Set<String> needPidProcesses = new HashSet<String>(){{
+    public static Set<String> needIdProcesses = new HashSet<String>(){{
         add("pfopresult");
+        add("censorresult");
     }};
     public static Set<String> needAvinfoProcesses = new HashSet<String>(){{
         add("pfopcmd");
@@ -110,8 +113,8 @@ public final class ProcessUtils {
         return needFopsProcesses.contains(process);
     }
 
-    public static boolean needPid(String process) {
-        return needPidProcesses.contains(process);
+    public static boolean needId(String process) {
+        return needIdProcesses.contains(process);
     }
 
     public static boolean needAvinfo(String process) {

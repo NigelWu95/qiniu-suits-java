@@ -16,30 +16,30 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     private Configuration configuration;
     private MediaManager mediaManager;
 
-    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex) throws IOException {
+    public QueryPfopResult(Configuration configuration, String protocol, String pIdIndex) throws IOException {
         super("pfopresult", "", "", null);
-        set(configuration, protocol, persistentIdIndex);
+        set(configuration, protocol, pIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath,
+    public QueryPfopResult(Configuration configuration, String protocol, String pIdIndex, String savePath,
                            int saveIndex) throws IOException {
         super("pfopresult", "", "", null, savePath, saveIndex);
-        set(configuration, protocol, persistentIdIndex);
+        set(configuration, protocol, pIdIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
         this.fileSaveMapper.preAddWriter("waiting");
         this.fileSaveMapper.preAddWriter("notify_failed");
     }
 
-    public QueryPfopResult(Configuration configuration, String protocol, String persistentIdIndex, String savePath)
+    public QueryPfopResult(Configuration configuration, String protocol, String pIdIndex, String savePath)
             throws IOException {
-        this(configuration, protocol, persistentIdIndex, savePath, 0);
+        this(configuration, protocol, pIdIndex, savePath, 0);
     }
 
     private void set(Configuration configuration, String protocol, String pidIndex) throws IOException {
         this.configuration = configuration;
         this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
-        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the persistentId-index.");
+        if (pidIndex == null || "".equals(pidIndex)) throw new IOException("please set the id-index.");
         else this.pidIndex = pidIndex;
     }
 
@@ -101,7 +101,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String pid = line.get(pidIndex);
-        if (pid == null || pid.isEmpty()) throw new IOException("key is not exists or empty in " + line);
+        if (pid == null || pid.isEmpty()) throw new IOException("id is not exists or empty in " + line);
         return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
     }
 

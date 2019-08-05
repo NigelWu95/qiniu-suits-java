@@ -17,7 +17,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     public QueryCensorResult(String accesskey, String secretKey, Configuration configuration, String jobIdIndex) throws IOException {
         super("censorresult", accesskey, secretKey, null);
         this.configuration = configuration;
-        if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the jobId-index.");
+        if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the id-index.");
         else this.jobIdIndex = jobIdIndex;
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }
@@ -26,7 +26,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
                              int saveIndex) throws IOException {
         super("pfopresult", accesskey, secretKey, null, savePath, saveIndex);
         this.configuration = configuration;
-        if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the jobId-index.");
+        if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the id-index.");
         else this.jobIdIndex = jobIdIndex;
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
         fileSaveMapper.preAddWriter("waiting");
@@ -84,7 +84,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String jobId = line.get(jobIdIndex);
-        if (jobId == null || jobId.isEmpty()) throw new IOException("key is not exists or empty in " + line);
+        if (jobId == null || jobId.isEmpty()) throw new IOException("id is not exists or empty in " + line);
         StringBuilder result = new StringBuilder();
         for (String key : line.keySet()) result.append(line.get(key)).append("\t");
         return result.append(censorManager.censorString(jobId)).toString();

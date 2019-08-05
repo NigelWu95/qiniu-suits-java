@@ -551,9 +551,9 @@ public class QSuitsEntry {
     private ILineProcess<Map<String, String>> getPfopResult(Map<String, String> indexMap, boolean single) throws IOException {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
-        String persistentIdIndex = indexMap.containsValue("pid") ? "pid" : null;
-        return single ? new QueryPfopResult(getQiniuConfig(), protocol, persistentIdIndex)
-                : new QueryPfopResult(getQiniuConfig(), protocol, persistentIdIndex, savePath);
+        String pIdIndex = indexMap.containsValue("id") ? "id" : null;
+        return single ? new QueryPfopResult(getQiniuConfig(), protocol, pIdIndex)
+                : new QueryPfopResult(getQiniuConfig(), protocol, pIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQueryHash(Map<String, String> indexMap, boolean single) throws IOException {

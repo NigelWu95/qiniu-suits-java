@@ -206,10 +206,10 @@ public class CommonParams {
                 }
                 break;
             case "pfopresult":
-                String pid = entryParam.getValue("pid", entryParam.getValue("persistentId", "")).trim();
+                String pid = entryParam.getValue("id", "").trim();
                 if (!"".equals(pid)) {
-                    indexMap.put("pid", "pid");
-                    mapLine.put("pid", pid);
+                    indexMap.put("id", "id");
+                    mapLine.put("id", pid);
                 }
                 break;
             case "stat":
@@ -601,8 +601,8 @@ public class CommonParams {
             setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
         if (ProcessUtils.needFops(process))
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
-        if (ProcessUtils.needPid(process))
-            setIndex(entryParam.getValue("pid-index", entryParam.getValue("persistentId-index", "")).trim(), "pid");
+        if (ProcessUtils.needId(process))
+            setIndex(entryParam.getValue("id-index", "").trim(), "id");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
 
