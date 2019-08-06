@@ -239,10 +239,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     /**
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
-     * @param order 当前列举对象集的起始序号
      */
-    void listing(ILister<E> lister, int order) {
+    void listing(ILister<E> lister) {
         // 持久化结果标识信息
+        int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         IResultOutput<W> saver = null;
         ILineProcess<T> lineProcessor = null;
@@ -266,7 +266,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } finally {
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
-            UniOrderUtils.returnOrder(order); // 执行完 close 再归还 order
+            UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
             lister.close();
         }
     }
@@ -373,7 +373,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         while (it.hasNext()) {
             ILister<E> nLister = it.next();
             if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
-                executorPool.execute(() -> listing(nLister, UniOrderUtils.getOrder()));
+                executorPool.execute(() -> listing(nLister));
                 it.remove();
             }
         }
@@ -382,7 +382,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private void processNodeLister(ILister<E> lister) {
         if (lister.currents().size() > 0 || lister.hasNext()) {
-            executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder()));
+            executorPool.execute(() -> listing(lister));
         } else {
             recorder.remove(lister.getPrefix());
             lister.close();
@@ -493,7 +493,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
-                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
+                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
             }
             executorPool.shutdown();
             extremePrefixes = checkListerInPool(listerList, cValue, tiny);
@@ -502,7 +502,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (phraseLastPrefixes.size() > 0) {
             executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
             listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
-            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
+            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
             executorPool.shutdown();
         }
         while (!executorPool.isTerminated()) {
@@ -564,8 +564,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 if (prefixes == null) threads = 1;
             }
             if (threads <= 1) {
-                int order = UniOrderUtils.getOrder();
-                listing(startLister, order);
+                listing(startLister);
                 return;
             }
         } else {
@@ -584,7 +583,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
-                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister, UniOrderUtils.getOrder())));
+                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
             }
             executorPool.shutdown();
             waitAndTailListing(listerList);

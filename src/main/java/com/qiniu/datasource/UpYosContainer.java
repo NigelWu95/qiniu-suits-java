@@ -13,7 +13,6 @@ import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.CloudAPIUtils;
 import com.qiniu.util.ConvertingUtils;
-import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -98,7 +97,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                     e.printStackTrace(); return null;
                 }
                 if (upLister.hasNext() || upLister.getDirectories() != null) {
-                    listing(upLister, UniOrderUtils.getOrder());
+                    listing(upLister);
                     if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
                         return null;
                     } else if (hasAntiPrefixes) {
@@ -109,7 +108,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                         return upLister.getDirectories();
                     }
                 } else {
-                    executorPool.execute(() -> listing(upLister, UniOrderUtils.getOrder()));
+                    executorPool.execute(() -> listing(upLister));
                     return null;
                 }
             }).filter(Objects::nonNull)
@@ -125,8 +124,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         System.out.println(info + " running...");
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
-            int order = UniOrderUtils.getOrder();
-            listing(startLister, order);
+            listing(startLister);
             if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) return;
             else if (hasAntiPrefixes) prefixes = startLister.getDirectories().parallelStream()
                     .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
