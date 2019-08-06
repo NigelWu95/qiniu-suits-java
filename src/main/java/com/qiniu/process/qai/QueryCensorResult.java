@@ -59,7 +59,9 @@ public class QueryCensorResult extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(jobIdIndex);
+        StringBuilder ret = new StringBuilder();
+        for (String key : line.keySet()) ret.append(line.get(key)).append("\t");
+        return ret.deleteCharAt(ret.length() - 1).toString();
     }
 
     @Override
@@ -71,16 +73,14 @@ public class QueryCensorResult extends Base<Map<String, String>> {
             if ("FINISHED".equalsIgnoreCase(censorResult.status)) {
                 ret.append(JsonUtils.toJson(censorResult.result));
                 fileSaveMapper.writeSuccess(ret.toString(), false);
-            } else if ("WAITING".equalsIgnoreCase(censorResult.status))
+            } else if ("FAILED".equalsIgnoreCase(censorResult.status)) {
+                ret.append(result);
+                fileSaveMapper.writeError(ret.toString(), false);
+            } else {
                 fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
-            else if ("DOING".equalsIgnoreCase(censorResult.status))
-                fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
-            else if ("RESCHEDULED".equalsIgnoreCase(censorResult.status))
-                fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
-            else
-                fileSaveMapper.writeError(line.get(jobIdIndex), false);
+            }
         } else {
-            throw new IOException(line + " only has empty_result");
+            throw new IOException("only has empty_result");
         }
     }
 

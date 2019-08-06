@@ -6,12 +6,12 @@
 
 ## 配置文件
 数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
-`path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
-`path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
-`path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表  
-`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表  
-`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表  
-`path=<filepath>` 表示从本地目录（或文件）中读取资源列表  
+`path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](#1-七牛云存储)  
+`path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](#2-腾讯云存储)  
+`path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](#3-阿里云存储)  
+`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表，参考[S3数据源示例](#4-aws-s3)  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[又拍数据源示例](#5-又拍云存储)  
+`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](#6-local-files)  
 未设置数据源时则默认从七牛空间进行列举**，配置文件示例可参考 [配置模板](../resources/application.config)  
 
 ### 1 公共参数
@@ -55,12 +55,12 @@ key,size:key,datetime。因此 `indexes` 可以设置多个键值对，每个键
 个字段的索引即可，此时可以不需要中括号 []，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 etag，以此类推，或者输入行为 json 
 时如 `indexes=key,etag,size,datetime,mime,type` 表示从这些字段依次取出 key,etag,size,datetime,mime,type 这些值。  
 **默认情况：**  
-（1）当数据源为 [file](#2-file-文件内容读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
+（1）当数据源为 [file](#2-file-文本文件行读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
 `0`，输入格式为 `json` 时索引只有 `key`，需要指定更多字段时可按照[indexes 规范](##-关于-indexes-索引)设置，例如为数字列表:`0,1,2,3,...`
 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式为 `tab/csv` 时索引必须均为整数，如
 果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入行中不包含 mime 字段，则可以设置
 `indexes=0,1,2,3,-1,5`。  
-（2）当数据源为 [list](#3-list-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 `key` 的下标，如
+（2）当数据源为 [list](#3-storage-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 `key` 的下标，如
 果存在 process 操作则自动保留 `key` 字段或者根据过滤条件的字段进行添加，也可按照[indexes 规范](##-关于-indexes-索引)自行设置。  
 
 ### 2 file 文本文件行读取
@@ -167,7 +167,7 @@ prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀�
   举操作中排除包含该前缀的情况，通常 prefixes 和 anti-prefixes 不同时进行设置。  
   <details><summary>并发列举算法描述图：点击查看</summary>  
   
-  ![云存储文件并发列举算法](../docs/云存储文件并发列举算法.jpg)</details>  
+  ![云存储文件并发列举算法](云存储文件并发列举算法.jpg)</details>  
 
 4、列举线程数根据实际文件数量调整，通常线程数较多的情况下并发效果较好，列举速度较快，原因是并发列举之前需要分析空间文件的前缀，线程数多增递进到的前缀
   更多，则各线程需要列举的文件数量相对平均，达到比较好的并发效果。如果出现某些前缀的文件特别多的情况，则可能出现线程池中大部分线程列举完成了最后还在
@@ -179,3 +179,99 @@ prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀�
 ```
 -source= -path= threads= -unit-len= [-<name>=<value>]...
 ```
+
+## 数据源示例
+### 1 七牛云存储
+命令行参数示例：
+```
+-path=qiniu://<bucket> -ak= -sk= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=qiniu://<bucket>
+ak=
+sk=
+threads=300
+prefixes=
+#region=
+```  
+
+### 2 腾讯云存储
+命令行参数示例：
+```
+-path=tencent://<bucket> -ten-id= -ten-secret= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=tencent://<bucket>
+ten-id=
+ten-secret=
+threads=300
+prefixes=
+#region=
+```  
+
+### 3 阿里云存储
+命令行参数示例：
+```
+-path=aliyun://<bucket> -ali-id= -ali-secret= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=aliyun://<bucket>
+ali-id=
+ali-secret=
+threads=300
+prefixes=
+#region=
+```  
+
+### 4 AWS S3
+命令行参数示例：
+```
+-path=s3://<bucket> -s3-id= -s3-secret= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=s3://<bucket>
+s3-id=
+s3-secret=
+threads=300
+prefixes=
+#region=
+```  
+
+### 5 又拍云存储
+命令行参数示例：
+```
+-path=upyun://<bucket> -up-name= -up-pass= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=upyun://<bucket>
+up-name=
+up-pass=
+threads=300
+prefixes=
+#region=
+```  
+
+### 6 local files
+
+命令行参数示例：
+```
+-path=<file_path> -parse=json -indexes= [-threads=100]
+```  
+配置文件示例：
+```
+#path=<directory_path>
+path=<file_path>
+#parse=tab
+#separator=\t
+#indexes=0,1,2
+parse=json
+indexes=key,etag,fsize
+add-keyPrefix=
+rm-keyPrefix=
+#threads=100
+```  

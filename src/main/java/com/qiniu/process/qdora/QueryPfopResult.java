@@ -71,7 +71,9 @@ public class QueryPfopResult extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(pidIndex);
+        StringBuilder ret = new StringBuilder();
+        for (String key : line.keySet()) ret.append(line.get(key)).append("\t");
+        return ret.deleteCharAt(ret.length() - 1).toString();
     }
 
     @Override
@@ -80,21 +82,26 @@ public class QueryPfopResult extends Base<Map<String, String>> {
             PfopResult pfopResult = JsonUtils.fromJson(result, PfopResult.class);
             // 可能有多条转码指令
             for (Item item : pfopResult.items) {
-                if (item.code == 0)
-                    fileSaveMapper.writeSuccess(pfopResult.inputKey + "\t" + (item.key != null ? item.key + "\t" : "") +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
-                else if (item.code == 3)
-                    fileSaveMapper.writeError(pfopResult.inputKey + "\t" + item.cmd + "\t" +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
-                else if (item.code == 4)
-                    fileSaveMapper.writeToKey("waiting", item.code + "\t" + line.get(pidIndex) + "\t" +
-                            JsonUtils.toJsonWithoutUrlEscape(item), false);
-                else
-                    fileSaveMapper.writeToKey("notify_failed", item.code + "\t" + line.get(pidIndex) + "\t" +
-                        JsonUtils.toJsonWithoutUrlEscape(item), false);
+                StringBuilder ret = new StringBuilder();
+                for (String key : line.keySet()) ret.append(line.get(key)).append("\t");
+                if (item.code == 0) {
+                    ret.append(pfopResult.inputBucket).append("\t").append(pfopResult.inputKey).append("\t");
+                    ret.append(JsonUtils.toJsonWithoutUrlEscape(item));
+                    fileSaveMapper.writeSuccess(ret.toString(), false);
+                } else if (item.code == 3) {
+                    ret.append(pfopResult.inputBucket).append("\t").append(pfopResult.inputKey).append("\t");
+                    ret.append(JsonUtils.toJsonWithoutUrlEscape(item));
+                    fileSaveMapper.writeError(ret.toString(), false);
+                } else if (item.code == 4) {
+                    ret.append(pfopResult.inputBucket).append("\t").append(pfopResult.inputKey).append("\t");
+                    ret.append(JsonUtils.toJsonWithoutUrlEscape(item));
+                    fileSaveMapper.writeToKey("notify_failed", ret.toString(), false);
+                } else {
+                    fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
+                }
             }
         } else {
-            throw new IOException(line + " only has empty_result");
+            throw new IOException("only has empty_result");
         }
     }
 
@@ -102,7 +109,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String pid = line.get(pidIndex);
         if (pid == null || pid.isEmpty()) throw new IOException("id is not exists or empty in " + line);
-        return pid + "\t" + mediaManager.getPfopResultBodyById(pid);
+        return mediaManager.getPfopResultBodyById(pid);
     }
 
     @Override

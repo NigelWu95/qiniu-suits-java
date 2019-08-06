@@ -10,7 +10,7 @@ public class PfopResult {
     public String id;
     public String inputBucket;
     public String inputKey;
-    public List<Item> items = new ArrayList<Item>();
+    public List<Item> items = new ArrayList<>();
     public String pipeline;
     public String reqid;
 }

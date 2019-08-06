@@ -114,11 +114,12 @@ public class DownloadFile extends Base<Map<String, String>> {
         line.put("key", key);
         if (preDown) {
             downloader.download(url, headers);
+            return key + "\t" + url;
         } else {
-            downloader.download(url, (fileSaveMapper == null ? savePath : fileSaveMapper.getSavePath()) +
-                    FileUtils.pathSeparator + key, headers);
+            String filename = (fileSaveMapper == null ? savePath : fileSaveMapper.getSavePath()) + FileUtils.pathSeparator + key;
+            downloader.download(url, filename, headers);
+            return key + "\t" + url + "\t" + filename;
         }
-        return "success";
     }
 
     @Override

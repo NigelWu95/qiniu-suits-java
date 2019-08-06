@@ -86,7 +86,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
             line.put("url", url.toString());
             return nextProcessor.processLine(line);
         }
-        return url.toString();
+        return key + "\t" + url.toString();
     }
 
     @Override
