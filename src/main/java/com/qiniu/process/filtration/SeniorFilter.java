@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.qiniu.config.JsonFile;
+import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.JsonUtils;
 
 import java.io.IOException;
@@ -59,7 +60,8 @@ public abstract class SeniorFilter<T> {
                 if (line == null) continue;
                 key = valueFrom(line, "key");
                 if (key.contains(".")) {
-                    String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
+                    String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" +
+                            valueFrom(line, ConvertingUtils.defaultMimeField);
                     if (extMimeList.parallelStream().anyMatch(extMime ->
                             finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                         continue;
@@ -83,7 +85,8 @@ public abstract class SeniorFilter<T> {
         try {
             key = valueFrom(line, "key");
             if (key.contains(".")) {
-                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + valueFrom(line, "mime");
+                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" +
+                        valueFrom(line, ConvertingUtils.defaultMimeField);
                 if (extMimeList.parallelStream().anyMatch(extMime ->
                         finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                     return false;
