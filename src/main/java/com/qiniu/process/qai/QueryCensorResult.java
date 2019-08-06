@@ -24,7 +24,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
 
     public QueryCensorResult(String accesskey, String secretKey, Configuration configuration, String jobIdIndex, String savePath,
                              int saveIndex) throws IOException {
-        super("pfopresult", accesskey, secretKey, null, savePath, saveIndex);
+        super("censorresult", accesskey, secretKey, null, savePath, saveIndex);
         this.configuration = configuration;
         if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the id-index.");
         else this.jobIdIndex = jobIdIndex;
@@ -65,15 +65,18 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     @Override
     protected void parseSingleResult(Map<String, String> line, String result) throws Exception {
         if (result != null && !"".equals(result)) {
+            StringBuilder ret = new StringBuilder();
+            for (String key : line.keySet()) ret.append(line.get(key)).append("\t");
             CensorResult censorResult = JsonUtils.fromJson(result, CensorResult.class);
-            if ("FINISHED".equalsIgnoreCase(censorResult.status))
-                fileSaveMapper.writeSuccess(line.get(jobIdIndex) + JsonUtils.toJson(censorResult.result), false);
-            else if ("WAITING".equalsIgnoreCase(censorResult.status))
-                fileSaveMapper.writeToKey("waiting", line.get(jobIdIndex), false);
+            if ("FINISHED".equalsIgnoreCase(censorResult.status)) {
+                ret.append(JsonUtils.toJson(censorResult.result));
+                fileSaveMapper.writeSuccess(ret.toString(), false);
+            } else if ("WAITING".equalsIgnoreCase(censorResult.status))
+                fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
             else if ("DOING".equalsIgnoreCase(censorResult.status))
-                fileSaveMapper.writeToKey("waiting", line.get(jobIdIndex), false);
+                fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
             else if ("RESCHEDULED".equalsIgnoreCase(censorResult.status))
-                fileSaveMapper.writeToKey("waiting", line.get(jobIdIndex), false);
+                fileSaveMapper.writeToKey("waiting", ret.deleteCharAt(ret.length() - 1).toString(), false);
             else
                 fileSaveMapper.writeError(line.get(jobIdIndex), false);
         } else {
@@ -85,9 +88,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String jobId = line.get(jobIdIndex);
         if (jobId == null || jobId.isEmpty()) throw new IOException("id is not exists or empty in " + line);
-        StringBuilder result = new StringBuilder();
-        for (String key : line.keySet()) result.append(line.get(key)).append("\t");
-        return result.append(censorManager.censorString(jobId)).toString();
+        return censorManager.censorString(jobId);
     }
 
     @Override

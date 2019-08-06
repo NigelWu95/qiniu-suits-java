@@ -484,7 +484,7 @@ public class QSuitsEntry {
         String md5Index = indexMap.containsValue("md5") ? "md5" : null;
         String callbackUrl = entryParam.getValue("callback-url", "").trim();
         String checkUrl = entryParam.getValue("check-url", "true").trim();
-        if ("true".equals(checkUrl)) RequestUtils.checkCallbackUrl(callbackUrl);
+        if ("true".equals(checkUrl) && !"".equals(callbackUrl)) RequestUtils.checkCallbackUrl(callbackUrl);
         String callbackBody = entryParam.getValue("callback-body", "").trim();
         String callbackBodyType = entryParam.getValue("callback-body-type", "").trim();
         String callbackHost = entryParam.getValue("callback-host", "").trim();
@@ -675,9 +675,9 @@ public class QSuitsEntry {
         String interval = entryParam.getValue("interval", "0").trim();
         String saverBucket = entryParam.getValue("save-bucket", "").trim();
         String saverPrefix = entryParam.getValue("saver-prefix", "").trim();
-        String hookUrl = entryParam.getValue("callback-url", "0").trim();
+        String hookUrl = entryParam.getValue("callback-url", "").trim();
         String checkUrl = entryParam.getValue("check-url", "true").trim();
-        if ("true".equals(checkUrl)) RequestUtils.checkCallbackUrl(hookUrl);
+        if ("true".equals(checkUrl) && !"".equals(hookUrl)) RequestUtils.checkCallbackUrl(hookUrl);
         return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes,
                 Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
                 getQiniuConfig(), domain, protocol, urlIndex, scenes, Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl,

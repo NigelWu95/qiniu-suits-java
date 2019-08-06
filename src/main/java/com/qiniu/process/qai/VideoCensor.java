@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.JsonUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
@@ -111,9 +112,9 @@ public class VideoCensor extends Base<Map<String, String>> {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
-            return key + "\t" + url + "\t" + censorManager.doVideoCensor(url, paramsJson);
+            return key + "\t" + url + "\t" + JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString();
         }
-        return url + "\t" + censorManager.doVideoCensor(url, paramsJson);
+        return url + "\t" + JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString();
     }
 
     @Override

@@ -76,6 +76,7 @@ public final class ProcessUtils {
         add("privateurl");
         add("imagecensor");
         add("videocensor");
+        add("censorresult");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
         addAll(needQiniuAuthProcesses);
