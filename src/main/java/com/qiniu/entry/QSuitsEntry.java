@@ -661,9 +661,10 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        String suffix = entryParam.getValue("suffix", "").trim();
         Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
-        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes) :
-                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes, savePath);
+        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, suffix, scenes) :
+                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, suffix, scenes, savePath);
     }
 
     private ILineProcess<Map<String, String>> getVideoCensor(Map<String, String> indexMap, boolean single) throws IOException {

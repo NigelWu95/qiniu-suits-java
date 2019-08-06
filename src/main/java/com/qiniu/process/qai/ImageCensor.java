@@ -14,31 +14,34 @@ public class ImageCensor extends Base<Map<String, String>> {
     private String domain;
     private String protocol;
     private String urlIndex;
+    private String suffixOrQuery;
+    private boolean useQuery;
     private JsonObject paramsJson;
     private Configuration configuration;
     private CensorManager censorManager;
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, Scenes scenes)
+                       String urlIndex, String suffixOrQuery, Scenes scenes)
             throws IOException {
         super("imagecensor", accesskey, secretKey, null);
-        set(configuration, domain, protocol, urlIndex, scenes);
+        set(configuration, domain, protocol, urlIndex, suffixOrQuery, scenes);
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, Scenes scenes, String savePath, int saveIndex) throws IOException {
+                       String urlIndex, String suffixOrQuery, Scenes scenes, String savePath, int saveIndex) throws IOException {
         super("imagecensor", accesskey, secretKey, null, savePath, saveIndex);
-        set(configuration, domain, protocol, urlIndex, scenes);
+        set(configuration, domain, protocol, urlIndex, suffixOrQuery, scenes);
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, Scenes scenes, String savePath) throws IOException {
-        this(accesskey, secretKey, configuration, domain, protocol, urlIndex, scenes, savePath, 0);
+                       String urlIndex, String suffixOrQuery, Scenes scenes, String savePath) throws IOException {
+        this(accesskey, secretKey, configuration, domain, protocol, urlIndex, suffixOrQuery, scenes, savePath, 0);
     }
 
-    private void set(Configuration configuration, String domain, String protocol, String urlIndex, Scenes scenes) throws IOException {
+    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String suffixOrQuery,
+                     Scenes scenes) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
@@ -52,6 +55,8 @@ public class ImageCensor extends Base<Map<String, String>> {
         } else {
             this.urlIndex = urlIndex;
         }
+        this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
+        useQuery = !"".equals(this.suffixOrQuery);
         this.paramsJson = new JsonObject();
         paramsJson.add("scenes", CensorManager.scenesMap.get(scenes));
     }
@@ -90,11 +95,16 @@ public class ImageCensor extends Base<Map<String, String>> {
         String key = line.get("key");
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
+            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f") + suffixOrQuery;
             line.put(urlIndex, url);
             return key + "\t" + url + "\t" + censorManager.doImageCensor(url, paramsJson);
+        } else {
+            if (useQuery) {
+                url = url + suffixOrQuery;
+                line.put(urlIndex, url);
+            }
+            return (key == null ? "\t" : key + "\t") + url + "\t" + censorManager.doImageCensor(url, paramsJson);
         }
-        return (key == null ? "\t" : key + "\t") + url + "\t" + censorManager.doImageCensor(url, paramsJson);
     }
 
     @Override
