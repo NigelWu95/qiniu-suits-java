@@ -66,27 +66,7 @@ public class DownloadFile extends Base<Map<String, String>> {
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
     }
-
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
-    public void updateAddPrefix(String addPrefix) {
-        this.addPrefix = addPrefix == null ? "" : addPrefix;
-    }
-
-    public void updateRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
-    }
-
+    
     public DownloadFile clone() throws CloneNotSupportedException {
         DownloadFile downloadFile = (DownloadFile)super.clone();
         downloadFile.downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);

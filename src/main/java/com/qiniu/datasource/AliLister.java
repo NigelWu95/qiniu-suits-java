@@ -7,6 +7,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.common.SuitsException;
+import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudAPIUtils;
 
 import java.util.List;

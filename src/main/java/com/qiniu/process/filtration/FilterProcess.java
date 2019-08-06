@@ -86,12 +86,6 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         return this.processName;
     }
 
-    public void updateSavePath(String savePath) throws IOException {
-        this.savePath = savePath;
-        if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
-        else fileSaveMapper.closeWriters();
-        fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
-    }
     public void setNextProcessor(ILineProcess<T> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_after_" + processName;

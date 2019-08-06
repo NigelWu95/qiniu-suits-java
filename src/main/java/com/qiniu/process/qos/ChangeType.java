@@ -48,10 +48,6 @@ public class ChangeType extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, type, savePath, 0);
     }
 
-    public void updateType(int type) {
-        storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
-    }
-
     public ChangeType clone() throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
         changeType.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());

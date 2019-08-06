@@ -13,8 +13,6 @@ public interface ILineProcess<T> {
 
     default void setRetryTimes(int retryTimes) {}
 
-    default void updateSavePath(String savePath) throws IOException {}
-
     default void setNextProcessor(ILineProcess<T> nextProcessor) {}
 
     default ILineProcess<T> getNextProcessor() {

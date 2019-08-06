@@ -77,22 +77,6 @@ public class VideoCensor extends Base<Map<String, String>> {
         }
     }
 
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
-    public void updateCensorParams(JsonObject paramsJson) {
-        this.paramsJson = paramsJson;
-    }
-
     public VideoCensor clone() throws CloneNotSupportedException {
         VideoCensor videoCensor = (VideoCensor)super.clone();
         videoCensor.censorManager = new CensorManager(Auth.create(authKey1, authKey2), configuration.clone());

@@ -45,10 +45,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         return this.processName;
     }
 
-    public void updateBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
     public void setBatchSize(int batchSize) throws IOException {
         if (!ProcessUtils.canBatch(processName)) {
             throw new IOException(processName + " is not support batch operation.");
@@ -61,14 +57,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
-    }
-
-    public void updateSavePath(String savePath) throws IOException {
-        this.savePath = savePath;
-        if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
-        else fileSaveMapper.closeWriters();
-        fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
-        fileSaveMapper.preAddWriter("need_retry");
     }
 
     @SuppressWarnings("unchecked")
@@ -144,10 +132,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     /**
      * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现。
      * @param lineList 输入列表
+     * @param batchSize 一次批量处理请求处理的文件个数
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    private void batchProcess(List<T> lineList, int retryTimes) throws IOException {
+    private void batchProcess(List<T> lineList, int batchSize, int retryTimes) throws IOException {
         int times = lineList.size()/batchSize + 1;
         List<T> processList;
         String result;
@@ -273,7 +262,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     public void processLine(List<T> lineList) throws IOException {
         try {
-            if (batchSize > 1) batchProcess(lineList, retryTimes);
+            if (batchSize > 1) batchProcess(lineList, batchSize, retryTimes);
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
             throw new IOException("input is empty or the processor may be already closed.", e);

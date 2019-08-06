@@ -53,22 +53,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this.expires = expires == 0L ? 3600 : expires;
     }
 
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
-    public void updateExpires(long expires) {
-        this.expires = expires;
-    }
-
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_with_" + processName;

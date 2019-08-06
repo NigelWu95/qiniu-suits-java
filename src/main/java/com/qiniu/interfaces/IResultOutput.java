@@ -1,7 +1,6 @@
-package com.qiniu.persistence;
+package com.qiniu.interfaces;
 
 import java.io.*;
-import java.util.List;
 
 public interface IResultOutput<T> {
 

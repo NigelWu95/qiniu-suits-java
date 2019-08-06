@@ -40,14 +40,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this(accessKeyId, accessKeySecret, bucket, endpoint, expires, savePath, 0);
     }
 
-    public void updateEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public void updateExpires(long expires) {
-        this.expiration = new Date(System.currentTimeMillis() + expires);
-    }
-
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_with_" + processName;

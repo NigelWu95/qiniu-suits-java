@@ -54,22 +54,6 @@ public class QueryHash extends Base<Map<String, String>> {
         }
     }
 
-    public void updateAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
         queryHash.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);

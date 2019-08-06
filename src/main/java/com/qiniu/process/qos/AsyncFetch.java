@@ -71,26 +71,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix;
     }
 
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
-    public void updateAddPrefix(String addPrefix) {
-        this.addPrefix = addPrefix == null ? "" : addPrefix;
-    }
-
-    public void updateRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
-    }
-
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
                              String callbackBodyType, String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;

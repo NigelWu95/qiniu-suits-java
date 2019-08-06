@@ -43,22 +43,6 @@ public class QueryPfopResult extends Base<Map<String, String>> {
         else this.pidIndex = pidIndex;
     }
 
-    public void updateSavePath(String savePath) throws IOException {
-        super.updateSavePath(savePath);
-        if (fileSaveMapper != null) {
-            this.fileSaveMapper.preAddWriter("waiting");
-            this.fileSaveMapper.preAddWriter("notify_failed");
-        }
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updatePidIndex(String pidIndex) {
-        this.pidIndex = pidIndex;
-    }
-
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
         pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);

@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
+import com.qiniu.interfaces.ILister;
 
 import java.util.List;
 

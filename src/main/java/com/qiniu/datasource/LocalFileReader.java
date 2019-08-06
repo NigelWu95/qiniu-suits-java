@@ -1,5 +1,7 @@
 package com.qiniu.datasource;
 
+import com.qiniu.interfaces.IReader;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

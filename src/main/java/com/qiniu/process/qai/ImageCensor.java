@@ -61,22 +61,6 @@ public class ImageCensor extends Base<Map<String, String>> {
         paramsJson.add("scenes", CensorManager.scenesMap.get(scenes));
     }
 
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
-    public void updateCensorParams(JsonObject paramsJson) {
-        this.paramsJson = paramsJson;
-    }
-
     public ImageCensor clone() throws CloneNotSupportedException {
         ImageCensor videoCensor = (ImageCensor)super.clone();
         videoCensor.censorManager = new CensorManager(Auth.create(authKey1, authKey2), configuration.clone());

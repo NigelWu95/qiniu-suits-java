@@ -9,6 +9,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
+import com.qiniu.interfaces.IDataSource;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;

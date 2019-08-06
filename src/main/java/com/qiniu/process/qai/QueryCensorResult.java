@@ -37,17 +37,6 @@ public class QueryCensorResult extends Base<Map<String, String>> {
         this(accesskey, secretKey, configuration, jobIdIndex, savePath, 0);
     }
 
-    public void updateSavePath(String savePath) throws IOException {
-        super.updateSavePath(savePath);
-        if (fileSaveMapper != null) {
-            fileSaveMapper.preAddWriter("waiting");
-        }
-    }
-
-    public void updateJobIdIndex(String jobIdIndex) {
-        this.jobIdIndex = jobIdIndex;
-    }
-
     public QueryCensorResult clone() throws CloneNotSupportedException {
         QueryCensorResult censorResult = (QueryCensorResult)super.clone();
         censorResult.censorManager = new CensorManager(Auth.create(authKey1, authKey2), configuration.clone());

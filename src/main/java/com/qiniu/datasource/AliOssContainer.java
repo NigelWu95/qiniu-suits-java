@@ -8,10 +8,11 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringMapPair;
+import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultOutput;
+import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.CloudAPIUtils;
 import com.qiniu.util.ConvertingUtils;
 

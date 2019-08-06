@@ -1,4 +1,4 @@
-package com.qiniu.datasource;
+package com.qiniu.interfaces;
 
 import com.qiniu.interfaces.ILineProcess;
 

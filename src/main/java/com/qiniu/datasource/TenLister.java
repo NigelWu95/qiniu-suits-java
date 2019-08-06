@@ -7,6 +7,7 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
+import com.qiniu.interfaces.ILister;
 
 import java.util.List;
 

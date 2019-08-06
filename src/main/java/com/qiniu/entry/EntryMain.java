@@ -2,7 +2,7 @@ package com.qiniu.entry;
 
 import com.qiniu.config.ParamsConfig;
 import com.qiniu.config.PropertiesFile;
-import com.qiniu.datasource.IDataSource;
+import com.qiniu.interfaces.IDataSource;
 import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
