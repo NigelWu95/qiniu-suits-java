@@ -4,7 +4,7 @@
 对内容审核返回的 jobId 查询 censorresult 操作。参考：[七牛内容审核结果查询](https://developer.qiniu.com/censor/api/5620/video-censor#4)
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
+**操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ### 配置参数
 ```

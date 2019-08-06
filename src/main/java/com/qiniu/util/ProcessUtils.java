@@ -102,6 +102,12 @@ public final class ProcessUtils {
 //        addAll(needBucketAnKeyProcesses);
 //        addAll(supportListSourceProcesses);
 //    }};
+    public static Set<String> canPrivateToNextProcesses = new HashSet<String>(){{
+        add("asyncfetch");
+        add("download");
+        add("imagecensor");
+        add("videocensor");
+    }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
@@ -158,4 +164,8 @@ public final class ProcessUtils {
 //    public static boolean isSupportedProcess(String process) {
 //        return processes.contains(process);
 //    }
+
+    public static boolean canPrivateToNext(String process) {
+        return canPrivateToNextProcesses.contains(process);
+    }
 }

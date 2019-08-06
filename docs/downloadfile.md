@@ -4,13 +4,14 @@
 下载文件列表的资源到本地。  
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
+**操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ### 功能配置参数
 ```
 process=download
 domain=
 protocol=
+indexes=
 url-index=
 host=
 add-prefix=
@@ -24,6 +25,7 @@ download-timeout=
 |process| 下载资源时设置为download | 表示资源下载操作|  
 |domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行下载（默认 http）|  
+|indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|  

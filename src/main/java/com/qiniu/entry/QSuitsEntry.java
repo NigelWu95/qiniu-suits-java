@@ -52,6 +52,7 @@ public class QSuitsEntry {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
+    private boolean single;
 
     public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
@@ -354,53 +355,38 @@ public class QSuitsEntry {
 
     public ILineProcess<Map<String, String>> whichNextProcessor(boolean single) throws Exception {
         ILineProcess<Map<String, String>> processor = null;
-        if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
+        ILineProcess<Map<String, String>> privateProcessor = null;
+        Map<String, String> indexes = new HashMap<>(indexMap);
+        if (ProcessUtils.canPrivateToNext(process)) {
+            privateProcessor = getPrivateTypeProcessor(single);
+            indexes.put("url", "url");
+            single = true;
+        }
         switch (process) {
             case "status": processor = getChangeStatus(single); break;
             case "type": processor = getChangeType(single); break;
             case "lifecycle": processor = getChangeLifecycle(single); break;
-            case "copy": processor = getCopyFile(indexMap, single); break;
+            case "copy": processor = getCopyFile(indexes, single); break;
             case "move":
-            case "rename": processor = getMoveFile(indexMap, single); break;
+            case "rename": processor = getMoveFile(indexes, single); break;
             case "delete": processor = getDeleteFile(single); break;
-            case "asyncfetch":
-                processor = getPrivateTypeProcessor(single);
-                if (processor != null) {
-                    ILineProcess<Map<String, String>> fetchProcessor = getAsyncFetch(new HashMap<String, String>(){{
-                        putAll(indexMap);
-                        put("url", "url");
-                    }}, true);
-                    fetchProcessor.setRetryTimes(retryTimes);
-                    processor.setNextProcessor(fetchProcessor);
-                } else {
-                    processor = getAsyncFetch(indexMap, single);
-                }
-                break;
-            case "avinfo": processor = getQueryAvinfo(indexMap, single); break;
-            case "pfopcmd": processor = getPfopCommand(indexMap, single); break;
-            case "pfop": processor = getPfop(indexMap, single); break;
-            case "pfopresult": processor = getPfopResult(indexMap, single); break;
-            case "qhash": processor = getQueryHash(indexMap, single); break;
+            case "asyncfetch": processor = getAsyncFetch(indexes, single); break;
+            case "avinfo": processor = getQueryAvinfo(indexes, single); break;
+            case "pfopcmd": processor = getPfopCommand(indexes, single); break;
+            case "pfop": processor = getPfop(indexes, single); break;
+            case "pfopresult": processor = getPfopResult(indexes, single); break;
+            case "qhash": processor = getQueryHash(indexes, single); break;
             case "stat": processor = getStatFile(single); break;
-            case "privateurl": processor = getPrivateUrl(indexMap, single); break;
+            case "privateurl": processor = getPrivateUrl(indexes, single); break;
             case "mirror": processor = getMirrorFile(single); break;
-            case "exportts": processor = getExportTs(indexMap, single); break;
+            case "exportts": processor = getExportTs(indexes, single); break;
             case "tenprivate": processor = getTencentPrivateUrl(single); break;
             case "s3private": case "awsprivate": processor = getAwsS3PrivateUrl(single); break;
             case "aliprivate": processor = getAliyunPrivateUrl(single); break;
-            case "download":
-                processor = getPrivateTypeProcessor(single);
-                if (processor != null) {
-                    ILineProcess<Map<String, String>> downProcessor = getDownloadFile(new HashMap<String, String>(){{
-                        putAll(indexMap);
-                        put("url", "url");
-                    }}, true);
-                    downProcessor.setRetryTimes(retryTimes);
-                    processor.setNextProcessor(downProcessor);
-                } else {
-                    processor = getDownloadFile(indexMap, single);
-                }
-                break;
+            case "download": processor = getDownloadFile(indexes, single); break;
+            case "imagecensor": processor = getImageCensor(indexes, single); break;
+            case "videocensor": processor = getVideoCensor(indexes, single); break;
+            case "censorresult": processor = getCensorResult(indexes, single); break;
             case "filter": case "": break;
             default: throw new IOException("unsupported process: " + process);
         }
@@ -408,6 +394,10 @@ public class QSuitsEntry {
             if (ProcessUtils.canBatch(processor.getProcessName())) processor.setBatchSize(commonParams.getBatchSize());
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数
             processor.setRetryTimes(retryTimes);
+            if (privateProcessor != null) {
+                privateProcessor.setNextProcessor(processor);
+                return privateProcessor;
+            }
         }
         return processor;
     }
@@ -492,6 +482,8 @@ public class QSuitsEntry {
         String host = entryParam.getValue("host", "").trim();
         String md5Index = indexMap.containsValue("md5") ? "md5" : null;
         String callbackUrl = entryParam.getValue("callback-url", "").trim();
+        String checkUrl = entryParam.getValue("check-url", "true").trim();
+        if ("true".equals(checkUrl)) RequestUtils.checkCallbackUrl(callbackUrl);
         String callbackBody = entryParam.getValue("callback-body", "").trim();
         String callbackBodyType = entryParam.getValue("callback-body-type", "").trim();
         String callbackHost = entryParam.getValue("callback-host", "").trim();
@@ -683,6 +675,8 @@ public class QSuitsEntry {
         String saverBucket = entryParam.getValue("save-bucket", "").trim();
         String saverPrefix = entryParam.getValue("saver-prefix", "").trim();
         String hookUrl = entryParam.getValue("callback-url", "0").trim();
+        String checkUrl = entryParam.getValue("check-url", "true").trim();
+        if ("true".equals(checkUrl)) RequestUtils.checkCallbackUrl(hookUrl);
         return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes,
                 Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
                 getQiniuConfig(), domain, protocol, urlIndex, scenes, Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl,

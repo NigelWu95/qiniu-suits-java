@@ -4,11 +4,12 @@
 根据已经获取到的音视频资源的 avinfo 信息，来设置规则判断进行某种自定义的转码并自定义转码后的文件名。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
+**操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ### 配置参数
 ```
-process=pfopcmd 
+process=pfopcmd
+indexes=
 pfop-config=
 duration=
 size=
@@ -17,6 +18,7 @@ avinfo-index=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=pfopcmd| 该操作设置为pfopcmd| 表示根据 avinfo 生成音视频转码指令|  
+|indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，[配置写法](##-pfop-config-配置文件内容写法如下：)|  
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
