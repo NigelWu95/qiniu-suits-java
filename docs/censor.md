@@ -10,6 +10,7 @@
 
 #### 图片审核
 审核 image 类型的资源，同步审核，审核结果输出为 json：[七牛图片审核响应 json](https://developer.qiniu.com/censor/api/5588/image-censor#4)
+如果数据源的资源类型不确定（如云存储数据源），建议设置 filter 选项：f-mime=image
 ```
 process=imagecensor
 ak=
@@ -33,7 +34,8 @@ scenes=
 
 #### 视频审核
 审核 video 类型的资源，异步审核，审核结果输出为 jobId，要获取进一步的实际审核结果需要通过 id 查询，参考该工具的 [censorresult 操作](censorresult.md)，
-七牛官网文档见：[通过jobid获取视频审核结果](https://developer.qiniu.com/censor/api/5620/video-censor#4)
+七牛官网文档见：[通过jobid获取视频审核结果](https://developer.qiniu.com/censor/api/5620/video-censor#4)，如果数据源的资源类型不确定
+（如云存储数据源），建议设置 filter 选项：f-mime=video
 ```
 process=imagecensor
 ak=

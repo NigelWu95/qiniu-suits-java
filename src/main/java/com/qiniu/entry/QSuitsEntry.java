@@ -52,7 +52,6 @@ public class QSuitsEntry {
     private String saveFormat;
     private String saveSeparator;
     private List<String> rmFields;
-    private boolean single;
 
     public QSuitsEntry(IEntryParam entryParam) throws Exception {
         this.entryParam = entryParam;
@@ -359,8 +358,10 @@ public class QSuitsEntry {
         Map<String, String> indexes = new HashMap<>(indexMap);
         if (ProcessUtils.canPrivateToNext(process)) {
             privateProcessor = getPrivateTypeProcessor(single);
-            indexes.put("url", "url");
-            single = true;
+            if (privateProcessor != null) {
+                indexes.put("url", "url");
+                single = true;
+            }
         }
         switch (process) {
             case "status": processor = getChangeStatus(single); break;
