@@ -2,32 +2,15 @@ package com.qiniu.process.qai;
 
 public enum Scenes {
 
-    PULP(1, "pulp"),
+    pulp,
 
-    TERROR(2, "terror"),
+    terror,
 
-    POLITICIAN(3, "politician"),
+    politician,
 
-    PULP_TERROR(4, "pulp_terror"),
+    pulp_terror,
 
-    TERROR_POLITICIAN(5, "terror_politician"),
+    terror_politician,
 
-    PULP_TERROR_POLITICIAN(6, "pulp_terror_politician");
-
-    private Integer order;
-    private String des;
-
-    Scenes(int i, String des) {
-        this.order = i;
-        this.des = des;
-    }
-
-    public int getOrder() {
-        return this.order;
-    }
-
-
-    public String getJson() {
-        return this.des;
-    }
+    pulp_terror_politician;
 }

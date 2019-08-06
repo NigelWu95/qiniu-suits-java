@@ -15,6 +15,7 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.DownloadFile;
 import com.qiniu.process.other.ExportTS;
+import com.qiniu.process.qai.*;
 import com.qiniu.process.qdora.*;
 import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
@@ -660,5 +661,37 @@ public class QSuitsEntry {
         return single ? new DownloadFile(configuration, domain, protocol, urlIndex, host, "true".equals(preDown) ? null : savePath,
                 addPrefix, rmPrefix) : new DownloadFile(configuration, domain, protocol, urlIndex, host, Boolean.valueOf(preDown),
                 addPrefix, rmPrefix, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getImageCensor(Map<String, String> indexMap, boolean single) throws IOException {
+        String domain = entryParam.getValue("domain", "").trim();
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
+        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes) :
+                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getVideoCensor(Map<String, String> indexMap, boolean single) throws IOException {
+        String domain = entryParam.getValue("domain", "").trim();
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
+        String interval = entryParam.getValue("interval", "0").trim();
+        String saverBucket = entryParam.getValue("save-bucket", "").trim();
+        String saverPrefix = entryParam.getValue("saver-prefix", "").trim();
+        String hookUrl = entryParam.getValue("callback-url", "0").trim();
+        return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes,
+                Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
+                getQiniuConfig(), domain, protocol, urlIndex, scenes, Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl,
+                savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getCensorResult(Map<String, String> indexMap, boolean single) throws IOException {
+        String jobIdIndex = indexMap.containsValue("id") ? "id" : null;
+        return single ? new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex)
+                : new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex, savePath);
     }
 }

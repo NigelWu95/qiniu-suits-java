@@ -17,13 +17,15 @@ public class CensorManagerTest {
         String secretKey = propertiesFile.getValue("sk");
         Auth auth = Auth.create(accessKey, secretKey);
         CensorManager censorManager = new CensorManager(auth);
-//        String result = censorManager.doVideoCensor("http://xx.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
-//                Scenes.PULP, 10, "temp", "test-censor", "http://xx.com");
-//        System.out.println(result);
-////        String
-//                result = censorManager.doImageCensor("http://7xlv47.com1.z0.glb.clouddn.com/pulpsexy.jpg", Scenes.PULP);
-//        System.out.println(result);
+        String result = censorManager.doVideoCensor("http://xx.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
+                Scenes.pulp, 10, "temp", "test-censor", "http://xx.com");
+        System.out.println(result);
+//        String
+                result = censorManager.doImageCensor("http://7xlv47.com1.z0.glb.clouddn.com/pulpsexy.jpg", Scenes.pulp);
+        System.out.println(result);
         System.out.println(JsonUtils.toJson(censorManager.censorResult("5d480ea3244bbb000818d0f4")));
+        System.out.println(Scenes.valueOf("pulp"));
+        System.out.println(Scenes.pulp.ordinal());
     }
 
 }

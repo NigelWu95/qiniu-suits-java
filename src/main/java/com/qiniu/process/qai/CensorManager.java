@@ -43,12 +43,12 @@ public class CensorManager {
         pulp_terror_politicianJsonArray.add("politician");
     }
     public static Map<Scenes, JsonArray> scenesMap = new HashMap<Scenes, JsonArray>(){{
-        put(Scenes.PULP, pulpJsonArray);
-        put(Scenes.TERROR, terrorJsonArray);
-        put(Scenes.POLITICIAN, politicianJsonArray);
-        put(Scenes.PULP_TERROR, pulp_terrorJsonArray);
-        put(Scenes.TERROR_POLITICIAN, terror_politicianJsonArray);
-        put(Scenes.PULP_TERROR_POLITICIAN, pulp_terror_politicianJsonArray);
+        put(Scenes.pulp, pulpJsonArray);
+        put(Scenes.terror, terrorJsonArray);
+        put(Scenes.politician, politicianJsonArray);
+        put(Scenes.pulp_terror, pulp_terrorJsonArray);
+        put(Scenes.terror_politician, terror_politicianJsonArray);
+        put(Scenes.pulp_terror_politician, pulp_terror_politicianJsonArray);
     }};
 
     public CensorManager(Auth auth, Configuration configuration) {

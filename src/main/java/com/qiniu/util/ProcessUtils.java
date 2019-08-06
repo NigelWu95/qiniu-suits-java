@@ -74,6 +74,8 @@ public final class ProcessUtils {
         addAll(qiniuProcessesWithBucket);
         add("asyncfetch");
         add("privateurl");
+        add("imagecensor");
+        add("videocensor");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
         addAll(needQiniuAuthProcesses);

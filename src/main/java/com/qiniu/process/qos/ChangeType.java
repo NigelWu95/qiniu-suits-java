@@ -92,7 +92,7 @@ public class ChangeType extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        return key + "\t" + storageType + "\t" + HttpRespUtils.getResult(bucketManager.changeType(bucket, key, storageType));
+        return key + "\t" + storageType.ordinal() + "\t" + HttpRespUtils.getResult(bucketManager.changeType(bucket, key, storageType));
     }
 
     @Override
