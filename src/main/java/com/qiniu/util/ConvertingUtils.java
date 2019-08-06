@@ -275,7 +275,7 @@ public final class ConvertingUtils {
         for (String index : indexMap.keySet()) {
             jsonElement = json.get(index);
             if (jsonElement == null || jsonElement instanceof JsonNull) {
-                throw new IOException("the index: " + index + " can't be found in " + json);
+                if (!allFieldsSet.contains(index)) throw new IOException("the index: " + index + " can't be found in " + json);
             } else {
                 pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
             }
@@ -314,7 +314,7 @@ public final class ConvertingUtils {
                 else if (intFields.contains(field)) pair.put(field, Integer.valueOf(value));
                 else pair.put(field, value);
             } else {
-                throw new IOException("the field: " + field + " can't be found in " + line);
+                if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + line);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result string.");

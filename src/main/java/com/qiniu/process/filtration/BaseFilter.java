@@ -1,5 +1,7 @@
 package com.qiniu.process.filtration;
 
+import com.qiniu.util.ConvertingUtils;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -111,7 +113,7 @@ public abstract class BaseFilter<T> {
     public boolean filterMimeType(T item) {
         try {
             if (item == null) return false;
-            String mType = valueFrom(item, "mime");
+            String mType = valueFrom(item, ConvertingUtils.defaultMimeField);
             boolean result = false;
             if (checkList(mimeType)) {
                 result = mimeType.stream().anyMatch(mType::contains);
@@ -127,7 +129,7 @@ public abstract class BaseFilter<T> {
     public boolean filterDatetime(T item) {
         try {
             if (item == null) return false;
-            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, "datetime"));
+            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, ConvertingUtils.defaultDatetimeField));
             return localDateTime.compareTo(datetimeMax) <= 0 && localDateTime.compareTo(datetimeMin) >= 0;
         } catch (Exception e) {
             return true;
@@ -137,7 +139,7 @@ public abstract class BaseFilter<T> {
     public boolean filterType(T item) {
         try {
             if (item == null) return false;
-            return valueFrom(item, "type").equals(type);
+            return valueFrom(item, ConvertingUtils.defaultTypeField).equals(type);
         } catch (NullPointerException e) {
             return true;
         }
@@ -146,7 +148,7 @@ public abstract class BaseFilter<T> {
     public boolean filterStatus(T item) {
         try {
             if (item == null) return false;
-            return valueFrom(item, "status").equals(status);
+            return valueFrom(item, ConvertingUtils.defaultStatusField).equals(status);
         } catch (NullPointerException e) {
             return true;
         }
