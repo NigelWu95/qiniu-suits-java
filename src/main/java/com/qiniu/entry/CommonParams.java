@@ -344,7 +344,7 @@ public class CommonParams {
                 }
                 break;
             case "tencent":
-                if (!"qiniu".equals(source) && isStorageSource) {
+                if (!"tencent".equals(source) && isStorageSource) {
                     throw new IOException("the privateType: " + privateType + " can not match source: " + source);
                 }
                 break;
