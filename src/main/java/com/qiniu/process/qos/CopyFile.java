@@ -121,7 +121,7 @@ public class CopyFile extends Base<Map<String, String>> {
                     fileSaveMapper.writeError("no " + toKeyIndex + " in " + map, false);
                 }
             } else {
-                fileSaveMapper.writeError("no key in " + map, false);
+                fileSaveMapper.writeError("key is not exists or empty in " + map, false);
             }
         }
         return lines;
@@ -136,7 +136,7 @@ public class CopyFile extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
-        if (key == null) throw new IOException("no key in " + line);
+        if (key == null) throw new IOException("key is not exists or empty in " + line);
         String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
         return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false));
     }

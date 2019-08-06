@@ -83,15 +83,16 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(urlIndex);
+        String key = line.get("key");
+        return (key == null ? "\t" : key + "\t") + line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
         String url = line.get(urlIndex);
+        String key = line.get("key");
         if (url == null || "".equals(url)) {
-            String key = line.get("key");
-            if (key == null) throw new IOException("no key in " + line);
+            if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
         }
@@ -100,7 +101,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
             line.put("url", url);
             return nextProcessor.processLine(line);
         }
-        return url;
+        return (key == null ? "\t" : key + "\t") + url;
     }
 
     @Override

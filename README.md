@@ -92,12 +92,12 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 
 ### 3 数据源
 数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
-`path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表  
-`path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表  
-`path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表  
-`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表  
-`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表  
-`path=<filepath>` 表示从本地目录（或文件）中读取资源列表  
+`path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](docs/datasource.md#1-七牛云存储)  
+`path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](docs/datasource.md#2-腾讯云存储)  
+`path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](docs/datasource.md#3-阿里云存储)  
+`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表，参考[S3数据源示例](docs/datasource.md#4-aws-s3)  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[又拍数据源示例](docs/datasource.md#5-又拍云存储)  
+`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#6-local-files)  
 未设置数据源时则默认从七牛空间进行列举**，配置文件示例可参考 [配置模板](resources/application.config)  
 
 #### storage 云存储列举  

@@ -102,7 +102,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
-        if (key == null) throw new IOException("no key in " + line);
+        if (key == null) throw new IOException("key is not exists or empty in " + line);
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             StringBuilder cmdBuilder = new StringBuilder();
             for (JsonObject pfopConfig : pfopConfigs) {
@@ -115,7 +115,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
             return key + "\t" + operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams);
         } else {
             String fops = line.get(fopsIndex);
-            if (fops == null) throw new IOException("no fops in " + line);
+            if (fops == null) throw new IOException("fops is not exists or empty in " + line);
             return key + "\t" + operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);
         }
     }

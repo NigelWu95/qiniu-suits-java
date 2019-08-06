@@ -8,7 +8,7 @@
 - [AWS](#七牛配置参数)参考：[私有空间资源签名](https://docs.aws.amazon.com/zh_cn/general/latest/gr/signing_aws_api_requests.html#rest-and-query-requests)  
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
+**操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ### 七牛配置参数
 ```
@@ -17,6 +17,7 @@ ak=
 sk=
 domain=
 protocol=
+indexes=
 url-index=
 expires=
 ```  
@@ -26,6 +27,7 @@ expires=
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源为 qiniu 时无需再设置|  
 |domain| 域名字符串| 用于拼接文件名生成链接的域名，当指定 url-index 时无需设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
+|indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 |expires| 整型| url 签名的过期时间，单位 s，默认 3600s|  
 

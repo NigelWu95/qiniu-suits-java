@@ -19,6 +19,7 @@ public final class URLUtils {
 //        else if (uri.endsWith("\t")) return uri.substring(0, uri.length() - 1) + "%09";
 //        else return uri;
         if (uri == null || uri.isEmpty()) return "";
-        return uri.replaceAll(" ", "%20").replaceAll("\t", "%09");
+        return uri.replaceAll(" ", "%20").replaceAll("\t", "%09")
+                .replaceAll("\n", "%0a").replaceAll("\r", "%0d");
     }
 }

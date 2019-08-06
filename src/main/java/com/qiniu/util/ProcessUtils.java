@@ -15,6 +15,8 @@ public final class ProcessUtils {
         add("awsprivate");
         add("aliprivate");
         add("download");
+        add("imagecensor");
+        add("videocensor");
     }};
     public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
@@ -24,8 +26,9 @@ public final class ProcessUtils {
     public static Set<String> needFopsProcesses = new HashSet<String>(){{
         add("pfop");
     }};
-    public static Set<String> needPidProcesses = new HashSet<String>(){{
+    public static Set<String> needIdProcesses = new HashSet<String>(){{
         add("pfopresult");
+        add("censorresult");
     }};
     public static Set<String> needAvinfoProcesses = new HashSet<String>(){{
         add("pfopcmd");
@@ -71,6 +74,9 @@ public final class ProcessUtils {
         addAll(qiniuProcessesWithBucket);
         add("asyncfetch");
         add("privateurl");
+        add("imagecensor");
+        add("videocensor");
+        add("censorresult");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
         addAll(needQiniuAuthProcesses);
@@ -97,6 +103,12 @@ public final class ProcessUtils {
 //        addAll(needBucketAnKeyProcesses);
 //        addAll(supportListSourceProcesses);
 //    }};
+    public static Set<String> canPrivateToNextProcesses = new HashSet<String>(){{
+        add("asyncfetch");
+        add("download");
+        add("imagecensor");
+        add("videocensor");
+    }};
 
     public static boolean needUrl(String process) {
         return needUrlProcesses.contains(process);
@@ -110,8 +122,8 @@ public final class ProcessUtils {
         return needFopsProcesses.contains(process);
     }
 
-    public static boolean needPid(String process) {
-        return needPidProcesses.contains(process);
+    public static boolean needId(String process) {
+        return needIdProcesses.contains(process);
     }
 
     public static boolean needAvinfo(String process) {
@@ -153,4 +165,8 @@ public final class ProcessUtils {
 //    public static boolean isSupportedProcess(String process) {
 //        return processes.contains(process);
 //    }
+
+    public static boolean canPrivateToNext(String process) {
+        return canPrivateToNextProcesses.contains(process);
+    }
 }

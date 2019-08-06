@@ -67,7 +67,7 @@ public class DeleteFile extends Base<Map<String, String>> {
                 lines.add(map);
                 batchOperations.addDeleteOp(bucket, key);
             } else {
-                fileSaveMapper.writeError("no key in " + map, false);
+                fileSaveMapper.writeError("key is not exists or empty in " + map, false);
             }
         }
         return lines;
@@ -82,7 +82,7 @@ public class DeleteFile extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
-        if (key == null) throw new IOException("no key in " + line);
+        if (key == null) throw new IOException("key is not exists or empty in " + line);
         return key + "\t" + HttpRespUtils.getResult(bucketManager.delete(bucket, key));
     }
 

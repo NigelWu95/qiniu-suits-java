@@ -48,7 +48,7 @@ public class MirrorFile extends Base<Map<String, String>> {
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
-        if (key == null) throw new IOException("no key in " + line);
+        if (key == null) throw new IOException("key is not exists or empty in " + line);
         bucketManager.prefetch(bucket, key);
         return key;
     }

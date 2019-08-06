@@ -2,11 +2,11 @@
   "pfop":[
     {
       "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-      "saveas":"bucket:$(key)F720.mp4"
+      "saveas":"bucket:$(name)F720.mp4"
     },
     {
-      "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-      "saveas":"bucket:$(key)F720.mp4"
+      "cmd":"avthumb/mp4/s/720x480/autoscale/1",
+      "saveas":"bucket:$(name)F480.mp4"
     }
   ],
   "pfopcmd":[

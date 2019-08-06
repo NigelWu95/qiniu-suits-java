@@ -78,25 +78,21 @@ public class QueryHash extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(urlIndex);
+        String key = line.get("key");
+        return (key == null ? "\t" : key + "\t") + line.get(urlIndex);
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
         String url =  line.get(urlIndex);
+        String key = line.get("key");
         if (url == null || "".equals(url)) {
-            String key = line.get("key");
-            if (key == null) throw new IOException("no key in " + line);
+            if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
             line.put(urlIndex, url);
+            return key + "\t" + url + "\t" + JsonUtils.toJson(fileChecker.getQHashBody(url));
         }
-        String qhash = fileChecker.getQHashBody(url);
-        if (qhash != null && !"".equals(qhash)) {
-            // 由于响应的 body 为多行需经过格式化处理为一行字符串
-            return url + "\t" + JsonUtils.toJson(qhash);
-        } else {
-            throw new IOException(line + " only has empty_result");
-        }
+        return (key == null ? "\t" : key + "\t") + url + "\t" + JsonUtils.toJson(fileChecker.getQHashBody(url));
     }
 
     @Override

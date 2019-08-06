@@ -112,8 +112,13 @@ public abstract class BaseFilter<T> {
         try {
             if (item == null) return false;
             String mType = valueFrom(item, "mime");
-            return (checkList(mimeType) || mimeType.stream().anyMatch(mType::contains))
-                    && (checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains));
+            boolean result = false;
+            if (checkList(mimeType)) {
+                result = mimeType.stream().anyMatch(mType::contains);
+                if (!result) return false;
+            }
+            if (checkList(antiMimeType)) return antiMimeType.stream().noneMatch(mType::contains);
+            return result;
         } catch (Exception e) {
             return true;
         }

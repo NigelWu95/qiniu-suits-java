@@ -8,6 +8,7 @@ import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
 import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.URLUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -101,9 +102,9 @@ public class UpLister implements ILister<FileItem> {
                     if ("folder".equals(attribute)) {
                         if (directories == null) {
                             directories = new ArrayList<>();
-                            directories.add(totalName);
+                            directories.add(URLUtils.getSpaceEscapedURI(totalName));
                         } else {
-                            directories.add(totalName);
+                            directories.add(URLUtils.getSpaceEscapedURI(totalName));
                         }
                     } else {
                         FileItem fileItem = new FileItem();

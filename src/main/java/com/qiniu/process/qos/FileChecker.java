@@ -1,11 +1,11 @@
 package com.qiniu.process.qos;
 
-import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.model.qos.Qhash;
 import com.qiniu.storage.Configuration;
+import com.qiniu.util.JsonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,31 +45,8 @@ public class FileChecker {
         return getQHashByJson(getQHashBody(domain, sourceKey));
     }
 
-    public Qhash getQHashByJson(String qHashJson) throws QiniuException {
-        Qhash qhash;
-        try {
-            Gson gson = new Gson();
-            qhash = gson.fromJson(qHashJson, Qhash.class);
-        } catch (JsonParseException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
-        return qhash;
-    }
-
-    public Qhash getQHashByJson(JsonObject qHashJson) throws QiniuException {
-        Qhash qhash;
-        try {
-            Gson gson = new Gson();
-            qhash = gson.fromJson(qHashJson, Qhash.class);
-        } catch (JsonParseException e) {
-            throw new QiniuException(e, e.getMessage());
-        }
-        return qhash;
-    }
-
-    public JsonObject getQHashJson(String domain, String sourceKey) throws QiniuException {
-        JsonParser jsonParser = new JsonParser();
-        return jsonParser.parse(getQHashBody(domain, sourceKey)).getAsJsonObject();
+    public Qhash getQHashByJson(String qHashJson) {
+        return JsonUtils.fromJson(qHashJson, Qhash.class);
     }
 
     public String getQHashBody(String domain, String sourceKey) throws QiniuException {
@@ -81,7 +58,7 @@ public class FileChecker {
         if (client == null) this.client = new Client();
         Response response = client.get(url + "?qhash/" + algorithm);
         String qhash = response.bodyString();
-        if (response.statusCode != 200) throw new QiniuException(response);
+        if (response.statusCode != 200 || qhash.isEmpty()) throw new QiniuException(response);
         response.close();
         return qhash;
     }
