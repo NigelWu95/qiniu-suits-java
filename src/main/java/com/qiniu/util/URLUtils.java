@@ -13,7 +13,7 @@ public final class URLUtils {
         else return path.startsWith("/") ? path.substring(1) : path;
     }
 
-    public static String getSpaceEscapedURI(String uri) {
+    public static String getEncodedURI(String uri) {
 //        if (uri == null || uri.isEmpty()) return "";
 //        else if (uri.endsWith(" ")) return uri.substring(0, uri.length() - 1) + "%20";
 //        else if (uri.endsWith("\t")) return uri.substring(0, uri.length() - 1) + "%09";

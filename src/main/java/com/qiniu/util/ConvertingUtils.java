@@ -251,7 +251,7 @@ public final class ConvertingUtils {
         if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": pair.put(indexMap.get(index), fileItem.key); break;
+                case "key": pair.put(indexMap.get(index), URLUtils.getEncodedURI(fileItem.key)); break;
 //                case "hash": case "etag": break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
@@ -326,7 +326,7 @@ public final class ConvertingUtils {
         StringBuilder converted = new StringBuilder();
         for (String field : fields) {
             switch (field) {
-                case "key": converted.append(fileInfo.key).append(separator); break;
+                case "key": converted.append(URLUtils.getEncodedURI(fileInfo.key)).append(separator); break;
                 case "hash":
                 case "etag": converted.append(fileInfo.hash).append(separator); break;
                 case "size":

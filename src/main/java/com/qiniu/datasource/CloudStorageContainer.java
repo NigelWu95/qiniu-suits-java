@@ -264,9 +264,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
-            UniOrderUtils.returnOrder(order);
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
+            UniOrderUtils.returnOrder(order); // 执行完 close 再归还 order
             lister.close();
         }
     }

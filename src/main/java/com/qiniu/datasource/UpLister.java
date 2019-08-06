@@ -102,9 +102,9 @@ public class UpLister implements ILister<FileItem> {
                     if ("folder".equals(attribute)) {
                         if (directories == null) {
                             directories = new ArrayList<>();
-                            directories.add(URLUtils.getSpaceEscapedURI(totalName));
+                            directories.add(URLUtils.getEncodedURI(totalName));
                         } else {
-                            directories.add(URLUtils.getSpaceEscapedURI(totalName));
+                            directories.add(URLUtils.getEncodedURI(totalName));
                         }
                     } else {
                         FileItem fileItem = new FileItem();
