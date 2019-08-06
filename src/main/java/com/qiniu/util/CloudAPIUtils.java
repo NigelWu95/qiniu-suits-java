@@ -239,13 +239,13 @@ public final class CloudAPIUtils {
     }
 
     public static void checkQiniu(BucketManager bucketManager, String bucket) throws QiniuException {
-        bucketManager.listFilesV2(bucket, null, null, 1, null);
+        bucketManager.listV2(bucket, null, null, 1, null);
     }
 
     public static void checkQiniu(String accessKey, String secretKey, Configuration configuration, String bucket)
             throws QiniuException {
         BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
-        bucketManager.listFilesV2(bucket, null, null, 1, null);
+        bucketManager.listV2(bucket, null, null, 1, null);
         bucketManager = null;
     }
 
