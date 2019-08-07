@@ -572,11 +572,11 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String query = entryParam.getValue("query", "").trim();
+        String queries = entryParam.getValue("queries", "").trim();
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, query, Long.valueOf(expires))
-                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, query, Long.valueOf(expires), savePath);
+        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, queries, Long.valueOf(expires))
+                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, queries, Long.valueOf(expires), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
@@ -620,8 +620,26 @@ public class QSuitsEntry {
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires)) :
-                new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires), savePath);
+        String queries = entryParam.getValue("queries", "").trim();
+        if (queries.startsWith("\\?")) queries = queries.substring(1);
+        String[] items = queries.split("&");
+        Map<String, String> queriesMap = new HashMap<>();
+        int index;
+        String key;
+        String value;
+        for (String item : items) {
+            index = item.indexOf("=");
+            if (index < 0) {
+                key = item;
+                value = "";
+            } else {
+                key = item.substring(0, index);
+                value = item.substring(index + 1);
+            }
+            queriesMap.put(key, value);
+        }
+        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires), queriesMap) :
+                new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires), queriesMap, savePath);
     }
 
     public com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
@@ -641,7 +659,7 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String query = entryParam.getValue("query", "").trim();
+        String queries = entryParam.getValue("queries", "").trim();
         String host = entryParam.getValue("host", "").trim();
         String preDown = entryParam.getValue("pre-down", "false").trim();
         preDown = ParamsUtils.checked(preDown, "pre-down", "(true|false)");
@@ -654,9 +672,9 @@ public class QSuitsEntry {
             configuration.connectTimeout = getQiniuConfig().connectTimeout;
             configuration.readTimeout = Integer.valueOf(timeOut);
         }
-        return single ? new DownloadFile(configuration, domain, protocol, urlIndex, query, host, "true".equals(preDown) ?
-                null : savePath, addPrefix, rmPrefix)
-                : new DownloadFile(configuration, domain, protocol, urlIndex, query, host, Boolean.valueOf(preDown),
+        return single ? new DownloadFile(configuration, domain, protocol, urlIndex, queries, host, "true".equals(preDown)
+                ? null : savePath, addPrefix, rmPrefix)
+                : new DownloadFile(configuration, domain, protocol, urlIndex, queries, host, Boolean.valueOf(preDown),
                 addPrefix, rmPrefix, savePath);
     }
 
@@ -665,10 +683,10 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String query = entryParam.getValue("query", "").trim();
+        String queries = entryParam.getValue("queries", "").trim();
         Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
-        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, query, scenes) :
-                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, query, scenes, savePath);
+        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes) :
+                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes, savePath);
     }
 
     private ILineProcess<Map<String, String>> getVideoCensor(Map<String, String> indexMap, boolean single) throws IOException {
