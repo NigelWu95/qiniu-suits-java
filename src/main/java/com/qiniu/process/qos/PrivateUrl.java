@@ -81,7 +81,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         String key = line.get("key");
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f") + suffixOrQuery;
+            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f") + suffixOrQuery;
             line.put(urlIndex, url);
         } else if (useQuery) {
             url = url + suffixOrQuery;

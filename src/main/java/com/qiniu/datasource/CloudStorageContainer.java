@@ -571,6 +571,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         System.out.println(info + " running...");
+        ctrlC();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
@@ -579,8 +580,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 if (prefixes == null) threads = 1;
             }
             if (threads <= 1) {
-                System.out.println(info + " finished.");
                 listing(startLister);
+                System.out.println(info + " finished.");
+                endAction();
                 return;
             }
         } else {
@@ -592,7 +594,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     .collect(Collectors.toList());
         }
         executorPool = Executors.newFixedThreadPool(threads);
-        ctrlC();
         try {
             if (startLister != null) processNodeLister(startLister);
             List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());

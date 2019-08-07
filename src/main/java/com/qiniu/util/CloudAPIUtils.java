@@ -169,7 +169,7 @@ public final class CloudAPIUtils {
 
     public static String getUpYunMarker(String bucket, FileItem fileItem) {
         if (fileItem.key.contains("/")) {
-            String convertedKey = fileItem.key.replaceAll("/", "/~");
+            String convertedKey = fileItem.key.replace("/", "/~");
             int lastIndex = convertedKey.lastIndexOf("~");
             if ("folder".equals(fileItem.attribute) || ("F".equals(fileItem.attribute))) {
                 convertedKey = convertedKey.substring(0, lastIndex) + "@" + convertedKey.substring(lastIndex);
@@ -229,7 +229,7 @@ public final class CloudAPIUtils {
     public static String decodeUpYunMarker(String marker) {
         String keyString = new String(decoder.decode(marker));
         int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
-        return keyString.substring(index).replaceAll("(/~|/@~|/@#)", "/");
+        return keyString.substring(index).replace("(/~|/@~|/@#)", "/");
     }
 
     public static void checkQiniu(Auth auth) throws QiniuException {
