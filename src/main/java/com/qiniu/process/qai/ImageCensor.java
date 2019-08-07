@@ -82,13 +82,11 @@ public class ImageCensor extends Base<Map<String, String>> {
             url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f") + suffixOrQuery;
             line.put(urlIndex, url);
             return key + "\t" + url + "\t" + censorManager.doImageCensor(url, paramsJson);
-        } else {
-            if (useQuery) {
-                url = url + suffixOrQuery;
-                line.put(urlIndex, url);
-            }
-            return (key == null ? "\t" : key + "\t") + url + "\t" + censorManager.doImageCensor(url, paramsJson);
+        } else if (useQuery) {
+            url = url + suffixOrQuery;
+            line.put(urlIndex, url);
         }
+        return (key == null ? "\t" : key + "\t") + url + "\t" + censorManager.doImageCensor(url, paramsJson);
     }
 
     @Override

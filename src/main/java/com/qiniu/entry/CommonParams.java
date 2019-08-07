@@ -296,6 +296,23 @@ public class CommonParams {
         }
     }
 
+    /**
+     * 支持从路径方式上解析出 bucket，如果主动设置 bucket 则替换路径中的值
+     * @throws IOException 解析 bucket 参数失败抛出异常
+     */
+    private void setBucket() throws IOException {
+        if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
+        else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
+        else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
+        else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
+        else if ("s3".equals(source)) {
+            if (path.startsWith("s3://")) bucket = path.substring(5);
+            else if (path.startsWith("aws://")) bucket = path.substring(6);
+        }
+        if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
+        else bucket = entryParam.getValue("bucket", bucket).trim();
+    }
+
     private void setProcess() throws IOException {
         process = entryParam.getValue("process", "").trim();
         if (!process.isEmpty() && isStorageSource && !ProcessUtils.supportStorageSource(process)) {
@@ -314,24 +331,7 @@ public class CommonParams {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
         }
-        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket").trim();
-    }
-
-    /**
-     * 支持从路径方式上解析出 bucket，如果主动设置 bucket 则替换路径中的值
-     * @throws IOException 解析 bucket 参数失败抛出异常
-     */
-    private void setBucket() throws IOException {
-        if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
-        else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
-        else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
-        else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
-        else if ("s3".equals(source)) {
-            if (path.startsWith("s3://")) bucket = path.substring(5);
-            else if (path.startsWith("aws://")) bucket = path.substring(6);
-        }
-        if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
-        else bucket = entryParam.getValue("bucket", bucket).trim();
+        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket", bucket).trim();
     }
 
     private void setPrivateType() throws IOException {

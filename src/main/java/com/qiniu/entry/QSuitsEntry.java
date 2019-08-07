@@ -572,10 +572,11 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        String query = entryParam.getValue("query", "").trim();
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires))
-                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, Long.valueOf(expires), savePath);
+        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, query, Long.valueOf(expires))
+                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, query, Long.valueOf(expires), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
@@ -640,6 +641,7 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        String query = entryParam.getValue("query", "").trim();
         String host = entryParam.getValue("host", "").trim();
         String preDown = entryParam.getValue("pre-down", "false").trim();
         preDown = ParamsUtils.checked(preDown, "pre-down", "(true|false)");
@@ -652,8 +654,9 @@ public class QSuitsEntry {
             configuration.connectTimeout = getQiniuConfig().connectTimeout;
             configuration.readTimeout = Integer.valueOf(timeOut);
         }
-        return single ? new DownloadFile(configuration, domain, protocol, urlIndex, host, "true".equals(preDown) ? null : savePath,
-                addPrefix, rmPrefix) : new DownloadFile(configuration, domain, protocol, urlIndex, host, Boolean.valueOf(preDown),
+        return single ? new DownloadFile(configuration, domain, protocol, urlIndex, query, host, "true".equals(preDown) ?
+                null : savePath, addPrefix, rmPrefix)
+                : new DownloadFile(configuration, domain, protocol, urlIndex, query, host, Boolean.valueOf(preDown),
                 addPrefix, rmPrefix, savePath);
     }
 
@@ -662,10 +665,10 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String suffix = entryParam.getValue("suffix", "").trim();
+        String query = entryParam.getValue("query", "").trim();
         Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
-        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, suffix, scenes) :
-                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, suffix, scenes, savePath);
+        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, query, scenes) :
+                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, query, scenes, savePath);
     }
 
     private ILineProcess<Map<String, String>> getVideoCensor(Map<String, String> indexMap, boolean single) throws IOException {
