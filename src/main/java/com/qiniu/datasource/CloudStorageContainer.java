@@ -280,7 +280,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tsuccessfully done");
         } catch (Throwable e) {
             e.printStackTrace();
-            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + recorder.get(lister.getPrefix()));
+            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + recorder.getJson(lister.getPrefix()));
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
