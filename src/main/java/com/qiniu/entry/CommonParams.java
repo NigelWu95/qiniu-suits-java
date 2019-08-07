@@ -374,7 +374,7 @@ public class CommonParams {
             JsonObject jsonCfg;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 Map<String, String> markerAndEnd = new HashMap<>();
-                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
+//                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 JsonElement json = jsonFile.getElement(prefix);
                 if (json == null || json instanceof JsonNull) {
                     prefixesMap.put(prefix, null);

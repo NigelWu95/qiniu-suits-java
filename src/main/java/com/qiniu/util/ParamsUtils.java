@@ -14,10 +14,10 @@ public class ParamsUtils {
     public static String[] escapeSplit(String paramLine, char delimiter, String[] escapeArray, boolean replace) throws IOException {
         if (paramLine == null || "".equals(paramLine)) return new String[0];
         String delimit = String.valueOf(delimiter);
-//        if (paramLine.startsWith(delimit))
-//            throw new IOException("first character can not be delimiter: \"" + delimit + "\" in \"" + paramLine + "\"");
-//        if (paramLine.endsWith(delimit))
-//            throw new IOException("last character can not be delimiter: \"" + delimit + "\" in \"" + paramLine + "\"");
+        if (paramLine.startsWith(delimit))
+            throw new IOException("first character can not be delimiter: \"" + delimit + "\" in \"" + paramLine + "\"");
+        if (paramLine.endsWith(delimit))
+            throw new IOException("last character can not be delimiter: \"" + delimit + "\" in \"" + paramLine + "\"");
         String params = paramLine;
         Map<String, String> escapeMap = new HashMap<>();
         String[] escapes = new String[escapeArray.length + 1];
