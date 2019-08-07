@@ -37,7 +37,7 @@ public class DownloadFile extends Base<Map<String, String>> {
         super("download", "", "", null);
         if (downPath == null || "".equals(downPath)) preDown = true;
         else this.savePath = FileUtils.realPathWithUserHome(downPath);
-        set(configuration, domain, protocol, urlIndex, suffixOrQuery,host, preDown, addPrefix, rmPrefix);
+        set(configuration, domain, protocol, urlIndex, suffixOrQuery, host, preDown, addPrefix, rmPrefix);
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }
 

@@ -356,12 +356,14 @@ public class QSuitsEntry {
     public ILineProcess<Map<String, String>> whichNextProcessor(boolean single) throws Exception {
         ILineProcess<Map<String, String>> processor = null;
         ILineProcess<Map<String, String>> privateProcessor = null;
+        boolean useQuery = true;
         Map<String, String> indexes = new HashMap<>(indexMap);
         if (ProcessUtils.canPrivateToNext(process)) {
             privateProcessor = getPrivateTypeProcessor(single);
             if (privateProcessor != null) {
                 indexes.put("url", "url");
                 single = true;
+                useQuery = false;
             }
         }
         switch (process) {
@@ -385,8 +387,8 @@ public class QSuitsEntry {
             case "tenprivate": processor = getTencentPrivateUrl(single); break;
             case "s3private": case "awsprivate": processor = getAwsS3PrivateUrl(single); break;
             case "aliprivate": processor = getAliyunPrivateUrl(single); break;
-            case "download": processor = getDownloadFile(indexes, single); break;
-            case "imagecensor": processor = getImageCensor(indexes, single); break;
+            case "download": processor = getDownloadFile(indexes, single, useQuery); break;
+            case "imagecensor": processor = getImageCensor(indexes, single, useQuery); break;
             case "videocensor": processor = getVideoCensor(indexes, single); break;
             case "censorresult": processor = getCensorResult(indexes, single); break;
             case "filter": case "": break;
@@ -661,12 +663,13 @@ public class QSuitsEntry {
                 Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
-    public ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single) throws IOException {
+    public ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single, boolean useQuery)
+            throws IOException {
         String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String queries = entryParam.getValue("queries", "").trim();
+        String queries = useQuery ? entryParam.getValue("queries", "").trim() : null;
         String host = entryParam.getValue("host", "").trim();
         String preDown = entryParam.getValue("pre-down", "false").trim();
         preDown = ParamsUtils.checked(preDown, "pre-down", "(true|false)");
@@ -685,12 +688,13 @@ public class QSuitsEntry {
                 addPrefix, rmPrefix, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getImageCensor(Map<String, String> indexMap, boolean single) throws IOException {
+    private ILineProcess<Map<String, String>> getImageCensor(Map<String, String> indexMap, boolean single, boolean useQuery)
+            throws IOException {
         String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        String queries = entryParam.getValue("queries", "").trim();
+        String queries = useQuery ? entryParam.getValue("queries", "").trim() : null;
         Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
         return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes) :
                 new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes, savePath);

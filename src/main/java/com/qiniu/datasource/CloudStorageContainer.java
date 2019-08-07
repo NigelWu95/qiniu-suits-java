@@ -566,6 +566,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 if (prefixes == null) threads = 1;
             }
             if (threads <= 1) {
+                System.out.println(info + " finished.");
                 listing(startLister);
                 return;
             }

@@ -114,14 +114,15 @@ prefix-right=
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
 
-**备注：** 又拍云存储的列举不支持 prefix-left 和 prefix-right 参数，同时又拍云存储强制目录结构以 "/" 作为分隔符，不支持任意前缀列举，设置 
-prefixes 的情况下必须是有效的目录名 
-
-#### # 关于多前缀列举
-prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果设
+#### # 数据源完备性和多前缀列举
+1. prefix-left 为可选择是否列举所有前缀 ASCII 顺序之前的文件，prefix-right 为选择是否列举所有前缀 ASCII 顺序之后的文件，确保在没有预定义前缀的
+情况下仍能列举完整数据。   
+2. prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果设
 置 prefix-config 则 prefixes 配置无效，同时 prefix-config 支持指定列举起始和结束位置(<start/marker>、<end>)，写法如下，配置举例见
 [prefix-config 配置](../resources/prefixes.json)。在使用多个前缀列举的同时，可能存在需要列举到**第一个前缀之前**或**最后一个前缀之后**(前
-缀会自动按照 ASCII 码排序)的文件，因此设置 prefix-left 和 prefix-right 用于满足该需求。  
+缀会自动按照 ASCII 码排序)的文件，因此设置 prefix-left 和 prefix-right 用于满足该需求。   
+**备注：** 又拍云存储的列举不支持 prefix-left 和 prefix-right 参数，同时又拍云存储强制目录结构以 "/" 作为分隔符，不支
+持任意前缀列举，设置 prefixes 的情况下必须是有效的目录名。  
 
 ##### prefix-config 配置
 ```

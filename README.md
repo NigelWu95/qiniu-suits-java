@@ -28,6 +28,8 @@
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 - [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 - [x] 批量下载资源到本地 [download 配置](docs/downloadfile.md)  
+- [x] 批量下载资源到本地 [imagecensor 配置](docs/censor.md#图片审核)  
+- [x] 批量下载资源到本地 [videocensor 配置](docs/censor.md#视频审核)  
 
 *【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
 
@@ -248,4 +250,20 @@ java.net.SocketTimeoutException: timeout
 2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
 为前缀配置文件: prefix-config=<breakpoint_filepath> 即可。【该项参数请和其他参数保持一致放在命令行或配置文件中。】  
 3. 对于 file 数据源产生的断点文件记录了读取的文本行，如果需要使用断点则需要检查对应文件中文本行位置再做截取，目前没有实现自动检测方式。
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。  
+
+### 分布式任务方案
+对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完
+整文件列表时，可以按照连续的前缀字符分割成多段分别执行各个机器的任务，建议的前缀列表为:
+```!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz```，将该列表任意分成 n 段，如：
+```
+prefixes=!,\,",#,$,%,&,',(,),*,+,\,,-,.,/,0,1
+prefixes=2,3,4,5,6,7,8,9,:,;
+prefixes=<,=,>,?,@,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O
+prefixes=P,Q,R,S,T,U,V,W,X,Y,Z,[,\\,\\,],^,_,`
+prefixes=a,b,c,d,e,f,g,h,i,j,k,l,m
+prefixes=n,o,p,q,r,s,t,u,v,w,x,y,z
+```
+（**`,`，`\`，`=` 需要转义**）将前缀分为上述几段后，设置 prefixes 参数可以分做六台机器执行，同时因为需要列举空间全部文件，需要分别在第一段 prefixes
+设置 `prefix-left=true`，在最后一段 prefixes 设置 `prefix-right=true`（其他段 prefixes 不能同时设置 prefix-left 或 prefix-right，
+且仅能第一段设置 prefix-left 和最后一段设置 prefix-right，参数描述见[数据源完备性](docs/datasource.md##-数据源完备性和多前缀列举)
