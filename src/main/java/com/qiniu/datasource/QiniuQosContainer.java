@@ -31,7 +31,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
                              boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
-                             int threads) throws SuitsException {
+                             int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKey = accessKey;
         this.secretKey = secretKey;

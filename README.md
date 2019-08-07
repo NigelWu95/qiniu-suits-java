@@ -106,13 +106,13 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 30，1 亿以内文件可以不增加线程，通常云存储空间列举的必须参数包括密钥、空间名(通过
 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)：  
 
-|list 源|             密钥和 region 字段         |                  对应关系和描述               |  
-|------|---------------------------------------|---------------------------------------------|  
-|qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
-|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
-|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
-|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|storage 源|             密钥和 region 字段         |                  对应关系和描述               |  
+|---------|---------------------------------------|---------------------------------------------|  
+|qiniu    |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
+|tencent  |`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
+|aliyun   |`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
+|upyun    |`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
+|aws/s3   |`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
 #### file 文本文件行读取  
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
@@ -264,6 +264,6 @@ prefixes=P,Q,R,S,T,U,V,W,X,Y,Z,[,\\,\\,],^,_,`
 prefixes=a,b,c,d,e,f,g,h,i,j,k,l,m
 prefixes=n,o,p,q,r,s,t,u,v,w,x,y,z
 ```
-（**`,`，`\`，`=` 需要转义**）将前缀分为上述几段后，设置 prefixes 参数可以分做六台机器执行，同时因为需要列举空间全部文件，需要分别在第一段 prefixes
+（**`,`，`\` 需要转义**）将前缀分为上述几段后，设置 prefixes 参数可以分做六台机器执行，同时因为需要列举空间全部文件，需要分别在第一段 prefixes
 设置 `prefix-left=true`，在最后一段 prefixes 设置 `prefix-right=true`（其他段 prefixes 不能同时设置 prefix-left 或 prefix-right，
 且仅能第一段设置 prefix-left 和最后一段设置 prefix-right，参数描述见[数据源完备性](docs/datasource.md##-数据源完备性和多前缀列举)

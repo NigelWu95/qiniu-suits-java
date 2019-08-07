@@ -55,7 +55,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen,
-                                 int threads) {
+                                 int threads) throws IOException {
         this.bucket = bucket;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
@@ -109,34 +109,52 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.processor = processor;
     }
 
-    private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) {
+    private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
         if (prefixesMap == null || prefixesMap.size() <= 0) {
             this.prefixesMap = new HashMap<>();
             prefixLeft = true;
             prefixRight = true;
-            if (hasAntiPrefixes) {
-                prefixes = originPrefixList.stream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
-            }
+            if (hasAntiPrefixes) prefixes = originPrefixList.stream().sorted().collect(Collectors.toList());
         } else {
+            if (prefixesMap.containsKey(null)) throw new IOException("");
             this.prefixesMap = prefixesMap;
-            prefixes = prefixesMap.keySet().parallelStream().filter(this::checkPrefix).sorted().collect(Collectors.toList());
+            prefixes = prefixesMap.keySet().parallelStream().sorted().collect(Collectors.toList());
             int size = prefixes.size();
-            if (size == 0) return;
             Iterator<String> iterator = prefixes.iterator();
             String temp = iterator.next();
-            String end;
+            Map<String, String> value = prefixesMap.get(temp);
+            String start = null;
+            String end = null;
+            String marker = null;
+            if (temp.equals("") && !iterator.hasNext()) {
+                if (value != null && value.size() > 0) {
+                    start = "".equals(value.get("start")) ? null : value.get("start");
+                    end = "".equals(value.get("end")) ? null : value.get("end");
+                    marker = "".equals(value.get("marker")) ? null : value.get("marker");
+                }
+                if (start == null && end == null && marker == null) throw new IOException("prefixes can not only be empty string(\"\")");
+            }
             while (iterator.hasNext() && size > 0) {
                 size--;
                 String prefix = iterator.next();
                 if (prefix.startsWith(temp)) {
-                    end = prefixesMap.get(temp).get("end");
+                    end = value == null ? null : value.get("end");
                     if (end == null || "".equals(end)) {
                         iterator.remove();
                         this.prefixesMap.remove(prefix);
+                    } else if (end.compareTo(prefix) >= 0) {
+                        throw new IOException(temp + "'s end can not be more larger than " + prefix + " in " + prefixesMap);
                     }
                 } else {
                     temp = prefix;
+                    value = prefixesMap.get(temp);
                 }
+            }
+        }
+        if (hasAntiPrefixes && prefixes != null && prefixes.size() > 0) {
+            String lastAntiPrefix = antiPrefixes.stream().max(Comparator.naturalOrder()).orElse(null);
+            if (prefixRight && lastAntiPrefix != null && lastAntiPrefix.compareTo(prefixes.get(prefixes.size() - 1)) <= 0) {
+                throw new IOException("max anti-prefix can not be same as or more larger than max prefix.");
             }
         }
     }
@@ -411,7 +429,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Iterator<ILister<E>> iterator;
         while (!executorPool.isTerminated()) {
             try {
-                if (count >= 300) {
+                if (count >= 1800) {
                     iterator = listerList.iterator();
                     while (iterator.hasNext()) {
                         iLister = iterator.next();
@@ -428,11 +446,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                             insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
                         }
                     }
-                    if (startCheck || listerList.size() > cValue) {
+                    if (startCheck) {
+                        count = 1500;
+                    } else if (listerList.size() > cValue) {
                         count = 0;
                     } else {
                         startCheck = true;
-                        count = listerList.size() <= tiny ? -1800 : -3200;
+                        count = listerList.size() <= tiny ? 1800 : 1500;
                     }
                 }
                 Thread.sleep(1000);
@@ -448,10 +468,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private List<String> lastEndedPrefixes() {
         List<String> phraseLastPrefixes = new ArrayList<>(prefixAndEndedMap.keySet());
         phraseLastPrefixes.sort(Comparator.reverseOrder());
-        String lastPrefix;
+        String previousPrefix;
         Map<String, String> prefixMap;
-        Map<String, String> lastPrefixMap;
-        String firstEndPrefix = prefixes == null || prefixes.size() == 0 ? "" : prefixes.get(0);
+        Set<String> startPrefixes = prefixes == null ? new HashSet<>() : new HashSet<>(prefixes);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
             if (prefixMap.size() == 0) {
@@ -459,21 +478,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 continue;
             }
             recorder.remove(prefix);
-            lastPrefix = prefix.substring(0, prefix.length() - 1);
-            lastPrefixMap = prefixAndEndedMap.get(lastPrefix);
-            if (lastPrefixMap != null) {
-                prefixAndEndedMap.put(lastPrefix, prefixMap);
-                prefixAndEndedMap.remove(prefix);
-            } else {
-                if (prefix.equals(firstEndPrefix) || "".equals(lastPrefix)) {
-                    if (prefixRight) {
-                        prefixAndEndedMap.put("", prefixMap);
-                        prefixAndEndedMap.remove(prefix);
-                    }
-                } else {
-                    prefixAndEndedMap.put(lastPrefix, prefixMap);
+            if (startPrefixes.contains(prefix)) {
+                if (prefixRight) {
+                    prefixAndEndedMap.put("", prefixMap);
                     prefixAndEndedMap.remove(prefix);
                 }
+            } else {
+                previousPrefix = prefix.substring(0, prefix.length() - 1);
+                prefixAndEndedMap.put(previousPrefix, prefixMap);
+                prefixAndEndedMap.remove(prefix);
             }
         }
         prefixesMap.putAll(prefixAndEndedMap);
@@ -571,11 +584,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return;
             }
         } else {
-            for (String prefix : prefixes) recordListerByPrefix(prefix);
-            if (prefixLeft) {
+            if (prefixLeft && prefixes.get(0).compareTo("") > 0) {
                 insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
                 startLister = generateLister("");
             }
+            prefixes = prefixes.parallelStream().filter(this::checkPrefix).peek(this::recordListerByPrefix)
+                    .collect(Collectors.toList());
         }
         executorPool = Executors.newFixedThreadPool(threads);
         ctrlC();

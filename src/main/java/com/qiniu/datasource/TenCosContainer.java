@@ -31,7 +31,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
                            boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
-                           int threads) throws SuitsException {
+                           int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;

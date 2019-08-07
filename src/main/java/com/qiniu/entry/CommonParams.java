@@ -363,7 +363,7 @@ public class CommonParams {
         }
     }
 
-    private void setAntiPrefixes() {
+    private void setAntiPrefixes() throws IOException {
         antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
     }
 

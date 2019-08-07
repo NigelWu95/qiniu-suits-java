@@ -9,23 +9,36 @@ import java.util.*;
 
 public class ParamsUtils {
 
-    public final static String[] escapes = new String[]{",", "\\", ":", "="};
+    public final static String[] defaultEscapes = new String[]{"\\"};
 
-    public static String[] escapeSplit(String paramLine, char delimiter, String[] escaped, boolean replace) {
+    public static String[] escapeSplit(String paramLine, char delimiter, String[] escapeArray, boolean replace) throws IOException {
         if (paramLine == null || "".equals(paramLine)) return new String[0];
+        String delimit = String.valueOf(delimiter);
+//        if (paramLine.startsWith(delimit))
+//            throw new IOException("first character can not be delimiter: \"" + delimit + "\" in \"" + paramLine + "\"");
+//        if (paramLine.endsWith(delimit))
+//            throw new IOException("last character can not be delimiter: \"" + delimit + "\" in \"" + paramLine + "\"");
+        String params = paramLine;
         Map<String, String> escapeMap = new HashMap<>();
-        for (String s : escaped) {
-            if (paramLine.contains("\\" + s)) {
-                String tempReplace = String.valueOf(System.nanoTime());
-                while (paramLine.contains(tempReplace) && escapeMap.containsKey(tempReplace)) {
-                    tempReplace = String.valueOf(System.nanoTime());
+        String[] escapes = new String[escapeArray.length + 1];
+        escapes[0] = delimit;
+        System.arraycopy(escapeArray, 0, escapes, 1, escapeArray.length);
+        for (String s : escapes) {
+            if (params.contains(s)) {
+                if (params.contains("\\" + s)) {
+                    String tempReplace = String.valueOf(System.nanoTime());
+                    while (params.contains(tempReplace) && escapeMap.containsKey(tempReplace)) {
+                        tempReplace = String.valueOf(System.nanoTime());
+                    }
+                    escapeMap.put(tempReplace, s);
+                    params = params.replace("\\" + s, tempReplace);
+                } else if (!delimit.equals(s) || params.contains(delimit + s)) {
+                    throw new IOException("please escape \"" + s + "\" in \"" + paramLine + "\"");
                 }
-                escapeMap.put(tempReplace, s);
-                paramLine = paramLine.replace("\\" + s, tempReplace);
             }
         }
 
-        String[] elements = paramLine.split(String.valueOf(delimiter));
+        String[] elements = params.split(delimit);
         for (int i = 0; i < elements.length; i++) {
             for (String key : escapeMap.keySet()) {
                 if (elements[i].contains(key)) {
@@ -37,20 +50,20 @@ public class ParamsUtils {
         return elements;
     }
 
-    public static String[] escapeSplit(String paramLine, char delimiter) {
-        return escapeSplit(paramLine, delimiter, escapes, true);
+    public static String[] escapeSplit(String paramLine, char delimiter) throws IOException {
+        return escapeSplit(paramLine, delimiter, defaultEscapes, true);
     }
 
-    public static String[] escapeSplit(String paramLine, char delimiter, boolean replace) {
-        return escapeSplit(paramLine, delimiter, escapes, replace);
+    public static String[] escapeSplit(String paramLine, char delimiter, boolean replace) throws IOException {
+        return escapeSplit(paramLine, delimiter, defaultEscapes, replace);
     }
 
-    public static String[] escapeSplit(String paramLine) {
-        return escapeSplit(paramLine, ',', escapes, true);
+    public static String[] escapeSplit(String paramLine) throws IOException {
+        return escapeSplit(paramLine, ',', defaultEscapes, true);
     }
 
-    public static String[] escapeSplit(String paramLine, boolean replace) {
-        return escapeSplit(paramLine, ',', escapes, replace);
+    public static String[] escapeSplit(String paramLine, boolean replace) throws IOException {
+        return escapeSplit(paramLine, ',', defaultEscapes, replace);
     }
 
     public static Map<String, String> toParamsMap(Properties properties) {
@@ -127,7 +140,7 @@ public class ParamsUtils {
         if (!paramCommand.contains("="))
             throw new IOException("invalid command param: \"" + paramCommand + "\", no value set with \"=\".");
         String[] strings = new String[2];
-        int position = paramCommand.indexOf("=");
+        int position = paramCommand.indexOf("="); // 取前一个 = 为赋值符号
         if (position + 1 == paramCommand.length())
             throw new IOException("the \"" + paramCommand + "\" param has no value."); // 不允许空值的出现
         strings[0] = paramCommand.substring(0, position);
