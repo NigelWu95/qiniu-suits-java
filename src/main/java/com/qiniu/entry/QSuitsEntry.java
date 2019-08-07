@@ -593,33 +593,7 @@ public class QSuitsEntry {
                 : new ExportTS(getQiniuConfig(), domain, protocol, urlIndex, savePath);
     }
 
-    public com.qiniu.process.tencent.PrivateUrl getTencentPrivateUrl(boolean single) throws IOException {
-        String secretId = entryParam.getValue("ten-id", commonParams.getTencentSecretId());
-        String secretKey = entryParam.getValue("ten-secret", commonParams.getTencentSecretKey());
-        String tenBucket = entryParam.getValue("ten-bucket", bucket);
-        String region = entryParam.getValue("ten-region", regionName);
-        if (region == null || "".equals(region)) region = CloudAPIUtils.getTenCosRegion(secretId, secretKey, tenBucket);
-        String expires = entryParam.getValue("expires", "3600").trim();
-        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, region, Long.valueOf(expires)) :
-                new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, regionName, Long.valueOf(expires), savePath);
-    }
-
-    public com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
-        String accessId = entryParam.getValue("ali-id", commonParams.getAliyunAccessId());
-        String accessSecret = entryParam.getValue("ali-secret", commonParams.getAliyunAccessSecret());
-        String aliBucket = entryParam.getValue("ali-bucket", bucket);
-        String region = entryParam.getValue("ali-region", regionName);
-        if (region == null || "".equals(region)) region = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
-        String endPoint;
-        if (region.matches("https?://.+")) {
-            endPoint = region;
-        } else {
-            if (!region.startsWith("oss-")) region = "oss-" + region;
-            endPoint = "http://" + region + ".aliyuncs.com";
-        }
-        String expires = entryParam.getValue("expires", "3600").trim();
-        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+    private Map<String, String> getQueriesMap() {
         String queries = entryParam.getValue("queries", "").trim();
         if (queries.startsWith("\\?")) queries = queries.substring(1);
         String[] items = queries.split("&");
@@ -638,8 +612,40 @@ public class QSuitsEntry {
             }
             queriesMap.put(key, value);
         }
-        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires), queriesMap) :
-                new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires), queriesMap, savePath);
+        return queriesMap;
+    }
+
+    public com.qiniu.process.tencent.PrivateUrl getTencentPrivateUrl(boolean single) throws IOException {
+        String secretId = entryParam.getValue("ten-id", commonParams.getTencentSecretId());
+        String secretKey = entryParam.getValue("ten-secret", commonParams.getTencentSecretKey());
+        String tenBucket = entryParam.getValue("ten-bucket", bucket);
+        String region = entryParam.getValue("ten-region", regionName);
+        if (region == null || "".equals(region)) region = CloudAPIUtils.getTenCosRegion(secretId, secretKey, tenBucket);
+        String expires = entryParam.getValue("expires", "3600").trim();
+        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, region, Long.valueOf(expires),
+                getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, regionName,
+                Long.valueOf(expires), getQueriesMap(), savePath);
+    }
+
+    public com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
+        String accessId = entryParam.getValue("ali-id", commonParams.getAliyunAccessId());
+        String accessSecret = entryParam.getValue("ali-secret", commonParams.getAliyunAccessSecret());
+        String aliBucket = entryParam.getValue("ali-bucket", bucket);
+        String region = entryParam.getValue("ali-region", regionName);
+        if (region == null || "".equals(region)) region = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
+        String endPoint;
+        if (region.matches("https?://.+")) {
+            endPoint = region;
+        } else {
+            if (!region.startsWith("oss-")) region = "oss-" + region;
+            endPoint = "http://" + region + ".aliyuncs.com";
+        }
+        String expires = entryParam.getValue("expires", "3600").trim();
+        expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint, Long.valueOf(expires),
+                getQueriesMap()) : new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, bucket, endPoint,
+                Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
     public com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
@@ -650,8 +656,9 @@ public class QSuitsEntry {
         if (region == null || "".equals(region)) region = CloudAPIUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, bucket, region, Long.valueOf(expires)) :
-                new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, bucket, regionName, Long.valueOf(expires), savePath);
+        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, bucket, region, Long.valueOf(expires),
+                getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, bucket, regionName,
+                Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
     public ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single) throws IOException {

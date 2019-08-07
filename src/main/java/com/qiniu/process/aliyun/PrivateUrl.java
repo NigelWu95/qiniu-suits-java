@@ -99,6 +99,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
         super.closeResource();
         endpoint = null;
         expiration = null;
+        queries = null;
+        request = null;
         ossClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

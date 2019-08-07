@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.CloudAPIUtils;
@@ -16,15 +17,20 @@ import java.util.Map;
 public class PrivateUrl extends Base<Map<String, String>> {
 
     private String region;
-    private Date expiration;
+    private GeneratePresignedUrlRequest request;
     private AmazonS3 s3Client;
     private ILineProcess<Map<String, String>> nextProcessor;
 
-    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires,
+    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires, Map<String, String> queries,
                       String savePath, int saveIndex) throws IOException {
         super("awsprivate", accessKeyId, secretKey, bucket, savePath, saveIndex);
         this.region = region;
-        expiration = new Date(System.currentTimeMillis() + expires);
+        request = new GeneratePresignedUrlRequest(bucket, "");
+        request.setExpiration(new Date(System.currentTimeMillis() + expires));
+        if (queries != null) {
+            for (Map.Entry<String, String> entry : queries.entrySet())
+                request.addRequestParameter(entry.getKey(), entry.getValue());
+        }
         s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
                 .withRegion(region)
@@ -32,10 +38,15 @@ public class PrivateUrl extends Base<Map<String, String>> {
         CloudAPIUtils.checkAws(s3Client);
     }
 
-    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires) {
+    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires, Map<String, String> queries) {
         super("awsprivate", accessKeyId, secretKey, bucket);
         this.region = region;
-        expiration = new Date(System.currentTimeMillis() + expires);
+        request = new GeneratePresignedUrlRequest(bucket, "");
+        request.setExpiration(new Date(System.currentTimeMillis() + expires));
+        if (queries != null) {
+            for (Map.Entry<String, String> entry : queries.entrySet())
+                request.addRequestParameter(entry.getKey(), entry.getValue());
+        }
         s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
                 .withRegion(region)
@@ -43,9 +54,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         CloudAPIUtils.checkAws(s3Client);
     }
 
-    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String region, long expires,
+    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String region, long expires, Map<String, String> queries,
                       String savePath) throws IOException {
-        this(accessKeyId, accessKeySecret, bucket, region, expires, savePath, 0);
+        this(accessKeyId, accessKeySecret, bucket, region, expires, queries, savePath, 0);
     }
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
@@ -55,6 +66,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl awsPrivateUrl = (PrivateUrl)super.clone();
+        awsPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
         awsPrivateUrl.s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(authKey1, authKey2)))
                 .withRegion(region)
@@ -72,8 +84,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
         if (key == null) throw new IOException("no key in " + line);
-        // 生成以GET方法访问的签名URL，访客可以直接通过浏览器访问相关内容。
-        URL url = s3Client.generatePresignedUrl(bucket, key, expiration);
+        request.setKey(key);
+        URL url = s3Client.generatePresignedUrl(request);
         if (nextProcessor != null) {
             line.put("url", url.toString());
             return nextProcessor.processLine(line);
@@ -85,7 +97,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         region = null;
-        expiration = null;
+        request = null;
         s3Client = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
