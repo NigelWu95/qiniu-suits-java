@@ -9,6 +9,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AwsS3Lister implements ILister<S3ObjectSummary> {
@@ -17,6 +18,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
     private List<S3ObjectSummary> s3ObjectList;
+    private static final List<S3ObjectSummary> defaultList = new ArrayList<>();
 
     public AwsS3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
                        int max) throws SuitsException {
@@ -124,7 +126,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         if (hasNext()) {
             doList();
         } else {
-            s3ObjectList.clear();
+            s3ObjectList = defaultList;
         }
     }
 
@@ -176,6 +178,6 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         s3Client.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        s3ObjectList.clear();
+        s3ObjectList = defaultList;
     }
 }

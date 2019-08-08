@@ -9,6 +9,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudAPIUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class NetLister implements ILister<NOSObjectSummary> {
@@ -17,6 +18,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
     private List<NOSObjectSummary> nosObjectList;
+    private static final List<NOSObjectSummary> defaultList = new ArrayList<>();
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.nosClient = nosClient;
@@ -114,7 +116,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
         if (hasNext()) {
             doList();
         } else {
-            nosObjectList.clear();
+            nosObjectList = defaultList;
         }
     }
 
@@ -153,11 +155,8 @@ public class NetLister implements ILister<NOSObjectSummary> {
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = null;
-        if (hasNext()) {
-            truncateMarker = listObjectsRequest.getMarker();
-            listObjectsRequest.setMarker(null);
-        }
+        String truncateMarker = listObjectsRequest.getMarker();
+        listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
 
@@ -166,6 +165,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
         nosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        nosObjectList.clear();
+        nosObjectList = defaultList;
     }
 }

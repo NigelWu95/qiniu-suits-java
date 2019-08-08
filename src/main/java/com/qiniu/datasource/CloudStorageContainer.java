@@ -242,7 +242,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             retry = retryTimes;
             while (true) {
                 try {
-                    lister.listForward(); // 要求 listForward 实现中先做 hashNext 判断，if (!hasNext) clear();
+                    lister.listForward(); // 要求 listForward 实现中先做 hashNext 判断，if (!hasNext) 置空;
                     objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
@@ -438,7 +438,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     for (ILister<E> lister : listerList) {
                         String prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
-                        if (nextMarker == null) continue;
+                        if (nextMarker == null || nextMarker.isEmpty()) continue;
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                         extremePrefixes.add(prefix);
                         insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});

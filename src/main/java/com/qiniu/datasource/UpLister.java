@@ -23,6 +23,7 @@ public class UpLister implements ILister<FileItem> {
     private String endPrefix;
     private int limit;
     private List<FileItem> fileItems;
+    private static final List<FileItem> defaultItems = new ArrayList<>();
     private List<String> directories;
 
     public UpLister(UpYunClient upYunClient, String bucket, String prefix, String marker, String endPrefix,
@@ -165,7 +166,7 @@ public class UpLister implements ILister<FileItem> {
         if (hasNext()) {
             doList();
         } else {
-            fileItems.clear();
+            fileItems = defaultItems;
         }
     }
 
@@ -208,11 +209,8 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = null;
-        if (hasNext()) {
-            truncateMarker = marker;
-            marker = null;
-        }
+        String truncateMarker = marker;
+        marker = null;
         return truncateMarker;
     }
 
@@ -223,7 +221,7 @@ public class UpLister implements ILister<FileItem> {
         prefix = null;
         marker = null;
         endPrefix = null;
-        fileItems.clear();
+        fileItems = defaultItems;
 //        directories = null;
     }
 }
