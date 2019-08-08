@@ -372,6 +372,9 @@ public class CommonParams {
         if (!"".equals(prefixConfig) && prefixConfig != null) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
+            JsonElement markerElement;
+            JsonElement startElement;
+            JsonElement endElement;
             for (String prefix : jsonFile.getJsonObject().keySet()) {
                 Map<String, String> markerAndEnd = new HashMap<>();
 //                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
@@ -380,27 +383,22 @@ public class CommonParams {
                     prefixesMap.put(prefix, null);
                     continue;
                 }
+                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + prefix + " must be json.");
                 jsonCfg = json.getAsJsonObject();
-                if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
-                    markerAndEnd.put("marker", jsonCfg.get("marker").getAsString());
-                } else {
-                    if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
-                        if ("qiniu".equals(source)) {
-                            markerAndEnd.put("marker", CloudAPIUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
-                        } else if ("tencent".equals(source)) {
-                            markerAndEnd.put("marker", CloudAPIUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
-                        } else if ("aliyun".equals(source)) {
-                            markerAndEnd.put("marker", CloudAPIUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
-                        } else if ("upyun".equals(source)) {
-                            String start = jsonCfg.get("start").getAsString();
-                            markerAndEnd.put("marker", CloudAPIUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
-                        } else if ("s3".equals(source) || "aws".equals(source)) {
-                            markerAndEnd.put("start", jsonCfg.get("start").getAsString());
-                        }
-                    }
+                markerElement = jsonCfg.get("marker");
+                startElement = jsonCfg.get("start");
+                endElement = jsonCfg.get("end");
+                if (markerElement != null && !(markerElement instanceof JsonNull)) {
+                    markerAndEnd.put("marker", markerElement.getAsString());
                 }
-                if (jsonCfg.has("end") && !(jsonCfg.get("end") instanceof JsonNull))
-                    markerAndEnd.put("end", jsonCfg.get("end").getAsString());
+                if (startElement != null && !(startElement instanceof JsonNull)) {
+                    if ("qiniu".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("tencent".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("aliyun".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("upyun".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("s3".equals(source) || "aws".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                }
+                if (endElement != null && !(endElement instanceof JsonNull)) markerAndEnd.put("end", endElement.getAsString());
                 prefixesMap.put(prefix, markerAndEnd);
             }
         } else if (prefixes != null && !"".equals(prefixes)) {

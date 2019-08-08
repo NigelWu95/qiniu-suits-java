@@ -169,7 +169,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @return 检验结果，true 表示 prefix 有效不需要剔除
      */
     boolean checkPrefix(String prefix) {
-        if (prefix == null || "".equals(prefix)) return false;
+        if (prefix == null) return false;
         if (hasAntiPrefixes) {
             for (String antiPrefix : antiPrefixes) {
                 if (prefix.startsWith(antiPrefix)) return false;
@@ -474,10 +474,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             recorder.remove(prefix);
             if (startPrefixes.contains(prefix)) {
-                if (prefixRight) {
-                    prefixAndEndedMap.put("", prefixMap);
-                    prefixAndEndedMap.remove(prefix);
-                }
+                if (prefixRight) prefixAndEndedMap.put("", prefixMap);
+                prefixAndEndedMap.remove(prefix);
             } else {
                 previousPrefix = prefix.substring(0, prefix.length() - 1);
                 prefixAndEndedMap.put(previousPrefix, prefixMap);

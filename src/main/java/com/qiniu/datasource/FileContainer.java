@@ -33,6 +33,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private String filePath;
     protected String parse;
     protected String separator;
+    protected Map<String, Map<String, String>> linesMap;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
     protected Map<String, String> indexMap;

@@ -2,10 +2,7 @@ package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
@@ -277,7 +274,11 @@ public final class ConvertingUtils {
             if (jsonElement == null || jsonElement instanceof JsonNull) {
                 if (!allFieldsSet.contains(index)) throw new IOException("the index: " + index + " can't be found in " + json);
             } else {
-                pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
+                try {
+                    pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
+                } catch (JsonSyntaxException e) {
+                    pair.put(indexMap.get(index), String.valueOf(jsonElement));
+                }
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
