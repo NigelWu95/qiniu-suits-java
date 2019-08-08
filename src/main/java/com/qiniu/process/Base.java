@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * process 基类，实现 ILineProcess 的方法，并实现 Cloneable 接口支持 clone。该类为抽象类，且子类需要实现一些抽象方法（子类实现抽象方法时不需
  * 要同步代码），包内提供的子类均为非线程安全，且都调用该基类的 close 方法，多线程时需使用 clone 的对象，否则容易引发线程安全问题，同时，即使子类
  * 使用同步方法，多线程时调用了一次 close 会导致其他线程跑异常。
- * @param <T>
+ * @param <T> line 数据范型
  */
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
