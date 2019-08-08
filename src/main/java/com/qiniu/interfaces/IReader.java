@@ -1,4 +1,4 @@
-package com.qiniu.datasource;
+package com.qiniu.interfaces;
 
 import java.io.IOException;
 import java.util.stream.Stream;

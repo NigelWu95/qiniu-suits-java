@@ -73,16 +73,6 @@ public class StatFile extends Base<Map<String, String>> {
         return stringFormatter;
     }
 
-    public void updateFormat(String format) {
-        this.format = format;
-        stringFormatter = getNewStatJsonFormatter(rmFields);
-    }
-
-    public void updateSeparator(String separator) {
-        this.separator = separator;
-        stringFormatter = getNewStatJsonFormatter(rmFields);
-    }
-
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
@@ -116,7 +106,6 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     public String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 

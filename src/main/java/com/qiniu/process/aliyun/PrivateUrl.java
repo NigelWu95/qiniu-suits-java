@@ -2,6 +2,7 @@ package com.qiniu.process.aliyun;
 
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
+import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.CloudAPIUtils;
@@ -15,37 +16,46 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     private String endpoint;
     private Date expiration;
+    private Map<String, String> queries;
+    private GeneratePresignedUrlRequest request;
     private OSSClient ossClient;
     private ILineProcess<Map<String, String>> nextProcessor;
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
-                      String savePath, int saveIndex) throws IOException {
-        super("aliprivate", accessKeyId, accessKeySecret, bucket, savePath, saveIndex);
-        this.endpoint = endpoint;
-        expiration = new Date(System.currentTimeMillis() + expires);
-        ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
-        CloudAPIUtils.checkAliyun(ossClient);
-    }
-
-    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires) {
+                      Map<String, String> queries) {
         super("aliprivate", accessKeyId, accessKeySecret, bucket);
         this.endpoint = endpoint;
         expiration = new Date(System.currentTimeMillis() + expires);
+        this.queries = queries;
+        request = new GeneratePresignedUrlRequest(bucket, "");
+        request.setExpiration(expiration);
+        if (queries != null) {
+            for (Map.Entry<String, String> entry : queries.entrySet())
+                request.addQueryParameter(entry.getKey(), entry.getValue());
+        }
         ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
         CloudAPIUtils.checkAliyun(ossClient);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
-                      String savePath) throws IOException {
-        this(accessKeyId, accessKeySecret, bucket, endpoint, expires, savePath, 0);
-    }
-
-    public void updateEndpoint(String endpoint) {
+                      Map<String, String> queries, String savePath, int saveIndex) throws IOException {
+        super("aliprivate", accessKeyId, accessKeySecret, bucket, savePath, saveIndex);
         this.endpoint = endpoint;
+        expiration = new Date(System.currentTimeMillis() + expires);
+        this.queries = queries;
+        request = new GeneratePresignedUrlRequest(bucket, "");
+        request.setExpiration(expiration);
+        if (queries != null) {
+            for (Map.Entry<String, String> entry : queries.entrySet())
+                request.addQueryParameter(entry.getKey(), entry.getValue());
+        }
+        ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
+        CloudAPIUtils.checkAliyun(ossClient);
     }
 
-    public void updateExpires(long expires) {
-        this.expiration = new Date(System.currentTimeMillis() + expires);
+    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
+                      Map<String, String> queries, String savePath) throws IOException {
+        this(accessKeyId, accessKeySecret, bucket, endpoint, expires, queries, savePath, 0);
     }
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
@@ -55,6 +65,12 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl ossPrivateUrl = (PrivateUrl)super.clone();
+        ossPrivateUrl.request = new GeneratePresignedUrlRequest(bucket, "");
+        ossPrivateUrl.request.setExpiration(expiration);
+        if (queries != null) {
+            for (Map.Entry<String, String> entry : queries.entrySet())
+                ossPrivateUrl.request.addQueryParameter(entry.getKey(), entry.getValue());
+        }
         ossPrivateUrl.ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(authKey1, authKey2), null);
         if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
         return ossPrivateUrl;
@@ -69,8 +85,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
         if (key == null) throw new IOException("no key in " + line);
-        // 生成以GET方法访问的签名URL，访客可以直接通过浏览器访问相关内容。
-        URL url = ossClient.generatePresignedUrl(bucket, key, expiration);
+        request.setKey(key);
+        URL url = ossClient.generatePresignedUrl(request);
         if (nextProcessor != null) {
             line.put("url", url.toString());
             return nextProcessor.processLine(line);
@@ -83,6 +99,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
         super.closeResource();
         endpoint = null;
         expiration = null;
+        queries = null;
+        request = null;
         ossClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

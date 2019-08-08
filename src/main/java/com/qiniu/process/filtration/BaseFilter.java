@@ -74,37 +74,15 @@ public abstract class BaseFilter<T> {
         try {
             if (item == null) return false;
             String key = valueFrom(item, "key");
-            boolean result = false;
-            if (checkList(keyPrefix)) {
-                result = keyPrefix.stream().anyMatch(key::startsWith);
-                if (!result) return false;
-            }
-            if (checkList(keySuffix)) {
-                result = keySuffix.stream().anyMatch(key::endsWith);
-                if (!result) return false;
-            }
-            if (checkList(keyInner)) {
-                result = keyInner.stream().anyMatch(key::contains);
-                if (!result) return false;
-            }
-            if (checkList(keyRegex)) {
-                result = keyRegex.stream().anyMatch(key::matches);
-                if (!result) return false;
-            }
-            if (checkList(antiKeyPrefix)) {
-                result = antiKeyPrefix.stream().noneMatch(key::startsWith);
-                if (!result) return false;
-            }
-            if (checkList(antiKeySuffix)) {
-                result = antiKeySuffix.stream().noneMatch(key::endsWith);
-                if (!result) return false;
-            }
-            if (checkList(antiKeyInner)) {
-                result = antiKeyInner.stream().noneMatch(key::contains);
-                if (!result) return false;
-            }
-            if (checkList(antiKeyRegex)) result = antiKeyRegex.stream().noneMatch(key::matches);
-            return result;
+            if (checkList(keyPrefix) && keyPrefix.stream().noneMatch(key::startsWith)) return false;
+            if (checkList(keySuffix) && keySuffix.stream().noneMatch(key::endsWith)) return false;
+            if (checkList(keyInner) && keyInner.stream().noneMatch(key::contains)) return false;
+            if (checkList(keyRegex) && keyRegex.stream().noneMatch(key::matches)) return false;
+            if (checkList(antiKeyPrefix) && antiKeyPrefix.stream().anyMatch(key::startsWith)) return false;
+            if (checkList(antiKeySuffix) && antiKeySuffix.stream().anyMatch(key::endsWith)) return false;
+            if (checkList(antiKeyInner) && antiKeyInner.stream().anyMatch(key::contains)) return false;
+            if (checkList(antiKeyRegex) && antiKeyRegex.stream().anyMatch(key::matches)) return false;
+            return true;
         } catch (Exception e) {
             return true;
         }
@@ -114,13 +92,9 @@ public abstract class BaseFilter<T> {
         try {
             if (item == null) return false;
             String mType = valueFrom(item, ConvertingUtils.defaultMimeField);
-            boolean result = false;
-            if (checkList(mimeType)) {
-                result = mimeType.stream().anyMatch(mType::contains);
-                if (!result) return false;
-            }
-            if (checkList(antiMimeType)) return antiMimeType.stream().noneMatch(mType::contains);
-            return result;
+            if (checkList(mimeType) && mimeType.stream().noneMatch(mType::contains)) return false;
+            if (checkList(antiMimeType) && antiMimeType.stream().anyMatch(mType::contains)) return false;
+            return true;
         } catch (Exception e) {
             return true;
         }

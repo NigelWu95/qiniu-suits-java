@@ -25,7 +25,7 @@ public class UpYunClient {
     }
 
     public String listFiles(String bucket, String directory, String marker, int limit) throws IOException {
-        String uri = "/" + bucket + "/" + URLUtils.getSpaceEscapedURI(directory);
+        String uri = "/" + bucket + "/" + URLUtils.getEncodedURI(directory);
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setConnectTimeout(config.connectTimeout);
@@ -72,7 +72,7 @@ public class UpYunClient {
     }
 
     public FileItem getFileInfo(String bucket, String key) throws IOException {
-        String uri = "/" + bucket + "/" + URLUtils.getSpaceEscapedURI(key);
+        String uri = "/" + bucket + "/" + URLUtils.getEncodedURI(key);
         HttpURLConnection conn;
         URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
         conn = (HttpURLConnection) url.openConnection();

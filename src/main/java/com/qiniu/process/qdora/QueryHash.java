@@ -54,22 +54,6 @@ public class QueryHash extends Base<Map<String, String>> {
         }
     }
 
-    public void updateAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
         queryHash.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
@@ -88,7 +72,7 @@ public class QueryHash extends Base<Map<String, String>> {
         String key = line.get("key");
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
+            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f");
             line.put(urlIndex, url);
             return key + "\t" + url + "\t" + JsonUtils.toJson(fileChecker.getQHashBody(url));
         }

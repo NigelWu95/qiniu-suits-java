@@ -1,12 +1,14 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonObject;
+import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
 import com.qiniu.entry.CommonParams;
+import com.qiniu.interfaces.IDataSource;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.interfaces.IReader;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultOutput;
+import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.ConvertingUtils;
@@ -107,15 +109,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    private static volatile JsonObject linesJson = new JsonObject();
-
-    private synchronized static void recordLines(String name, String line) {
-        linesJson.addProperty(name, line);
-    }
-
-    private synchronized static void removeRecordLine(String name) {
-        linesJson.remove(name);
-    }
+    private JsonRecorder recorder = new JsonRecorder();
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
         ITypeConvert<String, T> converter = getNewConverter();
@@ -160,7 +154,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     if (HttpRespUtils.checkException(e, 2) < -1) throw e;
                     e.response.close();
                 }
-                recordLines(reader.getName(), line);
+                recorder.put(reader.getName(), line);
                 srcList.clear();
             }
         }
@@ -168,7 +162,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    void reading(IReader<E> reader, int order) {
+    void reading(IReader<E> reader) {
+        int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
         IResultOutput<W> saver = null;
@@ -180,15 +175,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             saver = getNewResultSaver(orderStr);
             saverMap.put(orderStr, saver);
             export(reader, saver, lineProcessor);
-            removeRecordLine(reader.getName());
+            recorder.remove(reader.getName());
             saverMap.remove(orderStr);
             System.out.println("order " + orderStr + ": " + reader.getName() + "\tsuccessfully done");
         } catch (Throwable e) {
             e.printStackTrace();
-            System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + linesJson.get(reader.getName()));
+            System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + recorder.getString(reader.getName()));
         } finally {
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
+            UniOrderUtils.returnOrder(order);
             reader.close();
         }
     }
@@ -200,14 +196,14 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
-        if (linesJson.size() > 0) {
+        if (recorder.size() > 0) {
             FileSaveMapper.ext = ".json";
             FileSaveMapper.append = false;
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
             saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, linesJson.toString(), true);
+            saveMapper.writeToKey(fileName, recorder.toString(), true);
             saveMapper.closeWriters();
             System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
                     "reading remained lines.\n", fileName, FileSaveMapper.ext);
@@ -239,9 +235,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ctrlC();
         try {
             for (IReader<E> fileReader : fileReaders) {
-                recordLines(fileReader.getName(), null);
-                int order = UniOrderUtils.getOrder();
-                executorPool.execute(() -> reading(fileReader, order));
+                recorder.put(fileReader.getName(), "");
+                executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {

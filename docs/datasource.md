@@ -2,7 +2,7 @@
 
 ## 简介
 从支持的数据源中读入资源信息列表，部分数据源需要指定行解析方式或所需格式分隔符，读取指定位置的字段作为输入值进行下一步处理。**目前支持的数据源类型分为
-几大类型：云存储列举(list)、文件内容读取(file)**。  
+几大类型：云存储列举(storage)、文件内容读取(file)**。  
 
 ## 配置文件
 数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
@@ -60,7 +60,7 @@ key,size:key,datetime。因此 `indexes` 可以设置多个键值对，每个键
 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式为 `tab/csv` 时索引必须均为整数，如
 果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入行中不包含 mime 字段，则可以设置
 `indexes=0,1,2,3,-1,5`。  
-（2）当数据源为 [list](#3-storage-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 `key` 的下标，如
+（2）当数据源为 [storage](#3-storage-云存储列举) 类型时，也可以设置该参数，用于指定下一步 process 操作所需要的字段，默认情况下包含 `key` 的下标，如
 果存在 process 操作则自动保留 `key` 字段或者根据过滤条件的字段进行添加，也可按照[indexes 规范](##-关于-indexes-索引)自行设置。  
 
 ### 2 file 文本文件行读取
@@ -95,7 +95,7 @@ prefix-right=
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 30，1 亿以内文件可以不增加线程，公共参数修改参考[公共参数配置](#1-公共参数)，通常
 云存储空间列举的必须参数包括密钥、空间名(通过 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)：  
 
-|list 源|             密钥和 region 字段         |                  对应关系和描述                |  
+|storage 源|             密钥和 region 字段         |                  对应关系和描述                |  
 |------|---------------------------------------|---------------------------------------------|  
 |qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
 |tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
@@ -114,14 +114,15 @@ prefix-right=
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
 
-**备注：** 又拍云存储的列举不支持 prefix-left 和 prefix-right 参数，同时又拍云存储强制目录结构以 "/" 作为分隔符，不支持任意前缀列举，设置 
-prefixes 的情况下必须是有效的目录名 
-
-#### # 关于多前缀列举
-prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果设
+#### # 数据源完备性和多前缀列举
+1. prefix-left 为可选择是否列举所有前缀 ASCII 顺序之前的文件，prefix-right 为选择是否列举所有前缀 ASCII 顺序之后的文件，确保在没有预定义前缀的
+情况下仍能列举完整数据。   
+2. prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果设
 置 prefix-config 则 prefixes 配置无效，同时 prefix-config 支持指定列举起始和结束位置(<start/marker>、<end>)，写法如下，配置举例见
 [prefix-config 配置](../resources/prefixes.json)。在使用多个前缀列举的同时，可能存在需要列举到**第一个前缀之前**或**最后一个前缀之后**(前
-缀会自动按照 ASCII 码排序)的文件，因此设置 prefix-left 和 prefix-right 用于满足该需求。  
+缀会自动按照 ASCII 码排序)的文件，因此设置 prefix-left 和 prefix-right 用于满足该需求。   
+**备注：** 又拍云存储的列举不支持 prefix-left 和 prefix-right 参数，同时又拍云存储强制目录结构以 "/" 作为分隔符，不支
+持任意前缀列举，设置 prefixes 的情况下必须是有效的目录名。  
 
 ##### prefix-config 配置
 ```

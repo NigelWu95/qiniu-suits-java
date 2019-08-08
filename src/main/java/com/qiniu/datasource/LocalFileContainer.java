@@ -2,9 +2,10 @@ package com.qiniu.datasource;
 
 import com.qiniu.convert.LineToMap;
 import com.qiniu.convert.MapToString;
+import com.qiniu.interfaces.IReader;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultOutput;
+import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.FileUtils;
 
 import java.io.*;

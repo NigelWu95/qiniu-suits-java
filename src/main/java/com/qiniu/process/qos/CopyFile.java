@@ -70,22 +70,6 @@ public class CopyFile extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix;
     }
 
-    public void updateToBucket(String toBucket) {
-        this.toBucket = toBucket;
-    }
-
-    public void updateToKeyIndex(String toKeyIndex) {
-        this.toKeyIndex = toKeyIndex;
-    }
-
-    public void updateAddPrefix(String addPrefix) {
-        this.addPrefix = addPrefix == null ? "" : addPrefix;
-    }
-
-    public void updateRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
-    }
-
     public CopyFile clone() throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
         copyFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
@@ -129,7 +113,6 @@ public class CopyFile extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 

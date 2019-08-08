@@ -28,6 +28,8 @@
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 - [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 - [x] 批量下载资源到本地 [download 配置](docs/downloadfile.md)  
+- [x] 批量下载资源到本地 [imagecensor 配置](docs/censor.md#图片审核)  
+- [x] 批量下载资源到本地 [videocensor 配置](docs/censor.md#视频审核)  
 
 *【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
 
@@ -104,13 +106,13 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 30，1 亿以内文件可以不增加线程，通常云存储空间列举的必须参数包括密钥、空间名(通过
 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)：  
 
-|list 源|             密钥和 region 字段         |                  对应关系和描述               |  
-|------|---------------------------------------|---------------------------------------------|  
-|qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
-|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
-|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
-|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|storage 源|             密钥和 region 字段         |                  对应关系和描述               |  
+|---------|---------------------------------------|---------------------------------------------|  
+|qiniu    |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
+|tencent  |`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
+|aliyun   |`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
+|upyun    |`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
+|aws/s3   |`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
 #### file 文本文件行读取  
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
@@ -248,4 +250,20 @@ java.net.SocketTimeoutException: timeout
 2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
 为前缀配置文件: prefix-config=<breakpoint_filepath> 即可。【该项参数请和其他参数保持一致放在命令行或配置文件中。】  
 3. 对于 file 数据源产生的断点文件记录了读取的文本行，如果需要使用断点则需要检查对应文件中文本行位置再做截取，目前没有实现自动检测方式。
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。  
+
+### 分布式任务方案
+对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完
+整文件列表时，可以按照连续的前缀字符分割成多段分别执行各个机器的任务，建议的前缀列表为:
+```!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz```，将该列表任意分成 n 段，如：
+```
+prefixes=!,\,",#,$,%,&,',(,),*,+,\,,-,.,/,0,1
+prefixes=2,3,4,5,6,7,8,9,:,;
+prefixes=<,=,>,?,@,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O
+prefixes=P,Q,R,S,T,U,V,W,X,Y,Z,[,\\,\\,],^,_,`
+prefixes=a,b,c,d,e,f,g,h,i,j,k,l,m
+prefixes=n,o,p,q,r,s,t,u,v,w,x,y,z
+```
+（**`,`，`\` 需要转义**）将前缀分为上述几段后，设置 prefixes 参数可以分做六台机器执行，同时因为需要列举空间全部文件，需要分别在第一段 prefixes
+设置 `prefix-left=true`，在最后一段 prefixes 设置 `prefix-right=true`（其他段 prefixes 不能同时设置 prefix-left 或 prefix-right，
+且仅能第一段设置 prefix-left 和最后一段设置 prefix-right，参数描述见[数据源完备性](docs/datasource.md##-数据源完备性和多前缀列举)

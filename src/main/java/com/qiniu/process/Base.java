@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * process 基类，实现 ILineProcess 的方法，并实现 Cloneable 接口支持 clone。该类为抽象类，且子类需要实现一些抽象方法（子类实现抽象方法时不需
+ * 要同步代码），包内提供的子类均为非线程安全，且都调用该基类的 close 方法，多线程时需使用 clone 的对象，否则容易引发线程安全问题，同时，即使子类
+ * 使用同步方法，多线程时调用了一次 close 会导致其他线程跑异常。
+ * @param <T> line 数据范型
+ */
 public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     protected String processName;
@@ -45,10 +51,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         return this.processName;
     }
 
-    public void updateBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
     public void setBatchSize(int batchSize) throws IOException {
         if (!ProcessUtils.canBatch(processName)) {
             throw new IOException(processName + " is not support batch operation.");
@@ -61,14 +63,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
-    }
-
-    public void updateSavePath(String savePath) throws IOException {
-        this.savePath = savePath;
-        if (fileSaveMapper == null) saveIndex = new AtomicInteger(0);
-        else fileSaveMapper.closeWriters();
-        fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
-        fileSaveMapper.preAddWriter("need_retry");
     }
 
     @SuppressWarnings("unchecked")
@@ -113,7 +107,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws Exception 处理结果失败抛出的异常
      */
     protected List<T> parseBatchResult(List<T> processList, String result) throws Exception {
-        if (processList.size() <= 0) return null;
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = null;
         JsonArray jsonArray = JsonUtils.fromJson(result, JsonArray.class);
@@ -144,10 +137,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     /**
      * 批量处理输入行，具体执行的操作取决于 batchResult 方法的实现。
      * @param lineList 输入列表
+     * @param batchSize 一次批量处理请求处理的文件个数
      * @param retryTimes 每一行信息处理时需要的重试次数
      * @throws IOException 处理失败可能抛出的异常
      */
-    private void batchProcess(List<T> lineList, int retryTimes) throws IOException {
+    private void batchProcess(List<T> lineList, int batchSize, int retryTimes) throws IOException {
         int times = lineList.size()/batchSize + 1;
         List<T> processList;
         String result;
@@ -161,8 +155,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             while (processList != null && processList.size() > 0) {
                 try {
                     processList = putBatchOperations(processList);
-                    result = batchResult(processList);
-                    processList = parseBatchResult(processList, result);
+                    if (processList.size() > 0) {
+                        result = batchResult(processList);
+                        processList = parseBatchResult(processList, result);
+                    }
                 } catch (Exception e) {
                     QiniuException qiniuException = null;
                     String message;
@@ -241,7 +237,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         retry = 0;
                         message = e.getMessage();
                     }
-                    System.out.println(message);
+                    System.out.println(line + "\t" + message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
                         case -1: fileSaveMapper.writeToKey("need_retry", resultInfo(line) + "\t" + message,
@@ -260,7 +256,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         try {
             return singleResult(line);
         } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.", e);
+            throw new IOException("input is empty or the processor may be already closed.");
         } catch (Exception e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -273,10 +269,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      */
     public void processLine(List<T> lineList) throws IOException {
         try {
-            if (batchSize > 1) batchProcess(lineList, retryTimes);
+            if (batchSize > 1) batchProcess(lineList, batchSize, retryTimes);
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.", e);
+            throw new IOException("input is empty or the processor may be already closed.");
         } catch (Exception e) {
             throw new IOException(e.getMessage(), e);
         }

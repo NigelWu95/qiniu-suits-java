@@ -1,5 +1,6 @@
 package com.qiniu.persistence;
 
+import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.FileUtils;
 
 import java.io.*;

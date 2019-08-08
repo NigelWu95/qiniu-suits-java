@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
+import com.qiniu.interfaces.ILister;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;

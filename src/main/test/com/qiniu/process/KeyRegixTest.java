@@ -41,9 +41,9 @@ public class KeyRegixTest {
 //                break;
 //            }
             pattern = jsonElement.getAsJsonObject().get("pattern").getAsString();
-            repl = jsonElement.getAsJsonObject().get("repl").getAsString().replaceAll("[{}]", "");
+            repl = jsonElement.getAsJsonObject().get("repl").getAsString().replace("[{}]", "");
             if (path.matches(pattern)) {
-                key = path.replaceAll(pattern, repl).substring(1);
+                key = path.replace(pattern, repl).substring(1);
                 System.out.println(path + "\t" + key);
             }
         }

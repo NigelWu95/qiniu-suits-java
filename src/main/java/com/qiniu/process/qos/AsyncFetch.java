@@ -71,26 +71,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
         this.rmPrefix = rmPrefix;
     }
 
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
-    public void updateAddPrefix(String addPrefix) {
-        this.addPrefix = addPrefix == null ? "" : addPrefix;
-    }
-
-    public void updateRmPrefix(String rmPrefix) {
-        this.rmPrefix = rmPrefix;
-    }
-
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
                              String callbackBodyType, String callbackHost, int fileType, boolean ignoreSameKey) {
         this.host = host;
@@ -128,7 +108,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
+            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f");
             line.put(urlIndex, url);
             key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
         } else {

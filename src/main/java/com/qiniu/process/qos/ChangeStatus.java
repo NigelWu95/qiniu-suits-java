@@ -47,10 +47,6 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, status, savePath, 0);
     }
 
-    public void updateStatus(int status) {
-        this.status = status;
-    }
-
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
         changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
@@ -83,7 +79,6 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 

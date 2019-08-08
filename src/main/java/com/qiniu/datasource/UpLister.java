@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
+import com.qiniu.interfaces.ILister;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
@@ -102,9 +103,9 @@ public class UpLister implements ILister<FileItem> {
                     if ("folder".equals(attribute)) {
                         if (directories == null) {
                             directories = new ArrayList<>();
-                            directories.add(URLUtils.getSpaceEscapedURI(totalName));
+                            directories.add(URLUtils.getEncodedURI(totalName));
                         } else {
-                            directories.add(URLUtils.getSpaceEscapedURI(totalName));
+                            directories.add(URLUtils.getEncodedURI(totalName));
                         }
                     } else {
                         FileItem fileItem = new FileItem();

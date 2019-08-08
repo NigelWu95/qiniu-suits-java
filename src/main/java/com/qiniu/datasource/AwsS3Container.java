@@ -10,10 +10,11 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringMapPair;
+import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultOutput;
+import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
@@ -33,7 +34,7 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
                           String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
-                          int unitLen, int threads) throws SuitsException {
+                          int unitLen, int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;

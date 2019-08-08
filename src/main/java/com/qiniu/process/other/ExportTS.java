@@ -51,18 +51,6 @@ public class ExportTS extends Base<Map<String, String>> {
         }
     }
 
-    public void updateDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void updateProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public void updateUrlIndex(String urlIndex) {
-        this.urlIndex = urlIndex;
-    }
-
     public ExportTS clone() throws CloneNotSupportedException {
         ExportTS exportTS = (ExportTS)super.clone();
         exportTS.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
@@ -80,7 +68,7 @@ public class ExportTS extends Base<Map<String, String>> {
         if (url == null || "".equals(url)) {
             String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replaceAll("\\?", "%3f");
+            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f");
             line.put(urlIndex, url);
         }
         return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream()

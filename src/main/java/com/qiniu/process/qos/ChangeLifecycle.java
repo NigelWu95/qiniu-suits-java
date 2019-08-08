@@ -47,10 +47,6 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, days, savePath, 0);
     }
 
-    public void updateDays(int days) {
-        this.days = days;
-    }
-
     public ChangeLifecycle clone() throws CloneNotSupportedException {
         ChangeLifecycle changeLifecycle = (ChangeLifecycle)super.clone();
         changeLifecycle.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
@@ -83,7 +79,6 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 

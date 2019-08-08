@@ -13,13 +13,13 @@ public final class URLUtils {
         else return path.startsWith("/") ? path.substring(1) : path;
     }
 
-    public static String getSpaceEscapedURI(String uri) {
+    public static String getEncodedURI(String uri) {
 //        if (uri == null || uri.isEmpty()) return "";
 //        else if (uri.endsWith(" ")) return uri.substring(0, uri.length() - 1) + "%20";
 //        else if (uri.endsWith("\t")) return uri.substring(0, uri.length() - 1) + "%09";
 //        else return uri;
         if (uri == null || uri.isEmpty()) return "";
-        return uri.replaceAll(" ", "%20").replaceAll("\t", "%09")
-                .replaceAll("\n", "%0a").replaceAll("\r", "%0d");
+        return uri.replace(" ", "%20").replace("\t", "%09")
+                .replace("\n", "%0a").replace("\r", "%0d");
     }
 }

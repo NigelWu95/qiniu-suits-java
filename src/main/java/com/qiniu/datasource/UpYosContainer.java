@@ -4,16 +4,16 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringMapPair;
+import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.persistence.IResultOutput;
+import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.CloudAPIUtils;
 import com.qiniu.util.ConvertingUtils;
-import com.qiniu.util.UniOrderUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
 //                             boolean prefixLeft, boolean prefixRight,
-                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws SuitsException {
+                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
         super(bucket, antiPrefixes, prefixesMap, false, false, indexMap, unitLen, threads);
         this.username = username;
         this.password = password;
@@ -98,7 +98,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                     e.printStackTrace(); return null;
                 }
                 if (upLister.hasNext() || upLister.getDirectories() != null) {
-                    listing(upLister, UniOrderUtils.getOrder());
+                    listing(upLister);
                     if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
                         return null;
                     } else if (hasAntiPrefixes) {
@@ -109,7 +109,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                         return upLister.getDirectories();
                     }
                 } else {
-                    executorPool.execute(() -> listing(upLister, UniOrderUtils.getOrder()));
+                    executorPool.execute(() -> listing(upLister));
                     return null;
                 }
             }).filter(Objects::nonNull)
@@ -125,12 +125,14 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         System.out.println(info + " running...");
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
-            int order = UniOrderUtils.getOrder();
-            listing(startLister, order);
-            if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) return;
-            else if (hasAntiPrefixes) prefixes = startLister.getDirectories().parallelStream()
-                    .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
-            else {
+            listing(startLister);
+            if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) {
+                System.out.println(info + " finished.");
+                return;
+            } else if (hasAntiPrefixes) {
+                prefixes = startLister.getDirectories().parallelStream()
+                        .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
+            } else {
                 for (String dir : startLister.getDirectories()) recordListerByPrefix(dir);
                 prefixes = startLister.getDirectories();
             }
