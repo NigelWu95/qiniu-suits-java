@@ -537,6 +537,7 @@ public class CommonParams {
                 }
             } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
                 indexMap.put(index, indexName);
+                toStringFields.add(indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
@@ -690,6 +691,7 @@ public class CommonParams {
                 }
             }
         }
+        toStringFields.sort(Comparator.reverseOrder());
     }
 
     private void setUnitLen(String unitLen) throws IOException {
