@@ -424,37 +424,32 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private List<String> checkListerInPool(List<ILister<E>> listerList, int cValue, int tiny) {
         List<String> extremePrefixes = null;
         int count = 0;
-        boolean startCheck = false;
         ILister<E> iLister;
         Iterator<ILister<E>> iterator;
         while (!executorPool.isTerminated()) {
-            try {
-                if (count >= 1800) {
-                    iterator = listerList.iterator();
-                    while (iterator.hasNext()) {
-                        iLister = iterator.next();
-                        if(!iLister.hasNext()) iterator.remove();
-                    }
-                    if (startCheck && listerList.size() <= tiny) {
-                        System.out.printf("unfinished: %s, cValue: %s\nto re-split prefixes...", listerList.size(), cValue);
-                        for (ILister<E> lister : listerList) {
-                            String prefix = lister.getPrefix();
-                            String nextMarker = lister.truncate();
-                            if (nextMarker == null) continue;
-                            if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
-                            extremePrefixes.add(prefix);
-                            insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
-                        }
-                    }
-                    if (startCheck) {
-                        count = 1500;
-                    } else if (listerList.size() > cValue) {
-                        count = 0;
-                    } else {
-                        startCheck = true;
-                        count = listerList.size() <= tiny ? 1800 : 1500;
-                    }
+            if (count >= 1800) {
+                iterator = listerList.iterator();
+                while (iterator.hasNext()) {
+                    iLister = iterator.next();
+                    if(!iLister.hasNext()) iterator.remove();
                 }
+                if (listerList.size() <= tiny) {
+                    System.out.printf("unfinished: %s, cValue: %s, to re-split prefixes...\n", listerList.size(), cValue);
+                    for (ILister<E> lister : listerList) {
+                        String prefix = lister.getPrefix();
+                        String nextMarker = lister.truncate();
+                        if (nextMarker == null) continue;
+                        if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
+                        extremePrefixes.add(prefix);
+                        insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
+                    }
+                } else if (listerList.size() <= cValue) {
+                    count = 1200;
+                } else {
+                    count = 0;
+                }
+            }
+            try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
                 int i = 0;
