@@ -107,7 +107,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws Exception 处理结果失败抛出的异常
      */
     protected List<T> parseBatchResult(List<T> processList, String result) throws Exception {
-        if (processList.size() <= 0) return null;
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = null;
         JsonArray jsonArray = JsonUtils.fromJson(result, JsonArray.class);
@@ -156,8 +155,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             while (processList != null && processList.size() > 0) {
                 try {
                     processList = putBatchOperations(processList);
-                    result = batchResult(processList);
-                    processList = parseBatchResult(processList, result);
+                    if (processList.size() > 0) {
+                        result = batchResult(processList);
+                        processList = parseBatchResult(processList, result);
+                    }
                 } catch (Exception e) {
                     QiniuException qiniuException = null;
                     String message;

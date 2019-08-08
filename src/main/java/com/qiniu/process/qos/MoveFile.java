@@ -110,7 +110,6 @@ public class MoveFile extends Base<Map<String, String>> {
             key = map.get("key");
             if (key != null) {
                 try {
-
                     if (defaultToKey) {
                         toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
                     } else {
@@ -135,7 +134,6 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 

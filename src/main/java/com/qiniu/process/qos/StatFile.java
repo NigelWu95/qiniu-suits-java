@@ -106,7 +106,6 @@ public class StatFile extends Base<Map<String, String>> {
 
     @Override
     public String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 

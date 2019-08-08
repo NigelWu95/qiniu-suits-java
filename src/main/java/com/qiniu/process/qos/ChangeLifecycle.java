@@ -79,7 +79,6 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        if (lineList.size() <= 0) return null;
         return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
