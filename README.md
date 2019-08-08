@@ -27,9 +27,9 @@
 - [x] 对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 - [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
-- [x] 批量下载资源到本地 [download 配置](docs/downloadfile.md)  
-- [x] 批量下载资源到本地 [imagecensor 配置](docs/censor.md#图片审核)  
-- [x] 批量下载资源到本地 [videocensor 配置](docs/censor.md#视频审核)  
+- [x] 下载资源到本地 [download 配置](docs/downloadfile.md)  
+- [x] 图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
+- [x] 视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
 
 *【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
 
