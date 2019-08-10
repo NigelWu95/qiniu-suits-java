@@ -9,6 +9,8 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.JsonUtils;
 import com.qiniu.util.StringMap;
 
+import java.io.IOException;
+
 public class CensorManager {
 
     private Auth auth;
@@ -22,10 +24,14 @@ public class CensorManager {
     private static String imageCensorUrl = "http://ai.qiniuapi.com/v3/image/censor";
     private static String videoCensorUrl = "http://ai.qiniuapi.com/v3/video/censor";
 
-    public static JsonArray getScenes(String[] scenes) {
+    public static JsonArray getScenes(String[] scenes) throws IOException {
         JsonArray scenesJsonArray = new JsonArray();
         for (String scene : scenes) {
-            Scenes.valueOf(scene);
+            try {
+                Scenes.valueOf(scene);
+            } catch (IllegalArgumentException e) {
+                throw new IOException(e.getMessage() + ", error scene: \"" + scene + "\"");
+            }
             scenesJsonArray.add(scene);
         }
         return scenesJsonArray;
@@ -46,7 +52,7 @@ public class CensorManager {
         this(auth, null);
     }
 
-    synchronized public String doImageCensor(String url, String[] scenes) throws QiniuException {
+    synchronized public String doImageCensor(String url, String[] scenes) throws IOException {
         uriJson.addProperty("uri", url);
         bodyJson.add("data", uriJson);
         paramsJson.add("scenes", getScenes(scenes));
@@ -63,7 +69,7 @@ public class CensorManager {
     }
 
     synchronized public String doVideoCensor(String url, String[] scenes, int interval, String saverBucket, String saverPrefix,
-                                             String hookUrl) throws QiniuException {
+                                             String hookUrl) throws IOException {
         uriJson.addProperty("uri", url);
         bodyJson.add("data", uriJson);
         paramsJson.add("scenes", getScenes(scenes));

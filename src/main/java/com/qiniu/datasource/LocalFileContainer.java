@@ -64,8 +64,8 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
             try { path = FileUtils.realPathWithUserHome(path); } catch (IOException ignored) {}
             String type;
             for (Map.Entry<String, String> entry : linesMap.entrySet()) {
-                File file = new File(entry.getKey());
-                if (!file.exists()) file = new File(path, entry.getKey());
+                File file = new File(path, entry.getKey());
+                if (!file.exists()) file = new File(entry.getKey());
                 if (file.isDirectory()) throw new IOException("the filename defined in lines map can not be directory.");
                 else {
                     type = FileUtils.contentType(file);

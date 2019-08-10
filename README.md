@@ -118,6 +118,9 @@ path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
 `separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
+`add-keyPrefix=` 数据源中每一行的文件名添加前缀  
+`rm-keyPrefix=` 数据源中每一行的文件名去除前缀  
+`line-config=` 数据源路径即对应文本读取的起始行配置  
 **数据源更多参数配置和详细解释及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
 
 ### 4 过滤器功能
@@ -249,9 +252,10 @@ java.net.SocketTimeoutException: timeout
 `please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
 表示在 <filename>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，<filename> 表示文件名。
 2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
-为前缀配置文件: prefix-config=<breakpoint_filepath> 即可。【该项参数请和其他参数保持一致放在命令行或配置文件中。】  
-3. 对于 file 数据源产生的断点文件记录了读取的文本行，如果需要使用断点则需要检查对应文件中文本行位置再做截取，目前没有实现自动检测方式。
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。  
+为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
+3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次继
+续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分，断点参数请和其他参数保持一致放在命令行或配置文件中。  
 
 ### 分布式任务方案
 对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完
