@@ -106,7 +106,7 @@ public class CommonParams {
         setSeniorFilter();
         setIndexMap();
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
-        setThreads(entryParam.getValue("threads", "30").trim());
+        setThreads(entryParam.getValue("threads", "50").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
         setRetryTimes(entryParam.getValue("retry-times", "5").trim());
         setSaveTotal(entryParam.getValue("save-total", "").trim());
@@ -594,17 +594,16 @@ public class CommonParams {
             throw new IOException("please check your indexes, set it as \"[key1:index1,key2:index2,...]\".");
         } else if (!"".equals(indexes)) {
             String[] indexList = ParamsUtils.escapeSplit(indexes);
-            if (indexList.length > keys.size()) {
-                throw new IOException("the file info's index length is too long than default: " + keys);
-            } else {
-                for (int i = 0; i < indexList.length; i++) {
-                    if ("timestamp".equals(indexList[i])) {
-                        indexMap.put(indexList[i], "timestamp");
-                        toStringFields.add("timestamp");
-                        keys.add(i, "timestamp");
-                    } else {
-                        setIndex(indexList[i], keys.get(i));
+            for (int i = 0; i < indexList.length; i++) {
+                if ("timestamp".equals(indexList[i])) {
+                    indexMap.put(indexList[i], "timestamp");
+                    toStringFields.add("timestamp");
+                    keys.add(i, "timestamp");
+                } else {
+                    if (i >= keys.size()) {
+                        throw new IOException("the file object fields' indexes are too long than default: " + keys);
                     }
+                    setIndex(indexList[i], keys.get(i));
                 }
             }
         }
@@ -639,7 +638,7 @@ public class CommonParams {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
                     indexMap.put(fieldIndex ? "key" : "0", "key");
-                    toStringFields.add("key");
+                    toStringFields.add(0, "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
@@ -647,7 +646,7 @@ public class CommonParams {
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault) {
                     indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
-                    toStringFields.add("datetime");
+                    toStringFields.add(3, "datetime");
                 } else {
                     throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
                 }
@@ -656,7 +655,7 @@ public class CommonParams {
                 if (useDefault) {
                     if (fieldsMode != 2) {
                         indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                        toStringFields.add("mime");
+                        toStringFields.add(4, "mime");
                     }
                 } else {
                     throw new IOException("f-mime filter must get the mime's index in indexes settings.");
@@ -666,7 +665,7 @@ public class CommonParams {
                 if (useDefault) {
                     if (fieldsMode != 1) {
                         indexMap.put(fieldIndex ? "type" : "5", "type");
-                        toStringFields.add("type");
+                        toStringFields.add(5, "type");
                     }
                 } else {
                     throw new IOException("f-type filter must get the type's index in indexes settings.");
@@ -676,7 +675,7 @@ public class CommonParams {
                 if (useDefault) {
                     if (fieldsMode == 0) {
                         indexMap.put(fieldIndex ? "status" : "6", "status");
-                        toStringFields.add("status");
+                        toStringFields.add(6, "status");
                     }
                 } else {
                     throw new IOException("f-status filter must get the status's index in indexes settings.");
@@ -688,7 +687,7 @@ public class CommonParams {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
                         indexMap.put(fieldIndex ? "key" : "0", "key");
-                        toStringFields.add("key");
+                        toStringFields.add(0, "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }
@@ -697,7 +696,7 @@ public class CommonParams {
                     if (useDefault) {
                         if (fieldsMode != 2) {
                             indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                            toStringFields.add("mime");
+                            toStringFields.add(4, "mime");
                         }
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
@@ -705,7 +704,6 @@ public class CommonParams {
                 }
             }
         }
-        toStringFields.sort(Comparator.reverseOrder());
     }
 
     private void setUnitLen(String unitLen) throws IOException {
@@ -771,12 +769,12 @@ public class CommonParams {
         }
     }
 
-    private void setRmFields() {
+    private void setRmFields() throws IOException {
         String param = entryParam.getValue("rm-fields", "").trim();
         if ("".equals(param)) {
             rmFields = null;
         } else {
-            String[] fields = param.split(",");
+            String[] fields = ParamsUtils.escapeSplit(param);
             rmFields = new ArrayList<>();
             Collections.addAll(rmFields, fields);
         }

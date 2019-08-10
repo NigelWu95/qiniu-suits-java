@@ -252,9 +252,9 @@ public final class ConvertingUtils {
 //                case "hash": case "etag": break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.lastModified)); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), fileItem.timeSeconds); break;
+                case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
                 case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
 //                case "type": case "status": case "md5": case "owner": case "endUser": break;
@@ -433,9 +433,9 @@ public final class ConvertingUtils {
                 case "key": converted.append(URLUtils.getEncodedURI(fileItem.key)).append(separator); break;
                 case "size":
                 case "fsize": converted.append(fileItem.size).append(separator); break;
-                case "datetime": converted.append(DatetimeUtils.stringOf(fileItem.timeSeconds)).append(separator); break;
+                case "datetime": converted.append(DatetimeUtils.stringOf(fileItem.lastModified)).append(separator); break;
                 case "timestamp":
-                case "putTime": converted.append(fileItem.timeSeconds).append(separator); break;
+                case "putTime": converted.append(fileItem.lastModified).append(separator); break;
                 case "mime":
                 case "mimeType": converted.append(fileItem.attribute).append(separator); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + field);
