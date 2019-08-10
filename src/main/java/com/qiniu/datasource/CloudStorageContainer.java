@@ -44,6 +44,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected String saveSeparator;
     protected List<String> rmFields;
     protected Map<String, String> indexMap;
+    protected Map<String, String> indexPair;
+    protected List<String> fields;
     protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
@@ -54,8 +56,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
-                                 boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen,
-                                 int threads) throws IOException {
+                                 boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
+                                 int unitLen, int threads) throws IOException {
         this.bucket = bucket;
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
@@ -71,6 +73,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
+        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, null);
+        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
+        else this.fields = fields;
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         originPrefixList.addAll(Arrays.asList(("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
@@ -88,6 +93,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+        if (rmFields != null && rmFields.size() > 0) {
+            this.indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
+            this.fields = ConvertingUtils.getFields(new ArrayList<>(fields), rmFields);
+        }
     }
 
     public void setRetryTimes(int retryTimes) {

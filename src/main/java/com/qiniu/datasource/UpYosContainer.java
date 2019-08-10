@@ -26,14 +26,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     private String username;
     private String password;
     private UpYunConfig configuration;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public UpYosContainer(String username, String password, UpYunConfig configuration, String bucket,
                           Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
 //                             boolean prefixLeft, boolean prefixRight,
                           Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, false, false, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, false, false, indexMap, fields, unitLen, threads);
         this.username = username;
         this.password = password;
         this.configuration = configuration;
@@ -41,9 +39,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 null, null, 1);
         upLister.close();
         upLister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
     }
 
     @Override

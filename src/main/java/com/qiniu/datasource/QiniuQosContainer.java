@@ -25,14 +25,12 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     private String accessKey;
     private String secretKey;
     private Configuration configuration;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                              boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
                              int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
@@ -40,9 +38,6 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
                 bucket, null, null, null, 1);
         qiniuLister.close();
         qiniuLister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
     }
 
     @Override

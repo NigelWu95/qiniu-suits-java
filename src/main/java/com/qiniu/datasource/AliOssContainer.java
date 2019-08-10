@@ -27,14 +27,12 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     private String accessKeySecret;
     private ClientConfiguration clientConfig;
     private String endpoint;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
                            String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                            boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                            int unitLen, int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
         this.clientConfig = clientConfig;
@@ -43,9 +41,6 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
                 clientConfig), bucket, null, null, null, 1);
         aliLister.close();
         aliLister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
     }
 
     @Override

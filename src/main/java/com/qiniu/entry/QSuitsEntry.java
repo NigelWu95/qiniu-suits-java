@@ -565,8 +565,8 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
-        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, rmFields, saveFormat, saveSeparator)
-                : new StatFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, rmFields, savePath, saveFormat, saveSeparator);
+        return single ? new StatFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, saveFormat, saveSeparator, rmFields)
+                : new StatFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, savePath, saveFormat, saveSeparator, rmFields);
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl(Map<String, String> indexMap, boolean single) throws IOException {

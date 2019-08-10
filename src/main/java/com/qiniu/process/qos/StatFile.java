@@ -26,16 +26,16 @@ public class StatFile extends Base<Map<String, String>> {
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
-                    String format, String separator) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String format,
+                    String separator, List<String> rmFields) throws IOException {
         super("stat", accessKey, secretKey, bucket);
         set(configuration, rmFields, format, separator);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
-                    String savePath, String format, String separator, int saveIndex) throws IOException {
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator, List<String> rmFields, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, rmFields, format, separator);
         this.batchSize = 1000;
@@ -45,9 +45,9 @@ public class StatFile extends Base<Map<String, String>> {
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, List<String> rmFields,
-                    String savePath, String format, String separator) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, rmFields, savePath, format, separator, 0);
+    public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
+                    String format, String separator, List<String> rmFields) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, savePath, format, separator, rmFields, 0);
     }
 
     private void set(Configuration configuration, List<String> rmFields, String format, String separator) throws IOException {

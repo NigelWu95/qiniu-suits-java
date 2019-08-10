@@ -23,7 +23,7 @@ public class ProcessTest {
         String bucket =
 //                "note-video";
                 propertiesFile.getValue("bucket");
-        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, null, "tab", "\t");
+        statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "tab", "\t", null);
         qiniuPfop = new QiniuPfop(accessKey, secretKey, new Configuration(), bucket, null, null, null, "1");
     }
     @Test

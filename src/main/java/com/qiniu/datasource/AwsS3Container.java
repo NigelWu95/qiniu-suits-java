@@ -28,14 +28,12 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     private String secretKey;
     private ClientConfiguration clientConfig;
     private String region;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
                           String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                           int unitLen, int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
@@ -48,9 +46,6 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
         AwsS3Lister awsS3Lister = new AwsS3Lister(s3Client, bucket, null, null, null, null, 1);
         awsS3Lister.close();
         awsS3Lister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
     }
 
     @Override
