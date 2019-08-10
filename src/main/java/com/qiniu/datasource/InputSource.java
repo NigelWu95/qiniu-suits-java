@@ -30,15 +30,6 @@ public class InputSource {
         this.indexMap = indexMap;
     }
 
-    // 通过 commonParams 来更新基本参数
-    public void updateSettings(CommonParams commonParams) {
-        this.parse = commonParams.getParse();
-        this.separator = commonParams.getSeparator();
-        this.addKeyPrefix = commonParams.getAddKeyPrefix();
-        this.rmKeyPrefix = commonParams.getRmKeyPrefix();
-        this.indexMap = commonParams.getIndexMap();
-    }
-
     public void export(InputStream inputStream, ILineProcess<Map<String, String >> processor) throws IOException {
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap);

@@ -53,15 +53,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
-    public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+    public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen,
                                  int threads) throws IOException {
         this.bucket = bucket;
+        this.prefixLeft = prefixLeft;
+        this.prefixRight = prefixRight;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
         if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
-        this.prefixLeft = prefixLeft;
-        this.prefixRight = prefixRight;
         setPrefixesAndMap(prefixesMap);
         this.unitLen = unitLen;
         this.threads = threads;

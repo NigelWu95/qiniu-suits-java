@@ -31,10 +31,10 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     private List<String> fields;
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
-                           String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                           String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                            boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                            int unitLen, int threads) throws IOException {
-        super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
         this.clientConfig = clientConfig;

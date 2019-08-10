@@ -32,10 +32,10 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     private List<String> fields;
 
     public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
-                          String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+                          String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                           int unitLen, int threads) throws IOException {
-        super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
