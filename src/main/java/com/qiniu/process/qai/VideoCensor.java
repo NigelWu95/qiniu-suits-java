@@ -20,7 +20,7 @@ public class VideoCensor extends Base<Map<String, String>> {
     private CensorManager censorManager;
 
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, Scenes scenes, int interval, String saverBucket, String saverPrefix, String hookUrl)
+                       String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl)
             throws IOException {
         super("videocensor", accesskey, secretKey, null);
         set(configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
@@ -28,7 +28,7 @@ public class VideoCensor extends Base<Map<String, String>> {
     }
 
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, Scenes scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
+                       String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
                        String savePath, int saveIndex) throws IOException {
         super("videocensor", accesskey, secretKey, null, savePath, saveIndex);
         set(configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
@@ -36,14 +36,14 @@ public class VideoCensor extends Base<Map<String, String>> {
     }
 
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, Scenes scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
+                       String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
                        String savePath)
             throws IOException {
         this(accesskey, secretKey, configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix,
                 hookUrl, savePath, 0);
     }
 
-    private void set(Configuration configuration, String domain, String protocol, String urlIndex, Scenes scenes,
+    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String[] scenes,
                      int interval, String saverBucket, String saverPrefix, String hookUrl) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
@@ -59,7 +59,7 @@ public class VideoCensor extends Base<Map<String, String>> {
             this.urlIndex = urlIndex;
         }
         this.paramsJson = new JsonObject();
-        paramsJson.add("scenes", CensorManager.scenesMap.get(scenes));
+        paramsJson.add("scenes", CensorManager.getScenes(scenes));
         if ((saverBucket != null && !"".equals(saverBucket)) || (saverPrefix != null && !"".equals(saverPrefix))) {
             JsonObject saverJson = new JsonObject();
             saverJson.addProperty("bucket", saverBucket);

@@ -44,7 +44,7 @@ check-url=
 |callback-body| body 字符串| 设置回调 body|  
 |callback-body-type| body-type 字符串| 设置回调 body 类型|  
 |callback-host| 域名字符串| 设置回调 host |  
-|file-type| 0/1| 文件的存储类型|  
+|file-type| 0/1| 文件的存储类型，默认为 0 标准存储|  
 |ignore-same-key| true/false|（暂未启用）为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
 |check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 

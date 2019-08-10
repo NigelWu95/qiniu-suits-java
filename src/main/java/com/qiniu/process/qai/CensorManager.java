@@ -9,9 +9,6 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.JsonUtils;
 import com.qiniu.util.StringMap;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class CensorManager {
 
     private Auth auth;
@@ -24,32 +21,15 @@ public class CensorManager {
     private StringMap headers;
     private static String imageCensorUrl = "http://ai.qiniuapi.com/v3/image/censor";
     private static String videoCensorUrl = "http://ai.qiniuapi.com/v3/video/censor";
-    private static JsonArray pulpJsonArray = new JsonArray();
-    private static JsonArray terrorJsonArray = new JsonArray();
-    private static JsonArray politicianJsonArray = new JsonArray();
-    private static JsonArray pulp_terrorJsonArray = new JsonArray();
-    private static JsonArray terror_politicianJsonArray = new JsonArray();
-    private static JsonArray pulp_terror_politicianJsonArray = new JsonArray();
-    static {
-        pulpJsonArray.add("pulp");
-        terrorJsonArray.add("terror");
-        politicianJsonArray.add("politician");
-        pulp_terrorJsonArray.add("pulp");
-        pulp_terrorJsonArray.add("terror");
-        terror_politicianJsonArray.add("terror");
-        terror_politicianJsonArray.add("politician");
-        pulp_terror_politicianJsonArray.add("pulp");
-        pulp_terror_politicianJsonArray.add("terror");
-        pulp_terror_politicianJsonArray.add("politician");
+
+    public static JsonArray getScenes(String[] scenes) {
+        JsonArray scenesJsonArray = new JsonArray();
+        for (String scene : scenes) {
+            Scenes.valueOf(scene);
+            scenesJsonArray.add(scene);
+        }
+        return scenesJsonArray;
     }
-    public static Map<Scenes, JsonArray> scenesMap = new HashMap<Scenes, JsonArray>(){{
-        put(Scenes.pulp, pulpJsonArray);
-        put(Scenes.terror, terrorJsonArray);
-        put(Scenes.politician, politicianJsonArray);
-        put(Scenes.pulp_terror, pulp_terrorJsonArray);
-        put(Scenes.terror_politician, terror_politicianJsonArray);
-        put(Scenes.pulp_terror_politician, pulp_terror_politicianJsonArray);
-    }};
 
     public CensorManager(Auth auth, Configuration configuration) {
         this.auth = auth;
@@ -66,10 +46,10 @@ public class CensorManager {
         this(auth, null);
     }
 
-    synchronized public String doImageCensor(String url, Scenes scenes) throws QiniuException {
+    synchronized public String doImageCensor(String url, String[] scenes) throws QiniuException {
         uriJson.addProperty("uri", url);
         bodyJson.add("data", uriJson);
-        paramsJson.add("scenes", scenesMap.get(scenes));
+        paramsJson.add("scenes", getScenes(scenes));
         bodyJson.add("params", paramsJson);
         byte[] body = bodyJson.toString().getBytes();
         jsonClear();
@@ -82,11 +62,11 @@ public class CensorManager {
         return result;
     }
 
-    synchronized public String doVideoCensor(String url, Scenes scenes, int interval, String saverBucket, String saverPrefix,
+    synchronized public String doVideoCensor(String url, String[] scenes, int interval, String saverBucket, String saverPrefix,
                                              String hookUrl) throws QiniuException {
         uriJson.addProperty("uri", url);
         bodyJson.add("data", uriJson);
-        paramsJson.add("scenes", scenesMap.get(scenes));
+        paramsJson.add("scenes", getScenes(scenes));
         if ((saverBucket != null && !"".equals(saverBucket)) || (saverPrefix != null && !"".equals(saverPrefix))) {
             saverJson.addProperty("bucket", saverBucket);
             saverJson.addProperty("prefix", saverPrefix);

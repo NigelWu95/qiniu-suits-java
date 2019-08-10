@@ -695,7 +695,7 @@ public class QSuitsEntry {
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = useQuery ? entryParam.getValue("queries", "").trim() : null;
-        Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
+        String[] scenes = entryParam.getValue("scenes").trim().split(",");
         return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes) :
                 new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes, savePath);
     }
@@ -705,7 +705,7 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        Scenes scenes = Scenes.valueOf(entryParam.getValue("scenes").trim());
+        String[] scenes = entryParam.getValue("scenes").trim().split(",");
         String interval = entryParam.getValue("interval", "0").trim();
         String saverBucket = entryParam.getValue("save-bucket", "").trim();
         String saverPrefix = entryParam.getValue("saver-prefix", "").trim();

@@ -8,9 +8,5 @@ public enum Scenes {
 
     politician,
 
-    pulp_terror,
-
-    terror_politician,
-
-    pulp_terror_politician;
+    ads;
 }
