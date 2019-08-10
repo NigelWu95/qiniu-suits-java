@@ -2,12 +2,12 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表，同时支持对资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/
-改/查/迁移/转码等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
+云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表(支持**阿里云/腾讯云/七牛云等**)，同时支持对资源列表并发进行批量处理，主
+要包括对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
-- [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效[并发列举](docs/datasource.md#3-storage-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
-- [x] [数据迁移](docs/data_migration.md)，针对不同数据源向七牛空间迁移数据  
+- [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 文件[迁移/备份](docs/data_migration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
@@ -23,13 +23,14 @@
 - [x] 查询空间资源的元信息 [stat 配置](docs/stat.md)  
 - [x] 对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
 - [x] 查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
-- [x] 查询资源的 qhash [qhash 配置](docs/qhash.md)  
-- [x] 对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
+- [x] qhash 查询资源的 hash/size [qhash 配置](docs/qhash.md)  
+- [x] 对私有空间资源进行签名 [privateurl 配置](docs/privateurl.md)  
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
-- [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
-- [x] 下载资源到本地 [download 配置](docs/downloadfile.md)  
+- [x] 对 m3u8 的 http 资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
+- [x] 通过 http 下载资源到本地 [download 配置](docs/downloadfile.md)  
 - [x] 图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
 - [x] 视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
+- [x] 内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 
 *【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
 

@@ -231,8 +231,9 @@ public class QSuitsEntry {
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
+        Map<String, String> linesMap = new HashMap<>();
         LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, indexMap, commonParams.getToStringFields(), unitLen, threads);
+                rmKeyPrefix, linesMap, indexMap, commonParams.getToStringFields(), unitLen, threads);
         localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;

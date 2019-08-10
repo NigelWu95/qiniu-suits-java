@@ -2,7 +2,6 @@ package com.qiniu.datasource;
 
 import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
-import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.IDataSource;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.IReader;
@@ -19,6 +18,7 @@ import sun.misc.SignalHandler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,9 +33,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private String filePath;
     protected String parse;
     protected String separator;
-    protected Map<String, Map<String, String>> linesMap;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
+    protected Map<String, String> linesMap;
     protected Map<String, String> indexMap;
     protected int unitLen;
     private int threads;
@@ -51,12 +51,14 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
-                         Map<String, String> indexMap, List<String> fields, int unitLen, int threads) {
+                         Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
+                         int threads) {
         this.filePath = filePath;
         this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
         this.rmKeyPrefix = rmKeyPrefix;
+        this.linesMap = linesMap == null ? new HashMap<>() : linesMap;
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
@@ -84,24 +86,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.retryTimes = retryTimes;
     }
 
-    // 通过 commonParams 来更新基本参数
-    public void updateSettings(CommonParams commonParams) {
-        this.filePath = commonParams.getPath();
-        this.parse = commonParams.getParse();
-        this.separator = commonParams.getSeparator();
-        this.addKeyPrefix = commonParams.getAddKeyPrefix();
-        this.rmKeyPrefix = commonParams.getRmKeyPrefix();
-        this.indexMap = commonParams.getIndexMap();
-        this.unitLen = commonParams.getUnitLen();
-        this.threads = commonParams.getThreads();
-        this.retryTimes = commonParams.getRetryTimes();
-        this.savePath = commonParams.getSavePath();
-        this.saveTotal = commonParams.getSaveTotal();
-        this.saveFormat = commonParams.getSaveFormat();
-        this.saveSeparator = commonParams.getSaveSeparator();
-        this.rmFields = commonParams.getRmFields();
-    }
-
     public void setProcessor(ILineProcess<T> processor) {
         this.processor = processor;
     }
@@ -124,6 +108,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         List<String> writeList;
         String line = "";
         int retry;
+        String startLine = linesMap.get(reader.getName());
+        if (startLine == null) startLine = "";
         while (line != null) {
             retry = retryTimes + 1;
             while (retry > 0) {
@@ -136,7 +122,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     if (retry == 0) throw e;
                 }
             }
-            if (line != null && !"".equals(line)) srcList.add(line);
+            if (line != null && line.compareTo(startLine) > 0) srcList.add(line);
             if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
                 convertedList = converter.convertToVList(srcList);
                 if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);

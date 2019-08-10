@@ -14,8 +14,9 @@ import java.util.*;
 public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter, Map<String, String>> {
 
     public LocalFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
-                              String rmKeyPrefix, Map<String, String> indexMap, List<String> fields, int unitLen, int threads) {
-        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, indexMap, fields, unitLen, threads);
+                              String rmKeyPrefix, Map<String, String> linesMap, Map<String, String> indexMap,
+                              List<String> fields, int unitLen, int threads) {
+        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, linesMap, indexMap, fields, unitLen, threads);
     }
 
     @Override
@@ -39,8 +40,11 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     }
 
     private List<File> getFiles(File directory) throws IOException {
+        File[] fs = directory.listFiles();
+        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
         List<File> files = new ArrayList<>();
-        for(File f : Objects.requireNonNull(directory.listFiles())) {
+//        Objects.requireNonNull(directory.listFiles());
+        for(File f : fs) {
             if (f.isDirectory()) {
                 files.addAll(getFiles(f));
             } else {
@@ -56,26 +60,40 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     @Override
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
-        path = FileUtils.realPathWithUserHome(path);
-        if (path.equals(FileUtils.realPathWithUserHome(savePath))) {
-            throw new IOException("the save-path can not be same as path.");
-        }
-        File sourceFile = new File(path);
-        if (sourceFile.isDirectory()) {
-            File[] fs = sourceFile.listFiles();
-            if (fs == null) throw new IOException("The current path you gave may be incorrect: " + path);
-            else {
+        if (linesMap != null && linesMap.size() > 0) {
+            try { path = FileUtils.realPathWithUserHome(path); } catch (IOException ignored) {}
+            String type;
+            for (Map.Entry<String, String> entry : linesMap.entrySet()) {
+                File file = new File(entry.getKey());
+                if (!file.exists()) file = new File(path, entry.getKey());
+                if (file.isDirectory()) throw new IOException("the filename defined in lines map can not be directory.");
+                else {
+                    type = FileUtils.contentType(file);
+                    if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                        fileReaders.add(new LocalFileReader(file));
+                    } else {
+                        throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
+                    }
+                }
+            }
+        } else {
+            path = FileUtils.realPathWithUserHome(path);
+            if (path.equals(FileUtils.realPathWithUserHome(savePath))) {
+                throw new IOException("the save-path can not be same as path.");
+            }
+            File sourceFile = new File(path);
+            if (sourceFile.isDirectory()) {
                 List<File> files = getFiles(sourceFile);
                 for (File file : files) {
                     fileReaders.add(new LocalFileReader(file));
                 }
-            }
-        } else {
-            String type = FileUtils.contentType(sourceFile);
-            if (type.startsWith("text") || type.equals("application/octet-stream")) {
-                fileReaders.add(new LocalFileReader(sourceFile));
             } else {
-                throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
+                String type = FileUtils.contentType(sourceFile);
+                if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                    fileReaders.add(new LocalFileReader(sourceFile));
+                } else {
+                    throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
+                }
             }
         }
         if (fileReaders.size() == 0) throw new IOException("please provide the \'text\' file in the directory. " +
