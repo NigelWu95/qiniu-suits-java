@@ -2,8 +2,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表(支持**阿里云/腾讯云/七牛云等**)，同时支持对资源列表并发进行批量处理，主
-要包括对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
+云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云等**)，同时支持对 LocalFile 中的资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
