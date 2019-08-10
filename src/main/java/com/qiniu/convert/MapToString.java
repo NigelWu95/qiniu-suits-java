@@ -15,9 +15,9 @@ public class MapToString extends Converter<Map<String, String>, String> {
         if ("json".equals(format)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
         } else if ("csv".equals(format)) {
-            stringFormatter = line -> ConvertingUtils.toFormatString(line, ",", fields);
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(","));
         } else if ("tab".equals(format)) {
-            stringFormatter = line -> ConvertingUtils.toFormatString(line, separator, fields);
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(separator));
         } else {
             throw new IOException("please check your format for map to string.");
         }
