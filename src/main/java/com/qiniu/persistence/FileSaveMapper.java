@@ -19,14 +19,10 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     public FileSaveMapper(String savePath) throws IOException {
         this.savePath = FileUtils.realPathWithUserHome(savePath);
         File fDir = new File(this.savePath);
-        boolean firExists = fDir.exists();
         int retry = retryTimes;
-        while (retry > 0) {
+        while (retry > 0 && !fDir.exists()) {
             try {
-                if (!firExists) {
-                    firExists = fDir.mkdirs();
-                    if (!firExists) throw new IOException("create result directory: " + savePath + " failed.");
-                }
+                if (!fDir.mkdirs() && !fDir.exists()) throw new IOException("create result directory: " + savePath + " failed.");
                 retry = 0;
             } catch (IOException e) {
                 retry--;

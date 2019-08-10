@@ -29,10 +29,10 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     private List<String> fields;
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
-                           List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap, boolean prefixLeft,
+                           Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                            boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
                            int threads) throws IOException {
-        super(bucket, antiPrefixes, prefixesMap, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;

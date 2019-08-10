@@ -9,6 +9,7 @@ import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TenLister implements ILister<COSObjectSummary> {
@@ -17,6 +18,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
     private List<COSObjectSummary> cosObjectList;
+    private static final List<COSObjectSummary> defaultList = new ArrayList<>();
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.cosClient = cosClient;
@@ -113,7 +115,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         if (hasNext()) {
             doList();
         } else {
-            cosObjectList.clear();
+            cosObjectList = defaultList;
         }
     }
 
@@ -152,11 +154,8 @@ public class TenLister implements ILister<COSObjectSummary> {
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = null;
-        if (hasNext()) {
-            truncateMarker = listObjectsRequest.getMarker();
-            listObjectsRequest.setMarker(null);
-        }
+        String truncateMarker = listObjectsRequest.getMarker();
+        listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
 
@@ -165,6 +164,6 @@ public class TenLister implements ILister<COSObjectSummary> {
         cosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        cosObjectList.clear();
+        cosObjectList = defaultList;
     }
 }

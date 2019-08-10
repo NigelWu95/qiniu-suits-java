@@ -1,5 +1,6 @@
 package com.qiniu.config;
 
+import com.google.gson.JsonObject;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,5 +15,8 @@ public class JsonFileTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        JsonObject jsonObject = new JsonObject();
+        System.out.println(jsonObject.get("test"));
+        System.out.println(jsonObject.get("test") == null);
     }
 }

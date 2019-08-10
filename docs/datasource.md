@@ -71,6 +71,7 @@ separator=\t
 indexes=
 add-keyPrefix=
 rm-keyPrefix=
+line-config=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
@@ -78,6 +79,27 @@ rm-keyPrefix=
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
 |add-keyPrefix| 字符串|将解析出的 key 字段加上指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 少了前缀的情况，补上前缀才能获取到资源|  
 |rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 `/` 前缀|  
+|line-config| 配置文件路径|表示从该配置中读取文件名作为 file 数据源，同时文件名对应的值表示读取该文件的起始位置，[配置文件](#line-config-配置)格式为 json|  
+
+#### 关于 line-config
+line-config 用来设置要读取的文件路径，在 path 为空的情况下，line-config 中的文件名必须是完整的路径名，path 为目录时，line-config 中的文件名
+可以采取相对该目录的路径，因此 line-config 中的文件名必须存在。配置中每一个文件源对应的值表示在一行文本信息，在实际读取数据源过程中，会参照该行信息，
+从之后的位置开始读入数据，即此行文本信息标示文件中的读取位置，可以用于设置断点。
+
+##### line-config 配置
+```
+{
+  "/Users/wubingheng/Projects/Github/test/success_1.txt":"test.gif",
+  "/Users/wubingheng/Projects/Github/test/success_2.txt":"",
+  "../test/success_3.txt":"",
+  "../test/success_4.txt":"",
+  "../test/success_5.txt":""
+}
+```  
+|选项|含义|  
+|-----|-----|  
+|key|上述配置文件中的 "../test/success_3.txt" 等表示文件名或路径，不可重复，重复情况下后者会覆盖前者|  
+|value| 表示数据源中某一行的内容，如 "test.gif" 表示 "/Users/wubingheng/Projects/Github/test/success_1.txt" 文件中可能存在某一行包含该信息|  
 
 ### 3 storage 云存储列举  
 ```
@@ -141,7 +163,7 @@ prefix-right=
 ```  
 |选项|含义|  
 |-----|-----|  
-|key|上述配置文件中的 "a"、"b" 为前缀，设置为 json key，key 不可重复，重复情况下后者会覆盖前者|  
+|key|上述配置文件中的 "a"、"b" 表示文件名前缀，不可重复，重复情况下后者会覆盖前者|  
 |marker| 从指定 marker 的位置开始列举，该参数与 start 参数含义相同，同时设置时忽略 start 而使用 marker|  
 |start| 从指定文件名开始列举，该参数必须是正确且存在的文件名，否则会产生错误的 marker 从而无法列举|  
 |end| 文件名字符串，可以是完整的文件名，也可以是文件名前缀，程序列举时会以该文件信息作为结束位置|  

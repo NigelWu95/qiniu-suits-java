@@ -21,7 +21,7 @@ public class ImageCensor extends Base<Map<String, String>> {
     private CensorManager censorManager;
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, String suffixOrQuery, Scenes scenes)
+                       String urlIndex, String suffixOrQuery, String[] scenes)
             throws IOException {
         super("imagecensor", accesskey, secretKey, null);
         set(configuration, domain, protocol, urlIndex, suffixOrQuery, scenes);
@@ -29,19 +29,19 @@ public class ImageCensor extends Base<Map<String, String>> {
     }
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, String suffixOrQuery, Scenes scenes, String savePath, int saveIndex) throws IOException {
+                       String urlIndex, String suffixOrQuery, String[] scenes, String savePath, int saveIndex) throws IOException {
         super("imagecensor", accesskey, secretKey, null, savePath, saveIndex);
         set(configuration, domain, protocol, urlIndex, suffixOrQuery, scenes);
         censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
     }
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
-                       String urlIndex, String suffixOrQuery, Scenes scenes, String savePath) throws IOException {
+                       String urlIndex, String suffixOrQuery, String[] scenes, String savePath) throws IOException {
         this(accesskey, secretKey, configuration, domain, protocol, urlIndex, suffixOrQuery, scenes, savePath, 0);
     }
 
     private void set(Configuration configuration, String domain, String protocol, String urlIndex, String suffixOrQuery,
-                     Scenes scenes) throws IOException {
+                     String[] scenes) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
@@ -58,7 +58,7 @@ public class ImageCensor extends Base<Map<String, String>> {
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
         useQuery = !"".equals(this.suffixOrQuery);
         this.paramsJson = new JsonObject();
-        paramsJson.add("scenes", CensorManager.scenesMap.get(scenes));
+        paramsJson.add("scenes", CensorManager.getScenes(scenes));
     }
 
     public ImageCensor clone() throws CloneNotSupportedException {

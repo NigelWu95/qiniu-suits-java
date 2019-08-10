@@ -2,10 +2,7 @@ package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
@@ -251,7 +248,7 @@ public final class ConvertingUtils {
         if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
-                case "key": pair.put(indexMap.get(index), URLUtils.getEncodedURI(fileItem.key)); break;
+                case "key": pair.put(indexMap.get(index), fileItem.key); break;
 //                case "hash": case "etag": break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
@@ -277,7 +274,11 @@ public final class ConvertingUtils {
             if (jsonElement == null || jsonElement instanceof JsonNull) {
                 if (!allFieldsSet.contains(index)) throw new IOException("the index: " + index + " can't be found in " + json);
             } else {
-                pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
+                try {
+                    pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
+                } catch (JsonSyntaxException e) {
+                    pair.put(indexMap.get(index), String.valueOf(jsonElement));
+                }
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
@@ -354,7 +355,7 @@ public final class ConvertingUtils {
         StringBuilder converted = new StringBuilder();
         for (String field : fields) {
             switch (field) {
-                case "key": converted.append(cosObject.getKey()).append(separator); break;
+                case "key": converted.append(URLUtils.getEncodedURI(cosObject.getKey())).append(separator); break;
                 case "hash":
                 case "etag": converted.append(cosObject.getETag()).append(separator); break;
                 case "size":
@@ -379,7 +380,7 @@ public final class ConvertingUtils {
         StringBuilder converted = new StringBuilder();
         for (String field : fields) {
             switch (field) {
-                case "key": converted.append(ossObject.getKey()).append(separator); break;
+                case "key": converted.append(URLUtils.getEncodedURI(ossObject.getKey())).append(separator); break;
                 case "hash":
                 case "etag": converted.append(ossObject.getETag()).append(separator); break;
                 case "size":
@@ -404,7 +405,7 @@ public final class ConvertingUtils {
         StringBuilder converted = new StringBuilder();
         for (String field : fields) {
             switch (field) {
-                case "key": converted.append(s3Object.getKey()).append(separator); break;
+                case "key": converted.append(URLUtils.getEncodedURI(s3Object.getKey())).append(separator); break;
                 case "hash":
                 case "etag": converted.append(s3Object.getETag()).append(separator); break;
                 case "size":
@@ -429,7 +430,7 @@ public final class ConvertingUtils {
         StringBuilder converted = new StringBuilder();
         for (String field : fields) {
             switch (field) {
-                case "key": converted.append(fileItem.key).append(separator); break;
+                case "key": converted.append(URLUtils.getEncodedURI(fileItem.key)).append(separator); break;
                 case "size":
                 case "fsize": converted.append(fileItem.size).append(separator); break;
                 case "datetime": converted.append(DatetimeUtils.stringOf(fileItem.timeSeconds)).append(separator); break;
@@ -453,7 +454,7 @@ public final class ConvertingUtils {
             if (value != null) {
                 if (longFields.contains(field)) converted.append(Long.valueOf(value)).append(separator);
                 else if (intFields.contains(field)) converted.append(Integer.valueOf(value)).append(separator);
-                else converted.append(value).append(separator);
+                else converted.append(URLUtils.getEncodedURI(value)).append(separator);
             } else {
                 if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + line);
             }
@@ -473,7 +474,7 @@ public final class ConvertingUtils {
             } else {
                 if (longFields.contains(field)) converted.append(value.getAsLong()).append(separator);
                 else if (intFields.contains(field)) converted.append(value.getAsInt()).append(separator);
-                else converted.append(value.getAsString()).append(separator);
+                else converted.append(URLUtils.getEncodedURI(value.getAsString())).append(separator);
             }
         }
         if (converted.length() == 0) throw new IOException("empty result string.");

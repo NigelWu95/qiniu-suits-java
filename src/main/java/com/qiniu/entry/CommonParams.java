@@ -37,17 +37,18 @@ public class CommonParams {
     private String s3AccessId;
     private String s3SecretKey;
     private String bucket;
-    private String parse;
-    private String separator;
-    private String process;
-    private String privateType;
-    private String regionName;
     private Map<String, Map<String, String>> prefixesMap;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
+    private String parse;
+    private String separator;
     private String addKeyPrefix;
     private String rmKeyPrefix;
+    private Map<String, String> linesMap;
+    private String process;
+    private String privateType;
+    private String regionName;
     private BaseFilter<Map<String, String>> baseFilter;
     private SeniorFilter<Map<String, String>> seniorFilter;
     private Map<String, String> indexMap;
@@ -86,20 +87,21 @@ public class CommonParams {
         if (isStorageSource) {
             setAuthKey();
             setBucket();
-            setAntiPrefixes();
             String prefixes = entryParam.getValue("prefixes", null);
             setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
+            antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
             setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         } else {
             setParse();
             setSeparator();
+            addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
+            rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
+            setLinesMap(entryParam.getValue("line-config", ""));
         }
         setProcess();
         setPrivateType();
         regionName = entryParam.getValue("region", "").trim();
-        addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
-        rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setBaseFilter();
         setSeniorFilter();
         setIndexMap();
@@ -122,10 +124,10 @@ public class CommonParams {
         source = "terminal";
         setParse();
         setSeparator();
-        setProcess();
-        regionName = entryParam.getValue("region", "").trim();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
+        setProcess();
+        regionName = entryParam.getValue("region", "").trim();
         setIndexMap();
         setRetryTimes(entryParam.getValue("retry-times", "5").trim());
         String line = entryParam.getValue("line", null);
@@ -274,6 +276,22 @@ public class CommonParams {
         }
     }
 
+    private void setLinesMap(String linesConfig) throws Exception {
+        linesMap = new HashMap<>();
+        if (linesConfig != null && !"".equals(linesConfig)) {
+            JsonFile jsonFile = new JsonFile(linesConfig);
+            JsonElement lineCfg;
+            for (String filename : jsonFile.getKeys()) {
+                lineCfg = jsonFile.getElement(filename);
+                if (lineCfg == null || lineCfg instanceof JsonNull) {
+                    linesMap.put(filename, "");
+                } else {
+                    linesMap.put(filename, lineCfg.getAsString());
+                }
+            }
+        }
+    }
+
     private void setAuthKey() throws IOException {
         if ("qiniu".equals(source)) {
             qiniuAccessKey = entryParam.getValue("ak").trim();
@@ -363,16 +381,15 @@ public class CommonParams {
         }
     }
 
-    private void setAntiPrefixes() throws IOException {
-        antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
-    }
-
     private void setPrefixesMap(String prefixConfig, String prefixes) throws Exception {
         prefixesMap = new HashMap<>();
-        if (!"".equals(prefixConfig) && prefixConfig != null) {
+        if (prefixConfig != null && !"".equals(prefixConfig)) {
             JsonFile jsonFile = new JsonFile(prefixConfig);
             JsonObject jsonCfg;
-            for (String prefix : jsonFile.getJsonObject().keySet()) {
+            JsonElement markerElement;
+            JsonElement startElement;
+            JsonElement endElement;
+            for (String prefix : jsonFile.getKeys()) {
                 Map<String, String> markerAndEnd = new HashMap<>();
 //                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 JsonElement json = jsonFile.getElement(prefix);
@@ -380,27 +397,22 @@ public class CommonParams {
                     prefixesMap.put(prefix, null);
                     continue;
                 }
+                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + prefix + " must be json.");
                 jsonCfg = json.getAsJsonObject();
-                if (jsonCfg.has("marker") && !(jsonCfg.get("marker") instanceof JsonNull)) {
-                    markerAndEnd.put("marker", jsonCfg.get("marker").getAsString());
-                } else {
-                    if (jsonCfg.has("start") && !(jsonCfg.get("start") instanceof JsonNull)) {
-                        if ("qiniu".equals(source)) {
-                            markerAndEnd.put("marker", CloudAPIUtils.getQiniuMarker(jsonCfg.get("start").getAsString()));
-                        } else if ("tencent".equals(source)) {
-                            markerAndEnd.put("marker", CloudAPIUtils.getTenCosMarker(jsonCfg.get("start").getAsString()));
-                        } else if ("aliyun".equals(source)) {
-                            markerAndEnd.put("marker", CloudAPIUtils.getAliOssMarker(jsonCfg.get("start").getAsString()));
-                        } else if ("upyun".equals(source)) {
-                            String start = jsonCfg.get("start").getAsString();
-                            markerAndEnd.put("marker", CloudAPIUtils.getUpYunMarker(upyunUsername, upyunPassword, bucket, start));
-                        } else if ("s3".equals(source) || "aws".equals(source)) {
-                            markerAndEnd.put("start", jsonCfg.get("start").getAsString());
-                        }
-                    }
+                markerElement = jsonCfg.get("marker");
+                startElement = jsonCfg.get("start");
+                endElement = jsonCfg.get("end");
+                if (markerElement != null && !(markerElement instanceof JsonNull)) {
+                    markerAndEnd.put("marker", markerElement.getAsString());
                 }
-                if (jsonCfg.has("end") && !(jsonCfg.get("end") instanceof JsonNull))
-                    markerAndEnd.put("end", jsonCfg.get("end").getAsString());
+                if (startElement != null && !(startElement instanceof JsonNull)) {
+                    if ("qiniu".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("tencent".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("aliyun".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("upyun".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    else if ("s3".equals(source) || "aws".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                }
+                if (endElement != null && !(endElement instanceof JsonNull)) markerAndEnd.put("end", endElement.getAsString());
                 prefixesMap.put(prefix, markerAndEnd);
             }
         } else if (prefixes != null && !"".equals(prefixes)) {
@@ -539,6 +551,7 @@ public class CommonParams {
                 }
             } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
                 indexMap.put(index, indexName);
+                toStringFields.add(indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
@@ -692,6 +705,7 @@ public class CommonParams {
                 }
             }
         }
+        toStringFields.sort(Comparator.reverseOrder());
     }
 
     private void setUnitLen(String unitLen) throws IOException {
@@ -836,26 +850,6 @@ public class CommonParams {
         this.bucket = bucket;
     }
 
-    public void setParse(String parse) {
-        this.parse = parse;
-    }
-
-    public void setSeparator(String separator) {
-        this.separator = separator;
-    }
-
-    public void setProcess(String process) {
-        this.process = process;
-    }
-
-    public void setPrivateType(String privateType) {
-        this.privateType = privateType;
-    }
-
-    public void setRegionName(String regionName) {
-        this.regionName = regionName;
-    }
-
     public void setPrefixesMap(Map<String, Map<String, String>> prefixesMap) {
         this.prefixesMap = prefixesMap;
     }
@@ -872,12 +866,36 @@ public class CommonParams {
         this.prefixRight = prefixRight;
     }
 
+    public void setParse(String parse) {
+        this.parse = parse;
+    }
+
+    public void setSeparator(String separator) {
+        this.separator = separator;
+    }
+
     public void setAddKeyPrefix(String addKeyPrefix) {
         this.addKeyPrefix = addKeyPrefix;
     }
 
     public void setRmKeyPrefix(String rmKeyPrefix) {
         this.rmKeyPrefix = rmKeyPrefix;
+    }
+
+    public void setLinesMap(Map<String, String> linesMap) {
+        this.linesMap = linesMap;
+    }
+
+    public void setProcess(String process) {
+        this.process = process;
+    }
+
+    public void setPrivateType(String privateType) {
+        this.privateType = privateType;
+    }
+
+    public void setRegionName(String regionName) {
+        this.regionName = regionName;
     }
 
     public void setBaseFilter(BaseFilter<Map<String, String>> baseFilter) {
@@ -1004,12 +1022,40 @@ public class CommonParams {
         return bucket;
     }
 
+    public Map<String, Map<String, String>> getPrefixesMap() {
+        return prefixesMap;
+    }
+
+    public List<String> getAntiPrefixes() {
+        return antiPrefixes;
+    }
+
+    public boolean getPrefixLeft() {
+        return prefixLeft;
+    }
+
+    public boolean getPrefixRight() {
+        return prefixRight;
+    }
+
     public String getParse() {
         return parse;
     }
 
     public String getSeparator() {
         return separator;
+    }
+
+    public String getAddKeyPrefix() {
+        return addKeyPrefix;
+    }
+
+    public String getRmKeyPrefix() {
+        return rmKeyPrefix;
+    }
+
+    public Map<String, String> getLinesMap() {
+        return linesMap;
     }
 
     public String getProcess() {
@@ -1022,30 +1068,6 @@ public class CommonParams {
 
     public String getRegionName() {
         return regionName;
-    }
-
-    public List<String> getAntiPrefixes() {
-        return antiPrefixes;
-    }
-
-    public Map<String, Map<String, String>> getPrefixesMap() {
-        return prefixesMap;
-    }
-
-    public boolean getPrefixLeft() {
-        return prefixLeft;
-    }
-
-    public boolean getPrefixRight() {
-        return prefixRight;
-    }
-
-    public String getAddKeyPrefix() {
-        return addKeyPrefix;
-    }
-
-    public String getRmKeyPrefix() {
-        return rmKeyPrefix;
     }
 
     public BaseFilter<Map<String, String>> getBaseFilter() {

@@ -2,12 +2,12 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表，同时支持对资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/
-改/查/迁移/转码等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
+云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表(支持**阿里云/腾讯云/七牛云等**)，同时支持对资源列表并发进行批量处理，主
+要包括对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。基于 Java 编写，可基于 JDK（8 或以上）环境在命令行或 IDE 中运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
-- [x] 云存储(**阿里云/腾讯云/七牛云等**)大量文件高效[并发列举](docs/datasource.md#3-storage-云存储列举)，支持指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
-- [x] [数据迁移](docs/data_migration.md)，针对不同数据源向七牛空间迁移数据  
+- [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 文件[迁移/备份](docs/data_migration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
@@ -23,13 +23,14 @@
 - [x] 查询空间资源的元信息 [stat 配置](docs/stat.md)  
 - [x] 对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
 - [x] 查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
-- [x] 查询资源的 qhash [qhash 配置](docs/qhash.md)  
-- [x] 对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
+- [x] qhash 查询资源的 hash/size [qhash 配置](docs/qhash.md)  
+- [x] 对私有空间资源进行签名 [privateurl 配置](docs/privateurl.md)  
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
-- [x] 对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
-- [x] 下载资源到本地 [download 配置](docs/downloadfile.md)  
+- [x] 对 m3u8 的 http 资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
+- [x] 通过 http 下载资源到本地 [download 配置](docs/downloadfile.md)  
 - [x] 图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
 - [x] 视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
+- [x] 内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 
 *【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
 
@@ -117,6 +118,9 @@ path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
 `separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
+`add-keyPrefix=` 数据源中每一行的文件名添加前缀  
+`rm-keyPrefix=` 数据源中每一行的文件名去除前缀  
+`line-config=` 数据源路径即对应文本读取的起始行配置  
 **数据源更多参数配置和详细解释及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
 
 ### 4 过滤器功能
@@ -248,9 +252,10 @@ java.net.SocketTimeoutException: timeout
 `please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
 表示在 <filename>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，<filename> 表示文件名。
 2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
-为前缀配置文件: prefix-config=<breakpoint_filepath> 即可。【该项参数请和其他参数保持一致放在命令行或配置文件中。】  
-3. 对于 file 数据源产生的断点文件记录了读取的文本行，如果需要使用断点则需要检查对应文件中文本行位置再做截取，目前没有实现自动检测方式。
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分。  
+为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
+3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次继
+续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分，断点参数请和其他参数保持一致放在命令行或配置文件中。  
 
 ### 分布式任务方案
 对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完

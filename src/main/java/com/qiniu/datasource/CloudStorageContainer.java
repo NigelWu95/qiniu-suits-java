@@ -53,15 +53,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
     ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
-    public CloudStorageContainer(String bucket, List<String> antiPrefixes, Map<String, Map<String, String>> prefixesMap,
+    public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, int unitLen,
                                  int threads) throws IOException {
         this.bucket = bucket;
+        this.prefixLeft = prefixLeft;
+        this.prefixRight = prefixRight;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
         this.antiPrefixes = antiPrefixes;
         if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
-        this.prefixLeft = prefixLeft;
-        this.prefixRight = prefixRight;
         setPrefixesAndMap(prefixesMap);
         this.unitLen = unitLen;
         this.threads = threads;
@@ -169,7 +169,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @return 检验结果，true 表示 prefix 有效不需要剔除
      */
     boolean checkPrefix(String prefix) {
-        if (prefix == null || "".equals(prefix)) return false;
+        if (prefix == null) return false;
         if (hasAntiPrefixes) {
             for (String antiPrefix : antiPrefixes) {
                 if (prefix.startsWith(antiPrefix)) return false;
@@ -242,7 +242,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             retry = retryTimes;
             while (true) {
                 try {
-                    lister.listForward(); // 要求 listForward 实现中先做 hashNext 判断，if (!hasNext) clear();
+                    lister.listForward(); // 要求 listForward 实现中先做 hashNext 判断，if (!hasNext) 置空;
                     objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
@@ -438,7 +438,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     for (ILister<E> lister : listerList) {
                         String prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
-                        if (nextMarker == null) continue;
+                        if (nextMarker == null || nextMarker.isEmpty()) continue;
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                         extremePrefixes.add(prefix);
                         insertIntoPrefixesMap(prefix, new HashMap<String, String>(){{ put("marker", nextMarker); }});
@@ -474,10 +474,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             recorder.remove(prefix);
             if (startPrefixes.contains(prefix)) {
-                if (prefixRight) {
-                    prefixAndEndedMap.put("", prefixMap);
-                    prefixAndEndedMap.remove(prefix);
-                }
+                if (prefixRight) prefixAndEndedMap.put("", prefixMap);
+                prefixAndEndedMap.remove(prefix);
             } else {
                 previousPrefix = prefix.substring(0, prefix.length() - 1);
                 prefixAndEndedMap.put(previousPrefix, prefixMap);

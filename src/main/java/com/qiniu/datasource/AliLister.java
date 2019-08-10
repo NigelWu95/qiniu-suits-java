@@ -10,6 +10,7 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudAPIUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AliLister implements ILister<OSSObjectSummary> {
@@ -18,6 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
     private List<OSSObjectSummary> ossObjectList;
+    private static final List<OSSObjectSummary> defaultList = new ArrayList<>();
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.ossClient = ossClient;
@@ -116,7 +118,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         if (hasNext()) {
             doList();
         } else {
-            ossObjectList.clear();
+            ossObjectList = defaultList;
         }
     }
 
@@ -155,11 +157,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = null;
-        if (hasNext()) {
-            truncateMarker = listObjectsRequest.getMarker();
-            listObjectsRequest.setMarker(null);
-        }
+        String truncateMarker = listObjectsRequest.getMarker();
+        listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
 
@@ -168,6 +167,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
         ossClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        ossObjectList.clear();
+        ossObjectList = defaultList;
     }
 }
