@@ -19,12 +19,12 @@ avinfo-index=
 |-----|-------|-----|  
 |process=pfopcmd| 该操作设置为pfopcmd| 表示根据 avinfo 生成音视频转码指令|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
-|pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，[配置写法](##-pfop-config-配置文件内容写法如下：)|  
+|pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，[配置写法](#pfop-config-配置文件内容写法如下：)|  
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
 |avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），必须指定才能进行处理|  
 
-#### # pfop-config 配置文件内容写法如下：
+#### pfop-config 配置文件内容写法如下：
 ```
 {
   "pfopcmd":[
