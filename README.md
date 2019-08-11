@@ -2,8 +2,9 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-云存储 API (base-qiniu) tool，能够**并发列举**云存储空间的大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云等**)，同时支持对 LocalFile 中
-的资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。基于 Java8 编写，可基于 JDK 环境在命令行或 IDE 中运行。  
+云存储 API (base-qiniu) tool（工具方式推荐使用命令行执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))），能够**并发列举**云存储空间的
+大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云等**)，同时支持对 LocalFile 中的资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/改
+/查/迁移/转码/内容审核等。基于 Java8 编写，可基于 JDK 环境在命令行或 IDE 中运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -46,7 +47,7 @@
 qsuits 提供命令行运行工具（或可执行 jar 包）和 maven artifact，使用时建议直接使用最新版本或者更新到最新版本。如下的 x.xx 替换成版本号，最新版
 本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
-**1. 命令行直接运行 jar 包**  
+#### 1. 命令行直接运行 jar 包  
 在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载最新 jar 包（**maven 仓库中的 jar 包不支持命令行运
 行**），使用命令行参数 [-config=<filepath>] 指定
 配置文件路径，运行命令形如：
@@ -68,7 +69,8 @@ sk=
 java -jar qsuits-x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 **备注2**：命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。  
-**2. 命令行执行器 qsuits（by golang）**  
+
+#### 2. 命令行执行器 qsuits(by golang)  
 由于 qsuits-java 基于 java 编写，命令行运行时需要提供 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的二进制可执行文件用
 来代理 qsuits-java 的功能，即 qsuits 执行器（基于 golang 编写和编译）：https://github.com/NigelWu95/qsuits-exec-go/tree/master/bin
 ，下载执行器后可直接以 `qsuits <parameters>` 方式运行，支持所有 qsuits-java 提供的处理参数，且用法一致。如：
@@ -82,7 +84,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 **注意**：qsuits 执行器依然依赖 java 环境（8 或以上），但是执行器会去检测本地 java 环境，在无匹配的 java 环境时会提示推荐的安装方法。并且该执行
 器在运行时默认会选择最新的 qsuits-java 版本，其他选项参考 qsuits-exec-go 的文档：https://github.com/NigelWu95/qsuits-exec-go  
 
-**3. 程序依赖 jar**  
+#### 3. 程序依赖 jar  
 引入 jar 包（[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者 [使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），
 可以重写或新增 processor 接口实现类进行自定义功能，maven:
 ```
@@ -261,7 +263,7 @@ java.net.SocketTimeoutException: timeout
 
 ### 分布式任务方案
 对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完
-整文件列表时，可以按照连续的前缀字符分割成多段分别执行各个机器的任务，建议的前缀列表为:
+整文件列表时，可以按照连续的前缀字符分割成多段分别执行各个机器的任务，建议的前缀列表为:  
 ```!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz```，将该列表任意分成 n 段，如：
 ```
 prefixes=!,\,",#,$,%,&,',(,),*,+,\,,-,.,/,0,1
