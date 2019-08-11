@@ -303,8 +303,8 @@ public class CommonParams {
             aliyunAccessId = entryParam.getValue("ali-id").trim();
             aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
         } else if ("upyun".equals(source)) {
-            upyunUsername = entryParam.getValue("up-name").trim();
-            upyunPassword = entryParam.getValue("up-pass").trim();
+            upyunUsername = entryParam.getValue("up-id").trim();
+            upyunPassword = entryParam.getValue("up-secret").trim();
         } else if ("s3".equals(source)) {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();

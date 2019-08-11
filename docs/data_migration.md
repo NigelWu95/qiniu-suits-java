@@ -62,8 +62,8 @@ to-bucket=
 #### 4. 又拍云存储
 ```
 path=upyun://<bucket>
-up-name=
-up-pass=
+up-id=
+up-secret=
 
 # 迁移配置（七牛的账号、空间等参数）
 process=asyncfetch

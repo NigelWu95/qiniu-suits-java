@@ -132,7 +132,7 @@ prefix-right=
 |qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
 |tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
 |aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
+|upyun|`up-id=`<br>`up-secret=`<br>| 密钥对应又拍云存储空间授权的操作员和对应密码，又拍云存储目前没有 region 概念|  
 |aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS S3 Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
 
 |参数名|参数值及类型 |含义|  
@@ -282,13 +282,13 @@ prefixes=
 ### 5 又拍云存储
 命令行参数示例：
 ```
--path=upyun://<bucket> -up-name= -up-pass= -threads=300 -prefixes= [-region=]
+-path=upyun://<bucket> -up-id= -up-secret= -threads=300 -prefixes= [-region=]
 ```  
 配置文件示例：
 ```
 path=upyun://<bucket>
-up-name=
-up-pass=
+up-id=
+up-secret=
 threads=300
 prefixes=
 #region=
