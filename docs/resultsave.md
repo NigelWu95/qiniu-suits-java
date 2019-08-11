@@ -19,9 +19,7 @@ rm-fields=
 |save-path| local file 相对路径字符串| 表示保存结果的文件路径|  
 |save-format| json/tab/csv| 结果保存格式，将每一条结果记录格式化为对应格式，默认为 tab 格式（减小输出结果的体积）|  
 |save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
-|rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
-
-**rm-fields 对应的字段名列表应为资源元信息字段 key,hash,size,datetime,mime,type,status,md5,owner 及自定义字段名中的一个或几个。**  
+|rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际字段选项，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
 
 **默认情况：**  
 （1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  

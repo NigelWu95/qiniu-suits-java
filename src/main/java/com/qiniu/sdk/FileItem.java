@@ -13,7 +13,7 @@ public class FileItem {
 
     // 文件日期
 //    public Date date;
-    public long timeSeconds;
+    public long lastModified;
 
     public FileItem() {}
 
@@ -22,7 +22,7 @@ public class FileItem {
         key = a[0];
         if (a.length > 1) attribute = a[1];
         if (a.length > 2) size = Long.parseLong(a[2].trim());
-        if (a.length > 3) timeSeconds = Long.parseLong(a[3].trim());
+        if (a.length > 3) lastModified = Long.parseLong(a[3].trim());
 //        try {
 //            this.size = Long.parseLong(a[2].trim());
 //        } catch (NumberFormatException e) {
@@ -40,6 +40,6 @@ public class FileItem {
     @Override
     public String toString() {
 //        return "key=" + key + ",size=" + size + ",time=" + date + ",attribute=" + attribute;
-        return "key=" + key + ",size=" + size + ",time=" + timeSeconds + ",attribute=" + attribute;
+        return "key=" + key + ",size=" + size + ",time=" + lastModified + ",attribute=" + attribute;
     }
 }

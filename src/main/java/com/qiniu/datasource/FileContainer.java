@@ -80,6 +80,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;
         this.rmFields = rmFields;
+        if (rmFields != null && rmFields.size() > 0) {
+            this.fields = ConvertingUtils.getFields(new ArrayList<>(fields), rmFields);
+        }
     }
 
     public void setRetryTimes(int retryTimes) {

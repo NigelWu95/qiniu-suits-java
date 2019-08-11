@@ -7,6 +7,7 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
@@ -25,14 +26,12 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     private String secretId;
     private String secretKey;
     private ClientConfig clientConfig;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
                            Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                            boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
                            int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.secretId = secretId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
@@ -40,9 +39,9 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
                 bucket, null, null, null, 1);
         tenLister.close();
         tenLister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
+        COSObjectSummary test = new COSObjectSummary();
+        test.setKey("test");
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override
@@ -64,10 +63,9 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     protected ITypeConvert<COSObjectSummary, String> getNewStringConverter() {
         IStringFormat<COSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
         } else {
-            if (fields == null) fields = ConvertingUtils.getKeyOrderFields(indexPair);
-            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
         return new Converter<COSObjectSummary, String>() {
             @Override

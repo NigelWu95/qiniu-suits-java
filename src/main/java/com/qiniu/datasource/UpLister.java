@@ -112,7 +112,7 @@ public class UpLister implements ILister<FileItem> {
                         fileItem.key = totalName;
                         fileItem.attribute = attribute;
                         fileItem.size = object.get("length").getAsLong();
-                        fileItem.timeSeconds = object.get("last_modified").getAsLong();
+                        fileItem.lastModified = object.get("last_modified").getAsLong();
                         fileItems.add(fileItem);
                     }
                 }

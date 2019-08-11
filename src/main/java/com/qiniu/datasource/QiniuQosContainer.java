@@ -3,6 +3,7 @@ package com.qiniu.datasource;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
@@ -25,14 +26,12 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     private String accessKey;
     private String secretKey;
     private Configuration configuration;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public QiniuQosContainer(String accessKey, String secretKey, Configuration configuration, String bucket,
                              Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
                              boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
                              int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.configuration = configuration;
@@ -40,9 +39,9 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
                 bucket, null, null, null, 1);
         qiniuLister.close();
         qiniuLister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
+        FileInfo test = new FileInfo();
+        test.key = "test";
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override
@@ -64,9 +63,9 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     protected ITypeConvert<FileInfo, String> getNewStringConverter() {
         IStringFormat<FileInfo> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
         } else {
-            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
         return new Converter<FileInfo, String>() {
             @Override

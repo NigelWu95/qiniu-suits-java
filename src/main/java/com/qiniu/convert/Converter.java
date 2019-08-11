@@ -21,7 +21,11 @@ public abstract class Converter<E, T> implements ITypeConvert<E, T> {
                 try {
                     mapList.add(convertToV(line));
                 } catch (Exception e) {
-                    errorList.add(JsonUtils.toJson(line) + "\tconvert error " + e.getMessage());
+                    if (line instanceof String) {
+                        errorList.add(line + "\tconvert error " + e.getMessage());
+                    } else {
+                        errorList.add(JsonUtils.toJson(line) + "\tconvert error " + e.getMessage());
+                    }
                 }
             }
         }

@@ -7,6 +7,7 @@ import com.aliyun.oss.model.OSSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
@@ -27,14 +28,12 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     private String accessKeySecret;
     private ClientConfiguration clientConfig;
     private String endpoint;
-    private Map<String, String> indexPair;
-    private List<String> fields;
 
     public AliOssContainer(String accessKeyId, String accessKeySecret, ClientConfiguration clientConfig, String endpoint,
                            String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                            boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                            int unitLen, int threads) throws IOException {
-        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, unitLen, threads);
+        super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
         this.clientConfig = clientConfig;
@@ -43,9 +42,9 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
                 clientConfig), bucket, null, null, null, 1);
         aliLister.close();
         aliLister = null;
-        indexPair = ConvertingUtils.getReversedIndexMap(indexMap, rmFields);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getKeyOrderFields(indexPair);
-        else this.fields = fields;
+        OSSObjectSummary test = new OSSObjectSummary();
+        test.setKey("test");
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override
@@ -67,9 +66,9 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     protected ITypeConvert<OSSObjectSummary, String> getNewStringConverter() {
         IStringFormat<OSSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
         } else {
-            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
         return new Converter<OSSObjectSummary, String>() {
             @Override

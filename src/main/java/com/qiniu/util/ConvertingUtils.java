@@ -25,6 +25,7 @@ public final class ConvertingUtils {
 
     final static public Set<String> datetimeFields = new HashSet<String>(){{
         add("datetime");
+        add("lastModified");
     }};
 
     final static public Set<String> timestampFields = new HashSet<String>(){{
@@ -138,6 +139,14 @@ public final class ConvertingUtils {
         return fields;
     }
 
+    public static List<String> getOrderedFields(List<String> oriFields) {
+        List<String> fields = new ArrayList<>();
+        for (String fileField : fileFields) {
+            if (oriFields.contains(fileField)) fields.add(fileField);
+        }
+        return fields;
+    }
+
     public static <T> T toPair(FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
@@ -148,6 +157,7 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), fileInfo.hash); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileInfo.fsize); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
@@ -175,12 +185,11 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), cosObject.getETag()); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), cosObject.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified().getTime()); break;
-//                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
-//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
                     pair.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
@@ -201,12 +210,11 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), ossObject.getETag()); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), ossObject.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified().getTime()); break;
-//                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
-//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
                     pair.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
@@ -227,12 +235,11 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), s3Object.getETag()); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), s3Object.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified().getTime()); break;
-//                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
-//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null) pair.put(indexMap.get(index),
                         s3Object.getOwner().getDisplayName()); break;
@@ -249,15 +256,14 @@ public final class ConvertingUtils {
         for (String index : indexMap.keySet()) {
             switch (index) {
                 case "key": pair.put(indexMap.get(index), fileItem.key); break;
-//                case "hash": case "etag": break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.timeSeconds)); break;
+                case "lastModified":
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.lastModified)); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), fileItem.timeSeconds); break;
+                case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
                 case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
-//                case "type": case "status": case "md5": case "owner": case "endUser": break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + index);
             }
         }
@@ -305,6 +311,122 @@ public final class ConvertingUtils {
         return pair.getProtoEntity();
     }
 
+    public static <T> T toPair(FileInfo fileInfo, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, fileInfo.key); break;
+                case "hash":
+                case "etag": pair.put(field, fileInfo.hash); break;
+                case "size":
+                case "fsize": pair.put(field, fileInfo.fsize); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "timestamp":
+                case "putTime": pair.put(field, fileInfo.putTime); break;
+                case "mime":
+                case "mimeType": pair.put(field, fileInfo.mimeType); break;
+                case "type": pair.put(field, fileInfo.type); break;
+                case "status": pair.put(field, fileInfo.status); break;
+                case "md5": if (fileInfo.md5 != null) pair.put(field, fileInfo.md5); break;
+                case "owner":
+                case "endUser": if (fileInfo.endUser != null) pair.put(field, fileInfo.endUser); break;
+                default: throw new IOException("Qiniu fileInfo doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(COSObjectSummary cosObject, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, cosObject.getKey()); break;
+                case "hash":
+                case "etag": pair.put(field, cosObject.getETag()); break;
+                case "size":
+                case "fsize": pair.put(field, cosObject.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, cosObject.getLastModified().getTime()); break;
+                case "type": pair.put(field, cosObject.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (cosObject.getOwner() != null) pair.put(field, cosObject.getOwner().getDisplayName()); break;
+                default: throw new IOException("COSObjectSummary doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(OSSObjectSummary ossObject, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, ossObject.getKey()); break;
+                case "hash":
+                case "etag": pair.put(field, ossObject.getETag()); break;
+                case "size":
+                case "fsize": pair.put(field, ossObject.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, ossObject.getLastModified().getTime()); break;
+                case "type": pair.put(field, ossObject.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (ossObject.getOwner() != null) pair.put(field, ossObject.getOwner().getDisplayName()); break;
+                default: throw new IOException("OSSObjectSummary doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(S3ObjectSummary s3Object, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, s3Object.getKey()); break;
+                case "hash":
+                case "etag": pair.put(field, s3Object.getETag()); break;
+                case "size":
+                case "fsize": pair.put(field, s3Object.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, s3Object.getLastModified().getTime()); break;
+                case "type": pair.put(field, s3Object.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (s3Object.getOwner() != null) pair.put(field, s3Object.getOwner().getDisplayName()); break;
+                default: throw new IOException("S3ObjectSummary doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(FileItem fileItem, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, fileItem.key); break;
+                case "size":
+                case "fsize": pair.put(field, fileItem.size); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileItem.lastModified)); break;
+                case "timestamp":
+                case "putTime": pair.put(field, fileItem.lastModified); break;
+                case "mime":
+                case "mimeType": pair.put(field, fileItem.attribute); break;
+                default: throw new IOException("Upyun fileItem doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
     public static <T> T toPair(Map<String, String> line, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
         if (line == null) throw new IOException("empty string map.");
         String value;
@@ -318,166 +440,24 @@ public final class ConvertingUtils {
                 if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + line);
             }
         }
-        if (pair.size() == 0) throw new IOException("empty result string.");
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
         return pair.getProtoEntity();
     }
 
-    public static String toFormatString(FileInfo fileInfo, String separator, List<String> fields) throws IOException {
-        if (fileInfo == null || fileInfo.key == null) throw new IOException("empty file or key.");
-        StringBuilder converted = new StringBuilder();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.append(URLUtils.getEncodedURI(fileInfo.key)).append(separator); break;
-                case "hash":
-                case "etag": converted.append(fileInfo.hash).append(separator); break;
-                case "size":
-                case "fsize": converted.append(fileInfo.fsize).append(separator); break;
-                case "datetime": converted.append(DatetimeUtils.stringOf(fileInfo.putTime, 10000000)).append(separator);
-                    break;
-                case "timestamp":
-                case "putTime": converted.append(fileInfo.putTime).append(separator); break;
-                case "mime":
-                case "mimeType": converted.append(fileInfo.mimeType).append(separator); break;
-                case "type": converted.append(fileInfo.type).append(separator); break;
-                case "status": converted.append(fileInfo.status).append(separator); break;
-                case "md5": if (fileInfo.md5 != null) converted.append(fileInfo.md5).append(separator); break;
-                case "owner":
-                case "endUser": if (fileInfo.endUser != null) converted.append(fileInfo.endUser).append(separator); break;
-                default: throw new IOException("Qiniu fileInfo doesn't have field: " + field);
-            }
-        }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(COSObjectSummary cosObject, String separator, List<String> fields) throws IOException {
-        if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
-        StringBuilder converted = new StringBuilder();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.append(URLUtils.getEncodedURI(cosObject.getKey())).append(separator); break;
-                case "hash":
-                case "etag": converted.append(cosObject.getETag()).append(separator); break;
-                case "size":
-                case "fsize": converted.append(cosObject.getSize()).append(separator); break;
-                case "datetime": converted.append(DatetimeUtils.stringOf(cosObject.getLastModified())).append(separator);
-                    break;
-                case "timestamp":
-                case "putTime": converted.append(cosObject.getLastModified().getTime()).append(separator); break;
-                case "type": converted.append(cosObject.getStorageClass()).append(separator); break;
-                case "owner":
-                case "endUser": if (cosObject.getOwner() != null)
-                    converted.append(cosObject.getOwner().getDisplayName()).append(separator); break;
-                default: throw new IOException("COSObjectSummary doesn't have field: " + field);
-            }
-        }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(OSSObjectSummary ossObject, String separator, List<String> fields) throws IOException {
-        if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
-        StringBuilder converted = new StringBuilder();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.append(URLUtils.getEncodedURI(ossObject.getKey())).append(separator); break;
-                case "hash":
-                case "etag": converted.append(ossObject.getETag()).append(separator); break;
-                case "size":
-                case "fsize": converted.append(ossObject.getSize()).append(separator); break;
-                case "datetime": converted.append(DatetimeUtils.stringOf(ossObject.getLastModified())).append(separator);
-                    break;
-                case "timestamp":
-                case "putTime": converted.append(ossObject.getLastModified().getTime()).append(separator); break;
-                case "type": converted.append(ossObject.getStorageClass()).append(separator); break;
-                case "owner":
-                case "endUser": if (ossObject.getOwner() != null)
-                    converted.append(ossObject.getOwner().getDisplayName()).append(separator); break;
-                default: throw new IOException("OSSObjectSummary doesn't have field: " + field);
-            }
-        }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(S3ObjectSummary s3Object, String separator, List<String> fields) throws IOException {
-        if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty S3ObjectSummary or key.");
-        StringBuilder converted = new StringBuilder();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.append(URLUtils.getEncodedURI(s3Object.getKey())).append(separator); break;
-                case "hash":
-                case "etag": converted.append(s3Object.getETag()).append(separator); break;
-                case "size":
-                case "fsize": converted.append(s3Object.getSize()).append(separator); break;
-                case "datetime": converted.append(DatetimeUtils.stringOf(s3Object.getLastModified())).append(separator);
-                    break;
-                case "timestamp":
-                case "putTime": converted.append(s3Object.getLastModified().getTime()).append(separator); break;
-                case "type": converted.append(s3Object.getStorageClass()).append(separator); break;
-                case "owner":
-                case "endUser": if (s3Object.getOwner() != null)
-                    converted.append(s3Object.getOwner().getDisplayName()).append(separator); break;
-                default: throw new IOException("S3ObjectSummary doesn't have field: " + field);
-            }
-        }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(FileItem fileItem, String separator, List<String> fields) throws IOException {
-        if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
-        StringBuilder converted = new StringBuilder();
-        for (String field : fields) {
-            switch (field) {
-                case "key": converted.append(URLUtils.getEncodedURI(fileItem.key)).append(separator); break;
-                case "size":
-                case "fsize": converted.append(fileItem.size).append(separator); break;
-                case "datetime": converted.append(DatetimeUtils.stringOf(fileItem.timeSeconds)).append(separator); break;
-                case "timestamp":
-                case "putTime": converted.append(fileItem.timeSeconds).append(separator); break;
-                case "mime":
-                case "mimeType": converted.append(fileItem.attribute).append(separator); break;
-                default: throw new IOException("Upyun fileItem doesn't have field: " + field);
-            }
-        }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(Map<String, String> line, String separator, List<String> fields) throws IOException {
-        if (line == null) throw new IOException("empty string map.");
-        StringBuilder converted = new StringBuilder();
-        String value;
-        for (String field : fields) {
-            value = line.get(field);
-            if (value != null) {
-                if (longFields.contains(field)) converted.append(Long.valueOf(value)).append(separator);
-                else if (intFields.contains(field)) converted.append(Integer.valueOf(value)).append(separator);
-                else converted.append(URLUtils.getEncodedURI(value)).append(separator);
-            } else {
-                if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + line);
-            }
-        }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
-    }
-
-    public static String toFormatString(JsonObject json, String separator, List<String> fields) throws IOException {
+    public static <T> T toPair(JsonObject json, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
         if (json == null) throw new IOException("empty JsonObject.");
-        StringBuilder converted = new StringBuilder();
         JsonElement value;
         for (String field : fields) {
             value = json.get(field);
             if (value == null || value instanceof JsonNull) {
                 if (!allFieldsSet.contains(field)) throw new IOException("the field: " + field + " can't be found in " + json);
             } else {
-                if (longFields.contains(field)) converted.append(value.getAsLong()).append(separator);
-                else if (intFields.contains(field)) converted.append(value.getAsInt()).append(separator);
-                else converted.append(URLUtils.getEncodedURI(value.getAsString())).append(separator);
+                if (longFields.contains(field)) pair.put(field, value.getAsLong());
+                else if (intFields.contains(field)) pair.put(field, value.getAsInt());
+                else pair.put(field, value.getAsString());
             }
         }
-        if (converted.length() == 0) throw new IOException("empty result string.");
-        return converted.substring(0, converted.length() - separator.length());
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
     }
 }
