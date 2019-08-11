@@ -54,14 +54,16 @@ public abstract class SeniorFilter<T> {
 
     public List<T> checkMimeType(List<T> lineList) {
         String key;
+        String mime;
         List<T> filteredList = new ArrayList<>();
         for (T line : lineList) {
             try {
                 if (line == null) continue;
                 key = valueFrom(line, "key");
                 if (key.contains(".")) {
-                    String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" +
-                            valueFrom(line, ConvertingUtils.defaultMimeField);
+                    mime = valueFrom(line, ConvertingUtils.defaultMimeField);
+                    if (mime == null) mime = valueFrom(line, "mimeType");
+                    String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + mime;
                     if (extMimeList.parallelStream().anyMatch(extMime ->
                             finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                         continue;
@@ -82,11 +84,13 @@ public abstract class SeniorFilter<T> {
 
     public boolean checkMimeType(T line) {
         String key = null;
+        String mime;
         try {
             key = valueFrom(line, "key");
             if (key.contains(".")) {
-                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" +
-                        valueFrom(line, ConvertingUtils.defaultMimeField);
+                mime = valueFrom(line, ConvertingUtils.defaultMimeField);
+                if (mime == null) mime = valueFrom(line, "mimeType");
+                String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + mime;
                 if (extMimeList.parallelStream().anyMatch(extMime ->
                         finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
                     return false;

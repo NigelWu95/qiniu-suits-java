@@ -1,6 +1,7 @@
 package com.qiniu.process.filtration;
 
 import com.qiniu.util.ConvertingUtils;
+import com.qiniu.util.DatetimeUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -81,8 +82,7 @@ public abstract class BaseFilter<T> {
             if (checkList(antiKeyPrefix) && antiKeyPrefix.stream().anyMatch(key::startsWith)) return false;
             if (checkList(antiKeySuffix) && antiKeySuffix.stream().anyMatch(key::endsWith)) return false;
             if (checkList(antiKeyInner) && antiKeyInner.stream().anyMatch(key::contains)) return false;
-            if (checkList(antiKeyRegex) && antiKeyRegex.stream().anyMatch(key::matches)) return false;
-            return true;
+            return !checkList(antiKeyRegex) || antiKeyRegex.stream().noneMatch(key::matches);
         } catch (Exception e) {
             return true;
         }
@@ -92,9 +92,9 @@ public abstract class BaseFilter<T> {
         try {
             if (item == null) return false;
             String mType = valueFrom(item, ConvertingUtils.defaultMimeField);
+            if (mType == null) mType = valueFrom(item, "mimeType");
             if (checkList(mimeType) && mimeType.stream().noneMatch(mType::contains)) return false;
-            if (checkList(antiMimeType) && antiMimeType.stream().anyMatch(mType::contains)) return false;
-            return true;
+            return !checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains);
         } catch (Exception e) {
             return true;
         }
@@ -103,7 +103,21 @@ public abstract class BaseFilter<T> {
     public boolean filterDatetime(T item) {
         try {
             if (item == null) return false;
-            LocalDateTime localDateTime = LocalDateTime.parse(valueFrom(item, ConvertingUtils.defaultDatetimeField));
+            LocalDateTime localDateTime;
+            String datetime = valueFrom(item, ConvertingUtils.defaultDatetimeField);
+            if (datetime == null) {
+                String timestamp = valueFrom(item, "timestamp");
+                if (timestamp == null) {
+                    timestamp = valueFrom(item, "putTime");
+                }
+                if (timestamp == null) {
+                    datetime = valueFrom(item, "lastModified");
+                } else {
+                    long accuracy = (long) Math.pow(10, (timestamp.length() - 10));
+                    datetime = DatetimeUtils.stringOf(Long.valueOf(timestamp), accuracy);
+                }
+            }
+            localDateTime = LocalDateTime.parse(datetime);
             return localDateTime.compareTo(datetimeMax) <= 0 && localDateTime.compareTo(datetimeMin) >= 0;
         } catch (Exception e) {
             return true;
