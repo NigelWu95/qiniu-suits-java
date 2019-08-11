@@ -25,6 +25,7 @@ public final class ConvertingUtils {
 
     final static public Set<String> datetimeFields = new HashSet<String>(){{
         add("datetime");
+        add("lastModified");
     }};
 
     final static public Set<String> timestampFields = new HashSet<String>(){{
@@ -156,6 +157,7 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), fileInfo.hash); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileInfo.fsize); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
@@ -183,12 +185,11 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), cosObject.getETag()); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), cosObject.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified().getTime()); break;
-//                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
-//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
                     pair.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
@@ -209,12 +210,11 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), ossObject.getETag()); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), ossObject.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified().getTime()); break;
-//                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
-//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
                     pair.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
@@ -235,12 +235,11 @@ public final class ConvertingUtils {
                 case "etag": pair.put(indexMap.get(index), s3Object.getETag()); break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), s3Object.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified().getTime()); break;
-//                case "mime": case "mimeType": break;
                 case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
-//                case "status": case "md5": break;
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null) pair.put(indexMap.get(index),
                         s3Object.getOwner().getDisplayName()); break;
@@ -257,15 +256,14 @@ public final class ConvertingUtils {
         for (String index : indexMap.keySet()) {
             switch (index) {
                 case "key": pair.put(indexMap.get(index), fileItem.key); break;
-//                case "hash": case "etag": break;
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
+                case "lastModified":
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.lastModified)); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
                 case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
-//                case "type": case "status": case "md5": case "owner": case "endUser": break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + index);
             }
         }
@@ -322,6 +320,7 @@ public final class ConvertingUtils {
                 case "etag": pair.put(field, fileInfo.hash); break;
                 case "size":
                 case "fsize": pair.put(field, fileInfo.fsize); break;
+                case "lastModified":
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
                 case "timestamp":
                 case "putTime": pair.put(field, fileInfo.putTime); break;
@@ -348,6 +347,7 @@ public final class ConvertingUtils {
                 case "etag": pair.put(field, cosObject.getETag()); break;
                 case "size":
                 case "fsize": pair.put(field, cosObject.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(field, cosObject.getLastModified().getTime()); break;
@@ -370,6 +370,7 @@ public final class ConvertingUtils {
                 case "etag": pair.put(field, ossObject.getETag()); break;
                 case "size":
                 case "fsize": pair.put(field, ossObject.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(field, ossObject.getLastModified().getTime()); break;
@@ -392,6 +393,7 @@ public final class ConvertingUtils {
                 case "etag": pair.put(field, s3Object.getETag()); break;
                 case "size":
                 case "fsize": pair.put(field, s3Object.getSize()); break;
+                case "lastModified":
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
                 case "putTime": pair.put(field, s3Object.getLastModified().getTime()); break;
@@ -412,6 +414,7 @@ public final class ConvertingUtils {
                 case "key": pair.put(field, fileItem.key); break;
                 case "size":
                 case "fsize": pair.put(field, fileItem.size); break;
+                case "lastModified":
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(fileItem.lastModified)); break;
                 case "timestamp":
                 case "putTime": pair.put(field, fileItem.lastModified); break;

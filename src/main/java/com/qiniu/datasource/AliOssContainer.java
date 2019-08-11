@@ -42,6 +42,9 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
                 clientConfig), bucket, null, null, null, 1);
         aliLister.close();
         aliLister = null;
+        OSSObjectSummary test = new OSSObjectSummary();
+        test.setKey("test");
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override

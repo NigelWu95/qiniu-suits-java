@@ -47,6 +47,9 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
         AwsS3Lister awsS3Lister = new AwsS3Lister(s3Client, bucket, null, null, null, null, 1);
         awsS3Lister.close();
         awsS3Lister = null;
+        S3ObjectSummary test = new S3ObjectSummary();
+        test.setKey("test");
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override

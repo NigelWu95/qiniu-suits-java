@@ -40,6 +40,9 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 null, null, 1);
         upLister.close();
         upLister = null;
+        FileItem test = new FileItem();
+        test.key = "test";
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override

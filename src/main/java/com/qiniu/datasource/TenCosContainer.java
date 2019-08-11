@@ -39,6 +39,9 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
                 bucket, null, null, null, 1);
         tenLister.close();
         tenLister = null;
+        COSObjectSummary test = new COSObjectSummary();
+        test.setKey("test");
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override

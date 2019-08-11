@@ -39,6 +39,9 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
                 bucket, null, null, null, 1);
         qiniuLister.close();
         qiniuLister = null;
+        FileInfo test = new FileInfo();
+        test.key = "test";
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override
