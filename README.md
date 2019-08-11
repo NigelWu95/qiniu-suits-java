@@ -137,7 +137,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `f-inner=` 表示**选择**文件名包含该部分字符的文件  
 `f-regex=` 表示**选择**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-mime=` 表示**选择**符合该 mime 类型的文件  
-`f-type=` 表示**选择**符合该存储类型的文件，参下述[关于 f-type](##-关于-f-type)|  
+`f-type=` 表示**选择**符合该存储类型的文件，参下述[关于 f-type](#关于-f-type)|  
 `f-status=` 表示**选择**符合该存储状态的文件, 为 0（启用） 或 1（禁用）  
 `f-date-scale` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为：2018-08-01 00:00:00，[特殊规则](#f-date-scale)  
 `f-anti-prefix=` 表示**排除**文件名符合该前缀的文件  
@@ -146,7 +146,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `f-anti-regex=` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime=` 表示**排除**该 mime 类型的文件  
 
-#### # 关于 f-type
+#### 关于 f-type
 |存储源|type 参数类型|具体值                   |
 |-----|-----------|------------------------|
 |七牛  | 整型      |0 表示标准存储；1 表示低频存储|
@@ -275,4 +275,4 @@ prefixes=n,o,p,q,r,s,t,u,v,w,x,y,z
 ```
 （**`,`，`\` 需要转义**）将前缀分为上述几段后，设置 prefixes 参数可以分做六台机器执行，同时因为需要列举空间全部文件，需要分别在第一段 prefixes
 设置 `prefix-left=true`，在最后一段 prefixes 设置 `prefix-right=true`（其他段 prefixes 不能同时设置 prefix-left 或 prefix-right，
-且仅能第一段设置 prefix-left 和最后一段设置 prefix-right，参数描述见[数据源完备性](docs/datasource.md##-数据源完备性和多前缀列举)
+且仅能第一段设置 prefix-left 和最后一段设置 prefix-right，参数描述见[数据源完备性](docs/datasource.md#数据源完备性和多前缀列举)

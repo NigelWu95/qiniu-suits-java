@@ -27,23 +27,24 @@ indexes=key,etag,fsize
 |unit-len| 整型数字| 表示一次读取的文件个数（读取或列举长度，不同数据源有不同默认值），对应与读取文件时每次处理的行数或者列举请求时设置的 limit 参数|  
 |threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
 |indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标|  
-**备注：** indexes、unit-len、threads 均有默认值非必填，indexes 说明及默认值参考下述[ indexes 索引](##-关于-indexes-索引)，unit-len 
-和 threads 说明及默认值参考下述[并发处理](##-关于并发处理 )，建议根据需要优化参数配置。  
 
-#### # 关于 indexes 索引 
+**备注：** indexes、unit-len、threads 均有默认值非必填，indexes 说明及默认值参考下述[ indexes 索引](#关于-indexes-索引)，unit-len 
+和 threads 说明及默认值参考下述[并发处理](#关于并发处理 )，建议根据需要优化参数配置。  
+
+#### 关于 indexes 索引 
 `indexes` 是一个配置字段映射关系的参数，即规定用于从输入行中取出所需字段的索引名及映射到目标对象的字段名，程序会解析每一个键值对构成索引表，默认设置
-为顺序包含 9 个字段：**key,etag,size,datetime,mime,type,status,md5,owner**，参考[文件信息字段](##-关于文件信息字段)，只需要按顺序设置 
+为顺序包含 9 个字段：**key,etag,size,datetime,mime,type,status,md5,owner**，参考[文件信息字段](#关于文件信息字段)，只需要按顺序设置 
 9 个字段的索引即可，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 etag，以此类推，**列举操作**或者**文件输入格式为 json**
 时如 `indexes=key,etag,size,datetime,mime,type` 表示从依次取出 key,etag,size,datetime,mime,type 这些值，后几位不填写或者中间填写 -1
 的表示不需要该部分字段，如 `key,hash,size,-1,timestamp,-1,type` 表示需要 key,hash,size,timestamp,type 这些值，而其他的不需要。  
 **默认情况：**  
-（1）当数据源为 [storage](#3-storage-云存储列举) 类型时，也可按照[上述 indexes 规范](##-关于-indexes-索引)自行设置该参数，用于指定列举结果
+（1）当数据源为 [storage](#3-storage-云存储列举) 类型时，也可按照[上述 indexes 规范](#关于-indexes-索引)自行设置该参数，用于指定列举结果
 的持久化或者下一步 process 操作所需要的字段，默认包含全部下标。对于 datetime 字段，实际上是根据文件对象的 putTime 或者 lastModified 时间戳转
 换而来的日期时间字符串，便于了解具体时间信息，默认只能得到 datetime 信息，如果需要原本的时间戳信息，则需要在 indexes 中加入 timestamp 字段，程
 序会自动识别并扩展出该字段，如 `indexes=key,etag,size,timestamp,mime,type`，此时持久化结果中或者 process 的输入行中将体现 timestamp，亦
 可使两者同时存在，如 `indexes=key,etag,size,datetime,timestamp,mime,type,status,md5,owner`。  
 （2）当数据源为 [file](#2-file-文本文件行读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
-`0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照[indexes 规范](##-关于-indexes-索引)
+`0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照[indexes 规范](#关于-indexes-索引)
 设置，例如为数字列表:`0,1,2,3,...` 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式
 为 `tab/csv` 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入
 行中不包含 mime 字段，则可以设置 `indexes=0,1,2,3,-1,5`。  
@@ -54,12 +55,12 @@ size,datetime，且从输入行中进行解析的索引分别为 key,size:key,da
 行中索引的对应关系，即 `<key>:<index>`。`<key>` 即为表示实际含义的对象字段名，`<index>` 可以为数字或字符串，即将输入行按照一种格式解析后可以读
 取对象字段值的索引，为数字且输入格式为 tab/csv 时表示输入行可分隔为 value 数组，采用数组下标的方式读取目标值，为字符串时可以是 json 行的原始字段名。    
 
-#### # 关于并发处理  
+#### 关于并发处理  
 (1) 云存储数据源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的加速列举，线程数在配置文件中指定，自动按照线程数检索前缀并执行并发列举。  
 (2) 本地文件数据源，unit-len 和 threads 默认值分别为 10000 和 50，从本地读取路径下的所有文本文件，一个文件进入一个线程处理，最大线程数由 threads
 确定，与输入文件数之间小的值成为实际并发数，因此在需要并发时需要确保目录中存在多个不同的数据源文件。  
 
-#### # 关于文件信息字段  
+#### 关于文件信息字段  
 文件信息规范字段及顺序定义为：**key,etag,size,datetime,mime,type,status,md5,owner** (indexes 的默认字段及顺序即使用该字段列表)，默认根
 据七牛存储文件的信息字段进行定义，顺序固定，其释义及其他数据源方式对应关系如下：  
 
@@ -145,7 +146,7 @@ prefix-right=
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
 
-#### # 数据源完备性和多前缀列举
+#### 数据源完备性和多前缀列举
 1. prefix-left 为可选择是否列举所有前缀 ASCII 顺序之前的文件，prefix-right 为选择是否列举所有前缀 ASCII 顺序之后的文件，确保在没有预定义前缀
 的情况下仍能列举完整数据。   
 2. prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果
