@@ -7,6 +7,7 @@ import com.aliyun.oss.model.OSSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
+import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.interfaces.IStringFormat;
@@ -62,9 +63,9 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     protected ITypeConvert<OSSObjectSummary, String> getNewStringConverter() {
         IStringFormat<OSSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
-            stringFormatter = line -> ConvertingUtils.toPair(line, indexPair, new JsonObjectPair()).toString();
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
         } else {
-            stringFormatter = line -> ConvertingUtils.toFormatString(line, saveSeparator, fields);
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
         return new Converter<OSSObjectSummary, String>() {
             @Override
