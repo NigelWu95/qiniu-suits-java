@@ -12,8 +12,8 @@ import java.util.Map;
 
 public class AsyncFetch extends Base<Map<String, String>> {
 
-    private String domain;
     private String protocol;
+    private String domain;
     private String urlIndex;
     private String addPrefix;
     private String rmPrefix;
@@ -29,30 +29,30 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
+                      String domain, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
         super("asyncfetch", accessKey, secretKey, bucket);
-        set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
+        set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex)
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
+                      String domain, String urlIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex)
             throws IOException {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
-        set(configuration, domain, protocol, urlIndex, addPrefix, rmPrefix);
+        set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudAPIUtils.checkQiniu(bucketManager, bucket);
     }
 
-    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String domain,
-                      String protocol, String urlIndex, String addPrefix, String rmPrefix, String savePath)
+    public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
+                      String domain, String urlIndex, String addPrefix, String rmPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, domain, protocol, urlIndex, addPrefix, rmPrefix, savePath, 0);
+        this(accessKey, secretKey, configuration, bucket, protocol, domain, urlIndex, addPrefix, rmPrefix, savePath, 0);
     }
 
-    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String addPrefix,
+    private void set(Configuration configuration, String protocol, String domain, String urlIndex, String addPrefix,
                      String rmPrefix) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
@@ -60,9 +60,9 @@ public class AsyncFetch extends Base<Map<String, String>> {
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else {
             this.urlIndex = urlIndex;
@@ -123,8 +123,8 @@ public class AsyncFetch extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        domain = null;
         protocol = null;
+        domain = null;
         urlIndex = null;
         addPrefix = null;
         rmPrefix = null;

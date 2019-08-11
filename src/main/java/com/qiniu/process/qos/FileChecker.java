@@ -13,28 +13,28 @@ import java.util.List;
 public class FileChecker {
 
     private Client client;
-    private String algorithm;
     private String protocol;
+    private String algorithm;
     final private static List<String> algorithms = new ArrayList<String>(){{
         add("md5");
         add("sha1");
     }};
 
     public FileChecker() {
-        this.algorithm = "md5";
         this.protocol = "http";
+        this.algorithm = "md5";
     }
 
-    public FileChecker(String algorithm, String protocol) {
+    public FileChecker(String protocol, String algorithm) {
         this.client = new Client();
-        this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
         this.protocol = "https".equals(protocol)? "https" : "http";
+        this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
     }
 
-    public FileChecker(Configuration configuration, String algorithm, String protocol) {
+    public FileChecker(Configuration configuration, String protocol, String algorithm) {
         this.client = new Client(configuration);
-        this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
         this.protocol = "https".equals(protocol)? "https" : "http";
+        this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
     }
 
     public Qhash getQHash(String url) throws QiniuException {

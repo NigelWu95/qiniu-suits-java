@@ -39,7 +39,6 @@ public class InputSource {
         String line;
         Map<String, String> converted;
         boolean quit = false;
-        int retry;
         while (!quit) {
             System.out.println("please input line data to process: ");
             while ((t = reader.read()) != -1) {

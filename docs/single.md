@@ -27,9 +27,9 @@ Exception in thread "main" java.io.IOException: please set pipeline, if you don'
 ```
 ###### 3 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](pfopresult.md)  
 ```
-➜ ~ java -jar qsuits-6.20.jar -s -process=pfopresult -pid=z0.5cf6460238b9f31ea6d3d29d
+➜ ~ java -jar qsuits-6.20.jar -s -process=pfopresult -id=z0.5cf6460238b9f31ea6d3d29d
 z0.5cf6460238b9f31ea6d3d29d	{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf6460238b9f31ea6d3d29d","inputBucket":"temp","inputKey":"110.mp4","items":[{"cmd":"avthumb/mp4|saveas/dGVtcDprZXkubXA0","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"key.mp4","returnOld":0}],"pipeline":"0.default","reqid":"uxAAACmnPRWo96QV"}
-➜ ~ java -jar qsuits-6.20.jar -s -process=pfopresult -persistentId=z0.5cf6460238b9f31ea6d3d29d
+➜ ~ java -jar qsuits-6.20.jar -s -process=pfopresult -id=z0.5cf6460238b9f31ea6d3d29d
 z0.5cf6460238b9f31ea6d3d29d	{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf6460238b9f31ea6d3d29d","inputBucket":"temp","inputKey":"110.mp4","items":[{"cmd":"avthumb/mp4|saveas/dGVtcDprZXkubXA0","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"key.mp4","returnOld":0}],"pipeline":"0.default","reqid":"uxAAACmnPRWo96QV"}
 ```
 ###### 4 查询空间资源的视频元信息 [avinfo 配置](avinfo.md)  

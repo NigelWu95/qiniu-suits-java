@@ -477,9 +477,9 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getAsyncFetch(Map<String, String> indexMap, boolean single) throws IOException {
         String toBucket = entryParam.getValue("to-bucket").trim();
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
@@ -495,8 +495,8 @@ public class QSuitsEntry {
         String ignore = entryParam.getValue("ignore-same-key", "false").trim();
         ignore = ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
         ILineProcess<Map<String, String>> processor = single ? new AsyncFetch(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(),
-                toBucket, domain, protocol, urlIndex, addPrefix, rmPrefix)
-                : new AsyncFetch(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), toBucket, domain, protocol, urlIndex,
+                toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix)
+                : new AsyncFetch(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix, savePath);
         if (!host.isEmpty() || md5Index != null || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
                 !callbackBodyType.isEmpty() || !callbackHost.isEmpty() || "1".equals(type) || "true".equals(ignore)) {
@@ -507,12 +507,12 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getQueryAvinfo(Map<String, String> indexMap, boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new QueryAvinfo(getQiniuConfig(), domain, protocol, urlIndex)
-                : new QueryAvinfo(getQiniuConfig(), domain, protocol, urlIndex, savePath);
+        return single ? new QueryAvinfo(getQiniuConfig(), protocol, domain, urlIndex)
+                : new QueryAvinfo(getQiniuConfig(), protocol, domain, urlIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopCommand(Map<String, String> indexMap, boolean single) throws IOException {
@@ -554,14 +554,14 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getQueryHash(Map<String, String> indexMap, boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
-        String algorithm = entryParam.getValue("algorithm", "md5").trim();
-        algorithm = ParamsUtils.checked(algorithm, "algorithm", "(md5|sha1)");
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new QueryHash(getQiniuConfig(), algorithm, protocol, domain, urlIndex)
-                : new QueryHash(getQiniuConfig(), algorithm, protocol, domain, urlIndex, savePath);
+        String algorithm = entryParam.getValue("algorithm", "md5").trim();
+        algorithm = ParamsUtils.checked(algorithm, "algorithm", "(md5|sha1)");
+        return single ? new QueryHash(getQiniuConfig(), protocol, domain, urlIndex, algorithm)
+                : new QueryHash(getQiniuConfig(), protocol, domain, urlIndex, algorithm, savePath);
     }
 
     private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
@@ -570,15 +570,15 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getPrivateUrl(Map<String, String> indexMap, boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = entryParam.getValue("queries", "").trim();
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, queries, Long.valueOf(expires))
-                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, domain, protocol, urlIndex, queries, Long.valueOf(expires), savePath);
+        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.valueOf(expires))
+                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.valueOf(expires), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
@@ -587,12 +587,12 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getExportTs(Map<String, String> indexMap, boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new ExportTS(getQiniuConfig(), domain, protocol, urlIndex)
-                : new ExportTS(getQiniuConfig(), domain, protocol, urlIndex, savePath);
+        return single ? new ExportTS(getQiniuConfig(), protocol, domain, urlIndex)
+                : new ExportTS(getQiniuConfig(), protocol, domain, urlIndex, savePath);
     }
 
     private Map<String, String> getQueriesMap() {
@@ -665,12 +665,31 @@ public class QSuitsEntry {
 
     public ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single, boolean useQuery)
             throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = useQuery ? entryParam.getValue("queries", "").trim() : null;
         String host = entryParam.getValue("host", "").trim();
+        String bytes = entryParam.getValue("bytes", "").trim();
+        if (bytes.equals("0")) throw new IOException("range bytes can not be 0.");
+        int[] range = new int[0];
+        if (!"".equals(bytes)) {
+            String[] ranges = bytes.split("-");
+            if (ranges.length > 2) throw new IOException("range bytes should be like \"0-1024\".");
+            try {
+                if (ranges.length > 1) {
+                    range = new int[2];
+                    range[0] = Integer.valueOf(ranges[0]);
+                    String byteSize = ranges[1];
+                    if (byteSize != null && !"".equals(byteSize)) range[1] = Integer.valueOf(byteSize);
+                } else {
+                    range = new int[]{Integer.valueOf(ranges[0])};
+                }
+            } catch (Exception e) {
+                throw new IOException("incorrect range bytes value, " + e.toString());
+            }
+        }
         String preDown = entryParam.getValue("pre-down", "false").trim();
         preDown = ParamsUtils.checked(preDown, "pre-down", "(true|false)");
         String addPrefix = entryParam.getValue("add-prefix", null);
@@ -682,28 +701,28 @@ public class QSuitsEntry {
             configuration.connectTimeout = getQiniuConfig().connectTimeout;
             configuration.readTimeout = Integer.valueOf(timeOut);
         }
-        return single ? new DownloadFile(configuration, domain, protocol, urlIndex, queries, host, "true".equals(preDown)
+        return single ? new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, "true".equals(preDown)
                 ? null : savePath, addPrefix, rmPrefix)
-                : new DownloadFile(configuration, domain, protocol, urlIndex, queries, host, Boolean.valueOf(preDown),
+                : new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, Boolean.valueOf(preDown),
                 addPrefix, rmPrefix, savePath);
     }
 
     private ILineProcess<Map<String, String>> getImageCensor(Map<String, String> indexMap, boolean single, boolean useQuery)
             throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = useQuery ? entryParam.getValue("queries", "").trim() : null;
         String[] scenes = entryParam.getValue("scenes").trim().split(",");
-        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes) :
-                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, queries, scenes, savePath);
+        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, queries, scenes) :
+                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, queries, scenes, savePath);
     }
 
     private ILineProcess<Map<String, String>> getVideoCensor(Map<String, String> indexMap, boolean single) throws IOException {
-        String domain = entryParam.getValue("domain", "").trim();
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String[] scenes = entryParam.getValue("scenes").trim().split(",");
         String interval = entryParam.getValue("interval", "0").trim();
@@ -712,9 +731,9 @@ public class QSuitsEntry {
         String hookUrl = entryParam.getValue("callback-url", "").trim();
         String checkUrl = entryParam.getValue("check-url", "true").trim();
         if ("true".equals(checkUrl) && !"".equals(hookUrl)) RequestUtils.checkCallbackUrl(hookUrl);
-        return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), domain, protocol, urlIndex, scenes,
+        return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, scenes,
                 Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
-                getQiniuConfig(), domain, protocol, urlIndex, scenes, Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl,
+                getQiniuConfig(), protocol, domain, urlIndex, scenes, Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl,
                 savePath);
     }
 

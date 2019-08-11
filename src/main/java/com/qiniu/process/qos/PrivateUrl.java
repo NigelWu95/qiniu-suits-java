@@ -10,44 +10,44 @@ import java.util.Map;
 public class PrivateUrl extends Base<Map<String, String>> {
 
     private Auth auth;
-    private String domain;
     private String protocol;
+    private String domain;
     private String urlIndex;
     private String suffixOrQuery;
     private boolean useQuery;
     private long expires;
     private ILineProcess<Map<String, String>> nextProcessor;
 
-    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, String suffixOrQuery,
+    public PrivateUrl(String accessKey, String secretKey, String protocol, String domain, String urlIndex, String suffixOrQuery,
                       long expires) throws IOException {
         super("privateurl", accessKey, secretKey, null);
         this.auth = Auth.create(accessKey, secretKey);
         CloudAPIUtils.checkQiniu(auth);
-        set(domain, protocol, urlIndex, suffixOrQuery, expires);
+        set(protocol, domain, urlIndex, suffixOrQuery, expires);
     }
 
-    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, String suffixOrQuery,
+    public PrivateUrl(String accessKey, String secretKey, String protocol, String domain, String urlIndex, String suffixOrQuery,
                       long expires, String savePath, int saveIndex) throws IOException {
         super("privateurl", accessKey, secretKey, null, savePath, saveIndex);
         this.auth = Auth.create(accessKey, secretKey);
         CloudAPIUtils.checkQiniu(auth);
-        set(domain, protocol, urlIndex, suffixOrQuery, expires);
+        set(protocol, domain, urlIndex, suffixOrQuery, expires);
     }
 
-    public PrivateUrl(String accessKey, String secretKey, String domain, String protocol, String urlIndex, String suffixOrQuery,
+    public PrivateUrl(String accessKey, String secretKey, String protocol, String domain, String urlIndex, String suffixOrQuery,
                       long expires, String savePath) throws IOException {
-        this(accessKey, secretKey, domain, protocol, urlIndex, suffixOrQuery, expires, savePath, 0);
+        this(accessKey, secretKey, protocol, domain, urlIndex, suffixOrQuery, expires, savePath, 0);
     }
 
-    private void set(String domain, String protocol, String urlIndex, String suffixOrQuery, long expires) throws IOException {
+    private void set(String protocol, String domain, String urlIndex, String suffixOrQuery, long expires) throws IOException {
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else {
             this.urlIndex = urlIndex;
@@ -99,9 +99,10 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         auth = null;
-        domain = null;
         protocol = null;
+        domain = null;
         urlIndex = null;
+        suffixOrQuery = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }

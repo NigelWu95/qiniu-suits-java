@@ -12,61 +12,70 @@ import java.util.Map;
 
 public class DownloadFile extends Base<Map<String, String>> {
 
-    private String domain;
     private String protocol;
+    private String domain;
     private String urlIndex;
+    private StringMap headers;
     private String suffixOrQuery;
     private boolean useQuery;
+    private boolean preDown;
     private String addPrefix;
     private String rmPrefix;
-    private StringMap headers;
-    private boolean preDown;
     private Configuration configuration;
     private HttpDownloader downloader;
 
-    public DownloadFile(Configuration configuration, String domain, String protocol, String urlIndex, String suffixOrQuery,
-                        String host, boolean preDown, String addPrefix, String rmPrefix, String savePath, int saveIndex)
-            throws IOException {
+    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+                        int[] range, String suffixOrQuery, boolean preDown, String addPrefix, String rmPrefix, String savePath,
+                        int saveIndex) throws IOException {
         super("download", "", "", null, savePath, saveIndex);
-        set(configuration, domain, protocol, urlIndex, suffixOrQuery, host, preDown, addPrefix, rmPrefix);
+        set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix);
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }
 
-    public DownloadFile(Configuration configuration, String domain, String protocol, String urlIndex, String suffixOrQuery,
-                        String host, String downPath, String addPrefix, String rmPrefix) throws IOException {
+    /**
+     * 用来做只做文件 download 不记录结果的构造方法，downPath 为空时则表示预热方式下载
+     */
+    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+                        int[] range, String suffixOrQuery, String downPath, String addPrefix, String rmPrefix) throws IOException {
         super("download", "", "", null);
         if (downPath == null || "".equals(downPath)) preDown = true;
         else this.savePath = FileUtils.realPathWithUserHome(downPath);
-        set(configuration, domain, protocol, urlIndex, suffixOrQuery, host, preDown, addPrefix, rmPrefix);
+        set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix);
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }
 
-    public DownloadFile(Configuration configuration, String domain, String protocol, String urlIndex, String suffixOrQuery,
-                        String host, boolean preDown, String addPrefix, String rmPrefix, String savePath) throws IOException {
-        this(configuration, domain, protocol, urlIndex, suffixOrQuery, host, preDown, addPrefix, rmPrefix, savePath, 0);
+    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+                        int[] range, String suffixOrQuery, boolean preDown, String addPrefix, String rmPrefix, String savePath)
+            throws IOException {
+        this(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix, savePath,
+                0);
     }
 
-    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String suffixOrQuery,
-                     String host, boolean preDown, String addPrefix, String rmPrefix) throws IOException {
+    private void set(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+                     int[] range, String suffixOrQuery, boolean preDown, String addPrefix, String rmPrefix) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else {
             this.urlIndex = urlIndex;
         }
-        this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
-        useQuery = !"".equals(this.suffixOrQuery);
         if (host != null && !"".equals(host)) {
             RequestUtils.lookUpFirstIpFromHost(host);
             headers = new StringMap().put("Host", host);
         }
+        if (range != null && range.length > 0) {
+            if (headers == null) headers = new StringMap();
+            headers.put("Range", range[0] + "-" + (range.length > 1 ? range[1] : ""));
+        }
+        this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
+        useQuery = !"".equals(this.suffixOrQuery);
         this.preDown = preDown;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
@@ -112,16 +121,18 @@ public class DownloadFile extends Base<Map<String, String>> {
     }
 
     @Override
-    protected void parseSingleResult(Map<String, String> line, String result) {
-        // do nothing
+    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
+        if (preDown) fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override
     public void closeResource() {
         super.closeResource();
-        domain = null;
         protocol = null;
+        domain = null;
         urlIndex = null;
+        headers = null;
+        suffixOrQuery = null;
         addPrefix = null;
         rmPrefix = null;
         configuration = null;

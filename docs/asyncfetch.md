@@ -11,8 +11,8 @@
 process=asyncfetch
 ak=
 sk=
-domain=
 protocol=
+domain=
 indexes=
 url-index=
 add-prefix=
@@ -31,8 +31,8 @@ check-url=
 |-----|-------|-----|  
 |process| 异步抓取时设置为asyncfetch | 表示异步 fetch 操作|  
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源为 qiniu 时无需再设置| 
-|domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
+|domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
@@ -54,6 +54,6 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 
 ## 命令行参数方式
 ```
--process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -domain= -protocol= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
+-process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
 ```
 

@@ -158,6 +158,13 @@ public class CommonParams {
             case "qhash":
             case "privateurl":
             case "exportts":
+            case "download":
+            case "tenprivate":
+            case "aliprivate":
+            case "s3private":
+            case "awsprivate":
+            case "imagecensor":
+            case "videocensor":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
                     indexMap.put("url", "url");
@@ -208,10 +215,11 @@ public class CommonParams {
                 }
                 break;
             case "pfopresult":
-                String pid = entryParam.getValue("id", "").trim();
-                if (!"".equals(pid)) {
+            case "censorresult":
+                String id = entryParam.getValue("id", "").trim();
+                if (!"".equals(id)) {
                     indexMap.put("id", "id");
-                    mapLine.put("id", pid);
+                    mapLine.put("id", id);
                 }
                 break;
             case "stat":
