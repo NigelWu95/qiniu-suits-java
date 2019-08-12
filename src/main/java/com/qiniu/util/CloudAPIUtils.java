@@ -14,6 +14,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.obs.services.ObsClient;
+import com.obs.services.exception.ObsException;
+import com.obs.services.model.ObsObject;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
@@ -45,6 +48,7 @@ public final class CloudAPIUtils {
     public static String AWSS3 = "s3";
     public static String UPYUN = "upyun";
     public static String NETYUN = "netease";
+    public static String HUAWEI = "huawei";
     public static String LOCAL = "local";
     public static String TYPE_Storage = "storage";
     public static String TYPE_File = "file";
@@ -56,6 +60,7 @@ public final class CloudAPIUtils {
         put(AWSS3, TYPE_Storage);
         put(UPYUN, TYPE_Storage);
         put(NETYUN, TYPE_Storage);
+        put(HUAWEI, TYPE_Storage);
         put(LOCAL, TYPE_File);
     }};
 
@@ -167,6 +172,10 @@ public final class CloudAPIUtils {
         return summary.getKey();
     }
 
+    public static String getHwObsCosMarker(ObsObject obsObject) {
+        return obsObject.getObjectKey();
+    }
+
     public static String getUpYunMarker(String bucket, FileItem fileItem) {
         if (fileItem.key.contains("/")) {
             String convertedKey = fileItem.key.replace("/", "/~");
@@ -226,6 +235,10 @@ public final class CloudAPIUtils {
         return marker;
     }
 
+    public static String decodeHwObsMarker(String marker) {
+        return marker;
+    }
+
     public static String decodeUpYunMarker(String marker) {
         String keyString = new String(decoder.decode(marker));
         int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
@@ -259,6 +272,10 @@ public final class CloudAPIUtils {
 
     public static void checkAws(AmazonS3 s3Client) {
         s3Client.listBuckets();
+    }
+
+    public static void checkHuaWei(ObsClient obsClient) {
+        obsClient.listBucketsV2(null);
     }
 
     public static Zone getQiniuRegion(String regionName) {
@@ -353,6 +370,17 @@ public final class CloudAPIUtils {
             s3Client = null;
             credentialsProvider = null;
             credentials = null;
+        }
+    }
+
+    public static String getHwObsRegion(String accessKey, String secretKey, String bucket) throws SuitsException {
+        ObsClient obsClient = new ObsClient(accessKey, secretKey, "https://obs.myhuaweicloud.com");
+        try {
+            return obsClient.getBucketLocation(bucket);
+        } catch (ObsException e) {
+            throw new SuitsException(e, e.getResponseCode(), "get aliyun region failed");
+        } finally {
+            obsClient = null;
         }
     }
 

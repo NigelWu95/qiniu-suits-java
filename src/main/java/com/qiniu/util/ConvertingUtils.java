@@ -3,6 +3,7 @@ package com.qiniu.util;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.*;
+import com.obs.services.model.ObsObject;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
@@ -165,7 +166,7 @@ public final class ConvertingUtils {
                 case "mimeType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
                 case "type": pair.put(indexMap.get(index), fileInfo.type); break;
                 case "status": pair.put(indexMap.get(index), fileInfo.status); break;
-                case "md5": if (fileInfo.md5 != null) pair.put(indexMap.get(index), fileInfo.md5); break;
+                case "md5": pair.put(indexMap.get(index), fileInfo.md5); break;
                 case "owner":
                 case "endUser": if (fileInfo.endUser != null) pair.put(indexMap.get(index), fileInfo.endUser); break;
                 default: throw new IOException("Qiniu fileInfo doesn't have field: " + index);
@@ -265,6 +266,35 @@ public final class ConvertingUtils {
                 case "mime":
                 case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + index);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(ObsObject obsObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "key": pair.put(indexMap.get(index), obsObject.getObjectKey()); break;
+                case "hash":
+                case "etag": pair.put(indexMap.get(index), obsObject.getMetadata().getEtag()); break;
+                case "size":
+                case "fsize": pair.put(indexMap.get(index), obsObject.getMetadata().getContentLength()); break;
+                case "lastModified":
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(obsObject.getMetadata()
+                        .getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(indexMap.get(index), obsObject.getMetadata().getLastModified().getTime()); break;
+                case "mime":
+                case "mimeType": pair.put(indexMap.get(index), obsObject.getMetadata().getContentType()); break;
+                case "type": pair.put(indexMap.get(index), obsObject.getMetadata().getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(indexMap.get(index), obsObject.getMetadata().getContentMd5()); break;
+                case "owner":
+                case "endUser": if (obsObject.getOwner() != null) pair.put(indexMap.get(index),
+                        obsObject.getOwner().getId()); break;
+                default: throw new IOException("ObsObject doesn't have field: " + index);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
@@ -421,6 +451,33 @@ public final class ConvertingUtils {
                 case "mime":
                 case "mimeType": pair.put(field, fileItem.attribute); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(ObsObject obsObject, List<String> fields, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, obsObject.getObjectKey()); break;
+                case "hash":
+                case "etag": pair.put(field, obsObject.getMetadata().getEtag()); break;
+                case "size":
+                case "fsize": pair.put(field, obsObject.getMetadata().getContentLength()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, obsObject.getMetadata().getLastModified().getTime()); break;
+                case "mime":
+                case "mimeType": pair.put(field, obsObject.getMetadata().getContentType()); break;
+                case "type": pair.put(field, obsObject.getMetadata().getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(field, obsObject.getMetadata().getContentMd5()); break;
+                case "owner":
+                case "endUser": if (obsObject.getOwner() != null) pair.put(field, obsObject.getOwner().getId()); break;
+                default: throw new IOException("ObsObject doesn't have field: " + field);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
