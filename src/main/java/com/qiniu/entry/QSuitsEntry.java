@@ -329,7 +329,7 @@ public class QSuitsEntry {
         ILineProcess<Map<String, String>> processor;
         if (baseFilter != null || seniorFilter != null) {
             List<String> fields = commonParams.getToStringFields();
-            if (fields == null || fields.size() == 0) fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+            if (fields == null || fields.size() == 0) fields = ConvertingUtils.getOrderedFields(new ArrayList<>(indexMap.values()), rmFields);
             if (nextProcessor == null) {
                 List<String> finalFields = fields;
                 processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,

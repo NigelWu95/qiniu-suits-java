@@ -37,6 +37,7 @@ public final class ConvertingUtils {
     final static public Set<String> mimeFields = new HashSet<String>(){{
         add("mime");
         add("mimeType");
+        add("contentType");
     }};
 
     final static public Set<String> typeFields = new HashSet<String>(){{
@@ -132,19 +133,13 @@ public final class ConvertingUtils {
         return indexMap;
     }
 
-    public static List<String> getKeyOrderFields(Map<String, String> indexMap) {
-        List<String> fields = new ArrayList<>();
-        for (String fileField : fileFields) {
-            if (indexMap.containsKey(fileField)) fields.add(fileField);
-        }
-        return fields;
-    }
-
-    public static List<String> getOrderedFields(List<String> oriFields) {
+    public static List<String> getOrderedFields(List<String> oriFields, List<String> rmFields) {
         List<String> fields = new ArrayList<>();
         for (String fileField : fileFields) {
             if (oriFields.contains(fileField)) fields.add(fileField);
         }
+        if (rmFields == null) return fields;
+        for (String rmField : rmFields) fields.remove(rmField);
         return fields;
     }
 
@@ -163,7 +158,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
                 case "mime":
-                case "mimeType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
+                case "mimeType":
+                case "contentType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
                 case "type": pair.put(indexMap.get(index), fileInfo.type); break;
                 case "status": pair.put(indexMap.get(index), fileInfo.status); break;
                 case "md5": pair.put(indexMap.get(index), fileInfo.md5); break;
@@ -264,7 +260,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
-                case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
+                case "mimeType":
+                case "contentType": pair.put(indexMap.get(index), fileItem.attribute); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + index);
             }
         }
@@ -288,7 +285,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), obsObject.getMetadata().getLastModified().getTime()); break;
                 case "mime":
-                case "mimeType": pair.put(indexMap.get(index), obsObject.getMetadata().getContentType()); break;
+                case "mimeType":
+                case "contentType": pair.put(indexMap.get(index), obsObject.getMetadata().getContentType()); break;
                 case "type": pair.put(indexMap.get(index), obsObject.getMetadata().getObjectStorageClass().getCode()); break;
                 case "md5": pair.put(indexMap.get(index), obsObject.getMetadata().getContentMd5()); break;
                 case "owner":
@@ -355,7 +353,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(field, fileInfo.putTime); break;
                 case "mime":
-                case "mimeType": pair.put(field, fileInfo.mimeType); break;
+                case "mimeType":
+                case "contentType": pair.put(field, fileInfo.mimeType); break;
                 case "type": pair.put(field, fileInfo.type); break;
                 case "status": pair.put(field, fileInfo.status); break;
                 case "md5": if (fileInfo.md5 != null) pair.put(field, fileInfo.md5); break;
@@ -449,7 +448,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(field, fileItem.lastModified); break;
                 case "mime":
-                case "mimeType": pair.put(field, fileItem.attribute); break;
+                case "mimeType":
+                case "contentType": pair.put(field, fileItem.attribute); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + field);
             }
         }
@@ -472,7 +472,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(field, obsObject.getMetadata().getLastModified().getTime()); break;
                 case "mime":
-                case "mimeType": pair.put(field, obsObject.getMetadata().getContentType()); break;
+                case "mimeType":
+                case "contentType": pair.put(field, obsObject.getMetadata().getContentType()); break;
                 case "type": pair.put(field, obsObject.getMetadata().getObjectStorageClass().getCode()); break;
                 case "md5": pair.put(field, obsObject.getMetadata().getContentMd5()); break;
                 case "owner":
