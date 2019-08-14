@@ -27,15 +27,16 @@ public class HuaweiObsContainer extends CloudStorageContainer<ObsObject, Buffere
     private String accessKeySecret;
     private ObsConfiguration configuration;
 
-    public HuaweiObsContainer(String accessKeyId, String accessKeySecret, ObsConfiguration configuration, String bucket,
-                              Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
-                              boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
-                              int threads) throws IOException {
+    public HuaweiObsContainer(String accessKeyId, String accessKeySecret, ObsConfiguration configuration, String endPoint,
+                              String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
+                              boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
+                              int unitLen, int threads) throws IOException {
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
         this.configuration = configuration;
-        HuaweiLister huaweiLister = new HuaweiLister(new ObsClient(accessKeyId, accessKeySecret, configuration), bucket,
+        this.configuration.setEndPoint(endPoint);
+        HuaweiLister huaweiLister = new HuaweiLister(new ObsClient(accessKeyId, accessKeySecret, this.configuration), bucket,
                 null, null, null, 1);
         huaweiLister.close();
         huaweiLister = null;

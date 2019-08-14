@@ -317,7 +317,7 @@ public final class ConvertingUtils {
                 case "type": pair.put(indexMap.get(index), bosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (bosObject.getOwner() != null) pair.put(indexMap.get(index), bosObject.getOwner().getId()); break;
-                default: throw new IOException("ObsObject doesn't have field: " + index);
+                default: throw new IOException("BosObjectSummary doesn't have field: " + index);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
@@ -489,7 +489,11 @@ public final class ConvertingUtils {
             switch (field) {
                 case "key": pair.put(field, obsObject.getObjectKey()); break;
                 case "hash":
-                case "etag": pair.put(field, obsObject.getMetadata().getEtag()); break;
+                case "etag": String etag = obsObject.getMetadata().getEtag();
+                if (etag.startsWith("\"")) {
+                    etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
+                }
+                pair.put(field, etag); break;
                 case "size":
                 case "fsize": pair.put(field, obsObject.getMetadata().getContentLength()); break;
                 case "lastModified":
@@ -527,7 +531,7 @@ public final class ConvertingUtils {
                 case "type": pair.put(field, bosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (bosObject.getOwner() != null) pair.put(field, bosObject.getOwner().getId()); break;
-                default: throw new IOException("ObsObject doesn't have field: " + field);
+                default: throw new IOException("BosObjectSummary doesn't have field: " + field);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");

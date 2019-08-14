@@ -19,6 +19,7 @@ public class BaiduObsContainerTest {
                 "su.bcebos.com", bucket, null, null,
                 false, false, new HashMap<String, String>(){{ put("key", "key"); }}, null,
                 1000, 10);
+        baiduObsContainer.setSaveOptions(true, "../baidu", "tab", "\t", null);
         baiduObsContainer.export();
     }
 

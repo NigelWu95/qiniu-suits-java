@@ -35,10 +35,10 @@ public class BaiduObsContainer extends CloudStorageContainer<BosObjectSummary, B
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
 //        this.accessKeyId = accessKeyId;
 //        this.accessKeySecret = accessKeySecret;
-        configuration.setCredentials(new DefaultBceCredentials(accessKeyId, accessKeySecret));
-        configuration.setEndpoint(endpoint);
         this.configuration = configuration;
-        BosClient bosClient = new BosClient(configuration);
+        this.configuration.setCredentials(new DefaultBceCredentials(accessKeyId, accessKeySecret));
+        this.configuration.setEndpoint(endpoint);
+        BosClient bosClient = new BosClient(this.configuration);
         BaiduLister baiduLister = new BaiduLister(bosClient, bucket, null, null, null, 1);
         baiduLister.close();
         baiduLister = null;

@@ -15,6 +15,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.baidubce.auth.DefaultBceCredentials;
 import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.BosClientConfiguration;
+import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.obs.services.ObsClient;
@@ -52,6 +53,7 @@ public final class CloudAPIUtils {
     public static String UPYUN = "upyun";
     public static String NETYUN = "netease";
     public static String HUAWEI = "huawei";
+    public static String BAIDU = "baidu";
     public static String LOCAL = "local";
     public static String TYPE_Storage = "storage";
     public static String TYPE_File = "file";
@@ -64,6 +66,7 @@ public final class CloudAPIUtils {
         put(UPYUN, TYPE_Storage);
         put(NETYUN, TYPE_Storage);
         put(HUAWEI, TYPE_Storage);
+        put(BAIDU, TYPE_Storage);
         put(LOCAL, TYPE_File);
     }};
 
@@ -175,8 +178,12 @@ public final class CloudAPIUtils {
         return summary.getKey();
     }
 
-    public static String getHwObsCosMarker(ObsObject obsObject) {
+    public static String getHuaweiObsCosMarker(ObsObject obsObject) {
         return obsObject.getObjectKey();
+    }
+
+    public static String getbaiduBosCosMarker(BosObjectSummary obsObject) {
+        return obsObject.getKey();
     }
 
     public static String getUpYunMarker(String bucket, FileItem fileItem) {
@@ -238,7 +245,7 @@ public final class CloudAPIUtils {
         return marker;
     }
 
-    public static String decodeHwObsMarker(String marker) {
+    public static String decodeHuaweiObsMarker(String marker) {
         return marker;
     }
 
@@ -279,6 +286,10 @@ public final class CloudAPIUtils {
 
     public static void checkHuaWei(ObsClient obsClient) {
         obsClient.listBucketsV2(null);
+    }
+
+    public static void checkBaidu(BosClient bosClient) {
+        bosClient.listBuckets();
     }
 
     public static Zone getQiniuRegion(String regionName) {
