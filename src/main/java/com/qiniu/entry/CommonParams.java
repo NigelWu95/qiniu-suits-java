@@ -36,6 +36,10 @@ public class CommonParams {
     private String upyunPassword;
     private String s3AccessId;
     private String s3SecretKey;
+    private String huaweiAccessId;
+    private String huaweiSecretKey;
+    private String baiduAccessId;
+    private String baiduSecretKey;
     private String bucket;
     private Map<String, Map<String, String>> prefixesMap;
     private List<String> antiPrefixes;
@@ -255,6 +259,8 @@ public class CommonParams {
                 else if (path.startsWith("aliyun://")) source = "aliyun";
                 else if (path.startsWith("upyun://")) source = "upyun";
                 else if (path.startsWith("aws://") || path.startsWith("s3://")) source = "s3";
+                else if (path.startsWith("huawei://")) source = "huawei";
+                else if (path.startsWith("baidu://")) source = "baidu";
                 else source = "local";
             }
         }
@@ -262,7 +268,7 @@ public class CommonParams {
         if ("list".equals(source)) source = "qiniu";
         else if ("file".equals(source)) source = "local";
         else if ("aws".equals(source)) source = "s3";
-        if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3)")) {
+        if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3|huawei|baidu)")) {
             throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,s3]");
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
@@ -316,6 +322,12 @@ public class CommonParams {
         } else if ("s3".equals(source)) {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
+        } else if ("huawei".equals(source)) {
+            huaweiAccessId = entryParam.getValue("hua-id").trim();
+            huaweiSecretKey = entryParam.getValue("hua-secret").trim();
+        } else if ("baidu".equals(source)) {
+            baiduAccessId = entryParam.getValue("bai-id").trim();
+            baiduSecretKey = entryParam.getValue("bai-secret").trim();
         } else {
             qiniuAccessKey = entryParam.getValue("ak", "").trim();
             qiniuSecretKey = entryParam.getValue("sk", "").trim();
@@ -335,6 +347,8 @@ public class CommonParams {
             if (path.startsWith("s3://")) bucket = path.substring(5);
             else if (path.startsWith("aws://")) bucket = path.substring(6);
         }
+        else if ("huawei".equals(source) && path.startsWith("huawei://")) bucket = path.substring(9);
+        else if ("baidu".equals(source) && path.startsWith("baidu://")) bucket = path.substring(8);
         if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
         else bucket = entryParam.getValue("bucket", bucket).trim();
     }
@@ -414,13 +428,11 @@ public class CommonParams {
                     markerAndEnd.put("marker", markerElement.getAsString());
                 }
                 if (startElement != null && !(startElement instanceof JsonNull)) {
-                    if ("qiniu".equals(source)) markerAndEnd.put("start", startElement.getAsString());
-                    else if ("tencent".equals(source)) markerAndEnd.put("start", startElement.getAsString());
-                    else if ("aliyun".equals(source)) markerAndEnd.put("start", startElement.getAsString());
-                    else if ("upyun".equals(source)) markerAndEnd.put("start", startElement.getAsString());
-                    else if ("s3".equals(source) || "aws".equals(source)) markerAndEnd.put("start", startElement.getAsString());
+                    markerAndEnd.put("start", startElement.getAsString());
                 }
-                if (endElement != null && !(endElement instanceof JsonNull)) markerAndEnd.put("end", endElement.getAsString());
+                if (endElement != null && !(endElement instanceof JsonNull)) {
+                    markerAndEnd.put("end", endElement.getAsString());
+                }
                 prefixesMap.put(prefix, markerAndEnd);
             }
         } else if (prefixes != null && !"".equals(prefixes)) {
@@ -578,8 +590,11 @@ public class CommonParams {
             keys.remove(ConvertingUtils.defaultStatusField);
             keys.remove(ConvertingUtils.defaultMd5Field);
             keys.remove(ConvertingUtils.defaultOwnerField);
-        } else if (isStorageSource && !"qiniu".equals(source)) {
+        } else if ("huawei".equals(source)) {
             fieldsMode = 2;
+            keys.remove(ConvertingUtils.defaultStatusField);
+        } else if (isStorageSource && !"qiniu".equals(source)) {
+            fieldsMode = 3;
             keys.remove(ConvertingUtils.defaultMimeField);
             keys.remove(ConvertingUtils.defaultStatusField);
             keys.remove(ConvertingUtils.defaultMd5Field);
@@ -661,7 +676,7 @@ public class CommonParams {
             }
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
                 if (useDefault) {
-                    if (fieldsMode != 2) {
+                    if (fieldsMode != 3) {
                         indexMap.put(fieldIndex ? "mime" : "4", "mime");
                         toStringFields.add(4, "mime");
                     }
@@ -702,7 +717,7 @@ public class CommonParams {
                 }
                 if (!indexMap.containsValue("mime")) {
                     if (useDefault) {
-                        if (fieldsMode != 2) {
+                        if (fieldsMode != 3) {
                             indexMap.put(fieldIndex ? "mime" : "4", "mime");
                             toStringFields.add(4, "mime");
                         }
@@ -820,14 +835,6 @@ public class CommonParams {
         this.qiniuSecretKey = qiniuSecretKey;
     }
 
-    public void setS3AccessId(String s3AccessId) {
-        this.s3AccessId = s3AccessId;
-    }
-
-    public void setS3SecretKey(String s3SecretKey) {
-        this.s3SecretKey = s3SecretKey;
-    }
-
     public void setTencentSecretId(String tencentSecretId) {
         this.tencentSecretId = tencentSecretId;
     }
@@ -850,6 +857,30 @@ public class CommonParams {
 
     public void setUpyunPassword(String upyunPassword) {
         this.upyunPassword = upyunPassword;
+    }
+
+    public void setS3AccessId(String s3AccessId) {
+        this.s3AccessId = s3AccessId;
+    }
+
+    public void setS3SecretKey(String s3SecretKey) {
+        this.s3SecretKey = s3SecretKey;
+    }
+
+    public void setHuaweiAccessId(String huaweiAccessId) {
+        this.huaweiAccessId = huaweiAccessId;
+    }
+
+    public void setHuaweiSecretKey(String huaweiSecretKey) {
+        this.huaweiSecretKey = huaweiSecretKey;
+    }
+
+    public void setBaiduAccessId(String baiduAccessId) {
+        this.baiduAccessId = baiduAccessId;
+    }
+
+    public void setBaiduSecretKey(String baiduSecretKey) {
+        this.baiduSecretKey = baiduSecretKey;
     }
 
     public void setBucket(String bucket) {
@@ -992,14 +1023,6 @@ public class CommonParams {
         return qiniuSecretKey;
     }
 
-    public String getS3AccessId() {
-        return s3AccessId;
-    }
-
-    public String getS3SecretKey() {
-        return s3SecretKey;
-    }
-
     public String getTencentSecretId() {
         return tencentSecretId;
     }
@@ -1022,6 +1045,30 @@ public class CommonParams {
 
     public String getUpyunPassword() {
         return upyunPassword;
+    }
+
+    public String getS3AccessId() {
+        return s3AccessId;
+    }
+
+    public String getS3SecretKey() {
+        return s3SecretKey;
+    }
+
+    public String getHuaweiAccessId() {
+        return huaweiAccessId;
+    }
+
+    public String getHuaweiSecretKey() {
+        return huaweiSecretKey;
+    }
+
+    public String getBaiduAccessId() {
+        return baiduAccessId;
+    }
+
+    public String getBaiduSecretKey() {
+        return baiduSecretKey;
     }
 
     public String getBucket() {

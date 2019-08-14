@@ -1,7 +1,9 @@
 package com.qiniu.entry;
 
 import com.aliyun.oss.ClientConfiguration;
+import com.baidubce.services.bos.BosClientConfiguration;
 import com.google.gson.JsonObject;
+import com.obs.services.ObsConfiguration;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
@@ -38,6 +40,8 @@ public class QSuitsEntry {
     private ClientConfiguration aliClientConfig;
     private UpYunConfig upYunConfig;
     private com.amazonaws.ClientConfiguration s3ClientConfig;
+    private ObsConfiguration obsConfiguration;
+    private BosClientConfiguration bosClientConfiguration;
     private String source;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
@@ -199,6 +203,34 @@ public class QSuitsEntry {
         return clientConfig;
     }
 
+    public ObsConfiguration getObsConfiguration() {
+        return obsConfiguration == null ? getDefaultObsConfiguration() : obsConfiguration;
+    }
+
+    private ObsConfiguration getDefaultObsConfiguration() {
+        ObsConfiguration obsConfiguration = new ObsConfiguration();
+        if (1000 * connectTimeout > obsConfiguration.getConnectionTimeout())
+            obsConfiguration.setConnectionTimeout(1000 * connectTimeout);
+        if (1000 * readTimeout > obsConfiguration.getSocketTimeout())
+            obsConfiguration.setSocketTimeout(1000 * readTimeout);
+        if (1000 * requestTimeout > obsConfiguration.getConnectionRequestTimeout())
+            obsConfiguration.setConnectionRequestTimeout(1000 * requestTimeout);
+        return obsConfiguration;
+    }
+
+    private BosClientConfiguration getBosClientConfiguration() {
+        return bosClientConfiguration == null ? getDefaultBosClientConfiguration() : bosClientConfiguration;
+    }
+
+    private BosClientConfiguration getDefaultBosClientConfiguration() {
+        BosClientConfiguration bosClientConfiguration = new BosClientConfiguration();
+        if (1000 * connectTimeout > bosClientConfiguration.getConnectionTimeoutInMillis())
+            bosClientConfiguration.setConnectionTimeoutInMillis(1000 * connectTimeout);
+        if (1000 * readTimeout > bosClientConfiguration.getSocketTimeoutInMillis())
+            bosClientConfiguration.setSocketTimeoutInMillis(1000 * readTimeout);
+        return bosClientConfiguration;
+    }
+
     public IDataSource getDataSource() throws IOException {
         if ("qiniu".equals(source)) {
             return getQiniuQosContainer();
@@ -210,6 +242,10 @@ public class QSuitsEntry {
             return getUpYosContainer();
         } else if ("s3".equals(source)) {
             return getAwsS3Container();
+        } else if ("huawei".equals(source)) {
+            return getHuaweiObsContainer();
+        } else if ("baidu".equals(source)) {
+            return getBaiduBosContainer();
         } else if ("local".equals(source)) {
             return getLocalFileContainer();
         } else {
@@ -320,6 +356,53 @@ public class QSuitsEntry {
         awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         awsS3Container.setRetryTimes(retryTimes);
         return awsS3Container;
+    }
+
+    public HuaweiObsContainer getHuaweiObsContainer() throws IOException {
+        String accessId = commonParams.getHuaweiAccessId();
+        String secretKey = commonParams.getHuaweiSecretKey();
+        if (obsConfiguration == null) obsConfiguration = getDefaultObsConfiguration();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        String endPoint;
+        if (regionName == null || "".equals(regionName)) regionName = CloudApiUtils.getHuaweiObsRegion(accessId, secretKey, bucket);
+        if (regionName.matches("https?://.+")) {
+            endPoint = regionName;
+        } else {
+            if (!regionName.startsWith("obs.")) regionName = "obs." + regionName;
+            endPoint = "http://" + regionName + ".myhuaweicloud.com";
+        }
+        HuaweiObsContainer huaweiObsContainer = new HuaweiObsContainer(accessId, secretKey, new ObsConfiguration(), endPoint,
+                bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen,
+                threads);
+        huaweiObsContainer.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
+        huaweiObsContainer.setRetryTimes(retryTimes);
+        return huaweiObsContainer;
+    }
+
+    public BaiduBosContainer getBaiduBosContainer() throws IOException {
+        String accessId = commonParams.getBaiduAccessId();
+        String secretKey = commonParams.getBaiduSecretKey();
+        if (bosClientConfiguration == null) bosClientConfiguration = getDefaultBosClientConfiguration();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        List<String> antiPrefixes = commonParams.getAntiPrefixes();
+        boolean prefixLeft = commonParams.getPrefixLeft();
+        boolean prefixRight = commonParams.getPrefixRight();
+        String endPoint;
+        if (regionName == null || "".equals(regionName)) regionName = CloudApiUtils.getHuaweiObsRegion(accessId, secretKey, bucket);
+        if (regionName.matches("https?://.+")) {
+            endPoint = regionName;
+        } else {
+            endPoint = "http://" + regionName + ".bcebos.com";
+        }
+        BaiduBosContainer baiduBosContainer = new BaiduBosContainer(accessId, secretKey, bosClientConfiguration, endPoint,
+                bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(),
+                unitLen, threads);
+        baiduBosContainer.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
+        baiduBosContainer.setRetryTimes(retryTimes);
+        return baiduBosContainer;
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
