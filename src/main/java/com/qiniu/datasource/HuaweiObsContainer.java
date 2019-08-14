@@ -13,7 +13,7 @@ import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
@@ -83,7 +83,7 @@ public class HuaweiObsContainer extends CloudStorageContainer<ObsObject, Buffere
 
     @Override
     protected ILister<ObsObject> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = CloudAPIUtils.getAliOssMarker(start);
+        if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         return new HuaweiLister(new ObsClient(accessKeyId, accessKeySecret, configuration), bucket, prefix, marker, end, unitLen);
     }
 }

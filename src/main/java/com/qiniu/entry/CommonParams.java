@@ -265,7 +265,7 @@ public class CommonParams {
         if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3)")) {
             throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,s3]");
         }
-        isStorageSource = CloudAPIUtils.isStorageSource(source);
+        isStorageSource = CloudApiUtils.isStorageSource(source);
     }
 
     private void setParse() throws IOException {

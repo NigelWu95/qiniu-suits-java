@@ -28,7 +28,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
@@ -36,7 +36,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
         super("pfop", accessKey, secretKey, bucket);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
@@ -68,7 +68,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
 
     public QiniuPfop clone() throws CloneNotSupportedException {
         QiniuPfop qiniuPfop = (QiniuPfop)super.clone();
-        qiniuPfop.operationManager = new OperationManager(Auth.create(authKey1, authKey2), configuration.clone());
+        qiniuPfop.operationManager = new OperationManager(Auth.create(accessId, secretKey), configuration.clone());
         return qiniuPfop;
     }
 

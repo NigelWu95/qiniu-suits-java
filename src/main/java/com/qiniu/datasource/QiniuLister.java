@@ -195,7 +195,7 @@ public class QiniuLister implements ILister<FileInfo> {
 
     @Override
     public String currentEndKey() {
-        if (hasNext()) return CloudAPIUtils.decodeQiniuMarker(marker);
+        if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
         if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
         return null;
     }

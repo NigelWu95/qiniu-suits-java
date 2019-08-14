@@ -7,7 +7,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -35,7 +35,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
                 .withRegion(region)
                 .build();
-        CloudAPIUtils.checkAws(s3Client);
+        CloudApiUtils.checkAws(s3Client);
     }
 
     public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires, Map<String, String> queries) {
@@ -51,7 +51,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
                 .withRegion(region)
                 .build();
-        CloudAPIUtils.checkAws(s3Client);
+        CloudApiUtils.checkAws(s3Client);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String region, long expires, Map<String, String> queries,
@@ -68,7 +68,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         PrivateUrl awsPrivateUrl = (PrivateUrl)super.clone();
         awsPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
         awsPrivateUrl.s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(authKey1, authKey2)))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessId, secretKey)))
                 .withRegion(region)
                 .build();
         if (nextProcessor != null) awsPrivateUrl.nextProcessor = nextProcessor.clone();

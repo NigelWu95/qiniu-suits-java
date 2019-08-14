@@ -7,7 +7,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,8 +31,8 @@ public class CopyFile extends Base<Map<String, String>> {
         super("copy", accessKey, secretKey, bucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
-        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -43,8 +43,8 @@ public class CopyFile extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
-        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -72,7 +72,7 @@ public class CopyFile extends Base<Map<String, String>> {
 
     public CopyFile clone() throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
-        copyFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        copyFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         copyFile.batchOperations = new BatchOperations();
         copyFile.lines = new ArrayList<>();
         return copyFile;

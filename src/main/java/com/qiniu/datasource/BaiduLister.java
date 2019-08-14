@@ -8,7 +8,7 @@ import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +102,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
             bosObjectList = objectListing.getContents();
             checkedListWithEnd();
         } catch (BceServiceException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (BceClientException e) {
             throw new SuitsException(e, -1, e.getMessage());
         } catch (NullPointerException e) {

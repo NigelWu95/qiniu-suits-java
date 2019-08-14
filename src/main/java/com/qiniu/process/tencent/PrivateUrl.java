@@ -7,7 +7,7 @@ import com.qcloud.cos.model.GeneratePresignedUrlRequest;
 import com.qcloud.cos.region.Region;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -31,7 +31,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
-        CloudAPIUtils.checkTencent(cosClient);
+        CloudApiUtils.checkTencent(cosClient);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires, Map<String, String> queries,
@@ -45,7 +45,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
         cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
-        CloudAPIUtils.checkTencent(cosClient);
+        CloudApiUtils.checkTencent(cosClient);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, long expires, Map<String, String> queries,
@@ -61,7 +61,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
-        cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(authKey1, authKey2), new ClientConfig(new Region(region)));
+        cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(accessId, secretKey), new ClientConfig(new Region(region)));
         if (nextProcessor != null) cosPrivateUrl.nextProcessor = nextProcessor.clone();
         return cosPrivateUrl;
     }

@@ -3,6 +3,7 @@ package com.qiniu.process.qai;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.JsonUtils;
 
 import java.io.IOException;
@@ -14,32 +15,36 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     private Configuration configuration;
     private CensorManager censorManager;
 
-    public QueryCensorResult(String accesskey, String secretKey, Configuration configuration, String jobIdIndex) throws IOException {
-        super("censorresult", accesskey, secretKey, null);
+    public QueryCensorResult(String accessKey, String secretKey, Configuration configuration, String jobIdIndex) throws IOException {
+        super("censorresult", accessKey, secretKey, null);
         this.configuration = configuration;
         if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the id-index.");
         else this.jobIdIndex = jobIdIndex;
-        censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
+        Auth auth = Auth.create(accessKey, secretKey);
+        CloudApiUtils.checkQiniu(auth);
+        censorManager = new CensorManager(auth, configuration.clone());
     }
 
-    public QueryCensorResult(String accesskey, String secretKey, Configuration configuration, String jobIdIndex, String savePath,
+    public QueryCensorResult(String accessKey, String secretKey, Configuration configuration, String jobIdIndex, String savePath,
                              int saveIndex) throws IOException {
-        super("censorresult", accesskey, secretKey, null, savePath, saveIndex);
+        super("censorresult", accessKey, secretKey, null, savePath, saveIndex);
         this.configuration = configuration;
         if (jobIdIndex == null || "".equals(jobIdIndex)) throw new IOException("please set the id-index.");
         else this.jobIdIndex = jobIdIndex;
-        censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
+        Auth auth = Auth.create(accessKey, secretKey);
+        CloudApiUtils.checkQiniu(auth);
+        censorManager = new CensorManager(auth, configuration.clone());
         fileSaveMapper.preAddWriter("waiting");
     }
 
-    public QueryCensorResult(String accesskey, String secretKey, Configuration configuration, String jobIdIndex, String savePath)
+    public QueryCensorResult(String accessKey, String secretKey, Configuration configuration, String jobIdIndex, String savePath)
             throws IOException {
-        this(accesskey, secretKey, configuration, jobIdIndex, savePath, 0);
+        this(accessKey, secretKey, configuration, jobIdIndex, savePath, 0);
     }
 
     public QueryCensorResult clone() throws CloneNotSupportedException {
         QueryCensorResult censorResult = (QueryCensorResult)super.clone();
-        censorResult.censorManager = new CensorManager(Auth.create(authKey1, authKey2), configuration.clone());
+        censorResult.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration.clone());
         if (censorResult.fileSaveMapper != null) {
             censorResult.fileSaveMapper.preAddWriter("waiting");
         }

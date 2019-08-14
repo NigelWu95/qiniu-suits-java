@@ -14,7 +14,7 @@ import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class BaiduObsContainer extends CloudStorageContainer<BosObjectSummary, BufferedWriter, Map<String, String>> {
+public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, BufferedWriter, Map<String, String>> {
 
 //    private String accessKeyId;
 //    private String accessKeySecret;
     private BosClientConfiguration configuration;
 
-    public BaiduObsContainer(String accessKeyId, String accessKeySecret, BosClientConfiguration configuration, String endpoint,
+    public BaiduBosContainer(String accessKeyId, String accessKeySecret, BosClientConfiguration configuration, String endpoint,
                              String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                              boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                              int unitLen, int threads) throws IOException {
@@ -85,7 +85,7 @@ public class BaiduObsContainer extends CloudStorageContainer<BosObjectSummary, B
 
     @Override
     protected ILister<BosObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = CloudAPIUtils.getAliOssMarker(start);
+        if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         return new BaiduLister(new BosClient(configuration), bucket, prefix, marker, end, unitLen);
     }
 }

@@ -22,7 +22,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                       long expires) throws IOException {
         super("privateurl", accessKey, secretKey, null);
         this.auth = Auth.create(accessKey, secretKey);
-        CloudAPIUtils.checkQiniu(auth);
+        CloudApiUtils.checkQiniu(auth);
         set(protocol, domain, urlIndex, suffixOrQuery, expires);
     }
 
@@ -30,7 +30,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
                       long expires, String savePath, int saveIndex) throws IOException {
         super("privateurl", accessKey, secretKey, null, savePath, saveIndex);
         this.auth = Auth.create(accessKey, secretKey);
-        CloudAPIUtils.checkQiniu(auth);
+        CloudApiUtils.checkQiniu(auth);
         set(protocol, domain, urlIndex, suffixOrQuery, expires);
     }
 
@@ -64,7 +64,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl privateUrl = (PrivateUrl)super.clone();
-        privateUrl.auth = Auth.create(authKey1, authKey2);
+        privateUrl.auth = Auth.create(accessId, secretKey);
         if (nextProcessor != null) privateUrl.nextProcessor = nextProcessor.clone();
         return privateUrl;
     }

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.RequestUtils;
 
 import java.io.IOException;
@@ -20,19 +21,23 @@ public class ImageCensor extends Base<Map<String, String>> {
     private Configuration configuration;
     private CensorManager censorManager;
 
-    public ImageCensor(String accesskey, String secretKey, Configuration configuration, String protocol, String domain,
+    public ImageCensor(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, String suffixOrQuery, String[] scenes)
             throws IOException {
-        super("imagecensor", accesskey, secretKey, null);
+        super("imagecensor", accessKey, secretKey, null);
         set(configuration, protocol, domain, urlIndex, suffixOrQuery, scenes);
-        censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
+        Auth auth = Auth.create(accessKey, secretKey);
+        CloudApiUtils.checkQiniu(auth);
+        censorManager = new CensorManager(auth, configuration.clone());
     }
 
-    public ImageCensor(String accesskey, String secretKey, Configuration configuration, String protocol, String domain,
+    public ImageCensor(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, String suffixOrQuery, String[] scenes, String savePath, int saveIndex) throws IOException {
-        super("imagecensor", accesskey, secretKey, null, savePath, saveIndex);
+        super("imagecensor", accessKey, secretKey, null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex, suffixOrQuery, scenes);
-        censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
+        Auth auth = Auth.create(accessKey, secretKey);
+        CloudApiUtils.checkQiniu(auth);
+        censorManager = new CensorManager(auth, configuration.clone());
     }
 
     public ImageCensor(String accesskey, String secretKey, Configuration configuration, String protocol, String domain,
@@ -63,7 +68,7 @@ public class ImageCensor extends Base<Map<String, String>> {
 
     public ImageCensor clone() throws CloneNotSupportedException {
         ImageCensor videoCensor = (ImageCensor)super.clone();
-        videoCensor.censorManager = new CensorManager(Auth.create(authKey1, authKey2), configuration.clone());
+        videoCensor.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration.clone());
         return videoCensor;
     }
 

@@ -131,7 +131,7 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig() {
-        Zone zone = CloudAPIUtils.getQiniuRegion(regionName);
+        Zone zone = CloudApiUtils.getQiniuRegion(regionName);
         Configuration configuration = new Configuration(zone);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
@@ -144,7 +144,7 @@ public class QSuitsEntry {
     }
 
     private ClientConfig getDefaultTenClientConfig() throws SuitsException {
-        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getTenCosRegion(
+        if (regionName == null || "".equals(regionName)) regionName = CloudApiUtils.getTenCosRegion(
                 commonParams.getTencentSecretId(), commonParams.getTencentSecretKey(), bucket);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         if (1000 * connectTimeout > clientConfig.getConnectionTimeout())
@@ -271,7 +271,7 @@ public class QSuitsEntry {
         String accessId = commonParams.getAliyunAccessId();
         String accessSecret = commonParams.getAliyunAccessSecret();
         String endPoint;
-        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, bucket);
+        if (regionName == null || "".equals(regionName)) regionName = CloudApiUtils.getAliOssRegion(accessId, accessSecret, bucket);
         if (regionName.matches("https?://.+")) {
             endPoint = regionName;
         } else {
@@ -314,7 +314,7 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (regionName == null || "".equals(regionName)) regionName = CloudAPIUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
+        if (regionName == null || "".equals(regionName)) regionName = CloudApiUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
         AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
                 prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
         awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
@@ -622,7 +622,7 @@ public class QSuitsEntry {
         String secretKey = entryParam.getValue("ten-secret", commonParams.getTencentSecretKey());
         String tenBucket = entryParam.getValue("ten-bucket", bucket);
         String region = entryParam.getValue("ten-region", regionName);
-        if (region == null || "".equals(region)) region = CloudAPIUtils.getTenCosRegion(secretId, secretKey, tenBucket);
+        if (region == null || "".equals(region)) region = CloudApiUtils.getTenCosRegion(secretId, secretKey, tenBucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, bucket, region, Long.valueOf(expires),
@@ -635,7 +635,7 @@ public class QSuitsEntry {
         String accessSecret = entryParam.getValue("ali-secret", commonParams.getAliyunAccessSecret());
         String aliBucket = entryParam.getValue("ali-bucket", bucket);
         String region = entryParam.getValue("ali-region", regionName);
-        if (region == null || "".equals(region)) region = CloudAPIUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
+        if (region == null || "".equals(region)) region = CloudApiUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
         String endPoint;
         if (region.matches("https?://.+")) {
             endPoint = region;
@@ -655,7 +655,7 @@ public class QSuitsEntry {
         String secretKey = entryParam.getValue("s3-secret", commonParams.getS3SecretKey());
         String s3Bucket = entryParam.getValue("s3-bucket", bucket);
         String region = entryParam.getValue("s3-region", regionName);
-        if (region == null || "".equals(region)) region = CloudAPIUtils.getS3Region(accessId, secretKey, s3Bucket);
+        if (region == null || "".equals(region)) region = CloudApiUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, bucket, region, Long.valueOf(expires),

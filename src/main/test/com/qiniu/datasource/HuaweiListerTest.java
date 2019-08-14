@@ -5,7 +5,7 @@ import com.obs.services.ObsConfiguration;
 import com.obs.services.model.ObsObject;
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.convert.JsonObjectPair;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 import org.junit.Test;
 
@@ -22,7 +22,7 @@ public class HuaweiListerTest {
         String secretKey = propertiesFile.getValue("hua-secret");
         String bucket = propertiesFile.getValue("bucket");
         bucket = "css-backup-1544044401924";
-        String endPoint = "https://obs." + CloudAPIUtils.getHuaweiObsRegion(accessKeyId, secretKey, bucket) + ".myhuaweicloud.com";
+        String endPoint = "https://obs." + CloudApiUtils.getHuaweiObsRegion(accessKeyId, secretKey, bucket) + ".myhuaweicloud.com";
         ObsConfiguration configuration = new ObsConfiguration();
         configuration.setEndPoint(endPoint);
         HuaweiLister huaweiLister = new HuaweiLister(new ObsClient(accessKeyId, secretKey, configuration), bucket,

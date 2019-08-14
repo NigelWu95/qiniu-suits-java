@@ -34,7 +34,7 @@ public class UpYunClient {
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudAPIUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
                 userName, password, null));
         conn.setRequestProperty("x-list-iter", marker);
         conn.setRequestProperty("x-list-limit", String.valueOf(limit));
@@ -82,7 +82,7 @@ public class UpYunClient {
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudAPIUtils.upYunSign(UpYunConfig.METHOD_HEAD, date, uri,
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunSign(UpYunConfig.METHOD_HEAD, date, uri,
                 userName, password, null));
         conn.connect();
         int code = conn.getResponseCode();

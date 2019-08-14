@@ -7,7 +7,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,8 +34,8 @@ public class MoveFile extends Base<Map<String, String>> {
         if ("rename".equals(processName)) isRename = true;
         set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
-        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -49,8 +49,8 @@ public class MoveFile extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
-        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, toBucket);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -89,7 +89,7 @@ public class MoveFile extends Base<Map<String, String>> {
 
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
-        moveFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        moveFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         moveFile.batchOperations = new BatchOperations();
         moveFile.lines = new ArrayList<>();
         return moveFile;

@@ -14,7 +14,7 @@ import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
@@ -82,7 +82,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
 
     @Override
     protected ILister<COSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = CloudAPIUtils.getTenCosMarker(start);
+        if (marker == null || "".equals(marker)) marker = CloudApiUtils.getTenCosMarker(start);
         return new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig), bucket, prefix,
                 marker, end, unitLen);
     }

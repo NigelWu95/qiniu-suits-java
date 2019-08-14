@@ -34,7 +34,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
@@ -43,7 +43,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
@@ -86,7 +86,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        asyncFetch.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         return asyncFetch;
     }
 

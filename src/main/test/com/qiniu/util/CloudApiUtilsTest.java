@@ -1,15 +1,12 @@
 package com.qiniu.util;
 
-import com.baidubce.auth.DefaultBceCredentials;
-import com.baidubce.services.bos.BosClient;
-import com.baidubce.services.bos.BosClientConfiguration;
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.sdk.FileItem;
 import org.junit.Test;
 
 import java.io.IOException;
 
-public class CloudAPIUtilsTest {
+public class CloudApiUtilsTest {
 
     @Test
     public void testGetTenCosRegion() throws IOException {
@@ -17,7 +14,7 @@ public class CloudAPIUtilsTest {
         String secretId = propertiesFile.getValue("ten-id");
         String secretKey = propertiesFile.getValue("ten-secret");
         String bucket = propertiesFile.getValue("bucket");
-        String region = CloudAPIUtils.getTenCosRegion(secretId, secretKey, bucket);
+        String region = CloudApiUtils.getTenCosRegion(secretId, secretKey, bucket);
         System.out.println(bucket + "\t" + region);
     }
 
@@ -27,9 +24,9 @@ public class CloudAPIUtilsTest {
         String accessId = propertiesFile.getValue("s3-id");
         String secretKey = propertiesFile.getValue("s3-secret");
         String bucket = propertiesFile.getValue("bucket");
-        System.out.println(bucket + "\t" + CloudAPIUtils.getS3Region(accessId, secretKey, bucket + "1"));
-        System.out.println(bucket + "\t" + CloudAPIUtils.getS3Region(accessId, secretKey, bucket + "2"));
-        System.out.println(bucket + "\t" + CloudAPIUtils.getS3Region(accessId, secretKey, bucket + "3"));
+        System.out.println(bucket + "\t" + CloudApiUtils.getS3Region(accessId, secretKey, bucket + "1"));
+        System.out.println(bucket + "\t" + CloudApiUtils.getS3Region(accessId, secretKey, bucket + "2"));
+        System.out.println(bucket + "\t" + CloudApiUtils.getS3Region(accessId, secretKey, bucket + "3"));
     }
 
     @Test
@@ -38,9 +35,9 @@ public class CloudAPIUtilsTest {
         String accessKeyId = propertiesFile.getValue("ali-id");
         String accessKeySecret = propertiesFile.getValue("ali-secret");
         String bucket = propertiesFile.getValue("bucket");
-        System.out.println(bucket + "\t" + CloudAPIUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket));
-        System.out.println(bucket + "\t" + CloudAPIUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "2"));
-        System.out.println(bucket + "\t" + CloudAPIUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "3"));
+        System.out.println(bucket + "\t" + CloudApiUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket));
+        System.out.println(bucket + "\t" + CloudApiUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "2"));
+        System.out.println(bucket + "\t" + CloudApiUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "3"));
     }
 
     @Test
@@ -50,7 +47,7 @@ public class CloudAPIUtilsTest {
         String secretKey = propertiesFile.getValue("bai-secret");
         String bucket = propertiesFile.getValue("bucket");
         bucket = "nigel-test";
-        System.out.println(CloudAPIUtils.getBaiduBosRegion(accessKeyId, secretKey, bucket));
+        System.out.println(CloudApiUtils.getBaiduBosRegion(accessKeyId, secretKey, bucket));
     }
 
     @Test
@@ -60,18 +57,18 @@ public class CloudAPIUtilsTest {
         FileItem fileItem1 = new FileItem();
         fileItem1.key = name1;
         fileItem1.attribute = "folder";
-        System.out.println(CloudAPIUtils.getUpYunMarker(bucket, fileItem1));
+        System.out.println(CloudApiUtils.getUpYunMarker(bucket, fileItem1));
         String name2 = "wordSplit/xml/20161220/FF8080815919A15101591AFE37C603F7/4028965B591534B501591BBEC0E8049A.txt";
         FileItem fileItem2 = new FileItem();
         fileItem2.key = name2;
-        System.out.println(CloudAPIUtils.getUpYunMarker(bucket, fileItem2));
+        System.out.println(CloudApiUtils.getUpYunMarker(bucket, fileItem2));
     }
 
     @Test
     public void testDecodeUpYunMarker() {
         String marker1 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9AfkZGODA4MDgxNTkxOUExNTEwMTU5MTlEN0RDOEYwMDM2";
         String marker2 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9+RkY4MDgwODE1OTE5QTE1MTAxNTkxQUZFMzdDNjAzRjcvQCM0MDI4OTY1QjU5MTUzNEI1MDE1OTFCQkVDMEU4MDQ5QS50eHQ=";
-        System.out.println(CloudAPIUtils.decodeUpYunMarker(marker1));
-        System.out.println(CloudAPIUtils.decodeUpYunMarker(marker2));
+        System.out.println(CloudApiUtils.decodeUpYunMarker(marker1));
+        System.out.println(CloudApiUtils.decodeUpYunMarker(marker2));
     }
 }

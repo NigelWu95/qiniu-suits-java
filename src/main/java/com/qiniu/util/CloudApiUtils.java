@@ -44,7 +44,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Base64.*;
 
-public final class CloudAPIUtils {
+public final class CloudApiUtils {
 
     public static String QINIU = "qiniu";
     public static String TENCENT = "tencent";
@@ -320,9 +320,9 @@ public final class CloudAPIUtils {
         try {
             return ossClient.getBucketLocation(bucket);
         } catch (ClientException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } finally {
             ossClient.shutdown();
             ossClient = null;
