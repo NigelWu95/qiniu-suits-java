@@ -378,7 +378,7 @@ public final class CloudAPIUtils {
         try {
             return obsClient.getBucketLocation(bucket);
         } catch (ObsException e) {
-            throw new SuitsException(e, e.getResponseCode(), "get aliyun region failed");
+            throw new SuitsException(e, e.getResponseCode(), "get huaweicloud region failed");
         } finally {
             obsClient = null;
         }
