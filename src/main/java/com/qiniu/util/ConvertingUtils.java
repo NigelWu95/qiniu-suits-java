@@ -2,6 +2,7 @@ package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.*;
 import com.obs.services.model.ObsObject;
 import com.qcloud.cos.model.COSObjectSummary;
@@ -271,7 +272,7 @@ public final class ConvertingUtils {
 
     public static <T> T toPair(ObsObject obsObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
-        if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
+        if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty ObsObject or key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
                 case "key": pair.put(indexMap.get(index), obsObject.getObjectKey()); break;
@@ -292,6 +293,30 @@ public final class ConvertingUtils {
                 case "owner":
                 case "endUser": if (obsObject.getOwner() != null) pair.put(indexMap.get(index),
                         obsObject.getOwner().getId()); break;
+                default: throw new IOException("ObsObject doesn't have field: " + index);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(BosObjectSummary bosObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (bosObject == null || bosObject.getKey() == null) throw new IOException("empty BosObject or key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "key": pair.put(indexMap.get(index), bosObject.getKey()); break;
+                case "hash":
+                case "etag": pair.put(indexMap.get(index), bosObject.getETag()); break;
+                case "size":
+                case "fsize": pair.put(indexMap.get(index), bosObject.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(bosObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(indexMap.get(index), bosObject.getLastModified().getTime()); break;
+                case "type": pair.put(indexMap.get(index), bosObject.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (bosObject.getOwner() != null) pair.put(indexMap.get(index), bosObject.getOwner().getId()); break;
                 default: throw new IOException("ObsObject doesn't have field: " + index);
             }
         }
@@ -478,6 +503,30 @@ public final class ConvertingUtils {
                 case "md5": pair.put(field, obsObject.getMetadata().getContentMd5()); break;
                 case "owner":
                 case "endUser": if (obsObject.getOwner() != null) pair.put(field, obsObject.getOwner().getId()); break;
+                default: throw new IOException("ObsObject doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(BosObjectSummary bosObject, List<String> fields, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (bosObject == null || bosObject.getKey() == null) throw new IOException("empty BosObject or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, bosObject.getKey()); break;
+                case "hash":
+                case "etag": pair.put(field, bosObject.getETag()); break;
+                case "size":
+                case "fsize": pair.put(field, bosObject.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(bosObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, bosObject.getLastModified().getTime()); break;
+                case "type": pair.put(field, bosObject.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (bosObject.getOwner() != null) pair.put(field, bosObject.getOwner().getId()); break;
                 default: throw new IOException("ObsObject doesn't have field: " + field);
             }
         }

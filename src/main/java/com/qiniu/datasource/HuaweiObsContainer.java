@@ -26,17 +26,15 @@ public class HuaweiObsContainer extends CloudStorageContainer<ObsObject, Buffere
     private String accessKeyId;
     private String accessKeySecret;
     private ObsConfiguration configuration;
-    private String endpoint;
 
-    public HuaweiObsContainer(String accessKeyId, String accessKeySecret, ObsConfiguration configuration, String endpoint,
-                              String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
-                              boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
-                              int unitLen, int threads) throws IOException {
+    public HuaweiObsContainer(String accessKeyId, String accessKeySecret, ObsConfiguration configuration, String bucket,
+                              Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes, boolean prefixLeft,
+                              boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
+                              int threads) throws IOException {
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.accessKeySecret = accessKeySecret;
         this.configuration = configuration;
-        this.endpoint = endpoint;
         HuaweiLister huaweiLister = new HuaweiLister(new ObsClient(accessKeyId, accessKeySecret, configuration), bucket,
                 null, null, null, 1);
         huaweiLister.close();
@@ -48,7 +46,7 @@ public class HuaweiObsContainer extends CloudStorageContainer<ObsObject, Buffere
 
     @Override
     public String getSourceName() {
-        return "aliyun";
+        return "huawei";
     }
 
     @Override

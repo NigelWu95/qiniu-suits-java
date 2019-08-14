@@ -1,5 +1,8 @@
 package com.qiniu.util;
 
+import com.baidubce.auth.DefaultBceCredentials;
+import com.baidubce.services.bos.BosClient;
+import com.baidubce.services.bos.BosClientConfiguration;
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.sdk.FileItem;
 import org.junit.Test;
@@ -38,6 +41,16 @@ public class CloudAPIUtilsTest {
         System.out.println(bucket + "\t" + CloudAPIUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket));
         System.out.println(bucket + "\t" + CloudAPIUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "2"));
         System.out.println(bucket + "\t" + CloudAPIUtils.getAliOssRegion(accessKeyId, accessKeySecret, bucket + "3"));
+    }
+
+    @Test
+    public void testGetBaiduBosRegion() throws IOException {
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
+        String accessKeyId = propertiesFile.getValue("bai-id");
+        String secretKey = propertiesFile.getValue("bai-secret");
+        String bucket = propertiesFile.getValue("bucket");
+        bucket = "nigel-test";
+        System.out.println(CloudAPIUtils.getBaiduBosRegion(accessKeyId, secretKey, bucket));
     }
 
     @Test

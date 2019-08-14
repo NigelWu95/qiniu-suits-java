@@ -12,6 +12,9 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.baidubce.auth.DefaultBceCredentials;
+import com.baidubce.services.bos.BosClient;
+import com.baidubce.services.bos.BosClientConfiguration;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.obs.services.ObsClient;
@@ -373,14 +376,25 @@ public final class CloudAPIUtils {
         }
     }
 
-    public static String getHwObsRegion(String accessKey, String secretKey, String bucket) throws SuitsException {
-        ObsClient obsClient = new ObsClient(accessKey, secretKey, "https://obs.myhuaweicloud.com");
+    public static String getHuaweiObsRegion(String accessKeyId, String secretKey, String bucket) throws SuitsException {
+        ObsClient obsClient = new ObsClient(accessKeyId, secretKey, "https://obs.myhuaweicloud.com");
         try {
             return obsClient.getBucketLocation(bucket);
         } catch (ObsException e) {
             throw new SuitsException(e, e.getResponseCode(), "get huaweicloud region failed");
         } finally {
             obsClient = null;
+        }
+    }
+
+    public static String getBaiduBosRegion(String accessKeyId, String secretKey, String bucket) {
+        BosClient bosClient = new BosClient(new BosClientConfiguration()
+//                .withEndpoint("bj.bcebos.com")
+                .withCredentials(new DefaultBceCredentials(accessKeyId, secretKey)));
+        try {
+            return bosClient.getBucketLocation(bucket).getLocationConstraint();
+        } finally {
+            bosClient.shutdown();
         }
     }
 
