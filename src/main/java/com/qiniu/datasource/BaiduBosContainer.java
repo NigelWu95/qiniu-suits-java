@@ -39,9 +39,14 @@ public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, B
         this.configuration.setCredentials(new DefaultBceCredentials(accessKeyId, accessKeySecret));
         this.configuration.setEndpoint(endpoint);
         BosClient bosClient = new BosClient(this.configuration);
-        BaiduLister baiduLister = new BaiduLister(bosClient, bucket, null, null, null, 1);
-        baiduLister.close();
-        baiduLister = null;
+        try {
+            BaiduLister baiduLister = new BaiduLister(bosClient, bucket, null, null, null, 1);
+            baiduLister.close();
+            baiduLister = null;
+        } catch (SuitsException e) {
+            bosClient.shutdown();
+            throw e;
+        }
         BosObjectSummary test = new BosObjectSummary();
         test.setKey("test");
         ConvertingUtils.toPair(test, indexMap, new StringMapPair());
@@ -86,6 +91,12 @@ public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, B
     @Override
     protected ILister<BosObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
-        return new BaiduLister(new BosClient(configuration), bucket, prefix, marker, end, unitLen);
+        BosClient bosClient = new BosClient(this.configuration);
+        try {
+            return new BaiduLister(new BosClient(configuration), bucket, prefix, marker, end, unitLen);
+        } catch (SuitsException e) {
+            bosClient.shutdown();
+            throw e;
+        }
     }
 }

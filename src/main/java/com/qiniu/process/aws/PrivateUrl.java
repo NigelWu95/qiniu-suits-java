@@ -98,6 +98,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         super.closeResource();
         region = null;
         request = null;
+        s3Client.shutdown();
         s3Client = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

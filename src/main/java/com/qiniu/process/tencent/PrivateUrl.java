@@ -89,6 +89,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         super.closeResource();
         clientConfig = null;
         request = null;
+        cosClient.shutdown();
         cosClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

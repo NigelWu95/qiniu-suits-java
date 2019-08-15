@@ -37,7 +37,12 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration = new BosClientConfiguration().withEndpoint(endpoint).withCredentials(
                 new DefaultBceCredentials(accessKeyId, accessKeySecret));
         bosClient = new BosClient(configuration);
-        CloudApiUtils.checkBaidu(bosClient);
+        try {
+            CloudApiUtils.checkBaidu(bosClient);
+        } catch (Exception e) {
+            bosClient.shutdown();
+            throw e;
+        }
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, int expires,
@@ -54,7 +59,12 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration = new BosClientConfiguration().withEndpoint(endpoint).withCredentials(
                 new DefaultBceCredentials(accessKeyId, accessKeySecret));
         bosClient = new BosClient(configuration);
-        CloudApiUtils.checkBaidu(bosClient);
+        try {
+            CloudApiUtils.checkBaidu(bosClient);
+        } catch (Exception e) {
+            bosClient.shutdown();
+            throw e;
+        }
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, int expires,
@@ -76,8 +86,13 @@ public class PrivateUrl extends Base<Map<String, String>> {
                 ossPrivateUrl.request.addRequestParameter(entry.getKey(), entry.getValue());
         }
         ossPrivateUrl.bosClient = new BosClient(configuration);
-        if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
-        return ossPrivateUrl;
+        try {
+            if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
+            return ossPrivateUrl;
+        } catch (Exception e) {
+            bosClient.shutdown();
+            throw e;
+        }
     }
 
     @Override
@@ -104,6 +119,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration = null;
         queries = null;
         request = null;
+        bosClient.shutdown();
         bosClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

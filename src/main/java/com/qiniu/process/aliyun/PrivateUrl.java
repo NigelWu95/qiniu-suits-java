@@ -101,6 +101,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         expiration = null;
         queries = null;
         request = null;
+        ossClient.shutdown();
         ossClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
