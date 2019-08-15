@@ -15,7 +15,6 @@ import java.util.Map;
 public class PrivateUrl extends Base<Map<String, String>> {
 
     private BosClientConfiguration configuration;
-    private String endpoint;
     private int expires;
     private Map<String, String> queries;
     private GeneratePresignedUrlRequest request;
@@ -25,7 +24,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, int expires,
                       Map<String, String> queries) {
         super("baiduprivate", accessKeyId, accessKeySecret, bucket);
-        this.endpoint = endpoint;
         this.expires = expires;
         this.queries = queries;
         request = new GeneratePresignedUrlRequest(bucket, "");
@@ -44,8 +42,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, int expires,
                       Map<String, String> queries, String savePath, int saveIndex) throws IOException {
-        super("aliprivate", accessKeyId, accessKeySecret, bucket, savePath, saveIndex);
-        this.endpoint = endpoint;
+        super("baiduprivate", accessKeyId, accessKeySecret, bucket, savePath, saveIndex);
         this.expires = expires;
         this.queries = queries;
         request = new GeneratePresignedUrlRequest(bucket, "");
@@ -104,7 +101,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        endpoint = null;
+        configuration = null;
         queries = null;
         request = null;
         bosClient = null;

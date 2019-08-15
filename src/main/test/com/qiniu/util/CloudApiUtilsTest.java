@@ -1,5 +1,8 @@
 package com.qiniu.util;
 
+import com.qcloud.cos.COSClient;
+import com.qcloud.cos.ClientConfig;
+import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qiniu.config.PropertiesFile;
 import com.qiniu.sdk.FileItem;
 import org.junit.Test;
@@ -70,5 +73,14 @@ public class CloudApiUtilsTest {
         String marker2 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9+RkY4MDgwODE1OTE5QTE1MTAxNTkxQUZFMzdDNjAzRjcvQCM0MDI4OTY1QjU5MTUzNEI1MDE1OTFCQkVDMEU4MDQ5QS50eHQ=";
         System.out.println(CloudApiUtils.decodeUpYunMarker(marker1));
         System.out.println(CloudApiUtils.decodeUpYunMarker(marker2));
+    }
+
+    @Test
+    public void testCheck() throws IOException {
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
+        String accessKeyId = propertiesFile.getValue("ten-id");
+        String accessKeySecret = propertiesFile.getValue("ten-secret");
+        COSClient cosClient = new COSClient(new BasicCOSCredentials(accessKeyId, accessKeySecret), new ClientConfig());
+        CloudApiUtils.checkTencent(cosClient);
     }
 }

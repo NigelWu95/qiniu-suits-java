@@ -8,7 +8,6 @@ import com.qiniu.process.Base;
 import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,9 +40,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
         CloudApiUtils.checkHuaWei(obsClient);
     }
 
-    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, int expires,
+    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
                       Map<String, String> queries, String savePath, int saveIndex) throws IOException {
-        super("aliprivate", accessKeyId, accessKeySecret, bucket, savePath, saveIndex);
+        super("huaweiprivate", accessKeyId, accessKeySecret, bucket, savePath, saveIndex);
         this.expires = expires;
         this.queries = new HashMap<>();
         request = new TemporarySignatureRequest();
@@ -61,7 +60,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         CloudApiUtils.checkHuaWei(obsClient);
     }
 
-    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, int expires,
+    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
                       Map<String, String> queries, String savePath) throws IOException {
         this(accessKeyId, accessKeySecret, bucket, endpoint, expires, queries, savePath, 0);
     }

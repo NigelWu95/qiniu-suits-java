@@ -13,7 +13,10 @@ public final class ProcessUtils {
         add("exportts");
         add("tenprivate");
         add("awsprivate");
+        add("s3private");
         add("aliprivate");
+        add("huaweiprivate");
+        add("baiduprivate");
         add("download");
         add("imagecensor");
         add("videocensor");
@@ -58,17 +61,26 @@ public final class ProcessUtils {
     public static Set<String> tenProcesses = new HashSet<String>(){{
         add("tenprivate");
     }};
-    public static Set<String> awsProcesses = new HashSet<String>(){{
+    public static Set<String> awsS3Processes = new HashSet<String>(){{
         add("awsprivate");
+        add("s3private");
     }};
     public static Set<String> aliProcesses = new HashSet<String>(){{
         add("aliprivate");
     }};
+    public static Set<String> huaweiProcesses = new HashSet<String>(){{
+        add("huaweiprivate");
+    }};
+    public static Set<String> baiduProcesses = new HashSet<String>(){{
+        add("baiduprivate");
+    }};
     public static Set<String> needBucketProcesses = new HashSet<String>(){{
         addAll(qiniuProcessesWithBucket);
         addAll(tenProcesses);
-        addAll(awsProcesses);
+        addAll(awsS3Processes);
         addAll(aliProcesses);
+        addAll(huaweiProcesses);
+        addAll(baiduProcesses);
     }};
     public static Set<String> needQiniuAuthProcesses = new HashSet<String>(){{
         addAll(qiniuProcessesWithBucket);
@@ -147,7 +159,15 @@ public final class ProcessUtils {
     }
 
     public static boolean needAwsS3Auth(String process) {
-        return awsProcesses.contains(process);
+        return awsS3Processes.contains(process);
+    }
+
+    public static boolean needHuaweiAuth(String process) {
+        return huaweiProcesses.contains(process);
+    }
+
+    public static boolean needBaiduAuth(String process) {
+        return baiduProcesses.contains(process);
     }
 
     public static boolean canBatch(String process) {

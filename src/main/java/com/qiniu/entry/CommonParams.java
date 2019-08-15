@@ -167,6 +167,8 @@ public class CommonParams {
             case "aliprivate":
             case "s3private":
             case "awsprivate":
+            case "huaweiprivate":
+            case "baiduprivate":
             case "imagecensor":
             case "videocensor":
                 String url = entryParam.getValue("url", "").trim();
@@ -370,6 +372,12 @@ public class CommonParams {
         } else if (ProcessUtils.needAwsS3Auth(process)) {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
+        } else if (ProcessUtils.needHuaweiAuth(process)) {
+            huaweiAccessId = entryParam.getValue("hua-id").trim();
+            huaweiSecretKey = entryParam.getValue("hua-secret").trim();
+        } else if (ProcessUtils.needBaiduAuth(process)) {
+            baiduAccessId = entryParam.getValue("bai-id").trim();
+            huaweiSecretKey = entryParam.getValue("bai-secret").trim();
         }
         if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket", bucket).trim();
     }
@@ -396,6 +404,16 @@ public class CommonParams {
             case "aws":
             case "s3":
                 if (!"s3".equals(source) && isStorageSource) {
+                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                }
+                break;
+            case "huawei":
+                if (!"huawei".equals(source) && isStorageSource) {
+                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                }
+                break;
+            case "baidu":
+                if (!"baidu".equals(source) && isStorageSource) {
                     throw new IOException("the privateType: " + privateType + " can not match source: " + source);
                 }
                 break;

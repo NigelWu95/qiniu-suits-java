@@ -17,14 +17,12 @@ import java.util.Map;
 public class PrivateUrl extends Base<Map<String, String>> {
 
     private ClientConfig clientConfig;
-    private String region;
     private GeneratePresignedUrlRequest request;
     private COSClient cosClient;
     private ILineProcess<Map<String, String>> nextProcessor;
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires, Map<String, String> queries) {
         super("tenprivate", secretId, secretKey, bucket);
-        this.region = region;
         request = new GeneratePresignedUrlRequest(bucket, "");
         request.setExpiration(new Date(System.currentTimeMillis() + expires));
         if (queries != null) {
@@ -39,7 +37,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires, Map<String, String> queries,
                       String savePath, int saveIndex) throws IOException {
         super("tenprivate", secretId, secretKey, bucket, savePath, saveIndex);
-        this.region = region;
         request = new GeneratePresignedUrlRequest(bucket, "");
         request.setExpiration(new Date(System.currentTimeMillis() + expires));
         if (queries != null) {
@@ -90,7 +87,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        region = null;
+        clientConfig = null;
         request = null;
         cosClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
