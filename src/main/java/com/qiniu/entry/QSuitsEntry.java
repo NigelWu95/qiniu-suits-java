@@ -752,11 +752,13 @@ public class QSuitsEntry {
         String secretKey = entryParam.getValue("s3-secret", commonParams.getS3SecretKey());
         String s3Bucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
         String region = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
-        if (region == null || "".equals(region)) region = CloudApiUtils.getS3Region(accessId, secretKey, s3Bucket);
+        String endpoint = entryParam.getValue("endpoint", "").trim();
+        if (endpoint.isEmpty() && (region == null || "".equals(region)))
+            region = CloudApiUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, region, Long.valueOf(expires),
-                getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, region,
+        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region, Long.valueOf(expires),
+                getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region,
                 Long.valueOf(expires), getQueriesMap(), savePath);
     }
 

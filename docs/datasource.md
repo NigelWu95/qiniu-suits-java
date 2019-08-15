@@ -9,8 +9,8 @@
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](#3-阿里云存储)  
-`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表，参考[S3数据源示例](#4-aws-s3)  
-`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[又拍数据源示例](#5-又拍云存储)  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[S3数据源示例](#4-aws-s3)  
+`path=upyun://<bucket>` 表示从又拍云存储空间列举出资源列表，参考[又拍数据源示例](#5-又拍云存储)  
 `path=huawei://<bucket>` 表示从华为云存储空间列举出资源列表，参考[华为数据源示例](#6-华为云存储)  
 `path=baidu://<bucket>` 表示从百度云存储空间列举出资源列表，参考[百度数据源示例](#7-百度云存储)  
 `path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](#8-local-files)  
@@ -283,6 +283,12 @@ s3-secret=
 threads=300
 prefixes=
 #region=
+```  
+如果是其他基于 S3 实现的数据源，也可以使用 path=s3://<bucket> 方式来列举资源，但是由于 endpoint 与 aws 的不同，需要自行设置 endpoint，如[七
+牛的 S3 接口](https://developer.qiniu.com/kodo/manual/4088/s3-access-domainname)华东区域列举 bucket 文件时，可设置：  
+```
+# http(s):// 开头可省略
+endpoint=s3-cn-east-1.qiniucs.com
 ```  
 
 ### 5 又拍云存储

@@ -31,5 +31,5 @@ rm-prefix=
 
 ## 命令行方式
 ```
--process=copy -ak= -sk= -bucket= -to-bucket= -newKey-index= -add-prefix= -rm-prefix=
+-process=copy -ak= -sk= -bucket= -to-bucket= -toKey-index= -add-prefix= -rm-prefix=
 ```

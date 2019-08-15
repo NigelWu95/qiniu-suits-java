@@ -1,7 +1,6 @@
 package com.qiniu.datasource;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -27,12 +26,11 @@ import java.util.Map;
 
 public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, BufferedWriter, Map<String, String>> {
 
-    private String accessKeyId;
-    private String secretKey;
-    private AWSCredentials credentials;
-    private ClientConfiguration clientConfig;
-    private String endpoint;
-    private String region;
+//    private String accessKeyId;
+//    private String secretKey;
+//    private ClientConfiguration clientConfig;
+//    private String endpoint;
+//    private String region;
     private AmazonS3ClientBuilder amazonS3ClientBuilder;
 
     public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String endpoint,
@@ -40,11 +38,11 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                           int unitLen, int threads) throws IOException {
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
-        this.accessKeyId = accessKeyId;
-        this.secretKey = secretKey;
-        this.clientConfig = clientConfig;
-        this.endpoint = endpoint;
-        this.region = region;
+//        this.accessKeyId = accessKeyId;
+//        this.secretKey = secretKey;
+//        this.clientConfig = clientConfig;
+//        this.endpoint = endpoint;
+//        this.region = region;
         if (endpoint == null || endpoint.isEmpty()) {
             amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
                     .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))

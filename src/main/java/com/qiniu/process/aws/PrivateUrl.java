@@ -2,6 +2,7 @@ package com.qiniu.process.aws;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
@@ -16,47 +17,63 @@ import java.util.Map;
 
 public class PrivateUrl extends Base<Map<String, String>> {
 
-    private String region;
+//    private String region;
     private GeneratePresignedUrlRequest request;
+    private AmazonS3ClientBuilder amazonS3ClientBuilder;
     private AmazonS3 s3Client;
     private ILineProcess<Map<String, String>> nextProcessor;
 
-    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires, Map<String, String> queries) {
+    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String endpoint, String region, long expires,
+                      Map<String, String> queries) {
         super("awsprivate", accessKeyId, secretKey, bucket);
-        this.region = region;
+//        this.region = region;
         request = new GeneratePresignedUrlRequest(bucket, "");
         request.setExpiration(new Date(System.currentTimeMillis() + expires));
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
-                .withRegion(region)
-                .build();
+        if (endpoint == null || endpoint.isEmpty()) {
+            amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                    .withRegion(region);
+        } else {
+            EndpointConfiguration endpointConfiguration = new EndpointConfiguration(endpoint, region);
+            amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                    .withEndpointConfiguration(endpointConfiguration);
+        }
+        s3Client = amazonS3ClientBuilder.build();
         CloudApiUtils.checkAws(s3Client);
     }
 
-    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String region, long expires, Map<String, String> queries,
-                      String savePath, int saveIndex) throws IOException {
+    public PrivateUrl(String accessKeyId, String secretKey, String bucket, String endpoint, String region, long expires,
+                      Map<String, String> queries, String savePath, int saveIndex) throws IOException {
         super("awsprivate", accessKeyId, secretKey, bucket, savePath, saveIndex);
-        this.region = region;
+//        this.region = region;
         request = new GeneratePresignedUrlRequest(bucket, "");
         request.setExpiration(new Date(System.currentTimeMillis() + expires));
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
-                .withRegion(region)
-                .build();
+        if (endpoint == null || endpoint.isEmpty()) {
+            amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                    .withRegion(region);
+        } else {
+            EndpointConfiguration endpointConfiguration = new EndpointConfiguration(endpoint, region);
+            amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                    .withEndpointConfiguration(endpointConfiguration);
+        }
+        s3Client = amazonS3ClientBuilder.build();
         CloudApiUtils.checkAws(s3Client);
     }
 
-    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String region, long expires, Map<String, String> queries,
-                      String savePath) throws IOException {
-        this(accessKeyId, accessKeySecret, bucket, region, expires, queries, savePath, 0);
+    public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, String region, long expires,
+                      Map<String, String> queries, String savePath) throws IOException {
+        this(accessKeyId, accessKeySecret, bucket, endpoint, region, expires, queries, savePath, 0);
     }
 
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
@@ -67,10 +84,11 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl awsPrivateUrl = (PrivateUrl)super.clone();
         awsPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
-        awsPrivateUrl.s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessId, secretKey)))
-                .withRegion(region)
-                .build();
+//        awsPrivateUrl.s3Client = AmazonS3ClientBuilder.standard()
+//                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessId, secretKey)))
+//                .withRegion(region)
+//                .build();
+        awsPrivateUrl.s3Client = amazonS3ClientBuilder.build();
         if (nextProcessor != null) awsPrivateUrl.nextProcessor = nextProcessor.clone();
         return awsPrivateUrl;
     }
@@ -96,8 +114,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        region = null;
+//        region = null;
         request = null;
+        amazonS3ClientBuilder = null;
         s3Client.shutdown();
         s3Client = null;
         if (nextProcessor != null) nextProcessor.closeResource();

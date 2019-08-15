@@ -31,7 +31,7 @@ prefix-force=
 
 ### 关于 toKey-index
 指定输入行中对应修改之后的文件名字段下标，不设置则无法进行解析，当使用 file 源且 parse=tab/csv 时下标必须为整数，但未设置且 add-prefix 不为空
-时需要强制指定 prefix-force=true，表明该次重命名操作只添加文件名前缀。由于 rename 操作既需要原始文件名字段也需要新文件名字段，因此 newKey 下
+时需要强制指定 prefix-force=true，表明该次重命名操作只添加文件名前缀。由于 rename 操作既需要原始文件名字段也需要新文件名字段，因此 toKey 下
 标和 key 字段下标不可相同，key 下标用 indexes 参数设置，。  
 
 ## 命令行方式
