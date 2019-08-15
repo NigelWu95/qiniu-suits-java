@@ -16,6 +16,7 @@ import java.util.Map;
 
 public class PrivateUrl extends Base<Map<String, String>> {
 
+    private ClientConfig clientConfig;
     private String region;
     private GeneratePresignedUrlRequest request;
     private COSClient cosClient;
@@ -30,7 +31,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
+        clientConfig = new ClientConfig(new Region(region));
+        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig);
         CloudApiUtils.checkTencent(cosClient);
     }
 
@@ -44,7 +46,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
+        clientConfig = new ClientConfig(new Region(region));
+        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig);
         CloudApiUtils.checkTencent(cosClient);
     }
 
@@ -61,7 +64,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
-        cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(accessId, secretKey), new ClientConfig(new Region(region)));
+        cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(accessId, secretKey), clientConfig);
         if (nextProcessor != null) cosPrivateUrl.nextProcessor = nextProcessor.clone();
         return cosPrivateUrl;
     }
