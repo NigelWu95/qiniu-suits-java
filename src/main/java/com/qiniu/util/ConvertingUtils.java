@@ -184,9 +184,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), cosObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), cosObject.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified() == null ? 0 :
+                    cosObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
@@ -209,9 +211,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), ossObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), ossObject.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified() == null ? 0 :
+                    ossObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
@@ -234,13 +238,15 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), s3Object.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), s3Object.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified() == null ? 0 :
+                    s3Object.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null) pair.put(indexMap.get(index),
-                        s3Object.getOwner().getDisplayName()); break;
+                    s3Object.getOwner().getDisplayName()); break;
                 default: throw new IOException("S3ObjectSummary doesn't have field: " + index);
             }
         }
@@ -277,22 +283,33 @@ public final class ConvertingUtils {
             switch (index) {
                 case "key": pair.put(indexMap.get(index), obsObject.getObjectKey()); break;
                 case "hash":
-                case "etag": pair.put(indexMap.get(index), obsObject.getMetadata().getEtag()); break;
+                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                    if (etag.startsWith("\"")) {
+                        etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
+                    }
+                    pair.put(indexMap.get(index), etag); break;
                 case "size":
-                case "fsize": pair.put(indexMap.get(index), obsObject.getMetadata().getContentLength()); break;
+                case "fsize": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getContentLength()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(obsObject.getMetadata()
-                        .getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), obsObject.getMetadata().getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getLastModified() == null ? 0 :
+                    obsObject.getMetadata().getLastModified().getTime()); break;
                 case "mime":
                 case "mimeType":
-                case "contentType": pair.put(indexMap.get(index), obsObject.getMetadata().getContentType()); break;
-                case "type": pair.put(indexMap.get(index), obsObject.getMetadata().getObjectStorageClass().getCode()); break;
-                case "md5": pair.put(indexMap.get(index), obsObject.getMetadata().getContentMd5()); break;
+                case "contentType": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getContentType()); break;
+                case "type": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getObjectStorageClass() == null ? "" :
+                    obsObject.getMetadata().getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getContentMd5()); break;
                 case "owner":
-                case "endUser": if (obsObject.getOwner() != null) pair.put(indexMap.get(index),
-                        obsObject.getOwner().getId()); break;
+                case "endUser": if (obsObject.getOwner() != null) pair.put(indexMap.get(index), obsObject.getOwner().getId()); break;
                 default: throw new IOException("ObsObject doesn't have field: " + index);
             }
         }
@@ -311,9 +328,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), bosObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(bosObject.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), bosObject.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(bosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), bosObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), bosObject.getLastModified() == null ? 0 :
+                    bosObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), bosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (bosObject.getOwner() != null) pair.put(indexMap.get(index), bosObject.getOwner().getId()); break;
@@ -402,9 +421,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, cosObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "datetime": pair.put(field, cosObject.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, cosObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, cosObject.getLastModified() == null ? 0 :
+                    cosObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, cosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null) pair.put(field, cosObject.getOwner().getDisplayName()); break;
@@ -425,9 +446,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, ossObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "datetime": pair.put(field, ossObject.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, ossObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, ossObject.getLastModified() == null ? 0 :
+                    ossObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, ossObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null) pair.put(field, ossObject.getOwner().getDisplayName()); break;
@@ -448,9 +471,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, s3Object.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "datetime": pair.put(field, s3Object.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, s3Object.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, s3Object.getLastModified() == null ? 0 :
+                    s3Object.getLastModified().getTime()); break;
                 case "type": pair.put(field, s3Object.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null) pair.put(field, s3Object.getOwner().getDisplayName()); break;
@@ -489,22 +514,31 @@ public final class ConvertingUtils {
             switch (field) {
                 case "key": pair.put(field, obsObject.getObjectKey()); break;
                 case "hash":
-                case "etag": String etag = obsObject.getMetadata().getEtag();
-                if (etag.startsWith("\"")) {
-                    etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
-                }
-                pair.put(field, etag); break;
+                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                    if (etag.startsWith("\"")) {
+                        etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
+                    }
+                    pair.put(field, etag); break;
                 case "size":
-                case "fsize": pair.put(field, obsObject.getMetadata().getContentLength()); break;
+                case "fsize": pair.put(field, obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getContentLength()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
+                case "datetime": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, obsObject.getMetadata().getLastModified().getTime()); break;
+                case "putTime": pair.put(field, obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getLastModified() == null ? 0 :
+                    obsObject.getMetadata().getLastModified().getTime()); break;
                 case "mime":
                 case "mimeType":
-                case "contentType": pair.put(field, obsObject.getMetadata().getContentType()); break;
-                case "type": pair.put(field, obsObject.getMetadata().getObjectStorageClass().getCode()); break;
-                case "md5": pair.put(field, obsObject.getMetadata().getContentMd5()); break;
+                case "contentType": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getContentType()); break;
+                case "type": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getObjectStorageClass() == null ? "" :
+                    obsObject.getMetadata().getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getContentMd5()); break;
                 case "owner":
                 case "endUser": if (obsObject.getOwner() != null) pair.put(field, obsObject.getOwner().getId()); break;
                 default: throw new IOException("ObsObject doesn't have field: " + field);
@@ -525,9 +559,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, bosObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(bosObject.getLastModified())); break;
+                case "datetime": pair.put(field, bosObject.getLastModified() == null ? "" :
+                        DatetimeUtils.stringOf(bosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, bosObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, bosObject.getLastModified() == null ? 0 :
+                        bosObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, bosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (bosObject.getOwner() != null) pair.put(field, bosObject.getOwner().getId()); break;
