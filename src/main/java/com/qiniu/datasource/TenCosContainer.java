@@ -3,6 +3,7 @@ package com.qiniu.datasource;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
+import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
@@ -23,8 +24,9 @@ import java.util.*;
 
 public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
 
-    private String secretId;
-    private String secretKey;
+//    private String secretId;
+//    private String secretKey;
+    private COSCredentials credentials;
     private ClientConfig clientConfig;
 
     public TenCosContainer(String secretId, String secretKey, ClientConfig clientConfig, String bucket,
@@ -32,10 +34,11 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
                            boolean prefixRight, Map<String, String> indexMap, List<String> fields, int unitLen,
                            int threads) throws IOException {
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
-        this.secretId = secretId;
-        this.secretKey = secretKey;
+//        this.secretId = secretId;
+//        this.secretKey = secretKey;
+        this.credentials = new BasicCOSCredentials(secretId, secretKey);
         this.clientConfig = clientConfig;
-        TenLister tenLister = new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig),
+        TenLister tenLister = new TenLister(new COSClient(credentials, clientConfig),
                 bucket, null, null, null, 1);
         tenLister.close();
         tenLister = null;
@@ -83,7 +86,6 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     @Override
     protected ILister<COSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getTenCosMarker(start);
-        return new TenLister(new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig), bucket, prefix,
-                marker, end, unitLen);
+        return new TenLister(new COSClient(credentials, clientConfig), bucket, prefix, marker, end, unitLen);
     }
 }

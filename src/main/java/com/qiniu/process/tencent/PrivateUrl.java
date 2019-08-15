@@ -3,6 +3,7 @@ package com.qiniu.process.tencent;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
+import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.GeneratePresignedUrlRequest;
 import com.qcloud.cos.region.Region;
 import com.qiniu.interfaces.ILineProcess;
@@ -16,8 +17,9 @@ import java.util.Map;
 
 public class PrivateUrl extends Base<Map<String, String>> {
 
-    private ClientConfig clientConfig;
     private GeneratePresignedUrlRequest request;
+    private COSCredentials credentials;
+    private ClientConfig clientConfig;
     private COSClient cosClient;
     private ILineProcess<Map<String, String>> nextProcessor;
 
@@ -29,8 +31,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
+        credentials = new BasicCOSCredentials(secretId, secretKey);
         clientConfig = new ClientConfig(new Region(region));
-        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig);
+        cosClient = new COSClient(credentials, clientConfig);
         CloudApiUtils.checkTencent(cosClient);
     }
 
@@ -43,8 +46,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
+        credentials = new BasicCOSCredentials(secretId, secretKey);
         clientConfig = new ClientConfig(new Region(region));
-        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), clientConfig);
+        cosClient = new COSClient(credentials, clientConfig);
         CloudApiUtils.checkTencent(cosClient);
     }
 
@@ -61,7 +65,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
-        cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(accessId, secretKey), clientConfig);
+        cosPrivateUrl.cosClient = new COSClient(credentials, clientConfig);
         if (nextProcessor != null) cosPrivateUrl.nextProcessor = nextProcessor.clone();
         return cosPrivateUrl;
     }
@@ -87,8 +91,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        clientConfig = null;
         request = null;
+        credentials = null;
+        clientConfig = null;
         cosClient.shutdown();
         cosClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();

@@ -2,7 +2,9 @@ package com.qiniu.datasource;
 
 import com.aliyun.oss.ClientConfiguration;
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.common.auth.Credentials;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
+import com.aliyun.oss.common.auth.DefaultCredentials;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.convert.Converter;
@@ -24,8 +26,9 @@ import java.util.Map;
 
 public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
 
-    private String accessKeyId;
-    private String accessKeySecret;
+//    private String accessKeyId;
+//    private String accessKeySecret;
+    private Credentials credentials;
     private ClientConfiguration clientConfig;
     private String endpoint;
 
@@ -34,11 +37,12 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
                            boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                            int unitLen, int threads) throws IOException {
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
-        this.accessKeyId = accessKeyId;
-        this.accessKeySecret = accessKeySecret;
+        this.credentials = new DefaultCredentials(accessKeyId, accessKeySecret);
+//        this.accessKeyId = accessKeyId;
+//        this.accessKeySecret = accessKeySecret;
         this.clientConfig = clientConfig;
         this.endpoint = endpoint;
-        AliLister aliLister = new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
+        AliLister aliLister = new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(credentials),
                 clientConfig), bucket, null, null, null, 1);
         aliLister.close();
         aliLister = null;
@@ -86,7 +90,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     @Override
     protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
-        return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret),
+        return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(credentials),
                 clientConfig), bucket, prefix, marker, end, unitLen);
     }
 }
