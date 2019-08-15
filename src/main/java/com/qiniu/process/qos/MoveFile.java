@@ -28,63 +28,62 @@ public class MoveFile extends Base<Map<String, String>> {
     private BucketManager bucketManager;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+                    String toKeyIndex, String addPrefix, String rmPrefix, boolean forceIfOnlyPrefix) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket);
         if ("rename".equals(processName)) isRename = true;
-        set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         CloudApiUtils.checkQiniu(bucketManager, toBucket);
+        set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, forceIfOnlyPrefix);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String toKeyIndex, String addPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath,
+                    String toKeyIndex, String addPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath,
                     int saveIndex) throws IOException {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket, savePath, saveIndex);
         if ("rename".equals(processName)) isRename = true;
-        set(configuration, toBucket, toKeyIndex, addPrefix, forceIfOnlyPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         CloudApiUtils.checkQiniu(bucketManager, toBucket);
+        set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, forceIfOnlyPrefix);
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
-                    String toKeyIndex, String keyPrefix, boolean forceIfOnlyPrefix, String rmPrefix, String savePath)
+                    String toKeyIndex, String addPrefix, String rmPrefix, boolean forceIfOnlyPrefix, String savePath)
             throws IOException {
-        this(accessKey, secretKey, configuration, bucket, toBucket, toKeyIndex, keyPrefix, forceIfOnlyPrefix, rmPrefix,
+        this(accessKey, secretKey, configuration, bucket, toBucket, toKeyIndex, addPrefix, rmPrefix, forceIfOnlyPrefix,
                 savePath, 0);
     }
 
     private void set(Configuration configuration, String toBucket, String toKeyIndex, String addPrefix,
-                     boolean forceIfOnlyPrefix, String rmPrefix) throws IOException {
+                     String rmPrefix, boolean forceIfOnlyPrefix) throws IOException {
         this.configuration = configuration;
         this.toBucket = toBucket;
-        if (toKeyIndex == null || "".equals(toKeyIndex)) {
-            if ((addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix))) {
-                throw new IOException("no toKeyIndex and no valid addPrefix or rmPrefix.");
-            } else {
-                this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
-                defaultToKey = true;
-            }
-            if (isRename) { // rename 操作时未设置 new-key 的条件判断
-                if (forceIfOnlyPrefix) {
-                    if (addPrefix == null || "".equals(addPrefix))
-                        throw new IOException("although prefix-force is true, but the add-prefix is empty.");
-                } else {
-                    throw new IOException("there is no to-key index, if you only want to add prefix for renaming, " +
-                            "please set the \"prefix-force\" as true.");
-                }
-            }
-        } else {
-            this.toKeyIndex = toKeyIndex;
-        }
+        this.toKeyIndex = toKeyIndex;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
+        if (toKeyIndex == null || "".equals(toKeyIndex)) {
+            this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
+            defaultToKey = true;
+            if (isRename) { // rename 操作时未设置 new-key 的条件判断
+                if (forceIfOnlyPrefix) {
+                    if ((addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix)))
+                        throw new IOException("although prefix-force is true, but there no add/rm prefix for target key.");
+                } else {
+                    throw new IOException("there is no to-key index, if you only want to add/rm prefix for rename, " +
+                            "please set the \"prefix-force\" as true.");
+                }
+            } else {
+                if (bucket.equals(toBucket)) {
+                    throw new IOException("bucket can not be same as toBucket if process is move.");
+                }
+            }
+        }
     }
 
     public MoveFile clone() throws CloneNotSupportedException {

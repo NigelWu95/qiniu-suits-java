@@ -17,7 +17,6 @@ to-bucket=<to-bucket>
 toKey-index=
 add-prefix=
 rm-prefix=
-prefix-force=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  

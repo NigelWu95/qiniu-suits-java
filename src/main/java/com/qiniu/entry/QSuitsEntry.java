@@ -550,13 +550,13 @@ public class QSuitsEntry {
         }
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
+        String rmPrefix = entryParam.getValue("rm-prefix", null);
         String force = entryParam.getValue("prefix-force", "false").trim();
         force = ParamsUtils.checked(force, "prefix-force", "(true|false)");
-        String rmPrefix = entryParam.getValue("rm-prefix", null);
         return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                Boolean.valueOf(force), rmPrefix)
+                rmPrefix, Boolean.valueOf(force))
                 : new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                Boolean.valueOf(force), rmPrefix, savePath);
+                rmPrefix, Boolean.valueOf(force), savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile(boolean single) throws IOException {
@@ -568,6 +568,8 @@ public class QSuitsEntry {
         String ak = entryParam.getValue("qiniu-ak", qiniuAccessKey).trim();
         String sk = entryParam.getValue("qiniu-sk", qiniuSecretKey).trim();
         String toBucket = entryParam.getValue("to-bucket").trim();
+        if (toBucket.equals(bucket) && "qiniu".equals(source))
+            throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
