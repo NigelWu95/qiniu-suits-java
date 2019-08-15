@@ -14,7 +14,7 @@ path=aliyun://<bucket>
 ali-id=
 ali-secret=
 #region 可省略，即采用自动判断
-region/ali-region=
+region=
 # private 参数用来指定该数据源空间为私有，需要进行访问签名
 private=aliyun
 
@@ -23,6 +23,8 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
 ```
 
 #### 2. 腾讯云 cos
@@ -31,7 +33,7 @@ path=tencent://<bucket>
 ten-id=
 ten-secret=
 #region 可省略，即采用自动判断
-region/ten-region=
+region=
 # private 参数用来指定该数据源空间为私有，需要进行访问签名
 private=tencent
 
@@ -40,6 +42,8 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
 ```
 
 #### 3. Aws S3
@@ -48,7 +52,7 @@ path=s3://<bucket>
 s3-id=
 s3-secret=
 #region 可省略，即采用自动判断
-region/s3-region=
+region=
 # private 参数用来指定该数据源空间为私有，需要进行访问签名
 private=s3
 
@@ -57,6 +61,8 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
 ```
 
 #### 4. 又拍云存储
@@ -70,11 +76,72 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
+
 # 又拍云没有直接对资源名进行私有签名的操作，必须提供公开访问域名才能进行迁移
 domain=
 ```
 
-#### 5. 本地文件列表
+#### 5. 华为云 obs
+```
+path=huawei://<bucket>
+hua-id=
+hua-secret=
+#region 可省略，即采用自动判断
+region/hua-region=
+# private 参数用来指定该数据源空间为私有，需要进行访问签名
+private=huawei
+
+# 迁移配置（七牛的账号、空间等参数）
+process=asyncfetch
+ak=
+sk=
+to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
+```
+
+#### 6. 百度云 bos
+```
+path=baidu://<bucket>
+bai-id=
+bai-secret=
+#region 可省略，即采用自动判断
+region/bai-region=
+# private 参数用来指定该数据源空间为私有，需要进行访问签名
+private=baidu
+
+# 迁移配置（七牛的账号、空间等参数）
+process=asyncfetch
+ak=
+sk=
+to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
+```
+
+#### 7. 七牛云 qos
+```
+path=qiniu://<bucket>
+ak=
+sk=
+# region 可省略，即采用自动判断
+region=
+# private 参数用来指定该数据源空间为私有，需要进行访问签名
+private=qiniu
+
+# 迁移配置（七牛的目标账号、空间等参数）
+process=asyncfetch
+# 由于数据源中可能设置了另外的 ak/sk，便于区分开则使用 qiniu-ak/qiniu-sk，如抓取同一账号下的文件，则不用再设置 qiniu-ak/qiniu-sk
+qiniu-ak=
+qiniu-sk=
+to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
+```
+
+#### 8. 本地文件列表
 ```
 path=<localpath>
 parse=
@@ -85,6 +152,9 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
+# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# qiniu-region=z0/z1/qvm-z0/...
+
 # 本地的文件列表为文件名时需要提供能公开访问的 domain，为 url 时需要提供每一行中 url 的坐标名
 domain=
 url-index=
