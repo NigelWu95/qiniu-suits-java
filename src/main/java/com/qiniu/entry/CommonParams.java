@@ -105,7 +105,7 @@ public class CommonParams {
         }
         setProcess();
         setPrivateType();
-        regionName = entryParam.getValue("region", "").trim();
+        regionName = entryParam.getValue("region", "").trim().toLowerCase();
         setBaseFilter();
         setSeniorFilter();
         setIndexMap();
@@ -131,7 +131,7 @@ public class CommonParams {
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setProcess();
-        regionName = entryParam.getValue("region", "").trim();
+        regionName = entryParam.getValue("region", "").trim().toLowerCase();
         setIndexMap();
         setRetryTimes(entryParam.getValue("retry-times", "5").trim());
         String line = entryParam.getValue("line", null);

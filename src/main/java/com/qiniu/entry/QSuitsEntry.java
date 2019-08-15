@@ -350,8 +350,10 @@ public class QSuitsEntry {
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
-        if (regionName == null || "".equals(regionName)) regionName = CloudApiUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
-        AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, regionName, bucket,
+        String endpoint = entryParam.getValue("endpoint", "").trim();
+        if (endpoint.isEmpty() && (regionName == null || "".equals(regionName)))
+            regionName = CloudApiUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
+        AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, endpoint, regionName, bucket,
                 prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
         awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         awsS3Container.setRetryTimes(retryTimes);

@@ -1,8 +1,10 @@
 package com.qiniu.datasource;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -27,23 +29,40 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
 
     private String accessKeyId;
     private String secretKey;
+    private AWSCredentials credentials;
     private ClientConfiguration clientConfig;
+    private String endpoint;
     private String region;
+    private AmazonS3ClientBuilder amazonS3ClientBuilder;
 
-    public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String region,
-                          String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
+    public AwsS3Container(String accessKeyId, String secretKey, ClientConfiguration clientConfig, String endpoint,
+                          String region, String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                           boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                           int unitLen, int threads) throws IOException {
         super(bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, fields, unitLen, threads);
         this.accessKeyId = accessKeyId;
         this.secretKey = secretKey;
         this.clientConfig = clientConfig;
+        this.endpoint = endpoint;
         this.region = region;
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
-                .withRegion(region)
-                .withClientConfiguration(clientConfig)
-                .build();
+        if (endpoint == null || endpoint.isEmpty()) {
+            amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                    .withClientConfiguration(clientConfig)
+                    .withRegion(region);
+        } else {
+            EndpointConfiguration endpointConfiguration = new EndpointConfiguration(endpoint, region);
+            amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+                    .withClientConfiguration(clientConfig)
+                    .withEndpointConfiguration(endpointConfiguration);
+        }
+//        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
+//                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+//                .withRegion(region)
+//                .withClientConfiguration(clientConfig)
+//                .build();
+        AmazonS3 s3Client = amazonS3ClientBuilder.build();
         AwsS3Lister awsS3Lister = new AwsS3Lister(s3Client, bucket, null, null, null, null, 1);
         awsS3Lister.close();
         awsS3Lister = null;
@@ -90,11 +109,11 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
 
     @Override
     protected ILister<S3ObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
-                .withRegion(region)
-                .withClientConfiguration(clientConfig)
-                .build();
-        return new AwsS3Lister(s3Client, bucket, prefix, marker, start, end, unitLen);
+//        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
+//                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
+//                .withRegion(region)
+//                .withClientConfiguration(clientConfig)
+//                .build();
+        return new AwsS3Lister(amazonS3ClientBuilder.build(), bucket, prefix, marker, start, end, unitLen);
     }
 }
