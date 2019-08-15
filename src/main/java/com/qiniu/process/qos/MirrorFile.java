@@ -4,7 +4,7 @@ import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -18,7 +18,7 @@ public class MirrorFile extends Base<Map<String, String>> {
         super("mirror", accessKey, secretKey, bucket);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
@@ -26,7 +26,7 @@ public class MirrorFile extends Base<Map<String, String>> {
         super("mirror", accessKey, secretKey, bucket, savePath, saveIndex);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
@@ -36,7 +36,7 @@ public class MirrorFile extends Base<Map<String, String>> {
 
     public MirrorFile clone() throws CloneNotSupportedException {
         MirrorFile mirrorFile = (MirrorFile) super.clone();
-        mirrorFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        mirrorFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         return mirrorFile;
     }
 

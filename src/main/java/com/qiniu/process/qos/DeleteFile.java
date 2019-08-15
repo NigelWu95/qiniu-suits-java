@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class DeleteFile extends Base<Map<String, String>> {
         super("delete", accessKey, secretKey, bucket);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
@@ -35,7 +35,7 @@ public class DeleteFile extends Base<Map<String, String>> {
         this.lines = new ArrayList<>();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath)
@@ -45,7 +45,7 @@ public class DeleteFile extends Base<Map<String, String>> {
 
     public DeleteFile clone() throws CloneNotSupportedException {
         DeleteFile deleteFile = (DeleteFile)super.clone();
-        deleteFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        deleteFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         deleteFile.batchOperations = new BatchOperations();
         deleteFile.lines = new ArrayList<>();
         return deleteFile;

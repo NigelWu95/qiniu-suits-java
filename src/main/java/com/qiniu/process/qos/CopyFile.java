@@ -7,7 +7,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,22 +29,22 @@ public class CopyFile extends Base<Map<String, String>> {
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, String rmPrefix) throws IOException {
         super("copy", accessKey, secretKey, bucket);
-        set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
-        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, toBucket);
+        set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex) throws IOException {
         super("copy", accessKey, secretKey, bucket, savePath, saveIndex);
-        set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
-        CloudAPIUtils.checkQiniu(bucketManager, toBucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, toBucket);
+        set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -56,23 +56,21 @@ public class CopyFile extends Base<Map<String, String>> {
             throws IOException {
         this.configuration = configuration;
         this.toBucket = toBucket;
-        if (toKeyIndex == null || "".equals(toKeyIndex)) {
-            if ((addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix))) {
-                throw new IOException("no toKeyIndex and no valid addPrefix or rmPrefix.");
-            } else {
-                this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
-                defaultToKey = true;
-            }
-        } else {
-            this.toKeyIndex = toKeyIndex;
-        }
+        this.toKeyIndex = toKeyIndex;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
+        if (toKeyIndex == null || "".equals(toKeyIndex)) {
+            this.toKeyIndex = "toKey"; // 没有传入的 toKeyIndex 参数的话直接设置为默认的 "toKey"
+            defaultToKey = true;
+            if (bucket.equals(toBucket) && (addPrefix == null || "".equals(addPrefix)) && (rmPrefix == null || "".equals(rmPrefix))) {
+                throw new IOException("toBucket is same as bucket, but no toKeyIndex and no valid addPrefix or rmPrefix.");
+            }
+        }
     }
 
     public CopyFile clone() throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
-        copyFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        copyFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         copyFile.batchOperations = new BatchOperations();
         copyFile.lines = new ArrayList<>();
         return copyFile;

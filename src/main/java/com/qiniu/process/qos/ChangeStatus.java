@@ -6,7 +6,7 @@ import com.qiniu.storage.BucketManager.*;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.status = status;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -39,7 +39,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.lines = new ArrayList<>();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeStatus(String accessKey, String secretKey, Configuration configuration, String bucket, int status,
@@ -49,7 +49,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
 
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        changeStatus.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        changeStatus.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         changeStatus.batchOperations = new BatchOperations();
         changeStatus.lines = new ArrayList<>();
         return changeStatus;

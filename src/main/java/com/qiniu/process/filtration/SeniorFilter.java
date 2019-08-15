@@ -63,6 +63,7 @@ public abstract class SeniorFilter<T> {
                 if (key.contains(".")) {
                     mime = valueFrom(line, ConvertingUtils.defaultMimeField);
                     if (mime == null) mime = valueFrom(line, "mimeType");
+                    if (mime == null) mime = valueFrom(line, "contentType");
                     String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + mime;
                     if (extMimeList.parallelStream().anyMatch(extMime ->
                             finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {
@@ -90,6 +91,7 @@ public abstract class SeniorFilter<T> {
             if (key.contains(".")) {
                 mime = valueFrom(line, ConvertingUtils.defaultMimeField);
                 if (mime == null) mime = valueFrom(line, "mimeType");
+                if (mime == null) mime = valueFrom(line, "contentType");
                 String finalKeyMimePair = key.substring(key.lastIndexOf(".") + 1) + ":" + mime;
                 if (extMimeList.parallelStream().anyMatch(extMime ->
                         finalKeyMimePair.split("/")[0].equalsIgnoreCase(extMime))) {

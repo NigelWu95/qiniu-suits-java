@@ -2,7 +2,9 @@ package com.qiniu.util;
 
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.*;
+import com.obs.services.model.ObsObject;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
@@ -36,6 +38,7 @@ public final class ConvertingUtils {
     final static public Set<String> mimeFields = new HashSet<String>(){{
         add("mime");
         add("mimeType");
+        add("contentType");
     }};
 
     final static public Set<String> typeFields = new HashSet<String>(){{
@@ -131,19 +134,13 @@ public final class ConvertingUtils {
         return indexMap;
     }
 
-    public static List<String> getKeyOrderFields(Map<String, String> indexMap) {
-        List<String> fields = new ArrayList<>();
-        for (String fileField : fileFields) {
-            if (indexMap.containsKey(fileField)) fields.add(fileField);
-        }
-        return fields;
-    }
-
-    public static List<String> getOrderedFields(List<String> oriFields) {
+    public static List<String> getOrderedFields(List<String> oriFields, List<String> rmFields) {
         List<String> fields = new ArrayList<>();
         for (String fileField : fileFields) {
             if (oriFields.contains(fileField)) fields.add(fileField);
         }
+        if (rmFields == null) return fields;
+        for (String rmField : rmFields) fields.remove(rmField);
         return fields;
     }
 
@@ -162,10 +159,11 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
                 case "mime":
-                case "mimeType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
+                case "mimeType":
+                case "contentType": pair.put(indexMap.get(index), fileInfo.mimeType); break;
                 case "type": pair.put(indexMap.get(index), fileInfo.type); break;
                 case "status": pair.put(indexMap.get(index), fileInfo.status); break;
-                case "md5": if (fileInfo.md5 != null) pair.put(indexMap.get(index), fileInfo.md5); break;
+                case "md5": pair.put(indexMap.get(index), fileInfo.md5); break;
                 case "owner":
                 case "endUser": if (fileInfo.endUser != null) pair.put(indexMap.get(index), fileInfo.endUser); break;
                 default: throw new IOException("Qiniu fileInfo doesn't have field: " + index);
@@ -186,9 +184,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), cosObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), cosObject.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), cosObject.getLastModified() == null ? 0 :
+                    cosObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null)
@@ -211,9 +211,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), ossObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), ossObject.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), ossObject.getLastModified() == null ? 0 :
+                    ossObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null)
@@ -236,13 +238,15 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), s3Object.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "datetime": pair.put(indexMap.get(index), s3Object.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified().getTime()); break;
+                case "putTime": pair.put(indexMap.get(index), s3Object.getLastModified() == null ? 0 :
+                    s3Object.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null) pair.put(indexMap.get(index),
-                        s3Object.getOwner().getDisplayName()); break;
+                    s3Object.getOwner().getDisplayName()); break;
                 default: throw new IOException("S3ObjectSummary doesn't have field: " + index);
             }
         }
@@ -263,8 +267,76 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
-                case "mimeType": pair.put(indexMap.get(index), fileItem.attribute); break;
+                case "mimeType":
+                case "contentType": pair.put(indexMap.get(index), fileItem.attribute); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + index);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(ObsObject obsObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty ObsObject or key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "key": pair.put(indexMap.get(index), obsObject.getObjectKey()); break;
+                case "hash":
+                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                    if (etag.startsWith("\"")) {
+                        etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
+                    }
+                    pair.put(indexMap.get(index), etag); break;
+                case "size":
+                case "fsize": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getContentLength()); break;
+                case "lastModified":
+                case "datetime": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getLastModified() == null ? 0 :
+                    obsObject.getMetadata().getLastModified().getTime()); break;
+                case "mime":
+                case "mimeType":
+                case "contentType": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getContentType()); break;
+                case "type": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getObjectStorageClass() == null ? "" :
+                    obsObject.getMetadata().getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
+                    obsObject.getMetadata().getContentMd5()); break;
+                case "owner":
+                case "endUser": if (obsObject.getOwner() != null) pair.put(indexMap.get(index), obsObject.getOwner().getId()); break;
+                default: throw new IOException("ObsObject doesn't have field: " + index);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(BosObjectSummary bosObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (bosObject == null || bosObject.getKey() == null) throw new IOException("empty BosObject or key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "key": pair.put(indexMap.get(index), bosObject.getKey()); break;
+                case "hash":
+                case "etag": pair.put(indexMap.get(index), bosObject.getETag()); break;
+                case "size":
+                case "fsize": pair.put(indexMap.get(index), bosObject.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(indexMap.get(index), bosObject.getLastModified() == null ? null :
+                    DatetimeUtils.stringOf(bosObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(indexMap.get(index), bosObject.getLastModified() == null ? 0 :
+                    bosObject.getLastModified().getTime()); break;
+                case "type": pair.put(indexMap.get(index), bosObject.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (bosObject.getOwner() != null) pair.put(indexMap.get(index), bosObject.getOwner().getId()); break;
+                default: throw new IOException("BosObjectSummary doesn't have field: " + index);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
@@ -325,7 +397,8 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(field, fileInfo.putTime); break;
                 case "mime":
-                case "mimeType": pair.put(field, fileInfo.mimeType); break;
+                case "mimeType":
+                case "contentType": pair.put(field, fileInfo.mimeType); break;
                 case "type": pair.put(field, fileInfo.type); break;
                 case "status": pair.put(field, fileInfo.status); break;
                 case "md5": if (fileInfo.md5 != null) pair.put(field, fileInfo.md5); break;
@@ -348,9 +421,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, cosObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(cosObject.getLastModified())); break;
+                case "datetime": pair.put(field, cosObject.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(cosObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, cosObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, cosObject.getLastModified() == null ? 0 :
+                    cosObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, cosObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (cosObject.getOwner() != null) pair.put(field, cosObject.getOwner().getDisplayName()); break;
@@ -371,9 +446,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, ossObject.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(ossObject.getLastModified())); break;
+                case "datetime": pair.put(field, ossObject.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(ossObject.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, ossObject.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, ossObject.getLastModified() == null ? 0 :
+                    ossObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, ossObject.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (ossObject.getOwner() != null) pair.put(field, ossObject.getOwner().getDisplayName()); break;
@@ -394,9 +471,11 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, s3Object.getSize()); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(s3Object.getLastModified())); break;
+                case "datetime": pair.put(field, s3Object.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(s3Object.getLastModified())); break;
                 case "timestamp":
-                case "putTime": pair.put(field, s3Object.getLastModified().getTime()); break;
+                case "putTime": pair.put(field, s3Object.getLastModified() == null ? 0 :
+                    s3Object.getLastModified().getTime()); break;
                 case "type": pair.put(field, s3Object.getStorageClass()); break;
                 case "owner":
                 case "endUser": if (s3Object.getOwner() != null) pair.put(field, s3Object.getOwner().getDisplayName()); break;
@@ -419,8 +498,76 @@ public final class ConvertingUtils {
                 case "timestamp":
                 case "putTime": pair.put(field, fileItem.lastModified); break;
                 case "mime":
-                case "mimeType": pair.put(field, fileItem.attribute); break;
+                case "mimeType":
+                case "contentType": pair.put(field, fileItem.attribute); break;
                 default: throw new IOException("Upyun fileItem doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(ObsObject obsObject, List<String> fields, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, obsObject.getObjectKey()); break;
+                case "hash":
+                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                    if (etag.startsWith("\"")) {
+                        etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
+                    }
+                    pair.put(field, etag); break;
+                case "size":
+                case "fsize": pair.put(field, obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getContentLength()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, obsObject.getMetadata() == null ? 0 :
+                    obsObject.getMetadata().getLastModified() == null ? 0 :
+                    obsObject.getMetadata().getLastModified().getTime()); break;
+                case "mime":
+                case "mimeType":
+                case "contentType": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getContentType()); break;
+                case "type": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getObjectStorageClass() == null ? "" :
+                    obsObject.getMetadata().getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(field, obsObject.getMetadata() == null ? "" :
+                    obsObject.getMetadata().getContentMd5()); break;
+                case "owner":
+                case "endUser": if (obsObject.getOwner() != null) pair.put(field, obsObject.getOwner().getId()); break;
+                default: throw new IOException("ObsObject doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(BosObjectSummary bosObject, List<String> fields, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (bosObject == null || bosObject.getKey() == null) throw new IOException("empty BosObject or key.");
+        for (String field : fields) {
+            switch (field) {
+                case "key": pair.put(field, bosObject.getKey()); break;
+                case "hash":
+                case "etag": pair.put(field, bosObject.getETag()); break;
+                case "size":
+                case "fsize": pair.put(field, bosObject.getSize()); break;
+                case "lastModified":
+                case "datetime": pair.put(field, bosObject.getLastModified() == null ? "" :
+                        DatetimeUtils.stringOf(bosObject.getLastModified())); break;
+                case "timestamp":
+                case "putTime": pair.put(field, bosObject.getLastModified() == null ? 0 :
+                        bosObject.getLastModified().getTime()); break;
+                case "type": pair.put(field, bosObject.getStorageClass()); break;
+                case "owner":
+                case "endUser": if (bosObject.getOwner() != null) pair.put(field, bosObject.getOwner().getId()); break;
+                default: throw new IOException("BosObjectSummary doesn't have field: " + field);
             }
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");

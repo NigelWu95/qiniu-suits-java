@@ -12,8 +12,15 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.baidubce.auth.DefaultBceCredentials;
+import com.baidubce.services.bos.BosClient;
+import com.baidubce.services.bos.BosClientConfiguration;
+import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.obs.services.ObsClient;
+import com.obs.services.exception.ObsException;
+import com.obs.services.model.ObsObject;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
@@ -37,7 +44,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Base64.*;
 
-public final class CloudAPIUtils {
+public final class CloudApiUtils {
 
     public static String QINIU = "qiniu";
     public static String TENCENT = "tencent";
@@ -45,6 +52,8 @@ public final class CloudAPIUtils {
     public static String AWSS3 = "s3";
     public static String UPYUN = "upyun";
     public static String NETYUN = "netease";
+    public static String HUAWEI = "huawei";
+    public static String BAIDU = "baidu";
     public static String LOCAL = "local";
     public static String TYPE_Storage = "storage";
     public static String TYPE_File = "file";
@@ -56,6 +65,8 @@ public final class CloudAPIUtils {
         put(AWSS3, TYPE_Storage);
         put(UPYUN, TYPE_Storage);
         put(NETYUN, TYPE_Storage);
+        put(HUAWEI, TYPE_Storage);
+        put(BAIDU, TYPE_Storage);
         put(LOCAL, TYPE_File);
     }};
 
@@ -167,6 +178,14 @@ public final class CloudAPIUtils {
         return summary.getKey();
     }
 
+    public static String getHuaweiObsCosMarker(ObsObject obsObject) {
+        return obsObject.getObjectKey();
+    }
+
+    public static String getbaiduBosCosMarker(BosObjectSummary obsObject) {
+        return obsObject.getKey();
+    }
+
     public static String getUpYunMarker(String bucket, FileItem fileItem) {
         if (fileItem.key.contains("/")) {
             String convertedKey = fileItem.key.replace("/", "/~");
@@ -226,6 +245,10 @@ public final class CloudAPIUtils {
         return marker;
     }
 
+    public static String decodeHuaweiObsMarker(String marker) {
+        return marker;
+    }
+
     public static String decodeUpYunMarker(String marker) {
         String keyString = new String(decoder.decode(marker));
         int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
@@ -261,6 +284,14 @@ public final class CloudAPIUtils {
         s3Client.listBuckets();
     }
 
+    public static void checkHuaWei(ObsClient obsClient) {
+        obsClient.listBucketsV2(null);
+    }
+
+    public static void checkBaidu(BosClient bosClient) {
+        bosClient.listBuckets();
+    }
+
     public static Zone getQiniuRegion(String regionName) {
         if (regionName == null) return Zone.autoZone();
         switch (regionName) {
@@ -289,9 +320,9 @@ public final class CloudAPIUtils {
         try {
             return ossClient.getBucketLocation(bucket);
         } catch (ClientException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudAPIUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), "get aliyun region failed");
         } finally {
             ossClient.shutdown();
             ossClient = null;
@@ -353,6 +384,28 @@ public final class CloudAPIUtils {
             s3Client = null;
             credentialsProvider = null;
             credentials = null;
+        }
+    }
+
+    public static String getHuaweiObsRegion(String accessKeyId, String secretKey, String bucket) throws SuitsException {
+        ObsClient obsClient = new ObsClient(accessKeyId, secretKey, "https://obs.myhuaweicloud.com");
+        try {
+            return obsClient.getBucketLocation(bucket);
+        } catch (ObsException e) {
+            throw new SuitsException(e, e.getResponseCode(), "get huaweicloud region failed");
+        } finally {
+            obsClient = null;
+        }
+    }
+
+    public static String getBaiduBosRegion(String accessKeyId, String secretKey, String bucket) {
+        BosClient bosClient = new BosClient(new BosClientConfiguration()
+//                .withEndpoint("bj.bcebos.com")
+                .withCredentials(new DefaultBceCredentials(accessKeyId, secretKey)));
+        try {
+            return bosClient.getBucketLocation(bucket).getLocationConstraint();
+        } finally {
+            bosClient.shutdown();
         }
     }
 

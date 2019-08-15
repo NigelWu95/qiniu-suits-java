@@ -9,28 +9,28 @@ import java.util.Map;
 
 public class QueryAvinfo extends Base<Map<String, String>> {
 
-    private String domain;
     private String protocol;
+    private String domain;
     private String urlIndex;
     private Configuration configuration;
     private MediaManager mediaManager;
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex) throws IOException {
+    public QueryAvinfo(Configuration configuration, String protocol, String domain, String urlIndex) throws IOException {
         super("avinfo", "", "", null);
         set(configuration, protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath,
+    public QueryAvinfo(Configuration configuration, String protocol, String domain, String urlIndex, String savePath,
                        int saveIndex) throws IOException {
         super("avinfo", "", "", null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex);
         this.mediaManager = new MediaManager(configuration.clone(), protocol);
     }
 
-    public QueryAvinfo(Configuration configuration, String domain, String protocol, String urlIndex, String savePath)
+    public QueryAvinfo(Configuration configuration, String protocol, String domain, String urlIndex, String savePath)
             throws IOException {
-        this(configuration, domain, protocol, urlIndex, savePath, 0);
+        this(configuration, protocol, domain, urlIndex, savePath, 0);
     }
 
     private void set(Configuration configuration, String protocol, String domain, String urlIndex) throws IOException {
@@ -40,9 +40,9 @@ public class QueryAvinfo extends Base<Map<String, String>> {
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else {
             this.urlIndex = urlIndex;
@@ -76,10 +76,10 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
+        protocol = null;
+        domain = null;
+        urlIndex = null;
         configuration = null;
         mediaManager = null;
-        domain = null;
-        protocol = null;
-        urlIndex = null;
     }
 }

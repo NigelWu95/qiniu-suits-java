@@ -3,8 +3,8 @@
 
 # qiniu-suits (qsuits)
 云存储 API (base-qiniu) tool（工具方式推荐使用命令行执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))），能够**并发列举**云存储空间的
-大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云等**)，同时支持对 LocalFile 中的资源列表并发进行批量处理，主要包括对七牛云存储资源进行增/删/改
-/查/迁移/转码/内容审核等。基于 Java8 编写，可基于 JDK 环境在命令行或 IDE 中运行。  
+大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云/华为云/百度云等**)，同时支持对 LocalFile 中的资源列表并发进行批量处理，主要包括对七牛云存储资
+源进行增/删/改/查/迁移/转码/内容审核等。基于 Java8 编写，可基于 JDK 环境在命令行或 IDE 中运行。  
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -100,9 +100,11 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](docs/datasource.md#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](docs/datasource.md#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](docs/datasource.md#3-阿里云存储)  
-`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表，参考[S3数据源示例](docs/datasource.md#4-aws-s3)  
-`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[又拍数据源示例](docs/datasource.md#5-又拍云存储)  
-`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#6-local-files)  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[S3数据源示例](docs/datasource.md#4-aws-s3)  
+`path=upyun://<bucket>` 表示从又拍云存储空间列举出资源列表，参考[又拍数据源示例](docs/datasource.md#5-又拍云存储)  
+`path=huawei://<bucket>` 表示从华为云存储空间列举出资源列表，参考[华为数据源示例](docs/datasource.md#6-华为云存储)  
+`path=baidu://<bucket>` 表示从百度云存储空间列举出资源列表，参考[百度数据源示例](docs/datasource.md#7-百度云存储)  
+`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#8-local-files)  
 未设置数据源时则默认从七牛空间进行列举，数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)，配置文件示例可参考
 [配置模板](resources/application.config)  
 
@@ -113,11 +115,13 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 
 |storage 源|             密钥和 region 字段         |                  对应关系和描述               |  
 |---------|---------------------------------------|---------------------------------------------|  
-|qiniu    |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
-|tencent  |`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
-|aliyun   |`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|upyun    |`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
-|aws/s3   |`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|qiniu    |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对为七牛云账号的 AccessKey 和 SecretKey<br>region使用简称(可不设置)，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
+|tencent  |`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对为腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
+|aliyun   |`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对为阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region使用简称(可不设置)，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
+|aws/s3   |`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对为 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region使用简称(可不设置)，参考[AWS Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|upyun    |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
+|huawei   |`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Endpoint](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
+|baidu    |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Endpoint](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
 #### file 文本文件行读取  
 文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  

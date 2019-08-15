@@ -17,7 +17,6 @@ to-bucket=<to-bucket>
 toKey-index=
 add-prefix=
 rm-prefix=
-prefix-force=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
@@ -32,5 +31,5 @@ prefix-force=
 
 ## 命令行方式
 ```
--process=copy -ak= -sk= -bucket= -to-bucket= -newKey-index= -add-prefix= -rm-prefix=
+-process=copy -ak= -sk= -bucket= -to-bucket= -toKey-index= -add-prefix= -rm-prefix=
 ```

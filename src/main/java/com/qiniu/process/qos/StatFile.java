@@ -32,7 +32,7 @@ public class StatFile extends Base<Map<String, String>> {
         super("stat", accessKey, secretKey, bucket);
         set(configuration, rmFields, format, separator);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
@@ -43,7 +43,7 @@ public class StatFile extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public StatFile(String accessKey, String secretKey, Configuration configuration, String bucket, String savePath,
@@ -76,7 +76,7 @@ public class StatFile extends Base<Map<String, String>> {
 
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
-        statFile.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        statFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         statFile.batchOperations = new BatchOperations();
         statFile.lines = new ArrayList<>();
         statFile.stringFormatter = getNewStatJsonFormatter(rmFields);

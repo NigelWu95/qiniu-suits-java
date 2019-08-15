@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 public class TenCosContainerTest {
 
@@ -26,7 +27,8 @@ public class TenCosContainerTest {
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
         String bucket = propertiesFile.getValue("bucket");
         tenCosContainer = new TenCosContainer(secretId, secretKey, clientConfig, bucket, null, null,
-                false, false, null, null, 1000, 10);
+                false, false, new HashMap<String, String>(){{ put("key", "key"); }}, null,
+                1000, 10);
         tenCosContainer.setSaveOptions(true, "../tencent", "tab", "\t", null);
     }
 

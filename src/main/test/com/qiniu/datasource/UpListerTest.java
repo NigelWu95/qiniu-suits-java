@@ -13,8 +13,8 @@ public class UpListerTest {
     @Test
     public void testListForward() throws Exception {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
-        String name = propertiesFile.getValue("up-name");
-        String pass = propertiesFile.getValue("up-pass");
+        String name = propertiesFile.getValue("up-id");
+        String pass = propertiesFile.getValue("up-secret");
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), name, pass);
         String bucket = "squirrel";
 //                propertiesFile.getValue("bucket");

@@ -1,11 +1,13 @@
 package com.qiniu.process.aliyun;
 
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.common.auth.Credentials;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
+import com.aliyun.oss.common.auth.DefaultCredentials;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -18,6 +20,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     private Date expiration;
     private Map<String, String> queries;
     private GeneratePresignedUrlRequest request;
+    private Credentials credentials;
     private OSSClient ossClient;
     private ILineProcess<Map<String, String>> nextProcessor;
 
@@ -33,8 +36,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addQueryParameter(entry.getKey(), entry.getValue());
         }
-        ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
-        CloudAPIUtils.checkAliyun(ossClient);
+        credentials = new DefaultCredentials(accessKeyId, accessKeySecret);
+        ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(credentials), null);
+        CloudApiUtils.checkAliyun(ossClient);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
@@ -49,8 +53,9 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addQueryParameter(entry.getKey(), entry.getValue());
         }
-        ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(accessKeyId, accessKeySecret), null);
-        CloudAPIUtils.checkAliyun(ossClient);
+        credentials = new DefaultCredentials(accessKeyId, accessKeySecret);
+        ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(credentials), null);
+        CloudApiUtils.checkAliyun(ossClient);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
@@ -71,7 +76,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 ossPrivateUrl.request.addQueryParameter(entry.getKey(), entry.getValue());
         }
-        ossPrivateUrl.ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(authKey1, authKey2), null);
+        ossPrivateUrl.ossClient = new OSSClient(endpoint, new DefaultCredentialProvider(credentials), null);
         if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
         return ossPrivateUrl;
     }
@@ -101,6 +106,8 @@ public class PrivateUrl extends Base<Map<String, String>> {
         expiration = null;
         queries = null;
         request = null;
+        credentials = null;
+        ossClient.shutdown();
         ossClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

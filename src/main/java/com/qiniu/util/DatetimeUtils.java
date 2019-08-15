@@ -47,7 +47,7 @@ public final class DatetimeUtils {
 
     public static String stringOf(Date date) {
 //        return sdf_YYYY_MMTdd_HH_MM_SS_SSS.format(date);
-        return stringOf(date.toInstant()); // format(date) 方法会抛数组越界异常
+        return stringOf(date.toInstant()); // format(date) 方法可能会抛数组越界异常
     }
 
     public static String stringOf(Date date, SimpleDateFormat sdf) {

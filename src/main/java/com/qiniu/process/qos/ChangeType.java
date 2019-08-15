@@ -7,7 +7,7 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.StorageType;
 import com.qiniu.util.Auth;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class ChangeType extends Base<Map<String, String>> {
         storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
@@ -40,7 +40,7 @@ public class ChangeType extends Base<Map<String, String>> {
         this.lines = new ArrayList<>();
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudAPIUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
@@ -50,7 +50,7 @@ public class ChangeType extends Base<Map<String, String>> {
 
     public ChangeType clone() throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
-        changeType.bucketManager = new BucketManager(Auth.create(authKey1, authKey2), configuration.clone());
+        changeType.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         changeType.batchOperations = new BatchOperations();
         changeType.lines = new ArrayList<>();
         return changeType;

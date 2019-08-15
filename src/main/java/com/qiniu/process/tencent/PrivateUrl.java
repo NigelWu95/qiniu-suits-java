@@ -3,11 +3,12 @@ package com.qiniu.process.tencent;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
+import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.GeneratePresignedUrlRequest;
 import com.qcloud.cos.region.Region;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -16,36 +17,39 @@ import java.util.Map;
 
 public class PrivateUrl extends Base<Map<String, String>> {
 
-    private String region;
     private GeneratePresignedUrlRequest request;
+    private COSCredentials credentials;
+    private ClientConfig clientConfig;
     private COSClient cosClient;
     private ILineProcess<Map<String, String>> nextProcessor;
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires, Map<String, String> queries) {
         super("tenprivate", secretId, secretKey, bucket);
-        this.region = region;
         request = new GeneratePresignedUrlRequest(bucket, "");
         request.setExpiration(new Date(System.currentTimeMillis() + expires));
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
-        CloudAPIUtils.checkTencent(cosClient);
+        credentials = new BasicCOSCredentials(secretId, secretKey);
+        clientConfig = new ClientConfig(new Region(region));
+        cosClient = new COSClient(credentials, clientConfig);
+        CloudApiUtils.checkTencent(cosClient);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, long expires, Map<String, String> queries,
                       String savePath, int saveIndex) throws IOException {
         super("tenprivate", secretId, secretKey, bucket, savePath, saveIndex);
-        this.region = region;
         request = new GeneratePresignedUrlRequest(bucket, "");
         request.setExpiration(new Date(System.currentTimeMillis() + expires));
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
                 request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        cosClient = new COSClient(new BasicCOSCredentials(secretId, secretKey), new ClientConfig(new Region(region)));
-        CloudAPIUtils.checkTencent(cosClient);
+        credentials = new BasicCOSCredentials(secretId, secretKey);
+        clientConfig = new ClientConfig(new Region(region));
+        cosClient = new COSClient(credentials, clientConfig);
+        CloudApiUtils.checkTencent(cosClient);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, long expires, Map<String, String> queries,
@@ -61,7 +65,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();
-        cosPrivateUrl.cosClient = new COSClient(new BasicCOSCredentials(authKey1, authKey2), new ClientConfig(new Region(region)));
+        cosPrivateUrl.cosClient = new COSClient(credentials, clientConfig);
         if (nextProcessor != null) cosPrivateUrl.nextProcessor = nextProcessor.clone();
         return cosPrivateUrl;
     }
@@ -87,8 +91,10 @@ public class PrivateUrl extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        region = null;
         request = null;
+        credentials = null;
+        clientConfig = null;
+        cosClient.shutdown();
         cosClient = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;

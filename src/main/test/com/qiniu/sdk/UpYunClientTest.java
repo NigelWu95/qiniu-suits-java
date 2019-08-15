@@ -12,8 +12,8 @@ public class UpYunClientTest {
     @Test
     public void testGetFileInfo() throws Exception {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
-        String username = propertiesFile.getValue("up-name");
-        String password = propertiesFile.getValue("up-pass");
+        String username = propertiesFile.getValue("up-id");
+        String password = propertiesFile.getValue("up-secret");
         String bucket = propertiesFile.getValue("bucket");
         UpYunConfig configuration = new UpYunConfig();
         UpYunClient upYunClient = new UpYunClient(configuration, username, password);

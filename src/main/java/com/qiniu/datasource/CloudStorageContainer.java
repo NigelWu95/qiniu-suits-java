@@ -72,7 +72,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+        if (fields == null || fields.size() == 0) {
+            this.fields = ConvertingUtils.getOrderedFields(new ArrayList<>(this.indexMap.values()), rmFields);
+        }
         else this.fields = fields;
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法

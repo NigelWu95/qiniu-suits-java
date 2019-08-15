@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.JsonUtils;
 import com.qiniu.util.RequestUtils;
 
@@ -12,38 +13,42 @@ import java.util.Map;
 
 public class VideoCensor extends Base<Map<String, String>> {
 
-    private String domain;
     private String protocol;
+    private String domain;
     private String urlIndex;
     private JsonObject paramsJson;
     private Configuration configuration;
     private CensorManager censorManager;
 
-    public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
+    public VideoCensor(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl)
             throws IOException {
-        super("videocensor", accesskey, secretKey, null);
-        set(configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
-        censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
+        super("videocensor", accessKey, secretKey, null);
+        set(configuration, protocol, domain, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
+        Auth auth = Auth.create(accessKey, secretKey);
+        CloudApiUtils.checkQiniu(auth);
+        censorManager = new CensorManager(auth, configuration.clone());
     }
 
-    public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
+    public VideoCensor(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
                        String savePath, int saveIndex) throws IOException {
-        super("videocensor", accesskey, secretKey, null, savePath, saveIndex);
-        set(configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
-        censorManager = new CensorManager(Auth.create(accesskey, secretKey), configuration.clone());
+        super("videocensor", accessKey, secretKey, null, savePath, saveIndex);
+        set(configuration, protocol, domain, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
+        Auth auth = Auth.create(accessKey, secretKey);
+        CloudApiUtils.checkQiniu(auth);
+        censorManager = new CensorManager(auth, configuration.clone());
     }
 
-    public VideoCensor(String accesskey, String secretKey, Configuration configuration, String domain, String protocol,
+    public VideoCensor(String accesskey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
                        String savePath)
             throws IOException {
-        this(accesskey, secretKey, configuration, domain, protocol, urlIndex, scenes, interval, saverBucket, saverPrefix,
+        this(accesskey, secretKey, configuration, protocol, domain, urlIndex, scenes, interval, saverBucket, saverPrefix,
                 hookUrl, savePath, 0);
     }
 
-    private void set(Configuration configuration, String domain, String protocol, String urlIndex, String[] scenes,
+    private void set(Configuration configuration, String protocol, String domain, String urlIndex, String[] scenes,
                      int interval, String saverBucket, String saverPrefix, String hookUrl) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
@@ -51,9 +56,9 @@ public class VideoCensor extends Base<Map<String, String>> {
             if (domain == null || "".equals(domain)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
+                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
                 RequestUtils.lookUpFirstIpFromHost(domain);
                 this.domain = domain;
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             }
         } else {
             this.urlIndex = urlIndex;
@@ -79,7 +84,7 @@ public class VideoCensor extends Base<Map<String, String>> {
 
     public VideoCensor clone() throws CloneNotSupportedException {
         VideoCensor videoCensor = (VideoCensor)super.clone();
-        videoCensor.censorManager = new CensorManager(Auth.create(authKey1, authKey2), configuration.clone());
+        videoCensor.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration.clone());
         return videoCensor;
     }
 
@@ -106,8 +111,8 @@ public class VideoCensor extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        domain = null;
         protocol = null;
+        domain = null;
         urlIndex = null;
         paramsJson = null;
         configuration = null;

@@ -67,7 +67,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.savePath = "result";
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
-        if (fields == null || fields.size() == 0) this.fields = ConvertingUtils.getFields(new ArrayList<>(indexMap.values()), rmFields);
+        if (fields == null || fields.size() == 0) {
+            this.fields = ConvertingUtils.getOrderedFields(new ArrayList<>(this.indexMap.values()), rmFields);
+        }
         else this.fields = fields;
     }
 

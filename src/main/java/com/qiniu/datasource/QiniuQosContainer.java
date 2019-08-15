@@ -14,7 +14,7 @@ import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
@@ -82,7 +82,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
 
     @Override
     protected ILister<FileInfo> getLister(String prefix, String marker, String start, String end) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = CloudAPIUtils.getQiniuMarker(start);
+        if (marker == null || "".equals(marker)) marker = CloudApiUtils.getQiniuMarker(start);
         return new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()), bucket,
                 prefix, marker, end, unitLen);
     }

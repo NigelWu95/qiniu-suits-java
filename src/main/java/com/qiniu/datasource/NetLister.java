@@ -7,7 +7,7 @@ import com.netease.cloud.services.nos.model.NOSObjectSummary;
 import com.netease.cloud.services.nos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
-import com.qiniu.util.CloudAPIUtils;
+import com.qiniu.util.CloudApiUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,7 +103,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
             nosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudAPIUtils.NetStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(e, CloudApiUtils.NetStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

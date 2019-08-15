@@ -93,6 +93,7 @@ public abstract class BaseFilter<T> {
             if (item == null) return false;
             String mType = valueFrom(item, ConvertingUtils.defaultMimeField);
             if (mType == null) mType = valueFrom(item, "mimeType");
+            if (mType == null) mType = valueFrom(item, "contentType");
             if (checkList(mimeType) && mimeType.stream().noneMatch(mType::contains)) return false;
             return !checkList(antiMimeType) || antiMimeType.stream().noneMatch(mType::contains);
         } catch (Exception e) {

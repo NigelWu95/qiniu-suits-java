@@ -9,9 +9,11 @@
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](#3-阿里云存储)  
-`path=upyun://<bucket>` 表示从又拍存储空间列举出资源列表，参考[S3数据源示例](#4-aws-s3)  
-`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[又拍数据源示例](#5-又拍云存储)  
-`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](#6-local-files)  
+`path=s3://<bucket>` 表示从 aws/s3 存储空间列举出资源列表，参考[S3数据源示例](#4-aws-s3)  
+`path=upyun://<bucket>` 表示从又拍云存储空间列举出资源列表，参考[又拍数据源示例](#5-又拍云存储)  
+`path=huawei://<bucket>` 表示从华为云存储空间列举出资源列表，参考[华为数据源示例](#6-华为云存储)  
+`path=baidu://<bucket>` 表示从百度云存储空间列举出资源列表，参考[百度数据源示例](#7-百度云存储)  
+`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](#8-local-files)  
 未设置数据源时则默认从七牛空间进行列举**，配置文件示例可参考 [配置模板](../resources/application.config)  
 
 ### 1 公共参数
@@ -70,8 +72,10 @@ size,datetime，且从输入行中进行解析的索引分别为 key,size:key,da
 |七牛云存储   |key            |eatg（hash）    |fsize            |putTime 转换而来        |mimeType                     |type             |status         |md5          |endUser          |  
 |腾讯云存储   |key            |etag           |size             |lastModified 转换而来   |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
 |阿里云存储   |key            |etag           |size             |lastModified 转换而来   |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
-|又拍云存储   |name           |无此含义字段     |length           |lastModified 转换而来   |type                         |无此含义字段        |无此含义字段      |无此含义字段  |无此含义字段        |  
-|AWS云存储/S3|key            |etag           |size             |lastModified 转换而来    |无此含义字段                   |storageClass      |无此含义字段      |无此含义字段  |Owner.displayName |  
+|AWS云存储/S3|key            |etag           |size             |lastModified 转换而来    |无此含义字段                   |storageClass     |无此含义字段     |无此含义字段  |Owner.displayName |  
+|又拍云存储   |name           |无此含义字段     |length           |lastModified 转换而来   |type/attribute                |无此含义字段       |无此含义字段      |无此含义字段  |无此含义字段        |  
+|华为云存储   |key            |metadata.etag  |metadata.contentLength|lastModified 转换而来|metadata.contentType        |storageClass     |无此含义字段     |metadata.contentMd5|Owner.id  |  
+|百度云存储   |key            |etag           |size             |lastModified 转换而来    |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段  |Owner.displayName |  
 
 ### 2 file 文本文件行读取
 ```
@@ -129,11 +133,13 @@ prefix-right=
 
 |storage 源|             密钥和 region 字段         |                  对应关系和描述                |  
 |------|---------------------------------------|---------------------------------------------|  
-|qiniu|`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对应七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
-|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
-|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对应阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|upyun|`up-name=`<br>`up-pass=`<br>| 密钥对应又拍云账号管理员的 username 和 password，又拍云存储目前没有 region 概念|  
-|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对应 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS S3 Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|qiniu |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对为七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
+|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对为腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
+|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对为阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
+|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对为 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS S3 Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|upyun |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
+|huawei|`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Endpoint](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
+|baidu |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Endpoint](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
 
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
@@ -278,23 +284,59 @@ threads=300
 prefixes=
 #region=
 ```  
+如果是其他基于 S3 实现的数据源，也可以使用 path=s3://<bucket> 方式来列举资源，但是由于 endpoint 与 aws 的不同，需要自行设置 endpoint，如[七
+牛的 S3 接口](https://developer.qiniu.com/kodo/manual/4088/s3-access-domainname)华东区域列举 bucket 文件时，可设置：  
+```
+# http(s):// 开头可省略
+endpoint=s3-cn-east-1.qiniucs.com
+```  
 
 ### 5 又拍云存储
 命令行参数示例：
 ```
--path=upyun://<bucket> -up-name= -up-pass= -threads=300 -prefixes= [-region=]
+-path=upyun://<bucket> -up-id= -up-secret= -threads=300 -prefixes= [-region=]
 ```  
 配置文件示例：
 ```
 path=upyun://<bucket>
-up-name=
-up-pass=
+up-id=
+up-secret=
 threads=300
 prefixes=
 #region=
 ```  
 
-### 6 local files
+### 6 华为云存储
+命令行参数示例：
+```
+-path=huawei://<bucket> -hua-id= -hua-secret= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=huawei://<bucket>
+hua-id=
+hua-secret=
+threads=300
+prefixes=
+#region=
+```  
+
+### 7 百度云存储
+命令行参数示例：
+```
+-path=baidu://<bucket> -bai-id= -bai-secret= -threads=300 -prefixes= [-region=]
+```  
+配置文件示例：
+```
+path=baidu://<bucket>
+bai-id=
+bai-secret=
+threads=300
+prefixes=
+#region=
+```  
+
+### 8 local files
 
 命令行参数示例：
 ```

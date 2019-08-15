@@ -24,7 +24,7 @@ please input line data to process:
 ```
 ###### 3 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](pfopresult.md)  
 ```
-➜ ~ java -jar qsuits-6.20.jar -i -process=pfopresult -persistentId-index=0
+➜ ~ java -jar qsuits-6.20.jar -i -process=pfopresult -id-index=0
 please input line data to process: 
 z0.5cf4e0b138b9f31ea670c97e
 z0.5cf4e0b138b9f31ea670c97e	{"code":0,"desc":"The fop was completed successfully","id":"z0.5cf4e0b138b9f31ea670c97e","inputBucket":"temp","inputKey":"10.mp4","items":[{"cmd":"avthumb/mp4","code":0,"desc":"The fop was completed successfully","hash":"FpBw7VMk5raxi-MG0ooVuPUSMNEs","key":"UAA-4hndfVc5V6DJX0EvslAUBBI=/FhbkdU00yYIPg13-Qu6jZzLVYqvT","returnOld":0}],"pipeline":"0.default","reqid":"5nIAAJCijWpxpKQV"}
