@@ -30,7 +30,7 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(CloudStorageContainer.class);
+    static final Logger logger = LoggerFactory.getLogger(CloudStorageContainer.class);
     private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
 
     protected String bucket;
@@ -202,7 +202,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
         recorder.put(prefix, json);
-        procedureLogger.info("\"{}\":{},", prefix, json);
     }
 
     /**
@@ -248,7 +247,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 json.addProperty("marker", lister.getMarker());
                 json.addProperty("end", lister.getEndPrefix());
                 recorder.put(lister.getPrefix(), json);
-                procedureLogger.info("\"{}\":{},", lister.getPrefix(), json);
                 if (objects.size() <= 0) map = prefixAndEndedMap.get(lister.getPrefix());
             } else {
                 map = prefixAndEndedMap.get(lister.getPrefix());
@@ -261,10 +259,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     objects = lister.currents();
                     break;
                 } catch (SuitsException e) {
-                    logger.error("Exception ", e);
                     retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                    logger.info("list objects by prefix:{} retrying...", lister.getPrefix());
-//                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying... " + e.getMessage());
+                    logger.error("list objects by prefix:{} retrying...", lister.getPrefix(), e);
                 }
             }
             hasNext = lister.hasNext();
@@ -294,16 +290,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
-//            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tsuccessfully done");
             logger.info("order {}: {}\tsuccessfully done", orderStr, lister.getPrefix());
         } catch (Throwable e) {
-//            e.printStackTrace();
-            logger.error("Exception ", e);
-//            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + recorder.getJson(lister.getPrefix()));
-            logger.info("order {}: {}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()));
+            logger.error("order {}: {}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
+            procedureLogger.info(recorder.toString());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
@@ -330,10 +323,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
-                logger.error("Exception ", e);
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-//                System.out.println("generate lister by prefix:" + prefix + " retrying... " + e.getMessage());
-                logger.info("generate lister by prefix:{} retrying... ", prefix);
+                logger.error("generate lister by prefix:{} retrying... ", prefix, e);
             }
         }
     }
@@ -393,10 +384,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 return generateLister(prefix);
             } catch (SuitsException e) {
-                logger.error("Exception ", e);
-//                System.out.println("generate lister failed by " + prefix + "\t" + prefixesMap.get(prefix));
-//                e.printStackTrace();
-                logger.info("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix));
+                logger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
                 return null;
             }
         }).filter(generated -> {
@@ -589,7 +577,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         logger.info("{} running...", info);
-//        System.out.println(info + " running...");
         ctrlC();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
@@ -601,7 +588,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (threads <= 1) {
                 listing(startLister);
                 logger.info("{} finished.", info);
-//                System.out.println(info + " finished.");
                 endAction();
                 return;
             }
@@ -625,13 +611,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             executorPool.shutdown();
             waitAndTailListing(listerList);
-//            System.out.println(info + " finished.");
             logger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-//            e.printStackTrace();
-            logger.error("Exception ", e);
+            logger.error(e.toString(), e);
             endAction();
             System.exit(-1);
         }

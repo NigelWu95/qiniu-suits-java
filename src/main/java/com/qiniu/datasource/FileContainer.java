@@ -12,6 +12,8 @@ import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
 import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.UniOrderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -29,6 +31,9 @@ import java.util.concurrent.Executors;
 import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
+
+    private static final Logger logger = LoggerFactory.getLogger(CloudStorageContainer.class);
+    private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
 
     private String filePath;
     protected String parse;
@@ -147,6 +152,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     e.response.close();
                 }
                 recorder.put(reader.getName(), line);
+                procedureLogger.info(recorder.toString());
                 srcList.clear();
             }
         }
@@ -169,10 +175,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
-            System.out.println("order " + orderStr + ": " + reader.getName() + "\tsuccessfully done");
+            logger.info("order {}: {}\tsuccessfully done", orderStr, reader.getName());
         } catch (Throwable e) {
-            e.printStackTrace();
-            System.out.println("order " + orderStr + ": " + reader.getName() + "\tline:" + recorder.getString(reader.getName()));
+            logger.error("order {}: {}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()), e);
         } finally {
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
@@ -222,7 +227,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " running...");
+        logger.info("{} running...", info);
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         ctrlC();
         try {
@@ -239,11 +244,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     while (i < 1000) i++;
                 }
             }
-            System.out.println(info + " finished");
+            logger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            e.printStackTrace();
+            logger.error(e.toString(), e);
             endAction();
             System.exit(-1);
         }

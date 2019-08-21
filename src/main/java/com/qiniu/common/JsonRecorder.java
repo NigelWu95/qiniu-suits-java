@@ -54,7 +54,7 @@ public class JsonRecorder {
         return prefixesJson.size();
     }
 
-    public String toString() {
+    public synchronized String toString() {
         return prefixesJson.toString();
     }
 }
