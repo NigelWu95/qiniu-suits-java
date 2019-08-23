@@ -137,7 +137,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             }
         }
         executorPool = Executors.newFixedThreadPool(threads);
-        ctrlC();
+        showdownHook();
         try {
             prefixes = listAndGetNextPrefixes(prefixes);
             while (prefixes != null && prefixes.size() > 0) {

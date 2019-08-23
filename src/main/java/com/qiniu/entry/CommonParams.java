@@ -56,7 +56,6 @@ public class CommonParams {
     private BaseFilter<Map<String, String>> baseFilter;
     private SeniorFilter<Map<String, String>> seniorFilter;
     private Map<String, String> indexMap;
-    private List<String> toStringFields;
     private int unitLen;
     private int threads;
     private int batchSize;
@@ -583,13 +582,11 @@ public class CommonParams {
             if ("tab".equals(parse) || "csv".equals(parse)) {
                 if (index.matches("\\d+")) {
                     indexMap.put(index, indexName);
-                    toStringFields.add(indexName);
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
             } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
                 indexMap.put(index, indexName);
-                toStringFields.add(indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
             }
@@ -598,7 +595,6 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
-        toStringFields = new ArrayList<>();
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
         int fieldsMode = 0;
         if ("upyun".equals(source)) {
@@ -638,7 +634,6 @@ public class CommonParams {
             for (int i = 0; i < indexList.length; i++) {
                 if ("timestamp".equals(indexList[i])) {
                     indexMap.put(indexList[i], "timestamp");
-                    toStringFields.add("timestamp");
                     keys.add(i, "timestamp");
                 } else {
                     if (i >= keys.size()) {
@@ -664,14 +659,11 @@ public class CommonParams {
         if (indexMap.size() == 0) {
             useDefault = true;
             if (isStorageSource) {
-                toStringFields = keys;
                 for (String key : keys) indexMap.put(key, key);
             } else if (fieldIndex) {
                 indexMap.put("key", "key");
-                toStringFields.add("key");
             } else {
                 indexMap.put("0", "key");
-                toStringFields.add("key");
             }
         }
 
@@ -679,7 +671,6 @@ public class CommonParams {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
                     indexMap.put(fieldIndex ? "key" : "0", "key");
-                    toStringFields.add(0, "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
@@ -687,7 +678,6 @@ public class CommonParams {
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault) {
                     indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
-                    toStringFields.add(3, "datetime");
                 } else {
                     throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
                 }
@@ -696,7 +686,6 @@ public class CommonParams {
                 if (useDefault) {
                     if (fieldsMode != 3) {
                         indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                        toStringFields.add(4, "mime");
                     }
                 } else {
                     throw new IOException("f-mime filter must get the mime's index in indexes settings.");
@@ -706,7 +695,6 @@ public class CommonParams {
                 if (useDefault) {
                     if (fieldsMode != 1) {
                         indexMap.put(fieldIndex ? "type" : "5", "type");
-                        toStringFields.add(5, "type");
                     }
                 } else {
                     throw new IOException("f-type filter must get the type's index in indexes settings.");
@@ -716,7 +704,6 @@ public class CommonParams {
                 if (useDefault) {
                     if (fieldsMode == 0) {
                         indexMap.put(fieldIndex ? "status" : "6", "status");
-                        toStringFields.add(6, "status");
                     }
                 } else {
                     throw new IOException("f-status filter must get the status's index in indexes settings.");
@@ -728,7 +715,6 @@ public class CommonParams {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
                         indexMap.put(fieldIndex ? "key" : "0", "key");
-                        toStringFields.add(0, "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }
@@ -737,7 +723,6 @@ public class CommonParams {
                     if (useDefault) {
                         if (fieldsMode != 3) {
                             indexMap.put(fieldIndex ? "mime" : "4", "mime");
-                            toStringFields.add(4, "mime");
                         }
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
@@ -965,10 +950,6 @@ public class CommonParams {
         this.indexMap = indexMap;
     }
 
-    public void setToStringFields(List<String> toStringFields) {
-        this.toStringFields = toStringFields;
-    }
-
     public void setUnitLen(int unitLen) {
         this.unitLen = unitLen;
     }
@@ -1151,10 +1132,6 @@ public class CommonParams {
 
     public Map<String, String> getIndexMap() {
         return indexMap;
-    }
-
-    public List<String> getToStringFields() {
-        return toStringFields;
     }
 
     public int getUnitLen() {

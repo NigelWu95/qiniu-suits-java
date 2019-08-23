@@ -205,9 +205,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
                     "reading remained lines.\n", fileName, FileSaveMapper.ext);
         }
+        procedureLogger.info(recorder.toString());
     }
 
-    private void ctrlC() {
+    private void showdownHook() {
         SignalHandler handler = signal -> {
             try {
                 endAction();
@@ -229,7 +230,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
         logger.info("{} running...", info);
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
-        ctrlC();
+        showdownHook();
         try {
             for (IReader<E> fileReader : fileReaders) {
                 recorder.put(fileReader.getName(), "");

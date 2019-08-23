@@ -556,9 +556,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
                     "listing remained objects.\n", fileName, FileSaveMapper.ext);
         }
+        procedureLogger.info(recorder.toString());
     }
 
-    void ctrlC() {
+    void showdownHook() {
         SignalHandler handler = signal -> {
             try {
                 endAction();
@@ -577,7 +578,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
         logger.info("{} running...", info);
-        ctrlC();
+        showdownHook();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
