@@ -269,7 +269,7 @@ public class QSuitsEntry {
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
         Map<String, String> linesMap = commonParams.getLinesMap();
         LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, linesMap, indexMap, commonParams.getToStringFields(), unitLen, threads);
+                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
         localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;
@@ -282,7 +282,7 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         QiniuQosContainer qiniuQosContainer = new QiniuQosContainer(qiniuAccessKey, qiniuSecretKey, qiniuConfig, bucket,
-                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
+                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen, threads);
         qiniuQosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         qiniuQosContainer.setRetryTimes(retryTimes);
         return qiniuQosContainer;
@@ -297,7 +297,7 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         TenCosContainer tenCosContainer = new TenCosContainer(secretId, secretKey, tenClientConfig, bucket,
-                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
+                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen, threads);
         tenCosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         tenCosContainer.setRetryTimes(retryTimes);
         return tenCosContainer;
@@ -320,7 +320,7 @@ public class QSuitsEntry {
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
         AliOssContainer aliOssContainer = new AliOssContainer(accessId, accessSecret, aliClientConfig, endPoint, bucket,
-                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
+                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen, threads);
         aliOssContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         aliOssContainer.setRetryTimes(retryTimes);
         return aliOssContainer;
@@ -336,7 +336,7 @@ public class QSuitsEntry {
 //        boolean prefixRight = commonParams.getPrefixRight();
         UpYosContainer upYosContainer = new UpYosContainer(username, password, upYunConfig, bucket,  prefixesMap, antiPrefixes,
 //                prefixLeft, prefixRight,
-                indexMap, commonParams.getToStringFields(), unitLen, threads);
+                indexMap, null, unitLen, threads);
         upYosContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         upYosContainer.setRetryTimes(retryTimes);
         return upYosContainer;
@@ -354,7 +354,7 @@ public class QSuitsEntry {
         if (endpoint.isEmpty() && (regionName == null || "".equals(regionName)))
             regionName = CloudApiUtils.getS3Region(s3AccessId, s3SecretKey, bucket);
         AwsS3Container awsS3Container = new AwsS3Container(s3AccessId, s3SecretKey, s3ClientConfig, endpoint, regionName, bucket,
-                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen, threads);
+                prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen, threads);
         awsS3Container.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         awsS3Container.setRetryTimes(retryTimes);
         return awsS3Container;
@@ -377,7 +377,7 @@ public class QSuitsEntry {
             endPoint = "http://" + regionName + ".myhuaweicloud.com";
         }
         HuaweiObsContainer huaweiObsContainer = new HuaweiObsContainer(accessId, secretKey, new ObsConfiguration(), endPoint,
-                bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(), unitLen,
+                bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen,
                 threads);
         huaweiObsContainer.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         huaweiObsContainer.setRetryTimes(retryTimes);
@@ -400,8 +400,7 @@ public class QSuitsEntry {
             endPoint = "http://" + regionName + ".bcebos.com";
         }
         BaiduBosContainer baiduBosContainer = new BaiduBosContainer(accessId, secretKey, bosClientConfiguration, endPoint,
-                bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, commonParams.getToStringFields(),
-                unitLen, threads);
+                bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen, threads);
         baiduBosContainer.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
         baiduBosContainer.setRetryTimes(retryTimes);
         return baiduBosContainer;
@@ -413,15 +412,13 @@ public class QSuitsEntry {
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         ILineProcess<Map<String, String>> processor;
         if (baseFilter != null || seniorFilter != null) {
-            List<String> fields = commonParams.getToStringFields();
-            if (fields == null || fields.size() == 0) fields = ConvertingUtils.getOrderedFields(new ArrayList<>(indexMap.values()), rmFields);
+            List<String> fields = ConvertingUtils.getOrderedFields(new ArrayList<>(indexMap.values()), rmFields);
             if (nextProcessor == null) {
-                List<String> finalFields = fields;
                 processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
                         saveSeparator, rmFields) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
-                        return new MapToString(saveFormat, saveSeparator, finalFields);
+                        return new MapToString(saveFormat, saveSeparator, fields);
                     }
                 };
             } else {

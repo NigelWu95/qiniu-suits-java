@@ -11,6 +11,8 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -27,6 +29,9 @@ import java.util.stream.Stream;
 import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
+
+    static final Logger logger = LoggerFactory.getLogger(CloudStorageContainer.class);
+    private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
 
     protected String bucket;
     protected List<String> antiPrefixes;
@@ -255,7 +260,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     break;
                 } catch (SuitsException e) {
                     retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                    System.out.println("list objects by prefix:" + lister.getPrefix() + " retrying... " + e.getMessage());
+                    logger.error("list objects by prefix:{} retrying...", lister.getPrefix(), e);
                 }
             }
             hasNext = lister.hasNext();
@@ -285,13 +290,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
-            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\tsuccessfully done");
+            logger.info("order {}: {}\tsuccessfully done", orderStr, lister.getPrefix());
         } catch (Throwable e) {
-            e.printStackTrace();
-            System.out.println("order " + orderStr + ": " + lister.getPrefix() + "\t" + recorder.getJson(lister.getPrefix()));
+            logger.error("order {}: {}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
+            procedureLogger.info(recorder.toString());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
@@ -319,7 +324,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                System.out.println("generate lister by prefix:" + prefix + " retrying... " + e.getMessage());
+                logger.error("generate lister by prefix:{} retrying... ", prefix, e);
             }
         }
     }
@@ -379,8 +384,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 return generateLister(prefix);
             } catch (SuitsException e) {
-                System.out.println("generate lister failed by " + prefix + "\t" + prefixesMap.get(prefix));
-                e.printStackTrace(); return null;
+                logger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
+                return null;
             }
         }).filter(generated -> {
             if (generated == null) return false;
@@ -441,8 +446,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     iLister = iterator.next();
                     if(!iLister.hasNext()) iterator.remove();
                 }
-                if (listerList.size() <= tiny) {
-                    System.out.printf("unfinished: %s, cValue: %s, to re-split prefixes...\n", listerList.size(), cValue);
+                if (listerList.size() > 0 && listerList.size() <= tiny) {
+                    logger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
                     for (ILister<E> lister : listerList) {
                         String prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
@@ -551,9 +556,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
                     "listing remained objects.\n", fileName, FileSaveMapper.ext);
         }
+        procedureLogger.info(recorder.toString());
     }
 
-    void ctrlC() {
+    void showdownHook() {
         SignalHandler handler = signal -> {
             try {
                 endAction();
@@ -571,8 +577,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      */
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
-        System.out.println(info + " running...");
-        ctrlC();
+        logger.info("{} running...", info);
+        showdownHook();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");
@@ -582,7 +588,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             if (threads <= 1) {
                 listing(startLister);
-                System.out.println(info + " finished.");
+                logger.info("{} finished.", info);
                 endAction();
                 return;
             }
@@ -606,11 +612,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             executorPool.shutdown();
             waitAndTailListing(listerList);
-            System.out.println(info + " finished.");
+            logger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            e.printStackTrace();
+            logger.error(e.toString(), e);
             endAction();
             System.exit(-1);
         }

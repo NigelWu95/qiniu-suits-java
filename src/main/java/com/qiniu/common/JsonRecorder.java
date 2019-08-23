@@ -20,13 +20,13 @@ public class JsonRecorder {
         prefixesJson.remove(key);
     }
 
-    public synchronized JsonObject getJson(String key) {
+    public JsonObject getJson(String key) {
         JsonElement jsonElement = prefixesJson.get(key);
         if (jsonElement instanceof JsonObject) return jsonElement.getAsJsonObject();
         else return null;
     }
 
-    public synchronized String getString(String key) {
+    public String getString(String key) {
         JsonElement jsonElement = prefixesJson.get(key);
         if (jsonElement == null || jsonElement instanceof JsonNull) return null;
         else {
@@ -50,7 +50,7 @@ public class JsonRecorder {
         else return Default;
     }
 
-    public synchronized int size() {
+    public int size() {
         return prefixesJson.size();
     }
 

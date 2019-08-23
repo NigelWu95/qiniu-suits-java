@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
-    <version>7.7</version>
+    <version>7.71</version>
     <name>qsuits</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>
@@ -53,6 +53,27 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>1.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.28</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.12.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.10.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.10.0</version>
         </dependency>
 
         <dependency>
@@ -177,10 +198,10 @@
                 <!--<artifactId>joda-time</artifactId>-->
                 <!--</exclusion>-->
                 <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-                <!--<exclusion>-->
-                <!--<groupId>org.slf4j</groupId>-->
-                <!--<artifactId>slf4j-api</artifactId>-->
-                <!--</exclusion>-->
+                <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                </exclusion>
                 <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -477,6 +498,7 @@
               <!--<targetPath>resources/</targetPath>-->
               <includes>
                   <include>check.json</include>
+                  <include>log4j2.properties</include>
               </includes>
           </resource>
         </resources>

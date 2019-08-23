@@ -25,3 +25,6 @@ out/
 resources/.*
 assembly/
 .DS_Store
+
+qsuits.log
+procedure.log
