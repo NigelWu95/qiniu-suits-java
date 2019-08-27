@@ -120,8 +120,8 @@ public class ParamsUtils {
             String key;
             for (String arg : args) {
                 // 参数命令格式：-<key>=<value>
-                cmdGoon = arg.matches("^-.+=.+$") || cmdGoon;
-                if (cmdGoon) {
+                cmdGoon = cmdGoon || arg.matches("^-.+=.+$");
+                if (cmdGoon || arg.matches("^-[^=]+$")) {
                     if (!arg.startsWith("-"))
                         throw new IOException("invalid command param: \"" + arg + "\", not start with \"-\".");
                     key = arg.substring(1);
