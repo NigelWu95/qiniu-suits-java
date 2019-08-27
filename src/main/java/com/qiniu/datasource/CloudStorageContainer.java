@@ -553,8 +553,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             saveMapper.addWriter(fileName);
             saveMapper.writeToKey(fileName, recorder.toString(), true);
             saveMapper.closeWriters();
-            System.out.printf("please check the prefixes breakpoint in %s%s, it can be used for one more time " +
-                    "listing remained objects.\n", fileName, FileSaveMapper.ext);
+            logger.info("please check the prefixes breakpoint in {}{}, it can be used for one more time listing remained objects.",
+                    fileName, FileSaveMapper.ext);
         }
         procedureLogger.info(recorder.toString());
     }
@@ -616,7 +616,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            logger.error(e.toString(), e);
+            logger.error("export failed", e);
             endAction();
             System.exit(-1);
         }

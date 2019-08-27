@@ -15,11 +15,10 @@ public class UpListerTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String name = propertiesFile.getValue("up-id");
         String pass = propertiesFile.getValue("up-secret");
+        String bucket = propertiesFile.getValue("bucket");
+//        bucket = "squirrel";
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), name, pass);
-        String bucket = "squirrel";
-//                propertiesFile.getValue("bucket");
-        UpLister upLister = new UpLister(upYunClient, bucket, "wordSplit/xml/20161220/FF8080815919A15101591AFE37C603F7\t",
-                null, null, 10000);
+        UpLister upLister = new UpLister(upYunClient, bucket, "yflb/", null, null, 10000);
         String endKey = upLister.currentEndKey();
         System.out.println(endKey);
     }

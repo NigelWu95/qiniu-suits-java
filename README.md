@@ -64,7 +64,7 @@ sk=
 **备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/application.config` 或 `resources/.application.config`，
 两个文件存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
-数前加上 -**，如  
+数前加上 -**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
 ```
 java -jar qsuits-x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
@@ -143,7 +143,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `f-mime=` 表示**选择**符合该 mime 类型的文件  
 `f-type=` 表示**选择**符合该存储类型的文件，参下述[关于 f-type](#关于-f-type)|  
 `f-status=` 表示**选择**符合该存储状态的文件, 为 0（启用） 或 1（禁用）  
-`f-date-scale` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为：2018-08-01 00:00:00，[特殊规则](#f-date-scale)  
+`f-date-scale` 设置过滤的时间范围，格式为 [\<date1\>,\<date2\>]，\<date\> 格式为：2018-08-01 00:00:00，如 `f-date-scale="[0,2018-08-01 12:30:00]"` [特殊规则](#f-date-scale)  
 `f-anti-prefix=` 表示**排除**文件名符合该前缀的文件  
 `f-anti-suffix=` 表示**排除**文件名符合该后缀的文件  
 `f-anti-inner=` 表示**排除**文件名包含该部分字符的文件  
@@ -160,7 +160,8 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 特殊字符包括: `, \ =` 如有参数值本身包含特殊字符需要进行转义：`\, \\ \=`  
 
 #### f-date-scale
-<date> 中的 00:00:00 为默认值可省略，无起始时间则可填 [0,\<date2\>]，结束时间支持 now 和 max，分别表示到当前时间为结束或无结束时间。  
+\<date\> 中的 00:00:00 为默认值可省略，无起始时间则可填 [0,\<date2\>]，结束时间支持 now 和 max，分别表示到当前时间为结束或无结束时间。由于 date 
+值日期和时刻中间含有空格分隔符，故在设置时需要使用引号 `'` 或者 `"`，如 `f-date-scale="[0,2018-08-01 12:30:00]"`  
 
 #### 特殊特征匹配过滤 f-check[-x]  
 根据资源的字段关系选择某个特征下的文件，目前支持 "ext-mime" 检查，程序内置的默认特征配置见：[check 默认配置](resources/check.json)，运行
@@ -219,12 +220,12 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 （2）云存储数据源时默认设置 save-total=true。  
 （3）保存结果的路径 **默认（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
-**--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"：  
+**--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"，例如：  
 （1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
-（2）local 源 =》 "local_success_\<order\>.txt"  
-如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>_success/error_\<order\>.txt"。  
-**--** process 结果的文件名为：<process>_success/error_\<order\>.txt 及 <process>_need_retry_\<order\>.txt，error 的结果表明无法成功
+（2）local 列表数据源 =》 "local_success_\<order\>.txt"  
+如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter\_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
+"\<process\>\_success/error\_\<order\>.txt"。  
+**--** process 结果的文件名为：\<process\>\_success/error_\<order\>.txt 及 \<process\>\_need_retry_\<order\>.txt，error 的结果表明无法成功
 处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息。  
 **--** rm-fields 可选择去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式保存在 save-path 的文件中。  
 
