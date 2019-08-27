@@ -202,8 +202,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             saveMapper.addWriter(fileName);
             saveMapper.writeToKey(fileName, recorder.toString(), true);
             saveMapper.closeWriters();
-            System.out.printf("please check the lines breakpoint in %s%s, it can be used for one more time " +
-                    "reading remained lines.\n", fileName, FileSaveMapper.ext);
+            logger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
+                    fileName, FileSaveMapper.ext);
         }
         procedureLogger.info(recorder.toString());
     }
@@ -249,7 +249,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            logger.error(e.toString(), e);
+            logger.error("export failed", e);
             endAction();
             System.exit(-1);
         }
