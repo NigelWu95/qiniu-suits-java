@@ -82,7 +82,7 @@ public class QiniuLister implements ILister<FileInfo> {
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
-        List<FileInfo> fileInfoList = new ArrayList<>();
+        List<FileInfo> fileInfoList = new ArrayList<>(limit);
         JsonObject jsonObject = null;
         String line;
         try {

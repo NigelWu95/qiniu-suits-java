@@ -79,11 +79,10 @@ public class UpLister implements ILister<FileItem> {
     }
 
     private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
-        List<FileItem> fileItems = new ArrayList<>();
         String result = upYunClient.listFiles(bucket, prefix, marker, limit);
         if (result == null || result.isEmpty()) {
             this.marker = null;
-            return fileItems;
+            return new ArrayList<>();
         }
         JsonObject returnJson = JsonUtils.toJsonObject(result);
         this.marker = returnJson.has("iter") ? returnJson.get("iter").getAsString() : null;
@@ -91,6 +90,7 @@ public class UpLister implements ILister<FileItem> {
         JsonElement jsonElement = returnJson.get("files");
         if (jsonElement instanceof JsonArray) {
             JsonArray files = returnJson.get("files").getAsJsonArray();
+            List<FileItem> fileItems = new ArrayList<>(files.size());
             if (files.size() > 0) {
                 JsonObject object;
                 String attribute;
@@ -117,8 +117,10 @@ public class UpLister implements ILister<FileItem> {
                     }
                 }
             }
+            return fileItems;
+        } else {
+            return new ArrayList<>();
         }
-        return fileItems;
     }
 
     private void checkedListWithEnd() {
