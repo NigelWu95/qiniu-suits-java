@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UpYunClient {
 
@@ -26,48 +28,19 @@ public class UpYunClient {
 
     public String listFiles(String bucket, String directory, String marker, int limit) throws IOException {
         String uri = "/" + bucket + "/" + URLUtils.getEncodedURI(directory);
-        URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(config.connectTimeout);
-        conn.setReadTimeout(config.readTimeout);
-        conn.setRequestMethod(UpYunConfig.METHOD_GET);
-        conn.setUseCaches(false);
-        String date = DatetimeUtils.getGMTDate();
-        conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
-                userName, password, null));
-        conn.setRequestProperty("x-list-iter", marker);
-        conn.setRequestProperty("x-list-limit", String.valueOf(limit));
-        conn.setRequestProperty("Accept", "application/json");
-        conn.connect();
-        int code = conn.getResponseCode();
-//        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
-        InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-        InputStreamReader sr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(sr);
-        StringBuilder text = new StringBuilder();
+        Map<String, String> headers = new HashMap<String, String>(){{
+            put("x-list-iter", marker);
+            put("x-list-limit", String.valueOf(limit));
+            put("Accept", "application/json");
+        }};
         try {
-            char[] chars = new char[4096];
-            int length;
-            while ((length = br.read(chars)) != -1) {
-                text.append(chars, 0, length);
+            return HttpGetAction(uri, headers);
+        } catch (SuitsException e) {
+            if (e.getStatusCode() == 401) {
+                throw new SuitsException(e, "please check name of bucket or user.");
+            } else {
+                throw new SuitsException(e, headers.toString());
             }
-        } finally {
-            try {
-                conn.disconnect();
-                br.close();
-                sr.close();
-                is.close();
-            } catch (IOException e) {
-                br = null;
-                sr = null;
-                is = null;
-            }
-        }
-        if (code == 200) {
-            return text.toString();
-        } else {
-            throw new SuitsException(code, text.toString() + "\t" + directory + "\t" + marker);
         }
     }
 
@@ -99,6 +72,63 @@ public class UpYunClient {
             conn.disconnect();
         }
         return fileItem;
+    }
+
+    public long getBucketUsage(String bucket) throws IOException {
+        String result = HttpGetAction("/" + bucket + "/?usage", null);
+        try {
+            return Long.parseLong(result.trim());
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private String HttpGetAction(String uri, Map<String, String> headers) throws IOException {
+        URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(config.connectTimeout);
+        conn.setReadTimeout(config.readTimeout);
+        conn.setRequestMethod(UpYunConfig.METHOD_GET);
+        conn.setUseCaches(false);
+        String date = DatetimeUtils.getGMTDate();
+        conn.setRequestProperty(UpYunConfig.DATE, date);
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
+                userName, password, null));
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                conn.setRequestProperty(entry.getKey(), entry.getValue());
+            }
+        }
+        conn.connect();
+        int code = conn.getResponseCode();
+//        is = conn.getInputStream(); // 状态码错误时不能使用 getInputStream()
+        InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+        InputStreamReader sr = new InputStreamReader(is);
+        BufferedReader br = new BufferedReader(sr);
+        StringBuilder text = new StringBuilder();
+        try {
+            char[] chars = new char[4096];
+            int length;
+            while ((length = br.read(chars)) != -1) {
+                text.append(chars, 0, length);
+            }
+        } finally {
+            try {
+                conn.disconnect();
+                br.close();
+                sr.close();
+                is.close();
+            } catch (IOException e) {
+                br = null;
+                sr = null;
+                is = null;
+            }
+        }
+        if (code == 200) {
+            return text.toString();
+        } else {
+            throw new SuitsException(code, text.toString());
+        }
     }
 }
 
