@@ -225,7 +225,7 @@ public final class CloudApiUtils {
         try {
             return getUpYunMarker(bucket, upYunClient.getFileInfo(bucket, key));
         } catch (Exception e) {
-            throw new SuitsException(e, 848);
+            throw new SuitsException(848, e.getMessage());
         } finally {
             upYunClient = null;
         }

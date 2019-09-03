@@ -103,9 +103,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
             ossObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ClientException e) {
-            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
+            throw new SuitsException(CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

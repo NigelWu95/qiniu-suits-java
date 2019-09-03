@@ -2,6 +2,7 @@ package com.qiniu.datasource;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
@@ -96,6 +97,7 @@ public class UpLister implements ILister<FileItem> {
                 String attribute;
                 String totalName;
                 for (JsonElement item : files) {
+                    if (item == null || item instanceof JsonNull) continue;
                     object = item.getAsJsonObject();
                     attribute = object.get("type").getAsString();
                     totalName = prefix == null || prefix.isEmpty() ? object.get("name").getAsString() :
