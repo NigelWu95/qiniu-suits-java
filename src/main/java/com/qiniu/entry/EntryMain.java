@@ -6,10 +6,13 @@ import com.qiniu.interfaces.IDataSource;
 import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.util.FileUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -28,10 +31,15 @@ public class EntryMain {
             put("interactive", "interactive=true");
         }};
         Map<String, String> paramsMap = getEntryParams(args, preSetMap);
+        IEntryParam entryParam = new ParamsConfig(paramsMap);
+        if (paramsMap.containsKey("account")) {
+            // TODO set account
+            setAccount(entryParam, paramsMap.get("account"));
+            return;
+        }
         if (paramsMap.containsKey("verify")) process_verify = Boolean.parseBoolean(paramsMap.get("verify"));
         boolean single = paramsMap.containsKey("single") && Boolean.parseBoolean(paramsMap.get("single"));
         boolean interactive = paramsMap.containsKey("interactive") && Boolean.parseBoolean(paramsMap.get("interactive"));
-        IEntryParam entryParam = new ParamsConfig(paramsMap);
         CommonParams commonParams = single ? new CommonParams(paramsMap) : new CommonParams(entryParam);
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor = single || interactive ? qSuitsEntry.whichNextProcessor(true) :
@@ -133,5 +141,50 @@ public class EntryMain {
 //                return ParamsUtils.toParamsMap(configFilePath);
 //            }
 //        }
+    }
+
+    private static void setAccount(IEntryParam entryParam, String account) throws IOException {
+        File accountFile = new File(FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account"));
+        boolean accountFileExists = (!accountFile.isDirectory() && accountFile.exists()) || accountFile.createNewFile();
+        if (!accountFileExists) throw new IOException("account file not exists and can not be created.");
+        BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
+        String id;
+        String secret;
+        if (account == null) {
+            throw new IOException("account name is empty.");
+        } else if (account.startsWith("ten-")) {
+            account = account.split("-")[1];
+            id = account + "-tencent-id=" + entryParam.getValue("ten-id");
+            secret = account + "-tencent-secret=" + entryParam.getValue("ten-secret");
+        } else if (account.startsWith("ali-")) {
+            account = account.split("-")[1];
+            id = account + "-aliyun-id=" + entryParam.getValue("ali-id");
+            secret = account + "-aliyun-secret=" + entryParam.getValue("ali-secret");
+        } else if (account.startsWith("up-")) {
+            account = account.split("-")[1];
+            id = account + "-upyun-id=" + entryParam.getValue("up-id");
+            secret = account + "-upyun-secret=" + entryParam.getValue("up-secret");
+        } else if (account.startsWith("s3-") || account.startsWith("aws-")) {
+            account = account.split("-")[1];
+            id = account + "-s3-id=" + entryParam.getValue("s3-id");
+            secret = account + "-s3-secret=" + entryParam.getValue("s3-secret");
+        } else if (account.startsWith("hua-")) {
+            account = account.split("-")[1];
+            id = account + "-huawei-id=" + entryParam.getValue("hua-id");
+            secret = account + "-huawei-secret=" + entryParam.getValue("hua-secret");
+        } else if (account.startsWith("bai-")) {
+            account = account.split("-")[1];
+            id = account + "-baidu-id=" + entryParam.getValue("bai-id");
+            secret = account + "-baidu-secret=" + entryParam.getValue("bai-secret");
+        } else {
+            if (account.contains("-")) account = account.split("-")[1];
+            id = account + "-qiniu-id=" + entryParam.getValue("ak");
+            secret = account + "-qiniu-secret=" + entryParam.getValue("sk");
+        }
+        writer.write(id);
+        writer.newLine();
+        writer.write(secret);
+        writer.newLine();
+        writer.close();
     }
 }
