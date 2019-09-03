@@ -6,9 +6,11 @@ import com.qiniu.interfaces.IDataSource;
 import com.qiniu.datasource.InputSource;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.interfaces.ILineProcess;
+import com.qiniu.util.EncryptUtils;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
+import sun.misc.BASE64Encoder;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -143,43 +145,58 @@ public class EntryMain {
 //        }
     }
 
-    private static void setAccount(IEntryParam entryParam, String account) throws IOException {
+    private static void setAccount(IEntryParam entryParam, String account) throws Exception {
         File accountFile = new File(FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account"));
         boolean accountFileExists = (!accountFile.isDirectory() && accountFile.exists()) || accountFile.createNewFile();
         if (!accountFileExists) throw new IOException("account file not exists and can not be created.");
         BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
         String id;
         String secret;
+        BASE64Encoder encoder = new BASE64Encoder();
         if (account == null) {
             throw new IOException("account name is empty.");
         } else if (account.startsWith("ten-")) {
             account = account.split("-")[1];
-            id = account + "-tencent-id=" + entryParam.getValue("ten-id");
-            secret = account + "-tencent-secret=" + entryParam.getValue("ten-secret");
+            id = account + "-tencent-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("ten-id").getBytes());
+            secret = account + "-tencent-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("ten-secret").getBytes());
         } else if (account.startsWith("ali-")) {
             account = account.split("-")[1];
-            id = account + "-aliyun-id=" + entryParam.getValue("ali-id");
-            secret = account + "-aliyun-secret=" + entryParam.getValue("ali-secret");
+            id = account + "-aliyun-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("ali-id").getBytes());
+            secret = account + "-aliyun-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("ali-secret").getBytes());
         } else if (account.startsWith("up-")) {
             account = account.split("-")[1];
-            id = account + "-upyun-id=" + entryParam.getValue("up-id");
-            secret = account + "-upyun-secret=" + entryParam.getValue("up-secret");
+            id = account + "-upyun-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("up-id").getBytes());
+            secret = account + "-upyun-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("up-secret").getBytes());
         } else if (account.startsWith("s3-") || account.startsWith("aws-")) {
             account = account.split("-")[1];
-            id = account + "-s3-id=" + entryParam.getValue("s3-id");
-            secret = account + "-s3-secret=" + entryParam.getValue("s3-secret");
+            id = account + "-s3-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("s3-id").getBytes());
+            secret = account + "-s3-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("s3-secret").getBytes());
         } else if (account.startsWith("hua-")) {
             account = account.split("-")[1];
-            id = account + "-huawei-id=" + entryParam.getValue("hua-id");
-            secret = account + "-huawei-secret=" + entryParam.getValue("hua-secret");
+            id = account + "-huawei-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("hua-id").getBytes());
+            secret = account + "-huawei-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("hua-secret").getBytes());
         } else if (account.startsWith("bai-")) {
             account = account.split("-")[1];
-            id = account + "-baidu-id=" + entryParam.getValue("bai-id");
-            secret = account + "-baidu-secret=" + entryParam.getValue("bai-secret");
+            id = account + "-baidu-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("bai-id").getBytes());
+            secret = account + "-baidu-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("bai-secret").getBytes());
         } else {
             if (account.contains("-")) account = account.split("-")[1];
-            id = account + "-qiniu-id=" + entryParam.getValue("ak");
-            secret = account + "-qiniu-secret=" + entryParam.getValue("sk");
+            id = account + "-qiniu-id=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("ak").getBytes());
+            secret = account + "-qiniu-secret=" + EncryptUtils.getRandomString(8) +
+                    encoder.encode(entryParam.getValue("sk").getBytes());
         }
         writer.write(id);
         writer.newLine();

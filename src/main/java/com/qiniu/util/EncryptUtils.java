@@ -4,7 +4,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
+import java.util.Random;
 
 public class EncryptUtils {
 
@@ -73,5 +73,28 @@ public class EncryptUtils {
             op++;
         }
         return out;
+    }
+
+    public static String getRandomString(int length) {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i<length; i++) {
+            int number = random.nextInt(3);
+            long result;
+            switch(number) {
+                case 0:
+                    result = Math.round(Math.random() * 25 + 65);
+                    sb.append(String.valueOf((char)result));
+                    break;
+                case 1:
+                    result = Math.round(Math.random() * 25 + 97);
+                    sb.append(String.valueOf((char)result));
+                    break;
+                case 2:
+                    sb.append(String.valueOf(new Random().nextInt(10)));
+                    break;
+            }
+        }
+        return sb.toString();
     }
 }
