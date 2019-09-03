@@ -75,6 +75,7 @@ public class EntryMain {
             String configFilePath = null;
             List<String> configFiles = new ArrayList<String>(){{
                 add("resources" + System.getProperty("file.separator") + "application.config");
+                add("resources" + System.getProperty("file.separator") + "application.properties");
                 add("resources" + System.getProperty("file.separator") + ".application.config");
                 add("resources" + System.getProperty("file.separator") + ".application.properties");
             }};
