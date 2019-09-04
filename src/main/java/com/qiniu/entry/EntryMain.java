@@ -204,6 +204,7 @@ public class EntryMain {
         String valueId = map.get(id.substring(0, idIndex));
         String valueSecret = map.get(secret.substring(0, secretIndex));
         if (entryParam.getValue("default", "false").equals("true")) {
+            map.put("account", account);
             String oldAccount = map.get("account");
             if (oldAccount == null) {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
@@ -211,7 +212,6 @@ public class EntryMain {
                 writer.newLine();
                 writer.close();
             } else {
-                map.put("account", account);
                 BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile));
                 for (Map.Entry<String, String> entry : map.entrySet()) {
                     writer.write(entry.getKey() + "=" + entry.getValue());
