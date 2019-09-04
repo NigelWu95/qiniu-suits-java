@@ -2,7 +2,9 @@ package com.qiniu.util;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -130,6 +132,40 @@ public final class FileUtils {
             return filePath.createNewFile();
         } else {
             return true;
+        }
+    }
+
+    public static void randomModify(String filePath, String oldStr, String newStr) throws IOException {
+        ///定义一个随机访问文件类的对象
+        RandomAccessFile raf = null;
+        try {
+            //初始化对象,以"rw"(读写方式)访问文件
+            raf = new RandomAccessFile(filePath, "rw");
+            //临时变量,存放每次读出来的文件内容
+            String line;
+            // 记住上一次的偏移量
+            long lastPoint = 0;
+            //循环读出文件内容
+            while ((line = raf.readLine()) != null) {
+                // 文件当前偏移量返回文件记录指针的当前位置
+                final long point = raf.getFilePointer();
+                // 查找要替换的内容
+                if (line.contains(oldStr)) {
+                    //修改内容,line读出整行数据
+                    String str = line.replace(oldStr, newStr);
+                    //文件节点移动到文件开始
+                    System.out.println(str);
+                    raf.seek(lastPoint);
+                    raf.writeBytes(str);
+                }
+                lastPoint = point;
+            }
+        } finally {
+            try {
+                if (raf != null) raf.close();
+            } catch (IOException e) {
+                raf = null;
+            }
         }
     }
 }
