@@ -156,43 +156,43 @@ public class EntryMain {
         if (account == null) {
             throw new IOException("account name is empty.");
         } else if (account.startsWith("ten-")) {
-            account = account.split("-")[1];
+            account = account.substring(4);
             id = account + "-tencent-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("ten-id").getBytes());
             secret = account + "-tencent-secret=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("ten-secret").getBytes());
         } else if (account.startsWith("ali-")) {
-            account = account.split("-")[1];
+            account = account.substring(4);
             id = account + "-aliyun-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("ali-id").getBytes());
             secret = account + "-aliyun-secret=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("ali-secret").getBytes());
         } else if (account.startsWith("up-")) {
-            account = account.split("-")[1];
+            account = account.substring(3);
             id = account + "-upyun-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("up-id").getBytes());
             secret = account + "-upyun-secret=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("up-secret").getBytes());
         } else if (account.startsWith("s3-") || account.startsWith("aws-")) {
-            account = account.split("-")[1];
+            account = account.substring(3);
             id = account + "-s3-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("s3-id").getBytes());
             secret = account + "-s3-secret=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("s3-secret").getBytes());
         } else if (account.startsWith("hua-")) {
-            account = account.split("-")[1];
+            account = account.substring(4);
             id = account + "-huawei-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("hua-id").getBytes());
             secret = account + "-huawei-secret=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("hua-secret").getBytes());
         } else if (account.startsWith("bai-")) {
-            account = account.split("-")[1];
+            account = account.substring(4);
             id = account + "-baidu-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("bai-id").getBytes());
             secret = account + "-baidu-secret=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("bai-secret").getBytes());
         } else {
-            if (account.contains("-")) account = account.split("-")[1];
+            if (account.startsWith("qiniu-")) account = account.substring(6);
             id = account + "-qiniu-id=" + EncryptUtils.getRandomString(8) +
                     encoder.encode(entryParam.getValue("ak").getBytes());
             secret = account + "-qiniu-secret=" + EncryptUtils.getRandomString(8) +
