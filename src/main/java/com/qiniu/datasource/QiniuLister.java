@@ -82,7 +82,7 @@ public class QiniuLister implements ILister<FileInfo> {
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
-        List<FileInfo> fileInfoList = new ArrayList<>();
+        List<FileInfo> fileInfoList = new ArrayList<>(limit);
         JsonObject jsonObject = null;
         String line;
         try {
@@ -148,7 +148,7 @@ public class QiniuLister implements ILister<FileInfo> {
             fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (QiniuException e) {
-            throw new SuitsException(e, e.code(), LogUtils.getMessage(e));
+            throw new SuitsException(e.code(), LogUtils.getMessage(e));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

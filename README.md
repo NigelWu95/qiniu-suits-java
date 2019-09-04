@@ -36,6 +36,24 @@
 *【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不想进行 verify 验证则在命令行加入 -f 参数】*
 
 ### 1 程序运行过程  
+#### 账号设置（7.73 及以上版本）  
+预先设置好账号的密钥，在后续执行中只需使用 account name 即可读取对应密钥进行操作，定义不同的 account name 则可设置多对密钥，亦可设置不同数据源
+的账号密钥，账号名相同时会覆盖该账号的历史密钥，操作如下：  
+**设置 account：**  
+```
+-account=<source>-<name> -<source>-id= -<source>-secret= [-d]
+```  
+`-account=test/qiniu-test -ak= -sk=` 设置七牛账号，账号名为 test，没有数据源标识时默认设置七牛账号  
+`-account=ten-test -ten-id= -ten-secret=` 设置腾讯云账号，账号名为 test  
+`-account=ali-test -ali-id= -ali-secret=` 设置阿里云账号，账号名为 test  
+`-account=s3-test -s3-id= -s3-secret=` 设置 S3 账号，账号名为 test  
+`-account=up-test -up-id= -up-secret=` 设置又拍云账号，账号名为 test  
+`-account=hua-test -hua-id= -hua-secret=` 设置华为云账号，账号名为 test  
+`-account=bai-test -bai-id= -bai-secret=` 设置百度云账号，账号名为 test  
+`-d` 表示默认账号选项，此时设置的账号将会成为全局默认账号，执行操作时 -d 选项将调取该默认账号  
+**使用 account 账号：**  
+`-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
+`-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
 #### （1）批处理模式
 [读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
 #### （2）交互模式
@@ -48,8 +66,8 @@ qsuits 提供命令行运行工具（或可执行 jar 包）和 maven artifact�
 本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1. 命令行直接运行 jar 包  
-在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载最新 jar 包（**maven 仓库中的 jar 包不支持命令行运
-行**），使用命令行参数 [-config=<filepath>] 指定
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载最新 jar 包（**maven 仓库中的 \<version\>.jar 包
+不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 [-config=<filepath>] 指定
 配置文件路径，运行命令形如：
 ```
 java -jar qsuits-x.x.jar -config=config.txt
@@ -61,14 +79,16 @@ bucket=
 ak=
 sk=
 ```  
-**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/application.config` 或 `resources/.application.config`，
-两个文件存在任意一个均可作为配置文件来设置参数，此时则不需要通过 `-config=` 指定配置文件路径。  
+**备注1**：可以通过默认路径的配置文件来设置参数值，默认配置文件路径为 `resources/application.config` 或 `resources/application.properties`，
+properties 方式需要遵循 java 的转义规则，两个文件存在任意一个均可作为默认配置文件来设置参数（优先使用 resources/application.properties），
+此时则不需要通过 `-config=` 指定配置文件路径，指定 `-config=` 时则默认文件路径无效。  
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
 数前加上 -**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
 ```
 java -jar qsuits-x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
-**备注2**：命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。  
+**备注2**：7.72 及以下版本中命令行参数与配置文件参数不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件
+中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。  
 
 #### 2. 命令行执行器 qsuits(by golang)  
 由于 qsuits-java 基于 java 编写，命令行运行时需要提供 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的二进制可执行文件用
@@ -131,7 +151,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `line-config=` 数据源路径即对应文本读取的起始行配置  
 **数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
 
-### 4 过滤器功能
+### 4 过滤器功能  
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
 1.**基本字段过滤**和2.**特殊特征匹配过滤**  
 #### 基本字段过滤  
@@ -236,8 +256,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `request-timeout=60` 网络请求超时时间，程序默认 60s  
 
 ### 8 错误及异常
-1. 命令行方式与配置文件方式不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件中。
-2. 一般情况下，命令行输出异常信息如 socket timeout 超时为正常现象，如：
+1. 一般情况下，终端输出异常信息如 socket timeout 超时为正常现象，如：
 ```
 list prefix:<prefix> retrying...
 ...
@@ -245,7 +264,7 @@ java.net.SocketTimeoutException: timeout
 ```
 程序会自动重试，如果比较频繁则可以修改[超时配置](#7-超时设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。  
-3. 常见错误信息：  
+2. 常见错误信息：  
 （1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
 表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
 （2）java.lang.OutOfMemoryError: unable to create new native thread   
@@ -271,7 +290,8 @@ java.net.SocketTimeoutException: timeout
 为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
 3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次继
 续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分，断点参数请和其他参数保持一致放在命令行或配置文件中。  
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
+版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
 
 **注意：如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后的断
 点信息，取出 procedure.log 日志的最后一行并创建断点配置文件，从而按照上述方式进行断点运行。**  

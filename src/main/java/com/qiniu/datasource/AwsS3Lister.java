@@ -111,9 +111,9 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
             s3ObjectList = result.getObjectSummaries();
             checkedListWithEnd();
         } catch (AmazonServiceException e) {
-            throw new SuitsException(e, e.getStatusCode());
+            throw new SuitsException(e.getStatusCode(), e.getMessage());
         } catch (SdkClientException e) {
-            throw new SuitsException(e, -1);
+            throw new SuitsException(-1, e.getMessage());
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

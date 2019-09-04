@@ -112,8 +112,9 @@ public class ParamsUtils {
     }
 
     public static Map<String, String> toParamsMap(String[] args, Map<String, String> preSetMap) throws IOException {
-        if (args == null || args.length == 0) throw new IOException("args is empty.");
-        else {
+        if (args == null || args.length == 0) {
+            throw new IOException("args is empty.");
+        } else {
             boolean cmdGoon = false;
             Map<String, String> paramsMap = new HashMap<>();
             String[] strings;
@@ -137,22 +138,26 @@ public class ParamsUtils {
     }
 
     public static String[] splitParam(String paramCommand) throws IOException {
-        if (!paramCommand.contains("="))
+        if (!paramCommand.contains("=")) {
             throw new IOException("invalid command param: \"" + paramCommand + "\", no value set with \"=\".");
+        }
         String[] strings = new String[2];
         int position = paramCommand.indexOf("="); // 取前一个 = 为赋值符号
-        if (position + 1 == paramCommand.length())
+        if (position + 1 == paramCommand.length()) {
             throw new IOException("the \"" + paramCommand + "\" param has no value."); // 不允许空值的出现
+        }
         strings[0] = paramCommand.substring(0, position);
         strings[1] = paramCommand.substring(position + 1);
-        if (strings[1].matches("(^\".*\"$|^\'.*\'$)"))
-            return new String[]{strings[0], strings[1].substring(1, strings[1].length() -1)};
+        if (strings[1].matches("(^\".*\"$|^\'.*\'$)")) {
+            return new String[]{strings[0], strings[1].substring(1, strings[1].length() - 1)};
+        }
         return strings;
     }
 
     public static String checked(String param, String name, String conditionReg) throws IOException {
-        if (param == null || !param.matches(conditionReg))
+        if (param == null || !param.matches(conditionReg)) {
             throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
-        else return param;
+        }
+        return param;
     }
 }

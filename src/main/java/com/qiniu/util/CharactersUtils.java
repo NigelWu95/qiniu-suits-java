@@ -61,19 +61,24 @@ public final class CharactersUtils {
         return hexString.toString().split(",");
     }
 
+    /**
+     * 二进制转换成16进制，加密后的字节数组不能直接转换为字符串
+     */
     public static String bytesToHexString(byte[] byteArray) {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i < byteArray.length; i++) {
             String temp = Integer.toHexString(byteArray[i] & 0xff);
             if (temp.length() == 1) {
-                temp = "0" + temp;
+                temp = '0' + temp;
             }
-            result += temp;
+            result.append(temp.toUpperCase());
         }
-
-        return result;
+        return result.toString();
     }
 
+    /**
+     * 16进制转换成二进制
+     */
     public static byte[] hexStringToBytes(String hexString) {
         int len = (hexString.length() / 2);
         byte[] result = new byte[len];
@@ -84,6 +89,17 @@ public final class CharactersUtils {
         }
         return result;
     }
+
+//    public static byte[] parseHexStr2Byte(String hexStr) {
+//        if (hexStr.length() < 1) return null;
+//        byte[] result = new byte[hexStr.length() / 2];
+//        for (int i = 0; i < hexStr.length() / 2; i++) {
+//            int high = Integer.parseInt(hexStr.substring(i * 2, i * 2 + 1), 16);
+//            int low = Integer.parseInt(hexStr.substring(i * 2 + 1, i * 2 + 2), 16);
+//            result[i] = (byte) (high * 16 + low);
+//        }
+//        return result;
+//    }
 
     private static int toByte(char c) {
         return (byte) "0123456789ABCDEF".indexOf(c);

@@ -135,6 +135,11 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 for (String dir : startLister.getDirectories()) recordListerByPrefix(dir);
                 prefixes = startLister.getDirectories();
             }
+        } else {
+            prefixes = prefixes.stream().map(prefix -> {
+                if (prefix.endsWith("/")) return prefix.substring(0, prefix.length() - 1);
+                return prefix;
+            }).collect(Collectors.toList());
         }
         executorPool = Executors.newFixedThreadPool(threads);
         showdownHook();
