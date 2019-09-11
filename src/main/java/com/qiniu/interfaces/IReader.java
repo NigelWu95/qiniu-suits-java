@@ -2,7 +2,6 @@ package com.qiniu.interfaces;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Stream;
 
 public interface IReader<T> {
 
@@ -10,13 +9,11 @@ public interface IReader<T> {
 
     T getRealReader();
 
-    String readLine() throws IOException;
-
     List<String> readLines() throws IOException;
 
-    boolean isTruncated();
+    String lastLine();
 
-    Stream<String> lines();
+    long count();
 
     void close();
 }

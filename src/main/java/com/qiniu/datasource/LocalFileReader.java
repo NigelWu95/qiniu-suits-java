@@ -8,7 +8,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class LocalFileReader implements IReader<BufferedReader> {
 
@@ -18,6 +17,7 @@ public class LocalFileReader implements IReader<BufferedReader> {
     private int limit;
     private String line;
     private List<String> lineList;
+    private long count;
 
     public LocalFileReader(File sourceFile, String startLine, int limit) throws IOException {
         FileReader fileReader;
@@ -30,8 +30,8 @@ public class LocalFileReader implements IReader<BufferedReader> {
         bufferedReader = new BufferedReader(fileReader);
         this.startLine = startLine == null ? "" : startLine;
         this.limit = limit;
-        this.line = "";
-        this.lineList = new ArrayList<>();
+        this.line = bufferedReader.readLine();
+        this.lineList = new ArrayList<String>(){{ add(line); }};
     }
 
     @Override
@@ -42,11 +42,6 @@ public class LocalFileReader implements IReader<BufferedReader> {
     @Override
     public BufferedReader getRealReader() {
         return bufferedReader;
-    }
-
-    @Override
-    public String readLine() throws IOException {
-        return bufferedReader.readLine();
     }
 
     @Override
@@ -68,17 +63,18 @@ public class LocalFileReader implements IReader<BufferedReader> {
                 srcList.add(line);
             }
         }
+        count += srcList.size();
         return srcList;
     }
 
     @Override
-    public boolean isTruncated() {
-        return line == null;
+    public String lastLine() {
+        return line;
     }
 
     @Override
-    public Stream<String> lines() {
-        return bufferedReader.lines();
+    public long count() {
+        return count;
     }
 
     @Override
