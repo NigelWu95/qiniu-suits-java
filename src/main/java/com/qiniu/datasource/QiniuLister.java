@@ -22,6 +22,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private String endPrefix;
     private int limit;
     private List<FileInfo> fileInfoList;
+    private long count;
     private static final List<FileInfo> defaultList = new ArrayList<>();
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -33,6 +34,7 @@ public class QiniuLister implements ILister<FileInfo> {
         this.endPrefix = endPrefix;
         this.limit = limit;
         doList();
+        count += fileInfoList.size();
     }
 
     @Override
@@ -160,6 +162,7 @@ public class QiniuLister implements ILister<FileInfo> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += fileInfoList.size();
         } else {
             fileInfoList = defaultList;
         }
@@ -185,6 +188,7 @@ public class QiniuLister implements ILister<FileInfo> {
             futureList.addAll(fileInfoList);
         }
         fileInfoList = futureList;
+        count += fileInfoList.size();
         return hasNext();
     }
 
@@ -205,6 +209,11 @@ public class QiniuLister implements ILister<FileInfo> {
         String truncateMarker = marker;
         marker = null;
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

@@ -18,6 +18,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
     private List<COSObjectSummary> cosObjectList;
+    private long count;
     private static final List<COSObjectSummary> defaultList = new ArrayList<>();
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -29,6 +30,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
+        count += cosObjectList.size();
     }
 
     @Override
@@ -114,6 +116,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += cosObjectList.size();
         } else {
             cosObjectList = defaultList;
         }
@@ -137,6 +140,7 @@ public class TenLister implements ILister<COSObjectSummary> {
             futureList.addAll(cosObjectList);
         }
         cosObjectList = futureList;
+        count += cosObjectList.size();
         return hasNext();
     }
 
@@ -157,6 +161,11 @@ public class TenLister implements ILister<COSObjectSummary> {
         String truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

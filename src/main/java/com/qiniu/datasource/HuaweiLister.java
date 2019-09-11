@@ -18,6 +18,7 @@ public class HuaweiLister implements ILister<ObsObject> {
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
     private List<ObsObject> obsObjects;
+    private long count;
     private static final List<ObsObject> defaultList = new ArrayList<>();
 
     public HuaweiLister(ObsClient obsClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -29,6 +30,7 @@ public class HuaweiLister implements ILister<ObsObject> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
+        count += obsObjects.size();
     }
 
     @Override
@@ -114,6 +116,7 @@ public class HuaweiLister implements ILister<ObsObject> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += obsObjects.size();
         } else {
             obsObjects = defaultList;
         }
@@ -137,6 +140,7 @@ public class HuaweiLister implements ILister<ObsObject> {
             futureList.addAll(obsObjects);
         }
         obsObjects = futureList;
+        count += obsObjects.size();
         return hasNext();
     }
 
@@ -157,6 +161,11 @@ public class HuaweiLister implements ILister<ObsObject> {
         String truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

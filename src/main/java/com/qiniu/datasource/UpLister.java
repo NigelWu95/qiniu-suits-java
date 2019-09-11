@@ -24,6 +24,7 @@ public class UpLister implements ILister<FileItem> {
     private String endPrefix;
     private int limit;
     private List<FileItem> fileItems;
+    private long count;
     private static final List<FileItem> defaultItems = new ArrayList<>();
     private List<String> directories;
 
@@ -36,6 +37,7 @@ public class UpLister implements ILister<FileItem> {
         this.endPrefix = endPrefix;
         this.limit = limit;
         doList();
+        count += fileItems.size();
     }
 
     @Override
@@ -169,6 +171,7 @@ public class UpLister implements ILister<FileItem> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += fileItems.size();
         } else {
             fileItems = defaultItems;
         }
@@ -192,6 +195,7 @@ public class UpLister implements ILister<FileItem> {
             futureList.addAll(fileItems);
         }
         fileItems = futureList;
+        count += fileItems.size();
         return hasNext();
     }
 
@@ -216,6 +220,11 @@ public class UpLister implements ILister<FileItem> {
         String truncateMarker = marker;
         marker = null;
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

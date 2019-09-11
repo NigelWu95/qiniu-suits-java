@@ -18,6 +18,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
     private List<NOSObjectSummary> nosObjectList;
+    private long count;
     private static final List<NOSObjectSummary> defaultList = new ArrayList<>();
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -29,6 +30,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
+        count += nosObjectList.size();
     }
 
     @Override
@@ -115,6 +117,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += nosObjectList.size();
         } else {
             nosObjectList = defaultList;
         }
@@ -138,6 +141,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
             futureList.addAll(nosObjectList);
         }
         nosObjectList = futureList;
+        count += nosObjectList.size();
         return hasNext();
     }
 
@@ -158,6 +162,11 @@ public class NetLister implements ILister<NOSObjectSummary> {
         String truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

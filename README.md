@@ -92,8 +92,19 @@ java -jar qsuits-x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 
 #### 2. 命令行执行器 qsuits(by golang)  
 由于 qsuits-java 基于 java 编写，命令行运行时需要提供 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的二进制可执行文件用
-来代理 qsuits-java 的功能，即 qsuits 执行器（基于 golang 编写和编译）：https://github.com/NigelWu95/qsuits-exec-go/tree/master/bin
-，下载执行器后可直接以 `qsuits <parameters>` 方式运行，支持所有 qsuits-java 提供的处理参数，且用法一致。如：
+来代理 qsuits-java 的功能，即 [qsuits 执行器](https://github.com/NigelWu95/qsuits-exec-go)（基于 golang 编写和编译）：  
+
+|操作系统|程序名|地址|
+|---|-----|---|
+|windows 32 位|qsuits_windows_386.exe|[下载](https://github.com/NigelWu95/qsuits-exec-go/raw/master/bin/qsuits_windows_386.exe)|
+|windows 64 位|qsuits_windows_amd64.exe|[下载](https://github.com/NigelWu95/qsuits-exec-go/raw/master/bin/qsuits_windows_amd64.exe)|
+|linux 32 位|qsuits_linux_386|[下载](https://github.com/NigelWu95/qsuits-exec-go/raw/master/bin/qsuits_linux_386)|
+|linux 64 位|qsuits_linux_amd64|[下载](https://github.com/NigelWu95/qsuits-exec-go/raw/master/bin/qsuits_linux_amd64)|
+|mac 32 位|qsuits_darwin_386|[下载](https://github.com/NigelWu95/qsuits-exec-go/raw/master/bin/qsuits_darwin_386)|
+|mac 64 位|qsuits_darwin_amd64|[下载](https://github.com/NigelWu95/qsuits-exec-go/raw/master/bin/qsuits_darwin_amd64)|
+
+下载执行器后可直接以 `qsuits <parameters>` 方式运行，支持所有 
+qsuits-java 提供的处理参数，且用法一致。如：
 ```
 qsuits -config=config.txt
 ```  
