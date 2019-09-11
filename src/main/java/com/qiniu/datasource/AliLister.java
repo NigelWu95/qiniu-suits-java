@@ -54,7 +54,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= ossObjectList.size();
         checkedListWithEnd();
+        count += ossObjectList.size();
     }
 
     @Override

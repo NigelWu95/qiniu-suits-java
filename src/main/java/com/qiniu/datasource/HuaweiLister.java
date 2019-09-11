@@ -53,7 +53,9 @@ public class HuaweiLister implements ILister<ObsObject> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= obsObjects.size();
         checkedListWithEnd();
+        count += obsObjects.size();
     }
 
     @Override

@@ -63,7 +63,9 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= fileItems.size();
         checkedListWithEnd();
+        count += fileItems.size();
     }
 
     @Override

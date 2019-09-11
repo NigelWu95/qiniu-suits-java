@@ -58,7 +58,9 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= s3ObjectList.size();
         checkedListWithEnd();
+        count += s3ObjectList.size();
     }
 
     @Override

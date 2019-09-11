@@ -53,7 +53,9 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= bosObjectList.size();
         checkedListWithEnd();
+        count += bosObjectList.size();
     }
 
     @Override

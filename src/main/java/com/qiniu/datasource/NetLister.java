@@ -53,7 +53,9 @@ public class NetLister implements ILister<NOSObjectSummary> {
     @Override
     public void setEndPrefix(String endKeyPrefix) {
         this.endPrefix = endKeyPrefix;
+        count -= nosObjectList.size();
         checkedListWithEnd();
+        count += nosObjectList.size();
     }
 
     @Override

@@ -60,7 +60,9 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= fileInfoList.size();
         checkedListWithEnd();
+        count += fileInfoList.size();
     }
 
     @Override

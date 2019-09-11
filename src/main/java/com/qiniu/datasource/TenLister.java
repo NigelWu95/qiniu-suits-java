@@ -53,7 +53,9 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= cosObjectList.size();
         checkedListWithEnd();
+        count += cosObjectList.size();
     }
 
     @Override
