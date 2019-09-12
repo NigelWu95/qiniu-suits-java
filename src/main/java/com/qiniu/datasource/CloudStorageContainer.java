@@ -420,7 +420,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             recorder.remove(lister.getPrefix());
             lister.close();
         }
-        procedureLogger.info(recorder.toString());
     }
 
     private List<ILister<E>> computeToNextLevel(List<ILister<E>> listerList) {
@@ -440,6 +439,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         int count = 0;
         ILister<E> iLister;
         Iterator<ILister<E>> iterator;
+        int logTime = 0;
         while (!executorPool.isTerminated()) {
             if (count >= 1800) {
                 iterator = listerList.iterator();
@@ -463,6 +463,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     count = 0;
                 }
             }
+            if (logTime >= 300) {
+                logTime = 0;
+                procedureLogger.info(recorder.toString());
+            }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
@@ -470,6 +474,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 while (i < 1000) i++;
             }
             count++;
+            logTime++;
         }
         return extremePrefixes;
     }

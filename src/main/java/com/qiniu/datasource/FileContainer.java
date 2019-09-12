@@ -147,7 +147,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 e.response.close();
             }
             recorder.put(reader.getName(), lastLine);
-            procedureLogger.info(recorder.toString());
             lastLine = reader.lastLine();
         }
     }
@@ -232,6 +231,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
+            int logTime = 0;
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
@@ -239,6 +239,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     int i = 0;
                     while (i < 1000) i++;
                 }
+                if (logTime >= 300) {
+                    logTime = 0;
+                    procedureLogger.info(recorder.toString());
+                }
+                logTime++;
             }
             logger.info("{} finished.", info);
             endAction();
