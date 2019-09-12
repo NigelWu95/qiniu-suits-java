@@ -11,13 +11,9 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
 import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
-import com.qiniu.interfaces.IDataSource;
-import com.qiniu.interfaces.IEntryParam;
-import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.interfaces.*;
 import com.qiniu.process.filtration.*;
-import com.qiniu.process.other.DownloadFile;
-import com.qiniu.process.other.ExportTS;
+import com.qiniu.process.other.*;
 import com.qiniu.process.qai.*;
 import com.qiniu.process.qdora.*;
 import com.qiniu.process.qos.*;
@@ -213,8 +209,8 @@ public class QSuitsEntry {
             obsConfiguration.setConnectionTimeout(1000 * connectTimeout);
         if (1000 * readTimeout > obsConfiguration.getSocketTimeout())
             obsConfiguration.setSocketTimeout(1000 * readTimeout);
-        if (1000 * requestTimeout > obsConfiguration.getConnectionRequestTimeout())
-            obsConfiguration.setConnectionRequestTimeout(1000 * requestTimeout);
+//        if (1000 * requestTimeout > obsConfiguration.getConnectionRequestTimeout())
+//            obsConfiguration.setConnectionRequestTimeout(1000 * requestTimeout);
         return obsConfiguration;
     }
 
@@ -714,7 +710,7 @@ public class QSuitsEntry {
         return queriesMap;
     }
 
-    public com.qiniu.process.tencent.PrivateUrl getTencentPrivateUrl(boolean single) throws IOException {
+    private com.qiniu.process.tencent.PrivateUrl getTencentPrivateUrl(boolean single) throws IOException {
         String secretId = entryParam.getValue("ten-id", commonParams.getTencentSecretId());
         String secretKey = entryParam.getValue("ten-secret", commonParams.getTencentSecretKey());
         String tenBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket") : bucket;
@@ -727,7 +723,7 @@ public class QSuitsEntry {
                 Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
-    public com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
+    private com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
         String accessId = entryParam.getValue("ali-id", commonParams.getAliyunAccessId());
         String accessSecret = entryParam.getValue("ali-secret", commonParams.getAliyunAccessSecret());
         String aliBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
@@ -744,7 +740,7 @@ public class QSuitsEntry {
                 Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
-    public com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
+    private com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
         String accessId = entryParam.getValue("s3-id", commonParams.getS3AccessId());
         String secretKey = entryParam.getValue("s3-secret", commonParams.getS3SecretKey());
         String s3Bucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
@@ -759,7 +755,7 @@ public class QSuitsEntry {
                 Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
-    public com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
+    private com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
         String accessId = entryParam.getValue("hua-id", commonParams.getS3AccessId());
         String secretKey = entryParam.getValue("hua-secret", commonParams.getS3SecretKey());
         String huaweiBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
@@ -776,7 +772,7 @@ public class QSuitsEntry {
                 Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
-    public com.qiniu.process.baidu.PrivateUrl getBaiduPrivateUrl(boolean single) throws IOException {
+    private com.qiniu.process.baidu.PrivateUrl getBaiduPrivateUrl(boolean single) throws IOException {
         String accessId = entryParam.getValue("bai-id", commonParams.getS3AccessId());
         String secretKey = entryParam.getValue("bai-secret", commonParams.getS3SecretKey());
         String baiduBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
@@ -792,7 +788,7 @@ public class QSuitsEntry {
                 Integer.valueOf(expires), getQueriesMap(), savePath);
     }
 
-    public ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single, boolean useQuery)
+    private ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single, boolean useQuery)
             throws IOException {
         String protocol = entryParam.getValue("protocol", "http").trim();
         protocol = ParamsUtils.checked(protocol, "protocol", "https?");
