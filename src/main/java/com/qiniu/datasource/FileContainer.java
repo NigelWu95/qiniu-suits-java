@@ -169,9 +169,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
-            logger.info("order {}: {}\tsuccessfully done", orderStr, reader.getName());
+            logger.info("order {}: {}\tsuccessfully done\t{}", orderStr, reader.getName(), reader.count());
         } catch (Throwable e) {
-            logger.error("order {}: {}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()), e);
+            logger.error("order {}: {}\t{}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()),
+                    reader.count(), e);
         } finally {
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();

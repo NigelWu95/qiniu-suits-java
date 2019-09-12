@@ -290,13 +290,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
-            logger.info("order {}: {}\tsuccessfully done", orderStr, lister.getPrefix());
+            logger.info("order {}: {}\tsuccessfully done\t{}", orderStr, lister.getPrefix(), lister.count());
         } catch (Throwable e) {
-            logger.error("order {}: {}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
+            logger.error("order {}: {}\t{}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()),
+                    lister.count(), e);
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
-            procedureLogger.info(recorder.toString());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
@@ -420,6 +420,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             recorder.remove(lister.getPrefix());
             lister.close();
         }
+        procedureLogger.info(recorder.toString());
     }
 
     private List<ILister<E>> computeToNextLevel(List<ILister<E>> listerList) {
@@ -485,7 +486,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixAndEndedMap.remove(prefix);
                 continue;
             }
-            recorder.remove(prefix);
+//            recorder.remove(prefix);
             if (startPrefixes.contains(prefix)) {
                 if (prefixRight) prefixAndEndedMap.put("", prefixMap);
                 prefixAndEndedMap.remove(prefix);
