@@ -10,7 +10,6 @@ import com.qiniu.util.EncryptUtils;
 import com.qiniu.util.FileUtils;
 import com.qiniu.util.ParamsUtils;
 import com.qiniu.util.ProcessUtils;
-import sun.misc.BASE64Encoder;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -152,51 +151,51 @@ public class EntryMain {
         if (!accountFileExists) throw new IOException("account file not exists and can not be created.");
         String id;
         String secret;
-        BASE64Encoder encoder = new BASE64Encoder();
+        Base64.Encoder encoder = Base64.getEncoder();
         if (account == null) {
             throw new IOException("account name is empty.");
         } else if (account.startsWith("ten-")) {
             account = account.substring(4);
             id = account + "-tencent-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("ten-id").getBytes());
+                    new String(encoder.encode(entryParam.getValue("ten-id").getBytes()));
             secret = account + "-tencent-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("ten-secret").getBytes());
+                    new String(encoder.encode(entryParam.getValue("ten-secret").getBytes()));
         } else if (account.startsWith("ali-")) {
             account = account.substring(4);
             id = account + "-aliyun-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("ali-id").getBytes());
+                    new String(encoder.encode(entryParam.getValue("ali-id").getBytes()));
             secret = account + "-aliyun-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("ali-secret").getBytes());
+                    new String(encoder.encode(entryParam.getValue("ali-secret").getBytes()));
         } else if (account.startsWith("up-")) {
             account = account.substring(3);
             id = account + "-upyun-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("up-id").getBytes());
+                    new String(encoder.encode(entryParam.getValue("up-id").getBytes()));
             secret = account + "-upyun-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("up-secret").getBytes());
+                    new String(encoder.encode(entryParam.getValue("up-secret").getBytes()));
         } else if (account.startsWith("s3-") || account.startsWith("aws-")) {
             account = account.substring(3);
             id = account + "-s3-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("s3-id").getBytes());
+                    new String(encoder.encode(entryParam.getValue("s3-id").getBytes()));
             secret = account + "-s3-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("s3-secret").getBytes());
+                    new String(encoder.encode(entryParam.getValue("s3-secret").getBytes()));
         } else if (account.startsWith("hua-")) {
             account = account.substring(4);
             id = account + "-huawei-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("hua-id").getBytes());
+                    new String(encoder.encode(entryParam.getValue("hua-id").getBytes()));
             secret = account + "-huawei-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("hua-secret").getBytes());
+                    new String(encoder.encode(entryParam.getValue("hua-secret").getBytes()));
         } else if (account.startsWith("bai-")) {
             account = account.substring(4);
             id = account + "-baidu-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("bai-id").getBytes());
+                    new String(encoder.encode(entryParam.getValue("bai-id").getBytes()));
             secret = account + "-baidu-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("bai-secret").getBytes());
+                    new String(encoder.encode(entryParam.getValue("bai-secret").getBytes()));
         } else {
             if (account.startsWith("qiniu-")) account = account.substring(6);
             id = account + "-qiniu-id=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("ak").getBytes());
+                    new String(encoder.encode(entryParam.getValue("ak").getBytes()));
             secret = account + "-qiniu-secret=" + EncryptUtils.getRandomString(8) +
-                    encoder.encode(entryParam.getValue("sk").getBytes());
+                    new String(encoder.encode(entryParam.getValue("sk").getBytes()));
         }
         int idIndex = id.indexOf("=");
         int secretIndex = secret.indexOf("=");
@@ -204,6 +203,7 @@ public class EntryMain {
         String valueId = map.get(id.substring(0, idIndex));
         String valueSecret = map.get(secret.substring(0, secretIndex));
         if (entryParam.getValue("default", "false").equals("true")) {
+            map.put("account", account);
             String oldAccount = map.get("account");
             if (oldAccount == null) {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
@@ -211,7 +211,6 @@ public class EntryMain {
                 writer.newLine();
                 writer.close();
             } else {
-                map.put("account", account);
                 BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile));
                 for (Map.Entry<String, String> entry : map.entrySet()) {
                     writer.write(entry.getKey() + "=" + entry.getValue());

@@ -19,6 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
     private List<OSSObjectSummary> ossObjectList;
+    private long count;
     private static final List<OSSObjectSummary> defaultList = new ArrayList<>();
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -30,6 +31,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
+        count += ossObjectList.size();
     }
 
     @Override
@@ -52,7 +54,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= ossObjectList.size();
         checkedListWithEnd();
+        count += ossObjectList.size();
     }
 
     @Override
@@ -117,6 +121,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += ossObjectList.size();
         } else {
             ossObjectList = defaultList;
         }
@@ -140,6 +145,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
             futureList.addAll(ossObjectList);
         }
         ossObjectList = futureList;
+        count += ossObjectList.size();
         return hasNext();
     }
 
@@ -160,6 +166,11 @@ public class AliLister implements ILister<OSSObjectSummary> {
         String truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

@@ -1,7 +1,5 @@
 package com.qiniu.interfaces;
 
-import com.qiniu.interfaces.ILineProcess;
-
 import java.io.IOException;
 import java.util.List;
 

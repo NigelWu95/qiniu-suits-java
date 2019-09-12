@@ -113,48 +113,41 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             stringConverter = getNewStringConverter();
             saver.preAddWriter("failed");
         }
-        List<String> srcList = new ArrayList<>();
+        String lastLine = reader.lastLine();
+        List<String> srcList = null;
         List<T> convertedList;
         List<String> writeList;
-        String line = "";
         int retry;
-        String startLine = linesMap.get(reader.getName());
-        if (startLine == null) startLine = "";
-        while (line != null) {
+        while (lastLine != null) {
             retry = retryTimes + 1;
             while (retry > 0) {
                 try {
-                    // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
-                    line = reader.readLine();
+                    srcList = reader.readLines();
                     retry = 0;
                 } catch (IOException e) {
                     retry--;
                     if (retry == 0) throw e;
                 }
             }
-            if (line != null && line.compareTo(startLine) > 0) srcList.add(line);
-            if (srcList.size() >= unitLen || (line == null && srcList.size() > 0)) {
-                convertedList = converter.convertToVList(srcList);
-                if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
-                if (stringConverter != null) {
-                    writeList = stringConverter.convertToVList(convertedList);
-                    if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                    if (stringConverter.errorSize() > 0)
-                        saver.writeToKey("failed", stringConverter.errorLines(), false);
-                }
-                // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-                try {
-                    if (processor != null) processor.processLine(convertedList);
-                } catch (QiniuException e) {
-                    // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
-                    // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
-                    if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                    e.response.close();
-                }
-                recorder.put(reader.getName(), line);
-                procedureLogger.info(recorder.toString());
-                srcList.clear();
+            convertedList = converter.convertToVList(srcList);
+            if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
+            if (stringConverter != null) {
+                writeList = stringConverter.convertToVList(convertedList);
+                if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
+                if (stringConverter.errorSize() > 0)
+                    saver.writeToKey("failed", stringConverter.errorLines(), false);
             }
+            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+            try {
+                if (processor != null) processor.processLine(convertedList);
+            } catch (QiniuException e) {
+                // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
+                // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
+                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                e.response.close();
+            }
+            recorder.put(reader.getName(), lastLine);
+            lastLine = reader.lastLine();
         }
     }
 
@@ -175,9 +168,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
-            logger.info("order {}: {}\tsuccessfully done", orderStr, reader.getName());
+            logger.info("order {}: {}\tsuccessfully done\t{}", orderStr, reader.getName(), reader.count());
         } catch (Throwable e) {
-            logger.error("order {}: {}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()), e);
+            logger.error("order {}: {}\t{}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()),
+                    reader.count(), e);
         } finally {
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
@@ -237,6 +231,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
+            int logTime = 0;
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
@@ -244,6 +239,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     int i = 0;
                     while (i < 1000) i++;
                 }
+                if (logTime >= 300) {
+                    logTime = 0;
+                    procedureLogger.info(recorder.toString());
+                }
+                logTime++;
             }
             logger.info("{} finished.", info);
             endAction();

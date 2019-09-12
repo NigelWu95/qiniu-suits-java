@@ -70,7 +70,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
                 else {
                     type = FileUtils.contentType(file);
                     if (type.startsWith("text") || type.equals("application/octet-stream")) {
-                        fileReaders.add(new LocalFileReader(file));
+                        fileReaders.add(new LocalFileReader(file, linesMap.get(file.getPath()), unitLen));
                     } else {
                         throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
                     }
@@ -85,12 +85,12 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
             if (sourceFile.isDirectory()) {
                 List<File> files = getFiles(sourceFile);
                 for (File file : files) {
-                    fileReaders.add(new LocalFileReader(file));
+                    fileReaders.add(new LocalFileReader(file, linesMap.get(file.getPath()), unitLen));
                 }
             } else {
                 String type = FileUtils.contentType(sourceFile);
                 if (type.startsWith("text") || type.equals("application/octet-stream")) {
-                    fileReaders.add(new LocalFileReader(sourceFile));
+                    fileReaders.add(new LocalFileReader(sourceFile, linesMap.get(sourceFile.getPath()), unitLen));
                 } else {
                     throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
                 }

@@ -12,12 +12,12 @@ import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
-import sun.misc.BASE64Decoder;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Base64;
 
 public class CommonParams {
 
@@ -72,7 +72,7 @@ public class CommonParams {
     private List<String> rmFields;
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
-    private BASE64Decoder decoder = new BASE64Decoder();
+    private Base64.Decoder decoder = Base64.getDecoder();
 
     public static Set<String> lineFormats = new HashSet<String>(){{
         add("csv");
@@ -342,8 +342,8 @@ public class CommonParams {
             qiniuAccessKey = accountMap.get(account + "-qiniu-id");
             qiniuSecretKey = accountMap.get(account + "-qiniu-secret");
             if (qiniuAccessKey == null || qiniuSecretKey == null) throw new IOException("no account: " + account);
-            qiniuAccessKey = new String(decoder.decodeBuffer(qiniuAccessKey.substring(8)));
-            qiniuSecretKey = new String(decoder.decodeBuffer(qiniuSecretKey.substring(8)));
+            qiniuAccessKey = new String(decoder.decode(qiniuAccessKey.substring(8)));
+            qiniuSecretKey = new String(decoder.decode(qiniuSecretKey.substring(8)));
         }
     }
 
@@ -355,8 +355,8 @@ public class CommonParams {
             tencentSecretId = accountMap.get(account + "-tencent-id");
             tencentSecretKey = accountMap.get(account + "-tencent-secret");
             if (tencentSecretId == null || tencentSecretKey == null) throw new IOException("no account: " + account);
-            tencentSecretId = new String(decoder.decodeBuffer(tencentSecretId.substring(8)));
-            tencentSecretKey = new String(decoder.decodeBuffer(tencentSecretKey.substring(8)));
+            tencentSecretId = new String(decoder.decode(tencentSecretId.substring(8)));
+            tencentSecretKey = new String(decoder.decode(tencentSecretKey.substring(8)));
         }
     }
 
@@ -368,8 +368,8 @@ public class CommonParams {
             aliyunAccessId = accountMap.get(account + "-aliyun-id");
             aliyunAccessSecret = accountMap.get(account + "-aliyun-secret");
             if (aliyunAccessId == null || aliyunAccessSecret == null) throw new IOException("no account: " + account);
-            aliyunAccessId = new String(decoder.decodeBuffer(aliyunAccessId.substring(8)));
-            aliyunAccessSecret = new String(decoder.decodeBuffer(aliyunAccessSecret.substring(8)));
+            aliyunAccessId = new String(decoder.decode(aliyunAccessId.substring(8)));
+            aliyunAccessSecret = new String(decoder.decode(aliyunAccessSecret.substring(8)));
         }
     }
 
@@ -381,8 +381,8 @@ public class CommonParams {
             upyunUsername = accountMap.get(account + "-upyun-id");
             upyunPassword = accountMap.get(account + "-upyun-secret");
             if (upyunUsername == null || upyunPassword == null) throw new IOException("no account: " + account);
-            upyunUsername = new String(decoder.decodeBuffer(upyunUsername.substring(8)));
-            upyunPassword = new String(decoder.decodeBuffer(upyunPassword.substring(8)));
+            upyunUsername = new String(decoder.decode(upyunUsername.substring(8)));
+            upyunPassword = new String(decoder.decode(upyunPassword.substring(8)));
         }
     }
 
@@ -394,8 +394,8 @@ public class CommonParams {
             s3AccessId = accountMap.get(account + "-s3-id");
             s3SecretKey = accountMap.get(account + "-s3-secret");
             if (s3AccessId == null || s3SecretKey == null) throw new IOException("no account: " + account);
-            s3AccessId = new String(decoder.decodeBuffer(s3AccessId.substring(8)));
-            s3SecretKey = new String(decoder.decodeBuffer(s3SecretKey.substring(8)));
+            s3AccessId = new String(decoder.decode(s3AccessId.substring(8)));
+            s3SecretKey = new String(decoder.decode(s3SecretKey.substring(8)));
         }
     }
 
@@ -407,8 +407,8 @@ public class CommonParams {
             huaweiAccessId = accountMap.get(account + "-huawei-id");
             huaweiSecretKey = accountMap.get(account + "-huawei-secret");
             if (huaweiAccessId == null || huaweiSecretKey == null) throw new IOException("no account: " + account);
-            huaweiAccessId = new String(decoder.decodeBuffer(huaweiAccessId.substring(8)));
-            huaweiSecretKey = new String(decoder.decodeBuffer(huaweiSecretKey.substring(8)));
+            huaweiAccessId = new String(decoder.decode(huaweiAccessId.substring(8)));
+            huaweiSecretKey = new String(decoder.decode(huaweiSecretKey.substring(8)));
         }
     }
 
@@ -420,8 +420,8 @@ public class CommonParams {
             baiduAccessId = accountMap.get(account + "-baidu-id");
             baiduSecretKey = accountMap.get(account + "-baidu-secret");
             if (baiduAccessId == null || baiduSecretKey == null) throw new IOException("no account: " + account);
-            baiduAccessId = new String(decoder.decodeBuffer(baiduAccessId.substring(8)));
-            baiduSecretKey = new String(decoder.decodeBuffer(baiduSecretKey.substring(8)));
+            baiduAccessId = new String(decoder.decode(baiduAccessId.substring(8)));
+            baiduSecretKey = new String(decoder.decode(baiduSecretKey.substring(8)));
         }
     }
 

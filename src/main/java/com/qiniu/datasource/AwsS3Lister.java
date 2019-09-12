@@ -18,6 +18,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
     private List<S3ObjectSummary> s3ObjectList;
+    private long count;
     private static final List<S3ObjectSummary> defaultList = new ArrayList<>();
 
     public AwsS3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
@@ -31,6 +32,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
+        count += s3ObjectList.size();
     }
 
     @Override
@@ -56,7 +58,9 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     @Override
     public void setEndPrefix(String endPrefix) {
         this.endPrefix = endPrefix;
+        count -= s3ObjectList.size();
         checkedListWithEnd();
+        count += s3ObjectList.size();
     }
 
     @Override
@@ -125,6 +129,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
+            count += s3ObjectList.size();
         } else {
             s3ObjectList = defaultList;
         }
@@ -149,6 +154,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
             futureList.addAll(s3ObjectList);
         }
         s3ObjectList = futureList;
+        count += s3ObjectList.size();
         return hasNext();
     }
 
@@ -171,6 +177,11 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
             listObjectsRequest.setContinuationToken(null);
         }
         return truncateMarker;
+    }
+
+    @Override
+    public long count() {
+        return count;
     }
 
     @Override

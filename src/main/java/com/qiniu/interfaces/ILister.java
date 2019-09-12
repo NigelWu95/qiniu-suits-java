@@ -34,6 +34,8 @@ public interface ILister<E> {
 
     String truncate();
 
+    long count();
+
     /**
      * 关闭掉使用的资源
      */
