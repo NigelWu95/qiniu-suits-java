@@ -187,10 +187,10 @@ public class QiniuLister implements ILister<FileInfo> {
 //            if (futureList.size() > 0)
                 times--;
             doList();
+            count += fileInfoList.size();
             futureList.addAll(fileInfoList);
         }
         fileInfoList = futureList;
-        count += fileInfoList.size();
         return hasNext();
     }
 

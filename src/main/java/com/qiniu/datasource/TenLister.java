@@ -139,10 +139,10 @@ public class TenLister implements ILister<COSObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += cosObjectList.size();
             futureList.addAll(cosObjectList);
         }
         cosObjectList = futureList;
-        count += cosObjectList.size();
         return hasNext();
     }
 

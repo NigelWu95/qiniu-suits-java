@@ -140,10 +140,10 @@ public class NetLister implements ILister<NOSObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += nosObjectList.size();
             futureList.addAll(nosObjectList);
         }
         nosObjectList = futureList;
-        count += nosObjectList.size();
         return hasNext();
     }
 

@@ -141,10 +141,10 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += bosObjectList.size();
             futureList.addAll(bosObjectList);
         }
         bosObjectList = futureList;
-        count += bosObjectList.size();
         return hasNext();
     }
 

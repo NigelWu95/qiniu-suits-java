@@ -151,10 +151,10 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += s3ObjectList.size();
             futureList.addAll(s3ObjectList);
         }
         s3ObjectList = futureList;
-        count += s3ObjectList.size();
         return hasNext();
     }
 

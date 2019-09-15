@@ -194,10 +194,10 @@ public class UpLister implements ILister<FileItem> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += fileItems.size();
             futureList.addAll(fileItems);
         }
         fileItems = futureList;
-        count += fileItems.size();
         return hasNext();
     }
 

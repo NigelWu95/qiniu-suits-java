@@ -142,10 +142,10 @@ public class AliLister implements ILister<OSSObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += ossObjectList.size();
             futureList.addAll(ossObjectList);
         }
         ossObjectList = futureList;
-        count += ossObjectList.size();
         return hasNext();
     }
 

@@ -139,10 +139,10 @@ public class HuaweiLister implements ILister<ObsObject> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += obsObjects.size();
             futureList.addAll(obsObjects);
         }
         obsObjects = futureList;
-        count += obsObjects.size();
         return hasNext();
     }
 
