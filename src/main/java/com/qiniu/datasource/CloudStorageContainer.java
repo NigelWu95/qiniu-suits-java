@@ -290,7 +290,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
-            logger.info("order {}: {}\tsuccessfully done\t{}", orderStr, lister.getPrefix(), lister.count());
+            if (lister.count() > 0) {
+                logger.info("order {}: {}\t{}", orderStr, lister.getPrefix(), lister.count());
+            }
         } catch (Throwable e) {
             logger.error("order {}: {}\t{}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()),
                     lister.count(), e);
