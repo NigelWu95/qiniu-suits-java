@@ -106,9 +106,9 @@ public class BaiduLister implements ILister<BosObjectSummary> {
             bosObjectList = objectListing.getContents();
             checkedListWithEnd();
         } catch (BceServiceException e) {
-            throw new SuitsException(CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (BceClientException e) {
-            throw new SuitsException(-1, e.getMessage());
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

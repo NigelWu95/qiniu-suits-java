@@ -290,9 +290,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
-            if (lister.count() > 0) {
-                logger.info("order {}: {}\t{}", orderStr, lister.getPrefix(), lister.count());
-            }
+            logger.info("order {}: {}\t{}", orderStr, lister.getPrefix(), lister.count());
         } catch (Throwable e) {
             logger.error("order {}: {}\t{}\t{}", orderStr, lister.getPrefix(), recorder.getJson(lister.getPrefix()),
                     lister.count(), e);
@@ -326,7 +324,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                logger.error("generate lister by prefix:{} retrying... ", prefix, e);
+                logger.error("generate lister by prefix:{} retrying...", prefix, e);
             }
         }
     }
@@ -394,6 +392,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             else if (generated.currents().size() > 0 || generated.hasNext()) return true;
             else {
                 recorder.remove(generated.getPrefix());
+                generated.close();
                 return false;
             }
         }).collect(Collectors.toList());

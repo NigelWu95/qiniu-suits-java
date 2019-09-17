@@ -101,20 +101,20 @@ public class QiniuLister implements ILister<FileInfo> {
             } else {
                 this.marker = null;
             }
-            return fileInfoList;
         } finally {
+            response.close();
+            response = null;
             try {
                 bufferedReader.close();
                 reader.close();
                 inputStream.close();
-                response.close();
             } catch (IOException e) {
                 bufferedReader = null;
                 reader = null;
                 inputStream = null;
-                response = null;
             }
         }
+        return fileInfoList;
     }
 
     private void checkedListWithEnd() {
