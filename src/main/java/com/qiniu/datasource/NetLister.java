@@ -107,7 +107,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
             nosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ServiceException e) {
-            throw new SuitsException(CloudApiUtils.NetStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudApiUtils.NetStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

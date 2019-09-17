@@ -106,7 +106,7 @@ public class HuaweiLister implements ILister<ObsObject> {
             obsObjects = objectListing.getObjects();
             checkedListWithEnd();
         } catch (ObsException e) {
-            throw new SuitsException(e.getResponseCode(), e.getMessage());
+            throw new SuitsException(e, e.getResponseCode());
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
