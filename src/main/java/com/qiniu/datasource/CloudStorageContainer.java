@@ -239,8 +239,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     processor.processLine(convertedList);
                 }
             } catch (QiniuException e) {
+                if (e.response != null) e.response.close();
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                e.response.close();
             }
             if (hasNext) {
                 JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
