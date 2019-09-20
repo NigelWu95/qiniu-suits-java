@@ -15,6 +15,7 @@ import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
+import com.qiniu.util.FileUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -93,7 +94,13 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 try {
                     upLister = (UpLister) generateLister(prefix);
                 } catch (SuitsException e) {
-                    errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
+                    try {
+                        if (FileUtils.createIfNotExists(errorLogFile)) {
+                            errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
+                        }
+                    } catch (IOException e1) {
+//                        e1.printStackTrace();
+                    }
                     return null;
                 }
                 if (upLister.hasNext() || upLister.getDirectories() != null) {

@@ -135,6 +135,27 @@ public final class FileUtils {
         }
     }
 
+    public static boolean createIfNotExists(File file) throws IOException {
+        if (file == null) return false;
+        if (file.exists()) {
+            return true;
+        } else {
+            boolean success = false;
+            IOException exception = null;
+            try {
+                success = file.createNewFile();
+            } catch (IOException e) {
+                exception = e;
+            }
+            if (success) {
+                return true;
+            } else {
+                if (exception == null) exception = new IOException("create file: " + file.getPath() + " failed.");
+                throw exception;
+            }
+        }
+    }
+
     public static void randomModify(String filePath, String oldStr, String newStr) throws IOException {
         ///定义一个随机访问文件类的对象
         RandomAccessFile raf = null;

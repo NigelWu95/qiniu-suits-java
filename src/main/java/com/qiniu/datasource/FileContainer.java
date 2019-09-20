@@ -34,8 +34,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     private static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     private static final Logger errorLogger = LoggerFactory.getLogger("error");
+    private static final File errorLogFile = new File("qsuits.error");
     private static final Logger infoLogger = LoggerFactory.getLogger("info");
+    private static final File infoLogFile = new File("qsuits.info");
     private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
+    private static final File procedureLogFile = new File("procedure.log");
 
     private String filePath;
     protected String parse;
@@ -149,7 +152,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 e.response.close();
             }
             recorder.put(reader.getName(), lastLine);
-            procedureLogger.info(recorder.toString());
+            try {
+                if (FileUtils.createIfNotExists(procedureLogFile)) procedureLogger.info(recorder.toString());
+            } catch (IOException e1) {
+//            e1.printStackTrace();
+            }
             lastLine = reader.lastLine();
         }
     }
@@ -172,9 +179,21 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
         } catch (Throwable e) {
-            errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
+            try {
+                if (FileUtils.createIfNotExists(infoLogFile)) {
+                    errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
+                }
+            } catch (IOException e1) {
+//                e1.printStackTrace();
+            }
         } finally {
-            infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
+            try {
+                if (FileUtils.createIfNotExists(infoLogFile)) {
+                    infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
+                }
+            } catch (IOException e) {
+//                e.printStackTrace();
+            }
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order);
