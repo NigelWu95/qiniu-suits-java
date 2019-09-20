@@ -180,7 +180,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             saverMap.remove(orderStr);
         } catch (Throwable e) {
             try {
-                if (FileUtils.createIfNotExists(infoLogFile)) {
+                if (FileUtils.createIfNotExists(errorLogFile)) {
                     errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
                 }
             } catch (IOException e1) {
