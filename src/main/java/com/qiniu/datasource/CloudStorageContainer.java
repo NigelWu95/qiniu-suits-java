@@ -299,7 +299,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
             if (map != null) map.put("start", lister.currentEndKey());
         } finally {
-            infoLogger.info("order: {}, prefix: {}\t{}", orderStr, lister.getPrefix(), lister.count());
+            infoLogger.info("{}\t{}\t{}", orderStr, lister.getPrefix(), lister.count());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
@@ -555,12 +555,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 //        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
             saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, recorder.toString(), true);
+            String record = recorder.toString();
+            saveMapper.writeToKey(fileName, record, true);
+            procedureLogger.info(record);
             saveMapper.closeWriters();
             rootLogger.info("please check the prefixes breakpoint in {}{}, it can be used for one more time listing remained objects.",
                     fileName, FileSaveMapper.ext);
         }
-        procedureLogger.info(recorder.toString());
     }
 
     void showdownHook() {
@@ -583,6 +584,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String info = "list objects from " + getSourceName() + " bucket: " + bucket + (processor == null ? "" : " and "
                 + processor.getProcessName());
         rootLogger.info("{} running...", info);
+        rootLogger.info("order\tprefix\tquantity");
         showdownHook();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {

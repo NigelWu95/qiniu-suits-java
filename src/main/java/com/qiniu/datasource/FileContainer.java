@@ -32,7 +32,9 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(CloudStorageContainer.class);
+    private static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    private static final Logger errorLogger = LoggerFactory.getLogger("error");
+    private static final Logger infoLogger = LoggerFactory.getLogger("info");
     private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
 
     private String filePath;
@@ -147,6 +149,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 e.response.close();
             }
             recorder.put(reader.getName(), lastLine);
+            procedureLogger.info(recorder.toString());
             lastLine = reader.lastLine();
         }
     }
@@ -168,11 +171,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
-            logger.info("order {}: {}\tsuccessfully done\t{}", orderStr, reader.getName(), reader.count());
         } catch (Throwable e) {
-            logger.error("order {}: {}\t{}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()),
-                    reader.count(), e);
+            errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
         } finally {
+            infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order);
@@ -194,12 +196,13 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
             saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, recorder.toString(), true);
+            String record = recorder.toString();
+            saveMapper.writeToKey(fileName, record, true);
+            procedureLogger.info(record);
             saveMapper.closeWriters();
-            logger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
+            rootLogger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
                     fileName, FileSaveMapper.ext);
         }
-        procedureLogger.info(recorder.toString());
     }
 
     private void showdownHook() {
@@ -222,7 +225,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
-        logger.info("{} running...", info);
+        rootLogger.info("{} running...", info);
+        rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
         try {
@@ -231,7 +235,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
-            int logTime = 0;
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
@@ -239,17 +242,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     int i = 0;
                     while (i < 1000) i++;
                 }
-                if (logTime >= 300) {
-                    logTime = 0;
-                    procedureLogger.info(recorder.toString());
-                }
-                logTime++;
             }
-            logger.info("{} finished.", info);
+            rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            logger.error("export failed", e);
+            rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
         }
