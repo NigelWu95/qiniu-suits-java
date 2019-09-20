@@ -48,7 +48,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void setMarker(String marker) {
+    public synchronized void setMarker(String marker) {
         this.marker = "".equals(marker) ? null : marker;
     }
 
@@ -80,7 +80,7 @@ public class QiniuLister implements ILister<FileInfo> {
         return limit;
     }
 
-    private List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
+    private synchronized List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {
         Response response = bucketManager.listV2(bucket, prefix, marker, limit, null);
         if (response.statusCode != 200) throw new QiniuException(response);
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
@@ -117,7 +117,7 @@ public class QiniuLister implements ILister<FileInfo> {
         return fileInfoList;
     }
 
-    private void checkedListWithEnd() {
+    private synchronized void checkedListWithEnd() {
         if (endPrefix == null || "".equals(endPrefix)) return;
         String endKey = currentEndKey();
         // 删除大于 endPrefix 的元素，如果 endKey 大于等于 endPrefix 则需要进行筛选且使得 marker = null
@@ -162,7 +162,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public synchronized void listForward() throws SuitsException {
+    public void listForward() throws SuitsException {
         if (hasNext()) {
             doList();
             count += fileInfoList.size();
@@ -220,7 +220,7 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         bucketManager = null;
         bucket = null;
         prefix = null;
