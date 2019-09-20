@@ -588,6 +588,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
+        String record = recorder.toString();
         if (recorder.size() > 0) {
             FileSaveMapper.ext = ".json";
             FileSaveMapper.append = false;
@@ -596,13 +597,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 //        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
             saveMapper.addWriter(fileName);
-            String record = recorder.toString();
             saveMapper.writeToKey(fileName, record, true);
-            procedureLogger.info(record);
             saveMapper.closeWriters();
             rootLogger.info("please check the prefixes breakpoint in {}{}, it can be used for one more time listing remained objects.",
                     fileName, FileSaveMapper.ext);
         }
+        procedureLogger.info(record);
     }
 
     void showdownHook() {

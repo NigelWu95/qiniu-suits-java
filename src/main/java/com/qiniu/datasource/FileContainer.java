@@ -208,6 +208,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
+        String record = recorder.toString();
         if (recorder.size() > 0) {
             FileSaveMapper.ext = ".json";
             FileSaveMapper.append = false;
@@ -215,13 +216,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
             saveMapper.addWriter(fileName);
-            String record = recorder.toString();
             saveMapper.writeToKey(fileName, record, true);
-            procedureLogger.info(record);
             saveMapper.closeWriters();
             rootLogger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
                     fileName, FileSaveMapper.ext);
         }
+        procedureLogger.info(record);
     }
 
     private void showdownHook() {
