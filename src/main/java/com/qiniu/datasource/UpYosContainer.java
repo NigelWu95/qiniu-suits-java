@@ -93,7 +93,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 try {
                     upLister = (UpLister) generateLister(prefix);
                 } catch (SuitsException e) {
-                    logger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
+                    errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
                     return null;
                 }
                 if (upLister.hasNext() || upLister.getDirectories() != null) {
@@ -121,12 +121,12 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     @Override
     public void export() throws Exception {
         String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
-        logger.info("{} running...", info);
+        rootLogger.info("{} running...", info);
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
             listing(startLister);
             if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) {
-                logger.info("{} finished.", info);
+                rootLogger.info("{} finished.", info);
                 return;
             } else if (hasAntiPrefixes) {
                 prefixes = startLister.getDirectories().parallelStream()
@@ -157,11 +157,11 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                     while (i < 1000) i++;
                 }
             }
-            logger.info("{} finished.", info);
+            rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            logger.error(e.toString(), e);
+            rootLogger.error(e.toString(), e);
             endAction();
             System.exit(-1);
         }
