@@ -444,7 +444,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             ILister<E> lastLister = nextLevelList.get(nextLevelList.size() - 1);
             Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
             if (map == null) map = new HashMap<>();
-            map.remove("marker");
             prefixAndEndedMap.put(lastLister.getPrefix(), map);
         }
         Iterator<ILister<E>> it = nextLevelList.iterator();
@@ -496,6 +495,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     for (ILister<E> lister : listerList) {
                         String prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
+                        rootLogger.info("prefix: {}, nextMarker: {}\n", prefix, nextMarker);
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                         extremePrefixes.add(prefix);
@@ -531,6 +531,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 continue;
             }
 //            recorder.remove(prefix);
+            // 由于优先使用 marker 原则，为了 start 生效则将 marker 删除
+            if (prefixMap.containsKey("start")) prefixMap.remove("marker");
             if (startPrefixes.contains(prefix)) {
                 if (prefixRight) prefixAndEndedMap.put("", prefixMap);
                 prefixAndEndedMap.remove(prefix);
