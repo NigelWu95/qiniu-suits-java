@@ -19,6 +19,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private final String bucket;
     private final String prefix;
     private String marker;
+    private String truncateMarker;
     private String endPrefix;
     private int limit;
     private List<FileInfo> fileInfoList;
@@ -203,13 +204,14 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public synchronized String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
+        if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuMarker(truncateMarker);
         if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = marker;
+        truncateMarker = marker;
         marker = null;
         return truncateMarker;
     }
@@ -224,6 +226,6 @@ public class QiniuLister implements ILister<FileInfo> {
         bucketManager = null;
         marker = null;
         endPrefix = null;
-        fileInfoList = defaultList;
+//        fileInfoList = defaultList; // 不做修改，因为最后还有可能需要获取 currentEndKey()
     }
 }

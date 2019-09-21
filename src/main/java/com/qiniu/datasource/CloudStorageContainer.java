@@ -483,6 +483,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         int count = 0;
         ILister<E> iLister;
         Iterator<ILister<E>> iterator;
+        Map<String, String> endMap;
         while (!executorPool.isTerminated()) {
             if (count >= 1800) {
                 iterator = listerList.iterator();
@@ -496,7 +497,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         String prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
-                        rootLogger.info("prefix: {}, nextMarker: {}\n", prefix, nextMarker);
+                        // 防止 truncate 过程中原来的线程中丢失了 prefixAndEndedMap 的操作，这里再判断一次
+                        endMap = prefixAndEndedMap.get(prefix);
+                        if (endMap != null) endMap.put("start", lister.currentEndKey());
+                        rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
+                        // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                         extremePrefixes.add(prefix);
@@ -516,6 +521,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             count++;
         }
+        prefixesMap.putAll(prefixAndEndedMap);
         return extremePrefixes;
     }
 
