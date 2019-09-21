@@ -418,7 +418,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     }
 
     private List<ILister<E>> filteredListerByPrefixes(Stream<String> prefixesStream) {
-        List<ILister<E>> nextLevelList = prefixesStream.map(prefix -> {
+        List<ILister<E>> prefixesLister = prefixesStream.map(prefix -> {
             try {
                 return generateLister(prefix);
             } catch (SuitsException e) {
@@ -440,13 +440,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return false;
             }
         }).collect(Collectors.toList());
-        if (nextLevelList.size() > 0) {
-            ILister<E> lastLister = nextLevelList.get(nextLevelList.size() - 1);
-            Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
-            if (map == null) map = new HashMap<>();
-            prefixAndEndedMap.put(lastLister.getPrefix(), map);
+        if (prefixesLister.size() > 0) {
+            ILister<E> lastLister = prefixesLister.get(prefixesLister.size() - 1);
+            if (!prefixAndEndedMap.containsKey(lastLister.getPrefix())) {
+                Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
+                if (map == null) map = new HashMap<>();
+                prefixAndEndedMap.put(lastLister.getPrefix(), map);
+            }
         }
-        Iterator<ILister<E>> it = nextLevelList.iterator();
+        Iterator<ILister<E>> it = prefixesLister.iterator();
         while (it.hasNext()) {
             ILister<E> nLister = it.next();
             if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
@@ -454,7 +456,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 it.remove();
             }
         }
-        return nextLevelList;
+        return prefixesLister;
     }
 
     private void processNodeLister(ILister<E> lister) {
@@ -500,6 +502,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         // 防止 truncate 过程中原来的线程中丢失了 prefixAndEndedMap 的操作，这里再判断一次
                         endMap = prefixAndEndedMap.get(prefix);
                         if (endMap != null) endMap.put("start", lister.currentEndKey());
+                        else prefixAndEndedMap.put(prefix, null);
                         rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
@@ -521,7 +524,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             count++;
         }
-        prefixesMap.putAll(prefixAndEndedMap);
         return extremePrefixes;
     }
 
@@ -533,6 +535,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Set<String> startPrefixes = prefixes == null ? new HashSet<>() : new HashSet<>(prefixes);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
+            if (prefixMap == null) {
+                prefixAndEndedMap.remove(prefix);
+                continue;
+            }
             if (prefixMap.size() == 0) {
                 prefixAndEndedMap.remove(prefix);
                 continue;
@@ -565,6 +571,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             executorPool = Executors.newFixedThreadPool(threads);
             listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() <= threads) {
+                prefixesMap.clear();
                 listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
@@ -662,6 +669,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             if (startLister != null) processNodeLister(startLister);
             List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
             while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+                prefixesMap.clear();
                 listerList = computeToNextLevel(listerList);
             }
             if (listerList != null && listerList.size() > 0) {
