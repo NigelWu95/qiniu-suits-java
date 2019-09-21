@@ -16,8 +16,8 @@ import java.util.List;
 public class QiniuLister implements ILister<FileInfo> {
 
     private BucketManager bucketManager;
-    private String bucket;
-    private String prefix;
+    private final String bucket;
+    private final String prefix;
     private String marker;
     private String endPrefix;
     private int limit;
@@ -222,8 +222,6 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void close() {
         bucketManager = null;
-        bucket = null;
-        prefix = null;
         marker = null;
         endPrefix = null;
         fileInfoList = defaultList;

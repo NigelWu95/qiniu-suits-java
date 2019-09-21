@@ -493,6 +493,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 if (listerList.size() > 0 && listerList.size() <= tiny) {
                     rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
                     for (ILister<E> lister : listerList) {
+                        // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         String prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
                         rootLogger.info("prefix: {}, nextMarker: {}\n", prefix, nextMarker);
