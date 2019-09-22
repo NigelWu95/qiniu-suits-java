@@ -172,7 +172,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     @Override
     public String currentEndKey() {
         if (s3ObjectList.size() > 0) return s3ObjectList.get(s3ObjectList.size() - 1).getKey();
-        return null;
+        return lastKey;
     }
 
     @Override
