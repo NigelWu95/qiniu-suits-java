@@ -541,7 +541,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String previousPrefix;
         Map<String, String> prefixMap;
         String start;
-        String marker;
         Set<String> startPrefixes = prefixes == null ? new HashSet<>() : new HashSet<>(prefixes);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
@@ -551,11 +550,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
 //            recorder.remove(prefix);
             start = prefixMap.get("start");
-            marker = prefixMap.get("marker");
             // 由于优先使用 marker 原则，为了 start 生效则将可能的 marker 删除
             if (start != null && !"".equals(start)) {
                 prefixMap.remove("marker");
-            } else if (marker == null || "".equals(marker)) {
+            } else {
                 prefixAndEndedMap.remove(prefix);
                 continue;
             }
