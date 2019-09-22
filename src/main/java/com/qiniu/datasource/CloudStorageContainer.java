@@ -232,7 +232,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<String> writeList;
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
-        String marker = lister.getMarker();
         int retry;
         Map<String, String> map = null;
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -255,7 +254,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             if (hasNext) {
                 JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
-                json.addProperty("marker", marker);
+                json.addProperty("marker", lister.getMarker());
                 json.addProperty("end", lister.getEndPrefix());
                 recorder.put(lister.getPrefix(), json);
                 try {
@@ -267,11 +266,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             } else {
                 map = prefixAndEndedMap.get(lister.getPrefix());
             }
-            if (map != null) {
-                map.put("marker", marker);
-                map.put("start", lister.currentEndKey());
-                map.put("end", lister.getEndPrefix());
-            }
+            if (map != null) map.put("start", lister.currentEndKey());
             retry = retryTimes;
             while (true) {
                 try {
@@ -290,7 +285,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 }
             }
             hasNext = lister.hasNext();
-            marker = lister.getMarker();
         }
     }
 
@@ -514,6 +508,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         endMap = prefixAndEndedMap.get(prefix);
                         if (endMap == null) {
                             prefixAndEndedMap.put(prefix, new HashMap<String, String>(){{ put("remove", "remove"); }});
+                        } else {
+                            endMap.put("start", lister.currentEndKey());
                         }
                         rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
@@ -544,6 +540,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         phraseLastPrefixes.sort(Comparator.reverseOrder());
         String previousPrefix;
         Map<String, String> prefixMap;
+        String start;
+        String marker;
         Set<String> startPrefixes = prefixes == null ? new HashSet<>() : new HashSet<>(prefixes);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
@@ -552,8 +550,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 continue;
             }
 //            recorder.remove(prefix);
-            // 由于优先使用 marker 原则，为了 start 生效则将 marker 删除
-            if (prefixMap.containsKey("start")) prefixMap.remove("marker");
+            start = prefixMap.get("start");
+            marker = prefixMap.get("marker");
+            // 由于优先使用 marker 原则，为了 start 生效则将可能的 marker 删除
+            if (start != null && !"".equals(start)) {
+                prefixMap.remove("marker");
+            } else if (marker == null || "".equals(marker)) {
+                prefixAndEndedMap.remove(prefix);
+                continue;
+            }
             if (startPrefixes.contains(prefix)) {
                 if (prefixRight) prefixAndEndedMap.put("", prefixMap);
                 prefixAndEndedMap.remove(prefix);

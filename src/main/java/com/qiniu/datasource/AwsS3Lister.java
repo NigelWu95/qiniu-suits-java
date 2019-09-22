@@ -18,6 +18,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
     private List<S3ObjectSummary> s3ObjectList;
+    private String lastKey;
     private long count;
     private static final List<S3ObjectSummary> defaultList = new ArrayList<>();
 
@@ -112,6 +113,11 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
             ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
             listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
             listObjectsRequest.setStartAfter(null);
+            if (result.getObjectSummaries().size() == 0) {
+                if (s3ObjectList != null && s3ObjectList.size() > 0) {
+                    lastKey = s3ObjectList.get(s3ObjectList.size() - 1).getKey();
+                }
+            }
             s3ObjectList = result.getObjectSummaries();
             checkedListWithEnd();
         } catch (AmazonServiceException e) {

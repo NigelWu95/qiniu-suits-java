@@ -54,9 +54,8 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public synchronized String getMarker() {
-        if (truncateMarker == null || "".equals(truncateMarker)) return marker;
-        return truncateMarker;
+    public String getMarker() {
+        return marker;
     }
 
     @Override
