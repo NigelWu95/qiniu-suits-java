@@ -442,14 +442,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).collect(Collectors.toList());
         if (prefixesLister.size() > 0) {
             ILister<E> lastLister = prefixesLister.get(prefixesLister.size() - 1);
-            if (prefixAndEndedMap.containsKey(lastLister.getPrefix())) {
-                if (prefixAndEndedMap.get(lastLister.getPrefix()).containsKey("remove")) {
-                    prefixAndEndedMap.remove(lastLister.getPrefix());
-                }
-            } else {
-                Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
+            Map<String, String> map = prefixAndEndedMap.get(lastLister.getPrefix());
+            if (map == null) {
+                map = prefixesMap.get(lastLister.getPrefix());
                 if (map == null) map = new HashMap<>();
                 prefixAndEndedMap.put(lastLister.getPrefix(), map);
+            } else if (map.containsKey("remove")) {
+                prefixAndEndedMap.remove(lastLister.getPrefix());
             }
         }
         Iterator<ILister<E>> it = prefixesLister.iterator();
