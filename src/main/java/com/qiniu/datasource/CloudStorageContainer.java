@@ -441,7 +441,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }).collect(Collectors.toList());
         if (prefixesLister.size() > 0) {
-            ILister<E> lastLister = prefixesLister.get(prefixesLister.size() - 1);
+            ILister<E> lastLister = prefixesLister.stream().max(Comparator.comparing(ILister::getPrefix)).get();
             Map<String, String> map = prefixAndEndedMap.get(lastLister.getPrefix());
             if (map == null) {
                 map = prefixesMap.get(lastLister.getPrefix());
