@@ -136,7 +136,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } else {
             if (prefixesMap.containsKey(null)) throw new IOException("");
             this.prefixesMap = prefixesMap;
-            prefixes = prefixesMap.keySet().parallelStream().sorted().collect(Collectors.toList());
+            prefixes = prefixesMap.keySet().stream().sorted().collect(Collectors.toList());
             int size = prefixes.size();
             Iterator<String> iterator = prefixes.iterator();
             String temp = iterator.next();
@@ -442,7 +442,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).collect(Collectors.toList());
         if (prefixesLister.size() > 0) {
             ILister<E> lastLister = prefixesLister.get(prefixesLister.size() - 1);
-            if (!prefixAndEndedMap.containsKey(lastLister.getPrefix())) {
+            if (prefixAndEndedMap.containsKey(lastLister.getPrefix())) {
+                if (prefixAndEndedMap.get(lastLister.getPrefix()).containsKey("remove")) {
+                    prefixAndEndedMap.remove(lastLister.getPrefix());
+                }
+            } else {
                 Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
                 if (map == null) map = new HashMap<>();
                 prefixAndEndedMap.put(lastLister.getPrefix(), map);
@@ -485,6 +489,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         int count = 0;
         ILister<E> iLister;
         Iterator<ILister<E>> iterator;
+        String prefix;
         Map<String, String> endMap;
         while (!executorPool.isTerminated()) {
             if (count >= 1800) {
@@ -497,12 +502,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
                     for (ILister<E> lister : listerList) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
-                        String prefix = lister.getPrefix();
+                        prefix = lister.getPrefix();
                         String nextMarker = lister.truncate();
                         // 防止 truncate 过程中原来的线程中丢失了 prefixAndEndedMap 的操作，这里再判断一次
                         endMap = prefixAndEndedMap.get(prefix);
                         if (endMap != null) endMap.put("start", lister.currentEndKey());
-                        else prefixAndEndedMap.put(prefix, null);
+                        else prefixAndEndedMap.put(prefix, new HashMap<String, String>(){{ put("remove", "remove"); }});
                         rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
@@ -535,11 +540,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Set<String> startPrefixes = prefixes == null ? new HashSet<>() : new HashSet<>(prefixes);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
-            if (prefixMap == null) {
-                prefixAndEndedMap.remove(prefix);
-                continue;
-            }
-            if (prefixMap.size() == 0) {
+            if (prefixMap == null || prefixMap.size() == 0) {
                 prefixAndEndedMap.remove(prefix);
                 continue;
             }
@@ -556,7 +557,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         prefixesMap.putAll(prefixAndEndedMap);
-        phraseLastPrefixes = new ArrayList<>(prefixAndEndedMap.keySet());
+        phraseLastPrefixes = prefixAndEndedMap.keySet().stream().sorted().collect(Collectors.toList());
         for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
         return phraseLastPrefixes;
     }
