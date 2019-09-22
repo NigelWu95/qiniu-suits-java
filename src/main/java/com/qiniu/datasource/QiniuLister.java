@@ -19,12 +19,12 @@ public class QiniuLister implements ILister<FileInfo> {
     private final String bucket;
     private final String prefix;
     private String marker;
-    private String truncateMarker;
     private String endPrefix;
     private int limit;
+    private String truncateMarker;
     private List<FileInfo> fileInfoList;
-    private long count;
     private static final List<FileInfo> defaultList = new ArrayList<>();
+    private long count;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
                        int limit) throws SuitsException {
@@ -54,8 +54,9 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public String getMarker() {
-        return marker;
+    public synchronized String getMarker() {
+        if (truncateMarker == null || "".equals(truncateMarker)) return marker;
+        return truncateMarker;
     }
 
     @Override

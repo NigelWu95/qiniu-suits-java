@@ -232,6 +232,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<String> writeList;
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
+        String marker = lister.getMarker();
         int retry;
         Map<String, String> map = null;
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -254,7 +255,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             if (hasNext) {
                 JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
-                json.addProperty("marker", lister.getMarker());
+                json.addProperty("marker", marker);
                 json.addProperty("end", lister.getEndPrefix());
                 recorder.put(lister.getPrefix(), json);
                 try {
@@ -266,7 +267,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             } else {
                 map = prefixAndEndedMap.get(lister.getPrefix());
             }
-            if (map != null) map.put("start", lister.currentEndKey());
+            if (map != null) {
+                map.put("marker", marker);
+                map.put("start", lister.currentEndKey());
+                map.put("end", lister.getEndPrefix());
+            }
             retry = retryTimes;
             while (true) {
                 try {
@@ -285,6 +290,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 }
             }
             hasNext = lister.hasNext();
+            marker = lister.getMarker();
         }
     }
 
@@ -319,8 +325,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             } catch (IOException e1) {
 //                e1.printStackTrace();
             }
-            Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
-            if (map != null) map.put("start", lister.currentEndKey());
+//            Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
+//            if (map != null) map.put("start", lister.currentEndKey());
         } finally {
             try {
                 if (FileUtils.createIfNotExists(infoLogFile)) {
@@ -506,8 +512,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         String nextMarker = lister.truncate();
                         // 防止 truncate 过程中原来的线程中丢失了 prefixAndEndedMap 的操作，这里再判断一次
                         endMap = prefixAndEndedMap.get(prefix);
-                        if (endMap != null) endMap.put("start", lister.currentEndKey());
-                        else prefixAndEndedMap.put(prefix, new HashMap<String, String>(){{ put("remove", "remove"); }});
+                        if (endMap == null) {
+                            prefixAndEndedMap.put(prefix, new HashMap<String, String>(){{ put("remove", "remove"); }});
+                        }
                         rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
