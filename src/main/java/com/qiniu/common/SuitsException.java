@@ -6,23 +6,23 @@ public class SuitsException extends IOException {
 
     private int statusCode;
 
-    public SuitsException(Exception e, int statusCode) {
-        super(statusCode + ", " + e.getMessage(), e);
-        this.statusCode = statusCode;
-    }
-
     public SuitsException(int statusCode, String error) {
         super("code: " + statusCode + ", error: " + error);
         this.statusCode = statusCode;
     }
 
+    public SuitsException(Exception e, int statusCode) {
+        super(statusCode + ", " + e.getMessage(), e);
+        this.statusCode = statusCode;
+    }
+
     public SuitsException(Exception e, int statusCode, String error) {
-        super(statusCode + ", " + error + ", " + e.getMessage());
+        super(statusCode + ", " + error + ", " + e.getMessage(), e);
         this.statusCode = statusCode;
     }
 
     public SuitsException(SuitsException e, String message) {
-        super(e.getMessage() + ", " + message);
+        super(e.getMessage() + ", " + message, e);
         this.statusCode = e.getStatusCode();
     }
 

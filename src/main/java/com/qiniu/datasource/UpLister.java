@@ -18,15 +18,16 @@ import java.util.List;
 public class UpLister implements ILister<FileItem> {
 
     private UpYunClient upYunClient;
-    private String bucket;
-    private String prefix;
+    private final String bucket;
+    private final String prefix;
     private String marker;
     private String endPrefix;
     private int limit;
+    private String truncateMarker;
     private List<FileItem> fileItems;
-    private long count;
     private static final List<FileItem> defaultItems = new ArrayList<>();
     private List<String> directories;
+    private long count;
 
     public UpLister(UpYunClient upYunClient, String bucket, String prefix, String marker, String endPrefix,
                     int limit) throws SuitsException {
@@ -181,7 +182,7 @@ public class UpLister implements ILister<FileItem> {
 
     @Override
     public boolean hasNext() {
-        return marker != null && !"".equals(marker);
+        return marker != null && !"".equals(marker) && !"g2gCZAAEbmV4dGQAA2VvZg".equals(marker);
     }
 
     @Override
@@ -194,10 +195,10 @@ public class UpLister implements ILister<FileItem> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += fileItems.size();
             futureList.addAll(fileItems);
         }
         fileItems = futureList;
-        count += fileItems.size();
         return hasNext();
     }
 
@@ -213,13 +214,16 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeUpYunMarker(marker);
+        if (truncateMarker != null && !"".equals(truncateMarker) && !"g2gCZAAEbmV4dGQAA2VvZg".equals(marker)) {
+            return CloudApiUtils.decodeUpYunMarker(truncateMarker);
+        }
         if (fileItems.size() > 0) return fileItems.get(fileItems.size() - 1).key;
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = marker;
+        truncateMarker = marker;
         marker = null;
         return truncateMarker;
     }
@@ -232,11 +236,9 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void close() {
         upYunClient = null;
-        bucket = null;
-        prefix = null;
         marker = null;
         endPrefix = null;
-        fileItems = defaultItems;
+//        fileItems = defaultItems;
 //        directories = null;
     }
 }

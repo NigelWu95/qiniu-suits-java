@@ -16,14 +16,15 @@ import java.util.List;
 public class QiniuLister implements ILister<FileInfo> {
 
     private BucketManager bucketManager;
-    private String bucket;
-    private String prefix;
+    private final String bucket;
+    private final String prefix;
     private String marker;
     private String endPrefix;
     private int limit;
+    private String truncateMarker;
     private List<FileInfo> fileInfoList;
-    private long count;
     private static final List<FileInfo> defaultList = new ArrayList<>();
+    private long count;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
                        int limit) throws SuitsException {
@@ -101,20 +102,20 @@ public class QiniuLister implements ILister<FileInfo> {
             } else {
                 this.marker = null;
             }
-            return fileInfoList;
         } finally {
+            response.close();
+            response = null;
             try {
                 bufferedReader.close();
                 reader.close();
                 inputStream.close();
-                response.close();
             } catch (IOException e) {
                 bufferedReader = null;
                 reader = null;
                 inputStream = null;
-                response = null;
             }
         }
+        return fileInfoList;
     }
 
     private void checkedListWithEnd() {
@@ -152,7 +153,8 @@ public class QiniuLister implements ILister<FileInfo> {
             fileInfoList = getListResult(prefix, marker, limit);
             checkedListWithEnd();
         } catch (QiniuException e) {
-            throw new SuitsException(e.code(), LogUtils.getMessage(e));
+            if (e.response != null) e.response.close();
+            throw new SuitsException(e, e.code());
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -187,10 +189,10 @@ public class QiniuLister implements ILister<FileInfo> {
 //            if (futureList.size() > 0)
                 times--;
             doList();
+            count += fileInfoList.size();
             futureList.addAll(fileInfoList);
         }
         fileInfoList = futureList;
-        count += fileInfoList.size();
         return hasNext();
     }
 
@@ -200,15 +202,16 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
+        if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuMarker(truncateMarker);
         if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = marker;
+        truncateMarker = marker;
         marker = null;
         return truncateMarker;
     }
@@ -221,10 +224,8 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void close() {
         bucketManager = null;
-        bucket = null;
-        prefix = null;
         marker = null;
         endPrefix = null;
-        fileInfoList = defaultList;
+//        fileInfoList = defaultList; // 不做修改，因为最后还有可能需要获取 currentEndKey()
     }
 }

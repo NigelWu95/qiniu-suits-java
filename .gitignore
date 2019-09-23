@@ -27,4 +27,7 @@ assembly/
 .DS_Store
 
 qsuits.log
-procedure.log
+procedure*.log
+qsuits.error
+qsuits.info
+.qsuits.account

@@ -17,9 +17,10 @@ public class TenLister implements ILister<COSObjectSummary> {
     private COSClient cosClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
+    private String truncateMarker;
     private List<COSObjectSummary> cosObjectList;
-    private long count;
     private static final List<COSObjectSummary> defaultList = new ArrayList<>();
+    private long count;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.cosClient = cosClient;
@@ -104,9 +105,9 @@ public class TenLister implements ILister<COSObjectSummary> {
             cosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (CosServiceException e) {
-            throw new SuitsException(e.getStatusCode(), e.getMessage());
+            throw new SuitsException(e,e.getStatusCode());
         } catch (CosClientException e) {
-            throw new SuitsException(-1, e.getMessage());
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -139,10 +140,10 @@ public class TenLister implements ILister<COSObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += cosObjectList.size();
             futureList.addAll(cosObjectList);
         }
         cosObjectList = futureList;
-        count += cosObjectList.size();
         return hasNext();
     }
 
@@ -152,15 +153,16 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
+        if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (cosObjectList.size() > 0) return cosObjectList.get(cosObjectList.size() - 1).getKey();
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = listObjectsRequest.getMarker();
+        truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
@@ -175,6 +177,6 @@ public class TenLister implements ILister<COSObjectSummary> {
         cosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        cosObjectList = defaultList;
+//        cosObjectList = defaultList;
     }
 }

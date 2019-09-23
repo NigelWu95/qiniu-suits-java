@@ -18,9 +18,10 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private OSSClient ossClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
+    private String truncateMarker;
     private List<OSSObjectSummary> ossObjectList;
-    private long count;
     private static final List<OSSObjectSummary> defaultList = new ArrayList<>();
+    private long count;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.ossClient = ossClient;
@@ -107,9 +108,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
             ossObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ClientException e) {
-            throw new SuitsException(CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (ServiceException e) {
-            throw new SuitsException(CloudApiUtils.AliStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -142,10 +143,10 @@ public class AliLister implements ILister<OSSObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += ossObjectList.size();
             futureList.addAll(ossObjectList);
         }
         ossObjectList = futureList;
-        count += ossObjectList.size();
         return hasNext();
     }
 
@@ -155,15 +156,16 @@ public class AliLister implements ILister<OSSObjectSummary> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
+        if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (ossObjectList.size() > 0) return ossObjectList.get(ossObjectList.size() - 1).getKey();
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = listObjectsRequest.getMarker();
+        truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
@@ -178,6 +180,6 @@ public class AliLister implements ILister<OSSObjectSummary> {
         ossClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        ossObjectList = defaultList;
+//        ossObjectList = defaultList;
     }
 }

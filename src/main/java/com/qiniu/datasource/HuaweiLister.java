@@ -17,9 +17,10 @@ public class HuaweiLister implements ILister<ObsObject> {
     private ObsClient obsClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
+    private String truncateMarker;
     private List<ObsObject> obsObjects;
-    private long count;
     private static final List<ObsObject> defaultList = new ArrayList<>();
+    private long count;
 
     public HuaweiLister(ObsClient obsClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.obsClient = obsClient;
@@ -106,7 +107,7 @@ public class HuaweiLister implements ILister<ObsObject> {
             obsObjects = objectListing.getObjects();
             checkedListWithEnd();
         } catch (ObsException e) {
-            throw new SuitsException(e.getResponseCode(), e.getMessage());
+            throw new SuitsException(e, e.getResponseCode());
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -139,10 +140,10 @@ public class HuaweiLister implements ILister<ObsObject> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += obsObjects.size();
             futureList.addAll(obsObjects);
         }
         obsObjects = futureList;
-        count += obsObjects.size();
         return hasNext();
     }
 
@@ -152,15 +153,16 @@ public class HuaweiLister implements ILister<ObsObject> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
+        if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (obsObjects.size() > 0) return obsObjects.get(obsObjects.size() - 1).getObjectKey();
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = listObjectsRequest.getMarker();
+        truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
@@ -179,6 +181,6 @@ public class HuaweiLister implements ILister<ObsObject> {
         }
 //        listObjectsRequest = null;
         endPrefix = null;
-        obsObjects = defaultList;
+//        obsObjects = defaultList;
     }
 }

@@ -15,11 +15,12 @@ import java.util.List;
 public class NetLister implements ILister<NOSObjectSummary> {
 
     private NosClient nosClient;
-    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private String endPrefix;
+    private String truncateMarker;
     private List<NOSObjectSummary> nosObjectList;
-    private long count;
     private static final List<NOSObjectSummary> defaultList = new ArrayList<>();
+    private long count;
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.nosClient = nosClient;
@@ -107,7 +108,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
             nosObjectList = objectListing.getObjectSummaries();
             checkedListWithEnd();
         } catch (ServiceException e) {
-            throw new SuitsException(CloudApiUtils.NetStatusCode(e.getErrorCode(), -1), e.getMessage());
+            throw new SuitsException(e, CloudApiUtils.NetStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -140,10 +141,10 @@ public class NetLister implements ILister<NOSObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += nosObjectList.size();
             futureList.addAll(nosObjectList);
         }
         nosObjectList = futureList;
-        count += nosObjectList.size();
         return hasNext();
     }
 
@@ -153,15 +154,16 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
+        if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (nosObjectList.size() > 0) return nosObjectList.get(nosObjectList.size() - 1).getKey();
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = listObjectsRequest.getMarker();
+        truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
@@ -176,6 +178,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
         nosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        nosObjectList = defaultList;
+//        nosObjectList = defaultList;
     }
 }

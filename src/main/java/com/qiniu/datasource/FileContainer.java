@@ -32,8 +32,13 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(CloudStorageContainer.class);
+    private static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    private static final Logger errorLogger = LoggerFactory.getLogger("error");
+    private static final File errorLogFile = new File("qsuits.error");
+    private static final Logger infoLogger = LoggerFactory.getLogger("info");
+    private static final File infoLogFile = new File("qsuits.info");
     private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
+    private static final File procedureLogFile = new File("procedure.log");
 
     private String filePath;
     protected String parse;
@@ -146,7 +151,13 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
                 e.response.close();
             }
-            recorder.put(reader.getName(), lastLine);
+            try {
+                if (FileUtils.createIfNotExists(procedureLogFile)) {
+                    procedureLogger.info(recorder.put(reader.getName(), lastLine));
+                }
+            } catch (IOException e1) {
+//            e1.printStackTrace();
+            }
             lastLine = reader.lastLine();
         }
     }
@@ -168,11 +179,22 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
-            logger.info("order {}: {}\tsuccessfully done\t{}", orderStr, reader.getName(), reader.count());
         } catch (Throwable e) {
-            logger.error("order {}: {}\t{}\t{}", orderStr, reader.getName(), recorder.getString(reader.getName()),
-                    reader.count(), e);
+            try {
+                if (FileUtils.createIfNotExists(errorLogFile)) {
+                    errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
+                }
+            } catch (IOException e1) {
+//                e1.printStackTrace();
+            }
         } finally {
+            try {
+                if (FileUtils.createIfNotExists(infoLogFile)) {
+                    infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
+                }
+            } catch (IOException e) {
+//                e.printStackTrace();
+            }
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order);
@@ -187,6 +209,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
+        String record = recorder.toString();
         if (recorder.size() > 0) {
             FileSaveMapper.ext = ".json";
             FileSaveMapper.append = false;
@@ -194,12 +217,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
             saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, recorder.toString(), true);
+            saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();
-            logger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
+            rootLogger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
                     fileName, FileSaveMapper.ext);
         }
-        procedureLogger.info(recorder.toString());
+        procedureLogger.info(record);
     }
 
     private void showdownHook() {
@@ -222,7 +245,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
-        logger.info("{} running...", info);
+        rootLogger.info("{} running...", info);
+        rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
         try {
@@ -231,7 +255,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
-            int logTime = 0;
             while (!executorPool.isTerminated()) {
                 try {
                     Thread.sleep(1000);
@@ -239,17 +262,12 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                     int i = 0;
                     while (i < 1000) i++;
                 }
-                if (logTime >= 300) {
-                    logTime = 0;
-                    procedureLogger.info(recorder.toString());
-                }
-                logTime++;
             }
-            logger.info("{} finished.", info);
+            rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();
-            logger.error("export failed", e);
+            rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
         }

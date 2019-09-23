@@ -18,6 +18,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
     private List<S3ObjectSummary> s3ObjectList;
+    private String lastKey;
     private long count;
     private static final List<S3ObjectSummary> defaultList = new ArrayList<>();
 
@@ -112,12 +113,17 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
             ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
             listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
             listObjectsRequest.setStartAfter(null);
+            if (result.getObjectSummaries().size() == 0) {
+                if (s3ObjectList != null && s3ObjectList.size() > 0) {
+                    lastKey = s3ObjectList.get(s3ObjectList.size() - 1).getKey();
+                }
+            }
             s3ObjectList = result.getObjectSummaries();
             checkedListWithEnd();
         } catch (AmazonServiceException e) {
-            throw new SuitsException(e.getStatusCode(), e.getMessage());
+            throw new SuitsException(e, e.getStatusCode());
         } catch (SdkClientException e) {
-            throw new SuitsException(-1, e.getMessage());
+            throw new SuitsException(e, -1);
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -151,10 +157,10 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         while (hasNext() && times > 0 && futureList.size() < expected) {
             times--;
             doList();
+            count += s3ObjectList.size();
             futureList.addAll(s3ObjectList);
         }
         s3ObjectList = futureList;
-        count += s3ObjectList.size();
         return hasNext();
     }
 
@@ -166,7 +172,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     @Override
     public String currentEndKey() {
         if (s3ObjectList.size() > 0) return s3ObjectList.get(s3ObjectList.size() - 1).getKey();
-        return null;
+        return lastKey;
     }
 
     @Override
