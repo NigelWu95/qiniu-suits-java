@@ -440,8 +440,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (prefixesLister.size() > 0) {
             ILister<E> lastLister = prefixesLister.stream().max(Comparator.comparing(ILister::getPrefix)).get();
             Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
-            if (map == null || !map.containsKey("remove")) {
+            if (map == null) {
                 prefixAndEndedMap.put(lastLister.getPrefix(), new HashMap<>());
+            } else if (!map.containsKey("remove")) {
+                prefixAndEndedMap.put(lastLister.getPrefix(), map);
             }
         }
         Iterator<ILister<E>> it = prefixesLister.iterator();
