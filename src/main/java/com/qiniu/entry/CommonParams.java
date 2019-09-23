@@ -189,12 +189,13 @@ public class CommonParams {
             case "privateurl":
             case "exportts":
             case "download":
-            case "tenprivate":
-            case "aliprivate":
-            case "s3private":
-            case "awsprivate":
-            case "huaweiprivate":
-            case "baiduprivate":
+            // 这几个数据源的私有签名都是采用 bucket + key + endpoint(region) 的方式来签算
+//            case "tenprivate":
+//            case "aliprivate":
+//            case "s3private":
+//            case "awsprivate":
+//            case "huaweiprivate":
+//            case "baiduprivate":
             case "imagecensor":
             case "videocensor":
                 String url = entryParam.getValue("url", "").trim();

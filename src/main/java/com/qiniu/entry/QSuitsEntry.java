@@ -718,9 +718,9 @@ public class QSuitsEntry {
         if (region == null || "".equals(region)) region = CloudApiUtils.getTenCosRegion(secretId, secretKey, tenBucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region, Long.valueOf(expires),
-                getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region,
-                Long.valueOf(expires), getQueriesMap(), savePath);
+        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region,
+                1000 * Long.valueOf(expires), getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId,
+                secretKey, tenBucket, region, 1000 * Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
@@ -735,9 +735,9 @@ public class QSuitsEntry {
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, aliBucket, endPoint, Long.valueOf(expires),
-                getQueriesMap()) : new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, aliBucket, endPoint,
-                Long.valueOf(expires), getQueriesMap(), savePath);
+        return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, aliBucket, endPoint,
+                1000 * Long.valueOf(expires), getQueriesMap()) : new com.qiniu.process.aliyun.PrivateUrl(accessId,
+                accessSecret, aliBucket, endPoint, 1000 * Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
@@ -750,9 +750,9 @@ public class QSuitsEntry {
             region = CloudApiUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region, Long.valueOf(expires),
-                getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region,
-                Long.valueOf(expires), getQueriesMap(), savePath);
+        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region,
+                1000 * Long.valueOf(expires), getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId,
+                secretKey, s3Bucket, endpoint, region, 1000 * Long.valueOf(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
@@ -767,6 +767,7 @@ public class QSuitsEntry {
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        // 华为 sdk 的过期时间按秒设置
         return single ? new com.qiniu.process.huawei.PrivateUrl(accessId, secretKey, huaweiBucket, endPoint, Long.valueOf(expires),
                 getQueriesMap()) : new com.qiniu.process.huawei.PrivateUrl(accessId, secretKey, huaweiBucket, endPoint,
                 Long.valueOf(expires), getQueriesMap(), savePath);
@@ -783,6 +784,7 @@ public class QSuitsEntry {
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         expires = ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
+        // 华为 sdk 的过期时间按秒设置
         return single ? new com.qiniu.process.baidu.PrivateUrl(accessId, secretKey, baiduBucket, endPoint, Integer.valueOf(expires),
                 getQueriesMap()) : new com.qiniu.process.baidu.PrivateUrl(accessId, secretKey, baiduBucket, endPoint,
                 Integer.valueOf(expires), getQueriesMap(), savePath);

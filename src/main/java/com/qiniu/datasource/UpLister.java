@@ -212,7 +212,7 @@ public class UpLister implements ILister<FileItem> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeUpYunMarker(marker);
         if (truncateMarker != null && !"".equals(truncateMarker) && !"g2gCZAAEbmV4dGQAA2VvZg".equals(marker)) {
             return CloudApiUtils.decodeUpYunMarker(truncateMarker);
