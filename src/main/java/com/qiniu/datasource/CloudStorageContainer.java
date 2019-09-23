@@ -618,7 +618,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         String record = recorder.toString();
         if (recorder.size() > 0) {
             FileSaveMapper.ext = ".json";
-            FileSaveMapper.append = false;
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
 //        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
@@ -654,6 +653,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
+        FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("");

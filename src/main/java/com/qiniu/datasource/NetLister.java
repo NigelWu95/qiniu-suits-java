@@ -15,11 +15,12 @@ import java.util.List;
 public class NetLister implements ILister<NOSObjectSummary> {
 
     private NosClient nosClient;
-    private String endPrefix;
     private ListObjectsRequest listObjectsRequest;
+    private String endPrefix;
+    private String truncateMarker;
     private List<NOSObjectSummary> nosObjectList;
-    private long count;
     private static final List<NOSObjectSummary> defaultList = new ArrayList<>();
+    private long count;
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.nosClient = nosClient;
@@ -155,13 +156,14 @@ public class NetLister implements ILister<NOSObjectSummary> {
     @Override
     public String currentEndKey() {
         if (hasNext()) return getMarker();
+        if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (nosObjectList.size() > 0) return nosObjectList.get(nosObjectList.size() - 1).getKey();
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = listObjectsRequest.getMarker();
+        truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
@@ -176,6 +178,6 @@ public class NetLister implements ILister<NOSObjectSummary> {
         nosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        nosObjectList = defaultList;
+//        nosObjectList = defaultList;
     }
 }

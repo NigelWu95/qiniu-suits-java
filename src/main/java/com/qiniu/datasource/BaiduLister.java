@@ -18,9 +18,10 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     private BosClient bosClient;
     private ListObjectsRequest listObjectsRequest;
     private String endPrefix;
+    private String truncateMarker;
     private List<BosObjectSummary> bosObjectList;
-    private long count;
     private static final List<BosObjectSummary> defaultList = new ArrayList<>();
+    private long count;
 
     public BaiduLister(BosClient bosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
         this.bosClient = bosClient;
@@ -154,15 +155,16 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
+        if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (bosObjectList.size() > 0) return bosObjectList.get(bosObjectList.size() - 1).getKey();
         return null;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = listObjectsRequest.getMarker();
+        truncateMarker = listObjectsRequest.getMarker();
         listObjectsRequest.setMarker(null);
         return truncateMarker;
     }
@@ -177,6 +179,6 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         bosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        bosObjectList = defaultList;
+//        bosObjectList = defaultList;
     }
 }
