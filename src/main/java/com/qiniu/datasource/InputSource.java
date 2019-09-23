@@ -2,7 +2,6 @@ package com.qiniu.datasource;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.convert.LineToMap;
-import com.qiniu.entry.CommonParams;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.util.HttpRespUtils;
@@ -57,8 +56,9 @@ public class InputSource {
                         if (HttpRespUtils.checkException(e, 2) < -1) throw e;
                         else System.out.println(LogUtils.getMessage(e));
                     }
+                } else {
+                    System.out.println(line);
                 }
-                else System.out.println(line);
             }
         }
     }
