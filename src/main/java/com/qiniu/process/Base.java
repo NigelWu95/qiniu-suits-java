@@ -170,7 +170,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         retry = 0;
                         message = e.getMessage();
                     }
-                    System.out.println(message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
                                 .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
@@ -237,7 +236,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         retry = 0;
                         message = e.getMessage();
                     }
-                    System.out.println(line + "\t" + message);
                     switch (retry) {
                         case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
                         case -1: fileSaveMapper.writeToKey("need_retry", resultInfo(line) + "\t" + message,

@@ -593,10 +593,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
         if (phraseLastPrefixes.size() > 0) {
-//            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
-//            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
-//            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
-//            executorPool.shutdown();
+            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
+            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
+            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
+            executorPool.shutdown();
         }
         while (!executorPool.isTerminated()) {
             try {
