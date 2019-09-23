@@ -32,12 +32,10 @@ public class DownloadFile extends Base<Map<String, String>> {
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }
 
-    /**
-     * 用来做只做文件 download 不记录结果的构造方法，downPath 为空时则表示预热方式下载
-     */
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
                         int[] range, String suffixOrQuery, String downPath, String addPrefix, String rmPrefix) throws IOException {
         super("download", "", "", null);
+        // 用来做只做文件 download 不记录结果的构造方法，downPath 为空时则表示预热方式下载
         if (downPath == null || "".equals(downPath)) preDown = true;
         else this.savePath = FileUtils.realPathWithUserHome(downPath);
         set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix);
