@@ -154,7 +154,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     }
 
     @Override
-    public String currentEndKey() {
+    public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
         if (nosObjectList.size() > 0) return nosObjectList.get(nosObjectList.size() - 1).getKey();

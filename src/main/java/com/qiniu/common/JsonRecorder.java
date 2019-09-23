@@ -8,12 +8,14 @@ public class JsonRecorder {
 
     private volatile JsonObject prefixesJson = new JsonObject();
 
-    public synchronized void put(String key, JsonObject continueConf) {
+    public synchronized String put(String key, JsonObject continueConf) {
         prefixesJson.add(key, continueConf);
+        return prefixesJson.toString();
     }
 
-    public synchronized void put(String key, String line) {
+    public synchronized String put(String key, String line) {
         prefixesJson.addProperty(key, line);
+        return prefixesJson.toString();
     }
 
     public synchronized void remove(String key) {

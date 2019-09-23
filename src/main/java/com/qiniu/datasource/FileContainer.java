@@ -151,9 +151,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
                 e.response.close();
             }
-            recorder.put(reader.getName(), lastLine);
             try {
-                if (FileUtils.createIfNotExists(procedureLogFile)) procedureLogger.info(recorder.toString());
+                if (FileUtils.createIfNotExists(procedureLogFile)) {
+                    procedureLogger.info(recorder.put(reader.getName(), lastLine));
+                }
             } catch (IOException e1) {
 //            e1.printStackTrace();
             }

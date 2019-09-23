@@ -206,9 +206,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
-        recorder.put(prefix, json);
         try {
-            if (FileUtils.createIfNotExists(procedureLogFile)) procedureLogger.info(recorder.toString());
+            if (FileUtils.createIfNotExists(procedureLogFile)) procedureLogger.info(recorder.put(prefix, json));
         } catch (IOException e) {
 //            e.printStackTrace();
         }
@@ -256,9 +255,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
                 json.addProperty("marker", lister.getMarker());
                 json.addProperty("end", lister.getEndPrefix());
-                recorder.put(lister.getPrefix(), json);
                 try {
-                    if (FileUtils.createIfNotExists(procedureLogFile)) procedureLogger.info(recorder.toString());
+                    if (FileUtils.createIfNotExists(procedureLogFile)) {
+                        procedureLogger.info(recorder.put(lister.getPrefix(), json));
+                    }
                 } catch (IOException e) {
 //                    e.printStackTrace();
                 }
