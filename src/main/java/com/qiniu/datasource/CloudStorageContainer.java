@@ -233,7 +233,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
         int retry;
-        Map<String, String> map = null;
+        Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stringConverter != null) {
@@ -262,9 +262,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 } catch (IOException e) {
 //                    e.printStackTrace();
                 }
-                if (objects.size() <= 0) map = prefixAndEndedMap.get(lister.getPrefix());
-            } else {
-                map = prefixAndEndedMap.get(lister.getPrefix());
             }
             if (map != null) map.put("start", lister.currentEndKey());
             retry = retryTimes;
@@ -489,6 +486,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         ILister<E> iLister;
         Iterator<ILister<E>> iterator;
         String prefix;
+        String start;
         Map<String, String> endMap;
         while (!executorPool.isTerminated()) {
             if (count >= 1800) {
@@ -508,7 +506,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         if (endMap == null) {
                             prefixAndEndedMap.put(prefix, new HashMap<String, String>(){{ put("remove", "remove"); }});
                         } else {
-                            endMap.put("start", lister.currentEndKey());
+                            start = lister.currentEndKey();
+                            if (start != null) endMap.put("start", start);
                         }
                         rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
@@ -543,6 +542,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Set<String> startPrefixes = prefixes == null ? new HashSet<>() : new HashSet<>(prefixes);
         for (String prefix : phraseLastPrefixes) {
             prefixMap = prefixAndEndedMap.get(prefix);
+            rootLogger.info("prefix: {}, endMap: {}", prefix, prefixMap);
             if (prefixMap == null || prefixMap.size() == 0) {
                 prefixAndEndedMap.remove(prefix);
                 continue;
@@ -565,6 +565,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixAndEndedMap.remove(prefix);
             }
         }
+        rootLogger.info("prefixAndEndedMap: {}", prefixAndEndedMap);
         prefixesMap.putAll(prefixAndEndedMap);
         phraseLastPrefixes = prefixAndEndedMap.keySet().stream().sorted().collect(Collectors.toList());
         for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
@@ -592,10 +593,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
         if (phraseLastPrefixes.size() > 0) {
-            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
-            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
-            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
-            executorPool.shutdown();
+//            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
+//            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
+//            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
+//            executorPool.shutdown();
         }
         while (!executorPool.isTerminated()) {
             try {
