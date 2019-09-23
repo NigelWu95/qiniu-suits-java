@@ -567,7 +567,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixAndEndedMap.remove(prefix);
             }
         }
-        rootLogger.info("prefixAndEndedMap: {}", prefixAndEndedMap);
         prefixesMap.putAll(prefixAndEndedMap);
         phraseLastPrefixes = prefixAndEndedMap.keySet().stream().sorted().collect(Collectors.toList());
         for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
