@@ -94,13 +94,8 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 try {
                     upLister = (UpLister) generateLister(prefix);
                 } catch (SuitsException e) {
-                    try {
-                        if (FileUtils.createIfNotExists(errorLogFile)) {
-                            errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
-                        }
-                    } catch (IOException e1) {
-//                        e1.printStackTrace();
-                    }
+                    try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                    errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
                     return null;
                 }
                 if (upLister.hasNext() || upLister.getDirectories() != null) {

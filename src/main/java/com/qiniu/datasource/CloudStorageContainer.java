@@ -237,16 +237,16 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
                 if (stringConverter.errorSize() > 0) saver.writeToKey("failed", stringConverter.errorLines(), false);
             }
-            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-            try {
-                if (processor != null) {
-                    convertedList = converter.convertToVList(objects);
-                    if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
+            if (processor != null) {
+                convertedList = converter.convertToVList(objects);
+                if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
+                // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
+                try {
                     processor.processLine(convertedList);
+                } catch (QiniuException e) {
+                    if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                    if (e.response != null) e.response.close();
                 }
-            } catch (QiniuException e) {
-                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                if (e.response != null) e.response.close();
             }
             if (hasNext) {
                 JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
