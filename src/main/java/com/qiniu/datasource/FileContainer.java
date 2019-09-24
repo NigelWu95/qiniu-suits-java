@@ -149,15 +149,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
                 // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                e.response.close();
+                if (e.response != null) e.response.close();
             }
-            try {
-                if (FileUtils.createIfNotExists(procedureLogFile)) {
-                    procedureLogger.info(recorder.put(reader.getName(), lastLine));
-                }
-            } catch (IOException e1) {
-//            e1.printStackTrace();
-            }
+            try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+            procedureLogger.info(recorder.put(reader.getName(), lastLine));
             lastLine = reader.lastLine();
         }
     }
@@ -179,22 +174,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
             saverMap.remove(orderStr);
+        }  catch (QiniuException e) {
+            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+            errorLogger.error("{}: {}, {}", reader.getName(), recorder.getString(reader.getName()), e.error(), e);
+            if (e.response != null) e.response.close();
         } catch (Throwable e) {
-            try {
-                if (FileUtils.createIfNotExists(errorLogFile)) {
-                    errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
-                }
-            } catch (IOException e1) {
-//                e1.printStackTrace();
-            }
+            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+            errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
         } finally {
-            try {
-                if (FileUtils.createIfNotExists(infoLogFile)) {
-                    infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
-                }
-            } catch (IOException e) {
-//                e.printStackTrace();
-            }
+            try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
+            infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order);
