@@ -206,11 +206,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
-        try {
-            if (FileUtils.createIfNotExists(procedureLogFile)) procedureLogger.info(recorder.put(prefix, json));
-        } catch (IOException e) {
-//            e.printStackTrace();
-        }
+        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+        procedureLogger.info(recorder.put(prefix, json));
     }
 
     /**
@@ -248,20 +245,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     processor.processLine(convertedList);
                 }
             } catch (QiniuException e) {
-                if (e.response != null) e.response.close();
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                if (e.response != null) e.response.close();
             }
             if (hasNext) {
                 JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
                 json.addProperty("marker", lister.getMarker());
                 json.addProperty("end", lister.getEndPrefix());
-                try {
-                    if (FileUtils.createIfNotExists(procedureLogFile)) {
-                        procedureLogger.info(recorder.put(lister.getPrefix(), json));
-                    }
-                } catch (IOException e) {
-//                    e.printStackTrace();
-                }
+                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+                procedureLogger.info(recorder.put(lister.getPrefix(), json));
             }
             if (map != null) map.put("start", lister.currentEndKey());
             retry = retryTimes;
@@ -272,13 +264,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     break;
                 } catch (SuitsException e) {
                     retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                    try {
-                        if (FileUtils.createIfNotExists(errorLogFile)) {
-                            errorLogger.error("list objects by prefix:{} retrying...", lister.getPrefix(), e);
-                        }
-                    } catch (IOException e1) {
-//                        e1.printStackTrace();
-                    }
+                    try {FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                    errorLogger.error("list objects by prefix:{} retrying...", lister.getPrefix(), e);
                 }
             }
             hasNext = lister.hasNext();
@@ -308,24 +295,16 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getPrefix());
             saverMap.remove(orderStr);
+        } catch (QiniuException e) {
+            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+            errorLogger.error("{}: {}, {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e.error(), e);
+            if (e.response != null) e.response.close();
         } catch (Throwable e) {
-            try {
-                if (FileUtils.createIfNotExists(errorLogFile)) {
-                    errorLogger.error("{}: {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
-                }
-            } catch (IOException e1) {
-//                e1.printStackTrace();
-            }
-//            Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
-//            if (map != null) map.put("start", lister.currentEndKey());
+            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+            errorLogger.error("{}: {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
         } finally {
-            try {
-                if (FileUtils.createIfNotExists(infoLogFile)) {
-                    infoLogger.info("{}\t{}\t{}", orderStr, lister.getPrefix(), lister.count());
-                }
-            } catch (IOException e) {
-//                e.printStackTrace();
-            }
+            try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
+            infoLogger.info("{}\t{}\t{}", orderStr, lister.getPrefix(), lister.count());
             if (saver != null) saver.closeWriters();
             if (lineProcessor != null) lineProcessor.closeResource();
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
@@ -353,13 +332,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return getLister(prefix, marker, start, end);
             } catch (SuitsException e) {
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                try {
-                    if (FileUtils.createIfNotExists(errorLogFile)) {
-                        errorLogger.error("generate lister by prefix:{} retrying...", prefix, e);
-                    }
-                } catch (IOException e1) {
-//                        e1.printStackTrace();
-                }
+                try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                errorLogger.error("generate lister by prefix:{} retrying...", prefix, e);
             }
         }
     }
@@ -419,13 +393,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             try {
                 return generateLister(prefix);
             } catch (SuitsException e) {
-                try {
-                    if (FileUtils.createIfNotExists(errorLogFile)) {
-                        errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
-                    }
-                } catch (IOException e1) {
-//                e1.printStackTrace();
-                }
+                try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
                 return null;
             }
         }).filter(generated -> {

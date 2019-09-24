@@ -5,7 +5,6 @@ import com.qiniu.convert.LineToMap;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +53,7 @@ public class InputSource {
                         System.out.println(processor.processLine(converted));
                     } catch (QiniuException e) {
                         if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                        else System.out.println(LogUtils.getMessage(e));
+                        else System.out.println(HttpRespUtils.getMessage(e));
                     }
                 } else {
                     System.out.println(line);

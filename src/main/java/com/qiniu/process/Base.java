@@ -146,6 +146,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         List<T> processList;
         String result;
         int retry;
+        String message = null;
+        QiniuException exception = null;
         for (int i = 0; i < times; i++) {
             retry = retryTimes;
             processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
@@ -159,31 +161,28 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                         result = batchResult(processList);
                         processList = parseBatchResult(processList, result);
                     }
+                } catch (QiniuException e) {
+                    retry = HttpRespUtils.checkException(e, retry);
+                    message = HttpRespUtils.getMessage(e);
+                    exception = e;
                 } catch (Exception e) {
-                    QiniuException qiniuException = null;
-                    String message;
-                    if (e instanceof QiniuException) {
-                        qiniuException = (QiniuException) e;
-                        retry = HttpRespUtils.checkException(qiniuException, retry);
-                        message = LogUtils.getMessage(qiniuException);
-                    } else {
-                        retry = 0;
-                        message = e.getMessage();
-                    }
-                    switch (retry) {
-                        case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
-                                .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                                processList = null; break;
-                        case -1: fileSaveMapper.writeToKey("need_retry", String.join("\n", processList
-                                .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                                processList = null; break;
-                        case -2: fileSaveMapper.writeError(String.join("\n", lineList
-                                .subList(batchSize * i, lineList.size()).stream()
-                                .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                        throw qiniuException;
-                    }
-                    if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
+                    retry = 0;
+                    message = e.getMessage();
+                    exception = null;
                 }
+                switch (retry) {
+                    case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
+                            .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                        processList = null; break;
+                    case -1: fileSaveMapper.writeToKey("need_retry", String.join("\n", processList
+                            .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                        processList = null; break;
+                    case -2: fileSaveMapper.writeError(String.join("\n", lineList
+                            .subList(batchSize * i, lineList.size()).stream()
+                            .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                        if (exception != null) throw exception;
+                }
+                if (exception != null && exception.response != null) exception.response.close();
             }
         }
     }
@@ -217,6 +216,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         String result;
         int retry;
         T line;
+        String message;
+        QiniuException exception;
         for (int i = 0; i < lineList.size(); i++) {
             line = lineList.get(i);
             retry = retryTimes;
@@ -224,28 +225,25 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                 try {
                     result = singleResult(line);
                     parseSingleResult(line, result);
-                    retry = 0;
+                    break;
+                } catch (QiniuException e) {
+                    retry = HttpRespUtils.checkException(e, retry);
+                    message = HttpRespUtils.getMessage(e);
+                    exception = e;
                 } catch (Exception e) {
-                    QiniuException qiniuException = null;
-                    String message;
-                    if (e instanceof QiniuException) {
-                        qiniuException = (QiniuException) e;
-                        retry = HttpRespUtils.checkException(qiniuException, retry);
-                        message = LogUtils.getMessage(qiniuException);
-                    } else {
-                        retry = 0;
-                        message = e.getMessage();
-                    }
-                    switch (retry) {
-                        case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
-                        case -1: fileSaveMapper.writeToKey("need_retry", resultInfo(line) + "\t" + message,
-                                false); break;
-                        case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
-                                .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
-                        throw qiniuException;
-                    }
-                    if (qiniuException != null && qiniuException.response != null) qiniuException.response.close();
+                    retry = 0;
+                    message = e.getMessage();
+                    exception = null;
                 }
+                switch (retry) {
+                    case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
+                    case -1: fileSaveMapper.writeToKey("need_retry", resultInfo(line) + "\t" + message, false);
+                        break;
+                    case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
+                            .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                        throw exception;
+                }
+                if (exception != null && exception.response != null) exception.response.close();
             }
         }
     }
@@ -255,6 +253,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             return singleResult(line);
         } catch (NullPointerException e) {
             throw new IOException("input is empty or the processor may be already closed.");
+        } catch (IOException e) {
+            throw e;
         } catch (Exception e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -271,6 +271,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
             throw new IOException("input is empty or the processor may be already closed.");
+        } catch (IOException e) {
+            throw e;
         } catch (Exception e) {
             throw new IOException(e.getMessage(), e);
         }

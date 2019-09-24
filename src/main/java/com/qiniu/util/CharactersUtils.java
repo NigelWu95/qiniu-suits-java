@@ -63,6 +63,8 @@ public final class CharactersUtils {
 
     /**
      * 二进制转换成16进制，加密后的字节数组不能直接转换为字符串
+     * @param byteArray 输入二进制
+     * @return 转换的字符串
      */
     public static String bytesToHexString(byte[] byteArray) {
         StringBuilder result = new StringBuilder();
@@ -78,6 +80,8 @@ public final class CharactersUtils {
 
     /**
      * 16进制转换成二进制
+     * @param hexString 16 进制字符串
+     * @return 返回二进制字节数组
      */
     public static byte[] hexStringToBytes(String hexString) {
         int len = (hexString.length() / 2);
@@ -105,8 +109,11 @@ public final class CharactersUtils {
         return (byte) "0123456789ABCDEF".indexOf(c);
     }
 
-    /*
-       将 16 进制字符串转换为字节数组
+    /**
+     * 将 16 进制字符串转换为字节数组
+     * @param data char 数组
+     * @return 转换得到的二进制字节数组
+     * @throws IllegalArgumentException 非法转换跑出异常
      */
     public static byte[] decode(char[] data) throws IllegalArgumentException {
         int len = data.length;
