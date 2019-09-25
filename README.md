@@ -62,15 +62,14 @@
 **从命令行输入数据时，process 支持[单行模式](docs/single.md)运行**：一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-qsuits 提供命令行运行工具（或可执行 jar 包）和 maven artifact，使用时建议直接使用最新版本或者更新到最新版本。如下的 x.xx 替换成版本号，最新版
-本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
+qsuits 提供命令行运行工具（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1. 命令行直接运行 jar 包  
-在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载最新 jar 包（**maven 仓库中的 \<version\>.jar 包
-不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 [-config=<filepath>] 指定
-配置文件路径，运行命令形如：
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/raw/master/qsuits.jar)
+（**maven 仓库中的 \<version\>.jar 包不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 
+[-config=\<filepath\>] 指定配置文件路径，运行命令形如：
 ```
-java -jar qsuits-x.x.jar -config=config.txt
+java -jar qsuits-x.x.x.jar -config=config.txt
 ```  
 配置文件中可设置形如\<属性名\>=\<属性值\>，每行一个参数：  
 ```
@@ -85,7 +84,7 @@ properties 方式需要遵循 java 的转义规则，两个文件存在任意一
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
 数前加上 -**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
 ```
-java -jar qsuits-x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
+java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 **备注2**：7.72 及以下版本中命令行参数与配置文件参数不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件
 中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。  
@@ -122,7 +121,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 <dependency>
   <groupId>com.qiniu</groupId>
   <artifactId>qsuits</artifactId>
-  <version>x.xx</version>
+  <version>x.x.x</version>
 </dependency>
 ```  
 
