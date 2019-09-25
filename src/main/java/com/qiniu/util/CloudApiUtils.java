@@ -33,6 +33,7 @@ import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.common.Zone;
+import com.qiniu.http.Response;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
@@ -255,21 +256,40 @@ public final class CloudApiUtils {
         return keyString.substring(index).replace("(/~|/@~|/@#)", "/");
     }
 
-    public static void checkQiniu(Auth auth) throws QiniuException {
-        BucketManager bucketManager = new BucketManager(auth, new Configuration());
-        bucketManager.buckets();
-        bucketManager = null;
+    public static void checkQiniu(Auth auth) throws IOException {
+        try {
+            BucketManager bucketManager = new BucketManager(auth, new Configuration());
+            bucketManager.buckets();
+            bucketManager = null;
+        } catch (QiniuException e) {
+            if (e.response != null) e.response.close();
+            throw e;
+        }
     }
 
-    public static void checkQiniu(BucketManager bucketManager, String bucket) throws QiniuException {
-        bucketManager.listV2(bucket, null, null, 1, null);
+    public static void checkQiniu(BucketManager bucketManager, String bucket) throws IOException {
+        try {
+            Response response = bucketManager.listV2(bucket, null, null, 1, null);
+            response.close();
+            response = null;
+        } catch (QiniuException e) {
+            if (e.response != null) e.response.close();
+            throw e;
+        }
     }
 
     public static void checkQiniu(String accessKey, String secretKey, Configuration configuration, String bucket)
-            throws QiniuException {
-        BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
-        bucketManager.listV2(bucket, null, null, 1, null);
-        bucketManager = null;
+            throws IOException {
+        try {
+            BucketManager bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
+            Response response = bucketManager.listV2(bucket, null, null, 1, null);
+            response.close();
+            response = null;
+            bucketManager = null;
+        } catch (QiniuException e) {
+            if (e.response != null) e.response.close();
+            throw e;
+        }
     }
 
     public static void checkAliyun(OSSClient ossClient) {
