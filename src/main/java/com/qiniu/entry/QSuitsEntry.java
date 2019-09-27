@@ -8,7 +8,6 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
 import com.qiniu.common.SuitsException;
-import com.qiniu.common.Zone;
 import com.qiniu.convert.MapToString;
 import com.qiniu.datasource.*;
 import com.qiniu.interfaces.*;
@@ -131,8 +130,8 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig() {
-        Zone zone = CloudApiUtils.getQiniuRegion(regionName);
-        Configuration configuration = new Configuration(zone);
+        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
+        Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
         if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
@@ -582,9 +581,9 @@ public class QSuitsEntry {
         String type = entryParam.getValue("file-type", "0").trim();
         String ignore = entryParam.getValue("ignore-same-key", "false").trim();
         ignore = ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
-        String region = entryParam.getValue("qiniu-region", regionName).trim();
-        Zone zone = CloudApiUtils.getQiniuRegion(region);
-        Configuration configuration = new Configuration(zone);
+        String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
+        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionStr);
+        Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
         if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;

@@ -42,6 +42,7 @@ avinfo-index=
 }
 ```  
 如上所示，pfopcmd 操作的配置名称为 "pfopcmd"，配置项为 json array，可参见 [pfop-config 配置](../resources/process.json)  
+
 |必须选项|含义|  
 |-----|-----|  
 |key|上述配置文件中的 F720 为转码项名称，设置为 json key，key 不可重复，重复情况下后者会覆盖前者|  
