@@ -453,8 +453,8 @@ public class QSuitsEntry {
             case "delete": processor = getDeleteFile(single); break;
             case "asyncfetch": processor = getAsyncFetch(indexes, single); break;
             case "avinfo": processor = getQueryAvinfo(indexes, single); break;
-            case "pfopcmd": processor = getPfopCommand(indexes, single); break;
             case "pfop": processor = getPfop(indexes, single); break;
+            case "pfopcmd": processor = getPfopCommand(indexes, single); break;
             case "pfopresult": processor = getPfopResult(indexes, single); break;
             case "qhash": processor = getQueryHash(indexes, single); break;
             case "stat": processor = getStatFile(single); break;

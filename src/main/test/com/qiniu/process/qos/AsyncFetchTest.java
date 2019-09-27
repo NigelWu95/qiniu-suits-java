@@ -8,6 +8,7 @@ import com.qiniu.util.Auth;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class AsyncFetchTest {
 
@@ -18,9 +19,15 @@ public class AsyncFetchTest {
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
-        BucketManager manager = new BucketManager(Auth.create(accessKey, secretKey), new Configuration());
-        Response response = manager.asynFetch("http://p3l1d5mx4.bkt.clouddn.com/123456aaa.jpg ", bucket, "123456aaa.jpg -fetch");
-        System.out.println(response.bodyString());
-        response.close();
+        AsyncFetch asyncFetch = new AsyncFetch(accessKey, secretKey, new Configuration(), bucket, "http",
+                "p3l1d5mx4.bkt.clouddn.com", null, null, null);
+        asyncFetch.setFetchArgs("p3l1d5mx4.bkt.clouddn.com", null, "http://p3l1d5mx4.bkt.clouddn.com/",
+                "key=$(key)&hash=$(etag)&w=$(imageInfo.width)&h=$(imageInfo.height)", null,
+                "p3l1d5mx4.bkt.clouddn.com", 1, true);
+        String result = asyncFetch.processLine(new HashMap<String, String>(){{
+            put("url", "http://p3l1d5mx4.bkt.clouddn.com/123456aaa.jpg");
+            put("key", "123456aaa.jpg");
+        }});
+        System.out.println(result);
     }
 }

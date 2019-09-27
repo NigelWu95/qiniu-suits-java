@@ -8,7 +8,7 @@
 
 ### **高级功能列表（所有操作均支持批量并发处理）：**
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
-- [x] 文件[迁移/备份](docs/data_migration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
+- [x] 文件[迁移/备份](docs/datamigration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 删除空间资源 [delete 配置](docs/delete.md)  
