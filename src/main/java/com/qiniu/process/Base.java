@@ -110,25 +110,22 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         if (result == null || "".equals(result)) throw new IOException("not valid json.");
         List<T> retryList = null;
         JsonArray jsonArray = JsonUtils.fromJson(result, JsonArray.class);
+        // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录
+        if (processList.size() != jsonArray.size()) throw new IOException("not matched process and return size.");
         JsonObject jsonObject;
         for (int j = 0; j < processList.size(); j++) {
             jsonObject = jsonArray.get(j).getAsJsonObject();
-            // 正常情况下 jsonArray 和 processList 的长度是相同的，将输入行信息和执行结果一一对应记录，否则结果记录为空
-            if (j < jsonArray.size()) {
-                switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
-                    case 1:
-                        fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
-                        break;
-                    case 0:
-                        if (retryList == null) retryList = new ArrayList<>();
-                        retryList.add(processList.get(j)); // 放回重试列表
-                        break;
-                    case -1:
-                        fileSaveMapper.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
-                        break;
-                }
-            } else {
-                fileSaveMapper.writeError(resultInfo(processList.get(j)) + "empty_result", false);
+            switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
+                case 1:
+                    fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                    break;
+                case 0:
+                    if (retryList == null) retryList = new ArrayList<>();
+                    retryList.add(processList.get(j)); // 放回重试列表
+                    break;
+                case -1:
+                    fileSaveMapper.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                    break;
             }
         }
         return retryList;

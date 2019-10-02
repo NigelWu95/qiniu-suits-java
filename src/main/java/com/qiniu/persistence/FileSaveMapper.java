@@ -59,7 +59,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     private BufferedWriter add(String key) throws IOException {
-        File resultFile = new File(savePath, prefix + key + this.suffix + ext);
+        File resultFile = new File(savePath, prefix + key + suffix + ext);
         boolean resultFileExists = resultFile.exists();
         int retry = retryTimes;
         BufferedWriter writer = null;
@@ -96,7 +96,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 try {
                     bufferedWriter = writerMap.get(entry.getKey());
                     if (bufferedWriter != null) bufferedWriter.close();
-                    File file = new File(savePath, prefix + entry.getKey() + this.suffix + ext);
+                    File file = new File(savePath, prefix + entry.getKey() + suffix + ext);
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
                         if (reader.readLine() == null) {
