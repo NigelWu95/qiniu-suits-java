@@ -131,6 +131,13 @@ public class QSuitsEntry {
 
     private Configuration getDefaultQiniuConfig() {
         com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
+        String rsfDomain = entryParam.getValue("rsf-domain", null);
+        String rsDomain = entryParam.getValue("rs-domain", null);
+        String apiDomain = entryParam.getValue("api-domain", null);
+        com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
+        if (rsfDomain != null) region = builder.rsfHost(rsfDomain).build();
+        if (rsDomain != null) region = builder.rsHost(rsDomain).build();
+        if (apiDomain != null) region = builder.apiHost(apiDomain).build();
         Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
