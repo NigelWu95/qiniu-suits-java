@@ -36,6 +36,9 @@ public final class ProcessUtils {
     public static Set<String> needAvinfoProcesses = new HashSet<String>(){{
         add("pfopcmd");
     }};
+    public static Set<String> needFilepathProcesses = new HashSet<String>(){{
+        add("qupload");
+    }};
     public static Set<String> qiniuProcessesWithBucket = new HashSet<String>(){{
         add("status");
         add("type");
@@ -47,6 +50,7 @@ public final class ProcessUtils {
         add("move");
         add("pfop");
         add("stat");
+        add("qupload");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
@@ -140,6 +144,10 @@ public final class ProcessUtils {
 
     public static boolean needAvinfo(String process) {
         return needAvinfoProcesses.contains(process);
+    }
+
+    public static boolean needFilepath(String process) {
+        return needFilepathProcesses.contains(process);
     }
 
     public static boolean needBucket(String process) {

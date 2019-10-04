@@ -214,11 +214,14 @@ public class CommonParams {
                 }
                 break;
             case "pfop":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", "").trim();
                 if (!"".equals(fops)) {
                     indexMap.put("fops", "fops");
                     mapLine.put("fops", fops);
                 }
+                setPfopConfigs();
+                break;
             case "pfopcmd":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String avinfo = entryParam.getValue("avinfo", "").trim();
@@ -237,10 +240,18 @@ public class CommonParams {
                 }
                 break;
             case "stat":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 saveFormat = entryParam.getValue("save-format", "tab").trim();
                 saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
                 setSaveSeparator();
+                break;
+            case "qupload":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                String filepath = entryParam.getValue("filepath", "").trim();
+                if (!"".equals(filepath)) {
+                    indexMap.put("filepath", "filepath");
+                    mapLine.put("filepath", filepath);
+                }
                 break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
@@ -745,6 +756,8 @@ public class CommonParams {
             setIndex(entryParam.getValue("id-index", "").trim(), "id");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
+        if (ProcessUtils.needFilepath(process))
+            setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
 
         boolean useDefault = false;
         boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);

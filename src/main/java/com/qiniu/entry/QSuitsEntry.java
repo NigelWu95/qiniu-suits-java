@@ -19,6 +19,7 @@ import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import java.io.IOException;
 import java.util.*;
@@ -477,6 +478,7 @@ public class QSuitsEntry {
             case "imagecensor": processor = getImageCensor(indexes, single, useQuery); break;
             case "videocensor": processor = getVideoCensor(indexes, single); break;
             case "censorresult": processor = getCensorResult(indexes, single); break;
+            case "qupload": processor = getQiniuUploadFile(indexes, single); break;
             case "filter": case "": break;
             default: throw new IOException("unsupported process: " + process);
         }
@@ -875,5 +877,31 @@ public class QSuitsEntry {
         String jobIdIndex = indexMap.containsValue("id") ? "id" : null;
         return single ? new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex)
                 : new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single)
+            throws IOException {
+        String pathIndex = indexMap.containsValue("filepath") ? "filepath" : null;
+        String record = entryParam.getValue("record", null);
+        boolean recorder = Boolean.valueOf(record);
+        String addPrefix = entryParam.getValue("add-prefix", null);
+        String rmPrefix = entryParam.getValue("rm-prefix", null);
+        String expiration = entryParam.getValue("expires", null);
+        long expires = Long.valueOf(expiration);
+        StringMap policy = new StringMap();
+        StringMap params = new StringMap();
+        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+            if (entry.getKey().startsWith("policy.")) {
+                policy.put(entry.getKey().substring(7), entry.getValue());
+            } else if (entry.getKey().startsWith("params.")) {
+                params.put(entry.getKey().substring(7), entry.getValue());
+            }
+        }
+        String crc = entryParam.getValue("crc", null);
+        boolean checkCrc = Boolean.valueOf(crc);
+        return single ? new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex,
+                recorder, addPrefix,rmPrefix, expires, policy, params, checkCrc) :
+                new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex,
+                        recorder, addPrefix,rmPrefix, expires, policy, params, checkCrc, savePath);
     }
 }
