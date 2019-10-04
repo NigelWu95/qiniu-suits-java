@@ -827,12 +827,13 @@ public class QSuitsEntry {
         preDown = ParamsUtils.checked(preDown, "pre-down", "(true|false)");
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String timeOut = entryParam.getValue("download-timeout", null);
+        String timeout = entryParam.getValue("download-timeout", null);
         Configuration configuration = null;
-        if (timeOut != null) {
+        if (timeout != null) {
             configuration = new Configuration();
             configuration.connectTimeout = getQiniuConfig().connectTimeout;
-            configuration.readTimeout = Integer.valueOf(timeOut);
+            configuration.writeTimeout = getQiniuConfig().writeTimeout;
+            configuration.readTimeout = Integer.valueOf(timeout);
         }
         return single ? new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, "true".equals(preDown)
                 ? null : savePath, addPrefix, rmPrefix)
