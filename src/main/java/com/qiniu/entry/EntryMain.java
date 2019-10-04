@@ -15,6 +15,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class EntryMain {
@@ -69,6 +70,7 @@ public class EntryMain {
             if (dataSource != null) {
                 dataSource.setProcessor(processor);
                 dataSource.export();
+//                dataSource.export(LocalDateTime.now().plusSeconds(5), 0, 19);
             }
         }
         if (processor != null) processor.closeResource();
