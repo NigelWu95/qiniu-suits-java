@@ -267,13 +267,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     }
 
     private final Object object = new Object();
-    private LocalDateTime pauseDateTime = LocalDateTime.now();
+    private LocalDateTime pauseDateTime = LocalDateTime.MAX;
     private Clock clock = Clock.systemDefaultZone();
 
     public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
         if (startTime != null) {
             Clock clock = Clock.systemDefaultZone();
             LocalDateTime now = LocalDateTime.now(clock);
+            if (startTime.minusWeeks(1).isAfter(now)) {
+                throw new Exception("startTime is not allowed to exceed next week");
+            }
             while (now.isBefore(startTime)) {
                 System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
                 try {
