@@ -111,7 +111,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     private JsonRecorder recorder = new JsonRecorder();
 
-    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
+    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> stringConverter = null;
         if (saveTotal) {
