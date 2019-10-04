@@ -73,6 +73,9 @@ public class CommonParams {
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
     private Base64.Decoder decoder = Base64.getDecoder();
+    private LocalDateTime startDateTime;
+    private long pauseDelay;
+    private long pauseDuration;
 
     public static Set<String> lineFormats = new HashSet<String>(){{
         add("csv");
@@ -137,6 +140,8 @@ public class CommonParams {
         saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
         setSaveSeparator();
         setRmFields();
+        setPfopConfigs();
+        setStartAndPause();
     }
 
     public CommonParams(Map<String, String> paramsMap) throws IOException {
@@ -221,31 +226,7 @@ public class CommonParams {
                     indexMap.put("avinfo", "avinfo");
                     mapLine.put("avinfo", avinfo);
                 }
-                String cmd = entryParam.getValue("cmd", "").trim();
-                if (!"".equals(cmd)) {
-                    JsonObject pfopJson = new JsonObject();
-                    pfopJson.addProperty("cmd", cmd);
-                    String saveas = entryParam.getValue("saveas");
-                    pfopJson.addProperty("saveas", saveas);
-                    if ("pfopcmd".equals(process)) {
-                        String scale = entryParam.getValue("scale").trim();
-                        if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
-                                "like \"[num1,num2]\"");
-                        String[] scales = scale.substring(1, scale.length() - 1).split(",");
-                        JsonArray jsonArray = new JsonArray();
-                        if (scales.length > 1) {
-                            jsonArray.add(scales[0]);
-                            jsonArray.add(scales[1]);
-                        } else {
-                            jsonArray.add(Integer.valueOf(scales[0]));
-                            jsonArray.add(Integer.MAX_VALUE);
-                        }
-                        pfopJson.add("scale", jsonArray);
-                    }
-                    pfopConfigs = new ArrayList<JsonObject>(){{
-                        add(pfopJson);
-                    }};
-                }
+                setPfopConfigs();
                 break;
             case "pfopresult":
             case "censorresult":
@@ -917,6 +898,43 @@ public class CommonParams {
         }
     }
 
+    private void setPfopConfigs() throws IOException {
+        String cmd = entryParam.getValue("cmd", "").trim();
+        if (!"".equals(cmd)) {
+            JsonObject pfopJson = new JsonObject();
+            pfopJson.addProperty("cmd", cmd);
+            String saveas = entryParam.getValue("saveas");
+            pfopJson.addProperty("saveas", saveas);
+            if ("pfopcmd".equals(process)) {
+                String scale = entryParam.getValue("scale").trim();
+                if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
+                        "like \"[num1,num2]\"");
+                String[] scales = scale.substring(1, scale.length() - 1).split(",");
+                JsonArray jsonArray = new JsonArray();
+                if (scales.length > 1) {
+                    jsonArray.add(scales[0]);
+                    jsonArray.add(scales[1]);
+                } else {
+                    jsonArray.add(Integer.valueOf(scales[0]));
+                    jsonArray.add(Integer.MAX_VALUE);
+                }
+                pfopJson.add("scale", jsonArray);
+            }
+            pfopConfigs = new ArrayList<JsonObject>(){{
+                add(pfopJson);
+            }};
+        }
+    }
+
+    private void setStartAndPause() throws Exception {
+        String startTime = entryParam.getValue("start-time", null);
+        if (startTime != null) startDateTime = checkedDatetime(startTime);
+        String delay = entryParam.getValue("pause-delay", null);
+        if (startTime != null) pauseDelay = Long.valueOf(ParamsUtils.checked(delay, "pause-delay", "\\d+"));
+        String duration = entryParam.getValue("pause-duration", null);
+        if (startTime != null) pauseDuration = Long.valueOf(ParamsUtils.checked(duration, "pause-duration", "\\d+"));
+    }
+
     public void setEntryParam(IEntryParam entryParam) {
         this.entryParam = entryParam;
     }
@@ -1105,6 +1123,18 @@ public class CommonParams {
         this.pfopConfigs = pfopConfigs;
     }
 
+    public void setStartDateTime(LocalDateTime startDateTime) {
+        this.startDateTime = startDateTime;
+    }
+
+    public void setPauseDelay(long pauseDelay) {
+        this.pauseDelay = pauseDelay;
+    }
+
+    public void setPauseDuration(long pauseDuration) {
+        this.pauseDuration = pauseDuration;
+    }
+
     public int getConnectTimeout() {
         return connectTimeout;
     }
@@ -1291,5 +1321,17 @@ public class CommonParams {
 
     public List<JsonObject> getPfopConfigs() {
         return pfopConfigs;
+    }
+
+    public LocalDateTime getStartDateTime() {
+        return startDateTime;
+    }
+
+    public long getPauseDelay() {
+        return pauseDelay;
+    }
+
+    public long getPauseDuration() {
+        return pauseDuration;
     }
 }
