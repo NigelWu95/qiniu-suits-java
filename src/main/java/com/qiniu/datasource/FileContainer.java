@@ -47,7 +47,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected Map<String, String> linesMap;
     protected Map<String, String> indexMap;
     protected int unitLen;
-    private int threads;
+    protected int threads;
     protected int retryTimes = 5;
     protected String savePath;
     protected boolean saveTotal;

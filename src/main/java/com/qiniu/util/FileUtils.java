@@ -9,6 +9,8 @@ import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class FileUtils {
 
@@ -118,6 +120,24 @@ public final class FileUtils {
             shortName.append(items[i]).append(".");
         }
         return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
+    }
+
+    public static List<File> getFiles(File directory) throws IOException {
+        File[] fs = directory.listFiles();
+        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
+        List<File> files = new ArrayList<>();
+//        Objects.requireNonNull(directory.listFiles());
+        for(File f : fs) {
+            if (f.isDirectory()) {
+                files.addAll(getFiles(f));
+            } else {
+                String type = FileUtils.contentType(f);
+                if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                    files.add(f);
+                }
+            }
+        }
+        return files;
     }
 
     public static boolean mkDirAndFile(File filePath) throws IOException {

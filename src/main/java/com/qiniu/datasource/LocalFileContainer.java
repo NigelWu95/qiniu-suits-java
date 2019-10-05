@@ -39,24 +39,6 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
-    private List<File> getFiles(File directory) throws IOException {
-        File[] fs = directory.listFiles();
-        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
-        List<File> files = new ArrayList<>();
-//        Objects.requireNonNull(directory.listFiles());
-        for(File f : fs) {
-            if (f.isDirectory()) {
-                files.addAll(getFiles(f));
-            } else {
-                String type = FileUtils.contentType(f);
-                if (type.startsWith("text") || type.equals("application/octet-stream")) {
-                    files.add(f);
-                }
-            }
-        }
-        return files;
-    }
-
     @Override
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
@@ -83,8 +65,9 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
             }
             File sourceFile = new File(path);
             if (sourceFile.isDirectory()) {
-                List<File> files = getFiles(sourceFile);
+                List<File> files = FileUtils.getFiles(sourceFile);
                 for (File file : files) {
+                    if (file.getPath().contains(FileUtils.pathSeparator + ".")) continue;
                     fileReaders.add(new LocalFileReader(file, linesMap.get(file.getPath()), unitLen));
                 }
             } else {
