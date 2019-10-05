@@ -249,7 +249,8 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-            return getLocalFileContainer();
+            if ("self".equals(commonParams.getParse())) return getFilepathContainer();
+            else return getLocalFileContainer();
         } else {
             return null;
         }
@@ -275,6 +276,18 @@ public class QSuitsEntry {
         localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         localFileContainer.setRetryTimes(retryTimes);
         return localFileContainer;
+    }
+
+    public FilepathContainer getFilepathContainer() throws IOException {
+        String filePath = commonParams.getPath();
+        String parse = commonParams.getParse();
+        String separator = commonParams.getSeparator();
+        Map<String, String> linesMap = commonParams.getLinesMap();
+        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator,
+                linesMap, indexMap, null, unitLen, threads);
+        filepathContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
+        filepathContainer.setRetryTimes(retryTimes);
+        return filepathContainer;
     }
 
     public QiniuQosContainer getQiniuQosContainer() throws IOException {

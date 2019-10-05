@@ -298,11 +298,11 @@ public class CommonParams {
 
     private void setParse() throws IOException {
         parse = entryParam.getValue("parse", "tab").trim();
-        ParamsUtils.checked(parse, "parse", "(csv|tab|json)");
+        ParamsUtils.checked(parse, "parse", "(csv|tab|json|object|self)");
     }
 
     private void setSeparator() {
-        String separator = entryParam.getValue("separator", "");
+        String separator = entryParam.getValue("separator", null);
         if (separator == null || separator.isEmpty()) {
             if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
@@ -483,6 +483,11 @@ public class CommonParams {
             setBaiduAuthKey();
         }
         if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket", bucket).trim();
+        if ("qupload".equals(process)) {
+            // 如果是文件上传操作，默认表示上传 path 本身路径下的文件，设置默认值为 self，如果 parse 设置了其他值则不做替换
+            parse = entryParam.getValue("parse", "self").trim();
+            separator = entryParam.getValue("separator", ""); // 无分割符时则表示不做分割解析
+        }
     }
 
     private void setPrivateType() throws IOException {
@@ -691,7 +696,8 @@ public class CommonParams {
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
-            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
+            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)
+                    || "self".equals(parse)) {
                 indexMap.put(index, indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
@@ -763,7 +769,8 @@ public class CommonParams {
             setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
 
         boolean useDefault = false;
-        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);
+        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)
+                || "self".equals(parse);
         if (indexMap.size() == 0) {
             useDefault = true;
             if (isStorageSource) {
@@ -772,6 +779,10 @@ public class CommonParams {
                 indexMap.put("key", "key");
             } else {
                 indexMap.put("0", "key");
+            }
+            if ("self".equals(parse)) {
+                if (isStorageSource) throw new IOException("self parse only support local file source.");
+                indexMap.put("filepath", "filepath");
             }
         }
 
