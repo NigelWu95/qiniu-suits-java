@@ -37,7 +37,7 @@ public class DownloadFile extends Base<Map<String, String>> {
         super("download", "", "", null);
         // 用来做只做文件 download 不记录结果的构造方法，downPath 为空时则表示预热方式下载
         if (downPath == null || "".equals(downPath)) preDown = true;
-        else this.savePath = FileUtils.realPathWithUserHome(downPath);
+        else this.savePath = FileUtils.convertToRealPath(downPath);
         set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix);
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }

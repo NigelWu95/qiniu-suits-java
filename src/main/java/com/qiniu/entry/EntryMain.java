@@ -15,7 +15,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.*;
 
 public class EntryMain {
@@ -147,7 +146,7 @@ public class EntryMain {
     }
 
     private static void setAccount(IEntryParam entryParam, String account) throws Exception {
-        String filePath = FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account");
+        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
         File accountFile = new File(filePath);
         boolean accountFileExists = (!accountFile.isDirectory() && accountFile.exists()) || accountFile.createNewFile();
         if (!accountFileExists) throw new IOException("account file not exists and can not be created.");

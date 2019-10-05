@@ -75,7 +75,7 @@ public class ParamsUtils {
     }
 
     public static Map<String, String> toParamsMap(String resource) throws IOException {
-        resource = FileUtils.realPathWithUserHome(resource);
+        resource = FileUtils.convertToRealPath(resource);
         FileReader fileReader = new FileReader(resource);
         BufferedReader reader = new BufferedReader(fileReader);
         Map<String, String> paramsMap = new HashMap<>();

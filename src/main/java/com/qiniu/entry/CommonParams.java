@@ -96,7 +96,7 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
-        String filePath = FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account");
+        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
         try {
             accountMap = ParamsUtils.toParamsMap(filePath);
         } catch (FileNotFoundException ignored) {
@@ -149,7 +149,7 @@ public class CommonParams {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
-        String filePath = FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account");
+        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
         accountMap = ParamsUtils.toParamsMap(filePath);
         account = entryParam.getValue("a", null);
         if (account == null) {
@@ -486,7 +486,6 @@ public class CommonParams {
         if ("qupload".equals(process)) {
             // 如果是文件上传操作，默认表示上传 path 本身路径下的文件，设置默认值为 self，如果 parse 设置了其他值则不做替换
             parse = entryParam.getValue("parse", "self").trim();
-            separator = entryParam.getValue("separator", ""); // 无分割符时则表示不做分割解析
         }
     }
 
@@ -707,6 +706,14 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
+        String indexes = entryParam.getValue("indexes", "").trim();
+        if ("self".equals(parse)) {
+            if (!"".equals(indexes) && !"[]".equals(indexes)) throw new IOException("upload from path can not set indexes.");
+            if (isStorageSource) throw new IOException("self parse only support local file source.");
+            indexMap.put("0", "filepath");
+            indexMap.put("1", "key");
+            return;
+        }
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
         int fieldsMode = 0;
         if ("upyun".equals(source)) {
@@ -725,7 +732,6 @@ public class CommonParams {
             keys.remove(ConvertingUtils.defaultStatusField);
             keys.remove(ConvertingUtils.defaultMd5Field);
         }
-        String indexes = entryParam.getValue("indexes", "").trim();
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
             String[] strings = ParamsUtils.escapeSplit(indexes, false);
@@ -769,8 +775,7 @@ public class CommonParams {
             setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
 
         boolean useDefault = false;
-        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)
-                || "self".equals(parse);
+        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);
         if (indexMap.size() == 0) {
             useDefault = true;
             if (isStorageSource) {
@@ -779,10 +784,6 @@ public class CommonParams {
                 indexMap.put("key", "key");
             } else {
                 indexMap.put("0", "key");
-            }
-            if ("self".equals(parse)) {
-                if (isStorageSource) throw new IOException("self parse only support local file source.");
-                indexMap.put("filepath", "filepath");
             }
         }
 

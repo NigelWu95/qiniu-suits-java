@@ -17,7 +17,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     private int retryTimes = 5;
 
     public FileSaveMapper(String savePath) throws IOException {
-        this.savePath = FileUtils.realPathWithUserHome(savePath);
+        this.savePath = FileUtils.convertToRealPath(savePath);
         File fDir = new File(this.savePath);
         int retry = retryTimes;
         while (retry > 0 && !fDir.exists()) {

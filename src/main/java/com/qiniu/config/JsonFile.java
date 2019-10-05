@@ -15,7 +15,7 @@ public class JsonFile {
     public JsonFile(String resourceName) throws IOException {
         InputStream inputStream = null;
         try {
-            File file = new File(FileUtils.realPathWithUserHome(resourceName));
+            File file = new File(FileUtils.convertToRealPath(resourceName));
             if (file.exists()) {
                 inputStream = new FileInputStream(file);
             } else {

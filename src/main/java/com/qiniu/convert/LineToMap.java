@@ -18,15 +18,8 @@ public class LineToMap extends Converter<String, Map<String, String>> {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, indexMap, new StringMapPair()));
         } else if ("csv".equals(parseType)) {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, ",", indexMap, new StringMapPair()));
-        } else if ("tab".equals(parseType)) {
+        } else if ("tab".equals(parseType) || "self".equals(parseType)) {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, separator, indexMap, new StringMapPair()));
-        } else if ("self".equals(parseType)) {
-            this.lineParser = line -> {
-                if (line == null) throw new IOException("empty string line.");
-                Map<String, String> stringMap = new HashMap<>();
-                for (String s : indexMap.values()) stringMap.put(s, line);
-                return stringMap;
-            };
         } else {
             throw new IOException("please check your format for line to map.");
         }

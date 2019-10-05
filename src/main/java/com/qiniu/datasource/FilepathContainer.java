@@ -42,7 +42,7 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
 
     @Override
     protected List<IReader<Iterator<String>>> getFileReaders(String path) throws IOException {
-        if (FileUtils.realPathWithUserHome(path).equals(FileUtils.realPathWithUserHome(savePath))) {
+        if (FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException("the save-path can not be same as path.");
         }
         List<IReader<Iterator<String>>> filepathReaders = new ArrayList<>(threads);
@@ -61,7 +61,7 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
             realPath = realPath.substring(0, realPath.length() - 1);
         File sourceFile = new File(realPath);
         if (sourceFile.isDirectory()) {
-            List<File> files = FileUtils.getFiles(sourceFile);
+            List<File> files = FileUtils.getFiles(sourceFile, false);
             String filepath;
             String key;
             int size = files.size() > threads ? threads : files.size();

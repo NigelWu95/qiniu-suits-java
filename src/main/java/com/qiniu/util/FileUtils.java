@@ -2,7 +2,6 @@ package com.qiniu.util;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.FileNameMap;
@@ -61,7 +60,7 @@ public final class FileUtils {
     public static String userHomeStartPath = "~" + pathSeparator;
     public static String userHome = System.getProperty("user.home");
 
-    public static String realPathWithUserHome(String filepath) throws IOException {
+    public static String convertToRealPath(String filepath) throws IOException {
         if (filepath == null || "".equals(filepath)) throw new IOException("the path is empty.");
         if (filepath.startsWith(userHomeStartPath)) {
             return String.join("", userHome, filepath.substring(1));
@@ -124,17 +123,21 @@ public final class FileUtils {
         return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
     }
 
-    public static List<File> getFiles(File directory) throws IOException {
+    public static List<File> getFiles(File directory, boolean check) throws IOException {
         File[] fs = directory.listFiles();
         if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
         List<File> files = new ArrayList<>();
 //        Objects.requireNonNull(directory.listFiles());
         for(File f : fs) {
             if (f.isDirectory()) {
-                files.addAll(getFiles(f));
+                files.addAll(getFiles(f, check));
             } else {
-                String type = FileUtils.contentType(f);
-                if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                if (check) {
+                    String type = FileUtils.contentType(f);
+                    if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                        files.add(f);
+                    }
+                } else {
                     files.add(f);
                 }
             }
