@@ -69,7 +69,7 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
             for (int i = 0; i < size; i++) lists.add(new ArrayList<>());
             for (int i = 0; i < files.size(); i++) {
                 filepath = files.get(i).getPath();
-                if (filepath.startsWith(String.join("", realPath, "."))) continue;
+                if (filepath.startsWith(String.join(FileUtils.pathSeparator, realPath, "."))) continue;
                 if (replaced == null) key = filepath;
                 else key = filepath.replace(replaced, transferPath);
                 lists.get(i % size).add(String.join(separator, filepath, key));
