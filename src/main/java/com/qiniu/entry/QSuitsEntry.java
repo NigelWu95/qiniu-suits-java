@@ -19,7 +19,6 @@ import com.qiniu.process.qos.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import java.io.IOException;
 import java.util.*;
@@ -882,16 +881,19 @@ public class QSuitsEntry {
     private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single)
             throws IOException {
         String pathIndex = indexMap.containsValue("filepath") ? "filepath" : null;
-        String record = entryParam.getValue("record", null);
+        String record = entryParam.getValue("record", "false");
         boolean recorder = Boolean.valueOf(record);
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String expiration = entryParam.getValue("expires", null);
+        String expiration = entryParam.getValue("expires", "3600");
         long expires = Long.valueOf(expiration);
         StringMap policy = new StringMap();
         StringMap params = new StringMap();
         for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
-            if (entry.getKey().startsWith("policy.")) {
+            if (entry.getKey().matches("policy\\.(deleteAfterDays|isPrefixalScope|insertOnly|fsizeMin|fsizeLimit|" +
+                    "detectMime|fileType)")) {
+                policy.put(entry.getKey().substring(7), Long.valueOf(entry.getValue()));
+            } else if (entry.getKey().startsWith("policy.")) {
                 policy.put(entry.getKey().substring(7), entry.getValue());
             } else if (entry.getKey().startsWith("params.")) {
                 params.put(entry.getKey().substring(7), entry.getValue());
