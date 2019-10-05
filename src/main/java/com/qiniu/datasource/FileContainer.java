@@ -77,7 +77,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getOrderedFields(new ArrayList<>(this.indexMap.values()), rmFields);
+            this.fields = ConvertingUtils.getOrderedFields(this.indexMap, rmFields);
         }
         else this.fields = fields;
     }
@@ -92,7 +92,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.saveSeparator = separator;
         this.rmFields = rmFields;
         if (rmFields != null && rmFields.size() > 0) {
-            this.fields = ConvertingUtils.getFields(new ArrayList<>(fields), rmFields);
+            this.fields = ConvertingUtils.getFields(fields, rmFields);
         }
     }
 
@@ -242,6 +242,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
+        FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
         try {
             for (IReader<E> fileReader : fileReaders) {
                 recorder.put(fileReader.getName(), "");

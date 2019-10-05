@@ -58,13 +58,15 @@ public final class FileUtils {
     }
 
     public static String pathSeparator = System.getProperty("file.separator");
+    public static String userHomeStartPath = "~" + pathSeparator;
     public static String userHome = System.getProperty("user.home");
 
     public static String realPathWithUserHome(String filepath) throws IOException {
         if (filepath == null || "".equals(filepath)) throw new IOException("the path is empty.");
-        if (filepath.startsWith("~" + pathSeparator)) {
+        if (filepath.startsWith(userHomeStartPath)) {
             return userHome + filepath.substring(1);
         } else if (filepath.startsWith("\\~") || filepath.startsWith("\\-")) {
+            // 转义字符的路径
             return filepath.substring(1);
         } else {
             return new File(filepath).getCanonicalPath();

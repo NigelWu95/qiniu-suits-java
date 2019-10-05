@@ -64,7 +64,7 @@ public class StatFile extends Base<Map<String, String>> {
 
     private IStringFormat<JsonObject> getNewStatJsonFormatter(List<String> rmFields) {
         IStringFormat<JsonObject> stringFormatter;
-        if (statJsonFields == null) statJsonFields = ConvertingUtils.getFields(new ArrayList<>(ConvertingUtils.statFileFields), rmFields);
+        if (statJsonFields == null) statJsonFields = ConvertingUtils.getFields(ConvertingUtils.statFileFields, rmFields);
         if ("json".equals(format)) {
             stringFormatter = JsonObject::toString;
         } else {

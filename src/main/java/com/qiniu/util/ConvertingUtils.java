@@ -121,26 +121,33 @@ public final class ConvertingUtils {
     }};
 
     public static List<String> getFields(List<String> fields, List<String> rmFields) {
-        if (rmFields == null) return fields;
-        for (String rmField : rmFields) fields.remove(rmField);
-        return fields;
+        if (fields == null) return null;
+        List<String> list = new ArrayList<>(fields);
+        if (rmFields == null) return list;
+        list.removeAll(rmFields);
+        return list;
     }
 
     public static Map<String, String> getReversedIndexMap(Map<String, String> map, List<String> rmFields) {
-        Map<String, String> indexMap = new HashMap<>();
+        Map<String, String> indexMap = new HashMap<>(map.size());
         for (Map.Entry<String, String> entry : map.entrySet()) indexMap.put(entry.getValue(), entry.getKey());
         if (rmFields == null) return indexMap;
         for (String rmField : rmFields) indexMap.remove(rmField);
         return indexMap;
     }
 
-    public static List<String> getOrderedFields(List<String> oriFields, List<String> rmFields) {
-        List<String> fields = new ArrayList<>();
+    public static List<String> getOrderedFields(Map<String, String> indexMap, List<String> rmFields) {
+        List<String> fields = new ArrayList<>(indexMap.size());
+        Set<String> values = new HashSet<>(indexMap.values());
         for (String fileField : fileFields) {
-            if (oriFields.contains(fileField)) fields.add(fileField);
+            if (values.contains(fileField)) {
+                fields.add(fileField);
+                values.remove(fileField);
+            }
         }
+        fields.addAll(values);
         if (rmFields == null) return fields;
-        for (String rmField : rmFields) fields.remove(rmField);
+        fields.removeAll(rmFields);
         return fields;
     }
 

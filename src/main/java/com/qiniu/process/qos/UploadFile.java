@@ -14,7 +14,7 @@ public class UploadFile extends Base<Map<String, String>> {
     private Auth auth;
     private String pathIndex;
     private String parentPath;
-    private boolean record;
+    private String recorder;
     private StringMap params;
     private boolean checkCrc;
     private boolean keepPath;
@@ -31,11 +31,13 @@ public class UploadFile extends Base<Map<String, String>> {
         super("upload", accessKey, secretKey, null, savePath, saveIndex);
         auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
-        uploadManager = record ? new UploadManager(configuration.clone(),
-                new FileRecorder(savePath + FileUtils.pathSeparator + ".record"))
-                : new UploadManager(configuration.clone());
-        set(configuration, bucket, pathIndex, parentPath, record, keepPath, addPrefix, rmPrefix, expires, policy, params,
-                checkCrc);
+        if (record) {
+            recorder = String.join(FileUtils.pathSeparator, savePath, ".record");
+            uploadManager = new UploadManager(configuration.clone(), new FileRecorder(recorder));
+        } else {
+            uploadManager = new UploadManager(configuration.clone());
+        }
+        set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params, checkCrc);
     }
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
@@ -44,11 +46,13 @@ public class UploadFile extends Base<Map<String, String>> {
         super("upload", accessKey, secretKey, null);
         auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
-        uploadManager = record ? new UploadManager(configuration.clone(),
-                new FileRecorder(savePath + FileUtils.pathSeparator + ".record"))
-                : new UploadManager(configuration.clone());
-        set(configuration, bucket, pathIndex, parentPath, record, keepPath, addPrefix, rmPrefix, expires, policy, params,
-                checkCrc);
+        if (record) {
+            recorder = String.join(FileUtils.pathSeparator, FileUtils.userHome, ".qsuits.record");
+            uploadManager = new UploadManager(configuration.clone(), new FileRecorder(recorder));
+        } else {
+            uploadManager = new UploadManager(configuration.clone());
+        }
+        set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params, checkCrc);
     }
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
@@ -59,15 +63,14 @@ public class UploadFile extends Base<Map<String, String>> {
                 expires, policy, params, checkCrc, savePath, 0);
     }
 
-    private void set(Configuration configuration, String bucket, String pathIndex, String parentPath, boolean record,
-                     boolean keepPath, String addPrefix, String rmPrefix, long expires, StringMap policy, StringMap params,
+    private void set(Configuration configuration, String bucket, String pathIndex, String parentPath, boolean keepPath,
+                     String addPrefix, String rmPrefix, long expires, StringMap policy, StringMap params,
                      boolean checkCrc) {
         this.configuration = configuration;
         this.bucket = bucket;
         if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "path";
         else this.pathIndex = pathIndex;
         this.parentPath = "".equals(parentPath) ? null : parentPath;
-        this.record = record;
         this.keepPath = keepPath;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
@@ -78,16 +81,15 @@ public class UploadFile extends Base<Map<String, String>> {
     }
 
     public UploadFile clone() throws CloneNotSupportedException {
-        UploadFile downloadFile = (UploadFile)super.clone();
-        downloadFile.auth = Auth.create(accessId, secretKey);
+        UploadFile uploadFile = (UploadFile)super.clone();
+        uploadFile.auth = Auth.create(accessId, secretKey);
         try {
-            downloadFile.uploadManager = record ? new UploadManager(configuration.clone(),
-                    new FileRecorder(savePath + FileUtils.pathSeparator + ".record"))
-                    : new UploadManager(configuration.clone());
+            uploadFile.uploadManager = recorder == null ? new UploadManager(configuration.clone()) :
+                    new UploadManager(configuration.clone(), new FileRecorder(recorder));
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
-        return downloadFile;
+        return uploadFile;
     }
 
     @Override
@@ -138,8 +140,8 @@ public class UploadFile extends Base<Map<String, String>> {
         }
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
         line.put("key", key);
-        return HttpRespUtils.getResult(uploadManager.put(filepath, key, auth.uploadToken(bucket, key, expires, policy),
-                params, null, checkCrc));
+        return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key, auth.uploadToken(bucket, key, expires, policy),
+                params, null, checkCrc)));
     }
 
     @Override

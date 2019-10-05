@@ -427,7 +427,7 @@ public class QSuitsEntry {
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         ILineProcess<Map<String, String>> processor;
         if (baseFilter != null || seniorFilter != null) {
-            List<String> fields = ConvertingUtils.getOrderedFields(new ArrayList<>(indexMap.values()), rmFields);
+            List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
             if (nextProcessor == null) {
                 processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
                         saveSeparator, rmFields) {

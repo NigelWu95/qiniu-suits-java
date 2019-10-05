@@ -82,7 +82,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
         if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getOrderedFields(new ArrayList<>(this.indexMap.values()), rmFields);
+            this.fields = ConvertingUtils.getOrderedFields(this.indexMap, rmFields);
         }
         else this.fields = fields;
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
@@ -103,7 +103,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveSeparator = separator;
         this.rmFields = rmFields;
         if (rmFields != null && rmFields.size() > 0) {
-            this.fields = ConvertingUtils.getFields(new ArrayList<>(fields), rmFields);
+            this.fields = ConvertingUtils.getFields(fields, rmFields);
         }
     }
 

@@ -886,8 +886,7 @@ public class CommonParams {
         if (saveTotal == null || "".equals(saveTotal)) {
             if (isStorageSource) {
                 saveTotal = "true";
-
-//（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。
+//（2）云存储数据源时如果无 process 则为 true，如果存在 process 但不包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。
 //                if (process == null || "".equals(process)) {
 //                    saveTotal = "true";
 //                } else {
@@ -895,8 +894,13 @@ public class CommonParams {
 //                    else saveTotal = "false";
 //                }
             } else {
-                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
-                else saveTotal = "true";
+                if ("self".equals(parse)) { // 自上传时将上传路径的路径等信息做下保存
+                    saveTotal = "true";
+                } else if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) {
+                    saveTotal = "false";
+                } else {
+                    saveTotal = "true";
+                }
             }
         }
         ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
