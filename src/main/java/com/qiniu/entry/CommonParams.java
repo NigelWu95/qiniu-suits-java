@@ -81,6 +81,7 @@ public class CommonParams {
         add("csv");
         add("tab");
         add("json");
+        add("self"); // 表示读取的文件路径本身，而不是对文本内容做解析，用作目录下文件直接上传等操作
     }};
 
     public CommonParams() {}
@@ -137,7 +138,7 @@ public class CommonParams {
         setSavePath();
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
-        saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+        ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
         setSaveSeparator();
         setRmFields();
         setPfopConfigs();
@@ -242,7 +243,7 @@ public class CommonParams {
             case "stat":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 saveFormat = entryParam.getValue("save-format", "tab").trim();
-                saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+                ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
                 setSaveSeparator();
                 break;
             case "qupload":
@@ -297,7 +298,7 @@ public class CommonParams {
 
     private void setParse() throws IOException {
         parse = entryParam.getValue("parse", "tab").trim();
-        parse = ParamsUtils.checked(parse, "parse", "(csv|tab|json)");
+        ParamsUtils.checked(parse, "parse", "(csv|tab|json)");
     }
 
     private void setSeparator() {
@@ -562,11 +563,13 @@ public class CommonParams {
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
-        this.prefixLeft = Boolean.valueOf(ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)"));
+        ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)");
+        this.prefixLeft = Boolean.valueOf(prefixLeft);
     }
 
     private void setPrefixRight(String prefixRight) throws IOException {
-        this.prefixRight = Boolean.valueOf(ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)"));
+        ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)");
+        this.prefixRight = Boolean.valueOf(prefixRight);
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -633,7 +636,7 @@ public class CommonParams {
         }
         String type = entryParam.getValue("f-type", "").trim();
         String status = entryParam.getValue("f-status", "").trim();
-        if (!"".equals(status)) status = ParamsUtils.checked(status, "f-status", "[01]");
+        if (!"".equals(status)) ParamsUtils.checked(status, "f-status", "[01]");
 
         List<String> keyPrefixList = Arrays.asList(ParamsUtils.escapeSplit(keyPrefix));
         List<String> keySuffixList = Arrays.asList(ParamsUtils.escapeSplit(keySuffix));
@@ -661,10 +664,10 @@ public class CommonParams {
 
     private void setSeniorFilter() throws IOException {
         String checkType = entryParam.getValue("f-check", "").trim();
-        checkType = ParamsUtils.checked(checkType, "f-check", "(|ext-mime)").trim();
+        ParamsUtils.checked(checkType, "f-check", "(|ext-mime)");
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
-        checkRewrite = ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
         try {
             seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
                 @Override
@@ -842,11 +845,13 @@ public class CommonParams {
             if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
             else unitLen = "1000";
         }
-        this.unitLen = Integer.valueOf(ParamsUtils.checked(unitLen, "unit-len", "\\d+"));
+        ParamsUtils.checked(unitLen, "unit-len", "\\d+");
+        this.unitLen = Integer.valueOf(unitLen);
     }
 
     private void setThreads(String threads) throws IOException {
-        this.threads = Integer.valueOf(ParamsUtils.checked(threads, "threads", "[1-9]\\d*"));
+        ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
+        this.threads = Integer.valueOf(threads);
     }
 
     private void setBatchSize(String batchSize) throws IOException {
@@ -857,11 +862,13 @@ public class CommonParams {
                 batchSize = "0";
             }
         }
-        this.batchSize = Integer.valueOf(ParamsUtils.checked(batchSize, "batch-size", "\\d+"));
+        ParamsUtils.checked(batchSize, "batch-size", "\\d+");
+        this.batchSize = Integer.valueOf(batchSize);
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
-        this.retryTimes = Integer.valueOf(ParamsUtils.checked(retryTimes, "retry-times", "\\d+"));
+        ParamsUtils.checked(retryTimes, "retry-times", "\\d+");
+        this.retryTimes = Integer.valueOf(retryTimes);
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
@@ -881,7 +888,8 @@ public class CommonParams {
                 else saveTotal = "true";
             }
         }
-        this.saveTotal = Boolean.valueOf(ParamsUtils.checked(saveTotal, "save-total", "(true|false)"));
+        ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
+        this.saveTotal = Boolean.valueOf(saveTotal);
     }
 
     private void setSavePath() {
@@ -943,9 +951,15 @@ public class CommonParams {
         String startTime = entryParam.getValue("start-time", null);
         if (startTime != null) startDateTime = checkedDatetime(startTime);
         String delay = entryParam.getValue("pause-delay", null);
-        if (startTime != null) pauseDelay = Long.valueOf(ParamsUtils.checked(delay, "pause-delay", "\\d+"));
+        if (startTime != null) {
+            ParamsUtils.checked(delay, "pause-delay", "\\d+");
+            pauseDelay = Long.valueOf(delay);
+        }
         String duration = entryParam.getValue("pause-duration", null);
-        if (startTime != null) pauseDuration = Long.valueOf(ParamsUtils.checked(duration, "pause-duration", "\\d+"));
+        if (startTime != null) {
+            ParamsUtils.checked(duration, "pause-duration", "\\d+");
+            pauseDuration = Long.valueOf(duration);
+        }
     }
 
     public void setEntryParam(IEntryParam entryParam) {
