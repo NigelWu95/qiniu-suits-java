@@ -244,8 +244,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         showdownHook();
         FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
         try {
+            String start = null;
             for (IReader<E> fileReader : fileReaders) {
-                recorder.put(fileReader.getName(), "");
+                recorder.put(fileReader.getName(), start);
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();

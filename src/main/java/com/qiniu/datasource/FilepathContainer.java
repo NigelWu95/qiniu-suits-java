@@ -42,47 +42,49 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
 
     @Override
     protected List<IReader<Iterator<String>>> getFileReaders(String path) throws IOException {
+        if (FileUtils.realPathWithUserHome(path).equals(FileUtils.realPathWithUserHome(savePath))) {
+            throw new IOException("the save-path can not be same as path.");
+        }
         List<IReader<Iterator<String>>> filepathReaders = new ArrayList<>(threads);
-        if (linesMap != null && linesMap.size() > 0) {
-            try { path = FileUtils.realPathWithUserHome(path); } catch (IOException ignored) {}
-            List<String> list = new ArrayList<>(linesMap.keySet());
-            int size = list.size() > threads ? threads : list.size();
+        String replaced = null;
+        String transferPath = null;
+        String realPath;
+        if (path.startsWith(FileUtils.userHomeStartPath)) {
+            realPath = String.join("", FileUtils.userHome, path.substring(1));
+            replaced = FileUtils.userHome;
+            transferPath = "~";
+        } else {
+            realPath = path;
+        }
+        if (realPath.contains("\\~")) realPath = realPath.replace("\\~", "~");
+        if (realPath.endsWith(FileUtils.pathSeparator))
+            realPath = realPath.substring(0, realPath.length() - 1);
+        File sourceFile = new File(realPath);
+        if (sourceFile.isDirectory()) {
+            List<File> files = FileUtils.getFiles(sourceFile);
+            String filepath;
+            String key;
+            int size = files.size() > threads ? threads : files.size();
             List<List<String>> lists = new ArrayList<>(size);
             for (int i = 0; i < size; i++) lists.add(new ArrayList<>());
-            for (int i = 0; i < list.size(); i++) {
-                File file = new File(path, list.get(i));
-                if (!file.exists()) file = new File(list.get(i));
-                if (file.isDirectory()) throw new IOException("the filename defined in lines map can not be directory.");
-                else lists.get(i % size).add(list.get(i));
+            for (int i = 0; i < files.size(); i++) {
+                filepath = files.get(i).getPath();
+                if (filepath.startsWith(String.join("", realPath, "."))) continue;
+                if (replaced == null) key = filepath;
+                else key = filepath.replace(replaced, transferPath);
+                lists.get(i % size).add(String.join(separator, filepath, key));
             }
+            String name;
+            String startLine;
             for (int i = 0; i < size; i++) {
-                filepathReaders.add(new FilepathReader("filepath" + i, lists.get(i), unitLen));
+                name = "filepath-" + i;
+                startLine = linesMap == null ? null : linesMap.get(name);
+                filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
             }
         } else {
-            path = FileUtils.realPathWithUserHome(path);
-            if (path.equals(FileUtils.realPathWithUserHome(savePath))) {
-                throw new IOException("the save-path can not be same as path.");
-            }
-            File sourceFile = new File(path);
-            if (sourceFile.isDirectory()) {
-                List<File> files = FileUtils.getFiles(sourceFile);
-                String filepath;
-                int size = files.size() > threads ? threads : files.size();
-                List<List<String>> lists = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) lists.add(new ArrayList<>());
-                for (int i = 0; i < files.size(); i++) {
-                    filepath = files.get(i).getPath();
-                    if (filepath.contains(FileUtils.pathSeparator + ".")) continue;
-                    lists.get(i % size).add(files.get(i).getPath());
-                }
-                for (int i = 0; i < size; i++) {
-                    filepathReaders.add(new FilepathReader("filepath" + i, lists.get(i), unitLen));
-                }
-            } else {
-                filepathReaders.add(new FilepathReader("filepath-" + sourceFile, new ArrayList<String>(){{
-                    add(sourceFile.getPath());
-                }}, unitLen));
-            }
+            filepathReaders.add(new FilepathReader("filepath-" + path, new ArrayList<String>(){{
+                add(sourceFile.getPath());
+            }}, null, unitLen));
         }
         if (filepathReaders.size() == 0) throw new IOException("no files in the current path you gave: " + path);
         return filepathReaders;

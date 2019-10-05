@@ -894,9 +894,11 @@ public class CommonParams {
 //                    else saveTotal = "false";
 //                }
             } else {
-                if ("self".equals(parse)) { // 自上传时将上传路径的路径等信息做下保存
-                    saveTotal = "true";
-                } else if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) {
+//                if ("self".equals(parse)) { // 自上传时将上传路径的路径等信息做下保存
+//                    saveTotal = "true";
+//                }
+//                else
+                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) {
                     saveTotal = "false";
                 } else {
                     saveTotal = "true";

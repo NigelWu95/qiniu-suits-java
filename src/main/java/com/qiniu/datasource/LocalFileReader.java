@@ -28,7 +28,7 @@ public class LocalFileReader implements IReader<BufferedReader> {
         }
         name = sourceFile.getPath();
         bufferedReader = new BufferedReader(fileReader);
-        this.startLine = startLine == null ? "" : startLine;
+        this.startLine =  startLine;
         this.limit = limit;
         this.line = bufferedReader.readLine();
         this.lineList = new ArrayList<String>(){{ add(line); }};
@@ -46,6 +46,7 @@ public class LocalFileReader implements IReader<BufferedReader> {
 
     @Override
     public List<String> readLines() throws IOException {
+        if (line == null) return null;
         List<String> srcList = new ArrayList<>(lineList);
         lineList.clear();
         while (true) {
@@ -59,7 +60,7 @@ public class LocalFileReader implements IReader<BufferedReader> {
             }
             if (line == null) {
                 break;
-            } else if (line.compareTo(startLine) > 0) {
+            } else if (startLine == null || line.compareTo(startLine) > 0) {
                 srcList.add(line);
             }
         }

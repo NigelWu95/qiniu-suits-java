@@ -70,7 +70,8 @@ public class UploadFile extends Base<Map<String, String>> {
         this.bucket = bucket;
         if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "path";
         else this.pathIndex = pathIndex;
-        this.parentPath = "".equals(parentPath) ? null : parentPath;
+        this.parentPath = "".equals(parentPath) ? null : parentPath.endsWith(FileUtils.pathSeparator) ?
+                parentPath.substring(0, parentPath.length() - 1) : parentPath;
         this.keepPath = keepPath;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
@@ -136,6 +137,7 @@ public class UploadFile extends Base<Map<String, String>> {
                 } else {
                     filepath = String.join( FileUtils.pathSeparator , parentPath, filepath);
                 }
+                line.put(pathIndex, filepath);
             }
         }
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));

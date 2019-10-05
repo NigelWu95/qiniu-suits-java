@@ -64,10 +64,10 @@ public final class FileUtils {
     public static String realPathWithUserHome(String filepath) throws IOException {
         if (filepath == null || "".equals(filepath)) throw new IOException("the path is empty.");
         if (filepath.startsWith(userHomeStartPath)) {
-            return userHome + filepath.substring(1);
-        } else if (filepath.startsWith("\\~") || filepath.startsWith("\\-")) {
-            // 转义字符的路径
-            return filepath.substring(1);
+            return String.join("", userHome, filepath.substring(1));
+        }
+        if (filepath.contains("\\~")) { // 转义字符的路径
+            return new File(filepath.replace("\\~", "~")).getCanonicalPath();
         } else {
             return new File(filepath).getCanonicalPath();
         }

@@ -1,33 +1,32 @@
 # 资源异步抓取
 
 ## 简介
-下载文件列表的资源到本地。  
+将本地的文件批量上传至存储空间。  
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](datasource.md)**  
+**操作仅支持上传本地文件到七牛空间**  
 
 ### 功能配置参数
 ```
-process=download
-protocol=
-domain=
-indexes=
-url-index=
-host=
-bytes=
-queries=
-pre-down=
+process=qupload
+path=
+filepath-index=
+parent-path=
+record=
+keep-path=
 add-prefix=
 rm-prefix=
-download-timeout=
-save-path=
+expires=
+policy.[]=
+params.[]=
+crc=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
-|process| 下载资源时设置为download | 表示资源下载操作|  
-|protocol| http/https| 使用 http 还是 https 访问资源进行下载（默认 http）|  
-|domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
-|indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
+|process|上传资源时设置为qupload | 表示资源下载操作|  
+|path| 本地路径| path 是数据源选项，可以通过设置本地路径来指定要上传的文件，为目录时会遍历目录下（包括内层目录）除隐藏文件外的所有文件|  
+|filepath-index| 文件路径索引| 非必填字端，当直接上传 path 路径中的文件时无需设置，如果是通过读取文本文件每一行中的路径信息则需要设置|  
+|parent-path|上级目录| 该参数通常和 filepath-index 同时使用，用于规定文本中的路径值拼接上层目录得到要上传的文件路径|  
 |url-index| 字符串| 通过 url 操作时需要设置的 [url 索引（下标）](#关于-url-index)，需要手动指定才会进行解析，支持[需要私有签名的情况](#url-需要私有签名访问)|  
 |host| 域名字符串| 下载源资源时指定 host|  
 |bytes| 字节范围| 下载源资源时指定 range 的范围，如 `0-1024`，只有一个数字时表示起始字节，如 `1024-` 表示从 1024 到结尾，可用于大文件预热起始字节的场景|  
@@ -36,7 +35,6 @@ save-path=
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|  
 |download-timeout| 时间，单位秒|设置下载文件的超时时间，默认 1200s，下载大文件可根据需要调整|  
-|save-path| 文件保存路径|设置下载文件的保存路径，为本地的目录名称|  
 
 ### 关于 queries 参数
 queries 参数用于设置 url 的后缀或 ?+参数部分，资源下载可能需要下载不同格式或尺寸的如图片文件，因此可以通过一些图片处理样式或参数来设置对处理之后的
@@ -46,16 +44,8 @@ queries 参数用于设置 url 的后缀或 ?+参数部分，资源下载可能�
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
 
-### url 需要私有签名访问
-当进行图片审核的 url 需要通过私有鉴权访问时（资源来自于存储私有权限的空间），本工具支持串联操作，即先进行对应的私有签名再提交审核，使用 private 参
-数设置，如不需要进行私有访问则不设置，目前支持四类签名：
-`private=qiniu` [七牛云私有签名](privateurl.md#七牛配置参数)  
-`private=tencent` [腾讯云私有签名](privateurl.md#其他存储配置参数)  
-`private=aliyun` [阿里云私有签名](privateurl.md#其他存储配置参数)  
-`private=s3` [AWS S3 私有签名](privateurl.md#其他存储配置参数)  
-
 ## 命令行参数方式
 ```
--process=download -ak= -sk= -protocol= -domain= -host= -add-prefix= -save-path= ...
+-process=qupload -ak= -sk= -bucket= -protocol= -domain= -host= -add-prefix= ...
 ```
 
