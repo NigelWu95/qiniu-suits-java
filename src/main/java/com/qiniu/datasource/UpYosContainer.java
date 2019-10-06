@@ -122,7 +122,9 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
      */
     @Override
     public void export() throws Exception {
-        String info = "list objects from bucket: " + bucket + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = processor == null ?
+                String.join(" ", "list objects from upyun bucket:", bucket) :
+                String.join(" ", "list objects from upyun bucket:", bucket, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");

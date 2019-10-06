@@ -231,7 +231,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
-            if (LocalDateTime.now(clock).isAfter(pauseDateTime)) {
+            if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
                 synchronized (object) {
                     object.wait();
                 }
@@ -623,8 +623,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * 根据当前参数值创建多线程执行数据源导出工作
      */
     public void export() throws Exception {
-        String info = "list objects from " + getSourceName() + " bucket: " + bucket + (processor == null ? "" : " and "
-                + processor.getProcessName());
+        String info = processor == null ?
+                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
+                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
@@ -675,7 +676,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private final Object object = new Object();
     private LocalDateTime pauseDateTime = LocalDateTime.MAX;
-    private Clock clock = Clock.systemDefaultZone();
 
     public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
         if (startTime != null) {

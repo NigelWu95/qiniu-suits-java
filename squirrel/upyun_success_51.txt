@@ -1,0 +1,1 @@
+apk/squirrel-3.6.8-release-rc-20171129.apk	51400383	2017-12-01T15:49:01	application/vnd.android.package-archive

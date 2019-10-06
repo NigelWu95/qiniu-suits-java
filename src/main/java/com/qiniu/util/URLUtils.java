@@ -9,11 +9,11 @@ public final class URLUtils {
 //        URL httpUrl = new URL(url);
         String path = new URL(url).getPath();
         if (url.endsWith(" ")) {
-            if (path.startsWith("/")) return String.join(" ", path.substring(1));
-            else return String.join(" ", path);
+            if (path.startsWith("/")) return String.join("", path.substring(1), " ");
+            else return String.join("", path, " ");
         } else if (url.endsWith("\t")) {
-            if (path.startsWith("/")) return String.join("\t", path.substring(1));
-            else return String.join("\t", path);
+            if (path.startsWith("/")) return String.join("", path.substring(1), "\t");
+            else return String.join("", path, "\t");
         } else {
             if (path.startsWith("/")) return path.substring(1);
             else return path;

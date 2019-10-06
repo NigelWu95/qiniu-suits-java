@@ -1,0 +1,7 @@
+test/erfdsarf.mp4	198347	2017-03-18T11:56:44	video/mp4
+test/release32_16-11-02_9_30.rar	17452749	2016-11-02T09:50:07	application/x-rar-compressed
+test/test1.gif	46895	2017-03-18T11:53:56	image/gif
+test/test2.gif	42638	2017-03-18T11:53:56	image/gif
+test/test3.gif	2152719	2017-03-18T11:53:57	image/gif
+test/test4.jpg	106816	2017-03-18T11:55:28	image/jpeg
+test/test5.jpg	54246	2017-03-18T11:55:28	image/jpeg

@@ -8,10 +8,7 @@ import com.qiniu.interfaces.IReader;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
-import com.qiniu.util.FileUtils;
-import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.ConvertingUtils;
-import com.qiniu.util.UniOrderUtils;
+import com.qiniu.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.misc.Signal;
@@ -123,7 +120,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         List<String> writeList;
         int retry;
         while (lastLine != null) {
-            if (LocalDateTime.now(clock).isAfter(pauseDateTime)) {
+            if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
                 synchronized (object) {
                     object.wait();
                 }
@@ -237,7 +234,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         List<IReader<E>> fileReaders = getFileReaders(filePath);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = processor == null ?
+                String.join(" ", "read objects from file(s):", filePath) :
+                String.join(" ", "read objects from file(s):", filePath, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
@@ -270,7 +269,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     private final Object object = new Object();
     private LocalDateTime pauseDateTime = LocalDateTime.MAX;
-    private Clock clock = Clock.systemDefaultZone();
 
     public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
         if (startTime != null) {

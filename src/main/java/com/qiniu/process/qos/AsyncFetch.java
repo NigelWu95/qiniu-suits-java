@@ -141,7 +141,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         String etag = line.get("etag");
         if (etag == null || "".equals(etag)) etag = line.get("hash");
         Response response = asyncFetch(url, key, line.get(md5Index), etag);
-        return String.join("\t", key, url , String.valueOf(response.statusCode),
+        return String.join("\t", key, url, String.valueOf(response.statusCode),
                 HttpRespUtils.getResult(response));
     }
 

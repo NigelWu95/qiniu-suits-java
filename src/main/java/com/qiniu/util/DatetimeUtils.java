@@ -2,9 +2,7 @@ package com.qiniu.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
@@ -103,14 +101,17 @@ public final class DatetimeUtils {
         return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
     }
 
+    public final static Clock clock_Default = Clock.systemDefaultZone();
+    public final static Clock clock_GMT = Clock.system(ZoneId.of("GMT"));
     /**
      * 获取 GMT 格式时间戳，'Tue, 3 Jun 2008 11:05:30 GMT'
      * DateTimeFormatter.RFC_1123_DATE_TIME
      * @return GMT 格式时间戳
      */
     public static String getGMTDate() {
-        SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
-        format.setTimeZone(TimeZone.getTimeZone("GMT"));
-        return format.format(new Date());
+        SimpleDateFormat formatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+//        return formatter.format(new Date());
+        return formatter.format(new Date(Instant.now(clock_GMT).toEpochMilli()));
     }
 }

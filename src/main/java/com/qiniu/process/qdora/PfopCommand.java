@@ -101,7 +101,7 @@ public class PfopCommand extends Base<Map<String, String>> {
             if (videoStream == null) throw new IOException("videoStream is null.");
             if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
                 resultList.add(String.join("\t", key,
-                        PfopUtils.generateFopCmd(key, pfopConfig) + other.toString()));
+                        PfopUtils.generateFopCmd(key, pfopConfig), other.toString()));
             }
         }
         return String.join("\n", resultList);
