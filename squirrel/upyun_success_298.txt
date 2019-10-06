@@ -1,4 +1,0 @@
-msyk_question_cutting/2092_29186/2092_18821957_00000001.SWMG	154767	2017-07-26T14:15:36	application/octet-stream
-msyk_question_cutting/2092_29186/2092_18821957_00000002.SWMG	93316	2017-07-26T14:15:35	application/octet-stream
-msyk_question_cutting/2092_29186/2092_18821957_00000003.SWMG	53784	2017-07-26T14:15:36	application/octet-stream
-msyk_question_cutting/2092_29186/2092_18821957_conf.ini	54	2017-07-26T14:15:35	application/octet-stream
