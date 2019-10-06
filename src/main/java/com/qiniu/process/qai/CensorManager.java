@@ -23,6 +23,7 @@ public class CensorManager {
     private StringMap headers;
     private static String imageCensorUrl = "http://ai.qiniuapi.com/v3/image/censor";
     private static String videoCensorUrl = "http://ai.qiniuapi.com/v3/video/censor";
+    private static String videoJobsUrl = "http://ai.qiniuapi.com/v3/jobs/video/";
 
     public static JsonArray getScenes(String[] scenes) throws IOException {
         JsonArray scenesJsonArray = new JsonArray();
@@ -130,8 +131,9 @@ public class CensorManager {
     }
 
     public String censorString(String jobId) throws QiniuException {
-        String queryUrl = "http://ai.qiniuapi.com/v3/jobs/video/" + jobId;
-        String token = "Qiniu " + auth.signRequestV2(queryUrl, "GET", null, null);
+        String queryUrl = String.join("", videoJobsUrl, jobId);
+        String token = String.join(" ", "Qiniu",
+                auth.signRequestV2(queryUrl, "GET", null, null));
         headers.put("Authorization", token);
         Response response = client.get(queryUrl, headers);
         String result = response.bodyString();

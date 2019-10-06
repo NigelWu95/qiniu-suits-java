@@ -33,8 +33,8 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
 
     public FileSaveMapper(String savePath, String prefix, String suffix) throws IOException {
         this(savePath);
-        this.prefix = (prefix == null || "".equals(prefix)) ? "" : prefix + "_";
-        this.suffix = (suffix == null || "".equals(suffix)) ? "" : "_" + suffix;
+        this.prefix = (prefix == null || "".equals(prefix)) ? "" : String.join("", prefix, "_");
+        this.suffix = (suffix == null || "".equals(suffix)) ? "" : String.join("", "_", suffix);
         for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
     }
 
@@ -59,7 +59,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     private BufferedWriter add(String key) throws IOException {
-        File resultFile = new File(savePath, prefix + key + suffix + ext);
+        File resultFile = new File(savePath, String.join("", prefix, key, suffix, ext));
         boolean resultFileExists = resultFile.exists();
         int retry = retryTimes;
         BufferedWriter writer = null;
@@ -96,7 +96,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 try {
                     bufferedWriter = writerMap.get(entry.getKey());
                     if (bufferedWriter != null) bufferedWriter.close();
-                    File file = new File(savePath, prefix + entry.getKey() + suffix + ext);
+                    File file = new File(savePath, String.join("", prefix, entry.getKey(), suffix, ext));
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
                         if (reader.readLine() == null) {

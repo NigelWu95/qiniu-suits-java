@@ -75,7 +75,7 @@ public class ImageCensor extends Base<Map<String, String>> {
     @Override
     protected String resultInfo(Map<String, String> line) {
         String key = line.get("key");
-        return (key == null ? "\t" : key + "\t") + line.get(urlIndex);
+        return key == null ? line.get(urlIndex) : String.join("\t", key, line.get(urlIndex));
     }
 
     @Override
@@ -84,14 +84,16 @@ public class ImageCensor extends Base<Map<String, String>> {
         String key = line.get("key");
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f") + suffixOrQuery;
+            url = String.join("", protocol, "://", domain, "/",
+                    key.replace("\\?", "%3f"), suffixOrQuery);
             line.put(urlIndex, url);
-            return key + "\t" + url + "\t" + censorManager.doImageCensor(url, paramsJson);
+            return String.join("\t", key, url, censorManager.doImageCensor(url, paramsJson));
         } else if (useQuery) {
-            url = url + suffixOrQuery;
+            url = String.join("", url, suffixOrQuery);
             line.put(urlIndex, url);
         }
-        return (key == null ? "\t" : key + "\t") + url + "\t" + censorManager.doImageCensor(url, paramsJson);
+        return key == null ? String.join("\t", url, censorManager.doImageCensor(url, paramsJson)) :
+                String.join("\t", key, url, censorManager.doImageCensor(url, paramsJson));
     }
 
     @Override

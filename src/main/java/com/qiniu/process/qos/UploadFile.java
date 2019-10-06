@@ -95,7 +95,7 @@ public class UploadFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(pathIndex);
+        return String.join( "\t", line.get("key"), line.get(pathIndex));
     }
 
     @Override

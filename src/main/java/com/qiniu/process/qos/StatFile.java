@@ -125,7 +125,8 @@ public class StatFile extends Base<Map<String, String>> {
                 if (!(jsonObject.get("data") instanceof JsonNull) && jsonObject.get("data") instanceof JsonObject) {
                     data = jsonObject.get("data").getAsJsonObject();
                 } else {
-                    fileSaveMapper.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                    fileSaveMapper.writeError(String.join("\t",
+                            processList.get(j).get("key"), jsonObject.toString()), false);
                     continue;
                 }
                 switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
@@ -138,11 +139,13 @@ public class StatFile extends Base<Map<String, String>> {
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:
-                        fileSaveMapper.writeError(processList.get(j).get("key") + "\t" + jsonObject.toString(), false);
+                        fileSaveMapper.writeError(String.join("\t",
+                                processList.get(j).get("key"), jsonObject.toString()), false);
                         break;
                 }
             } else {
-                fileSaveMapper.writeError(processList.get(j).get("key") + "\tempty stat result", false);
+                fileSaveMapper.writeError(String.join("\t",
+                        processList.get(j).get("key"), "empty stat result"), false);
             }
         }
         return retryList;

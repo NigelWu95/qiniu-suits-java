@@ -94,12 +94,13 @@ public final class HttpRespUtils {
         // getMessage 会包含 reqid 等信息
         String message = e.getMessage();
         if (message == null || "".equals(message)) {
-            message = (e.response != null ? "reqid: " + e.response.reqId + ", ": "") + "code: " + e.code();
+            message = e.response == null ? String.join("", "code: ", String.valueOf(e.code())) :
+                    String.join("", "reqid: ", e.response.reqId, ", code: ", String.valueOf(e.code()));
             // 避免抛出空指针异常
             try {
-                message += "， error: " + e.error();
+                message = String.join(", error: ", message, e.error());
             } catch (Exception ex) {
-                message += ", failed: " + ex.getMessage();
+                message = String.join(", failed: ", message, ex.getMessage());
                 ex.printStackTrace();
             }
         }

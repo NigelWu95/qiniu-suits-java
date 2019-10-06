@@ -75,20 +75,21 @@ public final class FileUtils {
     public static String rmPrefix(String prefix, String name) throws IOException {
         if (name == null) throw new IOException("empty filename.");
         if (prefix == null || "".equals(prefix) || name.length() < prefix.length()) return name;
-        return name.substring(0, prefix.length()).replace(prefix, "") + name.substring(prefix.length());
+        return String.join("", name.substring(0, prefix.length()).replace(prefix, ""),
+                name.substring(prefix.length()));
     }
 
     public static String addSuffix(String name, String suffix) {
-        return name + suffix;
+        return String.join("", name, suffix);
     }
 
     public static String addPrefix(String prefix, String name) {
-        return prefix + name;
+        return String.join("", prefix, name);
     }
 
     public static String addPrefixAndSuffixKeepExt(String prefix, String name, String suffix) {
 
-        return prefix + addSuffixKeepExt(name, suffix);
+        return String.join("", prefix, addSuffixKeepExt(name, suffix));
     }
 
     public static String addSuffixKeepExt(String name, String suffix) {
@@ -97,7 +98,7 @@ public final class FileUtils {
     }
 
     public static String addPrefixAndSuffixWithExt(String prefix, String name, String suffix, String ext) {
-        return prefix + addSuffixWithExt(name, suffix, ext);
+        return String.join("", prefix, addSuffixWithExt(name, suffix, ext));
     }
 
     public static String replaceExt(String name, String ext) {
@@ -107,8 +108,13 @@ public final class FileUtils {
     public static String addSuffixWithExt(String name, String suffix, String ext) {
         if (name == null) return null;
         String[] items = getNameItems(name);
-        return items[0] + suffix + (ext != null && !"".equals(ext) ?  "." + ext :
-                (items[1] == null || "".equals(items[1]) ? "" : "." + items[1]));
+        if (ext != null && !"".equals(ext)) {
+            return String.join("", items[0], suffix, ".", ext);
+        } else if (items[1] == null || "".equals(items[1])) {
+            return String.join("", items[0], suffix);
+        } else {
+            return String.join("", items[0], suffix, "." + items[1]);
+        }
     }
 
     public static String[] getNameItems(String name) {

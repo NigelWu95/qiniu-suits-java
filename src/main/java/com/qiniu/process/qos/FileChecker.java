@@ -50,13 +50,13 @@ public class FileChecker {
     }
 
     public String getQHashBody(String domain, String sourceKey) throws QiniuException {
-        String url = protocol + "://" + domain + "/" + sourceKey.split("\\?")[0];
+        String url = String.join("", protocol, "://", domain, "/", sourceKey.split("\\?")[0]);
         return getQHashBody(url);
     }
 
     public String getQHashBody(String url) throws QiniuException {
         if (client == null) this.client = new Client();
-        Response response = client.get(url + "?qhash/" + algorithm);
+        Response response = client.get(String.join("", url, "?qhash/", algorithm));
         String qhash = response.bodyString();
         if (response.statusCode != 200 || qhash.isEmpty()) throw new QiniuException(response);
         response.close();

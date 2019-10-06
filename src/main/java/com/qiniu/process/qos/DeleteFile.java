@@ -82,7 +82,7 @@ public class DeleteFile extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        return key + "\t" + HttpRespUtils.getResult(bucketManager.delete(bucket, key));
+        return String.join("\t", key, HttpRespUtils.getResult(bucketManager.delete(bucket, key)));
     }
 
     @Override

@@ -454,8 +454,8 @@ public final class CloudApiUtils {
         }
 
         if (hmac != null) {
-            return "UPYUN " + userName + ":" + EncryptUtils.encodeLines(hmac, 0, hmac.length, 76,
-                    lineSeparator).trim();
+            return String.join("", "UPYUN ", userName, ":",
+                    EncryptUtils.encodeLines(hmac, 0, hmac.length, 76, lineSeparator).trim());
         }
 
         return null;

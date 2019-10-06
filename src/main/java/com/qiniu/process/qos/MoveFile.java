@@ -96,7 +96,7 @@ public class MoveFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(toKeyIndex);
+        return String.join("\t", line.get("key"), line.get(toKeyIndex));
     }
 
     @Override
@@ -110,9 +110,9 @@ public class MoveFile extends Base<Map<String, String>> {
             if (key != null) {
                 try {
                     if (defaultToKey) {
-                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+                        toKey = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
                     } else {
-                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                        toKey = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex)));
                     }
                     map.put(toKeyIndex, toKey);
                     lines.add(map);
@@ -142,9 +142,11 @@ public class MoveFile extends Base<Map<String, String>> {
         if (key == null) throw new IOException("key is not exists or empty in " + line);
         String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
         if (isRename) {
-            return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey));
+            return String.join("\t", key, toKey,
+                    HttpRespUtils.getResult(bucketManager.rename(bucket, key, toKey)));
         } else {
-            return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey));
+            return String.join("\t", key, toKey,
+                    HttpRespUtils.getResult(bucketManager.move(bucket, key, toBucket, toKey)));
         }
     }
 

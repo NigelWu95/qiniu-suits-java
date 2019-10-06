@@ -51,8 +51,9 @@ public class M3U8Manager {
                 continue;
             }
 
-            String url = line.startsWith("http") ? line : protocol + "://" +
-                    (line.startsWith("/") ? domain + line : domain + "/" + line);
+            String url = line.startsWith("http") ? line : line.startsWith("/") ?
+                    String.join("", protocol, "://", domain, line) :
+                    String.join("", protocol, "://", domain, "/", line);
             if (line.endsWith(".m3u8")) {
                 List<VideoTS> tsList = getVideoTSListByUrl(url);
                 ret.addAll(tsList);
@@ -79,7 +80,8 @@ public class M3U8Manager {
         } else {
             response.close();
             // 说明不是 m3u8 文件
-            throw new IOException(m3u8Url + " 's content-type is " + contentType + ", not a m3u8 type.");
+            throw new IOException(String.join("", m3u8Url, " 's content-type is ", contentType,
+                    ", not a m3u8 type."));
         }
     }
 

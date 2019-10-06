@@ -121,7 +121,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return String.join("\t", line.get("key"), line.get(urlIndex));
     }
 
     @Override
@@ -130,18 +130,19 @@ public class AsyncFetch extends Base<Map<String, String>> {
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f");
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
             line.put(urlIndex, url);
-            key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
+            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
         } else {
-            if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
-            else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+            if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
+            else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
         }
         line.put("key", key);
         String etag = line.get("etag");
         if (etag == null || "".equals(etag)) etag = line.get("hash");
         Response response = asyncFetch(url, key, line.get(md5Index), etag);
-        return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
+        return String.join("\t", key, url , String.valueOf(response.statusCode),
+                HttpRespUtils.getResult(response));
     }
 
     @Override

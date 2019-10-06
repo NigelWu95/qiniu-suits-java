@@ -78,7 +78,7 @@ public class CopyFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(toKeyIndex);
+        return String.join("\t", line.get("key"), line.get(toKeyIndex));
     }
 
     @Override
@@ -92,9 +92,9 @@ public class CopyFile extends Base<Map<String, String>> {
             if (key != null) {
                 try {
                     if (defaultToKey) {
-                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
+                        toKey = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
                     } else {
-                        toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex));
+                        toKey = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, map.get(toKeyIndex)));
                     }
                     map.put(toKeyIndex, toKey);
                     lines.add(map);
@@ -118,8 +118,9 @@ public class CopyFile extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
-        return key + "\t" + toKey + "\t" + HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false));
+        String toKey = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex)));
+        return String.join("\t", key, toKey,
+                HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false)));
     }
 
     @Override

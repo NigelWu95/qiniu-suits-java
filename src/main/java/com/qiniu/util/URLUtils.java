@@ -8,9 +8,16 @@ public final class URLUtils {
     public static String getKey(String url) throws IOException {
 //        URL httpUrl = new URL(url);
         String path = new URL(url).getPath();
-        if (url.endsWith(" ")) return (path.startsWith("/") ? path.substring(1) : path) + " ";
-        else if (url.endsWith("\t")) return (path.startsWith("/") ? path.substring(1) : path) + "\t";
-        else return path.startsWith("/") ? path.substring(1) : path;
+        if (url.endsWith(" ")) {
+            if (path.startsWith("/")) return String.join(" ", path.substring(1));
+            else return String.join(" ", path);
+        } else if (url.endsWith("\t")) {
+            if (path.startsWith("/")) return String.join("\t", path.substring(1));
+            else return String.join("\t", path);
+        } else {
+            if (path.startsWith("/")) return path.substring(1);
+            else return path;
+        }
     }
 
     public static String getEncodedURI(String uri) {

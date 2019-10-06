@@ -87,7 +87,7 @@ public class DownloadFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return String.join("\t", line.get("key"), line.get(urlIndex));
     }
 
     @Override
@@ -96,25 +96,26 @@ public class DownloadFile extends Base<Map<String, String>> {
         String key = line.get("key");
         if (url == null || "".equals(url)) {
             if (key == null || "".equals(key)) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f") + suffixOrQuery;
+            url = String.join("", protocol, "://", domain, "/",
+                    key.replace("\\?", "%3f"), suffixOrQuery);
             line.put(urlIndex, url);
-            key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
+            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
         } else {
-            if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
-            else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+            if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
+            else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
             if (useQuery) {
-                url = url + suffixOrQuery;
+                url = String.join("", url, suffixOrQuery);
                 line.put(urlIndex, url);
             }
         }
         line.put("key", key);
         if (preDown) {
             downloader.download(url, headers);
-            return key + "\t" + url;
+            return String.join("\t", key, url);
         } else {
-            String filename = (fileSaveMapper == null ? savePath : fileSaveMapper.getSavePath()) + FileUtils.pathSeparator + key;
+            String filename = String.join(FileUtils.pathSeparator, (fileSaveMapper == null ? savePath : fileSaveMapper.getSavePath()), key);
             downloader.download(url, filename, headers);
-            return key + "\t" + url + "\t" + filename;
+            return String.join("\t", key, url, filename);
         }
     }
 

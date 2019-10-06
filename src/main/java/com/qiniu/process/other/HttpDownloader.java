@@ -30,7 +30,7 @@ public class HttpDownloader {
         if (response.statusCode == 200 || response.statusCode == 206) {
             File file = new File(filepath);
             if (file.exists()) {
-                throw new IOException("file: " + filepath + " is already exists.");
+                throw new IOException(String.join("", "file: ", filepath, " is already exists."));
             } else {
                 boolean exists = FileUtils.mkDirAndFile(file);
                 while (!exists) {

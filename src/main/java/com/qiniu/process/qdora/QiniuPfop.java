@@ -90,11 +90,11 @@ public class QiniuPfop extends Base<Map<String, String>> {
                         .append(";");
             }
             cmdBuilder.deleteCharAt(cmdBuilder.length() - 1);
-            return key + "\t" + operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams);
+            return String.join("\t", key, operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams));
         } else {
             String fops = line.get(fopsIndex);
             if (fops == null) throw new IOException("fops is not exists or empty in " + line);
-            return key + "\t" + operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams);
+            return String.join("\t", key, operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams));
         }
     }
 
