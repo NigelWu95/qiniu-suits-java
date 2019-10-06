@@ -2,13 +2,14 @@ package com.qiniu.util;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class FileUtils {
 
@@ -56,36 +57,39 @@ public final class FileUtils {
     }
 
     public static String pathSeparator = System.getProperty("file.separator");
+    public static String userHomeStartPath = "~" + pathSeparator;
     public static String userHome = System.getProperty("user.home");
 
-    public static String realPathWithUserHome(String pathStr) throws IOException {
-        if (pathStr == null || "".equals(pathStr)) throw new IOException("the path is empty.");
-        if (pathStr.startsWith("~" + pathSeparator)) {
-            return userHome + pathStr.substring(1);
-        } else if (pathStr.startsWith("\\~") || pathStr.startsWith("\\-")) {
-            return pathStr.substring(1);
+    public static String convertToRealPath(String filepath) throws IOException {
+        if (filepath == null || "".equals(filepath)) throw new IOException("the path is empty.");
+        if (filepath.startsWith(userHomeStartPath)) {
+            return String.join("", userHome, filepath.substring(1));
+        }
+        if (filepath.contains("\\~")) { // 转义字符的路径
+            return new File(filepath.replace("\\~", "~")).getCanonicalPath();
         } else {
-            return new File(pathStr).getCanonicalPath();
+            return new File(filepath).getCanonicalPath();
         }
     }
 
     public static String rmPrefix(String prefix, String name) throws IOException {
         if (name == null) throw new IOException("empty filename.");
         if (prefix == null || "".equals(prefix) || name.length() < prefix.length()) return name;
-        return name.substring(0, prefix.length()).replace(prefix, "") + name.substring(prefix.length());
+        return String.join("", name.substring(0, prefix.length()).replace(prefix, ""),
+                name.substring(prefix.length()));
     }
 
     public static String addSuffix(String name, String suffix) {
-        return name + suffix;
+        return String.join("", name, suffix);
     }
 
     public static String addPrefix(String prefix, String name) {
-        return prefix + name;
+        return String.join("", prefix, name);
     }
 
     public static String addPrefixAndSuffixKeepExt(String prefix, String name, String suffix) {
 
-        return prefix + addSuffixKeepExt(name, suffix);
+        return String.join("", prefix, addSuffixKeepExt(name, suffix));
     }
 
     public static String addSuffixKeepExt(String name, String suffix) {
@@ -94,7 +98,7 @@ public final class FileUtils {
     }
 
     public static String addPrefixAndSuffixWithExt(String prefix, String name, String suffix, String ext) {
-        return prefix + addSuffixWithExt(name, suffix, ext);
+        return String.join("", prefix, addSuffixWithExt(name, suffix, ext));
     }
 
     public static String replaceExt(String name, String ext) {
@@ -104,8 +108,13 @@ public final class FileUtils {
     public static String addSuffixWithExt(String name, String suffix, String ext) {
         if (name == null) return null;
         String[] items = getNameItems(name);
-        return items[0] + suffix + (ext != null && !"".equals(ext) ?  "." + ext :
-                (items[1] == null || "".equals(items[1]) ? "" : "." + items[1]));
+        if (ext != null && !"".equals(ext)) {
+            return String.join("", items[0], suffix, ".", ext);
+        } else if (items[1] == null || "".equals(items[1])) {
+            return String.join("", items[0], suffix);
+        } else {
+            return String.join("", items[0], suffix, "." + items[1]);
+        }
     }
 
     public static String[] getNameItems(String name) {
@@ -118,6 +127,28 @@ public final class FileUtils {
             shortName.append(items[i]).append(".");
         }
         return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
+    }
+
+    public static List<File> getFiles(File directory, boolean check) throws IOException {
+        File[] fs = directory.listFiles();
+        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
+        List<File> files = new ArrayList<>();
+//        Objects.requireNonNull(directory.listFiles());
+        for(File f : fs) {
+            if (f.isDirectory()) {
+                files.addAll(getFiles(f, check));
+            } else {
+                if (check) {
+                    String type = FileUtils.contentType(f);
+                    if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                        files.add(f);
+                    }
+                } else {
+                    files.add(f);
+                }
+            }
+        }
+        return files;
     }
 
     public static boolean mkDirAndFile(File filePath) throws IOException {

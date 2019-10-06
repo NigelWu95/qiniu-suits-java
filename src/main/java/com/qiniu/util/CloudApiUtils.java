@@ -32,13 +32,13 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
-import com.qiniu.common.Zone;
 import com.qiniu.http.Response;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.Region;
 import com.qiniu.storage.model.FileInfo;
 
 import java.io.IOException;
@@ -312,24 +312,24 @@ public final class CloudApiUtils {
         bosClient.listBuckets();
     }
 
-    public static Zone getQiniuRegion(String regionName) {
-        if (regionName == null) return Zone.autoZone();
+    public static Region getQiniuRegion(String regionName) {
+        if (regionName == null) return Region.autoRegion();
         switch (regionName) {
             case "z0":
-            case "huadong": return Zone.huadong();
+            case "huadong": return Region.huadong();
             case "z1":
-            case "huabei": return Zone.huabei();
+            case "huabei": return Region.huabei();
             case "z2":
-            case "huanan": return Zone.huanan();
+            case "huanan": return Region.huanan();
             case "na0":
-            case "beimei": return Zone.beimei();
+            case "beimei": return Region.beimei();
             case "as0":
-            case "xinjiapo": return Zone.xinjiapo();
+            case "xinjiapo": return Region.xinjiapo();
             case "qvm-z0":
-            case "qvm-huadong": return Zone.qvmHuadong();
+            case "qvm-huadong": return Region.qvmHuadong();
             case "qvm-z1":
-            case "qvm-huabei": return Zone.qvmHuabei();
-            default: return Zone.autoZone();
+            case "qvm-huabei": return Region.qvmHuabei();
+            default: return Region.autoRegion();
         }
     }
 
@@ -454,8 +454,8 @@ public final class CloudApiUtils {
         }
 
         if (hmac != null) {
-            return "UPYUN " + userName + ":" + EncryptUtils.encodeLines(hmac, 0, hmac.length, 76,
-                    lineSeparator).trim();
+            return String.join("", "UPYUN ", userName, ":",
+                    EncryptUtils.encodeLines(hmac, 0, hmac.length, 76, lineSeparator).trim());
         }
 
         return null;

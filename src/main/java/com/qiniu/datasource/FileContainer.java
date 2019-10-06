@@ -8,10 +8,7 @@ import com.qiniu.interfaces.IReader;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
-import com.qiniu.util.FileUtils;
-import com.qiniu.util.HttpRespUtils;
-import com.qiniu.util.ConvertingUtils;
-import com.qiniu.util.UniOrderUtils;
+import com.qiniu.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.misc.Signal;
@@ -19,10 +16,9 @@ import sun.misc.SignalHandler;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -48,7 +44,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected Map<String, String> linesMap;
     protected Map<String, String> indexMap;
     protected int unitLen;
-    private int threads;
+    protected int threads;
     protected int retryTimes = 5;
     protected String savePath;
     protected boolean saveTotal;
@@ -78,7 +74,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getOrderedFields(new ArrayList<>(this.indexMap.values()), rmFields);
+            this.fields = ConvertingUtils.getOrderedFields(this.indexMap, rmFields);
         }
         else this.fields = fields;
     }
@@ -93,7 +89,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.saveSeparator = separator;
         this.rmFields = rmFields;
         if (rmFields != null && rmFields.size() > 0) {
-            this.fields = ConvertingUtils.getFields(new ArrayList<>(fields), rmFields);
+            this.fields = ConvertingUtils.getFields(fields, rmFields);
         }
     }
 
@@ -111,7 +107,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     private JsonRecorder recorder = new JsonRecorder();
 
-    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
+    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> stringConverter = null;
         if (saveTotal) {
@@ -124,6 +120,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         List<String> writeList;
         int retry;
         while (lastLine != null) {
+            if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
+                synchronized (object) {
+                    object.wait();
+                }
+            }
             retry = retryTimes + 1;
             while (retry > 0) {
                 try {
@@ -233,14 +234,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         List<IReader<E>> fileReaders = getFileReaders(filePath);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String info = "read objects from file(s): " + filePath + (processor == null ? "" : " and " + processor.getProcessName());
+        String info = processor == null ?
+                String.join(" ", "read objects from file(s):", filePath) :
+                String.join(" ", "read objects from file(s):", filePath, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
+        FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
         try {
+            String start = null;
             for (IReader<E> fileReader : fileReaders) {
-                recorder.put(fileReader.getName(), "");
+                recorder.put(fileReader.getName(), start);
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
@@ -259,6 +264,48 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
+        }
+    }
+
+    private final Object object = new Object();
+    private LocalDateTime pauseDateTime = LocalDateTime.MAX;
+
+    public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
+        if (startTime != null) {
+            Clock clock = Clock.systemDefaultZone();
+            LocalDateTime now = LocalDateTime.now(clock);
+            if (startTime.minusWeeks(1).isAfter(now)) {
+                throw new Exception("startTime is not allowed to exceed next week");
+            }
+            while (now.isBefore(startTime)) {
+                System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+                now = LocalDateTime.now(clock);
+            }
+        }
+        if (duration <= 0 || pauseDelay < 0) {
+            export();
+        } else if (duration > 84600 || duration < 1800) {
+            throw new Exception("duration can not be bigger than 23.5 hours or smaller than 0.5 hours.");
+        } else {
+            pauseDateTime = LocalDateTime.now().plusSeconds(pauseDelay);
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (object) {
+                        object.notifyAll();
+                    }
+                    pauseDateTime = LocalDateTime.now().plusSeconds(86400 - duration);
+//                    pauseDateTime = LocalDateTime.now().plusSeconds(20 - duration);
+                }
+            }, (pauseDelay + duration) * 1000, 86400000);
+//            }, (pauseDelay + duration) * 1000, 20000);
+            export();
+            timer.cancel();
         }
     }
 }

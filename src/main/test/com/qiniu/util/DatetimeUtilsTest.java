@@ -2,9 +2,12 @@ package com.qiniu.util;
 
 import org.junit.Test;
 
+import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.ZoneId;
+import java.util.*;
 
 public class DatetimeUtilsTest {
 
@@ -12,6 +15,7 @@ public class DatetimeUtilsTest {
     public void newDateTimeApi() {
         System.out.println(DatetimeUtils.datetimeOf(15319680669903952L));
         System.out.println(DatetimeUtils.stringOf(0, 10000000));
+        System.out.println(LocalDateTime.now());
     }
 
     @Test
@@ -38,5 +42,16 @@ public class DatetimeUtilsTest {
         }
         localDateTime = LocalDateTime.parse(datetime);
         System.out.println(localDateTime);
+    }
+
+    @Test
+    public void testGetGMTDate() {
+        System.out.println(DatetimeUtils.getGMTDate());
+        SimpleDateFormat formatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        System.out.println(formatter.format(new Date(Instant.now(DatetimeUtils.clock_Default).toEpochMilli())));
+        System.out.println(formatter.format(new Date()));
+        Clock clock = Clock.system(ZoneId.of("GMT"));
+        System.out.println(formatter.format(new Date(Instant.now(clock).toEpochMilli())));
     }
 }

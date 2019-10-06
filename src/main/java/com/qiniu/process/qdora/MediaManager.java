@@ -59,7 +59,7 @@ public class MediaManager {
     }
 
     public JsonObject getAvinfoJson(String domain, String sourceKey) throws IOException {
-        return getAvinfoJson(protocol + "://" + domain + "/" + sourceKey.split("\\?")[0]);
+        return getAvinfoJson(String.join("", protocol, "://", domain, "/", sourceKey.split("\\?")[0]));
     }
 
     public JsonObject getAvinfoJson(String url) throws IOException {
@@ -73,13 +73,13 @@ public class MediaManager {
     }
 
     public String getAvinfoBody(String domain, String sourceKey) throws QiniuException {
-        String url = protocol + "://" + domain + "/" + sourceKey.split("\\?")[0];
+        String url = String.join("", protocol, "://", domain, "/", sourceKey.split("\\?")[0]);
         return getAvinfoBody(url);
     }
 
     public String getAvinfoBody(String url) throws QiniuException {
         if (client == null) this.client = new Client();
-        Response response = client.get(url + "?avinfo");
+        Response response = client.get(String.join("?", url, "avinfo"));
         String avinfo = response.bodyString();
         if (response.statusCode != 200 || avinfo.isEmpty()) throw new QiniuException(response);
         response.close();
@@ -87,7 +87,7 @@ public class MediaManager {
     }
 
     public String getPfopResultBodyById(String persistentId) throws QiniuException {
-        String url = protocol + "://api.qiniu.com/status/get/prefop?id=" + persistentId;
+        String url = String.join("", protocol, "://api.qiniu.com/status/get/prefop?id=", persistentId);
         if (client == null) this.client = new Client();
         Response response = client.get(url);
         String pfopResult = response.bodyString();

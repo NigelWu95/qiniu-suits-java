@@ -41,14 +41,14 @@ check-url=
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|   
 |to-bucket|字符串| 保存抓取结果的空间名|  
-|host| host 字符串|（暂未启用）抓取源资源时指定 host|  
+|host| host 字符串|抓取源资源时指定 host|  
 |md5-index| 字符串| 资源 md5 值索引（下标），需要手动指定才会进行解析|  
 |callback-url| 公网可访问的 url 字符串| 设置回调地址|  
 |callback-body| body 字符串| 设置回调 body|  
 |callback-body-type| body-type 字符串| 设置回调 body 类型|  
 |callback-host| 域名字符串| 设置回调 host |  
 |file-type| 0/1| 文件的存储类型，默认为 0 标准存储|  
-|ignore-same-key| true/false|（暂未启用）为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
+|ignore-same-key| true/false|为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
 |check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 
 ### 关于 url-index 和 md5-index

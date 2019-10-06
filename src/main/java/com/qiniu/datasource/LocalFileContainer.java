@@ -39,29 +39,11 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 
-    private List<File> getFiles(File directory) throws IOException {
-        File[] fs = directory.listFiles();
-        if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
-        List<File> files = new ArrayList<>();
-//        Objects.requireNonNull(directory.listFiles());
-        for(File f : fs) {
-            if (f.isDirectory()) {
-                files.addAll(getFiles(f));
-            } else {
-                String type = FileUtils.contentType(f);
-                if (type.startsWith("text") || type.equals("application/octet-stream")) {
-                    files.add(f);
-                }
-            }
-        }
-        return files;
-    }
-
     @Override
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
         if (linesMap != null && linesMap.size() > 0) {
-            try { path = FileUtils.realPathWithUserHome(path); } catch (IOException ignored) {}
+            try { path = FileUtils.convertToRealPath(path); } catch (IOException ignored) {}
             String type;
             for (Map.Entry<String, String> entry : linesMap.entrySet()) {
                 File file = new File(path, entry.getKey());
@@ -77,14 +59,15 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
                 }
             }
         } else {
-            path = FileUtils.realPathWithUserHome(path);
-            if (path.equals(FileUtils.realPathWithUserHome(savePath))) {
+            path = FileUtils.convertToRealPath(path);
+            if (path.equals(FileUtils.convertToRealPath(savePath))) {
                 throw new IOException("the save-path can not be same as path.");
             }
             File sourceFile = new File(path);
             if (sourceFile.isDirectory()) {
-                List<File> files = getFiles(sourceFile);
+                List<File> files = FileUtils.getFiles(sourceFile, true);
                 for (File file : files) {
+                    if (file.getPath().contains(FileUtils.pathSeparator + ".")) continue;
                     fileReaders.add(new LocalFileReader(file, linesMap.get(file.getPath()), unitLen));
                 }
             } else {

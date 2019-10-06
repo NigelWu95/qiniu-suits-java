@@ -75,7 +75,7 @@ public class ParamsUtils {
     }
 
     public static Map<String, String> toParamsMap(String resource) throws IOException {
-        resource = FileUtils.realPathWithUserHome(resource);
+        resource = FileUtils.convertToRealPath(resource);
         FileReader fileReader = new FileReader(resource);
         BufferedReader reader = new BufferedReader(fileReader);
         Map<String, String> paramsMap = new HashMap<>();
@@ -154,10 +154,9 @@ public class ParamsUtils {
         return strings;
     }
 
-    public static String checked(String param, String name, String conditionReg) throws IOException {
+    public static void checked(String param, String name, String conditionReg) throws IOException {
         if (param == null || !param.matches(conditionReg)) {
             throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
         }
-        return param;
     }
 }

@@ -18,7 +18,7 @@ public class LineToMap extends Converter<String, Map<String, String>> {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, indexMap, new StringMapPair()));
         } else if ("csv".equals(parseType)) {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, ",", indexMap, new StringMapPair()));
-        } else if ("tab".equals(parseType)) {
+        } else if ("tab".equals(parseType) || "self".equals(parseType)) {
             this.lineParser = line -> process(addKeyPrefix, rmKeyPrefix, ConvertingUtils.toPair(line, separator, indexMap, new StringMapPair()));
         } else {
             throw new IOException("please check your format for line to map.");

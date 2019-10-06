@@ -2,16 +2,11 @@ package com.qiniu.util;
 
 import com.qiniu.config.PropertiesFile;
 import org.junit.Test;
-import sun.misc.BASE64Decoder;
 
-import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
 
 public class ParamsUtilsTest {
 
@@ -41,7 +36,7 @@ public class ParamsUtilsTest {
     @Test
     public void testAccountConfig() throws Exception {
         java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
-        String accountFile = FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account");
+        String accountFile = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
         Map<String, String> map = ParamsUtils.toParamsMap(accountFile);
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (entry.getKey().endsWith("id") || entry.getKey().endsWith("secret")) {

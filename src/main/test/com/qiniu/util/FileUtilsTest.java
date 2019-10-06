@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public class FileUtilsTest {
 
     @Test
-    public void contentType() throws IOException {
+    public void testContentType() throws IOException {
         File file1 = new File("/Users/wubingheng/Downloads/sign.py");
         File file2 = new File("/Users/wubingheng/Downloads/cdn-qiniu.html");
         File file3 = new File("/Users/wubingheng/Downloads/IAM文档 20190514.pdf");
@@ -43,5 +43,11 @@ public class FileUtilsTest {
         System.out.println(new File("~/Downloads").getName());
         System.out.println(new File("~/Downloads").getPath());
         System.out.println(System.getProperty("user.home") + System.getProperty("file.separator") + "Downloads");
+    }
+
+    @Test
+    public void test() {
+        File file = new File("/Users/wubingheng/Downloads/-706dd01a67");
+        System.out.println(file.exists());
     }
 }

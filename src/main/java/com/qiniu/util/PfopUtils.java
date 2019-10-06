@@ -37,7 +37,8 @@ public final class PfopUtils {
     }
 
     public static String generateFopCmd(String srcKey, JsonObject pfopJson) {
-        return pfopJson.get("cmd").getAsString() + "|saveas/" + UrlSafeBase64.encodeToString(generateFopSaveAs(srcKey, pfopJson));
+        return String.join("|saveas/", pfopJson.get("cmd").getAsString(),
+                UrlSafeBase64.encodeToString(generateFopSaveAs(srcKey, pfopJson)));
     }
 
     public static String generateFopSaveAs(String srcKey, JsonObject pfopJson) {

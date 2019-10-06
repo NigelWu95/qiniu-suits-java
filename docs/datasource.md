@@ -240,6 +240,12 @@ threads=300
 prefixes=
 #region=
 ```  
+**使用七牛数据源除了可以自行指定 region，也可以单独指定 rsf,rs,api 域名（一般不需要用到），如**：  
+```
+rsf-domain=rsf.qiniu.com
+rs-domain=rs.qiniu.com
+api-domain=api.qiniu.com
+```  
 
 ### 2 腾讯云存储
 命令行参数示例：

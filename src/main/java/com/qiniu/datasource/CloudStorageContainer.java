@@ -18,11 +18,10 @@ import sun.misc.SignalHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -83,7 +82,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
         if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getOrderedFields(new ArrayList<>(this.indexMap.values()), rmFields);
+            this.fields = ConvertingUtils.getOrderedFields(this.indexMap, rmFields);
         }
         else this.fields = fields;
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
@@ -104,7 +103,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.saveSeparator = separator;
         this.rmFields = rmFields;
         if (rmFields != null && rmFields.size() > 0) {
-            this.fields = ConvertingUtils.getFields(new ArrayList<>(fields), rmFields);
+            this.fields = ConvertingUtils.getFields(fields, rmFields);
         }
     }
 
@@ -217,7 +216,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws IOException {
+    public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -232,6 +231,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
+            if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
+                synchronized (object) {
+                    object.wait();
+                }
+            }
             if (stringConverter != null) {
                 writeList = stringConverter.convertToVList(objects);
                 if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
@@ -245,6 +249,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     processor.processLine(convertedList);
                 } catch (QiniuException e) {
                     if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                    errorLogger.error("process objects: {}", lister.getPrefix(), e);
                     if (e.response != null) e.response.close();
                 }
             }
@@ -618,8 +623,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * 根据当前参数值创建多线程执行数据源导出工作
      */
     public void export() throws Exception {
-        String info = "list objects from " + getSourceName() + " bucket: " + bucket + (processor == null ? "" : " and "
-                + processor.getProcessName());
+        String info = processor == null ?
+                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
+                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
@@ -665,6 +671,48 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
+        }
+    }
+
+    private final Object object = new Object();
+    private LocalDateTime pauseDateTime = LocalDateTime.MAX;
+
+    public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
+        if (startTime != null) {
+            Clock clock = Clock.systemDefaultZone();
+            LocalDateTime now = LocalDateTime.now(clock);
+            if (startTime.minusWeeks(1).isAfter(now)) {
+                throw new Exception("startTime is not allowed to exceed next week");
+            }
+            while (now.isBefore(startTime)) {
+                System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+                now = LocalDateTime.now(clock);
+            }
+        }
+        if (duration <= 0 || pauseDelay < 0) {
+            export();
+        } else if (duration > 84600 || duration < 1800) {
+            throw new Exception("duration can not be bigger than 23.5 hours or smaller than 0.5 hours.");
+        } else {
+            pauseDateTime = LocalDateTime.now().plusSeconds(pauseDelay);
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (object) {
+                        object.notifyAll();
+                    }
+                    pauseDateTime = LocalDateTime.now().plusSeconds(86400 - duration);
+//                    pauseDateTime = LocalDateTime.now().plusSeconds(20 - duration);
+                }
+            }, (pauseDelay + duration) * 1000, 86400000);
+//            }, (pauseDelay + duration) * 1000, 20000);
+            export();
+            timer.cancel();
         }
     }
 }

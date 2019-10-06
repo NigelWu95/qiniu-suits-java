@@ -1,6 +1,8 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
+import com.qiniu.http.Client;
 import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
@@ -27,13 +29,20 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private int fileType;
     private boolean ignoreSameKey;
     private Configuration configuration;
-    private BucketManager bucketManager;
+    private Auth auth;
+    private Client client;
+    private String requestUrl;
+//    private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
                       String domain, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
         super("asyncfetch", accessKey, secretKey, bucket);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        this.auth = Auth.create(accessKey, secretKey);
+        this.client = new Client(configuration.clone());
+        CloudApiUtils.checkQiniu(new BucketManager(auth, configuration), bucket);
+        this.requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
+//        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+//        CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
 
@@ -41,8 +50,12 @@ public class AsyncFetch extends Base<Map<String, String>> {
                       String domain, String urlIndex, String addPrefix, String rmPrefix, String savePath, int saveIndex)
             throws IOException {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        this.auth = Auth.create(accessKey, secretKey);
+        this.client = new Client(configuration.clone());
+        CloudApiUtils.checkQiniu(new BucketManager(auth, configuration), bucket);
+        this.requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
+//        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+//        CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
 
@@ -86,20 +99,29 @@ public class AsyncFetch extends Base<Map<String, String>> {
 
     public AsyncFetch clone() throws CloneNotSupportedException {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
-        asyncFetch.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        asyncFetch.auth = Auth.create(accessId, secretKey);
+        asyncFetch.client = new Client(configuration.clone());
+//        asyncFetch.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         return asyncFetch;
     }
 
-    private Response fetch(String url, String key, String md5, String etag) throws QiniuException {
-        return hasCustomArgs ?
-                bucketManager.asynFetch(url, bucket, key, md5, etag, callbackUrl, callbackBody, callbackBodyType,
-                        callbackHost, fileType) :
-                bucketManager.asynFetch(url, bucket, key);
+    public Response asyncFetch(String url, String key, String md5, String etag) throws QiniuException {
+        StringMap stringMap = new StringMap().put("url", url).put("bucket", bucket)
+                .putNotNull("key", key).putNotEmpty("etag", etag);
+        if (hasCustomArgs) {
+            stringMap.putNotEmpty("host", host).putNotNull("md5", md5)
+                    .putNotNull("callbackurl", callbackUrl).putNotNull("callbackbody", callbackBody)
+                    .putNotNull("callbackbodytype", callbackBodyType).putNotNull("callbackhost", callbackHost)
+                    .putNotNull("file_type", fileType).putNotNull("ignore_same_key", ignoreSameKey);
+        }
+        byte[] bodyByte = Json.encode(stringMap).getBytes(Constants.UTF_8);
+        return client.post(requestUrl, bodyByte, auth.authorizationV2(requestUrl, "POST", bodyByte, Client.JsonMime),
+                Client.JsonMime);
     }
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(urlIndex);
+        return String.join("\t", line.get("key"), line.get(urlIndex));
     }
 
     @Override
@@ -108,16 +130,19 @@ public class AsyncFetch extends Base<Map<String, String>> {
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f");
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
             line.put(urlIndex, url);
-            key = addPrefix + FileUtils.rmPrefix(rmPrefix, key); // 目标文件名
+            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
         } else {
-            if (key != null) key = addPrefix + FileUtils.rmPrefix(rmPrefix, key);
-            else key = addPrefix + FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url));
+            if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
+            else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
         }
         line.put("key", key);
-        Response response = fetch(url, key, line.get(md5Index), line.get("hash"));
-        return key + "\t" + url + "\t" + response.statusCode + "\t" + HttpRespUtils.getResult(response);
+        String etag = line.get("etag");
+        if (etag == null || "".equals(etag)) etag = line.get("hash");
+        Response response = asyncFetch(url, key, line.get(md5Index), etag);
+        return String.join("\t", key, url, String.valueOf(response.statusCode),
+                HttpRespUtils.getResult(response));
     }
 
     @Override
@@ -135,6 +160,8 @@ public class AsyncFetch extends Base<Map<String, String>> {
         callbackBodyType = null;
         callbackHost = null;
         configuration = null;
-        bucketManager = null;
+        auth = null;
+        client = null;
+//        bucketManager = null;
     }
 }

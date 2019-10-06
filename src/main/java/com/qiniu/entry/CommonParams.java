@@ -73,11 +73,15 @@ public class CommonParams {
     private Map<String, String> mapLine;
     private List<JsonObject> pfopConfigs;
     private Base64.Decoder decoder = Base64.getDecoder();
+    private LocalDateTime startDateTime;
+    private long pauseDelay;
+    private long pauseDuration;
 
     public static Set<String> lineFormats = new HashSet<String>(){{
         add("csv");
         add("tab");
         add("json");
+        add("self"); // 表示读取的文件路径本身，而不是对文本内容做解析，用作目录下文件直接上传等操作
     }};
 
     public CommonParams() {}
@@ -92,7 +96,7 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
-        String filePath = FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account");
+        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
         try {
             accountMap = ParamsUtils.toParamsMap(filePath);
         } catch (FileNotFoundException ignored) {
@@ -134,16 +138,18 @@ public class CommonParams {
         setSavePath();
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
-        saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+        ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
         setSaveSeparator();
         setRmFields();
+        setPfopConfigs();
+        setStartAndPause();
     }
 
     public CommonParams(Map<String, String> paramsMap) throws IOException {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
-        String filePath = FileUtils.realPathWithUserHome("~" + FileUtils.pathSeparator + ".qsuits.account");
+        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
         accountMap = ParamsUtils.toParamsMap(filePath);
         account = entryParam.getValue("a", null);
         if (account == null) {
@@ -209,11 +215,14 @@ public class CommonParams {
                 }
                 break;
             case "pfop":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", "").trim();
                 if (!"".equals(fops)) {
                     indexMap.put("fops", "fops");
                     mapLine.put("fops", fops);
                 }
+                setPfopConfigs();
+                break;
             case "pfopcmd":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String avinfo = entryParam.getValue("avinfo", "").trim();
@@ -221,31 +230,7 @@ public class CommonParams {
                     indexMap.put("avinfo", "avinfo");
                     mapLine.put("avinfo", avinfo);
                 }
-                String cmd = entryParam.getValue("cmd", "").trim();
-                if (!"".equals(cmd)) {
-                    JsonObject pfopJson = new JsonObject();
-                    pfopJson.addProperty("cmd", cmd);
-                    String saveas = entryParam.getValue("saveas");
-                    pfopJson.addProperty("saveas", saveas);
-                    if ("pfopcmd".equals(process)) {
-                        String scale = entryParam.getValue("scale").trim();
-                        if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
-                                "like \"[num1,num2]\"");
-                        String[] scales = scale.substring(1, scale.length() - 1).split(",");
-                        JsonArray jsonArray = new JsonArray();
-                        if (scales.length > 1) {
-                            jsonArray.add(scales[0]);
-                            jsonArray.add(scales[1]);
-                        } else {
-                            jsonArray.add(Integer.valueOf(scales[0]));
-                            jsonArray.add(Integer.MAX_VALUE);
-                        }
-                        pfopJson.add("scale", jsonArray);
-                    }
-                    pfopConfigs = new ArrayList<JsonObject>(){{
-                        add(pfopJson);
-                    }};
-                }
+                setPfopConfigs();
                 break;
             case "pfopresult":
             case "censorresult":
@@ -256,10 +241,18 @@ public class CommonParams {
                 }
                 break;
             case "stat":
-                saveFormat = entryParam.getValue("save-format", "tab").trim();
-                saveFormat = ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
-                setSaveSeparator();
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                saveFormat = entryParam.getValue("save-format", "tab").trim();
+                ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+                setSaveSeparator();
+                break;
+            case "qupload":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                String filepath = entryParam.getValue("filepath", "").trim();
+                if (!"".equals(filepath)) {
+                    indexMap.put("filepath", "filepath");
+                    mapLine.put("filepath", filepath);
+                }
                 break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
@@ -305,11 +298,11 @@ public class CommonParams {
 
     private void setParse() throws IOException {
         parse = entryParam.getValue("parse", "tab").trim();
-        parse = ParamsUtils.checked(parse, "parse", "(csv|tab|json)");
+        ParamsUtils.checked(parse, "parse", "(csv|tab|json|object|self)");
     }
 
     private void setSeparator() {
-        String separator = entryParam.getValue("separator", "");
+        String separator = entryParam.getValue("separator", null);
         if (separator == null || separator.isEmpty()) {
             if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
@@ -490,6 +483,10 @@ public class CommonParams {
             setBaiduAuthKey();
         }
         if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket", bucket).trim();
+        if ("qupload".equals(process)) {
+            // 如果是文件上传操作，默认表示上传 path 本身路径下的文件，设置默认值为 self，如果 parse 设置了其他值则不做替换
+            parse = entryParam.getValue("parse", "self").trim();
+        }
     }
 
     private void setPrivateType() throws IOException {
@@ -570,11 +567,13 @@ public class CommonParams {
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
-        this.prefixLeft = Boolean.valueOf(ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)"));
+        ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)");
+        this.prefixLeft = Boolean.valueOf(prefixLeft);
     }
 
     private void setPrefixRight(String prefixRight) throws IOException {
-        this.prefixRight = Boolean.valueOf(ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)"));
+        ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)");
+        this.prefixRight = Boolean.valueOf(prefixRight);
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -641,7 +640,7 @@ public class CommonParams {
         }
         String type = entryParam.getValue("f-type", "").trim();
         String status = entryParam.getValue("f-status", "").trim();
-        if (!"".equals(status)) status = ParamsUtils.checked(status, "f-status", "[01]");
+        if (!"".equals(status)) ParamsUtils.checked(status, "f-status", "[01]");
 
         List<String> keyPrefixList = Arrays.asList(ParamsUtils.escapeSplit(keyPrefix));
         List<String> keySuffixList = Arrays.asList(ParamsUtils.escapeSplit(keySuffix));
@@ -669,10 +668,10 @@ public class CommonParams {
 
     private void setSeniorFilter() throws IOException {
         String checkType = entryParam.getValue("f-check", "").trim();
-        checkType = ParamsUtils.checked(checkType, "f-check", "(|ext-mime)").trim();
+        ParamsUtils.checked(checkType, "f-check", "(|ext-mime)");
         String checkConfig = entryParam.getValue("f-check-config", "");
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
-        checkRewrite = ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
+        ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
         try {
             seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
                 @Override
@@ -696,7 +695,8 @@ public class CommonParams {
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
-            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
+            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)
+                    || "self".equals(parse)) {
                 indexMap.put(index, indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
@@ -706,6 +706,14 @@ public class CommonParams {
 
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
+        String indexes = entryParam.getValue("indexes", "").trim();
+        if ("self".equals(parse)) {
+            if (!"".equals(indexes) && !"[]".equals(indexes)) throw new IOException("upload from path can not set indexes.");
+            if (isStorageSource) throw new IOException("self parse only support local file source.");
+            indexMap.put("0", "filepath");
+            indexMap.put("1", "key");
+            return;
+        }
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
         int fieldsMode = 0;
         if ("upyun".equals(source)) {
@@ -724,7 +732,6 @@ public class CommonParams {
             keys.remove(ConvertingUtils.defaultStatusField);
             keys.remove(ConvertingUtils.defaultMd5Field);
         }
-        String indexes = entryParam.getValue("indexes", "").trim();
         if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
             String[] strings = ParamsUtils.escapeSplit(indexes, false);
@@ -764,6 +771,8 @@ public class CommonParams {
             setIndex(entryParam.getValue("id-index", "").trim(), "id");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
+        if (ProcessUtils.needFilepath(process))
+            setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
 
         boolean useDefault = false;
         boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);
@@ -848,11 +857,13 @@ public class CommonParams {
             if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
             else unitLen = "1000";
         }
-        this.unitLen = Integer.valueOf(ParamsUtils.checked(unitLen, "unit-len", "\\d+"));
+        ParamsUtils.checked(unitLen, "unit-len", "\\d+");
+        this.unitLen = Integer.valueOf(unitLen);
     }
 
     private void setThreads(String threads) throws IOException {
-        this.threads = Integer.valueOf(ParamsUtils.checked(threads, "threads", "[1-9]\\d*"));
+        ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
+        this.threads = Integer.valueOf(threads);
     }
 
     private void setBatchSize(String batchSize) throws IOException {
@@ -863,19 +874,20 @@ public class CommonParams {
                 batchSize = "0";
             }
         }
-        this.batchSize = Integer.valueOf(ParamsUtils.checked(batchSize, "batch-size", "\\d+"));
+        ParamsUtils.checked(batchSize, "batch-size", "\\d+");
+        this.batchSize = Integer.valueOf(batchSize);
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
-        this.retryTimes = Integer.valueOf(ParamsUtils.checked(retryTimes, "retry-times", "\\d+"));
+        ParamsUtils.checked(retryTimes, "retry-times", "\\d+");
+        this.retryTimes = Integer.valueOf(retryTimes);
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
         if (saveTotal == null || "".equals(saveTotal)) {
             if (isStorageSource) {
                 saveTotal = "true";
-
-//（2）云存储数据源时如果无 process 则为 true，如果存在 process 且包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。
+//（2）云存储数据源时如果无 process 则为 true，如果存在 process 但不包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。
 //                if (process == null || "".equals(process)) {
 //                    saveTotal = "true";
 //                } else {
@@ -883,11 +895,19 @@ public class CommonParams {
 //                    else saveTotal = "false";
 //                }
             } else {
-                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) saveTotal = "false";
-                else saveTotal = "true";
+//                if ("self".equals(parse)) { // 自上传时将上传路径的路径等信息做下保存
+//                    saveTotal = "true";
+//                }
+//                else
+                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) {
+                    saveTotal = "false";
+                } else {
+                    saveTotal = "true";
+                }
             }
         }
-        this.saveTotal = Boolean.valueOf(ParamsUtils.checked(saveTotal, "save-total", "(true|false)"));
+        ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
+        this.saveTotal = Boolean.valueOf(saveTotal);
     }
 
     private void setSavePath() {
@@ -914,6 +934,49 @@ public class CommonParams {
             String[] fields = ParamsUtils.escapeSplit(param);
             rmFields = new ArrayList<>();
             Collections.addAll(rmFields, fields);
+        }
+    }
+
+    private void setPfopConfigs() throws IOException {
+        String cmd = entryParam.getValue("cmd", "").trim();
+        if (!"".equals(cmd)) {
+            JsonObject pfopJson = new JsonObject();
+            pfopJson.addProperty("cmd", cmd);
+            String saveas = entryParam.getValue("saveas");
+            pfopJson.addProperty("saveas", saveas);
+            if ("pfopcmd".equals(process)) {
+                String scale = entryParam.getValue("scale").trim();
+                if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
+                        "like \"[num1,num2]\"");
+                String[] scales = scale.substring(1, scale.length() - 1).split(",");
+                JsonArray jsonArray = new JsonArray();
+                if (scales.length > 1) {
+                    jsonArray.add(scales[0]);
+                    jsonArray.add(scales[1]);
+                } else {
+                    jsonArray.add(Integer.valueOf(scales[0]));
+                    jsonArray.add(Integer.MAX_VALUE);
+                }
+                pfopJson.add("scale", jsonArray);
+            }
+            pfopConfigs = new ArrayList<JsonObject>(){{
+                add(pfopJson);
+            }};
+        }
+    }
+
+    private void setStartAndPause() throws Exception {
+        String startTime = entryParam.getValue("start-time", null);
+        if (startTime != null) startDateTime = checkedDatetime(startTime);
+        String delay = entryParam.getValue("pause-delay", null);
+        if (startTime != null) {
+            ParamsUtils.checked(delay, "pause-delay", "\\d+");
+            pauseDelay = Long.valueOf(delay);
+        }
+        String duration = entryParam.getValue("pause-duration", null);
+        if (startTime != null) {
+            ParamsUtils.checked(duration, "pause-duration", "\\d+");
+            pauseDuration = Long.valueOf(duration);
         }
     }
 
@@ -1105,6 +1168,18 @@ public class CommonParams {
         this.pfopConfigs = pfopConfigs;
     }
 
+    public void setStartDateTime(LocalDateTime startDateTime) {
+        this.startDateTime = startDateTime;
+    }
+
+    public void setPauseDelay(long pauseDelay) {
+        this.pauseDelay = pauseDelay;
+    }
+
+    public void setPauseDuration(long pauseDuration) {
+        this.pauseDuration = pauseDuration;
+    }
+
     public int getConnectTimeout() {
         return connectTimeout;
     }
@@ -1291,5 +1366,17 @@ public class CommonParams {
 
     public List<JsonObject> getPfopConfigs() {
         return pfopConfigs;
+    }
+
+    public LocalDateTime getStartDateTime() {
+        return startDateTime;
+    }
+
+    public long getPauseDelay() {
+        return pauseDelay;
+    }
+
+    public long getPauseDuration() {
+        return pauseDuration;
     }
 }

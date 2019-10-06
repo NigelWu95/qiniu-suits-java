@@ -76,7 +76,7 @@ public class PfopCommand extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key") + "\t" + line.get(avinfoIndex);
+        return String.join("\t", line.get("key"), line.get(avinfoIndex));
     }
 
     @Override
@@ -100,7 +100,8 @@ public class PfopCommand extends Base<Map<String, String>> {
             videoStream = avinfo.getVideoStream();
             if (videoStream == null) throw new IOException("videoStream is null.");
             if (scale.get(0) < videoStream.width && videoStream.width <= scale.get(1)) {
-                resultList.add(key + "\t" + PfopUtils.generateFopCmd(key, pfopConfig) + other.toString());
+                resultList.add(String.join("\t", key,
+                        PfopUtils.generateFopCmd(key, pfopConfig), other.toString()));
             }
         }
         return String.join("\n", resultList);

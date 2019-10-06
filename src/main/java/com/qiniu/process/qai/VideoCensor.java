@@ -91,7 +91,7 @@ public class VideoCensor extends Base<Map<String, String>> {
     @Override
     protected String resultInfo(Map<String, String> line) {
         String key = line.get("key");
-        return (key == null ? "\t" : key + "\t") + line.get(urlIndex);
+        return key == null ? line.get(urlIndex) : String.join("\t", key, line.get(urlIndex));
     }
 
     @Override
@@ -100,12 +100,13 @@ public class VideoCensor extends Base<Map<String, String>> {
         String key = line.get("key");
         if (url == null || "".equals(url)) {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = protocol + "://" + domain + "/" + key.replace("\\?", "%3f");
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
             line.put(urlIndex, url);
-            return key + "\t" + url + "\t" + JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString();
+            return String.join("\t", key, url,
+                    JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString());
         }
-        return (key == null ? "\t" : key + "\t") + url + "\t" + JsonUtils
-                .toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString();
+        return key == null ? String.join("\t", url, JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString()) :
+                String.join("\t", key, url, JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString());
     }
 
     @Override
