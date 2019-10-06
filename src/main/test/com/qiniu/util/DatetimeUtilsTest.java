@@ -49,7 +49,7 @@ public class DatetimeUtilsTest {
         System.out.println(DatetimeUtils.getGMTDate());
         SimpleDateFormat formatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
         formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-        System.out.println(formatter.format(new Date(Instant.now(DatetimeUtils.clock).toEpochMilli())));
+        System.out.println(formatter.format(new Date(Instant.now(DatetimeUtils.clock_Default).toEpochMilli())));
         System.out.println(formatter.format(new Date()));
         Clock clock = Clock.system(ZoneId.of("GMT"));
         System.out.println(formatter.format(new Date(Instant.now(clock).toEpochMilli())));
