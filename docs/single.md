@@ -152,4 +152,9 @@ http://xxx.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mp
 ```
 ➜ ~ qsuits -d -s -process=download -url=http://xxx.bkt.clouddn.com/test.go 
 test.go	http://xxx.bkt.clouddn.com/test.go
+```  
+###### 22 上传文件到七牛存储空间
 ```
+➜ ~ qsuits -d -s -process=qupload -path=test.py -bucket=temp -key=test.py
+test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test.py"}
+```  

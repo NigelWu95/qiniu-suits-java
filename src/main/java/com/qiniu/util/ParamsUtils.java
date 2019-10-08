@@ -130,7 +130,6 @@ public class ParamsUtils {
                         key = preSetMap.get(key);
                     }
                     strings = splitParam(key);
-                    System.out.println(strings[1]);
                     paramsMap.put(strings[0], strings[1]);
                 }
             }

@@ -28,7 +28,7 @@ public class UploadFile extends Base<Map<String, String>> {
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
                       StringMap policy, StringMap params, boolean checkCrc, String savePath, int saveIndex) throws IOException {
-        super("upload", accessKey, secretKey, null, savePath, saveIndex);
+        super("qupload", accessKey, secretKey, null, savePath, saveIndex);
         auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
         if (record) {
@@ -43,7 +43,7 @@ public class UploadFile extends Base<Map<String, String>> {
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
                       StringMap policy, StringMap params, boolean checkCrc) throws IOException {
-        super("upload", accessKey, secretKey, null);
+        super("qupload", accessKey, secretKey, null);
         auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
         if (record) {
