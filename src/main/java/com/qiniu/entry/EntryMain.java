@@ -59,7 +59,15 @@ public class EntryMain {
         }
         if (single) {
             if (processor != null) {
-                System.out.println(processor.processLine(commonParams.getMapLine()));
+                Map<String, String> converted = commonParams.getMapLine();
+                if ("qupload".equals(processor.getProcessName())) {
+                    if (converted.containsKey("filepath")) {
+                        converted.put("filepath", FileUtils.convertToRealPath(converted.get("filepath")));
+                    } else {
+                        converted.put("filepath", FileUtils.convertToRealPath(converted.get("key")));
+                    }
+                }
+                System.out.println(processor.processLine(converted));
             }
         } else if (interactive) {
             InputSource inputSource = qSuitsEntry.getInputSource();

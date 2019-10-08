@@ -76,10 +76,13 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
                 lists.get(i % size).add(String.join(separator, filepath, key));
             }
             String name;
+            List<String> list;
             String startLine;
             for (int i = 0; i < size; i++) {
                 name = "filepath-" + i;
                 startLine = linesMap == null ? null : linesMap.get(name);
+                list = lists.get(i);
+                if (list.size() == 0) continue;
                 filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
             }
         } else {

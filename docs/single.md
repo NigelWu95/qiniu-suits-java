@@ -150,11 +150,11 @@ http://xxx.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mp
 ```  
 ###### 21 通过 http 下载资源到本地
 ```
-➜ ~ qsuits -d -s -process=download -url=http://xxx.bkt.clouddn.com/test.go 
-test.go	http://xxx.bkt.clouddn.com/test.go
+➜ ~ qsuits -d -s -process=download -url=http://xxx.bkt.clouddn.com/test.go -save-path=.
+test.go	http://xxx.bkt.clouddn.com/test.go	/Users/wubingheng/Downloads/test.go
 ```  
 ###### 22 上传文件到七牛存储空间
 ```
-➜ ~ qsuits -d -s -process=qupload -path=test.py -bucket=temp -key=test.py
+➜ ~ qsuits -d -s -process=qupload -bucket=temp -filepath=test.py -key=test.py
 test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test.py"}
 ```  

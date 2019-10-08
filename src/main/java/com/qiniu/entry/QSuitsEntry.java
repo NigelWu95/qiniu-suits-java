@@ -249,7 +249,7 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-            if ("self".equals(commonParams.getParse())) return getFilepathContainer();
+            if (commonParams.isSelfUpload()) return getFilepathContainer();
             else return getLocalFileContainer();
         } else {
             return null;
