@@ -304,7 +304,8 @@ public class CommonParams {
     private void setSeparator() {
         String separator = entryParam.getValue("separator", null);
         if (separator == null || separator.isEmpty()) {
-            if ("tab".equals(parse)) this.separator = "\t";
+            if ("terminal".equals(source)) this.separator = " ";
+            else if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
             else this.separator = " ";
         } else {
@@ -776,8 +777,10 @@ public class CommonParams {
             setIndex(entryParam.getValue("id-index", "").trim(), "id");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
-        if (ProcessUtils.needFilepath(process))
+        if (ProcessUtils.needFilepath(process)) {
             setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
+            setIndex(entryParam.getValue("key-index", "").trim(), "key");
+        }
 
         boolean useDefault = false;
         boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);

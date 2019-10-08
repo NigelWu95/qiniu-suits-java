@@ -68,7 +68,7 @@ public class UploadFile extends Base<Map<String, String>> {
                      boolean checkCrc) {
         this.configuration = configuration;
         this.bucket = bucket;
-        if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "path";
+        if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "filepath";
         else this.pathIndex = pathIndex;
         this.parentPath = "".equals(parentPath) ? null : parentPath.endsWith(FileUtils.pathSeparator) ?
                 parentPath.substring(0, parentPath.length() - 1) : parentPath;
