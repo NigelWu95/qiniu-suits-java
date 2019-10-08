@@ -57,8 +57,9 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
             realPath = path;
         }
         if (realPath.contains("\\~")) realPath = realPath.replace("\\~", "~");
-        if (realPath.endsWith(FileUtils.pathSeparator))
+        if (realPath.endsWith(FileUtils.pathSeparator)) {
             realPath = realPath.substring(0, realPath.length() - 1);
+        }
         File sourceFile = new File(realPath);
         if (sourceFile.isDirectory()) {
             List<File> files = FileUtils.getFiles(sourceFile, false);

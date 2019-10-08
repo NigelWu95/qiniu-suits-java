@@ -169,7 +169,7 @@ public class CommonParams {
         String line = entryParam.getValue("line", null);
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
         boolean fromLine = line != null && !"".equals(line);
-        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine) {
+        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine && !"qupload".equals(process)) {
             throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
         }
         if (fromLine) {
@@ -304,7 +304,8 @@ public class CommonParams {
     private void setSeparator() {
         String separator = entryParam.getValue("separator", null);
         if (separator == null || separator.isEmpty()) {
-            if ("tab".equals(parse)) this.separator = "\t";
+            if ("terminal".equals(source)) this.separator = " ";
+            else if ("tab".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
             else this.separator = " ";
         } else {
@@ -482,7 +483,10 @@ public class CommonParams {
         } else if (ProcessUtils.needBaiduAuth(process)) {
             setBaiduAuthKey();
         }
-        if (ProcessUtils.needBucket(process)) bucket = entryParam.getValue("bucket", bucket).trim();
+        if (ProcessUtils.needBucket(process)) {
+            if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
+            else bucket = entryParam.getValue("bucket", bucket).trim();
+        }
         if ("qupload".equals(process)) {
             // 如果是文件上传操作，默认表示上传 path 本身路径下的文件，设置默认值为 self，如果 parse 设置了其他值则不做替换
             parse = entryParam.getValue("parse", "self").trim();
@@ -710,9 +714,11 @@ public class CommonParams {
         if ("self".equals(parse)) {
             if (!"".equals(indexes) && !"[]".equals(indexes)) throw new IOException("upload from path can not set indexes.");
             if (isStorageSource) throw new IOException("self parse only support local file source.");
-            indexMap.put("0", "filepath");
-            indexMap.put("1", "key");
-            return;
+            if (!"terminal".equals(source)) {
+                indexMap.put("0", "filepath");
+                indexMap.put("1", "key");
+                return;
+            }
         }
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
         int fieldsMode = 0;
@@ -771,8 +777,10 @@ public class CommonParams {
             setIndex(entryParam.getValue("id-index", "").trim(), "id");
         if (ProcessUtils.needAvinfo(process))
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
-        if (ProcessUtils.needFilepath(process))
+        if (ProcessUtils.needFilepath(process)) {
             setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
+            setIndex(entryParam.getValue("key-index", "").trim(), "key");
+        }
 
         boolean useDefault = false;
         boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);

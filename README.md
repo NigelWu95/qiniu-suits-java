@@ -20,13 +20,13 @@
 - [x] 修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
 - [x] 修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
 - [x] 修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
-- [x] 异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
-- [x] 对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
-- [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
-- [x] 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
 - [x] 对设置了镜像源的空间资源进行镜像更新或拉取 [mirror 配置](docs/mirror.md)  
+- [x] 异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
+- [x] 查询资源的 hash & size [qhash 配置](docs/qhash.md)  
 - [x] 查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
-- [x] qhash 查询资源的 hash/size [qhash 配置](docs/qhash.md)  
+- [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
+- [x] 对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
+- [x] 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
 - [x] 对私有空间资源进行签名 [privateurl 配置](docs/privateurl.md)  
 - [x] 对 m3u8 的 http 资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 - [x] 通过 http 下载资源到本地 [download 配置](docs/downloadfile.md)  
@@ -197,15 +197,16 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 特殊字符包括: `, \ =` 如有参数值本身包含特殊字符需要进行转义：`\, \\ \=`  
 
 #### f-date-scale
-\<date\> 中的 00:00:00 为默认值可省略，无起始时间则可填 [0,\<date2\>]，结束时间支持 now 和 max，分别表示到当前时间为结束或无结束时间。由于 date 
-值日期和时刻中间含有空格分隔符，故在设置时需要使用引号 `'` 或者 `"`，如 `f-date-scale="[0,2018-08-01 12:30:00]"`  
+\<date\> 中的 00:00:00 为默认值可省略，无起始时间则可填 [0,\<date2\>]，结束时间支持 now 和 max，分别表示到当前时间为结束或无结束时间。如果使
+用命令行来设置，注意日期值包含空格的情况（date 日期和时刻中间含有空格分隔符），故在设置时需要使用引号 `'` 或者 `"`，
+如 `-f-date-scale="[0,2018-08-01 12:30:00]"`，配置文件则不需要引号。  
 
 #### 特殊特征匹配过滤 f-check[-x]  
-根据资源的字段关系选择某个特征下的文件，目前支持 "ext-mime" 检查，程序内置的默认特征配置见：[check 默认配置](resources/check.json)，运行
+根据资源的字段关系选择某个特征下的文件，目前支持 `ext-mime` 检查，程序内置的默认特征配置见：[check 默认配置](resources/check.json)，运行
 参数选项如下：  
 `f-check=ext-mime` 表示进行**后缀名 ext** 和 **mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  
 `f-check-config` 自定义资源字段规范对应关系列表的配置文件，格式为 json，自定义规范配置 key 字段必填，其元素类型为列表 [], 否则无效，如
-"ext-mime" 配置时后缀名和 mimeType 用 ":" 组合成字符串成为一组对应关系，写法如下：  
+`ext-mime` 配置时后缀名和 mimeType 用 `:` 组合成字符串成为一组对应关系，写法如下：  
 ```
 {
   "ext-mime": [
@@ -217,7 +218,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `f-check-rewrite` 是否覆盖默认的特征配置，为 false（默认）表示将自定义的规范对应关系列表和默认的列表进行叠加，否则程序内置的规范对应关系将失效，
 只检查自定义的规范列表。  
 设置了过滤条件的情况下，后续的处理过程会选择满足过滤条件的记录来进行，或者对于数据源的输入进行过滤后的记录可以直接持久化保存结果，如通过 qiniu 源获
-取文件列表过滤后进行保存，可设置 save-total=true/false 来选择是否将列举到的完整记录进行保存。  
+取文件列表过滤后进行保存，可设置 `save-total=true/false` 来选择是否将列举到的完整记录进行保存。  
 filter 详细配置可见[filter 配置说明](docs/filter.md)  
 
 ### 5 处理过程
@@ -227,23 +228,28 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `batch-size=` 支持 batch 操作时设置的一次批量操作的文件个数（支持 batch 操作：type/status/lifecycle/delete/copy/move/rename/stat，
 其他操作请勿设置 batchSize 或者设置为 0），当响应结果较多 429/573 状态码时需要降低 batch-size，或者直接使用非 batch 方式：batch-size=0/1  
 **处理操作类型：**  
-`process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
-`process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
-`process=lifecycle` 表示修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
+`process=qupload` 表示上传文件到存储空间 [qupload 配置](docs/uploadfile.md)  
 `process=delete` 表示删除空间资源 [delete 配置](docs/delete.md)  
 `process=copy` 表示复制资源到指定空间 [copy 配置](docs/copy.md)  
 `process=move` 表示移动资源到指定空间 [move 配置](docs/move.md)  
 `process=rename` 表示对指定空间的资源进行重命名 [rename 配置](docs/rename.md)  
+`process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
+`process=type` 表示修改空间资源的存储类型（低频/标准）[type 配置](docs/type.md)  
+`process=status` 表示修改空间资源的状态（启用/禁用）[status 配置](docs/status.md)  
+`process=lifecycle` 表示修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
+`process=mirror` 表示对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
 `process=asyncfetch` 表示异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
+`process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
+`process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
+`process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 `process=pfop` 表示对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
 `process=pfopresult` 表示通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
-`process=stat` 表示查询空间资源的元信息 [stat 配置](docs/stat.md)  
-`process=mirror` 表示对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
-`process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
-`process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
 `process=privateurl` 表示对私有空间资源进行私有签名 [privateurl 配置](docs/privateurl.md)  
-`process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 `process=exportts` 表示对 m3u8 的资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
+`process=download` 表示通过 http 下载资源到本地 [download 配置](docs/downloadfile.md)  
+`process=imagecensor` 表示图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
+`process=videocensor` 表示视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
+`process=censorresult` 表示内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 
 ### 6 结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
@@ -316,12 +322,12 @@ java.net.SocketTimeoutException: timeout
 ### 11 分布式任务方案
 对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完
 整文件列表时，可以按照连续的前缀字符分割成多段分别执行各个机器的任务，建议的前缀列表为:  
-```!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz```，将该列表任意分成 n 段，如：
+```!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz```，将该列表任意分成 n 段，如：
 ```
-prefixes=!,\,",#,$,%,&,',(,),*,+,\,,-,.,/,0,1
+prefixes=!,",#,$,%,&,',(,),*,+,\,,-,.,/,0,1
 prefixes=2,3,4,5,6,7,8,9,:,;
 prefixes=<,=,>,?,@,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O
-prefixes=P,Q,R,S,T,U,V,W,X,Y,Z,[,\\,\\,],^,_,`
+prefixes=P,Q,R,S,T,U,V,W,X,Y,Z,[,\\,],^,_,`
 prefixes=a,b,c,d,e,f,g,h,i,j,k,l,m
 prefixes=n,o,p,q,r,s,t,u,v,w,x,y,z
 ```

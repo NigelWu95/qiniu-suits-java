@@ -148,9 +148,9 @@ public class ParamsUtils {
         }
         strings[0] = paramCommand.substring(0, position);
         strings[1] = paramCommand.substring(position + 1);
-        if (strings[1].matches("(^\".*\"$|^\'.*\'$)")) {
-            return new String[]{strings[0], strings[1].substring(1, strings[1].length() - 1)};
-        }
+//        if (strings[1].matches("(^\".*\"$|^\'.*\'$)")) {
+//            return new String[]{strings[0], strings[1].substring(1, strings[1].length() - 1)};
+//        } // java 命令行 args 会自动解析用 "" 包含的情况
         return strings;
     }
 

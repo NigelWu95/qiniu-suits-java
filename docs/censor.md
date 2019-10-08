@@ -2,15 +2,16 @@
 
 ## 简介
 对图片/视频资源进行内容审核。参考：[七牛内容审核](https://developer.qiniu.com/censor)  
+1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
+2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](../docs/datasource.md)**  
 
 ### 功能配置参数
 
 #### 图片审核
 审核 image 类型的资源，同步审核，审核结果输出为 json：[七牛图片审核响应 json](https://developer.qiniu.com/censor/api/5588/image-censor#4)
-如果数据源的资源类型不确定（如云存储数据源），建议设置 filter 选项：f-mime=image
+如果数据源的资源类型不确定（如云存储数据源），建议设置 filter 选项：f-mime=image  
 ```
 process=imagecensor
 ak=

@@ -4,6 +4,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.convert.LineToMap;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.util.FileUtils;
 import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
@@ -13,11 +14,12 @@ import java.util.Map;
 
 public class InputSource {
 
-    protected String parse;
-    protected String separator;
-    protected String addKeyPrefix;
-    protected String rmKeyPrefix;
-    protected Map<String, String> indexMap;
+    private String parse;
+    private String separator;
+    private String addKeyPrefix;
+    private String rmKeyPrefix;
+    private Map<String, String> indexMap;
+    private boolean isQupload;
 
     public InputSource(String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                        Map<String, String> indexMap) {
@@ -31,6 +33,7 @@ public class InputSource {
     public void export(InputStream inputStream, ILineProcess<Map<String, String >> processor) throws IOException {
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix,
                 rmKeyPrefix, indexMap);
+        if (processor != null) isQupload = "qupload".equals(processor.getProcessName());
         InputStreamReader reader = new InputStreamReader(inputStream);
         StringBuilder stringBuilder = new StringBuilder();
         int t;
@@ -49,6 +52,13 @@ public class InputSource {
             if (!quit) {
                 if (processor != null) {
                     converted = converter.convertToV(line);
+                    if (isQupload) {
+                        if (converted.containsKey("filepath")) {
+                            converted.put("filepath", FileUtils.convertToRealPath(converted.get("filepath")));
+                        } else {
+                            converted.put("filepath", FileUtils.convertToRealPath(converted.get("key")));
+                        }
+                    }
                     try {
                         System.out.println(processor.processLine(converted));
                     } catch (QiniuException e) {

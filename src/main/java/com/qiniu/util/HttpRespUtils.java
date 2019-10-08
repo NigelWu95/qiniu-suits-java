@@ -98,7 +98,11 @@ public final class HttpRespUtils {
                     String.join("", "reqid: ", e.response.reqId, ", code: ", String.valueOf(e.code()));
             // 避免抛出空指针异常
             try {
-                message = String.join(", error: ", message, e.error());
+                if (e.error() == null || "".equals(e.error())) {
+                    message = String.join(", error: ", message, String.valueOf(e.getCause()));
+                } else {
+                    message = String.join(", error: ", message, e.error());
+                }
             } catch (Exception ex) {
                 message = String.join(", failed: ", message, ex.getMessage());
                 ex.printStackTrace();

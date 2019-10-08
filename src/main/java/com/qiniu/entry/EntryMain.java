@@ -68,7 +68,8 @@ public class EntryMain {
             IDataSource dataSource = qSuitsEntry.getDataSource();
             if (dataSource != null) {
                 dataSource.setProcessor(processor);
-                dataSource.export();
+//                dataSource.export();
+                dataSource.export(commonParams.getStartDateTime(), commonParams.getPauseDelay(), commonParams.getPauseDuration());
 //                dataSource.export(LocalDateTime.now().plusSeconds(5), 0, 19);
             }
         }
