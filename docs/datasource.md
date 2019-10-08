@@ -129,19 +129,6 @@ anti-prefixes=
 prefix-left=
 prefix-right=
 ```  
-支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 50，千万以内文件数量可以不增加线程，数据源路径等公共参数参考[公共参数配置](#1-公共参数)，
-通常云存储空间列举的必须参数包括密钥、空间名(通过 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)：  
-
-|storage 源|             密钥和 region 字段         |                  对应关系和描述                |  
-|------|---------------------------------------|---------------------------------------------|  
-|qiniu |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对为七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
-|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对为腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
-|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对为阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
-|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对为 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS S3 Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
-|upyun |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
-|huawei|`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Endpoint](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
-|baidu |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Endpoint](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
-
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
 |<密钥配置>|字符串|密钥对字符串|  
@@ -152,6 +139,21 @@ prefix-right=
 |anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
+
+支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 50，千万以内文件数量可以不增加线程，数据源路径等公共参数参考[公共参数配置](#1-公共参数)，
+通常云存储空间列举的必须参数包括密钥、空间名(通过 path 或 bucket 设置)及空间所在区域(通过 region 设置，允许不设置的情况下表明支持自动查询)，各数
+据源配置参数如下：  
+
+|storage 源|             密钥和 region 字段         |                  对应关系和描述                |  
+|------|---------------------------------------|---------------------------------------------|  
+|qiniu |`ak=`<br>`sk=`<br>`region=z0/z1/z2/...`|密钥对为七牛云账号的 AccessKey 和 SecretKey<br>region(可不设置)使用简称，参考[七牛 Region](https://developer.qiniu.com/kodo/manual/1671/region-endpoint)|  
+|tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对为腾讯云账号的 SecretId 和 SecretKey<br>region(可不设置)使用简称，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
+|aliyun|`ali-id=`<br>`ali-secret=`<br>`region=oss-cn-hangzhou/...`| 密钥对为阿里云账号的 AccessKeyId 和 AccessKeySecret<br>region(可不设置)使用简称，参考[阿里 Region](https://help.aliyun.com/document_detail/31837.html)|  
+|aws/s3|`s3-id=`<br>`s3-secret=`<br>`region=ap-east-1/...`| 密钥对为 aws/s3 api 账号的 AccessKeyId 和 SecretKey<br>region(可不设置)使用简称，参考[AWS S3 Region](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html)|  
+|upyun |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
+|huawei|`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Endpoint](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
+|baidu |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Endpoint](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
+**支持通过上述参数设置账号，避免使用时需要重复设置或暴露密钥，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)**  
 
 #### 数据源完备性和多前缀列举
 1. prefix-left 为可选择是否列举所有前缀 ASCII 顺序之前的文件，prefix-right 为选择是否列举所有前缀 ASCII 顺序之后的文件，确保在没有预定义前缀
@@ -226,6 +228,8 @@ threads 小于等于 100，100 万左右及以下的文件数量设置 threads �
 ```
 
 ## 数据源示例
+如果已设置账号，则不需要再直接设置密钥，可以通过 `-a=<account-name>`/`-d` 来读取账号，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
+
 ### 1 七牛云存储
 命令行参数示例：
 ```

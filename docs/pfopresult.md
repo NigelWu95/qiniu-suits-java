@@ -1,10 +1,10 @@
 # 查询 pfop 转码结果
 
 ## 简介
-对转码返回的 persistentId 查询 pfopresult 操作。参考：[七牛转码结果查询](https://developer.qiniu.com/dora/manual/1294/persistent-processing-status-query-prefop)
+对转码返回的 persistentId 查询 pfopresult 操作。参考：[七牛转码结果查询](https://developer.qiniu.com/dora/manual/1294/persistent-processing-status-query-prefop)  
+1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ### 配置参数
 ```

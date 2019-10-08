@@ -56,4 +56,14 @@ public class ParamsUtilsTest {
         writer.newLine();
         writer.close();
     }
+
+    @Test
+    public void testConfigParams() {
+        try {
+            Map<String, String> fileConfig = ParamsUtils.toParamsMap("resources/.application.properties");
+            System.out.println(fileConfig);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

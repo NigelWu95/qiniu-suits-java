@@ -2,11 +2,13 @@
 
 ## 简介
 将本地的文件批量上传至存储空间。  
+1. **操作需要指定数据源，目前仅支持上传本地文件到七牛空间，故需要配置本地数据源，参考：[配置数据源](datasource.md)**  
+2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
 
 ## 配置文件
-**操作仅支持上传本地文件到七牛空间**  
 
 ### 功能配置参数
+支持通过 `-a=<account-name>`/`-d` 使用账号设置，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
 ```
 process=qupload
 path=
@@ -40,6 +42,7 @@ crc=
 |policy.[]| 字符串/整型数字| 可以设置一些上传策略参数，如 policy.deleteAfterDays=7 表示七天之后自动删除文件，其他参数可参考[七牛上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy)|  
 |params.[]| 字符串| 上传时设置的一些变量参数，如 params.x:user=138300 表示 x:user 的信息为 138300，可参考[七牛上传自定义变量](https://developer.qiniu.com/kodo/manual/1235/vars#xvar)|  
 |crc| true/false| 是否开启 crc32 来校验文件的上传，默认为 false|  
+timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](../README.md#7-超时设置)  
 
 ### 关于 filepath-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。filepath-index 表示输入行含 filepath 形式的文件路径，未设置的情
