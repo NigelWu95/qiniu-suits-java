@@ -698,6 +698,9 @@ public class CommonParams {
             if (isStorageSource) throw new IOException("self upload only support local file source.");
             indexMap.put("0", "filepath");
             indexMap.put("1", "key");
+            indexMap.put("2", "etag");
+            indexMap.put("3", "size");
+            indexMap.put("4", "timestamp");
             return;
         }
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);

@@ -47,7 +47,13 @@ public class FileUtilsTest {
 
     @Test
     public void test() {
-        File file = new File("/Users/wubingheng/Downloads/-706dd01a67");
+        File file = new File("/Users/wubingheng/Downloads/react.txt");
         System.out.println(file.exists());
+        System.out.println(file.getFreeSpace());
+        System.out.println(file.getTotalSpace());
+        System.out.println(file.getUsableSpace());
+        System.out.println(file.isHidden());
+        System.out.println(file.lastModified());
+        System.out.println(file.length());
     }
 }
