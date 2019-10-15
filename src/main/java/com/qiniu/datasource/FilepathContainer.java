@@ -6,6 +6,7 @@ import com.qiniu.interfaces.IReader;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
+import com.qiniu.util.Etag;
 import com.qiniu.util.FileUtils;
 
 import java.io.BufferedWriter;
@@ -68,18 +69,33 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
             int size = files.size() > threads ? threads : files.size();
             List<List<String>> lists = new ArrayList<>(size);
             for (int i = 0; i < size; i++) lists.add(new ArrayList<>());
+            File file;
+            String etag;
+            long length;
+            long timestamp;
+            String mime;
             for (int i = 0; i < files.size(); i++) {
-                filepath = files.get(i).getPath();
-                if (filepath.startsWith(String.join(FileUtils.pathSeparator, realPath, "."))) continue;
+                file = files.get(i);
+                filepath = file.getPath();
+                etag = Etag.file(file);
+                length = file.length();
+                timestamp = file.lastModified();
+                mime = FileUtils.contentType(file);
+//                if (filepath.startsWith(String.join(FileUtils.pathSeparator, realPath, "."))) continue;
+                if (file.isHidden()) continue;
                 if (replaced == null) key = filepath;
                 else key = filepath.replace(replaced, transferPath);
-                lists.get(i % size).add(String.join(separator, filepath, key));
+                lists.get(i % size).add(String.join(separator, filepath, key, etag, String.valueOf(length),
+                        String.valueOf(timestamp), mime));
             }
             String name;
+            List<String> list;
             String startLine;
             for (int i = 0; i < size; i++) {
                 name = "filepath-" + i;
                 startLine = linesMap == null ? null : linesMap.get(name);
+                list = lists.get(i);
+                if (list.size() == 0) continue;
                 filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
             }
         } else {

@@ -34,7 +34,7 @@
 - [x] 视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
 - [x] 内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 
-*【部分 process 属于危险操作，需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则在命令行加入 -f 参数】*  
+*【部分 process 属于危险操作（如文件删除/禁用等），需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则需要在命令行加入 -f 参数】*  
 
 ### 支持特性：
 - [x] 中间状态保持：[断点续操作](#10-断点续操作)  
@@ -44,7 +44,7 @@
 ### 1 程序运行过程  
 #### 账号设置（7.73 及以上版本）  
 预先设置好账号的密钥，在后续执行中只需使用 account name 即可读取对应密钥进行操作，定义不同的 account name 则可设置多对密钥，亦可设置不同数据源
-的账号密钥，账号名相同时会覆盖该账号的历史密钥，操作如下：  
+的账号密钥，账号名相同时会覆盖该账号的历史密钥，命令行操作如下：  
 **设置 account：**  
 ```
 -account=<source>-<name> -<source>-id= -<source>-secret= [-d]
@@ -57,9 +57,12 @@
 `-account=hua-test -hua-id= -hua-secret=` 设置华为云账号，账号名为 test  
 `-account=bai-test -bai-id= -bai-secret=` 设置百度云账号，账号名为 test  
 `-d` 表示默认账号选项，此时设置的账号将会成为全局默认账号，执行操作时 -d 选项将调取该默认账号  
+- *备注*：配置文件也可以进行账户设置，去掉参数开头的 `-` 且每项参数成一行即可，同后面配置文件用法  
+
 **使用 account 账号：**  
 `-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
+
 #### （1）批处理模式
 [读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
 #### （2）交互模式
@@ -88,7 +91,7 @@ sk=
 properties 方式需要遵循 java 的转义规则，两个文件存在任意一个均可作为默认配置文件来设置参数（优先使用 resources/application.properties），
 此时则不需要通过 `-config=` 指定配置文件路径，指定 `-config=` 时则默认文件路径无效。  
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
-数前加上 -**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
+数前加上 `-`**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
 ```
 java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  

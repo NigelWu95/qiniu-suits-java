@@ -76,12 +76,12 @@ public class CommonParams {
     private LocalDateTime startDateTime;
     private long pauseDelay;
     private long pauseDuration;
+    private boolean isSelfUpload; // 表示读取的文件路径本身，而不是对文本内容做解析，用作目录下文件直接上传等操作
 
     public static Set<String> lineFormats = new HashSet<String>(){{
         add("csv");
         add("tab");
         add("json");
-        add("self"); // 表示读取的文件路径本身，而不是对文本内容做解析，用作目录下文件直接上传等操作
     }};
 
     public CommonParams() {}
@@ -184,17 +184,14 @@ public class CommonParams {
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String toKey = entryParam.getValue("to-key", null);
-                if (toKey != null) {
-                    indexMap.put("toKey", "toKey");
-                    mapLine.put("toKey", toKey);
-                }
+                if (toKey != null) mapLine.put("toKey", toKey);
                 break;
+            case "download": savePath = entryParam.getValue("save-path", ".");
             case "asyncfetch":
             case "avinfo":
             case "qhash":
             case "privateurl":
             case "exportts":
-            case "download":
             // 这几个数据源的私有签名都是采用 bucket + key + endpoint(region) 的方式来签算
 //            case "tenprivate":
 //            case "aliprivate":
@@ -206,7 +203,6 @@ public class CommonParams {
             case "videocensor":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
-                    indexMap.put("url", "url");
                     mapLine.put("url", url);
                     mapLine.put("key", entryParam.getValue("key", null));
                 } else if (!fromLine) {
@@ -217,28 +213,19 @@ public class CommonParams {
             case "pfop":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", "").trim();
-                if (!"".equals(fops)) {
-                    indexMap.put("fops", "fops");
-                    mapLine.put("fops", fops);
-                }
+                if (!"".equals(fops)) mapLine.put("fops", fops);
                 setPfopConfigs();
                 break;
             case "pfopcmd":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String avinfo = entryParam.getValue("avinfo", "").trim();
-                if (!"".equals(avinfo)) {
-                    indexMap.put("avinfo", "avinfo");
-                    mapLine.put("avinfo", avinfo);
-                }
+                if (!"".equals(avinfo)) mapLine.put("avinfo", avinfo);
                 setPfopConfigs();
                 break;
             case "pfopresult":
             case "censorresult":
                 String id = entryParam.getValue("id", "").trim();
-                if (!"".equals(id)) {
-                    indexMap.put("id", "id");
-                    mapLine.put("id", id);
-                }
+                if (!"".equals(id)) mapLine.put("id", id);
                 break;
             case "stat":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
@@ -249,10 +236,7 @@ public class CommonParams {
             case "qupload":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String filepath = entryParam.getValue("filepath", "").trim();
-                if (!"".equals(filepath)) {
-                    indexMap.put("filepath", "filepath");
-                    mapLine.put("filepath", filepath);
-                }
+                if (!"".equals(filepath)) mapLine.put("filepath", filepath);
                 break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
@@ -298,7 +282,7 @@ public class CommonParams {
 
     private void setParse() throws IOException {
         parse = entryParam.getValue("parse", "tab").trim();
-        ParamsUtils.checked(parse, "parse", "(csv|tab|json|object|self)");
+        ParamsUtils.checked(parse, "parse", "(csv|tab|json|object)");
     }
 
     private void setSeparator() {
@@ -487,9 +471,8 @@ public class CommonParams {
             if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
             else bucket = entryParam.getValue("bucket", bucket).trim();
         }
-        if ("qupload".equals(process)) {
-            // 如果是文件上传操作，默认表示上传 path 本身路径下的文件，设置默认值为 self，如果 parse 设置了其他值则不做替换
-            parse = entryParam.getValue("parse", "self").trim();
+        if ("qupload".equals(process) && entryParam.getValue("parse", null) == null && !"terminal".equals(source)) {
+            isSelfUpload = true;
         }
     }
 
@@ -699,8 +682,7 @@ public class CommonParams {
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
-            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)
-                    || "self".equals(parse)) {
+            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
                 indexMap.put(index, indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
@@ -711,14 +693,16 @@ public class CommonParams {
     private void setIndexMap() throws IOException {
         indexMap = new HashMap<>();
         String indexes = entryParam.getValue("indexes", "").trim();
-        if ("self".equals(parse)) {
+        if (isSelfUpload) {
             if (!"".equals(indexes) && !"[]".equals(indexes)) throw new IOException("upload from path can not set indexes.");
-            if (isStorageSource) throw new IOException("self parse only support local file source.");
-            if (!"terminal".equals(source)) {
-                indexMap.put("0", "filepath");
-                indexMap.put("1", "key");
-                return;
-            }
+            if (isStorageSource) throw new IOException("self upload only support local file source.");
+            indexMap.put("0", "filepath");
+            indexMap.put("1", "key");
+            indexMap.put("2", "etag");
+            indexMap.put("3", "size");
+            indexMap.put("4", "timestamp");
+            indexMap.put("5", "mime");
+            return;
         }
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
         int fieldsMode = 0;
@@ -903,7 +887,7 @@ public class CommonParams {
 //                    else saveTotal = "false";
 //                }
             } else {
-//                if ("self".equals(parse)) { // 自上传时将上传路径的路径等信息做下保存
+//                if (isSelfUpload) { // 自上传时将上传路径的路径等信息做下保存
 //                    saveTotal = "true";
 //                }
 //                else
@@ -1386,5 +1370,9 @@ public class CommonParams {
 
     public long getPauseDuration() {
         return pauseDuration;
+    }
+
+    public boolean isSelfUpload() {
+        return isSelfUpload;
     }
 }

@@ -249,7 +249,7 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-            if ("self".equals(commonParams.getParse())) return getFilepathContainer();
+            if (commonParams.isSelfUpload()) return getFilepathContainer();
             else return getLocalFileContainer();
         } else {
             return null;
@@ -901,7 +901,7 @@ public class QSuitsEntry {
         String recorder = entryParam.getValue("record", "false").trim();
         ParamsUtils.checked(recorder, "record", "(true|false)");
         boolean record = Boolean.valueOf(recorder);
-        String keepPath = entryParam.getValue("keep-path", "false").trim();
+        String keepPath = entryParam.getValue("keep-path", "true").trim();
         ParamsUtils.checked(keepPath, "keep-path", "(true|false)");
         boolean keep = Boolean.valueOf(keepPath);
         String addPrefix = entryParam.getValue("add-prefix", "").trim();

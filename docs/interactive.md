@@ -167,15 +167,19 @@ please input line data to process:
 ```  
 ###### 21 通过 http 下载资源到本地
 ```
-➜ ~ qsuits -d -i -process=download -url-index=0
+➜ ~ qsuits -d -i -process=download -url-index=0 -save-path=.
 please input line data to process:
 http://xxx.bkt.clouddn.com/test.go
-test.go	http://xxx.bkt.clouddn.com/test.go
+test.go	http://xxx.bkt.clouddn.com/test.go	/Users/wubingheng/Downloads/test.go
 ```  
 ###### 22 上传文件到七牛存储空间
 ```
-➜ ~ qsuits -d -i -process=qupload -path=test.py -bucket=temp -key=test.py
+➜ ~ qsuits -d -i -process=qupload -bucket=temp
 please input line data to process:
 test.py
 test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test.py"}
+➜ ~ qsuits -d -i -process=qupload -bucket=temp -filepath-index=0 -indexes=1
+please input line data to process:
+~/Downloads/test.py test2.py
+test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test2.py"}
 ```  
