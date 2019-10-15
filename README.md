@@ -88,7 +88,7 @@ sk=
 properties 方式需要遵循 java 的转义规则，两个文件存在任意一个均可作为默认配置文件来设置参数（优先使用 resources/application.properties），
 此时则不需要通过 `-config=` 指定配置文件路径，指定 `-config=` 时则默认文件路径无效。  
 **备注2**：直接使用命令行传入参数（较繁琐），不使用配置文件的情况下全部所需参数可以完全从命令行指定，形式为：**`-<key>=<value>`**，**请务必在参
-数前加上 -**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
+数前加上 `-`**，如果参数值中间包含空格，请使用 `-<key>="<value>"` 或者 `-<key>='<value>'` 如  
 ```
 java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
