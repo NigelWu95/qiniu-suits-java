@@ -37,14 +37,15 @@
 *【部分 process 属于危险操作（如文件删除/禁用等），需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则需要在命令行加入 -f 参数】*  
 
 ### 支持特性：
+- [x] 数据源账户密钥（加密）设置：[账号设置](#账号设置)  
+- [x] 多种模式运行：[程序运行过程](#1-程序运行过程)  
 - [x] 中间状态保持：[断点续操作](#10-断点续操作)  
 - [x] 手动分布式执行任务 [分布式任务方案](#11-分布式任务方案)  
 - [x] 按照时间计划延迟或周期性暂停任务执行 [时间计划](#12-时间计划)  
 
-### 1 程序运行过程  
-#### 账号设置（7.73 及以上版本）  
-预先设置好账号的密钥，在后续执行中只需使用 account name 即可读取对应密钥进行操作，定义不同的 account name 则可设置多对密钥，亦可设置不同数据源
-的账号密钥，账号名相同时会覆盖该账号的历史密钥，命令行操作如下：  
+### 账号设置  
+（7.73 及以上版本）支持预先设置好账号的密钥，在后续执行中只需使用 account name 即可读取对应密钥进行操作，定义不同的 account name 则可设置多对
+密钥，亦可设置不同数据源的账号密钥，账号名相同时会覆盖该账号的历史密钥，命令行操作如下：  
 **设置 account：**  
 `-account=<source>-<name> -<source>-id= -<source>-secret= [-d]`  
 如：  
@@ -61,15 +62,14 @@
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
 - *备注*：配置文件也可以进行账户设置和使用，去掉参数开头的 `-` 且每项参数成一行即可，同后面配置文件用法  
 
-#### （1）批处理模式
-[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
-#### （2）交互模式
-**从命令行输入数据时，process 支持[交互模式](docs/interactive.md)运行**：一次启动，可无限次命令行输入 data，输入一次处理一次并返回结果。  
-#### （3）单行模式
-**从命令行输入数据时，process 支持[单行模式](docs/single.md)运行**：一次启动，指定 data 参数，直接一次处理并返回结果。  
+### 1 程序运行过程  
+##### （1）批处理模式：[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
+##### （2）交互模式：从命令行输入数据时，process 支持[交互模式](docs/interactive.md)运行，一次启动，可无限次命令行输入 data，输入一次处理一次并返回结果。  
+##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-qsuits 提供命令行运行工具（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
+提供命令行运行工具 [qsuits](#2.-命令行执行器-qsuits(by-golang))（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
+以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1. 命令行直接运行 jar 包  
 在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/raw/master/qsuits.jar)
@@ -98,8 +98,9 @@ java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 一是安全性，二是参数历史可保留且修改方便；推荐使用 -account 提前设置好账号，安全性更高，使用时 -a=\<account-name\> 即可，不必再暴露密钥】**  
 
 #### 2. 命令行执行器 qsuits(by golang)  
-由于 qsuits-java 基于 java 编写，命令行运行时需要提供 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的二进制可执行文件用
-来代理 qsuits-java 的功能，即 [qsuits 执行器](https://github.com/NigelWu95/qsuits-exec-go)（基于 golang 编写和编译）：  
+由于 qsuits-java 基于 java 编写，命令行运行时需要使用 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的命令行可执行工具
+[qsuits 执行器](https://github.com/NigelWu95/qsuits-exec-go)（使用 golang 编写和编译）来代理 qsuits-java 的功能，支持 qsuits-java
+所有参数配置，命令和配置文件用法完全相同，工具下载地址如下：  
 
 |操作系统|程序名|地址|
 |---|-----|---|
