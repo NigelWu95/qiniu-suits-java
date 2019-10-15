@@ -21,6 +21,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
@@ -88,33 +89,56 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
-    private List<String> listAndGetNextPrefixes(List<String> prefixes) {
-        return prefixes.parallelStream().map(prefix -> {
-                UpLister upLister;
+    private List<String> listAndGetNextPrefixes(List<String> prefixes) throws Exception {
+        List<Future<List<String>>> futures = new ArrayList<>();
+        List<String> nextPrefixes = new ArrayList<>();
+        List<String> tempPrefixes;
+        for (String prefix : prefixes) {
+            Future<List<String>> future = executorPool.submit(() -> {
                 try {
-                    upLister = (UpLister) generateLister(prefix);
+                    UpLister upLister = (UpLister) generateLister(prefix);
+                    if (upLister.hasNext() || upLister.getDirectories() != null) {
+                        listing(upLister);
+                        if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
+                            return null;
+                        } else if (hasAntiPrefixes) {
+                            return upLister.getDirectories().stream().filter(this::checkPrefix)
+                                    .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                        } else {
+                            for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
+                            return upLister.getDirectories();
+                        }
+                    } else {
+                        executorPool.submit(() -> listing(upLister));
+                        return null;
+                    }
                 } catch (SuitsException e) {
                     try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                     errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
                     return null;
                 }
-                if (upLister.hasNext() || upLister.getDirectories() != null) {
-                    listing(upLister);
-                    if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
-                        return null;
-                    } else if (hasAntiPrefixes) {
-                        return upLister.getDirectories().stream().filter(this::checkPrefix)
-                                .peek(this::recordListerByPrefix).collect(Collectors.toList());
-                    } else {
-                        for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
-                        return upLister.getDirectories();
-                    }
-                } else {
-                    executorPool.execute(() -> listing(upLister));
-                    return null;
+            });
+            if (future.isDone()) {
+                tempPrefixes = future.get();
+                if (tempPrefixes != null) nextPrefixes.addAll(tempPrefixes);
+            } else {
+                futures.add(future);
+            }
+        }
+        Iterator<Future<List<String>>> iterator;
+        Future<List<String>> future;
+        while (futures.size() > 0) {
+            iterator = futures.iterator();
+            while (iterator.hasNext()) {
+                future = iterator.next();
+                if (future.isDone()) {
+                    tempPrefixes = future.get();
+                    if (tempPrefixes != null) nextPrefixes.addAll(tempPrefixes);
+                    iterator.remove();
                 }
-            }).filter(Objects::nonNull)
-            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+            }
+        }
+        return nextPrefixes;
     }
 
     /**
