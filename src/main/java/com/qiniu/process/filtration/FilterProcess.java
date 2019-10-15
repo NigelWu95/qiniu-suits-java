@@ -119,6 +119,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             }
         } catch (NullPointerException e) {
             throw new IOException("input is empty or the processor may be already closed.", e);
+        } catch (IOException e) {
+            throw e;
         } catch (Exception e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -132,6 +134,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
                 if (filter.doFilter(line)) filterList.add(line);
             } catch (NullPointerException e) {
                 throw new IOException("input is empty or the processor may be already closed.", e);
+            } catch (IOException e) {
+                throw e;
             } catch (Exception e) {
                 throw new IOException(e.getMessage(), e);
             }
