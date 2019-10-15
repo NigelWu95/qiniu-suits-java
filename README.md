@@ -46,9 +46,8 @@
 预先设置好账号的密钥，在后续执行中只需使用 account name 即可读取对应密钥进行操作，定义不同的 account name 则可设置多对密钥，亦可设置不同数据源
 的账号密钥，账号名相同时会覆盖该账号的历史密钥，命令行操作如下：  
 **设置 account：**  
-```
--account=<source>-<name> -<source>-id= -<source>-secret= [-d]
-```  
+`-account=<source>-<name> -<source>-id= -<source>-secret= [-d]`  
+如：  
 `-account=test/qiniu-test -ak= -sk=` 设置七牛账号，账号名为 test，没有数据源标识时默认设置七牛账号  
 `-account=ten-test -ten-id= -ten-secret=` 设置腾讯云账号，账号名为 test  
 `-account=ali-test -ali-id= -ali-secret=` 设置阿里云账号，账号名为 test  
@@ -57,11 +56,10 @@
 `-account=hua-test -hua-id= -hua-secret=` 设置华为云账号，账号名为 test  
 `-account=bai-test -bai-id= -bai-secret=` 设置百度云账号，账号名为 test  
 `-d` 表示默认账号选项，此时设置的账号将会成为全局默认账号，执行操作时 -d 选项将调取该默认账号  
-- *备注*：配置文件也可以进行账户设置，去掉参数开头的 `-` 且每项参数成一行即可，同后面配置文件用法  
-
 **使用 account 账号：**  
 `-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
+- *备注*：配置文件也可以进行账户设置和使用，去掉参数开头的 `-` 且每项参数成一行即可，同后面配置文件用法  
 
 #### （1）批处理模式
 [读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
