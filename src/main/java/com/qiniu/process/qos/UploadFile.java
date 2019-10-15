@@ -70,8 +70,10 @@ public class UploadFile extends Base<Map<String, String>> {
         this.bucket = bucket;
         if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "filepath";
         else this.pathIndex = pathIndex;
-        this.parentPath = "".equals(parentPath) ? null : parentPath.endsWith(FileUtils.pathSeparator) ?
-                parentPath.substring(0, parentPath.length() - 1) : parentPath;
+        this.parentPath = "".equals(parentPath) ? null : parentPath;
+        if (this.parentPath != null && this.parentPath.endsWith(FileUtils.pathSeparator)) {
+            this.parentPath = this.parentPath.substring(0, parentPath.length() - 1);
+        }
         this.keepPath = keepPath;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
