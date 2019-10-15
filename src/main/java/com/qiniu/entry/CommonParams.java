@@ -701,6 +701,7 @@ public class CommonParams {
             indexMap.put("2", "etag");
             indexMap.put("3", "size");
             indexMap.put("4", "timestamp");
+            indexMap.put("5", "mime");
             return;
         }
         List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);

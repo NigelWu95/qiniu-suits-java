@@ -73,17 +73,20 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
             String etag;
             long length;
             long timestamp;
+            String mime;
             for (int i = 0; i < files.size(); i++) {
                 file = files.get(i);
                 filepath = file.getPath();
                 etag = Etag.file(file);
                 length = file.length();
                 timestamp = file.lastModified();
+                mime = FileUtils.contentType(file);
 //                if (filepath.startsWith(String.join(FileUtils.pathSeparator, realPath, "."))) continue;
                 if (file.isHidden()) continue;
                 if (replaced == null) key = filepath;
                 else key = filepath.replace(replaced, transferPath);
-                lists.get(i % size).add(String.join(separator, filepath, key, etag, String.valueOf(length), String.valueOf(timestamp)));
+                lists.get(i % size).add(String.join(separator, filepath, key, etag, String.valueOf(length),
+                        String.valueOf(timestamp), mime));
             }
             String name;
             List<String> list;
