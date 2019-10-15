@@ -89,8 +89,9 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
+    private List<Future<List<String>>> futures = new ArrayList<>();
+
     private List<String> listAndGetNextPrefixes(List<String> prefixes) throws Exception {
-        List<Future<List<String>>> futures = new ArrayList<>();
         List<String> nextPrefixes = new ArrayList<>();
         List<String> tempPrefixes;
         for (String prefix : prefixes) {
@@ -123,19 +124,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 if (tempPrefixes != null) nextPrefixes.addAll(tempPrefixes);
             } else {
                 futures.add(future);
-            }
-        }
-        Iterator<Future<List<String>>> iterator;
-        Future<List<String>> future;
-        while (futures.size() > 0) {
-            iterator = futures.iterator();
-            while (iterator.hasNext()) {
-                future = iterator.next();
-                if (future.isDone()) {
-                    tempPrefixes = future.get();
-                    if (tempPrefixes != null) nextPrefixes.addAll(tempPrefixes);
-                    iterator.remove();
-                }
             }
         }
         return nextPrefixes;
@@ -173,8 +161,25 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         showdownHook();
         try {
             prefixes = listAndGetNextPrefixes(prefixes);
-            while (prefixes != null && prefixes.size() > 0) {
+            while (prefixes.size() > 0) {
                 prefixes = listAndGetNextPrefixes(prefixes);
+            }
+            Iterator<Future<List<String>>> iterator;
+            Future<List<String>> future;
+            List<String> tempPrefixes;
+            while (futures.size() > 0) {
+                iterator = futures.iterator();
+                while (iterator.hasNext()) {
+                    future = iterator.next();
+                    if (future.isDone()) {
+                        tempPrefixes = future.get();
+                        if (tempPrefixes != null) prefixes.addAll(tempPrefixes);
+                        iterator.remove();
+                    }
+                }
+                while (prefixes.size() > 0) {
+                    prefixes = listAndGetNextPrefixes(prefixes);
+                }
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
