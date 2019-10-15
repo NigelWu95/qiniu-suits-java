@@ -19,7 +19,8 @@ import java.util.*;
 
 public class EntryMain {
 
-    public static boolean process_verify = true;
+    // 如果不希望对危险 process 进行 verify，请将该参数设置为 false
+    public static boolean processVerify = true;
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
@@ -38,14 +39,14 @@ public class EntryMain {
             setAccount(entryParam, paramsMap.get("account"));
             return;
         }
-        if (paramsMap.containsKey("verify")) process_verify = Boolean.parseBoolean(paramsMap.get("verify"));
+        if (paramsMap.containsKey("verify")) processVerify = Boolean.parseBoolean(paramsMap.get("verify"));
         boolean single = paramsMap.containsKey("single") && Boolean.parseBoolean(paramsMap.get("single"));
         boolean interactive = paramsMap.containsKey("interactive") && Boolean.parseBoolean(paramsMap.get("interactive"));
         CommonParams commonParams = single ? new CommonParams(paramsMap) : new CommonParams(entryParam);
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
         ILineProcess<Map<String, String>> processor = single || interactive ? qSuitsEntry.whichNextProcessor(true) :
                 qSuitsEntry.getProcessor();
-        if (process_verify && processor != null) {
+        if (processVerify && processor != null) {
             String process = processor.getProcessName();
             if (processor.getNextProcessor() != null) process = processor.getNextProcessor().getProcessName();
             if (ProcessUtils.isDangerous(process)) {

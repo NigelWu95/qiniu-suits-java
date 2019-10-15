@@ -58,6 +58,8 @@ separator=\t
 filepath-index=0
 indexes=1
 ```  
+通过 path 指定的目录直接上传文件时，会自动产生文件 etag,size,timestamp,mimeType 信息，因此也支持通过[过滤器](filter.md) 设置过滤多个条件，
+通过筛选的文件才进行上传。
 
 ### 关于上传空间保存的文件名
 如果是通过 path 下直接上传的文件，文件名采用自动解析，如果通过文件列表和 filepath-index 解析进行上传的文件，文件名可以自动确定也可以根据 key 
