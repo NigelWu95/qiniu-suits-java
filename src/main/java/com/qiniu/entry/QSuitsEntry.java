@@ -946,8 +946,10 @@ public class QSuitsEntry {
                 }
             }
         }
-        return single ? new ChangeMime(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, mimeType) :
-                new ChangeMime(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, mimeType, savePath);
+        return single ? new ChangeMime(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, mimeType, mimeIndex,
+                condition.toString()) :
+                new ChangeMime(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, mimeType, mimeIndex,
+                        condition.toString(), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeMetadata(boolean single) throws IOException {
@@ -964,7 +966,7 @@ public class QSuitsEntry {
                 }
             }
         }
-        return single ? new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata) :
-                new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, savePath);
+        return single ? new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, condition.toString()) :
+                new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, condition.toString(), savePath);
     }
 }

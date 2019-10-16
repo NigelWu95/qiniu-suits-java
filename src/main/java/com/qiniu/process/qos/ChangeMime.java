@@ -15,24 +15,28 @@ import java.util.Map;
 public class ChangeMime extends Base<Map<String, String>> {
 
     private String mimeType;
+    private String mimeIndex;
+    private String condition;
     private BucketManager.BatchOperations batchOperations;
     private List<Map<String, String>> lines;
     private Configuration configuration;
     private BucketManager bucketManager;
 
-    public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType)
-            throws IOException {
+    public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
+                      String mimeIndex, String condition) throws IOException {
         super("mime", accessKey, secretKey, bucket);
         this.mimeType = mimeType;
+        this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
-                      String savePath, int saveIndex) throws IOException {
+                      String mimeIndex, String condition, String savePath, int saveIndex) throws IOException {
         super("mime", accessKey, secretKey, bucket, savePath, saveIndex);
         this.mimeType = mimeType;
+        this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
         this.batchSize = 1000;
         this.batchOperations = new BucketManager.BatchOperations();
         this.lines = new ArrayList<>();
@@ -42,8 +46,8 @@ public class ChangeMime extends Base<Map<String, String>> {
     }
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
-                      String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, bucket, mimeType, savePath, 0);
+                      String mimeIndex, String condition, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, mimeType, mimeIndex, condition, savePath, 0);
     }
 
     public ChangeMime clone() throws CloneNotSupportedException {
@@ -68,7 +72,7 @@ public class ChangeMime extends Base<Map<String, String>> {
             String mime;
             for (Map<String, String> map : processList) {
                 key = map.get("key");
-                mime = map.get("mime");
+                mime = map.get(mimeIndex);
                 if (key != null && mime != null) {
                     lines.add(map);
                     batchOperations.addChgmOp(bucket, mime, key);
@@ -100,7 +104,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
         if (mimeType == null) {
-            String mime = line.get("mime");
+            String mime = line.get(mimeIndex);
             if (mime == null) throw new IOException("mime is not exists or empty in " + line);
             return String.join("\t", key, mime, HttpRespUtils.getResult(bucketManager.changeMime(bucket, key, mime)));
         } else {
