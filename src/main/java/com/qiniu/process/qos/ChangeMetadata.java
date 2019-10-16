@@ -34,7 +34,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
 
     public ChangeMetadata(String accessKey, String secretKey, Configuration configuration, String bucket, Map<String, String> metadata,
                           String savePath, int saveIndex) throws IOException {
-        super("mime", accessKey, secretKey, bucket, savePath, saveIndex);
+        super("metadata", accessKey, secretKey, bucket, savePath, saveIndex);
         if (metadata == null) throw new IOException("metadata can not be null");
         this.metadata = metadata;
         this.batchSize = 1000;

@@ -51,6 +51,8 @@ public final class ProcessUtils {
         add("pfop");
         add("stat");
         add("qupload");
+        add("mime");
+        add("metadata");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
@@ -61,6 +63,8 @@ public final class ProcessUtils {
         add("rename");
         add("delete");
         add("stat");
+        add("mime");
+        add("metadata");
     }};
     public static Set<String> tenProcesses = new HashSet<String>(){{
         add("tenprivate");
