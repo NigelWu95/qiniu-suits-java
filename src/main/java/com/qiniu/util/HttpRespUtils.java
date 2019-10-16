@@ -118,7 +118,7 @@ public final class HttpRespUtils {
      * @throws IOException Response 非正常响应的情况下抛出的异常
      */
     public static String getResult(Response response) throws IOException {
-        if (response == null) throw new IOException("empty response");
+//        if (response == null) throw new IOException("empty response");
         if (response.statusCode != 200 && response.statusCode != 298) throw new QiniuException(response);
         String responseBody = response.bodyString();
         response.close();

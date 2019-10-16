@@ -34,6 +34,8 @@ qiniu-suits-java 是一个云存储 api tools (base-qiniu)，通过设计并优�
 - [x] 图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
 - [x] 视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
 - [x] 内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
+- [x] 修改资源的 mimeType [mime 配置](docs/mime.md)  
+- [x] 修改资源的 metadata [metadata 配置](docs/metadata.md)  
 
 *【部分 process 属于危险操作（如文件删除/禁用等），需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则需要在命令行加入 -f 参数】*  
 
@@ -252,6 +254,8 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `process=imagecensor` 表示图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
 `process=videocensor` 表示视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
 `process=censorresult` 表示内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
+`process=mime` 修改资源的 mimeType [mime 配置](docs/mime.md)  
+`process=metadata` 修改资源的 metadata [metadata 配置](docs/metadata.md)  
 
 ### 6 结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  

@@ -491,6 +491,8 @@ public class QSuitsEntry {
             case "videocensor": processor = getVideoCensor(indexes, single); break;
             case "censorresult": processor = getCensorResult(indexes, single); break;
             case "qupload": processor = getQiniuUploadFile(indexes, single); break;
+            case "mime": processor = getChangeMime(indexes, single); break;
+            case "metadata": processor = getChangeMetadata(single); break;
             case "filter": case "": break;
             default: throw new IOException("unsupported process: " + process);
         }
@@ -927,5 +929,44 @@ public class QSuitsEntry {
                 record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc) :
                 new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex, parentPath,
                         record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getChangeMime(Map<String, String> indexMap, boolean single)
+            throws IOException {
+        String mimeIndex = indexMap.containsValue("mime") ? "mime" : null;
+        String mimeType = entryParam.getValue("mime", null);
+        if (mimeType != null) mimeType = mimeType.trim();
+        StringBuilder condition = new StringBuilder();
+        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+            if (entry.getKey().startsWith("cond.")) {
+                if (condition.length() > 0) {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
+                } else {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
+                }
+            }
+        }
+        return single ? new ChangeMime(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, mimeType, mimeIndex,
+                condition.toString()) :
+                new ChangeMime(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, mimeType, mimeIndex,
+                        condition.toString(), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getChangeMetadata(boolean single) throws IOException {
+        Map<String, String> metadata = new HashMap<>();
+        StringBuilder condition = new StringBuilder();
+        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+            if (entry.getKey().startsWith("meta.")) {
+                metadata.put(entry.getKey().substring(5), entry.getValue().trim());
+            } else if (entry.getKey().startsWith("cond.")) {
+                if (condition.length() > 0) {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
+                } else {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
+                }
+            }
+        }
+        return single ? new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, condition.toString()) :
+                new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, condition.toString(), savePath);
     }
 }

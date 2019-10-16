@@ -9,7 +9,7 @@
 - [华为](#其他存储配置参数)参考：[私有空间资源签名](https://support.huaweicloud.com/sdk-java-devg-obs/zh-cn_topic_0142815514.html)  
 - [百度](#其他存储配置参数)参考：[私有空间资源签名](https://cloud.baidu.com/doc/BOS/s/8jwvyrqj0#%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BDurl)  
 1. **操作需要指定数据源，默认表示从七牛空间列举文件执行操作，如非默认或需更多条件，请先[配置数据源](datasource.md)**  
-2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
+2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
 
 ## 配置文件
 

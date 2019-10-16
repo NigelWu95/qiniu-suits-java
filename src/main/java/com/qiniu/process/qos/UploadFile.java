@@ -29,8 +29,8 @@ public class UploadFile extends Base<Map<String, String>> {
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
                       StringMap policy, StringMap params, boolean checkCrc, String savePath, int saveIndex) throws IOException {
         super("qupload", accessKey, secretKey, null, savePath, saveIndex);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         auth = Auth.create(accessKey, secretKey);
-        CloudApiUtils.checkQiniu(auth);
         if (record) {
             recorder = String.join(FileUtils.pathSeparator, savePath, ".record");
             uploadManager = new UploadManager(configuration.clone(), new FileRecorder(recorder));
@@ -44,8 +44,8 @@ public class UploadFile extends Base<Map<String, String>> {
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
                       StringMap policy, StringMap params, boolean checkCrc) throws IOException {
         super("qupload", accessKey, secretKey, null);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         auth = Auth.create(accessKey, secretKey);
-        CloudApiUtils.checkQiniu(auth);
         if (record) {
             recorder = String.join(FileUtils.pathSeparator, FileUtils.userHome, ".qsuits.record");
             uploadManager = new UploadManager(configuration.clone(), new FileRecorder(recorder));

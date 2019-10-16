@@ -47,15 +47,27 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
             throw new IOException("the save-path can not be same as path.");
         }
         List<IReader<Iterator<String>>> filepathReaders = new ArrayList<>(threads);
-        String replaced = null;
         String transferPath = null;
+        int leftTrimSize = 0;
         String realPath;
-        if (path.startsWith(FileUtils.userHomeStartPath)) {
+        if (path.indexOf(FileUtils.pathSeparator + FileUtils.currentPath) > 0 ||
+                path.indexOf(FileUtils.pathSeparator + FileUtils.parentPath) > 0 ||
+                path.endsWith(FileUtils.pathSeparator + ".") ||
+                path.endsWith(FileUtils.pathSeparator + "..")) {
+            throw new IOException("please set straight path.");
+        } else if (path.startsWith(FileUtils.userHomeStartPath)) {
             realPath = String.join("", FileUtils.userHome, path.substring(1));
-            replaced = FileUtils.userHome;
             transferPath = "~";
+            leftTrimSize = FileUtils.userHome.length();
         } else {
             realPath = path;
+            if (path.startsWith(FileUtils.parentPath) || "..".equals(path)) {
+                transferPath = "";
+                leftTrimSize = 3;
+            } else if (path.startsWith(FileUtils.currentPath) || ".".equals(path)) {
+                transferPath = "";
+                leftTrimSize = 2;
+            }
         }
         if (realPath.contains("\\~")) realPath = realPath.replace("\\~", "~");
         if (realPath.endsWith(FileUtils.pathSeparator)) {
@@ -83,8 +95,8 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
                 mime = FileUtils.contentType(file);
 //                if (filepath.startsWith(String.join(FileUtils.pathSeparator, realPath, "."))) continue;
                 if (file.isHidden()) continue;
-                if (replaced == null) key = filepath;
-                else key = filepath.replace(replaced, transferPath);
+                if (leftTrimSize == 0) key = filepath;
+                else key = transferPath + filepath.substring(leftTrimSize);
                 lists.get(i % size).add(String.join(separator, filepath, key, etag, String.valueOf(length),
                         String.valueOf(timestamp), mime));
             }
