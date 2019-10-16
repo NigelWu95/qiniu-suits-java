@@ -249,7 +249,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         try {
             return singleResult(line);
         } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.");
+            throw new IOException("input is empty or the processor may be already closed.", e);
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
@@ -267,7 +267,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             if (batchSize > 1) batchProcess(lineList, batchSize, retryTimes);
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.");
+            if (bucket == null) { // 如果是关闭了那么 bucket 应该为 null
+                throw new IOException("input is empty or the processor may be already closed.", e);
+            } else {
+                throw new IOException("instance without savePath can not call this batch process method.", e);
+            }
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
