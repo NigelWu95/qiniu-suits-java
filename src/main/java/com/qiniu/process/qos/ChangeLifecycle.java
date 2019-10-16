@@ -1,5 +1,7 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -86,8 +88,10 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        return String.join("\t", key, String.valueOf(days),
-                HttpRespUtils.getResult(bucketManager.deleteAfterDays(bucket, key, days)));
+        Response response = bucketManager.deleteAfterDays(bucket, key, days);
+        if (response.statusCode != 200) throw new QiniuException(response);
+        response.close();
+        return String.join("\t", key, "200");
     }
 
     @Override

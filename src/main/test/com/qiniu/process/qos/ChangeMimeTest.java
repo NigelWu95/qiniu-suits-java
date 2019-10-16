@@ -19,7 +19,9 @@ public class ChangeMimeTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         ChangeMime changeMime = new ChangeMime(accessKey, secretKey, new Configuration(), bucket, "text/test", null,
-                null);
+                "mime=text/plain&a=b"
+//                null
+        );
         Map<String, String> map = new HashMap<String, String>(){{
             put("key", "qiniu_success_1.txt");
         }};
@@ -38,13 +40,14 @@ public class ChangeMimeTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         ChangeMime changeMime = new ChangeMime(accessKey, secretKey, new Configuration(), bucket, "text/test", null,
-                null
+                "mime=text/plain"
                 , "../temp"
         );
         List<Map<String, String>> list = new ArrayList<>();
         list.add(new HashMap<String, String>(){{ put("key", "qiniu_success_1.txt"); }});
         list.add(new HashMap<String, String>(){{ put("key", "qiniu_success_2.txt"); }});
         list.add(new HashMap<String, String>(){{ put("key", "qiniu_success_3.txt"); }});
+        list.add(new HashMap<String, String>(){{ put("key", "qiniu_success_9.txt"); }});
         try {
             changeMime.processLine(list);
         } catch (IOException e) {

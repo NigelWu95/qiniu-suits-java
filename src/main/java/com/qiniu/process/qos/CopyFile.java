@@ -1,5 +1,7 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.common.QiniuException;
+import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.BucketManager.*;
@@ -119,8 +121,10 @@ public class CopyFile extends Base<Map<String, String>> {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
         String toKey = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex)));
-        return String.join("\t", key, toKey,
-                HttpRespUtils.getResult(bucketManager.copy(bucket, key, toBucket, toKey, false)));
+        Response response = bucketManager.copy(bucket, key, toBucket, toKey, false);
+        if (response.statusCode != 200) throw new QiniuException(response);
+        response.close();
+        return String.join("\t", key, toKey, "200");
     }
 
     @Override
