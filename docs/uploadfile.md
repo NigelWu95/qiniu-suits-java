@@ -80,6 +80,8 @@ separator=\t
 filepath-index=0
 indexes=1
 ```  
+**注意**：七牛存储空间不支持文件名以 `../`, `./` 开头或者包含 `/../`, `/./` 这种情况，会造成无法访问，因此设置文件名时请注意，如果 path 是以
+`../` 或 `./` 开头的路径进行直接上传时文件名会解析时会去掉该开头。filepath 值也尽量不要携带这些部分，因为在 keep-path=true 时路径名即作为文件名。   
 
 ### 关于 filepath-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。filepath-index 表示输入行含 filepath 形式的文件路径，未设置的情

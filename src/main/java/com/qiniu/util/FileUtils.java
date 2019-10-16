@@ -58,6 +58,8 @@ public final class FileUtils {
 
     public static String pathSeparator = System.getProperty("file.separator");
     public static String userHomeStartPath = "~" + pathSeparator;
+    public static String currentPath = "." + pathSeparator;
+    public static String parentPath = ".." + pathSeparator;
     public static String userHome = System.getProperty("user.home");
 
     public static String convertToRealPath(String filepath) throws IOException {
