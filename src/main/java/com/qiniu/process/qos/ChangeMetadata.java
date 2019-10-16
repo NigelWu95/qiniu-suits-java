@@ -127,7 +127,10 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         metadata = null;
+        condition = null;
+        if (ops != null) ops.clear();
         ops = null;
+        if (lines != null) lines.clear();
         lines = null;
         auth = null;
         configuration = null;

@@ -1,11 +1,9 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.http.Client;
 import com.qiniu.process.Base;
-import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
-import com.qiniu.util.Auth;
-import com.qiniu.util.CloudApiUtils;
-import com.qiniu.util.HttpRespUtils;
+import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,19 +15,24 @@ public class ChangeMime extends Base<Map<String, String>> {
     private String mimeType;
     private String mimeIndex;
     private String condition;
-    private BucketManager.BatchOperations batchOperations;
+    private ArrayList<String> ops;
     private List<Map<String, String>> lines;
+    private Auth auth;
     private Configuration configuration;
-    private BucketManager bucketManager;
+    private Client client;
+    private static final String URL = "http://rs.qiniu.com/batch";
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
                       String mimeIndex, String condition) throws IOException {
         super("mime", accessKey, secretKey, bucket);
         this.mimeType = mimeType;
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
+        this.condition = condition != null ? UrlSafeBase64.encodeToString(condition) : null;
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
+        this.auth = Auth.create(accessKey, secretKey);
+        this.configuration = configuration;
+        this.client = new Client(configuration.clone());
     }
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
@@ -37,12 +40,14 @@ public class ChangeMime extends Base<Map<String, String>> {
         super("mime", accessKey, secretKey, bucket, savePath, saveIndex);
         this.mimeType = mimeType;
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
+        this.condition = condition != null ? UrlSafeBase64.encodeToString(condition) : null;
         this.batchSize = 1000;
-        this.batchOperations = new BucketManager.BatchOperations();
+        this.ops = new ArrayList<>();
         this.lines = new ArrayList<>();
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
+        this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        this.client = new Client(configuration.clone());
     }
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
@@ -52,8 +57,9 @@ public class ChangeMime extends Base<Map<String, String>> {
 
     public ChangeMime clone() throws CloneNotSupportedException {
         ChangeMime changeType = (ChangeMime)super.clone();
-        changeType.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
-        changeType.batchOperations = new BucketManager.BatchOperations();
+        changeType.auth = Auth.create(accessId, secretKey);
+        changeType.client = new Client(configuration.clone());
+        changeType.ops = new ArrayList<>();
         changeType.lines = new ArrayList<>();
         return changeType;
     }
@@ -65,9 +71,10 @@ public class ChangeMime extends Base<Map<String, String>> {
 
     @Override
     protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
-        batchOperations.clearOps();
+        ops.clear();
         lines.clear();
         String key;
+        StringBuilder pathBuilder = new StringBuilder();
         if (mimeType == null) {
             String mime;
             for (Map<String, String> map : processList) {
@@ -75,7 +82,11 @@ public class ChangeMime extends Base<Map<String, String>> {
                 mime = map.get(mimeIndex);
                 if (key != null && mime != null) {
                     lines.add(map);
-                    batchOperations.addChgmOp(bucket, mime, key);
+                    pathBuilder.append("/chgm/").append(UrlSafeBase64.encodeToString(bucket))
+                            .append(":").append(key).append("/mime/").append(mime);
+                    if (condition != null) pathBuilder.append("/cond/").append(condition);
+                    ops.add(pathBuilder.toString());
+//                    batchOperations.addChgmOp(bucket, mime, key);
                 } else {
                     fileSaveMapper.writeError("key or mime is not exists or empty in " + map, false);
                 }
@@ -85,7 +96,7 @@ public class ChangeMime extends Base<Map<String, String>> {
                 key = map.get("key");
                 if (key != null) {
                     lines.add(map);
-                    batchOperations.addChgmOp(bucket, mimeType, key);
+//                    batchOperations.addChgmOp(bucket, mimeType, key);
                 } else {
                     fileSaveMapper.writeError("key is not exists or empty in " + map, false);
                 }
@@ -96,7 +107,10 @@ public class ChangeMime extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
+        byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
+        StringMap headers = auth.authorization(URL, body, Client.FormMime);
+        return HttpRespUtils.getResult(client.post(URL, body, headers, Client.FormMime));
+//        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
@@ -106,9 +120,23 @@ public class ChangeMime extends Base<Map<String, String>> {
         if (mimeType == null) {
             String mime = line.get(mimeIndex);
             if (mime == null) throw new IOException("mime is not exists or empty in " + line);
-            return String.join("\t", key, mime, HttpRespUtils.getResult(bucketManager.changeMime(bucket, key, mime)));
+            StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
+                    .append(UrlSafeBase64.encodeToString(bucket))
+                    .append(":").append(key).append("/mime/").append(mime);
+            if (condition != null) urlBuilder.append("/cond/").append(condition);
+            String url = urlBuilder.toString();
+            StringMap headers = auth.authorization(url, null, Client.FormMime);
+            return String.join("\t", key, mime, HttpRespUtils.getResult(
+                    client.post(url, null, headers, Client.FormMime)));
         } else {
-            return String.join("\t", key, mimeType, HttpRespUtils.getResult(bucketManager.changeMime(bucket, key, mimeType)));
+            StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
+                    .append(UrlSafeBase64.encodeToString(bucket))
+                    .append(":").append(key).append("/mime/").append(mimeType);
+            if (condition != null) urlBuilder.append("/cond/").append(condition);
+            String url = urlBuilder.toString();
+            StringMap headers = auth.authorization(url, null, Client.FormMime);
+            return String.join("\t", key, mimeType, HttpRespUtils.getResult(
+                    client.post(url, null, headers, Client.FormMime)));
         }
     }
 
@@ -116,9 +144,15 @@ public class ChangeMime extends Base<Map<String, String>> {
     public void closeResource() {
         super.closeResource();
         mimeType = null;
-        batchOperations = null;
-        lines = null;
+        mimeIndex = null;
+        condition = null;
+//        batchOperations = null;
+        if (ops != null) ops.clear();
+        ops = null;
+        if (lines != null) lines.clear();
+        auth = null;
         configuration = null;
-        bucketManager = null;
+        client = null;
+//        bucketManager = null;
     }
 }
