@@ -1,6 +1,8 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
+import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
@@ -13,8 +15,10 @@ import java.util.Map;
 public class ChangeMime extends Base<Map<String, String>> {
 
     private String mimeType;
+    private String encodedMime;
     private String mimeIndex;
     private String condition;
+    private String encodedCondition;
     private ArrayList<String> ops;
     private List<Map<String, String>> lines;
     private Auth auth;
@@ -26,8 +30,10 @@ public class ChangeMime extends Base<Map<String, String>> {
                       String mimeIndex, String condition) throws IOException {
         super("mime", accessKey, secretKey, bucket);
         this.mimeType = mimeType;
+        if (mimeType != null) encodedMime = UrlSafeBase64.encodeToString(mimeType);
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
-        this.condition = condition != null ? UrlSafeBase64.encodeToString(condition) : null;
+        this.condition = condition;
+        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.configuration = configuration;
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.auth = Auth.create(accessKey, secretKey);
@@ -39,8 +45,10 @@ public class ChangeMime extends Base<Map<String, String>> {
                       String mimeIndex, String condition, String savePath, int saveIndex) throws IOException {
         super("mime", accessKey, secretKey, bucket, savePath, saveIndex);
         this.mimeType = mimeType;
+        if (mimeType != null) encodedMime = UrlSafeBase64.encodeToString(mimeType);
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
-        this.condition = condition != null ? UrlSafeBase64.encodeToString(condition) : null;
+        this.condition = condition;
+        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.batchSize = 1000;
         this.ops = new ArrayList<>();
         this.lines = new ArrayList<>();
@@ -66,7 +74,11 @@ public class ChangeMime extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
+        if (mimeType == null) {
+            return String.join("\t", line.get("key"), line.get(mimeIndex));
+        } else {
+            return line.get("key");
+        }
     }
 
     @Override
@@ -74,7 +86,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         ops.clear();
         lines.clear();
         String key;
-        StringBuilder pathBuilder = new StringBuilder();
+        StringBuilder pathBuilder;
         if (mimeType == null) {
             String mime;
             for (Map<String, String> map : processList) {
@@ -82,9 +94,10 @@ public class ChangeMime extends Base<Map<String, String>> {
                 mime = map.get(mimeIndex);
                 if (key != null && mime != null) {
                     lines.add(map);
-                    pathBuilder.append("/chgm/").append(UrlSafeBase64.encodeToString(bucket))
-                            .append(":").append(key).append("/mime/").append(mime);
-                    if (condition != null) pathBuilder.append("/cond/").append(condition);
+                    pathBuilder = new StringBuilder("/chgm/")
+                            .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
+                            .append("/mime/").append(UrlSafeBase64.encodeToString(mime));
+                    if (condition != null) pathBuilder.append("/cond/").append(encodedCondition);
                     ops.add(pathBuilder.toString());
 //                    batchOperations.addChgmOp(bucket, mime, key);
                 } else {
@@ -96,6 +109,11 @@ public class ChangeMime extends Base<Map<String, String>> {
                 key = map.get("key");
                 if (key != null) {
                     lines.add(map);
+                    pathBuilder = new StringBuilder("/chgm/")
+                            .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
+                            .append("/mime/").append(encodedMime);
+                    if (condition != null) pathBuilder.append("/cond/").append(encodedCondition);
+                    ops.add(pathBuilder.toString());
 //                    batchOperations.addChgmOp(bucket, mimeType, key);
                 } else {
                     fileSaveMapper.writeError("key is not exists or empty in " + map, false);
@@ -108,8 +126,7 @@ public class ChangeMime extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        StringMap headers = auth.authorization(URL, body, Client.FormMime);
-        return HttpRespUtils.getResult(client.post(URL, body, headers, Client.FormMime));
+        return HttpRespUtils.getResult(client.post(URL, body, auth.authorization(URL, body, Client.FormMime), Client.FormMime));
 //        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
@@ -117,26 +134,29 @@ public class ChangeMime extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
+        StringBuilder urlBuilder;
         if (mimeType == null) {
             String mime = line.get(mimeIndex);
             if (mime == null) throw new IOException("mime is not exists or empty in " + line);
-            StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
-                    .append(UrlSafeBase64.encodeToString(bucket))
-                    .append(":").append(key).append("/mime/").append(mime);
-            if (condition != null) urlBuilder.append("/cond/").append(condition);
+            urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
+                    .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
+                    .append("/mime/").append(UrlSafeBase64.encodeToString(mime));
+            if (condition != null) urlBuilder.append("/cond/").append(encodedCondition);
             String url = urlBuilder.toString();
-            StringMap headers = auth.authorization(url, null, Client.FormMime);
-            return String.join("\t", key, mime, HttpRespUtils.getResult(
-                    client.post(url, null, headers, Client.FormMime)));
+            Response response = client.post(url, null, auth.authorization(url, null, Client.FormMime), Client.FormMime);
+            if (response.statusCode != 200) throw new QiniuException(response);
+            response.close();
+            return String.join("\t", key, mime, "200");
         } else {
-            StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
-                    .append(UrlSafeBase64.encodeToString(bucket))
-                    .append(":").append(key).append("/mime/").append(mimeType);
-            if (condition != null) urlBuilder.append("/cond/").append(condition);
+            urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
+                    .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
+                    .append("/mime/").append(encodedMime);
+            if (condition != null) urlBuilder.append("/cond/").append(encodedCondition);
             String url = urlBuilder.toString();
-            StringMap headers = auth.authorization(url, null, Client.FormMime);
-            return String.join("\t", key, mimeType, HttpRespUtils.getResult(
-                    client.post(url, null, headers, Client.FormMime)));
+            Response response = client.post(url, null, auth.authorization(url, null, Client.FormMime), Client.FormMime);
+            if (response.statusCode != 200) throw new QiniuException(response);
+            response.close();
+            return String.join("\t", key, "200");
         }
     }
 

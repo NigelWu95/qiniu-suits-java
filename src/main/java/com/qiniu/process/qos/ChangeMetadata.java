@@ -1,6 +1,8 @@
 package com.qiniu.process.qos;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
+import com.qiniu.http.Response;
 import com.qiniu.process.Base;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
@@ -14,6 +16,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
 
     private Map<String, String> metadata;
     private String condition;
+    private String encodedCondition;
     private ArrayList<String> ops;
     private List<Map<String, String>> lines;
     private Auth auth;
@@ -26,7 +29,8 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         super("metadata", accessKey, secretKey, bucket);
         if (metadata == null) throw new IOException("metadata can not be null");
         this.metadata = metadata;
-        this.condition = condition != null ? UrlSafeBase64.encodeToString(condition) : null;
+        this.condition = condition;
+        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
@@ -38,7 +42,8 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         super("metadata", accessKey, secretKey, bucket, savePath, saveIndex);
         if (metadata == null) throw new IOException("metadata can not be null");
         this.metadata = metadata;
-        this.condition = condition != null ? UrlSafeBase64.encodeToString(condition) : null;
+        this.condition = condition;
+        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.batchSize = 1000;
         this.ops = new ArrayList<>();
         this.lines = new ArrayList<>();
@@ -74,13 +79,13 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         String key;
 //        String encodedMetaValue;
 //        String path;
-        StringBuilder pathBuilder = new StringBuilder();
+        StringBuilder pathBuilder;
         for (Map<String, String> map : processList) {
             key = map.get("key");
             if (key != null) {
                 lines.add(map);
 //                path = String.format("/chgm/%s", BucketManager.encodedEntry(bucket, key));
-                pathBuilder.append("/chgm/").append(UrlSafeBase64.encodeToString(bucket)).append(":").append(key);
+                pathBuilder = new StringBuilder("/chgm/").append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)));
                 for (String k : metadata.keySet()) {
 //                    encodedMetaValue = UrlSafeBase64.encodeToString(metadata.get(k));
 //                    path = String.format("%s/x-qn-meta-!%s/%s", path, k, encodedMetaValue);
@@ -88,7 +93,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
                 }
 //                if (condition != null) path = String.format("%s/cond/%s", path, condition);
 //                ops.add(path);
-                if (condition != null) pathBuilder.append("/cond/").append(condition);
+                if (condition != null) pathBuilder.append("/cond/").append(encodedCondition);
                 ops.add(pathBuilder.toString());
             } else {
                 fileSaveMapper.writeError("key is not exists or empty in " + map, false);
@@ -100,8 +105,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        StringMap headers = auth.authorization(URL, body, Client.FormMime);
-        return HttpRespUtils.getResult(client.post(URL, body, headers, Client.FormMime));
+        return HttpRespUtils.getResult(client.post(URL, body, auth.authorization(URL, body, Client.FormMime), Client.FormMime));
     }
 
     @Override
@@ -110,22 +114,25 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         if (key == null) throw new IOException("key is not exists or empty in " + line);
 //        String path = String.format("/chgm/%s", BucketManager.encodedEntry(bucket, key));
         StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
-                .append(UrlSafeBase64.encodeToString(bucket)).append(":").append(key);
+                .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)));
         for (String k : metadata.keySet()) {
 //            path = String.format("%s/x-qn-meta-!%s/%s", path, k, UrlSafeBase64.encodeToString(metadata.get(k)));
             urlBuilder.append("/x-qn-meta-!").append(k).append("/").append(UrlSafeBase64.encodeToString(metadata.get(k)));
         }
 //        if (condition != null) path = String.format("%s/cond/%s", path, condition);
 //        String url = "http://rs.qiniu.com" + path;
-        if (condition != null) urlBuilder.append("/cond/").append(condition);
+        if (condition != null) urlBuilder.append("/cond/").append(encodedCondition);
         StringMap headers = auth.authorization(urlBuilder.toString(), null, Client.FormMime);
-        return String.join("\t", key, String.valueOf(metadata),
-                HttpRespUtils.getResult(client.post(urlBuilder.toString(), null, headers, Client.FormMime)));
+        Response response = client.post(urlBuilder.toString(), null, headers, Client.FormMime);
+        if (response.statusCode != 200) throw new QiniuException(response);
+        response.close();
+        return String.join("\t", key, "200");
     }
 
     @Override
     public void closeResource() {
         super.closeResource();
+        if (metadata != null) metadata.clear();
         metadata = null;
         condition = null;
         if (ops != null) ops.clear();

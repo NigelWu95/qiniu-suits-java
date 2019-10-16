@@ -19,9 +19,7 @@ public class ChangeStatusTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        String bucket =
-                "note-video";
-//                propertiesFile.getValue("bucket");
+        String bucket = propertiesFile.getValue("bucket");
         changeStatus = new ChangeStatus(accessKey, secretKey, new Configuration(), bucket, 1, "../xhs");
     }
 
