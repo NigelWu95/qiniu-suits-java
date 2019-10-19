@@ -184,7 +184,10 @@ public class CommonParams {
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String toKey = entryParam.getValue("to-key", null);
-                if (toKey != null) mapLine.put("toKey", toKey);
+                if (toKey != null) {
+                    indexMap.put("toKey", "toKey");
+                    mapLine.put("toKey", toKey);
+                }
                 break;
             case "download": savePath = entryParam.getValue("save-path", ".");
             case "asyncfetch":
@@ -203,6 +206,7 @@ public class CommonParams {
             case "videocensor":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
+                    indexMap.put("url", "url");
                     mapLine.put("url", url);
                     mapLine.put("key", entryParam.getValue("key", null));
                 } else if (!fromLine) {
@@ -213,19 +217,28 @@ public class CommonParams {
             case "pfop":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", "").trim();
-                if (!"".equals(fops)) mapLine.put("fops", fops);
+                if (!"".equals(fops)) {
+                    indexMap.put("fops", "fops");
+                    mapLine.put("fops", fops);
+                }
                 setPfopConfigs();
                 break;
             case "pfopcmd":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String avinfo = entryParam.getValue("avinfo", "").trim();
-                if (!"".equals(avinfo)) mapLine.put("avinfo", avinfo);
+                if (!"".equals(avinfo)) {
+                    indexMap.put("avinfo", "avinfo");
+                    mapLine.put("avinfo", avinfo);
+                }
                 setPfopConfigs();
                 break;
             case "pfopresult":
             case "censorresult":
                 String id = entryParam.getValue("id", "").trim();
-                if (!"".equals(id)) mapLine.put("id", id);
+                if (!"".equals(id)) {
+                    indexMap.put("id", "id");
+                    mapLine.put("id", id);
+                }
                 break;
             case "stat":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
@@ -236,7 +249,10 @@ public class CommonParams {
             case "qupload":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String filepath = entryParam.getValue("filepath", "").trim();
-                if (!"".equals(filepath)) mapLine.put("filepath", filepath);
+                if (!"".equals(filepath)) {
+                    indexMap.put("filepath", "filepath");
+                    mapLine.put("filepath", filepath);
+                }
                 break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;

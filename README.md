@@ -2,10 +2,11 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-qiniu-suits-java 是一个云存储 api tools (base-qiniu)，通过设计并优化的[算法](docs/datasource.md#并发列举)能够高效**并发列举**云存储空
-间的大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云/华为云/百度云等**)，同时支持对 LocalFile 中的资源列表并发进行批量处理，主要包括本地文件批
-量上传和对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使
-用执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))）。  
+qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过设计的[前缀并发算法](docs/datasource.md#并发列举)能够高效**并发列举**
+云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
+资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
+非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
+令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))）。  
 
 ### 高级功能列表（所有操作均支持批量并发处理）：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -294,19 +295,23 @@ java.net.SocketTimeoutException: timeout
 程序会自动重试，如果比较频繁则可以修改[超时配置](#7-超时设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。  
 2. 常见错误信息：  
-（1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
-表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
-（2）java.lang.OutOfMemoryError: unable to create new native thread   
-与（1）类似，内存溢出导致无法继续创建更多线程或对象。  
-（3）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
+（1）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
 请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  
+（2）java.lang.OutOfMemoryError: GC overhead limit exceeded  
+表示可能是内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，更换高配置机器或者降低线程数 threads 或者 unit-len。  
+（3）java.lang.OutOfMemoryError: unable to create new native thread   
+与（1）类似，内存溢出导致无法继续创建更多线程或对象，降低线程数 threads 重新运行。  
+（4）java.lang.OutOfMemoryError: Java heap space   
+运行过程中 jvm 堆内存（一般默认为系统内存的 1/4）不足，可以通过 -Xms 和 -Xmx 来增加堆内存，用法: `java -Xms2g -Xmx2g -jar qsuits.jar ...`。  
 
 ### 9 程序日志
-7.7 版本引入了 slf4j+log4j2 来记录运行日志，主要记录信息为：  
+7.7 版本开始引入了 slf4j+log4j2 来记录运行日志，主要记录信息为：  
 1. 数据源位置记录信息 =\> procedure.log，记录格式为 json，数据源读取位置打点数据，每一行都是一次数据源位置记录，最后一行即为最后记录下的位置信
 息，如果信息为 `{}` 表明程序运行完整，没有断点需要再次运行，如果信息中包含具体的字符串，说明这是程序留下的断点，则该行信息可以取出作为断点操作的配置
 内容，具体参考：[断点操作](#10-断点续操作)  
-2. 程序运行过程输出及异常信息，通过终端 Console 和 qsuits.log 输出。  
+2. 程序运行过程输出及异常信息，通过终端 Console 和 qsuits.info、qsuits.error 输出。  
+3. 由于日志输出的文件名固定（一般会产生 3/4 日志文件：procedure.log、qsuits.info、qsuits.error，可能还会有 procedure-1.log），每次运行
+时如果当前路径下存在历史文件会直接覆盖掉，所以每次尽量在不同的路径去运行。  
 
 ### 10 断点续操作
 7.1 版本开始支持断点记录，在程序运行后出现异常导致终止或部分数据源路径错误或者是 INT 信号(命令行 Ctrl+C 中断执行)终止程序时，会记录数据导出中断的

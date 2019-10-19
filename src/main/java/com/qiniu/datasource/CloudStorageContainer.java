@@ -111,13 +111,16 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
-    private void setIndexMapWithDefault(Map<String, String> indexMap) {
+    private void setIndexMapWithDefault(Map<String, String> indexMap) throws IOException {
         if (indexMap == null || indexMap.size() == 0) {
             if (this.indexMap == null) this.indexMap = new HashMap<>();
             for (String fileInfoField : ConvertingUtils.defaultFileFields) {
                 this.indexMap.put(fileInfoField, fileInfoField);
             }
         } else {
+            for (String s : indexMap.keySet()) {
+                if (s == null || "".equals(s)) throw new IOException("the index can not be empty in " + indexMap);
+            }
             this.indexMap = indexMap;
         }
     }
