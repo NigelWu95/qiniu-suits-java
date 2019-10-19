@@ -23,7 +23,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private int limit;
     private String truncateMarker;
     private List<FileInfo> fileInfoList;
-    private static final List<FileInfo> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -142,6 +142,7 @@ public class QiniuLister implements ILister<FileInfo> {
             for (int i = 0; i < size; i++) {
                 if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
                     fileInfoList = fileInfoList.subList(0, i);
+                    fileInfoList.subList(i, size).clear();
                     return;
                 }
             }
@@ -168,7 +169,10 @@ public class QiniuLister implements ILister<FileInfo> {
             doList();
             count += fileInfoList.size();
         } else {
-            fileInfoList = defaultList;
+            if (fileInfoList.size() > 0) {
+                endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+                fileInfoList.clear();
+            }
         }
     }
 
@@ -205,6 +209,7 @@ public class QiniuLister implements ILister<FileInfo> {
     public synchronized String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
         if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuMarker(truncateMarker);
+        if (endKey != null) return endKey;
         if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
         return null;
     }
@@ -227,5 +232,9 @@ public class QiniuLister implements ILister<FileInfo> {
         marker = null;
         endPrefix = null;
 //        fileInfoList = defaultList; // 不做修改，因为最后还有可能需要获取 currentEndKey()
+        if (fileInfoList.size() > 0) {
+            endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+            fileInfoList.clear();
+        }
     }
 }

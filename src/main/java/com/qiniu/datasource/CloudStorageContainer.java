@@ -57,7 +57,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
-    public static String firstPoint;
+    static String firstPoint;
     private String lastPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>();
     private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
@@ -264,6 +264,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 procedureLogger.info(recorder.put(lister.getPrefix(), json));
             }
             if (map != null) map.put("start", lister.currentEndKey());
+            objects.clear();
             retry = retryTimes;
             while (true) {
                 try {
