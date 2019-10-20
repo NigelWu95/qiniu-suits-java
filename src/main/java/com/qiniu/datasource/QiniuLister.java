@@ -139,12 +139,16 @@ public class QiniuLister implements ILister<FileInfo> {
             int size = fileInfoList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
-                    fileInfoList = fileInfoList.subList(0, i);
-                    fileInfoList.subList(i, size).clear();
-                    return;
+                    fileInfoList.remove(i);
+                    break;
                 }
+            }
+            // 优化 gc，不用的元素全部清除
+            for (; i < size; i++) {
+                fileInfoList.remove(i);
             }
         }
     }
@@ -166,6 +170,7 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            fileInfoList.clear();
             doList();
             count += fileInfoList.size();
         } else {
@@ -184,19 +189,30 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public boolean hasFutureNext() throws SuitsException {
         int expected = limit + 1;
-        if (expected <= 10000) expected = 10001;
-        int times = 100000 / (fileInfoList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<FileInfo> futureList = fileInfoList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        if (expected < 10000) expected = 10000 + 1;
+        int times = 10;
+        int futureSize = limit;
+        if (limit < 1000) {
+            futureSize += limit * 10;
+        } else if (limit <= 5000) {
+            futureSize += 10000;
+        } else {
+            futureSize += limit;
+        }
+        List<FileInfo> futureList = new ArrayList<>(futureSize);
+        futureList.addAll(fileInfoList);
+        fileInfoList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             // 优化大量删除情况下的列举速度，去掉 size>0 的条件
 //            if (futureList.size() > 0)
                 times--;
             doList();
             count += fileInfoList.size();
             futureList.addAll(fileInfoList);
+            fileInfoList.clear();
         }
         fileInfoList = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -231,7 +247,6 @@ public class QiniuLister implements ILister<FileInfo> {
         bucketManager = null;
         marker = null;
         endPrefix = null;
-//        fileInfoList = defaultList; // 不做修改，因为最后还有可能需要获取 currentEndKey()
         if (fileInfoList.size() > 0) {
             endKey = fileInfoList.get(fileInfoList.size() - 1).key;
             fileInfoList.clear();

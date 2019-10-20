@@ -264,7 +264,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 procedureLogger.info(recorder.put(lister.getPrefix(), json));
             }
             if (map != null) map.put("start", lister.currentEndKey());
-            objects.clear();
+//            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             retry = retryTimes;
             while (true) {
                 try {
@@ -372,6 +372,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     } else if (point.compareTo(firstPoint) < 0) {
                         point = firstPoint;
                         lister.setEndPrefix(startPrefix + firstPoint);
+                        lister.setLimit(1);
                     } else {
                         insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
                             put("marker", lister.getMarker());
@@ -382,6 +383,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                     point = firstPoint;
                     // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
                     lister.setEndPrefix(startPrefix + firstPoint);
+                    lister.setLimit(1);
                 }
             } else {
                 return moreValidPrefixes(lister, true);
