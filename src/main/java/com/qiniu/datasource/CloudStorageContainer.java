@@ -59,9 +59,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected List<String> originPrefixList = new ArrayList<>();
     static String firstPoint;
     private String lastPoint;
-    private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>(100);
+    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
+    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
 
     public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
@@ -294,16 +294,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         IResultOutput<W> saver = null;
         ILineProcess<T> lineProcessor = null;
         try {
+            saver = getNewResultSaver(orderStr);
+            saverMap.put(orderStr, saver);
             // 多线程情况下不要直接使用传入的 processor，因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             if (processor != null) {
                 lineProcessor = processor.clone();
                 processorMap.put(orderStr, lineProcessor);
             }
-            saver = getNewResultSaver(orderStr);
-            saverMap.put(orderStr, saver);
             export(lister, saver, lineProcessor);
-            recorder.remove(lister.getPrefix());
-            saverMap.remove(orderStr);
+            recorder.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
         } catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e.error(), e);
@@ -314,8 +313,17 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } finally {
             try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
             infoLogger.info("{}\t{}\t{}", orderStr, lister.getPrefix(), lister.count());
-            if (saver != null) saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
+            if (saver != null) {
+                saver.closeWriters();
+                saver = null; // let gc work
+            }
+            saverMap.remove(orderStr);
+            if (lineProcessor != null) {
+                lineProcessor.closeResource();
+                lineProcessor = null;
+                // 实际上 processorMap 记录的 key 和 saverMap 的是一致的，只要 saverMap 中做了移除说明已经正常处理完任务，最后直接根据
+                // saverMap 的 keySet 来 check 即可
+            }
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
             lister.close();
         }
@@ -615,13 +623,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     void showdownHook() {
         SignalHandler handler = signal -> {
             try {
+//                executorPool.shutdownNow();
+                pauseDateTime = LocalDateTime.MIN; // 使用该语句使线程池中的任务停滞效果可能比 shutdownNow() 要好
                 endAction();
             } catch (IOException e) {
-                e.printStackTrace();
+                rootLogger.error("showdown", e);
             }
             System.exit(0);
         };
-        // 设置INT信号(Ctrl+C中断执行)交给指定的信号处理器处理，废掉系统自带的功能
+        // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
         Signal.handle(new Signal("INT"), handler);
     }
 
@@ -673,7 +683,8 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
-            executorPool.shutdownNow();
+//            executorPool.shutdownNow(); // 执行中的 sleep(), wait() 操作会抛出 InterruptedException
+            pauseDateTime = LocalDateTime.MIN; // 使用该语句使线程池中的任务停滞效果可能比 shutdownNow() 要好
             rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
