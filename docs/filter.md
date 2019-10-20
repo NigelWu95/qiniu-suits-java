@@ -67,7 +67,7 @@ f-prefix,f-suffix,f-inner,f-regex 四个均为针对文件名 key 的过滤条�
 `f-check=ext-mime` 表示进行**后缀名 ext** 和 **mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  
 `f-check-config` 自定义资源字段规范对应关系列表的配置文件，格式为 json，自定义规范配置 key 字段必填，其元素类型为列表 [], 否则无效，如
 "ext-mime" 配置时后缀名和 mimeType 用 ":" 组合成字符串成为一组对应关系，写法如下：  
-```
+```json
 {
   "ext-mime": [
     "mp5:video/mp5"

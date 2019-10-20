@@ -631,8 +631,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             System.exit(0);
         };
-        // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
-        Signal.handle(new Signal("INT"), handler);
+        try { // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
+            Signal.handle(new Signal("INT"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("TERM"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("USR1"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("USR2"), handler); } catch (Exception ignored) {}
+        // 以下几种信号实际上不能被处理
+//        try { Signal.handle(new Signal("QUIT"), handler); } catch (Exception ignored) {}
+//        try { Signal.handle(new Signal("KILL"), handler); } catch (Exception ignored) {}
+//        try { Signal.handle(new Signal("STOP"), handler); } catch (Exception ignored) {}
     }
 
     /**

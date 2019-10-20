@@ -102,7 +102,7 @@ line-config 用来设置要读取的文件路径，在 path 为空的情况下�
 从之后的位置开始读入数据，即此行文本信息标示文件中的读取位置，可以用于设置断点。
 
 ##### line-config 配置
-```
+```json
 {
   "/Users/wubingheng/Projects/Github/test/success_1.txt":"test.gif",
   "/Users/wubingheng/Projects/Github/test/success_2.txt":"",
@@ -166,7 +166,7 @@ prefix-right=
 prefixes 的情况下必须是有效的目录名。  
 
 ##### prefix-config 配置
-```
+```json
 {
   "a":{
     "marker":"",

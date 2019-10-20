@@ -84,7 +84,40 @@ public class CommonParams {
         add("json");
     }};
 
-    public CommonParams() {}
+    private void accountInit() throws IOException {
+        try {
+            accountMap = ParamsUtils.toParamsMap(AccountUtils.accountPath);
+        } catch (FileNotFoundException ignored) {
+            accountMap = new HashMap<>();
+        }
+        account = entryParam.getValue("a", null);
+        if (account == null) {
+            if (entryParam.getValue("default", "false").equals("true")) {
+                account = accountMap.get("account");
+                if (account == null) throw new IOException("no default account.");
+            }
+        }
+    }
+
+    public CommonParams() throws IOException {
+        accountInit();
+        if (account != null) {
+            qiniuAccessKey = accountMap.get(account + "-qiniu-id");
+            qiniuSecretKey = accountMap.get(account + "-qiniu-secret");
+            tencentSecretId = accountMap.get(account + "-tencent-id");
+            tencentSecretKey = accountMap.get(account + "-tencent-secret");
+            aliyunAccessId = accountMap.get(account + "-aliyun-id");
+            aliyunAccessSecret = accountMap.get(account + "-aliyun-secret");
+            upyunUsername = accountMap.get(account + "-upyun-id");
+            upyunPassword = accountMap.get(account + "-upyun-secret");
+            s3AccessId = accountMap.get(account + "-s3-id");
+            s3SecretKey = accountMap.get(account + "-s3-secret");
+            huaweiAccessId = accountMap.get(account + "-huawei-id");
+            huaweiSecretKey = accountMap.get(account + "-huawei-secret");
+            baiduAccessId = accountMap.get(account + "-baidu-id");
+            baiduSecretKey = accountMap.get(account + "-baidu-secret");
+        }
+    }
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -96,19 +129,7 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
-        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
-        try {
-            accountMap = ParamsUtils.toParamsMap(filePath);
-        } catch (FileNotFoundException ignored) {
-            accountMap = new HashMap<>();
-        }
-        account = entryParam.getValue("a", null);
-        if (account == null) {
-            if (entryParam.getValue("default", "false").equals("true")) {
-                account = accountMap.get("account");
-                if (account == null) throw new IOException("no default account.");
-            }
-        }
+        accountInit();
         if (isStorageSource) {
             setAuthKey();
             setBucket();
@@ -149,15 +170,7 @@ public class CommonParams {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
-        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
-        accountMap = ParamsUtils.toParamsMap(filePath);
-        account = entryParam.getValue("a", null);
-        if (account == null) {
-            if (entryParam.getValue("default", "false").equals("true")) {
-                account = accountMap.get("account");
-                if (account == null) throw new IOException("no default account.");
-            }
-        }
+        accountInit();
         setParse();
         setSeparator();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
