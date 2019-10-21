@@ -29,11 +29,21 @@ public class EntryMain {
             put("i", "interactive=true");
             put("interactive", "interactive=true");
             put("d", "default=true"); // for default account setting
+            put("dis", "displayed=false"); // get default account without displayed secret
         }};
         Map<String, String> paramsMap = getEntryParams(args, preSetMap);
         IEntryParam entryParam = new ParamsConfig(paramsMap);
         if (paramsMap.containsKey("account")) {
             AccountUtils.setAccount(entryParam, paramsMap.get("account"));
+            return;
+        } else if (paramsMap.containsKey("getaccount")) {
+            Boolean implicit = !paramsMap.containsKey("displayed");
+            List<String[]> keysList = AccountUtils.getAccount(paramsMap.get("getaccount"), implicit);
+            for (String[] keys : keysList) {
+                System.out.println(keys[2] + ": ");
+                System.out.println("id: " + keys[0]);
+                System.out.println("secret: " + keys[1]);
+            }
             return;
         }
         if (paramsMap.containsKey("verify")) processVerify = Boolean.parseBoolean(paramsMap.get("verify"));

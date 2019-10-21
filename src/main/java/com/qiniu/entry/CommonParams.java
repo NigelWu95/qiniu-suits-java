@@ -100,22 +100,55 @@ public class CommonParams {
     }
 
     public CommonParams() throws IOException {
-        accountInit();
+        try {
+            accountMap = ParamsUtils.toParamsMap(AccountUtils.accountPath);
+        } catch (FileNotFoundException ignored) {
+            accountMap = new HashMap<>();
+        }
+        account = accountMap.get("account");
         if (account != null) {
             qiniuAccessKey = accountMap.get(account + "-qiniu-id");
             qiniuSecretKey = accountMap.get(account + "-qiniu-secret");
+            if (qiniuAccessKey != null && qiniuSecretKey != null) {
+                qiniuAccessKey = new String(decoder.decode(qiniuAccessKey.substring(8)));
+                qiniuSecretKey = new String(decoder.decode(qiniuSecretKey.substring(8)));
+            }
             tencentSecretId = accountMap.get(account + "-tencent-id");
             tencentSecretKey = accountMap.get(account + "-tencent-secret");
+            if (tencentSecretId != null && tencentSecretKey != null) {
+                tencentSecretId = new String(decoder.decode(tencentSecretId.substring(8)));
+                tencentSecretKey = new String(decoder.decode(tencentSecretKey.substring(8)));
+            }
             aliyunAccessId = accountMap.get(account + "-aliyun-id");
             aliyunAccessSecret = accountMap.get(account + "-aliyun-secret");
+            if (aliyunAccessId != null && aliyunAccessSecret != null) {
+                aliyunAccessId = new String(decoder.decode(aliyunAccessId.substring(8)));
+                aliyunAccessSecret = new String(decoder.decode(aliyunAccessSecret.substring(8)));
+            }
             upyunUsername = accountMap.get(account + "-upyun-id");
             upyunPassword = accountMap.get(account + "-upyun-secret");
+            if (upyunUsername != null && upyunPassword != null) {
+                upyunUsername = new String(decoder.decode(upyunUsername.substring(8)));
+                upyunPassword = new String(decoder.decode(upyunPassword.substring(8)));
+            }
             s3AccessId = accountMap.get(account + "-s3-id");
             s3SecretKey = accountMap.get(account + "-s3-secret");
+            if (s3AccessId != null && s3SecretKey != null) {
+                s3AccessId = new String(decoder.decode(s3AccessId.substring(8)));
+                s3SecretKey = new String(decoder.decode(s3SecretKey.substring(8)));
+            }
             huaweiAccessId = accountMap.get(account + "-huawei-id");
             huaweiSecretKey = accountMap.get(account + "-huawei-secret");
+            if (huaweiAccessId != null && huaweiSecretKey != null) {
+                huaweiAccessId = new String(decoder.decode(huaweiAccessId.substring(8)));
+                huaweiSecretKey = new String(decoder.decode(huaweiSecretKey.substring(8)));
+            }
             baiduAccessId = accountMap.get(account + "-baidu-id");
             baiduSecretKey = accountMap.get(account + "-baidu-secret");
+            if (baiduAccessId != null && baiduSecretKey != null) {
+                baiduAccessId = new String(decoder.decode(baiduAccessId.substring(8)));
+                baiduSecretKey = new String(decoder.decode(baiduSecretKey.substring(8)));
+            }
         }
     }
 
