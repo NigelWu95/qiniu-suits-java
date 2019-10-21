@@ -337,7 +337,7 @@ public class CommonParams {
         else if ("file".equals(source)) source = "local";
         else if ("aws".equals(source)) source = "s3";
         if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3|huawei|baidu)")) {
-            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,s3]");
+            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,aws,s3,huawei,baidu]");
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
     }

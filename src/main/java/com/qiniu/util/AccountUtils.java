@@ -3,10 +3,8 @@ package com.qiniu.util;
 import com.qiniu.interfaces.IEntryParam;
 
 import java.io.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Base64;
-import java.util.List;
-import java.util.Map;
 
 public class AccountUtils {
 
@@ -21,55 +19,44 @@ public class AccountUtils {
         if (!accountFileExists) throw new IOException("account file not exists and can not be created.");
         String id;
         String secret;
+        String accountName;
         if (account == null) {
             throw new IOException("account name is empty.");
-        } else if (account.startsWith("ten-")) {
-            account = account.substring(4);
-            id = account + "-tencent-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("ten-id").getBytes()));
-            secret = account + "-tencent-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("ten-secret").getBytes()));
-        } else if (account.startsWith("ali-")) {
-            account = account.substring(4);
-            id = account + "-aliyun-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("ali-id").getBytes()));
-            secret = account + "-aliyun-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("ali-secret").getBytes()));
-        } else if (account.startsWith("up-")) {
-            account = account.substring(3);
-            id = account + "-upyun-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("up-id").getBytes()));
-            secret = account + "-upyun-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("up-secret").getBytes()));
-        } else if (account.startsWith("s3-")) {
-            account = account.substring(3);
-            id = account + "-s3-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("s3-id").getBytes()));
-            secret = account + "-s3-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("s3-secret").getBytes()));
-        } else if (account.startsWith("aws-")) {
-            account = account.substring(4);
-            id = account + "-aws-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("aws-id").getBytes()));
-            secret = account + "-aws-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("aws-secret").getBytes()));
-        } else if (account.startsWith("hua-")) {
-            account = account.substring(4);
-            id = account + "-huawei-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("hua-id").getBytes()));
-            secret = account + "-huawei-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("hua-secret").getBytes()));
-        } else if (account.startsWith("bai-")) {
-            account = account.substring(4);
-            id = account + "-baidu-id=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("bai-id").getBytes()));
-            secret = account + "-baidu-secret=" + EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("bai-secret").getBytes()));
-        } else {
-            if (account.startsWith("qiniu-")) account = account.substring(6);
-            id = account + "-qiniu-id=" + EncryptUtils.getRandomString(8) +
+        } else if (account.startsWith("qiniu-")) {
+            accountName = account.substring(6);
+            id = String.join("-", accountName, CloudApiUtils.QINIU, "id=") +
+                    EncryptUtils.getRandomString(8) +
                     new String(encoder.encode(entryParam.getValue("ak").getBytes()));
-            secret = account + "-qiniu-secret=" + EncryptUtils.getRandomString(8) +
+            secret = String.join("-", accountName, CloudApiUtils.QINIU, "secret=") +
+                    EncryptUtils.getRandomString(8) +
+                    new String(encoder.encode(entryParam.getValue("sk").getBytes()));
+        } else if (account.contains("-")) {
+            String sour = account.substring(0, account.indexOf("-"));
+            String source;
+            switch (sour) {
+                case "ten": source = CloudApiUtils.TENCENT; break;
+                case "ali": source = CloudApiUtils.ALIYUN; break;
+                case "up": source = CloudApiUtils.UPYUN; break;
+                case "aws": sour = "s3"; source = CloudApiUtils.AWSS3; break;
+                case "s3": source = CloudApiUtils.AWSS3; break;
+                case "bai": source = CloudApiUtils.BAIDU; break;
+                case "hua": source = CloudApiUtils.HUAWEI; break;
+                default: throw new IOException("no such datasource to set account: " + sour);
+            }
+            id = entryParam.getValue(String.join("-", sour, "id"));
+            id = new String(encoder.encode(id.getBytes()));
+            secret = entryParam.getValue(String.join("-", sour, "secret"));
+            secret = new String(encoder.encode(secret.getBytes()));
+            accountName = account.substring(account.indexOf("-") + 1);
+            id = String.join("-", accountName, source, "id=") + EncryptUtils.getRandomString(8) + id;
+            secret = String.join("-", accountName, source, "secret=") + EncryptUtils.getRandomString(8) + secret;
+        } else {
+            accountName = account;
+            id = String.join("-", account, CloudApiUtils.QINIU, "id=") +
+                    EncryptUtils.getRandomString(8) +
+                    new String(encoder.encode(entryParam.getValue("ak").getBytes()));
+            secret = String.join("-", account, CloudApiUtils.QINIU, "secret=") +
+                    EncryptUtils.getRandomString(8) +
                     new String(encoder.encode(entryParam.getValue("sk").getBytes()));
         }
         int idIndex = id.indexOf("=");
@@ -78,7 +65,7 @@ public class AccountUtils {
         String valueId = map.get(id.substring(0, idIndex));
         String valueSecret = map.get(secret.substring(0, secretIndex));
         if (entryParam.getValue("default", "false").equals("true")) {
-            map.put("account", account);
+            map.put("account", accountName);
             String oldAccount = map.get("account");
             if (oldAccount == null) {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
@@ -118,12 +105,18 @@ public class AccountUtils {
     }
 
     public static List<String[]> getAccount(String accountName, boolean secretMode) throws IOException {
-        Map<String, String> accountMap = ParamsUtils.toParamsMap(AccountUtils.accountPath);
+        Map<String, String> accountMap;
+        try {
+            accountMap = ParamsUtils.toParamsMap(AccountUtils.accountPath);
+        } catch (FileNotFoundException ignored) {
+            accountMap = new HashMap<>();
+        }
         if (accountName == null) {
             accountName = accountMap.get("account");
             if (accountName == null) throw new IOException("no default account.");
         }
         if (accountName.contains("-")) {
+            if (accountName.endsWith("-aws")) accountName = accountName.substring(0, accountName.length() - 4) + "-s3";
             String[] keys = new String[3];
             keys[0] = accountMap.get(String.join("-", accountName, "id"));
             keys[1] = accountMap.get(String.join("-", accountName, "secret"));
@@ -141,21 +134,19 @@ public class AccountUtils {
             return new ArrayList<String[]>(1){{ add(keys); }};
         } else {
             List<String[]> keysList = new ArrayList<>();
-            String[] keys = getAccount(accountMap, accountName, "qiniu", secretMode);
+            String[] keys = getAccount(accountMap, accountName, CloudApiUtils.QINIU, secretMode);
             if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "tencent", secretMode);
+            keys = getAccount(accountMap, accountName, CloudApiUtils.TENCENT, secretMode);
             if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "aliyun", secretMode);
+            keys = getAccount(accountMap, accountName, CloudApiUtils.ALIYUN, secretMode);
             if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "aws", secretMode);
+            keys = getAccount(accountMap, accountName, CloudApiUtils.AWSS3, secretMode);
             if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "s3", secretMode);
+            keys = getAccount(accountMap, accountName, CloudApiUtils.UPYUN, secretMode);
             if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "upyun", secretMode);
+            keys = getAccount(accountMap, accountName, CloudApiUtils.HUAWEI, secretMode);
             if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "huawei", secretMode);
-            if (keys[0] != null) keysList.add(keys);
-            keys = getAccount(accountMap, accountName, "baidu", secretMode);
+            keys = getAccount(accountMap, accountName, CloudApiUtils.BAIDU, secretMode);
             if (keys[0] != null) keysList.add(keys);
             if (keysList.size() == 0) {
                 throw new IOException("no account: " + accountName);
@@ -166,6 +157,8 @@ public class AccountUtils {
 
     public static String[] getAccount(Map<String, String> accountMap, String accountName, String source, boolean secretMode) {
         String[] keys = new String[3];
+        keys[2] = source;
+        if ("aws".equals(source)) source = CloudApiUtils.AWSS3;
         keys[0] = accountMap.get(String.join("-", accountName, source, "id"));
         if (keys[0] != null) {
             keys[0] = new String(decoder.decode(keys[0].substring(8)));
@@ -175,7 +168,6 @@ public class AccountUtils {
                 keys[1] = accountMap.get(String.join("-", accountName, source, "secret"));
                 keys[1] = new String(decoder.decode(keys[1].substring(8)));
             }
-            keys[2] = source;
         }
         return keys;
     }

@@ -56,7 +56,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 `-account=test/qiniu-test -ak= -sk=` 设置七牛账号，账号名为 test，没有数据源标识时默认设置七牛账号  
 `-account=ten-test -ten-id= -ten-secret=` 设置腾讯云账号，账号名为 test  
 `-account=ali-test -ali-id= -ali-secret=` 设置阿里云账号，账号名为 test  
-`-account=s3-test -s3-id= -s3-secret=` 设置 S3 账号，账号名为 test  
+`-account=s3-test -s3-id= -s3-secret=` 设置 AWS/S3 账号，账号名为 test  
 `-account=up-test -up-id= -up-secret=` 设置又拍云账号，账号名为 test  
 `-account=hua-test -hua-id= -hua-secret=` 设置华为云账号，账号名为 test  
 `-account=bai-test -bai-id= -bai-secret=` 设置百度云账号，账号名为 test  
@@ -64,6 +64,8 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 #### 2. 使用 account 账号：  
 `-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
+### 3. 查询 account 账号：
+命令格式：`-getaccount=<name>-<source> [-d]`，如：  
 
 ### 1 程序运行过程  
 ##### （1）批处理模式：[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
