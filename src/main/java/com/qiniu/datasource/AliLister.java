@@ -79,23 +79,25 @@ public class AliLister implements ILister<OSSObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (ossObjectList.size() > 0) {
-                    int lastIndex = ossObjectList.size() - 1;
-                    OSSObjectSummary last = ossObjectList.get(lastIndex);
-                    if (endPrefix.equals(last.getKey())) ossObjectList.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && ossObjectList.size() > 0) {
+                int lastIndex = ossObjectList.size() - 1;
+                if (endPrefix.equals(ossObjectList.get(lastIndex).getKey())) ossObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = ossObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    ossObjectList = ossObjectList.subList(0, i);
-                    return;
+                    ossObjectList.remove(i);
+                    break;
                 }
+            }
+            // 优化 gc，不用的元素全部清除
+            for (; i < size; i++) {
+                ossObjectList.remove(i);
             }
         }
     }

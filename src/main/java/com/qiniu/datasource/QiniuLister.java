@@ -127,12 +127,9 @@ public class QiniuLister implements ILister<FileInfo> {
             marker = null;
             // 由于 CloudStorageContainer 中设置 endPrefix 后下一级会从 endPrefix 开始直接列举，所以 endPrefix 这个文件名会出现重复，
             // 此处对其前者删除
-            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
-                if (fileInfoList.size() > 0) {
-                    int lastIndex = fileInfoList.size() - 1;
-                    FileInfo last = fileInfoList.get(lastIndex);
-                    if (endPrefix.equals(last.key)) fileInfoList.remove(lastIndex);
-                }
+            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint) && fileInfoList.size() > 0) {
+                int lastIndex = fileInfoList.size() - 1;
+                if (endPrefix.equals(fileInfoList.get(lastIndex).key)) fileInfoList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;

@@ -595,7 +595,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 pauseDateTime = LocalDateTime.MIN; // 使用该语句使线程池中的任务停滞效果可能比 shutdownNow() 要好
                 endAction();
             } catch (IOException e) {
-                rootLogger.error("showdown", e);
+                rootLogger.error("showdown error", e);
             }
             System.exit(0);
         };
@@ -705,10 +705,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
             while (now.isBefore(startTime)) {
                 System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
+                sleep(1000);
                 now = LocalDateTime.now(clock);
             }
         }

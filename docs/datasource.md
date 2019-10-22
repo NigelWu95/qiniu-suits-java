@@ -295,8 +295,9 @@ threads=300
 prefixes=
 #region=
 ```  
-如果是其他基于 S3 实现的数据源，也可以使用 path=s3://<bucket> 方式来列举资源，但是由于 endpoint 与 aws 的不同，需要自行设置 endpoint，如[七
-牛的 S3 接口](https://developer.qiniu.com/kodo/manual/4088/s3-access-domainname)华东区域列举 bucket 文件时，可设置：  
+如果是其他基于 S3 实现的数据源，也可以使用 path=s3://<bucket> 方式来列举资源，但是由于 endpoint 与 aws 的不同，需要自行设置 endpoint，
+如[七牛的 S3 接口](https://developer.qiniu.com/kodo/manual/4088/s3-access-domainname)华东区域列举 bucket 文件时【使用七牛的 s3 
+api 做列举时还需要注意 bucketId（七牛控制台查看） 和 bucketName 的区别，使用 s3 接口必须使用 bucketId 来设置 bucket 参数】，可设置：  
 ```
 # http(s):// 开头可省略
 endpoint=s3-cn-east-1.qiniucs.com

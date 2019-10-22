@@ -69,6 +69,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         listObjectsRequest.setMaxKeys(limit);
     }
 
+    @Override
     public int getLimit() {
         return listObjectsRequest.getMaxKeys();
     }
@@ -79,21 +80,23 @@ public class TenLister implements ILister<COSObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (cosObjectList.size() > 0) {
-                    int lastIndex = cosObjectList.size() - 1;
-                    COSObjectSummary last = cosObjectList.get(lastIndex);
-                    if (endPrefix.equals(last.getKey())) cosObjectList.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && cosObjectList.size() > 0) {
+                int lastIndex = cosObjectList.size() - 1;
+                if (endPrefix.equals(cosObjectList.get(lastIndex).getKey())) cosObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    cosObjectList = cosObjectList.subList(0, i);
-                    return;
+                    cosObjectList.remove(i);
+                    break;
                 }
+            }
+            // 优化 gc，不用的元素全部清除
+            for (; i < size; i++) {
+                cosObjectList.remove(i);
             }
         }
     }

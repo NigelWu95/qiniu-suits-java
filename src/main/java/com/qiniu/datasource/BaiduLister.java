@@ -78,23 +78,25 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (bosObjectList.size() > 0) {
-                    int lastIndex = bosObjectList.size() - 1;
-                    BosObjectSummary last = bosObjectList.get(lastIndex);
-                    if (endPrefix.equals(last.getKey())) bosObjectList.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && bosObjectList.size() > 0) {
+                int lastIndex = bosObjectList.size() - 1;
+                if (endPrefix.equals(bosObjectList.get(lastIndex).getKey())) bosObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = bosObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (bosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    bosObjectList = bosObjectList.subList(0, i);
-                    return;
+                    bosObjectList.remove(i);
+                    break;
                 }
+            }
+            // 优化 gc，不用的元素全部清除
+            for (; i < size; i++) {
+                bosObjectList.remove(i);
             }
         }
     }

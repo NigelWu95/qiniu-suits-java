@@ -192,6 +192,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
+    void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {
+            int i = 0;
+            while (i < millis) i++;
+        }
+    }
+
     private void endAction() throws IOException {
         ILineProcess<T> processor;
         for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
@@ -218,14 +227,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private void showdownHook() {
         SignalHandler handler = signal -> {
             try {
+                pauseDateTime = LocalDateTime.MIN;
                 endAction();
             } catch (IOException e) {
-                e.printStackTrace();
+                rootLogger.error("showdown error", e);
             }
             System.exit(0);
         };
-        // 设置INT信号(Ctrl+C中断执行)交给指定的信号处理器处理，废掉系统自带的功能
-        Signal.handle(new Signal("INT"), handler);
+        try { // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
+            Signal.handle(new Signal("INT"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("TERM"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("USR1"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("USR2"), handler); } catch (Exception ignored) {}
     }
 
     protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
@@ -250,12 +263,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                    int i = 0;
-                    while (i < 1000) i++;
-                }
+                sleep(2000);
             }
             rootLogger.info("{} finished.", info);
             endAction();
@@ -279,10 +287,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             while (now.isBefore(startTime)) {
                 System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
+                sleep(1000);
                 now = LocalDateTime.now(clock);
             }
         }
