@@ -28,13 +28,13 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
+    private static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
+    private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
+    private static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
     private static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    private static final Logger errorLogger = LoggerFactory.getLogger("error");
-    private static final File errorLogFile = new File("qsuits.error");
-    private static final Logger infoLogger = LoggerFactory.getLogger("info");
-    private static final File infoLogFile = new File("qsuits.info");
-    private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
-    private static final File procedureLogFile = new File("procedure.log");
+    private static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
+    private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
+    private static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
 
     private String filePath;
     protected String parse;
@@ -53,8 +53,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected List<String> rmFields;
     protected List<String> fields;
     private ILineProcess<T> processor; // 定义的资源处理器
-    ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
-    ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
