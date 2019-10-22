@@ -466,6 +466,15 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
+    void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {
+            int i = 0;
+            while (i < millis) i++;
+        }
+    }
+
     private List<String> checkListerInPool(List<ILister<E>> listerList, int cValue, int tiny) {
         List<String> extremePrefixes = null;
         int count = 0;
@@ -477,7 +486,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> endMap;
         Map<String, String> prefixMap;
         while (!executorPool.isTerminated()) {
-            if (count >= 1800) {
+            if (count >= 1200) {
                 iterator = listerList.iterator();
                 while (iterator.hasNext()) {
                     iLister = iterator.next();
@@ -507,17 +516,12 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         insertIntoPrefixesMap(prefix, prefixMap);
                     }
                 } else if (listerList.size() <= cValue) {
-                    count = 1200;
+                    count = 900;
                 } else {
                     count = 0;
                 }
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ignored) {
-                int i = 0;
-                while (i < 1000) i++;
-            }
+            sleep(1000);
             count++;
         }
         return extremePrefixes;
@@ -559,42 +563,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         phraseLastPrefixes = prefixAndEndedMap.keySet().stream().sorted().collect(Collectors.toList());
         for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
         return phraseLastPrefixes;
-    }
-
-    private void waitAndTailListing(List<ILister<E>> listerList) {
-        int cValue = threads < 10 ? 3 : threads / 2;
-        int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 50 ? threads / 10 :
-                threads >= 10 ? 3 : 1;
-        List<String> extremePrefixes = checkListerInPool(listerList, cValue, tiny);
-        while (extremePrefixes != null && extremePrefixes.size() > 0) {
-            for (String prefix : extremePrefixes) recordListerByPrefix(prefix);
-            executorPool = Executors.newFixedThreadPool(threads);
-            listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
-            while (listerList != null && listerList.size() > 0 && listerList.size() <= threads) {
-                prefixesMap.clear();
-                listerList = computeToNextLevel(listerList);
-            }
-            if (listerList != null && listerList.size() > 0) {
-                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
-            }
-            executorPool.shutdown();
-            extremePrefixes = checkListerInPool(listerList, cValue, tiny);
-        }
-        List<String> phraseLastPrefixes = lastEndedPrefixes();
-        if (phraseLastPrefixes.size() > 0) {
-            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
-            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
-            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
-            executorPool.shutdown();
-        }
-        while (!executorPool.isTerminated()) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ignored) {
-                int i = 0;
-                while (i < 1000) i++;
-            }
-        }
     }
 
     void endAction() throws IOException {
@@ -686,7 +654,34 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
             }
             executorPool.shutdown();
-            waitAndTailListing(listerList);
+            int cValue = threads < 10 ? 3 : threads / 2;
+            int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 50 ? threads / 10 :
+                    threads >= 10 ? 3 : 1;
+            List<String> extremePrefixes = checkListerInPool(listerList, cValue, tiny);
+            while (extremePrefixes != null && extremePrefixes.size() > 0) {
+                for (String prefix : extremePrefixes) recordListerByPrefix(prefix);
+                executorPool = Executors.newFixedThreadPool(threads);
+                listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
+                while (listerList != null && listerList.size() > 0 && listerList.size() <= threads) {
+                    prefixesMap.clear();
+                    listerList = computeToNextLevel(listerList);
+                }
+                if (listerList != null && listerList.size() > 0) {
+                    listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
+                }
+                executorPool.shutdown();
+                extremePrefixes = checkListerInPool(listerList, cValue, tiny);
+            }
+            List<String> phraseLastPrefixes = lastEndedPrefixes();
+            if (phraseLastPrefixes.size() > 0) {
+                executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
+                listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
+                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
+                executorPool.shutdown();
+            }
+            while (!executorPool.isTerminated()) {
+                sleep(2000);
+            }
             rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {

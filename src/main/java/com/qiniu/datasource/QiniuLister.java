@@ -205,11 +205,16 @@ public class QiniuLister implements ILister<FileInfo> {
         while (futureList.size() < expected && times > 0 && hasNext()) {
             // 优化大量删除情况下的列举速度，去掉 size>0 的条件
 //            if (futureList.size() > 0)
-                times--;
-            doList();
-            count += fileInfoList.size();
-            futureList.addAll(fileInfoList);
-            fileInfoList.clear();
+            times--;
+            try {
+                doList();
+                count += fileInfoList.size();
+                futureList.addAll(fileInfoList);
+                fileInfoList.clear();
+            } catch (SuitsException e) {
+                fileInfoList = futureList;
+                throw e;
+            }
         }
         fileInfoList = futureList;
         futureList = null;

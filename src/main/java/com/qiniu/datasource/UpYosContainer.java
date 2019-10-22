@@ -183,12 +183,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                    int i = 0;
-                    while (i < 1000) i++;
-                }
+                sleep(1000);
             }
             rootLogger.info("{} finished.", info);
             endAction();
