@@ -10,7 +10,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class BaiduLister implements ILister<BosObjectSummary> {
@@ -20,7 +19,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<BosObjectSummary> bosObjectList;
-    private static final List<BosObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public BaiduLister(BosClient bosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -120,10 +119,14 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            bosObjectList.clear();
             doList();
             count += bosObjectList.size();
         } else {
-            bosObjectList = defaultList;
+            if (bosObjectList.size() > 0) {
+                endKey = bosObjectList.get(bosObjectList.size() - 1).getKey();
+                bosObjectList.clear();
+            }
         }
     }
 
@@ -166,6 +169,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (bosObjectList.size() > 0) return bosObjectList.get(bosObjectList.size() - 1).getKey();
         return null;
     }
@@ -187,6 +191,9 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         bosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        bosObjectList = defaultList;
+        if (bosObjectList.size() > 0) {
+            endKey = bosObjectList.get(bosObjectList.size() - 1).getKey();
+            bosObjectList.clear();
+        }
     }
 }

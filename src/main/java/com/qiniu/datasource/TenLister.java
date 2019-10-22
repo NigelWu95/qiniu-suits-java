@@ -10,7 +10,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TenLister implements ILister<COSObjectSummary> {
@@ -20,7 +19,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<COSObjectSummary> cosObjectList;
-    private static final List<COSObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -119,10 +118,14 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            cosObjectList.clear();
             doList();
             count += cosObjectList.size();
         } else {
-            cosObjectList = defaultList;
+            if (cosObjectList.size() > 0) {
+                endKey = cosObjectList.get(cosObjectList.size() - 1).getKey();
+                cosObjectList.clear();
+            }
         }
     }
 
@@ -165,6 +168,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (cosObjectList.size() > 0) return cosObjectList.get(cosObjectList.size() - 1).getKey();
         return null;
     }
@@ -186,6 +190,9 @@ public class TenLister implements ILister<COSObjectSummary> {
         cosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        cosObjectList = defaultList;
+        if (cosObjectList.size() > 0) {
+            endKey = cosObjectList.get(cosObjectList.size() - 1).getKey();
+            cosObjectList.clear();
+        }
     }
 }

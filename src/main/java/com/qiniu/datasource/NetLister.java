@@ -9,7 +9,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class NetLister implements ILister<NOSObjectSummary> {
@@ -19,7 +18,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<NOSObjectSummary> nosObjectList;
-    private static final List<NOSObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -119,10 +118,14 @@ public class NetLister implements ILister<NOSObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            nosObjectList.clear();
             doList();
             count += nosObjectList.size();
         } else {
-            nosObjectList = defaultList;
+            if (nosObjectList.size() > 0) {
+                endKey = nosObjectList.get(nosObjectList.size() - 1).getKey();
+                nosObjectList.clear();
+            }
         }
     }
 
@@ -165,6 +168,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (nosObjectList.size() > 0) return nosObjectList.get(nosObjectList.size() - 1).getKey();
         return null;
     }
@@ -186,6 +190,9 @@ public class NetLister implements ILister<NOSObjectSummary> {
         nosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        nosObjectList = defaultList;
+        if (nosObjectList.size() > 0) {
+            endKey = nosObjectList.get(nosObjectList.size() - 1).getKey();
+            nosObjectList.clear();
+        }
     }
 }

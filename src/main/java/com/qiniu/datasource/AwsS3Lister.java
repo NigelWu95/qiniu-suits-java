@@ -32,7 +32,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
-        listObjectsRequest.setStartAfter(null); // 昨晚一次 list 之后该值应当失效，直接在此处置为空
+        listObjectsRequest.setStartAfter(null); // 做完一次 list 之后该值应当失效，直接在此处置为空
         count += s3ObjectList.size();
     }
 
