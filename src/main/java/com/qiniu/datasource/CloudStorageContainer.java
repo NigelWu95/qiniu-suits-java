@@ -29,13 +29,36 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
 
+    static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
+    private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
+    private static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
     static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    static final Logger errorLogger = LoggerFactory.getLogger("error");
-    static final File errorLogFile = new File("qsuits.error");
-    private static final Logger infoLogger = LoggerFactory.getLogger("info");
-    private static final File infoLogFile = new File("qsuits.info");
-    private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
-    private static final File procedureLogFile = new File("procedure.log");
+    static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
+    private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
+    private static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
+//
+//    static {
+//        StringBuilder qsuitsPath = new StringBuilder("logs/qsuits");
+//        StringBuilder procedurePath = new StringBuilder("logs/procedure");
+//        int serial = 0;
+//        errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), "error"));
+//        infoLogFile = new File(String.join(".", qsuitsPath, "info"));
+//        procedureLogFile = new File(String.join(".", procedurePath, "log"));
+//        while (infoLogFile.exists()) {
+//            qsuitsPath.delete(11, 12).append(serial);
+//            procedurePath.delete(14, 15).append(serial);
+//            errorLogFile = new File(String.join(".", qsuitsPath, "error"));
+//            infoLogFile = new File(String.join(".", qsuitsPath, "info"));
+//            procedureLogFile = new File(String.join(".", procedurePath, "log"));
+//            serial++;
+//        }
+//        System.setProperty("procedurePath", procedurePath.toString());
+//        System.setProperty("qsuitsPath", qsuitsPath.toString());
+//        rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+//        errorLogger = LoggerFactory.getLogger("error");
+//        infoLogger = LoggerFactory.getLogger("info");
+//        procedureLogger = LoggerFactory.getLogger("procedure");
+//    }
 
     protected String bucket;
     protected List<String> antiPrefixes;
