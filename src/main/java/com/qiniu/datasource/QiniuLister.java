@@ -242,7 +242,7 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void close() {
         bucketManager = null;
-        marker = null;
+//        marker = null; // 结束时本来就是已经 marker = null; 的时候
         endPrefix = null;
         if (fileInfoList.size() > 0) {
             endKey = fileInfoList.get(fileInfoList.size() - 1).key;

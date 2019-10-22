@@ -10,7 +10,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AliLister implements ILister<OSSObjectSummary> {
@@ -20,7 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<OSSObjectSummary> ossObjectList;
-    private static final List<OSSObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -121,10 +120,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            ossObjectList.clear();
             doList();
             count += ossObjectList.size();
         } else {
-            ossObjectList = defaultList;
+            if (ossObjectList.size() > 0) {
+                endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+                ossObjectList.clear();
+            }
         }
     }
 
@@ -167,6 +170,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (ossObjectList.size() > 0) return ossObjectList.get(ossObjectList.size() - 1).getKey();
         return null;
     }
@@ -188,6 +192,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
         ossClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        ossObjectList = defaultList;
+        if (ossObjectList.size() > 0) {
+            endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+            ossObjectList.clear();
+        }
     }
 }

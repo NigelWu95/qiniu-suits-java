@@ -25,7 +25,7 @@ public class UpLister implements ILister<FileItem> {
     private int limit;
     private String truncateMarker;
     private List<FileItem> fileItems;
-    private static final List<FileItem> defaultItems = new ArrayList<>();
+    private String endKey;
     private List<String> directories;
     private long count;
 
@@ -173,10 +173,14 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            fileItems.clear();
             doList();
             count += fileItems.size();
         } else {
-            fileItems = defaultItems;
+            if (fileItems.size() > 0) {
+                endKey = fileItems.get(fileItems.size() - 1).key;
+                fileItems.clear();
+            }
         }
     }
 
@@ -225,6 +229,7 @@ public class UpLister implements ILister<FileItem> {
         if (truncateMarker != null && !"".equals(truncateMarker) && !"g2gCZAAEbmV4dGQAA2VvZg".equals(marker)) {
             return CloudApiUtils.decodeUpYunMarker(truncateMarker);
         }
+        if (endKey != null) return endKey;
         if (fileItems.size() > 0) return fileItems.get(fileItems.size() - 1).key;
         return null;
     }
@@ -244,9 +249,11 @@ public class UpLister implements ILister<FileItem> {
     @Override
     public void close() {
         upYunClient = null;
-        marker = null;
         endPrefix = null;
-//        fileItems = defaultItems;
+        if (fileItems.size() > 0) {
+            endKey = fileItems.get(fileItems.size() - 1).key;
+            fileItems.clear();
+        }
 //        directories = null;
     }
 }
