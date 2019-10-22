@@ -137,16 +137,24 @@ public class AliLister implements ILister<OSSObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (ossObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<OSSObjectSummary> futureList = ossObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<OSSObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(ossObjectList);
+        ossObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += ossObjectList.size();
-            futureList.addAll(ossObjectList);
+            try {
+                doList();
+                count += ossObjectList.size();
+                futureList.addAll(ossObjectList);
+                ossObjectList.clear();
+            } catch (SuitsException e) {
+                ossObjectList = futureList;
+                throw e;
+            }
         }
         ossObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 

@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
+import com.qiniu.util.CloudApiUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,16 +152,24 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (s3ObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<S3ObjectSummary> futureList = s3ObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<S3ObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(s3ObjectList);
+        s3ObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += s3ObjectList.size();
-            futureList.addAll(s3ObjectList);
+            try {
+                doList();
+                count += s3ObjectList.size();
+                futureList.addAll(s3ObjectList);
+                s3ObjectList.clear();
+            } catch (SuitsException e) {
+                s3ObjectList = futureList;
+                throw e;
+            }
         }
         s3ObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 

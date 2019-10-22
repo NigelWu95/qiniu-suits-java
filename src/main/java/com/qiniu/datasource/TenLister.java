@@ -8,6 +8,7 @@ import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
+import com.qiniu.util.CloudApiUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,16 +135,24 @@ public class TenLister implements ILister<COSObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (cosObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<COSObjectSummary> futureList = cosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<COSObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(cosObjectList);
+        cosObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += cosObjectList.size();
-            futureList.addAll(cosObjectList);
+            try {
+                doList();
+                count += cosObjectList.size();
+                futureList.addAll(cosObjectList);
+                cosObjectList.clear();
+            } catch (SuitsException e) {
+                cosObjectList = futureList;
+                throw e;
+            }
         }
         cosObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 

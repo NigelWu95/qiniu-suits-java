@@ -136,16 +136,24 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (bosObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<BosObjectSummary> futureList = bosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<BosObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(bosObjectList);
+        bosObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += bosObjectList.size();
-            futureList.addAll(bosObjectList);
+            try {
+                doList();
+                count += bosObjectList.size();
+                futureList.addAll(bosObjectList);
+                bosObjectList.clear();
+            } catch (SuitsException e) {
+                bosObjectList = futureList;
+                throw e;
+            }
         }
         bosObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 

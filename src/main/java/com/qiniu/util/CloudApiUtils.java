@@ -460,4 +460,16 @@ public final class CloudApiUtils {
 
         return null;
     }
+
+    public static <T> List<T> initFutureList(int limit, int times) {
+        int futureSize = limit;
+        if (limit < 1000) {
+            futureSize += limit * times;
+        } else if (limit <= 5000) {
+            futureSize += 10000;
+        } else {
+            futureSize += limit;
+        }
+        return new ArrayList<>(futureSize);
+    }
 }

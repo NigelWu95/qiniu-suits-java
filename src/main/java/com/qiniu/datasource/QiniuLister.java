@@ -189,17 +189,9 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public boolean hasFutureNext() throws SuitsException {
         int expected = limit + 1;
-        if (expected < 10000) expected = 10000 + 1;
+        if (expected < 10000) expected = 10001;
         int times = 10;
-        int futureSize = limit;
-        if (limit < 1000) {
-            futureSize += limit * 10;
-        } else if (limit <= 5000) {
-            futureSize += 10000;
-        } else {
-            futureSize += limit;
-        }
-        List<FileInfo> futureList = new ArrayList<>(futureSize);
+        List<FileInfo> futureList = CloudApiUtils.initFutureList(limit, times);
         futureList.addAll(fileInfoList);
         fileInfoList.clear();
         while (futureList.size() < expected && times > 0 && hasNext()) {

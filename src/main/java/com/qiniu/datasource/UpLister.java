@@ -189,16 +189,24 @@ public class UpLister implements ILister<FileItem> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = limit + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (fileItems.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<FileItem> futureList = fileItems;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<FileItem> futureList = CloudApiUtils.initFutureList(limit, times);
+        futureList.addAll(fileItems);
+        fileItems.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += fileItems.size();
-            futureList.addAll(fileItems);
+            try {
+                doList();
+                count += fileItems.size();
+                futureList.addAll(fileItems);
+                fileItems.clear();
+            } catch (SuitsException e) {
+                fileItems = futureList;
+                throw e;
+            }
         }
         fileItems = futureList;
+        futureList = null;
         return hasNext();
     }
 
