@@ -91,14 +91,12 @@ public class AliLister implements ILister<OSSObjectSummary> {
             int i = 0;
             for (; i < size; i++) {
                 if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    ossObjectList.remove(i);
+//                    ossObjectList.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                ossObjectList.remove(i);
-            }
+            ossObjectList.subList(i, size).clear();
         }
     }
 

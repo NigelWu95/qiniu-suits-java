@@ -90,14 +90,12 @@ public class BaiduLister implements ILister<BosObjectSummary> {
             int i = 0;
             for (; i < size; i++) {
                 if (bosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    bosObjectList.remove(i);
+//                    bosObjectList.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                bosObjectList.remove(i);
-            }
+            bosObjectList.subList(i, size).clear();
         }
     }
 

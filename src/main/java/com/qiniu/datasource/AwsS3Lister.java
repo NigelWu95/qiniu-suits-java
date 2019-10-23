@@ -97,14 +97,12 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
             int i = 0;
             for (; i < size; i++) {
                 if (s3ObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    s3ObjectList.remove(i);
+//                    s3ObjectList.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                s3ObjectList.remove(i);
-            }
+            s3ObjectList.subList(i, size).clear();
         }
     }
 

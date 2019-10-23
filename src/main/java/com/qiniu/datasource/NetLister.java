@@ -90,14 +90,12 @@ public class NetLister implements ILister<NOSObjectSummary> {
             int i = 0;
             for (; i < size; i++) {
                 if (nosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    nosObjectList.remove(i);
+//                    nosObjectList.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                nosObjectList.remove(i);
-            }
+            nosObjectList.subList(i, size).clear();
         }
 
     }

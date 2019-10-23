@@ -90,14 +90,12 @@ public class TenLister implements ILister<COSObjectSummary> {
             int i = 0;
             for (; i < size; i++) {
                 if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    cosObjectList.remove(i);
+//                    cosObjectList.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                cosObjectList.remove(i);
-            }
+            cosObjectList.subList(i, size).clear();
         }
     }
 

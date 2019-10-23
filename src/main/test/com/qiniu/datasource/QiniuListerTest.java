@@ -6,6 +6,7 @@ import com.qiniu.config.PropertiesFile;
 import com.qiniu.interfaces.IEntryParam;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +25,7 @@ public class QiniuListerTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         qiniuLister = new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), new Configuration()), bucket,
-                "fragments/z1.yanyuvideo.room7", null, null, 10000);
+                null, null, null, 10000);
     }
 
     @Test
@@ -41,6 +42,14 @@ public class QiniuListerTest {
             }
         }
         System.out.println("over: " + size);
+    }
+
+    @Test
+    public void testListing() {
+        qiniuLister.setEndPrefix("crossdomain.xml");
+        for (FileInfo fileInfo : qiniuLister.currents()) {
+            System.out.println(fileInfo.key);
+        }
     }
 
     @Test

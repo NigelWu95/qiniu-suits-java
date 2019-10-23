@@ -148,14 +148,12 @@ public class UpLister implements ILister<FileItem> {
             int i = 0;
             for (; i < size; i++) {
                 if (fileItems.get(i).key.compareTo(endPrefix) > 0) {
-                    fileItems.remove(i);
+//                    fileItems.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                fileItems.remove(i);
-            }
+            fileItems.subList(i, size).clear();
         }
     }
 

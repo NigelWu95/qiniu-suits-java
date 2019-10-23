@@ -139,14 +139,12 @@ public class QiniuLister implements ILister<FileInfo> {
             int i = 0;
             for (; i < size; i++) {
                 if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
-                    fileInfoList.remove(i);
+//                    fileInfoList.remove(i);
                     break;
                 }
             }
             // 优化 gc，不用的元素全部清除
-            for (; i < size; i++) {
-                fileInfoList.remove(i);
-            }
+            fileInfoList.subList(i, size).clear();
         }
     }
 

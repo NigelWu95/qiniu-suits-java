@@ -91,12 +91,15 @@ public class HuaweiLister implements ILister<ObsObject> {
             int size = obsObjects.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (obsObjects.get(i).getObjectKey().compareTo(endPrefix) > 0) {
-                    obsObjects = obsObjects.subList(0, i);
-                    return;
+//                    nosObjectList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            obsObjects.subList(i, size).clear();
         }
     }
 
