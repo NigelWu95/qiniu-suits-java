@@ -49,8 +49,8 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 
 ### 账号设置  
 （7.73 及以上版本）支持预先设置好账号的密钥（经过加密），在后续执行中只需使用 account name 即可读取对应账号密钥进行操作，定义不同的 account name 
-则可设置多对密钥，亦可设置不同数据源的账号密钥，账号名相同时会覆盖该账号的历史密钥，命令行操作如下所示（配置文件也可以进行账户设置和使用，去掉命令行
-参数开头的 `-` 符号且每项参数成一行即可，与后面程序运行方式的配置文件用法相同）。  
+则可设置多对密钥，亦可设置不同数据源的账号密钥，同一数据源的账号名相同时会覆盖该账号的历史密钥，命令行操作如下所示（配置文件也可以进行账户设置和使用，
+去掉命令行参数开头的 `-` 符号且每项参数成一行即可，与后面程序运行方式的配置文件用法相同），密钥参数名参考[各存储数据源配置参数](#storage-云存储列举)。  
 #### 1. 设置 account：  
 命令格式：`-account=<source>-<name> -<source>-id= -<source>-secret= [-d]`，如：  
 `-account=test/qiniu-test -ak= -sk=` 设置七牛账号，账号名为 test，没有数据源标识时默认设置七牛账号  
@@ -64,7 +64,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 #### 2. 使用 account 账号：  
 `-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
-### 3. 查询 account 账号：
+#### 3. 查询 account 账号：
 命令格式：`-getaccount=<name>-<source> [-dis] [-d]`，默认只显示 id 的明文而隐藏 secret，`-dis` 参数表示选择明文显示 secret，如：  
 `-getaccount -d` 表示查询设置的默认账号的密钥  
 `-getaccount=test -dis` 表示查询设置的所有账号名为 test 的密钥，并显示 secret 的明文  
@@ -90,8 +90,7 @@ java -jar qsuits-x.x.x.jar -config=config.txt
 ```  
 配置文件中可设置形如\<属性名\>=\<属性值\>，每行一个参数：  
 ```
-source=qiniu
-bucket=
+path=qiniu://<bucket>
 ak=
 sk=
 ```  
@@ -103,7 +102,7 @@ properties 方式需要遵循 java 的转义规则，两个文件存在任意一
 ```
 java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
-**备注2**：7.72 及以下版本中命令行参数与配置文件参数不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件
+**备注3**：7.72 及以下版本中命令行参数与配置文件参数不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件
 中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。**【推荐使用配置文件方式，
 一是安全性，二是参数历史可保留且修改方便；推荐使用 -account 提前设置好账号，安全性更高，使用时 -a=\<account-name\> 即可，不必再暴露密钥】**  
 
@@ -145,7 +144,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
+数据源分为三种类型：**云存储列举(storage)**、**文本文件行读取(file)**、**文件路径和属性读取(filepath)**，可以通过 `path=` 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](docs/datasource.md#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](docs/datasource.md#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](docs/datasource.md#3-阿里云存储)  
@@ -153,7 +152,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `path=upyun://<bucket>` 表示从又拍云存储空间列举出资源列表，参考[又拍数据源示例](docs/datasource.md#5-又拍云存储)  
 `path=huawei://<bucket>` 表示从华为云存储空间列举出资源列表，参考[华为数据源示例](docs/datasource.md#6-华为云存储)  
 `path=baidu://<bucket>` 表示从百度云存储空间列举出资源列表，参考[百度数据源示例](docs/datasource.md#7-百度云存储)  
-`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#8-local-files)  
+`path=<path>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#8-local-files)  
 未设置数据源时则默认从七牛空间进行列举，数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)，配置文件示例可参考
 [配置模板](resources/application.config)  
 
@@ -179,6 +178,8 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `rm-keyPrefix=` 数据源中每一行的文件名去除前缀  
 `line-config=` 数据源路径即对应文本读取的起始行配置  
 **数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
+#### filepath 文件路径和属性读取
+该数据源用于上传文件的操作，设置 `process=qupload` 时自动生效，从 `path` 中读取所有文件（除隐藏文件外）执行上传操作，具体配置可参考 [qupload 配置](docs/uploadfile.md)。
 
 ### 4 过滤器功能  
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
@@ -267,24 +268,42 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 
 ### 6 结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
-`save-path=` 表示保存结果的文件路径  
-`save-format=` 结果保存格式（json/tab），默认为 tab  
-`save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
-`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
-进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。  
-**默认情况：**  
+```
+save-total=
+save-path=
+save-format=
+save-separator=
+rm-fields=
+```  
+|参数名|参数值及类型 | 含义|  
+|-----|-------|-----|  
+|save-total| true/false| 是否直接保存数据源完整输出结果，针对存在下一步处理过程时是否需要保存原始数据|  
+|save-path| local file 相对路径字符串| 表示保存结果的文件路径|  
+|save-format| json/tab/csv| 结果保存格式，将每一条结果记录格式化为对应格式，默认为 tab 格式（减小输出结果的体积）|  
+|save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
+|rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际字段选项，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
+
+**关于save-total**  
+（1）用于选择是否直接保存数据源完整输出结果，针对存在过滤条件或下一步处理过程时是否需要保存原始数据，如 bucket 的 list 操作需要在列举出结果之后再针
+    对字段进行过滤或者做删除，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置为 false，如
+    果是删除等操作，通常删除结果会直接保存文件名和删除结果，原始数据也不需要保存。  
 （1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
 （2）云存储数据源时默认设置 save-total=true。  
-（3）保存结果的路径 **默认（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
+（3）保存结果的路径 **默认（save-path）使用 <bucket\>（云存储数据源情况下）名称或者 <path\>-result 来创建目录**。  
+
+**关于持久化文件名** 
+（1）持数据源久化结果的文件名为 "<source-name\>\_success_<order\>.txt"，如 qiniu 存储数据源结果为 "qiniu_success_<order\>.txt"，
+    local 数据源结果为 "local_success_<order\>.txt"。  
+（2）如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter_success/error_<order\>.txt"。
+（3）process 过程保存的结果为文件为 "<process\>\_success/error\_<order\>.txt"，<process\>\_success/error\_<order\>.txt 表明无法
+    成功处理的结果，<process\>\_need_retry\_<order\>.txt，表明为需要重试的记录，可能需要确认所有错误数据和记录的错误信息。  
+
+**关于 rm-fields** 
+rm-fields 可选择持久化结果中去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式 save-format 保存在 save-path 的文件
+中。file 数据源输入字段完全取决于 indexes 和其他的一些 index 设置，可参考 [indexes 索引](datasource.md#关于-indexes-索引)，而其他 index
+设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](datasource.md#关于文件信息字段)   
+
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
-**--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"，例如：  
-（1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
-（2）local 列表数据源 =》 "local_success_\<order\>.txt"  
-如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter\_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>\_success/error\_\<order\>.txt"。  
-**--** process 结果的文件名为：\<process\>\_success/error_\<order\>.txt 及 \<process\>\_need_retry_\<order\>.txt，error 的结果表明无法成功
-处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息。  
-**--** rm-fields 可选择去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式保存在 save-path 的文件中。  
 
 ### 7 超时设置
 多数数据源或者操作涉及网络请求，因此提供超时时间设置，默认的超时时间一般能够满足要求，特殊需要的情况下可以修改各超时时间：  
@@ -327,13 +346,13 @@ java.net.SocketTimeoutException: timeout
 存在断点续操作的需求，续操作说明：  
 1. 如果存在续操作的需要，程序终止时会输出续操作的记录信息路径，如存储空间文件列举操作终止时可能输出：  
 `please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
-表示在 <filename>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，<filename> 表示文件名。
-2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
-为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
-3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次继
-续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
-版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
+表示在 \<filename\>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，\<filename\> 表示文件名。
+2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
+作为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
+3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次
+继续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分，否则可能会覆盖上次的结果，且文件名难以区分（7.72 及以下版本中断点参数请和其他参
+数保持一致放在命令行或配置文件中，7.72 以上版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
 
 **注意：如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后的断
 点信息，取出 procedure.log 日志的最后一行并创建断点配置文件，从而按照上述方式进行断点运行。**  
