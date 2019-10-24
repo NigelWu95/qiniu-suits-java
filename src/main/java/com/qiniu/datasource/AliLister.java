@@ -144,6 +144,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         List<OSSObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
         futureList.addAll(ossObjectList);
         ossObjectList.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
             try {
@@ -152,12 +153,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
                 futureList.addAll(ossObjectList);
                 ossObjectList.clear();
             } catch (SuitsException e) {
-                ossObjectList = futureList;
-                throw e;
+//                ossObjectList = futureList;
+//                throw e;
+                exception = e;
             }
         }
         ossObjectList = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 

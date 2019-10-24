@@ -361,7 +361,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
         } catch (SuitsException e) {
-            errorLogger.warn("check lister by hasFutureNext failed...", lister.getPrefix(), e);
+            errorLogger.warn("check lister hasFutureNext of \"{}\" has error: ", lister.getPrefix(), e);
             next = lister.hasNext();
         }
         String startPrefix = lister.getPrefix();

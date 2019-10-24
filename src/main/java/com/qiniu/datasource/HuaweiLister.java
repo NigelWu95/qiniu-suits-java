@@ -143,6 +143,7 @@ public class HuaweiLister implements ILister<ObsObject> {
         List<ObsObject> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
         futureList.addAll(obsObjects);
         obsObjects.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
             try {
@@ -151,12 +152,14 @@ public class HuaweiLister implements ILister<ObsObject> {
                 futureList.addAll(obsObjects);
                 obsObjects.clear();
             } catch (SuitsException e) {
-                obsObjects = futureList;
-                throw e;
+//                obsObjects = futureList;
+//                throw e;
+                exception = e;
             }
         }
         obsObjects = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 

@@ -148,6 +148,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         List<S3ObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
         futureList.addAll(s3ObjectList);
         s3ObjectList.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
             try {
@@ -156,12 +157,14 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
                 futureList.addAll(s3ObjectList);
                 s3ObjectList.clear();
             } catch (SuitsException e) {
-                s3ObjectList = futureList;
-                throw e;
+//                s3ObjectList = futureList;
+//                throw e;
+                exception = e;
             }
         }
         s3ObjectList = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 

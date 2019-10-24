@@ -143,6 +143,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         List<BosObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
         futureList.addAll(bosObjectList);
         bosObjectList.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
             try {
@@ -151,12 +152,14 @@ public class BaiduLister implements ILister<BosObjectSummary> {
                 futureList.addAll(bosObjectList);
                 bosObjectList.clear();
             } catch (SuitsException e) {
-                bosObjectList = futureList;
-                throw e;
+//                bosObjectList = futureList;
+//                throw e;
+                exception = e;
             }
         }
         bosObjectList = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 

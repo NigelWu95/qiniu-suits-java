@@ -103,7 +103,7 @@ public class QiniuLister implements ILister<FileInfo> {
                         }
                     }
                 } else {
-                    throw new QiniuException(response);
+                    throw new SuitsException(500, String.join(", ", response.getInfo(), line));
                 }
                 if (jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
                     this.marker = jsonObject.get("marker").getAsString();
@@ -164,6 +164,8 @@ public class QiniuLister implements ILister<FileInfo> {
         } catch (QiniuException e) {
             if (e.response != null) e.response.close();
             throw new SuitsException(e, e.code());
+        } catch (SuitsException e) {
+            throw e;
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
@@ -198,6 +200,7 @@ public class QiniuLister implements ILister<FileInfo> {
         List<FileInfo> futureList = CloudApiUtils.initFutureList(limit, times);
         futureList.addAll(fileInfoList);
         fileInfoList.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             // 优化大量删除情况下的列举速度，去掉 size>0 的条件
 //            if (futureList.size() > 0)
@@ -208,12 +211,14 @@ public class QiniuLister implements ILister<FileInfo> {
                 futureList.addAll(fileInfoList);
                 fileInfoList.clear();
             } catch (SuitsException e) {
-                fileInfoList = futureList;
-                throw e;
+//                fileInfoList = futureList;
+//                throw e;
+                exception = e;
             }
         }
         fileInfoList = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 
