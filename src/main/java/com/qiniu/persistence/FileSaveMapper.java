@@ -12,8 +12,8 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     private String savePath = null;
     private String prefix = "";
     private String suffix = "";
-    public static String ext = ".txt";
-    public static boolean append = true;
+    private String fileExt = ".txt";
+    private boolean append = true;
     private int retryTimes = 5;
 
     public FileSaveMapper(String savePath) throws IOException {
@@ -42,6 +42,14 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
+    public void setFileExt(String fileExt) {
+        this.fileExt = fileExt;
+    }
+
+    public void setAppend(boolean append) {
+        this.append = append;
+    }
+
     public String getSavePath() {
         return savePath;
     }
@@ -59,7 +67,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
     }
 
     private BufferedWriter add(String key) throws IOException {
-        File resultFile = new File(savePath, String.join("", prefix, key, suffix, ext));
+        File resultFile = new File(savePath, String.join("", prefix, key, suffix, fileExt));
         boolean resultFileExists = resultFile.exists();
         int retry = retryTimes;
         BufferedWriter writer = null;
@@ -96,7 +104,7 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
                 try {
                     bufferedWriter = writerMap.get(entry.getKey());
                     if (bufferedWriter != null) bufferedWriter.close();
-                    File file = new File(savePath, String.join("", prefix, entry.getKey(), suffix, ext));
+                    File file = new File(savePath, String.join("", prefix, entry.getKey(), suffix, fileExt));
                     if (file.exists()) {
                         BufferedReader reader = new BufferedReader(new FileReader(file));
                         if (reader.readLine() == null) {

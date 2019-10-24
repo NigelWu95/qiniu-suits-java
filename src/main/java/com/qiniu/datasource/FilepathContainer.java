@@ -17,7 +17,7 @@ import java.util.*;
 public class FilepathContainer extends FileContainer<Iterator<String>, BufferedWriter, Map<String, String>> {
 
     public FilepathContainer(String filePath, String parseFormat, String separator, Map<String, String> linesMap,
-                             Map<String, String> indexMap, List<String> fields, int unitLen, int threads) {
+                             Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
         super(filePath, parseFormat, separator, null, null, linesMap, indexMap, fields, unitLen, threads);
     }
 

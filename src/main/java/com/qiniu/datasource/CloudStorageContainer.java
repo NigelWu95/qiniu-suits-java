@@ -78,6 +78,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         // default save parameters
         this.saveTotal = true; // 默认全记录保存
         this.savePath = "result";
+        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
+            throw new IOException("please change the savePath, because there are last listing files");
+        }
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
@@ -98,6 +101,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             throws IOException {
         this.saveTotal = saveTotal;
         this.savePath = savePath;
+        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
+            throw new IOException("please change the savePath, because there are last listing files");
+        }
         this.saveFormat = format;
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;
@@ -576,16 +582,17 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
         String record = recorder.toString();
         if (recorder.size() > 0) {
-            FileSaveMapper.ext = ".json";
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+            saveMapper.setAppend(false);
+            saveMapper.setFileExt(".json");
 //        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
             saveMapper.addWriter(fileName);
             saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();
-            rootLogger.info("please check the prefixes breakpoint in {}{}, it can be used for one more time listing remained objects.",
-                    fileName, FileSaveMapper.ext);
+            rootLogger.info("please check the prefixes breakpoint in {}.json, " +
+                            "it can be used for one more time listing remained objects.", fileName);
         }
         procedureLogger.info(record);
     }
@@ -624,7 +631,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         showdownHook();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
-            FileSaveMapper.append = false; // 没有初始 prefixes 设置则默认让持久化非追加写入（即清除之前存在的文件）
             startLister = generateLister("");
             if (threads > 1) {
                 prefixes = moreValidPrefixes(startLister, false);

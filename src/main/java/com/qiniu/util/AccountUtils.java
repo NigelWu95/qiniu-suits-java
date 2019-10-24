@@ -20,6 +20,7 @@ public class AccountUtils {
         String id;
         String secret;
         String accountName;
+        Map<String, String> map = null;
         if (account == null) {
             throw new IOException("account name is empty.");
         } else if (account.startsWith("qiniu-")) {
@@ -51,51 +52,55 @@ public class AccountUtils {
             id = String.join("-", accountName, source, "id=") + EncryptUtils.getRandomString(8) + id;
             secret = String.join("-", accountName, source, "secret=") + EncryptUtils.getRandomString(8) + secret;
         } else {
+            map = ParamsUtils.toParamsMap(filePath);
             accountName = account;
-            id = String.join("-", account, CloudApiUtils.QINIU, "id=") +
-                    EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("ak").trim().getBytes()));
-            secret = String.join("-", account, CloudApiUtils.QINIU, "secret=") +
-                    EncryptUtils.getRandomString(8) +
-                    new String(encoder.encode(entryParam.getValue("sk").trim().getBytes()));
-        }
-        int idIndex = id.indexOf("=");
-        int secretIndex = secret.indexOf("=");
-        Map<String, String> map = ParamsUtils.toParamsMap(filePath);
-        String valueId = map.get(id.substring(0, idIndex));
-        String valueSecret = map.get(secret.substring(0, secretIndex));
-        if (entryParam.getValue("default", "false").equals("true")) {
-            map.put("account", accountName);
-            String oldAccount = map.get("account");
-            if (oldAccount == null) {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
-                writer.write("account=" + account);
-                writer.newLine();
-                writer.close();
-            } else {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile));
-                for (Map.Entry<String, String> entry : map.entrySet()) {
-                    writer.write(entry.getKey() + "=" + entry.getValue());
-                    writer.newLine();
+            id = entryParam.getValue("ak", null);
+            if (id == null) {
+                if (map.containsKey(accountName)) {
+                    map.put("account", accountName);
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile));
+                    for (Map.Entry<String, String> entry : map.entrySet()) {
+                        writer.write(String.join("=", entry.getKey(), entry.getValue()));
+                        writer.newLine();
+                    }
+                    writer.close();
+                    return;
+                } else {
+                    throw new IOException("no this account: " + account);
                 }
-                writer.close();
-//                FileUtils.randomModify(filePath, "account=" + oldAccount,
-//                        "account=" + encoder.encode(account.getBytes()));
+            } else {
+                id = String.join("-", account, CloudApiUtils.QINIU, "id=") +
+                        EncryptUtils.getRandomString(8) + new String(encoder.encode(id.trim().getBytes()));
+                secret = String.join("-", account, CloudApiUtils.QINIU, "secret=") +
+                        EncryptUtils.getRandomString(8) +
+                        new String(encoder.encode(entryParam.getValue("sk").trim().getBytes()));
             }
         }
-        if (valueId != null || valueSecret != null) {
+
+        int idIndex = id.indexOf("=");
+        int secretIndex = secret.indexOf("=");
+        if (map == null) map = ParamsUtils.toParamsMap(filePath);
+        String valueId = map.get(id.substring(0, idIndex));
+        String valueSecret = map.get(secret.substring(0, secretIndex));
+        boolean isSetDefault = Boolean.valueOf(entryParam.getValue("default", "false"));
+        if (valueId != null || valueSecret != null || (isSetDefault && map.get("account") != null)) {
             map.put(id.substring(0, idIndex), id.substring(idIndex + 1));
             map.put(secret.substring(0, secretIndex), secret.substring(secretIndex + 1));
+            if (isSetDefault) map.put("account", accountName);
             BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile));
             for (Map.Entry<String, String> entry : map.entrySet()) {
-                writer.write(entry.getKey() + "=" + entry.getValue());
+                writer.write(String.join("=", entry.getKey(), entry.getValue()));
                 writer.newLine();
             }
             writer.close();
-//            FileUtils.randomModify(filePath, keyId + "=" + valueId, id);
-//            FileUtils.randomModify(filePath, keySecret + "=" + valueSecret, secret);
         } else {
             BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile, true));
+            if (isSetDefault) {
+                writer.write("account");
+                writer.write("=");
+                writer.write(accountName);
+                writer.newLine();
+            }
             writer.write(id);
             writer.newLine();
             writer.write(secret);

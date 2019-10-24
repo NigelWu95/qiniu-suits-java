@@ -15,7 +15,7 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
 
     public LocalFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
                               String rmKeyPrefix, Map<String, String> linesMap, Map<String, String> indexMap,
-                              List<String> fields, int unitLen, int threads) {
+                              List<String> fields, int unitLen, int threads) throws IOException {
         super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, linesMap, indexMap, fields, unitLen, threads);
     }
 

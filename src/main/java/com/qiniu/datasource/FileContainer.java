@@ -58,7 +58,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
-                         int threads) {
+                         int threads) throws IOException {
         this.filePath = filePath;
         this.parse = parse;
         this.separator = separator;
@@ -71,6 +71,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         // default save parameters
         this.saveTotal = false; // 默认全记录不保存
         this.savePath = "result";
+        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
+            throw new IOException("please change the savePath, because there are last listing files");
+        }
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         if (fields == null || fields.size() == 0) {
@@ -84,6 +87,9 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             throws IOException {
         this.saveTotal = saveTotal;
         this.savePath = savePath;
+        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
+            throw new IOException("please change the savePath, because there are last listing files");
+        }
         this.saveFormat = format;
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;
@@ -216,16 +222,16 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
         String record = recorder.toString();
         if (recorder.size() > 0) {
-            FileSaveMapper.ext = ".json";
-            FileSaveMapper.append = false;
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
+            saveMapper.setAppend(false);
+            saveMapper.setFileExt(".json");
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
             saveMapper.addWriter(fileName);
             saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();
-            rootLogger.info("please check the lines breakpoint in {}{}, it can be used for one more time reading remained lines.",
-                    fileName, FileSaveMapper.ext);
+            rootLogger.info("please check the lines breakpoint in {}.json, " +
+                            "it can be used for one more time reading remained lines", fileName);
         }
         procedureLogger.info(record);
     }
@@ -260,7 +266,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
-        if (linesMap == null) FileSaveMapper.append = false; // 没有 lines 初始设置时默认让持久化非追加写入（即清除之前存在的文件）
         try {
             String start = null;
             for (IReader<E> fileReader : fileReaders) {
