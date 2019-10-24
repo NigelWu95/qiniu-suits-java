@@ -10,7 +10,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class BaiduLister implements ILister<BosObjectSummary> {
@@ -20,7 +19,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<BosObjectSummary> bosObjectList;
-    private static final List<BosObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public BaiduLister(BosClient bosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -79,24 +78,24 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (bosObjectList.size() > 0) {
-                    int lastIndex = bosObjectList.size() - 1;
-                    BosObjectSummary last = bosObjectList.get(lastIndex);
-                    if (endPrefix.equals(last.getKey())) bosObjectList.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && bosObjectList.size() > 0) {
+                int lastIndex = bosObjectList.size() - 1;
+                if (endPrefix.equals(bosObjectList.get(lastIndex).getKey())) bosObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = bosObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (bosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    bosObjectList = bosObjectList.subList(0, i);
-                    return;
+//                    bosObjectList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            bosObjectList.subList(i, size).clear();
         }
     }
 
@@ -120,10 +119,14 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            bosObjectList.clear();
             doList();
             count += bosObjectList.size();
         } else {
-            bosObjectList = defaultList;
+            if (bosObjectList.size() > 0) {
+                endKey = bosObjectList.get(bosObjectList.size() - 1).getKey();
+                bosObjectList.clear();
+            }
         }
     }
 
@@ -136,16 +139,24 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (bosObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<BosObjectSummary> futureList = bosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<BosObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(bosObjectList);
+        bosObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += bosObjectList.size();
-            futureList.addAll(bosObjectList);
+            try {
+                doList();
+                count += bosObjectList.size();
+                futureList.addAll(bosObjectList);
+                bosObjectList.clear();
+            } catch (SuitsException e) {
+                bosObjectList = futureList;
+                throw e;
+            }
         }
         bosObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -158,6 +169,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (bosObjectList.size() > 0) return bosObjectList.get(bosObjectList.size() - 1).getKey();
         return null;
     }
@@ -179,6 +191,9 @@ public class BaiduLister implements ILister<BosObjectSummary> {
         bosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        bosObjectList = defaultList;
+        if (bosObjectList.size() > 0) {
+            endKey = bosObjectList.get(bosObjectList.size() - 1).getKey();
+            bosObjectList.clear();
+        }
     }
 }

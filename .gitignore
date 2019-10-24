@@ -31,3 +31,4 @@ procedure*.log
 qsuits.error
 qsuits.info
 .qsuits.account
+logs/

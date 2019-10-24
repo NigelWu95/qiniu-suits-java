@@ -8,8 +8,8 @@ import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
+import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TenLister implements ILister<COSObjectSummary> {
@@ -19,7 +19,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<COSObjectSummary> cosObjectList;
-    private static final List<COSObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public TenLister(COSClient cosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -69,6 +69,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         listObjectsRequest.setMaxKeys(limit);
     }
 
+    @Override
     public int getLimit() {
         return listObjectsRequest.getMaxKeys();
     }
@@ -79,22 +80,22 @@ public class TenLister implements ILister<COSObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (cosObjectList.size() > 0) {
-                    int lastIndex = cosObjectList.size() - 1;
-                    COSObjectSummary last = cosObjectList.get(lastIndex);
-                    if (endPrefix.equals(last.getKey())) cosObjectList.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && cosObjectList.size() > 0) {
+                int lastIndex = cosObjectList.size() - 1;
+                if (endPrefix.equals(cosObjectList.get(lastIndex).getKey())) cosObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = cosObjectList.size();
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (cosObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    cosObjectList = cosObjectList.subList(0, i);
-                    return;
+//                    cosObjectList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            cosObjectList.subList(i, size).clear();
         }
     }
 
@@ -118,10 +119,14 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            cosObjectList.clear();
             doList();
             count += cosObjectList.size();
         } else {
-            cosObjectList = defaultList;
+            if (cosObjectList.size() > 0) {
+                endKey = cosObjectList.get(cosObjectList.size() - 1).getKey();
+                cosObjectList.clear();
+            }
         }
     }
 
@@ -134,16 +139,24 @@ public class TenLister implements ILister<COSObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (cosObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<COSObjectSummary> futureList = cosObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<COSObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(cosObjectList);
+        cosObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += cosObjectList.size();
-            futureList.addAll(cosObjectList);
+            try {
+                doList();
+                count += cosObjectList.size();
+                futureList.addAll(cosObjectList);
+                cosObjectList.clear();
+            } catch (SuitsException e) {
+                cosObjectList = futureList;
+                throw e;
+            }
         }
         cosObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -156,6 +169,7 @@ public class TenLister implements ILister<COSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (cosObjectList.size() > 0) return cosObjectList.get(cosObjectList.size() - 1).getKey();
         return null;
     }
@@ -177,6 +191,9 @@ public class TenLister implements ILister<COSObjectSummary> {
         cosClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        cosObjectList = defaultList;
+        if (cosObjectList.size() > 0) {
+            endKey = cosObjectList.get(cosObjectList.size() - 1).getKey();
+            cosObjectList.clear();
+        }
     }
 }

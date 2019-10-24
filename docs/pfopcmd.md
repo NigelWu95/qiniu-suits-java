@@ -26,7 +26,7 @@ avinfo-index=
 |avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），必须指定才能进行处理|  
 
 #### pfop-config 配置文件内容写法如下：
-```
+```json
 {
   "pfopcmd":[
     {

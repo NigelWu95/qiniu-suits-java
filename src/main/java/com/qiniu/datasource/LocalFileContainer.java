@@ -43,12 +43,20 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
         List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
         if (linesMap != null && linesMap.size() > 0) {
-            try { path = FileUtils.convertToRealPath(path); } catch (IOException ignored) {}
+            boolean pathIsValid = true;
+            try { path = FileUtils.convertToRealPath(path); } catch (IOException ignored) { pathIsValid = false; }
             String type;
+            File file;
             for (Map.Entry<String, String> entry : linesMap.entrySet()) {
-                File file = new File(path, entry.getKey());
-                if (!file.exists()) file = new File(entry.getKey());
-                if (file.isDirectory()) throw new IOException("the filename defined in lines map can not be directory.");
+                if (pathIsValid) {
+                    file = new File(path, entry.getKey());
+                    if (!file.exists()) file = new File(entry.getKey());
+                } else {
+                    file = new File(entry.getKey());
+                }
+                if (!file.exists()) throw new IOException("the filename not exists: " + entry.getKey());
+                if (file.isDirectory()) throw new IOException("the filename defined in lines map can not be directory: "
+                        + entry.getKey());
                 else {
                     type = FileUtils.contentType(file);
                     if (type.startsWith("text") || type.equals("application/octet-stream")) {

@@ -35,7 +35,7 @@ force-public=
 参数设置 key 下标，同时 key 下标不能与 fops 下标相同。  
 
 #### pfop-config 配置文件内容写法如下：
-```
+```json
 {
   "pfop":[
     {

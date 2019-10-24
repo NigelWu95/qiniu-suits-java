@@ -40,17 +40,20 @@ indexes=key,etag,fsize
 9 个字段的索引即可，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 etag，以此类推，**列举操作**或者**文件输入格式为 json**
 时如 `indexes=key,etag,size,datetime,mime,type` 表示从依次取出 key,etag,size,datetime,mime,type 这些值，后几位不填写或者中间填写 -1
 的表示不需要该部分字段，如 `key,hash,size,-1,timestamp,-1,type` 表示需要 key,hash,size,timestamp,type 这些值，而其他的不需要。  
+
 **默认情况：**  
 （1）当数据源为 [storage](#3-storage-云存储列举) 类型时，也可按照[上述 indexes 规范](#关于-indexes-索引)自行设置该参数，用于指定列举结果
 的持久化或者下一步 process 操作所需要的字段，默认包含全部下标。对于 datetime 字段，实际上是根据文件对象的 putTime 或者 lastModified 时间戳转
 换而来的日期时间字符串，便于了解具体时间信息，默认只能得到 datetime 信息，如果需要原本的时间戳信息，则需要在 indexes 中加入 timestamp 字段，程
 序会自动识别并扩展出该字段，如 `indexes=key,etag,size,timestamp,mime,type`，此时持久化结果中或者 process 的输入行中将体现 timestamp，亦
 可使两者同时存在，如 `indexes=key,etag,size,datetime,timestamp,mime,type,status,md5,owner`。  
+
 （2）当数据源为 [file](#2-file-文本文件行读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
 `0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照[indexes 规范](#关于-indexes-索引)
 设置，例如为数字列表:`0,1,2,3,...` 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式
 为 `tab/csv` 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入
 行中不包含 mime 字段，则可以设置 `indexes=0,1,2,3,-1,5`。  
+
 事实上，对于 file 数据源，`indexes` 还有一种设置方式，不需要遵循文件信息的字段，此时需要中括号 []，参数格式为 `[key1:index1,key2:index2,key3:index3,...]`，
 例如，输入行以分隔符分割得到字符串数据其中包含三个字段，分别表示<文件名>、<文件大小>、<时间>，那么可以设置 `indexes=[key:0,size:1,datetime:2]`，
 如输入行是包含 key,size,datetime 等字段的 json，则可以设置 `indexes=[key:key,size:key,datetime:datetime]`，表示目标对象字段需要 key,
@@ -94,7 +97,7 @@ line-config=
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
 |add-keyPrefix| 字符串|将解析出的 key 字段加上指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 少了前缀的情况，补上前缀才能获取到资源|  
 |rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 `/` 前缀|  
-|line-config| 配置文件路径|表示从该配置中读取文件名作为 file 数据源，同时文件名对应的值表示读取该文件的起始位置，[配置文件](#line-config-配置)格式为 json|  
+|line-config| 配置文件路径|表示从该配置中读取文件名作为 file 数据源，同时文件名对应的值表示读取该文件的起始位置，配置文件格式为 json，可参考[ line-config 配置](#关于-line-config)|  
 
 #### 关于 line-config
 line-config 用来设置要读取的文件路径，在 path 为空的情况下，line-config 中的文件名必须是完整的路径名，path 为目录时，line-config 中的文件名
@@ -102,7 +105,7 @@ line-config 用来设置要读取的文件路径，在 path 为空的情况下�
 从之后的位置开始读入数据，即此行文本信息标示文件中的读取位置，可以用于设置断点。
 
 ##### line-config 配置
-```
+```json
 {
   "/Users/wubingheng/Projects/Github/test/success_1.txt":"test.gif",
   "/Users/wubingheng/Projects/Github/test/success_2.txt":"",
@@ -135,7 +138,7 @@ prefix-right=
 |region|字符串|存储区域|
 |bucket|字符串| 需要列举的空间名称，通过 "path=qiniu://<bucket>" 来设置的话此参数可不设置，设置则会覆盖 path 中指定的 bucket 值|  
 |prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表，如果前缀本身包含 `,\=` 等特殊字符则需要加转义符，如 `\,`|  
-|prefix-config| 字符串| 该选项用于设置列举前缀的[配置文件](#prefix-config-配置)路径，配置文件格式为 json|
+|prefix-config| 字符串| 该选项用于设置列举前缀的[配置文件](#prefix-config-配置)路径，配置文件格式为 json，参考[ prefix-config 配置文件](#prefix-config-配置)|
 |anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
@@ -166,7 +169,7 @@ prefix-right=
 prefixes 的情况下必须是有效的目录名。  
 
 ##### prefix-config 配置
-```
+```json
 {
   "a":{
     "marker":"",
@@ -295,8 +298,9 @@ threads=300
 prefixes=
 #region=
 ```  
-如果是其他基于 S3 实现的数据源，也可以使用 path=s3://<bucket> 方式来列举资源，但是由于 endpoint 与 aws 的不同，需要自行设置 endpoint，如[七
-牛的 S3 接口](https://developer.qiniu.com/kodo/manual/4088/s3-access-domainname)华东区域列举 bucket 文件时，可设置：  
+如果是其他基于 S3 实现的数据源，也可以使用 path=s3://<bucket> 方式来列举资源，但是由于 endpoint 与 aws 的不同，需要自行设置 endpoint，
+如[七牛的 S3 接口](https://developer.qiniu.com/kodo/manual/4088/s3-access-domainname)华东区域列举 bucket 文件时【使用七牛的 s3 
+api 做列举时还需要注意 bucketId（七牛控制台查看） 和 bucketName 的区别，使用 s3 接口必须使用 bucketId 来设置 bucket 参数】，可设置：  
 ```
 # http(s):// 开头可省略
 endpoint=s3-cn-east-1.qiniucs.com

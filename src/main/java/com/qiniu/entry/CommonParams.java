@@ -84,7 +84,73 @@ public class CommonParams {
         add("json");
     }};
 
-    public CommonParams() {}
+    private void accountInit() throws IOException {
+        try {
+            accountMap = ParamsUtils.toParamsMap(AccountUtils.accountPath);
+        } catch (FileNotFoundException ignored) {
+            accountMap = new HashMap<>();
+        }
+        account = entryParam.getValue("a", null);
+        if (account == null) {
+            if (entryParam.getValue("default", "false").equals("true")) {
+                account = accountMap.get("account");
+                if (account == null) throw new IOException("no default account.");
+            }
+        }
+    }
+
+    public CommonParams() throws IOException {
+        try {
+            accountMap = ParamsUtils.toParamsMap(AccountUtils.accountPath);
+        } catch (FileNotFoundException ignored) {
+            accountMap = new HashMap<>();
+        }
+        account = accountMap.get("account");
+        if (account != null) {
+            qiniuAccessKey = accountMap.get(account + "-qiniu-id");
+            qiniuSecretKey = accountMap.get(account + "-qiniu-secret");
+            if (qiniuAccessKey != null && qiniuSecretKey != null) {
+                qiniuAccessKey = new String(decoder.decode(qiniuAccessKey.substring(8)));
+                qiniuSecretKey = new String(decoder.decode(qiniuSecretKey.substring(8)));
+            }
+            tencentSecretId = accountMap.get(account + "-tencent-id");
+            tencentSecretKey = accountMap.get(account + "-tencent-secret");
+            if (tencentSecretId != null && tencentSecretKey != null) {
+                tencentSecretId = new String(decoder.decode(tencentSecretId.substring(8)));
+                tencentSecretKey = new String(decoder.decode(tencentSecretKey.substring(8)));
+            }
+            aliyunAccessId = accountMap.get(account + "-aliyun-id");
+            aliyunAccessSecret = accountMap.get(account + "-aliyun-secret");
+            if (aliyunAccessId != null && aliyunAccessSecret != null) {
+                aliyunAccessId = new String(decoder.decode(aliyunAccessId.substring(8)));
+                aliyunAccessSecret = new String(decoder.decode(aliyunAccessSecret.substring(8)));
+            }
+            upyunUsername = accountMap.get(account + "-upyun-id");
+            upyunPassword = accountMap.get(account + "-upyun-secret");
+            if (upyunUsername != null && upyunPassword != null) {
+                upyunUsername = new String(decoder.decode(upyunUsername.substring(8)));
+                upyunPassword = new String(decoder.decode(upyunPassword.substring(8)));
+            }
+            s3AccessId = accountMap.get(account + "-s3-id");
+            s3SecretKey = accountMap.get(account + "-s3-secret");
+            if (s3AccessId != null && s3SecretKey != null) {
+                s3AccessId = new String(decoder.decode(s3AccessId.substring(8)));
+                s3SecretKey = new String(decoder.decode(s3SecretKey.substring(8)));
+            }
+            huaweiAccessId = accountMap.get(account + "-huawei-id");
+            huaweiSecretKey = accountMap.get(account + "-huawei-secret");
+            if (huaweiAccessId != null && huaweiSecretKey != null) {
+                huaweiAccessId = new String(decoder.decode(huaweiAccessId.substring(8)));
+                huaweiSecretKey = new String(decoder.decode(huaweiSecretKey.substring(8)));
+            }
+            baiduAccessId = accountMap.get(account + "-baidu-id");
+            baiduSecretKey = accountMap.get(account + "-baidu-secret");
+            if (baiduAccessId != null && baiduSecretKey != null) {
+                baiduAccessId = new String(decoder.decode(baiduAccessId.substring(8)));
+                baiduSecretKey = new String(decoder.decode(baiduSecretKey.substring(8)));
+            }
+        }
+    }
 
     /**
      * 从入口中解析出程序运行所需要的参数，参数解析需要一定的顺序，因为部分参数会依赖前面参数解析的结果
@@ -96,19 +162,7 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
-        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
-        try {
-            accountMap = ParamsUtils.toParamsMap(filePath);
-        } catch (FileNotFoundException ignored) {
-            accountMap = new HashMap<>();
-        }
-        account = entryParam.getValue("a", null);
-        if (account == null) {
-            if (entryParam.getValue("default", "false").equals("true")) {
-                account = accountMap.get("account");
-                if (account == null) throw new IOException("no default account.");
-            }
-        }
+        accountInit();
         if (isStorageSource) {
             setAuthKey();
             setBucket();
@@ -149,15 +203,7 @@ public class CommonParams {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
-        String filePath = FileUtils.convertToRealPath("~" + FileUtils.pathSeparator + ".qsuits.account");
-        accountMap = ParamsUtils.toParamsMap(filePath);
-        account = entryParam.getValue("a", null);
-        if (account == null) {
-            if (entryParam.getValue("default", "false").equals("true")) {
-                account = accountMap.get("account");
-                if (account == null) throw new IOException("no default account.");
-            }
-        }
+        accountInit();
         setParse();
         setSeparator();
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
@@ -184,7 +230,10 @@ public class CommonParams {
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String toKey = entryParam.getValue("to-key", null);
-                if (toKey != null) mapLine.put("toKey", toKey);
+                if (toKey != null) {
+                    indexMap.put("toKey", "toKey");
+                    mapLine.put("toKey", toKey);
+                }
                 break;
             case "download": savePath = entryParam.getValue("save-path", ".");
             case "asyncfetch":
@@ -203,6 +252,7 @@ public class CommonParams {
             case "videocensor":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
+                    indexMap.put("url", "url");
                     mapLine.put("url", url);
                     mapLine.put("key", entryParam.getValue("key", null));
                 } else if (!fromLine) {
@@ -213,19 +263,28 @@ public class CommonParams {
             case "pfop":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String fops = entryParam.getValue("fops", "").trim();
-                if (!"".equals(fops)) mapLine.put("fops", fops);
+                if (!"".equals(fops)) {
+                    indexMap.put("fops", "fops");
+                    mapLine.put("fops", fops);
+                }
                 setPfopConfigs();
                 break;
             case "pfopcmd":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String avinfo = entryParam.getValue("avinfo", "").trim();
-                if (!"".equals(avinfo)) mapLine.put("avinfo", avinfo);
+                if (!"".equals(avinfo)) {
+                    indexMap.put("avinfo", "avinfo");
+                    mapLine.put("avinfo", avinfo);
+                }
                 setPfopConfigs();
                 break;
             case "pfopresult":
             case "censorresult":
                 String id = entryParam.getValue("id", "").trim();
-                if (!"".equals(id)) mapLine.put("id", id);
+                if (!"".equals(id)) {
+                    indexMap.put("id", "id");
+                    mapLine.put("id", id);
+                }
                 break;
             case "stat":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
@@ -236,7 +295,10 @@ public class CommonParams {
             case "qupload":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 String filepath = entryParam.getValue("filepath", "").trim();
-                if (!"".equals(filepath)) mapLine.put("filepath", filepath);
+                if (!"".equals(filepath)) {
+                    indexMap.put("filepath", "filepath");
+                    mapLine.put("filepath", filepath);
+                }
                 break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
@@ -275,7 +337,7 @@ public class CommonParams {
         else if ("file".equals(source)) source = "local";
         else if ("aws".equals(source)) source = "s3";
         if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3|huawei|baidu)")) {
-            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,s3]");
+            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,aws,s3,huawei,baidu]");
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
     }

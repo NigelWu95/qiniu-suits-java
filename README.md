@@ -2,10 +2,11 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # qiniu-suits (qsuits)
-qiniu-suits-java 是一个云存储 api tools (base-qiniu)，通过设计并优化的[算法](docs/datasource.md#并发列举)能够高效**并发列举**云存储空
-间的大量资源列表(支持**阿里云/腾讯云/七牛云/AWS/又拍云/华为云/百度云等**)，同时支持对 LocalFile 中的资源列表并发进行批量处理，主要包括本地文件批
-量上传和对七牛云存储资源进行增/删/改/查/迁移/转码/内容审核等。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使
-用执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))）。  
+qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过设计的[前缀并发算法](docs/datasource.md#并发列举)能够高效**并发列举**
+云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
+资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
+非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
+令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))）。  
 
 ### 高级功能列表（所有操作均支持批量并发处理）：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
@@ -48,14 +49,14 @@ qiniu-suits-java 是一个云存储 api tools (base-qiniu)，通过设计并优�
 
 ### 账号设置  
 （7.73 及以上版本）支持预先设置好账号的密钥（经过加密），在后续执行中只需使用 account name 即可读取对应账号密钥进行操作，定义不同的 account name 
-则可设置多对密钥，亦可设置不同数据源的账号密钥，账号名相同时会覆盖该账号的历史密钥，命令行操作如下所示（配置文件也可以进行账户设置和使用，去掉命令行
-参数开头的 `-` 符号且每项参数成一行即可，与后面程序运行方式的配置文件用法相同）。  
+则可设置多对密钥，亦可设置不同数据源的账号密钥，同一数据源的账号名相同时会覆盖该账号的历史密钥，命令行操作如下所示（配置文件也可以进行账户设置和使用，
+去掉命令行参数开头的 `-` 符号且每项参数成一行即可，与后面程序运行方式的配置文件用法相同），密钥参数名参考[各存储数据源配置参数](#storage-云存储列举)。  
 #### 1. 设置 account：  
 命令格式：`-account=<source>-<name> -<source>-id= -<source>-secret= [-d]`，如：  
 `-account=test/qiniu-test -ak= -sk=` 设置七牛账号，账号名为 test，没有数据源标识时默认设置七牛账号  
 `-account=ten-test -ten-id= -ten-secret=` 设置腾讯云账号，账号名为 test  
 `-account=ali-test -ali-id= -ali-secret=` 设置阿里云账号，账号名为 test  
-`-account=s3-test -s3-id= -s3-secret=` 设置 S3 账号，账号名为 test  
+`-account=s3-test -s3-id= -s3-secret=` 设置 AWS/S3 账号，账号名为 test  
 `-account=up-test -up-id= -up-secret=` 设置又拍云账号，账号名为 test  
 `-account=hua-test -hua-id= -hua-secret=` 设置华为云账号，账号名为 test  
 `-account=bai-test -bai-id= -bai-secret=` 设置百度云账号，账号名为 test  
@@ -63,9 +64,16 @@ qiniu-suits-java 是一个云存储 api tools (base-qiniu)，通过设计并优�
 #### 2. 使用 account 账号：  
 `-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
+#### 3. 查询 account 账号：
+命令格式：`-getaccount=<name>-<source> [-dis] [-d]`，默认只显示 id 的明文而隐藏 secret，`-dis` 参数表示选择明文显示 secret，如：  
+`-getaccount -d` 表示查询设置的默认账号的密钥  
+`-getaccount=test -dis` 表示查询设置的所有账号名为 test 的密钥，并显示 secret 的明文  
+`-getaccount=test-s3` 表示查询设置的 S3 账号名为 test 的密钥  
+`-getaccount=test-qiniu` 表示查询设置的七牛账号名为 test 的密钥  
+`-getaccount=test-tencent` 表示查询设置的腾讯账号名为 test 的密钥  
 
 ### 1 程序运行过程  
-##### （1）批处理模式：[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
+##### （1）批处理模式：[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据[处理过程](#5-处理过程)] => [[结果持久化](docs/resultsave.md)]   
 ##### （2）交互模式：从命令行输入数据时，process 支持[交互模式](docs/interactive.md)运行，一次启动，可无限次命令行输入 data，输入一次处理一次并返回结果。  
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
@@ -82,8 +90,7 @@ java -jar qsuits-x.x.x.jar -config=config.txt
 ```  
 配置文件中可设置形如\<属性名\>=\<属性值\>，每行一个参数：  
 ```
-source=qiniu
-bucket=
+path=qiniu://<bucket>
 ak=
 sk=
 ```  
@@ -95,7 +102,7 @@ properties 方式需要遵循 java 的转义规则，两个文件存在任意一
 ```
 java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
-**备注2**：7.72 及以下版本中命令行参数与配置文件参数不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件
+**备注3**：7.72 及以下版本中命令行参数与配置文件参数不可同时使用，指定 -config=<path> 或使用默认配置配置文件路径时，需要将所有参数设置在配置文件
 中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。**【推荐使用配置文件方式，
 一是安全性，二是参数历史可保留且修改方便；推荐使用 -account 提前设置好账号，安全性更高，使用时 -a=\<account-name\> 即可，不必再暴露密钥】**  
 
@@ -137,7 +144,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
+数据源分为三种类型：**云存储列举(storage)**、**文本文件行读取(file)**、**文件路径和属性读取(filepath)**，可以通过 `path=` 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](docs/datasource.md#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](docs/datasource.md#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](docs/datasource.md#3-阿里云存储)  
@@ -145,7 +152,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `path=upyun://<bucket>` 表示从又拍云存储空间列举出资源列表，参考[又拍数据源示例](docs/datasource.md#5-又拍云存储)  
 `path=huawei://<bucket>` 表示从华为云存储空间列举出资源列表，参考[华为数据源示例](docs/datasource.md#6-华为云存储)  
 `path=baidu://<bucket>` 表示从百度云存储空间列举出资源列表，参考[百度数据源示例](docs/datasource.md#7-百度云存储)  
-`path=<filepath>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#8-local-files)  
+`path=<path>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#8-local-files)  
 未设置数据源时则默认从七牛空间进行列举，数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)，配置文件示例可参考
 [配置模板](resources/application.config)  
 
@@ -171,6 +178,8 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `rm-keyPrefix=` 数据源中每一行的文件名去除前缀  
 `line-config=` 数据源路径即对应文本读取的起始行配置  
 **数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
+#### filepath 文件路径和属性读取
+该数据源用于上传文件的操作，设置 `process=qupload` 时自动生效，从 `path` 中读取所有文件（除隐藏文件外）执行上传操作，具体配置可参考 [qupload 配置](docs/uploadfile.md)。
 
 ### 4 过滤器功能  
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
@@ -259,24 +268,42 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 
 ### 6 结果持久化
 对数据源输出（列举）结果进行持久化操作（目前支持写入到本地文件），持久化选项：  
-`save-path=` 表示保存结果的文件路径  
-`save-format=` 结果保存格式（json/tab），默认为 tab  
-`save-separator=` 结果保存分隔符，结合 save-format=tab 默认使用 "\t" 分隔  
-`save-total=` 是否保存数据源的完整输出结果，用于在设置过滤器的情况下选择是否保留原始数据，如 bucket 的 list 操作需要在列举出结果之后再针对字段
-进行过滤，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置 save-total=false。  
-**默认情况：**  
+```
+save-total=
+save-path=
+save-format=
+save-separator=
+rm-fields=
+```  
+|参数名|参数值及类型 | 含义|  
+|-----|-------|-----|  
+|save-total| true/false| 是否直接保存数据源完整输出结果，针对存在下一步处理过程时是否需要保存原始数据|  
+|save-path| local file 相对路径字符串| 表示保存结果的文件路径|  
+|save-format| json/tab/csv| 结果保存格式，将每一条结果记录格式化为对应格式，默认为 tab 格式（减小输出结果的体积）|  
+|save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
+|rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际字段选项，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
+
+**关于save-total**  
+（1）用于选择是否直接保存数据源完整输出结果，针对存在过滤条件或下一步处理过程时是否需要保存原始数据，如 bucket 的 list 操作需要在列举出结果之后再针
+    对字段进行过滤或者做删除，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置为 false，如
+    果是删除等操作，通常删除结果会直接保存文件名和删除结果，原始数据也不需要保存。  
 （1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
 （2）云存储数据源时默认设置 save-total=true。  
-（3）保存结果的路径 **默认（save-path）使用 <bucket>（云存储数据源情况下）名称或者 <path>-result 来创建目录**  
+（3）保存结果的路径 **默认（save-path）使用 <bucket\>（云存储数据源情况下）名称或者 <path\>-result 来创建目录**。  
+
+**关于持久化文件名** 
+（1）持数据源久化结果的文件名为 "<source-name\>\_success_<order\>.txt"，如 qiniu 存储数据源结果为 "qiniu_success_<order\>.txt"，
+    local 数据源结果为 "local_success_<order\>.txt"。  
+（2）如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter_success/error_<order\>.txt"。
+（3）process 过程保存的结果为文件为 "<process\>\_success/error\_<order\>.txt"，<process\>\_success/error\_<order\>.txt 表明无法
+    成功处理的结果，<process\>\_need_retry\_<order\>.txt，表明为需要重试的记录，可能需要确认所有错误数据和记录的错误信息。  
+
+**关于 rm-fields** 
+rm-fields 可选择持久化结果中去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式 save-format 保存在 save-path 的文件
+中。file 数据源输入字段完全取决于 indexes 和其他的一些 index 设置，可参考 [indexes 索引](datasource.md#关于-indexes-索引)，而其他 index
+设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](datasource.md#关于文件信息字段)   
+
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
-**--** 持数据源久化结果的文件名为 "\<source-name\>\_success_\<order\>.txt"，例如：  
-（1）qiniu 存储数据源 =》 "qiniu_success_\<order\>.txt"  
-（2）local 列表数据源 =》 "local_success_\<order\>.txt"  
-如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter\_success/error_\<order\>.txt"，process 过程保存的结果为文件为 
-"\<process\>\_success/error\_\<order\>.txt"。  
-**--** process 结果的文件名为：\<process\>\_success/error_\<order\>.txt 及 \<process\>\_need_retry_\<order\>.txt，error 的结果表明无法成功
-处理，可能需要确认所有错误数据和原因，need_retry 的结果为需要重试的记录，包含错误信息。  
-**--** rm-fields 可选择去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式保存在 save-path 的文件中。  
 
 ### 7 超时设置
 多数数据源或者操作涉及网络请求，因此提供超时时间设置，默认的超时时间一般能够满足要求，特殊需要的情况下可以修改各超时时间：  
@@ -294,19 +321,24 @@ java.net.SocketTimeoutException: timeout
 程序会自动重试，如果比较频繁则可以修改[超时配置](#7-超时设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。  
 2. 常见错误信息：  
-（1）java.lang.OutOfMemoryError: GC overhead limit exceeded  
-表示内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，降低线程数 threads 或者 unit-len。  
-（2）java.lang.OutOfMemoryError: unable to create new native thread   
-与（1）类似，内存溢出导致无法继续创建更多线程或对象。  
-（3）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
+（1）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
 请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  
+（2）java.lang.OutOfMemoryError: GC overhead limit exceeded  
+表示可能是内存中加载了过多的资源导致 java 的 gc 内存溢出，需要关闭程序重新运行，更换高配置机器或者降低线程数 threads 或者 unit-len。  
+（3）java.lang.OutOfMemoryError: unable to create new native thread   
+与（1）类似，内存溢出导致无法继续创建更多线程或对象，降低线程数 threads 重新运行。  
+（4）java.lang.OutOfMemoryError: Java heap space   
+运行过程中 jvm 堆内存（一般默认为系统内存的 1/4）不足，可以通过 -Xms 和 -Xmx 来增加堆内存，用法: `java -Xms2g -Xmx2g -jar qsuits.jar ...`。  
 
 ### 9 程序日志
-7.7 版本引入了 slf4j+log4j2 来记录运行日志，主要记录信息为：  
-1. 数据源位置记录信息 =\> procedure.log，记录格式为 json，数据源读取位置打点数据，每一行都是一次数据源位置记录，最后一行即为最后记录下的位置信
-息，如果信息为 `{}` 表明程序运行完整，没有断点需要再次运行，如果信息中包含具体的字符串，说明这是程序留下的断点，则该行信息可以取出作为断点操作的配置
-内容，具体参考：[断点操作](#10-断点续操作)  
-2. 程序运行过程输出及异常信息，通过终端 Console 和 qsuits.log 输出。  
+7.7 版本开始引入了 slf4j+log4j2 来记录运行日志，日志产生在当前路径的 logs 目录下，说明如下：  
+1. 数据源位置记录信息 =\> procedure.log，记录行格式为 json，数据源读取位置打点数据，每一行都是一次数据源位置记录，最后一行即为最后记录下
+的位置信息，如果信息为 `{}` 表明程序运行完整，没有断点需要再次运行，如果信息中包含具体的字符串，说明这是程序留下的断点，则该行信息可以取出作为断点操
+作的配置内容，具体参考：[断点操作](#10-断点续操作)  
+2. 程序运行过程输出及异常信息，通过终端 Console 和 qsuits.info、qsuits.error 输出。  
+3. 日志输出的默认文件名为 procedure.log、qsuits.info 和 qsuits.error，每次运行前会检查当前路径下是否存在历史日志文件，如果存在则会将文件名加
+上数字，如 procedure0.log、qsuits0.info、qsuits0.error 或 procedure1.log、qsuits1.info、qsuits1.error（自动修改日志文件名在 8.0.4
+ 以上版本支持）。  
 
 ### 10 断点续操作
 7.1 版本开始支持断点记录，在程序运行后出现异常导致终止或部分数据源路径错误或者是 INT 信号(命令行 Ctrl+C 中断执行)终止程序时，会记录数据导出中断的
@@ -314,13 +346,13 @@ java.net.SocketTimeoutException: timeout
 存在断点续操作的需求，续操作说明：  
 1. 如果存在续操作的需要，程序终止时会输出续操作的记录信息路径，如存储空间文件列举操作终止时可能输出：  
 `please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
-表示在 <filename>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，<filename> 表示文件名。
-2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次列举时使用断点文件作
-为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
-3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 <filename>.json，则在下次继
-续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
-版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
+表示在 \<filename\>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，\<filename\> 表示文件名。
+2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
+作为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
+3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次
+继续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
+4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分，否则可能会覆盖上次的结果，且文件名难以区分（7.72 及以下版本中断点参数请和其他参
+数保持一致放在命令行或配置文件中，7.72 以上版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
 
 **注意：如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后的断
 点信息，取出 procedure.log 日志的最后一行并创建断点配置文件，从而按照上述方式进行断点运行。**  
@@ -358,3 +390,15 @@ pause-duration=50400
 恢复运行，因此该配置的含义表示任务在每天的 08:00:00-18:00:00 期间运行（18:00:00-第二天08:00:00 期间暂停）。start-time 不允许超出到一周之后，
 pause-duration 的最小暂停时间为 1800s(0.5 小时) 最大暂停时间为 84600s(23.5 小时)。pause-delay 的默认值为 0，小于 0 时表示不执行时间计划，
 或者 pause-duration 小于 0 时同样表示不执行时间计划。  
+
+### 13 暂停和恢复
+暂停和恢复是操作系统特性，如果对系统熟悉也可以基于此来制作时间计划。Linux/Mac 下支持以下操作来暂停和恢复进程：  
+暂停（Ctrl + Z 命令）：  
+```shell
+^Z
+[1]  + 38835 suspended  java -jar qsuits.jar
+```  
+恢复（fg 命令，注意该命令需要在暂停时的同个 terminal 下执行，同时建议不要做路径切换）：  
+```shell
+[1]  + 38835 continued  java -jar qsuits.jar
+```  

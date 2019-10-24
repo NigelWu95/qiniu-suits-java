@@ -10,7 +10,6 @@ import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AliLister implements ILister<OSSObjectSummary> {
@@ -20,7 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<OSSObjectSummary> ossObjectList;
-    private static final List<OSSObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -80,24 +79,24 @@ public class AliLister implements ILister<OSSObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (ossObjectList.size() > 0) {
-                    int lastIndex = ossObjectList.size() - 1;
-                    OSSObjectSummary last = ossObjectList.get(lastIndex);
-                    if (endPrefix.equals(last.getKey())) ossObjectList.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && ossObjectList.size() > 0) {
+                int lastIndex = ossObjectList.size() - 1;
+                if (endPrefix.equals(ossObjectList.get(lastIndex).getKey())) ossObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = ossObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (ossObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    ossObjectList = ossObjectList.subList(0, i);
-                    return;
+//                    ossObjectList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            ossObjectList.subList(i, size).clear();
         }
     }
 
@@ -121,10 +120,14 @@ public class AliLister implements ILister<OSSObjectSummary> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            ossObjectList.clear();
             doList();
             count += ossObjectList.size();
         } else {
-            ossObjectList = defaultList;
+            if (ossObjectList.size() > 0) {
+                endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+                ossObjectList.clear();
+            }
         }
     }
 
@@ -137,16 +140,24 @@ public class AliLister implements ILister<OSSObjectSummary> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (ossObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<OSSObjectSummary> futureList = ossObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<OSSObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(ossObjectList);
+        ossObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += ossObjectList.size();
-            futureList.addAll(ossObjectList);
+            try {
+                doList();
+                count += ossObjectList.size();
+                futureList.addAll(ossObjectList);
+                ossObjectList.clear();
+            } catch (SuitsException e) {
+                ossObjectList = futureList;
+                throw e;
+            }
         }
         ossObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -159,6 +170,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (ossObjectList.size() > 0) return ossObjectList.get(ossObjectList.size() - 1).getKey();
         return null;
     }
@@ -180,6 +192,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
         ossClient.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-//        ossObjectList = defaultList;
+        if (ossObjectList.size() > 0) {
+            endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+            ossObjectList.clear();
+        }
     }
 }

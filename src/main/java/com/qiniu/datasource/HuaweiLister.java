@@ -7,6 +7,7 @@ import com.obs.services.model.ObjectListing;
 import com.obs.services.model.ObsObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
+import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public class HuaweiLister implements ILister<ObsObject> {
     private String endPrefix;
     private String truncateMarker;
     private List<ObsObject> obsObjects;
-    private static final List<ObsObject> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public HuaweiLister(ObsClient obsClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -79,24 +80,24 @@ public class HuaweiLister implements ILister<ObsObject> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setMarker(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                if (obsObjects.size() > 0) {
-                    int lastIndex = obsObjects.size() - 1;
-                    ObsObject last = obsObjects.get(lastIndex);
-                    if (endPrefix.equals(last.getObjectKey())) obsObjects.remove(lastIndex);
-                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && obsObjects.size() > 0) {
+                int lastIndex = obsObjects.size() - 1;
+                if (endPrefix.equals(obsObjects.get(lastIndex).getObjectKey())) obsObjects.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setMarker(null);
             int size = obsObjects.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (obsObjects.get(i).getObjectKey().compareTo(endPrefix) > 0) {
-                    obsObjects = obsObjects.subList(0, i);
-                    return;
+//                    nosObjectList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            obsObjects.subList(i, size).clear();
         }
     }
 
@@ -118,10 +119,14 @@ public class HuaweiLister implements ILister<ObsObject> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            obsObjects.clear();
             doList();
             count += obsObjects.size();
         } else {
-            obsObjects = defaultList;
+            if (obsObjects.size() > 0) {
+                endKey = obsObjects.get(obsObjects.size() - 1).getObjectKey();
+                obsObjects.clear();
+            }
         }
     }
 
@@ -134,16 +139,24 @@ public class HuaweiLister implements ILister<ObsObject> {
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (obsObjects.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<ObsObject> futureList = obsObjects;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<ObsObject> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(obsObjects);
+        obsObjects.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += obsObjects.size();
-            futureList.addAll(obsObjects);
+            try {
+                doList();
+                count += obsObjects.size();
+                futureList.addAll(obsObjects);
+                obsObjects.clear();
+            } catch (SuitsException e) {
+                obsObjects = futureList;
+                throw e;
+            }
         }
         obsObjects = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -156,6 +169,7 @@ public class HuaweiLister implements ILister<ObsObject> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
+        if (endKey != null) return endKey;
         if (obsObjects.size() > 0) return obsObjects.get(obsObjects.size() - 1).getObjectKey();
         return null;
     }
@@ -181,6 +195,9 @@ public class HuaweiLister implements ILister<ObsObject> {
         }
 //        listObjectsRequest = null;
         endPrefix = null;
-//        obsObjects = defaultList;
+        if (obsObjects.size() > 0) {
+            endKey = obsObjects.get(obsObjects.size() - 1).getObjectKey();
+            obsObjects.clear();
+        }
     }
 }

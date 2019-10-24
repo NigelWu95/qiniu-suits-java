@@ -23,7 +23,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private int limit;
     private String truncateMarker;
     private List<FileInfo> fileInfoList;
-    private static final List<FileInfo> defaultList = new ArrayList<>();
+    private String endKey;
     private long count;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -88,19 +88,28 @@ public class QiniuLister implements ILister<FileInfo> {
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
         List<FileInfo> fileInfoList = new ArrayList<>(limit);
-        JsonObject jsonObject = null;
-        String line;
+        String line = bufferedReader.readLine();
         try {
-            while ((line = bufferedReader.readLine()) != null) {
-                jsonObject = JsonUtils.toJsonObject(line);
-                if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
-                    fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
-                }
-            }
-            if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
-                this.marker = jsonObject.get("marker").getAsString();
-            } else {
+            if (line == null) {
                 this.marker = null;
+            } else {
+                JsonObject jsonObject = JsonUtils.toJsonObject(line);
+                if (jsonObject.has("item") || jsonObject.has("marker")) {
+                    fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                    while ((line = bufferedReader.readLine()) != null) {
+                        jsonObject = JsonUtils.toJsonObject(line);
+                        if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
+                            fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                        }
+                    }
+                } else {
+                    throw new QiniuException(response);
+                }
+                if (jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
+                    this.marker = jsonObject.get("marker").getAsString();
+                } else {
+                    this.marker = null;
+                }
             }
         } finally {
             response.close();
@@ -127,24 +136,24 @@ public class QiniuLister implements ILister<FileInfo> {
             marker = null;
             // 由于 CloudStorageContainer 中设置 endPrefix 后下一级会从 endPrefix 开始直接列举，所以 endPrefix 这个文件名会出现重复，
             // 此处对其前者删除
-            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint)) {
-                if (fileInfoList.size() > 0) {
-                    int lastIndex = fileInfoList.size() - 1;
-                    FileInfo last = fileInfoList.get(lastIndex);
-                    if (endPrefix.equals(last.key)) fileInfoList.remove(lastIndex);
-                }
+            if (endPrefix.equals(prefix + CloudStorageContainer.firstPoint) && fileInfoList.size() > 0) {
+                int lastIndex = fileInfoList.size() - 1;
+                if (endPrefix.equals(fileInfoList.get(lastIndex).key)) fileInfoList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             marker = null;
             int size = fileInfoList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (fileInfoList.get(i).key.compareTo(endPrefix) > 0) {
-                    fileInfoList = fileInfoList.subList(0, i);
-                    return;
+//                    fileInfoList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            fileInfoList.subList(i, size).clear();
         }
     }
 
@@ -165,10 +174,14 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public synchronized void listForward() throws SuitsException {
         if (hasNext()) {
+            fileInfoList.clear();
             doList();
             count += fileInfoList.size();
         } else {
-            fileInfoList = defaultList;
+            if (fileInfoList.size() > 0) {
+                endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+                fileInfoList.clear();
+            }
         }
     }
 
@@ -180,19 +193,27 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public boolean hasFutureNext() throws SuitsException {
         int expected = limit + 1;
-        if (expected <= 10000) expected = 10001;
-        int times = 100000 / (fileInfoList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<FileInfo> futureList = fileInfoList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        if (expected < 10000) expected = 10001;
+        int times = 10;
+        List<FileInfo> futureList = CloudApiUtils.initFutureList(limit, times);
+        futureList.addAll(fileInfoList);
+        fileInfoList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             // 优化大量删除情况下的列举速度，去掉 size>0 的条件
 //            if (futureList.size() > 0)
-                times--;
-            doList();
-            count += fileInfoList.size();
-            futureList.addAll(fileInfoList);
+            times--;
+            try {
+                doList();
+                count += fileInfoList.size();
+                futureList.addAll(fileInfoList);
+                fileInfoList.clear();
+            } catch (SuitsException e) {
+                fileInfoList = futureList;
+                throw e;
+            }
         }
         fileInfoList = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -205,6 +226,7 @@ public class QiniuLister implements ILister<FileInfo> {
     public synchronized String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
         if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuMarker(truncateMarker);
+        if (endKey != null) return endKey;
         if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
         return null;
     }
@@ -224,8 +246,11 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void close() {
         bucketManager = null;
-        marker = null;
+//        marker = null; // 结束时本来就是已经是 marker = null;
         endPrefix = null;
-//        fileInfoList = defaultList; // 不做修改，因为最后还有可能需要获取 currentEndKey()
+        if (fileInfoList.size() > 0) {
+            endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+            fileInfoList.clear();
+        }
     }
 }

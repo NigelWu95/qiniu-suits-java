@@ -28,13 +28,13 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
+    private static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
+    private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
+    private static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
     private static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    private static final Logger errorLogger = LoggerFactory.getLogger("error");
-    private static final File errorLogFile = new File("qsuits.error");
-    private static final Logger infoLogger = LoggerFactory.getLogger("info");
-    private static final File infoLogFile = new File("qsuits.info");
-    private static final Logger procedureLogger = LoggerFactory.getLogger("procedure");
-    private static final File procedureLogFile = new File("procedure.log");
+    private static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
+    private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
+    private static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
 
     private String filePath;
     protected String parse;
@@ -53,8 +53,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected List<String> rmFields;
     protected List<String> fields;
     private ILineProcess<T> processor; // 定义的资源处理器
-    ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
-    ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
+    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
@@ -166,15 +166,14 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ILineProcess<T> lineProcessor = null;
         IResultOutput<W> saver = null;
         try {
+            saver = getNewResultSaver(orderStr);
+            saverMap.put(orderStr, saver);
             if (processor != null) {
                 lineProcessor = processor.clone();
                 processorMap.put(orderStr, lineProcessor);
             }
-            saver = getNewResultSaver(orderStr);
-            saverMap.put(orderStr, saver);
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
-            saverMap.remove(orderStr);
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", reader.getName(), recorder.getString(reader.getName()), e.error(), e);
@@ -185,10 +184,26 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         } finally {
             try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
             infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
-            if (saver != null) saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
+            if (saver != null) {
+                saver.closeWriters();
+                saver = null; // let gc work
+            }
+            saverMap.remove(orderStr);
+            if (lineProcessor != null) {
+                lineProcessor.closeResource();
+                lineProcessor = null;
+            }
             UniOrderUtils.returnOrder(order);
             reader.close();
+        }
+    }
+
+    void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {
+            int i = 0;
+            while (i < millis) i++;
         }
     }
 
@@ -218,14 +233,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     private void showdownHook() {
         SignalHandler handler = signal -> {
             try {
+                pauseDateTime = LocalDateTime.MIN;
                 endAction();
             } catch (IOException e) {
-                e.printStackTrace();
+                rootLogger.error("showdown error", e);
             }
             System.exit(0);
         };
-        // 设置INT信号(Ctrl+C中断执行)交给指定的信号处理器处理，废掉系统自带的功能
-        Signal.handle(new Signal("INT"), handler);
+        try { // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
+            Signal.handle(new Signal("INT"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("TERM"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("USR1"), handler); } catch (Exception ignored) {}
+        try { Signal.handle(new Signal("USR2"), handler); } catch (Exception ignored) {}
     }
 
     protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
@@ -241,7 +260,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
-        FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
+        if (linesMap == null) FileSaveMapper.append = false; // 没有 lines 初始设置时默认让持久化非追加写入（即清除之前存在的文件）
         try {
             String start = null;
             for (IReader<E> fileReader : fileReaders) {
@@ -250,12 +269,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                    int i = 0;
-                    while (i < 1000) i++;
-                }
+                sleep(2000);
             }
             rootLogger.info("{} finished.", info);
             endAction();
@@ -279,10 +293,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             }
             while (now.isBefore(startTime)) {
                 System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
+                sleep(1000);
                 now = LocalDateTime.now(clock);
             }
         }

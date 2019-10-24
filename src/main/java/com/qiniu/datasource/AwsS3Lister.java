@@ -8,8 +8,8 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
+import com.qiniu.util.CloudApiUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AwsS3Lister implements ILister<S3ObjectSummary> {
@@ -18,9 +18,8 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
     private List<S3ObjectSummary> s3ObjectList;
-    private String lastKey;
     private long count;
-    private static final List<S3ObjectSummary> defaultList = new ArrayList<>();
+    private String endKey;
 
     public AwsS3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
                        int max) throws SuitsException {
@@ -33,6 +32,7 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         listObjectsRequest.setMaxKeys(max);
         this.endPrefix = endPrefix;
         doList();
+        listObjectsRequest.setStartAfter(null); // 做完一次 list 之后该值应当失效，直接在此处置为空
         count += s3ObjectList.size();
     }
 
@@ -85,26 +85,24 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         if (endKey == null) return;
         if (endKey.compareTo(endPrefix) == 0) {
             listObjectsRequest.setContinuationToken(null);
-            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint)) {
-                s3ObjectList.remove(s3ObjectList.size() - 1);
-//                if (s3ObjectList.size() > 0) {
-//                    int lastIndex = s3ObjectList.size() - 1;
-//                    S3ObjectSummary last = s3ObjectList.get(lastIndex);
-//                    if (endPrefix.equals(last.getKey()))
-//                        s3ObjectList.remove(lastIndex);
-//                }
+            if (endPrefix.equals(getPrefix() + CloudStorageContainer.firstPoint) && s3ObjectList.size() > 0) {
+                int lastIndex = s3ObjectList.size() - 1;
+                if (endPrefix.equals(s3ObjectList.get(lastIndex).getKey())) s3ObjectList.remove(lastIndex);
             }
         } else if (endKey.compareTo(endPrefix) > 0) {
             listObjectsRequest.setContinuationToken(null);
             int size = s3ObjectList.size();
             // SDK 中返回的是 ArrayList，使用 remove 操作性能一般较差，同时也为了避免 Collectors.toList() 的频繁 new 操作，根据返
             // 回的 list 为文件名有序的特性，直接从 end 的位置进行截断
-            for (int i = 0; i < size; i++) {
+            int i = 0;
+            for (; i < size; i++) {
                 if (s3ObjectList.get(i).getKey().compareTo(endPrefix) > 0) {
-                    s3ObjectList = s3ObjectList.subList(0, i);
-                    return;
+//                    s3ObjectList.remove(i);
+                    break;
                 }
             }
+            // 优化 gc，不用的元素全部清除
+            s3ObjectList.subList(i, size).clear();
         }
     }
 
@@ -112,13 +110,10 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         try {
             ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
             listObjectsRequest.setContinuationToken(result.getNextContinuationToken());
-            listObjectsRequest.setStartAfter(null);
-            if (result.getObjectSummaries().size() == 0) {
-                if (s3ObjectList != null && s3ObjectList.size() > 0) {
-                    lastKey = s3ObjectList.get(s3ObjectList.size() - 1).getKey();
-                }
-            }
             s3ObjectList = result.getObjectSummaries();
+            if (s3ObjectList.size() > 0) {
+                endKey = s3ObjectList.get(s3ObjectList.size() - 1).getKey();
+            }
             checkedListWithEnd();
         } catch (AmazonServiceException e) {
             throw new SuitsException(e, e.getStatusCode());
@@ -133,34 +128,40 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
 
     @Override
     public synchronized void listForward() throws SuitsException {
+        s3ObjectList.clear();
         if (hasNext()) {
             doList();
             count += s3ObjectList.size();
-        } else {
-            s3ObjectList = defaultList;
         }
     }
 
     @Override
     public boolean hasNext() {
-        return (listObjectsRequest.getContinuationToken() != null && !"".equals(listObjectsRequest.getContinuationToken()))
-                || (listObjectsRequest.getStartAfter() != null && !"".equals(listObjectsRequest.getStartAfter()));
+        return listObjectsRequest.getContinuationToken() != null && !"".equals(listObjectsRequest.getContinuationToken());
     }
 
     @Override
     public boolean hasFutureNext() throws SuitsException {
         int expected = listObjectsRequest.getMaxKeys() + 1;
         if (expected <= 10000) expected = 10001;
-        int times = 100000 / (s3ObjectList.size() + 1) + 1;
-        times = times > 10 ? 10 : times;
-        List<S3ObjectSummary> futureList = s3ObjectList;
-        while (hasNext() && times > 0 && futureList.size() < expected) {
+        int times = 10;
+        List<S3ObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
+        futureList.addAll(s3ObjectList);
+        s3ObjectList.clear();
+        while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
-            doList();
-            count += s3ObjectList.size();
-            futureList.addAll(s3ObjectList);
+            try {
+                doList();
+                count += s3ObjectList.size();
+                futureList.addAll(s3ObjectList);
+                s3ObjectList.clear();
+            } catch (SuitsException e) {
+                s3ObjectList = futureList;
+                throw e;
+            }
         }
         s3ObjectList = futureList;
+        futureList = null;
         return hasNext();
     }
 
@@ -171,17 +172,13 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
 
     @Override
     public String currentEndKey() {
-        if (s3ObjectList.size() > 0) return s3ObjectList.get(s3ObjectList.size() - 1).getKey();
-        return lastKey;
+        return endKey;
     }
 
     @Override
     public synchronized String truncate() {
-        String truncateMarker = null;
-        if (hasNext()) {
-            truncateMarker = listObjectsRequest.getContinuationToken();
-            listObjectsRequest.setContinuationToken(null);
-        }
+        String truncateMarker = listObjectsRequest.getContinuationToken();
+        listObjectsRequest.setContinuationToken(null);
         return truncateMarker;
     }
 
@@ -195,6 +192,6 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
         s3Client.shutdown();
 //        listObjectsRequest = null;
         endPrefix = null;
-        s3ObjectList = defaultList;
+        s3ObjectList.clear();
     }
 }
