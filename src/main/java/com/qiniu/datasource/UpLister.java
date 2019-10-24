@@ -197,6 +197,7 @@ public class UpLister implements ILister<FileItem> {
         List<FileItem> futureList = CloudApiUtils.initFutureList(limit, times);
         futureList.addAll(fileItems);
         fileItems.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
             try {
@@ -205,12 +206,14 @@ public class UpLister implements ILister<FileItem> {
                 futureList.addAll(fileItems);
                 fileItems.clear();
             } catch (SuitsException e) {
-                fileItems = futureList;
-                throw e;
+//                fileItems = futureList;
+//                throw e;
+                exception = e;
             }
         }
         fileItems = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 

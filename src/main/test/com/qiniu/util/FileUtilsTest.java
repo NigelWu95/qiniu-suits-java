@@ -55,5 +55,9 @@ public class FileUtilsTest {
         System.out.println(file.isHidden());
         System.out.println(file.lastModified());
         System.out.println(file.length());
+        File[] files = file.listFiles();
+//        System.out.println(files.length);
+        File[] files2 = new File("/Users/wubingheng/Downloads/").listFiles();
+        System.out.println(files2.length);
     }
 }

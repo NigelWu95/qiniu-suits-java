@@ -143,6 +143,7 @@ public class TenLister implements ILister<COSObjectSummary> {
         List<COSObjectSummary> futureList = CloudApiUtils.initFutureList(listObjectsRequest.getMaxKeys(), times);
         futureList.addAll(cosObjectList);
         cosObjectList.clear();
+        SuitsException exception = null;
         while (futureList.size() < expected && times > 0 && hasNext()) {
             times--;
             try {
@@ -151,12 +152,14 @@ public class TenLister implements ILister<COSObjectSummary> {
                 futureList.addAll(cosObjectList);
                 cosObjectList.clear();
             } catch (SuitsException e) {
-                cosObjectList = futureList;
-                throw e;
+//                cosObjectList = futureList;
+//                throw e;
+                exception = e;
             }
         }
         cosObjectList = futureList;
         futureList = null;
+        if (exception != null) throw exception;
         return hasNext();
     }
 

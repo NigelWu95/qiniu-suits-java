@@ -380,11 +380,18 @@ public class CommonParams {
             qiniuAccessKey = entryParam.getValue("ak").trim();
             qiniuSecretKey = entryParam.getValue("sk").trim();
         } else {
-            qiniuAccessKey = accountMap.get(account + "-qiniu-id");
-            qiniuSecretKey = accountMap.get(account + "-qiniu-secret");
-            if (qiniuAccessKey == null || qiniuSecretKey == null) throw new IOException("no account: " + account);
-            qiniuAccessKey = new String(decoder.decode(qiniuAccessKey.substring(8)));
-            qiniuSecretKey = new String(decoder.decode(qiniuSecretKey.substring(8)));
+            // 如果同时设置了 ak、sk，则覆盖从 account 中获取的密钥
+            qiniuAccessKey = entryParam.getValue("ak", null);
+            if (qiniuAccessKey == null) {
+                qiniuAccessKey = accountMap.get(account + "-qiniu-id");
+                qiniuSecretKey = accountMap.get(account + "-qiniu-secret");
+                if (qiniuAccessKey == null || qiniuSecretKey == null) throw new IOException("no account: " + account);
+                qiniuAccessKey = new String(decoder.decode(qiniuAccessKey.substring(8)));
+                qiniuSecretKey = new String(decoder.decode(qiniuSecretKey.substring(8)));
+            } else {
+                qiniuAccessKey = qiniuAccessKey.trim();
+                qiniuSecretKey = entryParam.getValue("sk").trim();
+            }
         }
     }
 
@@ -393,11 +400,17 @@ public class CommonParams {
             tencentSecretId = entryParam.getValue("ten-id").trim();
             tencentSecretKey = entryParam.getValue("ten-secret").trim();
         } else {
-            tencentSecretId = accountMap.get(account + "-tencent-id");
-            tencentSecretKey = accountMap.get(account + "-tencent-secret");
-            if (tencentSecretId == null || tencentSecretKey == null) throw new IOException("no account: " + account);
-            tencentSecretId = new String(decoder.decode(tencentSecretId.substring(8)));
-            tencentSecretKey = new String(decoder.decode(tencentSecretKey.substring(8)));
+            tencentSecretId = entryParam.getValue("ten-id", null);
+            if (tencentSecretId == null) {
+                tencentSecretId = accountMap.get(account + "-tencent-id");
+                tencentSecretKey = accountMap.get(account + "-tencent-secret");
+                if (tencentSecretId == null || tencentSecretKey == null) throw new IOException("no account: " + account);
+                tencentSecretId = new String(decoder.decode(tencentSecretId.substring(8)));
+                tencentSecretKey = new String(decoder.decode(tencentSecretKey.substring(8)));
+            } else {
+                tencentSecretId = tencentSecretId.trim();
+                tencentSecretKey = entryParam.getValue("ten-secret").trim();
+            }
         }
     }
 
@@ -406,11 +419,17 @@ public class CommonParams {
             aliyunAccessId = entryParam.getValue("ali-id").trim();
             aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
         } else {
-            aliyunAccessId = accountMap.get(account + "-aliyun-id");
-            aliyunAccessSecret = accountMap.get(account + "-aliyun-secret");
-            if (aliyunAccessId == null || aliyunAccessSecret == null) throw new IOException("no account: " + account);
-            aliyunAccessId = new String(decoder.decode(aliyunAccessId.substring(8)));
-            aliyunAccessSecret = new String(decoder.decode(aliyunAccessSecret.substring(8)));
+            aliyunAccessId = entryParam.getValue("ali-id", null);
+            if (aliyunAccessId == null) {
+                aliyunAccessId = accountMap.get(account + "-aliyun-id");
+                aliyunAccessSecret = accountMap.get(account + "-aliyun-secret");
+                if (aliyunAccessId == null || aliyunAccessSecret == null) throw new IOException("no account: " + account);
+                aliyunAccessId = new String(decoder.decode(aliyunAccessId.substring(8)));
+                aliyunAccessSecret = new String(decoder.decode(aliyunAccessSecret.substring(8)));
+            } else {
+                aliyunAccessId = aliyunAccessId.trim();
+                aliyunAccessSecret = entryParam.getValue("ali-secret").trim();
+            }
         }
     }
 
@@ -419,11 +438,17 @@ public class CommonParams {
             upyunUsername = entryParam.getValue("up-id").trim();
             upyunPassword = entryParam.getValue("up-secret").trim();
         } else {
-            upyunUsername = accountMap.get(account + "-upyun-id");
-            upyunPassword = accountMap.get(account + "-upyun-secret");
-            if (upyunUsername == null || upyunPassword == null) throw new IOException("no account: " + account);
-            upyunUsername = new String(decoder.decode(upyunUsername.substring(8)));
-            upyunPassword = new String(decoder.decode(upyunPassword.substring(8)));
+            upyunUsername = entryParam.getValue("up-id", null);
+            if (upyunUsername == null) {
+                upyunUsername = accountMap.get(account + "-upyun-id");
+                upyunPassword = accountMap.get(account + "-upyun-secret");
+                if (upyunUsername == null || upyunPassword == null) throw new IOException("no account: " + account);
+                upyunUsername = new String(decoder.decode(upyunUsername.substring(8)));
+                upyunPassword = new String(decoder.decode(upyunPassword.substring(8)));
+            } else {
+                upyunUsername = upyunUsername.trim();
+                upyunPassword = entryParam.getValue("up-secret").trim();
+            }
         }
     }
 
@@ -432,11 +457,17 @@ public class CommonParams {
             s3AccessId = entryParam.getValue("s3-id").trim();
             s3SecretKey = entryParam.getValue("s3-secret").trim();
         } else {
-            s3AccessId = accountMap.get(account + "-s3-id");
-            s3SecretKey = accountMap.get(account + "-s3-secret");
-            if (s3AccessId == null || s3SecretKey == null) throw new IOException("no account: " + account);
-            s3AccessId = new String(decoder.decode(s3AccessId.substring(8)));
-            s3SecretKey = new String(decoder.decode(s3SecretKey.substring(8)));
+            s3AccessId = entryParam.getValue("s3-id", null);
+            if (s3AccessId == null) {
+                s3AccessId = accountMap.get(account + "-s3-id");
+                s3SecretKey = accountMap.get(account + "-s3-secret");
+                if (s3AccessId == null || s3SecretKey == null) throw new IOException("no account: " + account);
+                s3AccessId = new String(decoder.decode(s3AccessId.substring(8)));
+                s3SecretKey = new String(decoder.decode(s3SecretKey.substring(8)));
+            } else {
+                s3AccessId = s3AccessId.trim();
+                s3SecretKey = entryParam.getValue("s3-secret").trim();
+            }
         }
     }
 
@@ -445,11 +476,17 @@ public class CommonParams {
             huaweiAccessId = entryParam.getValue("hua-id").trim();
             huaweiSecretKey = entryParam.getValue("hua-secret").trim();
         } else {
-            huaweiAccessId = accountMap.get(account + "-huawei-id");
-            huaweiSecretKey = accountMap.get(account + "-huawei-secret");
-            if (huaweiAccessId == null || huaweiSecretKey == null) throw new IOException("no account: " + account);
-            huaweiAccessId = new String(decoder.decode(huaweiAccessId.substring(8)));
-            huaweiSecretKey = new String(decoder.decode(huaweiSecretKey.substring(8)));
+            huaweiAccessId = entryParam.getValue("hua-id", null);
+            if (huaweiAccessId == null) {
+                huaweiAccessId = accountMap.get(account + "-huawei-id");
+                huaweiSecretKey = accountMap.get(account + "-huawei-secret");
+                if (huaweiAccessId == null || huaweiSecretKey == null) throw new IOException("no account: " + account);
+                huaweiAccessId = new String(decoder.decode(huaweiAccessId.substring(8)));
+                huaweiSecretKey = new String(decoder.decode(huaweiSecretKey.substring(8)));
+            } else {
+                huaweiAccessId = huaweiAccessId.trim();
+                huaweiSecretKey = entryParam.getValue("hua-secret", huaweiSecretKey).trim();
+            }
         }
     }
 
@@ -458,11 +495,17 @@ public class CommonParams {
             baiduAccessId = entryParam.getValue("bai-id").trim();
             baiduSecretKey = entryParam.getValue("bai-secret").trim();
         } else {
-            baiduAccessId = accountMap.get(account + "-baidu-id");
-            baiduSecretKey = accountMap.get(account + "-baidu-secret");
-            if (baiduAccessId == null || baiduSecretKey == null) throw new IOException("no account: " + account);
-            baiduAccessId = new String(decoder.decode(baiduAccessId.substring(8)));
-            baiduSecretKey = new String(decoder.decode(baiduSecretKey.substring(8)));
+            baiduAccessId = entryParam.getValue("bai-id", null);
+            if (baiduAccessId == null) {
+                baiduAccessId = accountMap.get(account + "-baidu-id");
+                baiduSecretKey = accountMap.get(account + "-baidu-secret");
+                if (baiduAccessId == null || baiduSecretKey == null) throw new IOException("no account: " + account);
+                baiduAccessId = new String(decoder.decode(baiduAccessId.substring(8)));
+                baiduSecretKey = new String(decoder.decode(baiduSecretKey.substring(8)));
+            } else {
+                baiduAccessId = baiduAccessId.trim();
+                baiduSecretKey = entryParam.getValue("bai-secret", baiduSecretKey).trim();
+            }
         }
     }
 

@@ -316,7 +316,12 @@ public final class CloudApiUtils {
         if (regionName == null) return Region.autoRegion();
         switch (regionName) {
             case "z0":
-            case "huadong": return Region.huadong();
+            case "huadong":
+                Region.Builder builder = new Region.Builder(Region.huadong());
+                return builder.iovipHost("iovip-z0.qbox.me")
+                        .rsfHost("rsf-z0.qbox.me")
+                        .rsHost("rs-z0.qbox.me")
+                        .apiHost("api-z0.qiniu.com").build();
             case "z1":
             case "huabei": return Region.huabei();
             case "z2":
