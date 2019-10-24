@@ -53,8 +53,8 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected List<String> rmFields;
     protected List<String> fields;
     private ILineProcess<T> processor; // 定义的资源处理器
-    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
+    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
 
     public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
@@ -166,15 +166,14 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         ILineProcess<T> lineProcessor = null;
         IResultOutput<W> saver = null;
         try {
+            saver = getNewResultSaver(orderStr);
+            saverMap.put(orderStr, saver);
             if (processor != null) {
                 lineProcessor = processor.clone();
                 processorMap.put(orderStr, lineProcessor);
             }
-            saver = getNewResultSaver(orderStr);
-            saverMap.put(orderStr, saver);
             export(reader, saver, lineProcessor);
             recorder.remove(reader.getName());
-            saverMap.remove(orderStr);
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", reader.getName(), recorder.getString(reader.getName()), e.error(), e);
@@ -185,8 +184,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         } finally {
             try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
             infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
-            if (saver != null) saver.closeWriters();
-            if (lineProcessor != null) lineProcessor.closeResource();
+            if (saver != null) {
+                saver.closeWriters();
+                saver = null; // let gc work
+            }
+            saverMap.remove(orderStr);
+            if (lineProcessor != null) {
+                lineProcessor.closeResource();
+                lineProcessor = null;
+            }
             UniOrderUtils.returnOrder(order);
             reader.close();
         }
@@ -254,7 +260,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         rootLogger.info("order\tpath\tquantity");
         ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
-        FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
+        if (linesMap == null) FileSaveMapper.append = false; // 没有 lines 初始设置时默认让持久化非追加写入（即清除之前存在的文件）
         try {
             String start = null;
             for (IReader<E> fileReader : fileReaders) {

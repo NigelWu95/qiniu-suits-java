@@ -131,13 +131,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
         if (prefixesMap == null || prefixesMap.size() <= 0) {
-            this.prefixesMap = new HashMap<>();
+            this.prefixesMap = new HashMap<>(threads);
             prefixLeft = true;
             prefixRight = true;
             if (hasAntiPrefixes) prefixes = originPrefixList.stream().sorted().collect(Collectors.toList());
         } else {
             if (prefixesMap.containsKey(null)) throw new IOException("");
-            this.prefixesMap = new HashMap<>(prefixesMap);
+            this.prefixesMap = new HashMap<>(threads);
+            this.prefixesMap.putAll(prefixesMap);
             prefixes = prefixesMap.keySet().stream().sorted().collect(Collectors.toList());
             int size = prefixes.size();
             Iterator<String> iterator = prefixes.iterator();
@@ -318,11 +319,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 saver = null; // let gc work
             }
             saverMap.remove(orderStr);
+            // 实际上 processorMap 记录的 key 和 saverMap 的是一致的，只要 saverMap 中做了移除说明已经正常处理完任务，最后直接根据
+            // saverMap 的 keySet 来 check 即可
             if (lineProcessor != null) {
                 lineProcessor.closeResource();
                 lineProcessor = null;
-                // 实际上 processorMap 记录的 key 和 saverMap 的是一致的，只要 saverMap 中做了移除说明已经正常处理完任务，最后直接根据
-                // saverMap 的 keySet 来 check 即可
             }
             UniOrderUtils.returnOrder(order); // 最好执行完 close 再归还 order，避免上个文件描述符没有被使用，order 又被使用
             lister.close();
@@ -621,9 +622,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
-        FileSaveMapper.append = false; // 默认让持久化非追加写入（即清除之前存在的文件）
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
+            FileSaveMapper.append = false; // 没有初始 prefixes 设置则默认让持久化非追加写入（即清除之前存在的文件）
             startLister = generateLister("");
             if (threads > 1) {
                 prefixes = moreValidPrefixes(startLister, false);

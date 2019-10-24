@@ -88,19 +88,28 @@ public class QiniuLister implements ILister<FileInfo> {
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
         List<FileInfo> fileInfoList = new ArrayList<>(limit);
-        JsonObject jsonObject = null;
-        String line;
+        String line = bufferedReader.readLine();
         try {
-            while ((line = bufferedReader.readLine()) != null) {
-                jsonObject = JsonUtils.toJsonObject(line);
-                if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
-                    fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
-                }
-            }
-            if (jsonObject != null && jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
-                this.marker = jsonObject.get("marker").getAsString();
-            } else {
+            if (line == null) {
                 this.marker = null;
+            } else {
+                JsonObject jsonObject = JsonUtils.toJsonObject(line);
+                if (jsonObject.has("item") || jsonObject.has("marker")) {
+                    fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                    while ((line = bufferedReader.readLine()) != null) {
+                        jsonObject = JsonUtils.toJsonObject(line);
+                        if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
+                            fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                        }
+                    }
+                } else {
+                    throw new QiniuException(response);
+                }
+                if (jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
+                    this.marker = jsonObject.get("marker").getAsString();
+                } else {
+                    this.marker = null;
+                }
             }
         } finally {
             response.close();
