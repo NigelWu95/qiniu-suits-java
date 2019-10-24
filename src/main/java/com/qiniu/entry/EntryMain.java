@@ -49,6 +49,9 @@ public class EntryMain {
                 System.out.println("secret: " + keys[1]);
             }
             return;
+        } else if (paramsMap.containsKey("delaccount")) {
+            AccountUtils.deleteAccount(paramsMap.get("delaccount"));
+            return;
         }
         if (paramsMap.containsKey("verify")) processVerify = Boolean.parseBoolean(paramsMap.get("verify"));
         boolean single = paramsMap.containsKey("single") && Boolean.parseBoolean(paramsMap.get("single"));

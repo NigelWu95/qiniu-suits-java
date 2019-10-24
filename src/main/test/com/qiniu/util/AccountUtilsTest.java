@@ -31,4 +31,13 @@ public class AccountUtilsTest {
         System.out.println(keys3[0] + "  " + keys3[1]);
     }
 
+    @Test
+    public void testDelAccount() {
+        try {
+            AccountUtils.deleteAccount("s3-test");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
