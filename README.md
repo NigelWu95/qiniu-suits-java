@@ -73,7 +73,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 `-getaccount=test-tencent` 表示查询设置的腾讯账号名为 test 的密钥  
 
 ### 1 程序运行过程  
-##### （1）批处理模式：[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据源[结果持久化](docs/resultsave.md)] => [数据[处理过程](#5-处理过程)]   
+##### （1）批处理模式：[读取[数据源](docs/datasource.md)] => [选择[过滤器](docs/filter.md)] => [数据[处理过程](#5-处理过程)] => [[结果持久化](docs/resultsave.md)]   
 ##### （2）交互模式：从命令行输入数据时，process 支持[交互模式](docs/interactive.md)运行，一次启动，可无限次命令行输入 data，输入一次处理一次并返回结果。  
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
@@ -392,7 +392,7 @@ pause-duration 的最小暂停时间为 1800s(0.5 小时) 最大暂停时间为 
 或者 pause-duration 小于 0 时同样表示不执行时间计划。  
 
 ### 13 暂停和恢复
-暂停和恢复是操作系统特性，如果对系统熟悉也可以基于此来制作时间计划。  
+暂停和恢复是操作系统特性，如果对系统熟悉也可以基于此来制作时间计划。Linux/Mac 下支持以下操作来暂停和恢复进程：  
 暂停（Ctrl + Z 命令）：  
 ```shell
 ^Z

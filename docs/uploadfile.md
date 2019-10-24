@@ -41,6 +41,13 @@ crc=
 |policy.[]| 字符串/整型数字| 可以设置一些上传策略参数，如 policy.deleteAfterDays=7 表示七天之后自动删除文件，其他参数可参考[七牛上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy)|  
 |params.[]| 字符串| 上传时设置的一些变量参数，如 params.x:user=138300 表示 x:user 的信息为 138300，可参考[七牛上传自定义变量](https://developer.qiniu.com/kodo/manual/1235/vars#xvar)|  
 |crc| true/false| 是否开启 crc32 来校验文件的上传，默认为 false|  
+|line-config| 配置文件路径|已上传的文件在 path 中的位置标识，用于[断点续操作](../README.md#10-断点续操作)，不需要自行编写该配置|  
+
+#### 关于 line-config
+line-config 需要的断点文件基于上次上传文件操作未完成的情况下可以产生，理论上只要上传的目录结构没有发生变化，断点文件就能针对上次未完成上传的文件进
+行上传，而不会所有文件重新上传一遍，断点信息的获取参考[断点续操作](../README.md#10-断点续操作)。
+
+#### 上传超时时间
 timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](../README.md#7-超时设置)  
 
 ### 关于上传的文件路径
