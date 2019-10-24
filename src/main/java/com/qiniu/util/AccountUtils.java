@@ -56,7 +56,18 @@ public class AccountUtils {
             accountName = account;
             id = entryParam.getValue("ak", null);
             if (id == null) {
-                if (map.containsKey(accountName)) {
+                map.remove("account");
+                String[] items;
+                boolean success = false;
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    items = entry.getKey().split("-");
+                    if (items.length < 3) {
+                        throw new IOException("your account file is be destroyed.");
+                    } else if (accountName.equals(items[0])) {
+                        success = true;
+                    }
+                }
+                if (success) {
                     map.put("account", accountName);
                     BufferedWriter writer = new BufferedWriter(new FileWriter(accountFile));
                     for (Map.Entry<String, String> entry : map.entrySet()) {
