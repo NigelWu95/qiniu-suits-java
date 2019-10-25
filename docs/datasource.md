@@ -247,7 +247,7 @@ threads=300
 prefixes=
 #region=
 ```  
-**使用七牛数据源除了可以自行指定 region，也可以单独指定 rsf,rs,api 域名（一般不需要用到），如**：  
+**使用七牛数据源除了可以自行指定 region（建议您自行指定 region 较好），也可以单独指定 rsf,rs,api 域名（一般不需要用到），如**：  
 ```
 rsf-domain=rsf-z0.qiniu.com
 rs-domain=rs-z0.qiniu.com

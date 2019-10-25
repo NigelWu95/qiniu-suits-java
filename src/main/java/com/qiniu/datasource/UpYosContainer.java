@@ -129,6 +129,39 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         return nextPrefixes;
     }
 
+    private void listAndGetNextPrefixesV2(List<String> prefixes) throws Exception {
+        List<String> tempPrefixes;
+        Future<List<String>> future;
+        for (String prefix : prefixes) {
+            future = executorPool.submit(() -> {
+                try {
+                    UpLister upLister = (UpLister) generateLister(prefix);
+                    if (upLister.hasNext() || upLister.getDirectories() != null) {
+                        listing(upLister);
+                        if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
+                            return null;
+                        } else if (hasAntiPrefixes) {
+                            return upLister.getDirectories().stream().filter(this::checkPrefix)
+                                    .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                        } else {
+                            for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
+                            return upLister.getDirectories();
+                        }
+                    } else {
+                        executorPool.submit(() -> listing(upLister));
+                        return null;
+                    }
+                } catch (SuitsException e) {
+                    try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                    errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
+                    return null;
+                }
+            });
+            tempPrefixes = future.get();
+            if (tempPrefixes != null) listAndGetNextPrefixesV2(tempPrefixes);
+        }
+    }
+
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
@@ -160,27 +193,28 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         executorPool = Executors.newFixedThreadPool(threads);
         showdownHook();
         try {
-            prefixes = listAndGetNextPrefixes(prefixes);
-            while (prefixes.size() > 0) {
-                prefixes = listAndGetNextPrefixes(prefixes);
-            }
-            Iterator<Future<List<String>>> iterator;
-            Future<List<String>> future;
-            List<String> tempPrefixes;
-            while (futures.size() > 0) {
-                iterator = futures.iterator();
-                while (iterator.hasNext()) {
-                    future = iterator.next();
-                    if (future.isDone()) {
-                        tempPrefixes = future.get();
-                        if (tempPrefixes != null) prefixes.addAll(tempPrefixes);
-                        iterator.remove();
-                    }
-                }
-                while (prefixes.size() > 0) {
-                    prefixes = listAndGetNextPrefixes(prefixes);
-                }
-            }
+            listAndGetNextPrefixesV2(prefixes);
+//            prefixes = listAndGetNextPrefixes(prefixes);
+//            while (prefixes.size() > 0) {
+//                prefixes = listAndGetNextPrefixes(prefixes);
+//            }
+//            Iterator<Future<List<String>>> iterator;
+//            Future<List<String>> future;
+//            List<String> tempPrefixes;
+//            while (futures.size() > 0) {
+//                iterator = futures.iterator();
+//                while (iterator.hasNext()) {
+//                    future = iterator.next();
+//                    if (future.isDone()) {
+//                        tempPrefixes = future.get();
+//                        if (tempPrefixes != null) prefixes.addAll(tempPrefixes);
+//                        iterator.remove();
+//                    }
+//                }
+//                while (prefixes.size() > 0) {
+//                    prefixes = listAndGetNextPrefixes(prefixes);
+//                }
+//            }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
                 sleep(1000);
