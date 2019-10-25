@@ -6,7 +6,6 @@ import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.model.BosObjectSummary;
 import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
-import com.obs.services.model.ObsObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
