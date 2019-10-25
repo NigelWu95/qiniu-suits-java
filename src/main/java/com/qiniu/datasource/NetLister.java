@@ -194,7 +194,8 @@ public class NetLister implements ILister<NOSObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (nosObjectList.size() > 0) {
-            endKey = nosObjectList.get(nosObjectList.size() - 1).getKey();
+            NOSObjectSummary last = nosObjectList.get(nosObjectList.size() - 1);
+            if (last != null) endKey = last.getKey();
             nosObjectList.clear();
         }
     }

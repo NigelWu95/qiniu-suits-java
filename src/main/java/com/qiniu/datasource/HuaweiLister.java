@@ -199,7 +199,8 @@ public class HuaweiLister implements ILister<ObsObject> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (obsObjects.size() > 0) {
-            endKey = obsObjects.get(obsObjects.size() - 1).getObjectKey();
+            ObsObject last = obsObjects.get(obsObjects.size() - 1);
+            if (last != null) endKey = last.getObjectKey();
             obsObjects.clear();
         }
     }

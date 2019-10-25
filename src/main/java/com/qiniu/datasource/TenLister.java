@@ -8,6 +8,7 @@ import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
+import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
@@ -195,7 +196,8 @@ public class TenLister implements ILister<COSObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (cosObjectList.size() > 0) {
-            endKey = cosObjectList.get(cosObjectList.size() - 1).getKey();
+            COSObjectSummary last = cosObjectList.get(cosObjectList.size() - 1);
+            if (last != null) endKey = last.getKey();
             cosObjectList.clear();
         }
     }

@@ -196,7 +196,8 @@ public class AliLister implements ILister<OSSObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (ossObjectList.size() > 0) {
-            endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+            OSSObjectSummary last = ossObjectList.get(ossObjectList.size() - 1);
+            if (last != null) endKey = last.getKey();
             ossObjectList.clear();
         }
     }

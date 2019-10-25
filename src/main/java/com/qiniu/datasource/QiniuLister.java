@@ -254,7 +254,8 @@ public class QiniuLister implements ILister<FileInfo> {
 //        marker = null; // 结束时本来就是已经是 marker = null;
         endPrefix = null;
         if (fileInfoList.size() > 0) {
-            endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+            FileInfo last = fileInfoList.get(fileInfoList.size() - 1);
+            if (last != null) endKey = last.key;
             fileInfoList.clear();
         }
     }

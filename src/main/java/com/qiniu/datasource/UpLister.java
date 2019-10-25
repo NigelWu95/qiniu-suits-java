@@ -254,7 +254,8 @@ public class UpLister implements ILister<FileItem> {
         upYunClient = null;
         endPrefix = null;
         if (fileItems.size() > 0) {
-            endKey = fileItems.get(fileItems.size() - 1).key;
+            FileItem last = fileItems.get(fileItems.size() - 1);
+            if (last != null) endKey = last.key;
             fileItems.clear();
         }
 //        directories = null;

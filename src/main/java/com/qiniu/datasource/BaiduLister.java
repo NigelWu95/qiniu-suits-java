@@ -6,6 +6,7 @@ import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.model.BosObjectSummary;
 import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
+import com.obs.services.model.ObsObject;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
@@ -195,7 +196,8 @@ public class BaiduLister implements ILister<BosObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (bosObjectList.size() > 0) {
-            endKey = bosObjectList.get(bosObjectList.size() - 1).getKey();
+            BosObjectSummary last = bosObjectList.get(bosObjectList.size() - 1);
+            if (last != null) endKey = last.getKey();
             bosObjectList.clear();
         }
     }
