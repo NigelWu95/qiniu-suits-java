@@ -19,7 +19,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<BosObjectSummary> bosObjectList;
-    private String endKey;
+    private BosObjectSummary last;
     private long count;
 
     public BaiduLister(BosClient bosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -124,7 +124,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
             count += bosObjectList.size();
         } else {
             if (bosObjectList.size() > 0) {
-                endKey = bosObjectList.get(bosObjectList.size() - 1).getKey();
+                last = bosObjectList.get(bosObjectList.size() - 1);
                 bosObjectList.clear();
             }
         }
@@ -172,8 +172,9 @@ public class BaiduLister implements ILister<BosObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
-        if (endKey != null) return endKey;
-        if (bosObjectList.size() > 0) return bosObjectList.get(bosObjectList.size() - 1).getKey();
+        if (last != null) return last.getKey();
+        if (bosObjectList.size() > 0) last = bosObjectList.get(bosObjectList.size() - 1);
+        if (last != null) return last.getKey();
         return null;
     }
 
@@ -195,8 +196,7 @@ public class BaiduLister implements ILister<BosObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (bosObjectList.size() > 0) {
-            BosObjectSummary last = bosObjectList.get(bosObjectList.size() - 1);
-            if (last != null) endKey = last.getKey();
+            last = bosObjectList.get(bosObjectList.size() - 1);
             bosObjectList.clear();
         }
     }

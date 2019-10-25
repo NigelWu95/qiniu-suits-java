@@ -10,7 +10,6 @@ import com.qiniu.interfaces.ILister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class HuaweiLister implements ILister<ObsObject> {
@@ -20,7 +19,7 @@ public class HuaweiLister implements ILister<ObsObject> {
     private String endPrefix;
     private String truncateMarker;
     private List<ObsObject> obsObjects;
-    private String endKey;
+    private ObsObject last;
     private long count;
 
     public HuaweiLister(ObsClient obsClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -124,7 +123,7 @@ public class HuaweiLister implements ILister<ObsObject> {
             count += obsObjects.size();
         } else {
             if (obsObjects.size() > 0) {
-                endKey = obsObjects.get(obsObjects.size() - 1).getObjectKey();
+                last = obsObjects.get(obsObjects.size() - 1);
                 obsObjects.clear();
             }
         }
@@ -172,8 +171,9 @@ public class HuaweiLister implements ILister<ObsObject> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
-        if (endKey != null) return endKey;
-        if (obsObjects.size() > 0) return obsObjects.get(obsObjects.size() - 1).getObjectKey();
+        if (last != null) return last.getObjectKey();
+        if (obsObjects.size() > 0) last = obsObjects.get(obsObjects.size() - 1);
+        if (last != null) return last.getObjectKey();
         return null;
     }
 
@@ -199,8 +199,7 @@ public class HuaweiLister implements ILister<ObsObject> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (obsObjects.size() > 0) {
-            ObsObject last = obsObjects.get(obsObjects.size() - 1);
-            if (last != null) endKey = last.getObjectKey();
+            last = obsObjects.get(obsObjects.size() - 1);
             obsObjects.clear();
         }
     }

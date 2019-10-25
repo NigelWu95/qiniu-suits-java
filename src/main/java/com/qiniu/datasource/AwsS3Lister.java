@@ -18,8 +18,8 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     private ListObjectsV2Request listObjectsRequest;
     private String endPrefix;
     private List<S3ObjectSummary> s3ObjectList;
-    private long count;
     private String endKey;
+    private long count;
 
     public AwsS3Lister(AmazonS3 s3Client, String bucket, String prefix, String marker, String start, String endPrefix,
                        int max) throws SuitsException {

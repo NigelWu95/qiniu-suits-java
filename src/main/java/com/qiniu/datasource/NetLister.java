@@ -18,7 +18,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<NOSObjectSummary> nosObjectList;
-    private String endKey;
+    private NOSObjectSummary last;
     private long count;
 
     public NetLister(NosClient nosClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -123,7 +123,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
             count += nosObjectList.size();
         } else {
             if (nosObjectList.size() > 0) {
-                endKey = nosObjectList.get(nosObjectList.size() - 1).getKey();
+                last = nosObjectList.get(nosObjectList.size() - 1);
                 nosObjectList.clear();
             }
         }
@@ -171,8 +171,9 @@ public class NetLister implements ILister<NOSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
-        if (endKey != null) return endKey;
-        if (nosObjectList.size() > 0) return nosObjectList.get(nosObjectList.size() - 1).getKey();
+        if (last != null) return last.getKey();
+        if (nosObjectList.size() > 0) last = nosObjectList.get(nosObjectList.size() - 1);
+        if (last != null) return last.getKey();
         return null;
     }
 
@@ -194,8 +195,7 @@ public class NetLister implements ILister<NOSObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (nosObjectList.size() > 0) {
-            NOSObjectSummary last = nosObjectList.get(nosObjectList.size() - 1);
-            if (last != null) endKey = last.getKey();
+            last = nosObjectList.get(nosObjectList.size() - 1);
             nosObjectList.clear();
         }
     }
