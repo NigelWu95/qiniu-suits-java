@@ -7,22 +7,22 @@ public class SuitsException extends IOException {
     private int statusCode;
 
     public SuitsException(int statusCode, String error) {
-        super("code: " + statusCode + ", error: " + error);
+        super(String.join("", "code: ", String.valueOf(statusCode), ", error: ", error));
         this.statusCode = statusCode;
     }
 
     public SuitsException(Exception e, int statusCode) {
-        super(statusCode + ", " + e.getMessage(), e);
+        super(String.join(", ", String.valueOf(statusCode), e.getMessage()), e);
         this.statusCode = statusCode;
     }
 
     public SuitsException(Exception e, int statusCode, String error) {
-        super(statusCode + ", " + error + ", " + e.getMessage(), e);
+        super(String.join(", ", String.valueOf(statusCode), error, e.getMessage()), e);
         this.statusCode = statusCode;
     }
 
     public SuitsException(SuitsException e, String message) {
-        super(e.getMessage() + ", " + message, e);
+        super(String.join(", ", e.getMessage(), message), e);
         this.statusCode = e.getStatusCode();
     }
 

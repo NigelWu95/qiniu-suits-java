@@ -228,7 +228,7 @@ public final class FileUtils {
         File[] files = file.listFiles();
         if (files != null && files.length > 0) {
             for (File file1 : files) {
-                if (file1.getName().startsWith(key)) {
+                if (file1.getName().startsWith(key) && file1.length() > 0) {
                     return true;
                 }
             }
