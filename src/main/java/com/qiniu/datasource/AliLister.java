@@ -19,7 +19,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
     private String endPrefix;
     private String truncateMarker;
     private List<OSSObjectSummary> ossObjectList;
-    private String endKey;
+    private OSSObjectSummary last;
     private long count;
 
     public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max) throws SuitsException {
@@ -125,7 +125,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
             count += ossObjectList.size();
         } else {
             if (ossObjectList.size() > 0) {
-                endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+                last = ossObjectList.get(ossObjectList.size() - 1);
                 ossObjectList.clear();
             }
         }
@@ -173,8 +173,9 @@ public class AliLister implements ILister<OSSObjectSummary> {
     public synchronized String currentEndKey() {
         if (hasNext()) return getMarker();
         if (truncateMarker != null && !"".equals(truncateMarker)) return truncateMarker;
-        if (endKey != null) return endKey;
-        if (ossObjectList.size() > 0) return ossObjectList.get(ossObjectList.size() - 1).getKey();
+        if (last != null) return last.getKey();
+        if (ossObjectList.size() > 0) last = ossObjectList.get(ossObjectList.size() - 1);
+        if (last != null) return last.getKey();
         return null;
     }
 
@@ -196,7 +197,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
 //        listObjectsRequest = null;
         endPrefix = null;
         if (ossObjectList.size() > 0) {
-            endKey = ossObjectList.get(ossObjectList.size() - 1).getKey();
+            last = ossObjectList.get(ossObjectList.size() - 1);
             ossObjectList.clear();
         }
     }

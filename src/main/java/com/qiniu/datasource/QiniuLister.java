@@ -23,7 +23,7 @@ public class QiniuLister implements ILister<FileInfo> {
     private int limit;
     private String truncateMarker;
     private List<FileInfo> fileInfoList;
-    private String endKey;
+    private FileInfo last;
     private long count;
 
     public QiniuLister(BucketManager bucketManager, String bucket, String prefix, String marker, String endPrefix,
@@ -93,20 +93,26 @@ public class QiniuLister implements ILister<FileInfo> {
             if (line == null) {
                 this.marker = null;
             } else {
+                JsonElement item;
                 JsonObject jsonObject = JsonUtils.toJsonObject(line);
                 if (jsonObject.has("item") || jsonObject.has("marker")) {
-                    fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                    item = jsonObject.get("item");
+                    if (item != null && !(item instanceof JsonNull)) {
+                        fileInfoList.add(JsonUtils.fromJson(item, FileInfo.class));
+                    }
                     while ((line = bufferedReader.readLine()) != null) {
                         jsonObject = JsonUtils.toJsonObject(line);
-                        if (jsonObject.get("item") != null && !(jsonObject.get("item") instanceof JsonNull)) {
-                            fileInfoList.add(JsonUtils.fromJson(jsonObject.get("item"), FileInfo.class));
+                        item = jsonObject.get("item");
+                        if (item != null && !(item instanceof JsonNull)) {
+                            fileInfoList.add(JsonUtils.fromJson(item, FileInfo.class));
                         }
                     }
                 } else {
                     throw new SuitsException(500, String.join(", ", response.getInfo(), line));
                 }
-                if (jsonObject.get("marker") != null && !(jsonObject.get("marker") instanceof JsonNull)) {
-                    this.marker = jsonObject.get("marker").getAsString();
+                item = jsonObject.get("marker");
+                if (item != null && !(item instanceof JsonNull)) {
+                    this.marker = item.getAsString();
                 } else {
                     this.marker = null;
                 }
@@ -181,7 +187,7 @@ public class QiniuLister implements ILister<FileInfo> {
             count += fileInfoList.size();
         } else {
             if (fileInfoList.size() > 0) {
-                endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+                last = fileInfoList.get(fileInfoList.size() - 1);
                 fileInfoList.clear();
             }
         }
@@ -231,8 +237,9 @@ public class QiniuLister implements ILister<FileInfo> {
     public synchronized String currentEndKey() {
         if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
         if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuMarker(truncateMarker);
-        if (endKey != null) return endKey;
-        if (fileInfoList.size() > 0) return fileInfoList.get(fileInfoList.size() - 1).key;
+        if (last != null) return last.key;
+        if (fileInfoList.size() > 0) last = fileInfoList.get(fileInfoList.size() - 1);
+        if (last != null) return last.key;
         return null;
     }
 
@@ -254,7 +261,7 @@ public class QiniuLister implements ILister<FileInfo> {
 //        marker = null; // 结束时本来就是已经是 marker = null;
         endPrefix = null;
         if (fileInfoList.size() > 0) {
-            endKey = fileInfoList.get(fileInfoList.size() - 1).key;
+            last = fileInfoList.get(fileInfoList.size() - 1);
             fileInfoList.clear();
         }
     }
