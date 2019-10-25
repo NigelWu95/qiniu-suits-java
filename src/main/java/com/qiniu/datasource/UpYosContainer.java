@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
@@ -114,19 +115,22 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         }
     }
 
-//    private AtomicLong atomicLong = new AtomicLong(0);
-    private long size = 0;
+    private AtomicLong atomicLong = new AtomicLong(0);
 
     private void listForNextIteratively(List<String> prefixes) throws Exception {
         List<String> tempPrefixes;
         List<Future<List<String>>> futures = new ArrayList<>();
         for (String prefix : prefixes) {
-            if (size > threads) {
+            if (atomicLong.get() > threads) {
                 tempPrefixes = directoriesAfterListerRun(prefix);
                 if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
             } else {
-                futures.add(executorPool.submit(() -> directoriesAfterListerRun(prefix)));
-                size++;
+                atomicLong.incrementAndGet();
+                futures.add(executorPool.submit(() -> {
+                    List<String> list = directoriesAfterListerRun(prefix);
+                    atomicLong.decrementAndGet();
+                    return list;
+                }));
             }
         }
         Iterator<Future<List<String>>> iterator;
@@ -136,7 +140,6 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
             while (iterator.hasNext()) {
                 future = iterator.next();
                 if (future.isDone()) {
-                    size--;
                     tempPrefixes = future.get();
                     if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
                     iterator.remove();
