@@ -117,8 +117,10 @@ public class PrivateUrl extends Base<Map<String, String>> {
 //        region = null;
         request = null;
         amazonS3ClientBuilder = null;
-        s3Client.shutdown();
-        s3Client = null;
+        if (s3Client != null) {
+            s3Client.shutdown();
+            s3Client = null;
+        }
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }

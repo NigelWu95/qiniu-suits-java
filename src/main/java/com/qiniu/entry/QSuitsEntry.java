@@ -431,10 +431,9 @@ public class QSuitsEntry {
         if (baseFilter != null || seniorFilter != null) {
             List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
             if (nextProcessor == null) {
-                processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath, saveFormat,
-                        saveSeparator, rmFields) {
+                processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
                     @Override
-                    protected ITypeConvert<Map<String, String>, String> newTypeConverter() throws IOException {
+                    protected ITypeConvert<Map<String, String>, String> newPersistConverter() throws IOException {
                         return new MapToString(saveFormat, saveSeparator, fields);
                     }
                 };

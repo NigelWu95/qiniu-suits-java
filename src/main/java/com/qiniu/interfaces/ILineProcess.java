@@ -24,4 +24,6 @@ public interface ILineProcess<T> {
     void processLine(List<T> list) throws IOException;
 
     void closeResource();
+
+    void cancel();
 }

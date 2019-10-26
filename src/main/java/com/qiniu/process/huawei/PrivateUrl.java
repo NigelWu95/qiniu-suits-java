@@ -106,10 +106,14 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration = null;
         queries = null;
         request = null;
-        try {
-            obsClient.close();
-        } catch (IOException ignored) {}
-        obsClient = null;
+        if (obsClient != null) {
+            try {
+                obsClient.close();
+            } catch (IOException ignored) {
+                // 有关闭异常直接避开
+            }
+            obsClient = null;
+        }
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }

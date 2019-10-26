@@ -107,8 +107,10 @@ public class PrivateUrl extends Base<Map<String, String>> {
         queries = null;
         request = null;
         credentials = null;
-        ossClient.shutdown();
-        ossClient = null;
+        if (ossClient != null) {
+            ossClient.shutdown();
+            ossClient = null;
+        }
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }
