@@ -62,6 +62,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>(100);
     private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
     private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
+    private boolean stopped;
 
     public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
@@ -241,6 +242,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
+            if (stopped) break;
             if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
                 synchronized (object) {
                     object.wait();
@@ -271,6 +273,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 procedureLogger.info(recorder.put(lister.getPrefix(), json));
             }
             if (map != null) map.put("start", lister.currentEndKey());
+            if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             retry = retryTimes;
             while (true) {
@@ -495,6 +498,10 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         Map<String, String> prefixMap;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
+                if (listerList == null) {
+                    count = 0;
+                    continue;
+                }
                 iterator = listerList.iterator();
                 while (iterator.hasNext()) {
                     iLister = iterator.next();
@@ -578,7 +585,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
             processor = processorMap.get(saverEntry.getKey());
-            if (processor != null) processor.closeResource();
+            if (processor != null) processor.cancel();
         }
         String record = recorder.toString();
         if (recorder.size() > 0) {
@@ -601,7 +608,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         SignalHandler handler = signal -> {
             try {
 //                executorPool.shutdownNow();
-                pauseDateTime = LocalDateTime.MIN; // 使用该语句使线程池中的任务停滞效果可能比 shutdownNow() 要好
+                stopped = true; // 使用该语句使线程池中的任务退出循环可能比直接 shutdownNow() 要好
                 endAction();
             } catch (IOException e) {
                 rootLogger.error("showdown error", e);
@@ -694,7 +701,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             endAction();
         } catch (Throwable e) {
 //            executorPool.shutdownNow(); // 执行中的 sleep(), wait() 操作会抛出 InterruptedException
-            pauseDateTime = LocalDateTime.MIN; // 使用该语句使线程池中的任务停滞效果可能比 shutdownNow() 要好
+            stopped = true; // 使用该语句使线程池中的任务退出循环可能比直接 shutdownNow() 要好
             rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);

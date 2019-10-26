@@ -30,6 +30,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
+    protected boolean canceled;
 
     public Base(String processName, String accessId, String secretKey, String bucket) {
         this.processName = processName;
@@ -146,6 +147,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         String message = null;
         QiniuException exception = null;
         for (int i = 0; i < times; i++) {
+            if (canceled) break;
             retry = retryTimes;
             processList = lineList.subList(batchSize * i, i == times - 1 ? lineList.size() : batchSize * (i + 1));
             // 加上 processList.size() > 0 的选择原因是会在每一次处理 batch 操作的结果时将需要重试的记录加入重试列表进行返回，并且在
@@ -249,7 +251,13 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         try {
             return singleResult(line);
         } catch (NullPointerException e) {
-            throw new IOException("input is empty or the processor may be already closed.", e);
+            if (canceled) {
+                throw new IOException("processor is canceled state.", e);
+            } else if (bucket == null) { // 如果是关闭了那么 bucket 应该为 null
+                throw new IOException("input is empty or the processor may be already closed.", e);
+            } else {
+                throw new IOException("instance without savePath can not call this batch process method.", e);
+            }
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
@@ -267,7 +275,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             if (batchSize > 1) batchProcess(lineList, batchSize, retryTimes);
             else singleProcess(lineList, retryTimes);
         } catch (NullPointerException e) {
-            if (bucket == null) { // 如果是关闭了那么 bucket 应该为 null
+            if (canceled) {
+////            // nothing to do
+            } else
+                if (bucket == null) { // 如果是关闭了那么 bucket 应该为 null
                 throw new IOException("input is empty or the processor may be already closed.", e);
             } else {
                 throw new IOException("instance without savePath can not call this batch process method.", e);
@@ -287,5 +298,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         savePath = null;
         if (fileSaveMapper != null) fileSaveMapper.closeWriters();
         fileSaveMapper = null;
+    }
+
+    public void cancel() {
+        canceled = true;
+        closeResource();
     }
 }
