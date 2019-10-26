@@ -119,8 +119,10 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration = null;
         queries = null;
         request = null;
-        bosClient.shutdown();
-        bosClient = null;
+        if (bosClient != null) {
+            bosClient.shutdown();
+            bosClient = null;
+        }
         if (nextProcessor != null) nextProcessor.closeResource();
         nextProcessor = null;
     }
