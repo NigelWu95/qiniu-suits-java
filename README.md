@@ -6,7 +6,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
 资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
 非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
-令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2-命令行执行器-qsuits(by-golang))）。  
+令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2.-命令行执行器-qsuits)）。  
 
 ### 功能列表：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
@@ -83,11 +83,11 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-提供命令行运行工具 [qsuits](#2-命令行执行器-qsuits(by-golang))（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
+提供命令行运行工具 [qsuits](#2.-命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
 以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1. 命令行直接运行 jar 包  
-在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases/download/v8.0.9/qsuits-8.0.9.jar)
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases/download/v8.0.10/qsuits-8.0.10.jar)
 （**maven 仓库中的 \<version\>.jar 包不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 
 [-config=\<filepath\>] 指定配置文件路径，运行命令形如：
 ```
@@ -111,7 +111,7 @@ java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。**【推荐使用配置文件方式，
 一是安全性，二是参数历史可保留且修改方便；推荐使用 -account 提前设置好账号，安全性更高，使用时 -a=\<account-name\> 即可，不必再暴露密钥】**  
 
-#### 2. 命令行执行器 qsuits(by golang)  
+#### 2. 命令行执行器 qsuits  
 由于 qsuits-java 基于 java 编写，命令行运行时需要使用 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的命令行可执行工具
 [qsuits 执行器](https://github.com/NigelWu95/qsuits-exec-go)（使用 golang 编写和编译）来代理 qsuits-java 的功能，支持 qsuits-java
 所有参数配置，命令和配置文件用法完全相同，工具下载地址如下：  
@@ -315,7 +315,7 @@ rm-fields=
 **关于 rm-fields** 
 rm-fields 可选择持久化结果中去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式 save-format 保存在 save-path 的文件
 中。file 数据源输入字段完全取决于 indexes 和其他的一些 index 设置，可参考 [indexes 索引](datasource.md#关于-indexes-索引)，而其他 index
-设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](datasource.md#关于文件信息字段)   
+设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](docs/datasource.md#关于文件信息字段)   
 
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
 

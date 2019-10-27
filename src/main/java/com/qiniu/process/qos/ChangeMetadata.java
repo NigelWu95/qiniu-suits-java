@@ -15,7 +15,6 @@ import java.util.Map;
 public class ChangeMetadata extends Base<Map<String, String>> {
 
     private Map<String, String> metadata;
-    private String condition;
     private String encodedCondition;
     private ArrayList<String> ops;
     private List<Map<String, String>> lines;
@@ -29,8 +28,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         super("metadata", accessKey, secretKey, bucket);
         if (metadata == null) throw new IOException("metadata can not be null");
         this.metadata = metadata;
-        this.condition = condition;
-        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
+        if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
@@ -42,8 +40,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         super("metadata", accessKey, secretKey, bucket, savePath, saveIndex);
         if (metadata == null) throw new IOException("metadata can not be null");
         this.metadata = metadata;
-        this.condition = condition;
-        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
+        if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.batchSize = 1000;
         this.ops = new ArrayList<>();
         this.lines = new ArrayList<>();
@@ -93,7 +90,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
                 }
 //                if (condition != null) path = String.format("%s/cond/%s", path, condition);
 //                ops.add(path);
-                if (condition != null) pathBuilder.append("/cond/").append(encodedCondition);
+                if (encodedCondition != null) pathBuilder.append("/cond/").append(encodedCondition);
                 ops.add(pathBuilder.toString());
             } else {
                 fileSaveMapper.writeError("key is not exists or empty in " + map, false);
@@ -121,7 +118,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         }
 //        if (condition != null) path = String.format("%s/cond/%s", path, condition);
 //        String url = "http://rs.qiniu.com" + path;
-        if (condition != null) urlBuilder.append("/cond/").append(encodedCondition);
+        if (encodedCondition != null) urlBuilder.append("/cond/").append(encodedCondition);
         StringMap headers = auth.authorization(urlBuilder.toString(), null, Client.FormMime);
         Response response = client.post(urlBuilder.toString(), null, headers, Client.FormMime);
         if (response.statusCode != 200) throw new QiniuException(response);
@@ -134,7 +131,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         super.closeResource();
         if (metadata != null) metadata.clear();
         metadata = null;
-        condition = null;
+        encodedCondition = null;
         if (ops != null) ops.clear();
         ops = null;
         if (lines != null) lines.clear();

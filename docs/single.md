@@ -9,13 +9,13 @@
 在指定 process 的情况下加上 `-s` 或者 `--single` 则表示使用单行模式，会直接执行 process 操作，因此必须包含该 process 所需的最少参数（兼容各 
 process 提供的参数用法，具体可参见 process 的文档）包括要处理的 data 参数，如 key 或 url 等。  
 **说明：
-1、`-d` 为新版 qsuits 的 account 用法，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
-2、 直接使用 qsuits 命令是执行代理器用法，参考：[命令行执行器](../README.md#2.-命令行执行器-qsuits(by-golang))**  
+1、`-d` 为新版 qsuits 的 account 用法，参考：[账号设置](../README.md#账号设置)  
+2、 直接使用 qsuits 命令是执行代理器用法，参考：[命令行执行器](../README.md#2.-命令行执行器-qsuits)**  
 
 ### process 用法
 ###### 1 删除空间资源 [delete 配置](delete.md)  
 ```
-➜ ~ qsuits -s -process=delete -ak=---------- -sk=--------- -bucket=ts-work -key=10.mp4
+➜ ~ qsuits -s -d -process=delete-bucket=ts-work -key=10.mp4
 10.mp4	
 ```
 ###### 2 复制资源到指定空间 [copy 配置](copy.md)  
@@ -31,13 +31,6 @@ process 提供的参数用法，具体可参见 process 的文档）包括要处
 ###### 4 对指定空间的资源进行重命名 [rename 配置](rename.md)  
 ```
 ➜ ~ qsuits -s -d -process=rename -bucket=temp -add-prefix=1 -prefix-force=true -key=10.mp4
-Exception in thread "main" java.io.IOException: there is no to-key index, if you only want to add prefix for renaming, please set the "prefix-force" as true.
-	at com.qiniu.process.qoss.MoveFile.set(MoveFile.java:62)
-	at com.qiniu.process.qoss.MoveFile.<init>(MoveFile.java:28)
-	at com.qiniu.entry.QSuitsEntry.getMoveFile(QSuitsEntry.java:380)
-	at com.qiniu.entry.QSuitsEntry.whichNextProcessor(QSuitsEntry.java:321)
-	at com.qiniu.entry.EntryMain.main(EntryMain.java:32)
-qsuits -s -d -process=rename -bucket=temp -add-prefix=2 -prefix-force=true -key=10.mp4
 10.mp4	10.mp4	
 ```
 ###### 5 查询空间资源的元信息 [stat 配置](stat.md)  
@@ -57,7 +50,7 @@ qsuits -s -d -process=rename -bucket=temp -add-prefix=2 -prefix-force=true -key=
 ```
 ###### 8 修改空间资源的生命周期 [lifecycle 配置](lifecycle.md)  
 ```
-➜ ~ qsuits -s -process=lifecycle -ak=------ -sk=------- -bucket=temp -days=1 -key=10.mp4
+➜ ~ qsuits -s -d -process=lifecycle -bucket=temp -days=1 -key=10.mp4
 10.mp4	1	
 ```
 ###### 9 对设置了镜像源的空间资源进行镜像更新 [mirror 配置](mirror.md)  
@@ -157,4 +150,14 @@ test.go	http://xxx.bkt.clouddn.com/test.go	/Users/wubingheng/Downloads/test.go
 ```
 ➜ ~ qsuits -d -s -process=qupload -bucket=temp -filepath=test.py -key=test.py
 test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test.py"}
+```  
+###### 23 修改文件的 mime
+```
+➜ ~ qsuits -d -s -process=mime -bucket=temp -key=test.py -mime=text/plain
+test.py	200
+```  
+###### 24 修改文件的 metadata
+```
+➜ ~ qsuits -d -s -process=metadata -bucket=temp -key=test.py -meta.Cache-Control="public, max-age=3600"
+test.py	200
 ```  

@@ -10,8 +10,8 @@
 输入的参数与各 process 提供的参数用法一致，具体可参见 process 的文档。如：  
 `qsuits -i -d -process=privateurl -url-index=0`  
 **说明：
-1、`-d` 为新版 qsuits 的 account 用法，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
-2、 直接使用 qsuits 命令是执行代理器用法，参考：[命令行执行器](../README.md#2.-命令行执行器-qsuits(by-golang))**  
+1、`-d` 为新版 qsuits 的 account 用法，参考：[账号设置](../README.md#账号设置)  
+2、 直接使用 qsuits 命令是执行代理器用法，参考：[命令行执行器](../README.md#2.-命令行执行器-qsuits)**  
 
 ## process 举例
 ###### 1 删除空间资源 [delete 配置](delete.md)  
@@ -182,4 +182,21 @@ test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test.py"}
 please input line data to process:
 ~/Downloads/test.py test2.py
 test.py	{"hash":"Fto5o-5ea0sNMlW_75VgGJCv2AcJ","key":"test2.py"}
+```  
+###### 23 修改文件的 mime
+```
+➜ ~ qsuits -d -i -process=mime -bucket=temp
+please input line data to process:
+test.py text/py
+http://rs.qiniu.com/chgm/dGVtcDo=/mime/JiY=    {ResponseInfo:com.qiniu.http.Response@18a70f16,status:400, reqId:nUcAAAwVS86OhdEV, xlog:-, xvia:, adress:rs.qiniu.com/115.238.101.27:80, duration:0.000000 s, error:Invalid mimeType}    {"error":"Invalid mimeType"}
+please input line data to process: 
+test.py text/plain
+test.py	text/plain	200
+```  
+###### 24 修改文件的 metadata
+```
+➜ ~ qsuits -d -i -process=metadata -bucket=temp -meta.Cache-Control="public, max-age=3600"
+please input line data to process:
+test.py
+test.py	200
 ```  

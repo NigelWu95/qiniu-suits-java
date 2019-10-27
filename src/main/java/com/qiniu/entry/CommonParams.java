@@ -300,6 +300,14 @@ public class CommonParams {
                     mapLine.put("filepath", filepath);
                 }
                 break;
+            case "mime":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                String mime = entryParam.getValue("mime", "").trim();
+                if (!"".equals(mime)) {
+                    indexMap.put("mime", "mime");
+                    mapLine.put("mime", mime);
+                }
+                break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
                 break;
         }
