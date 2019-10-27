@@ -87,7 +87,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1. 命令行直接运行 jar 包  
-在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/raw/master/qsuits.jar)
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases/download/v8.0.9/qsuits-8.0.9.jar)
 （**maven 仓库中的 \<version\>.jar 包不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 
 [-config=\<filepath\>] 指定配置文件路径，运行命令形如：
 ```
