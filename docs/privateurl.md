@@ -10,6 +10,8 @@
 - [百度](#其他存储配置参数)参考：[私有空间资源签名](https://cloud.baidu.com/doc/BOS/s/8jwvyrqj0#%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BDurl)  
 1. **操作需要指定数据源，默认表示从七牛空间列举文件执行操作，如非默认或需更多条件，请先[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
+3. 单次对一个文件/url 签名请参考[ single 操作](single.md)  
+4. 交互式操作随时输入 key/url 进行签名请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 
@@ -42,7 +44,7 @@ queries=
 
 ### 其他存储配置参数
 ```
-process=tenprivate/aliprivate/awsprivate
+process=tenprivate/aliprivate/s3private/huaweiprivate/baiduprivate
 <密钥配置>
 region=
 bucket=

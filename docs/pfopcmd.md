@@ -1,11 +1,14 @@
 # 生成音视频转码指令
 
 ## 简介
-根据已经获取到的音视频资源的 avinfo 信息，来设置规则判断进行某种自定义的转码并自定义转码后的文件名。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)  
-1. **操作需要指定数据源，默认表示从七牛空间列举文件执行操作，如非默认或需更多条件，请先[配置数据源](datasource.md)**  
+一般情况下，可能对于大量的音视频资源具体需要转码的规格和参数处于未知情况，根据上一步已经获取到的音视频资源的 avinfo 信息，可以来设置规则判断进行某种
+自定义的转码并自定义转码后的文件名。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)，
+经过该指令生成之后那么又可以回到[ pfop 操作](pfop.md)进行批量提交处理请求的操作。  
+1. **操作需要指定数据源，因为该操作是针对 avinfo 的信息进行判断，需要本地提供 avinfo 信息的列表，所以只支持本地数据源，请先[配置数据源](datasource.md)**  
+2. 单次生成一个 pfop 指令请参考[ single 操作](single.md)  
+3. 交互式操作随时输入 avinfo 进行指令生成请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
-**操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ### 配置参数
 ```

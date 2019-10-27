@@ -1,9 +1,11 @@
 # 内容审核结果查询
 
 ## 简介
-对（视频）内容审核返回的 jobId 查询 censorresult（审核的结果）操作。参考：[七牛内容审核结果查询](https://developer.qiniu.com/censor/api/5620/video-censor#4)  
+对（视频）内容审核返回的 jobId 查询 censorresult（审核的结果查询）操作。参考：[七牛内容审核结果查询](https://developer.qiniu.com/censor/api/5620/video-censor#4)  
 1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
+3. 单次查询一个审核结果请参考[ single 操作](single.md)  
+4. 交互式操作随时输入 id 进行查询请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 

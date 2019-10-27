@@ -6,7 +6,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
 资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
 非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
-令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2.-命令行执行器-qsuits)）。  
+令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2命令行执行器-qsuits)）。  
 
 ### 功能列表：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
@@ -51,7 +51,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 （7.73 及以上版本）支持预先设置好账号的密钥（经过加密），在后续执行中只需使用 account name 即可读取对应账号密钥进行操作，定义不同的 account name 
 则可设置多对密钥，亦可设置不同数据源的账号密钥，同一数据源的账号名相同时会覆盖该账号的历史密钥，命令行操作如下所示（配置文件也可以进行账户设置和使用，
 去掉命令行参数开头的 `-` 符号且每项参数成一行即可，与后面程序运行方式的配置文件用法相同），密钥参数名参考[各存储数据源配置参数](#storage-云存储列举)。  
-#### 1. 设置 account：  
+#### 1、设置 account：  
 命令格式：`-account=<source>-<name> -<source>-id= -<source>-secret= [-d]`，如：  
 `-account=test/qiniu-test -ak= -sk=` 设置七牛账号，账号名为 test，没有数据源标识时默认设置七牛账号  
 `-account=ten-test -ten-id= -ten-secret=` 设置腾讯云账号，账号名为 test  
@@ -61,17 +61,17 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 `-account=hua-test -hua-id= -hua-secret=` 设置华为云账号，账号名为 test  
 `-account=bai-test -bai-id= -bai-secret=` 设置百度云账号，账号名为 test  
 `-d` 表示默认账号选项，此时设置的账号将会成为全局默认账号，执行操作时 -d 选项将调取该默认账号。如果当前已存在多个账号，使用 `-account=<已存在的账号名> -d` 可以修改默认账号。
-#### 2. 使用 account 账号：  
+#### 2、使用 account 账号：  
 `-a=test` 表示使用 test 账号，数据源会自动根据 path 参数判断  
 `-d` 表示使用默认的账号，数据源会自动根据 path 参数判断  
-#### 3. 查询 account 账号：
+#### 3、查询 account 账号：
 命令格式：`-getaccount=<source>-<name> [-dis] [-d]`，默认只显示 id 的明文而隐藏 secret，`-dis` 参数表示选择明文显示 secret，如：  
 `-getaccount -d` 表示查询设置的默认账号的密钥  
 `-getaccount=test -dis` 表示查询设置的所有账号名为 test 的密钥，并显示 secret 的明文  
 `-getaccount=s3-test` 表示查询设置的 S3 账号名为 test 的密钥  
 `-getaccount=ten-test` 表示查询设置的腾讯账号名为 test 的密钥  
 `-getaccount=qiniu-test` 表示查询设置的七牛账号名为 test 的密钥  
-#### 4. 删除 account 账号：  
+#### 4、删除 account 账号：  
 命令格式：`-delaccount=<source>-<name>`，删除账号只允许一次删除一条，如：  
 `-delaccount=s3-test` 表示删除设置的 S3 账号名为 test 的密钥  
 `-delaccount=ten-test` 表示删除设置的腾讯账号名为 test 的密钥  
@@ -83,10 +83,10 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-提供命令行运行工具 [qsuits](#2.-命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
+提供命令行运行工具 [qsuits](#2命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
 以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
-#### 1. 命令行直接运行 jar 包  
+#### 1、命令行直接运行 jar 包  
 在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases/download/v8.0.10/qsuits-8.0.10.jar)
 （**maven 仓库中的 \<version\>.jar 包不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 
 [-config=\<filepath\>] 指定配置文件路径，运行命令形如：
@@ -111,7 +111,7 @@ java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。**【推荐使用配置文件方式，
 一是安全性，二是参数历史可保留且修改方便；推荐使用 -account 提前设置好账号，安全性更高，使用时 -a=\<account-name\> 即可，不必再暴露密钥】**  
 
-#### 2. 命令行执行器 qsuits  
+#### 2、命令行执行器 qsuits  
 由于 qsuits-java 基于 java 编写，命令行运行时需要使用 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的命令行可执行工具
 [qsuits 执行器](https://github.com/NigelWu95/qsuits-exec-go)（使用 golang 编写和编译）来代理 qsuits-java 的功能，支持 qsuits-java
 所有参数配置，命令和配置文件用法完全相同，工具下载地址如下：  
@@ -137,7 +137,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 **注意**：qsuits 执行器依然依赖 java 环境（8 或以上），但是执行器会去检测本地 java 环境，在无匹配的 java 环境时会提示推荐的安装方法。并且该执行
 器在运行时默认会选择最新的 qsuits-java 版本，其他选项参考 qsuits-exec-go 的文档：https://github.com/NigelWu95/qsuits-exec-go  
 
-#### 3. 程序依赖 jar  
+#### 3、程序依赖 jar  
 引入 jar 包（[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者 [使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），
 可以重写或新增 processor 接口实现类进行自定义功能，maven:
 ```
@@ -188,7 +188,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 
 ### 4 过滤器功能  
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
-1.**基本字段过滤**和2.**特殊特征匹配过滤**  
+1、**基本字段过滤**和 2、**特殊特征匹配过滤**  
 #### 基本字段过滤  
 根据设置的字段条件进行筛选，多个条件时需同时满足才保留，若存在记录不包该字段信息时则正向规则下不保留，反正规则下保留，字段包含：  
 `f-prefix=` 表示**选择**文件名符合该前缀的文件  
@@ -270,7 +270,8 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `process=censorresult` 表示内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 `process=mime` 修改资源的 mimeType [mime 配置](docs/mime.md)  
 `process=metadata` 修改资源的 metadata [metadata 配置](docs/metadata.md)  
-**注意**：
+
+**注意**：  
 1. 云存储数据源 + process 操作的情况下通常会涉及两对密钥，数据源一对，process 操作一对，如果是 delete、status 等操作则这两对密钥相同，使用一个密
 钥设置或者一个 account (`-a=<account-name>`) 即可，copy、move 要求针对同一个账号操作或者采用空间授权，因此也只需要一堆密钥，但如果是其他存储
 数据源的数据备份操作 asyncfetch，就需要两对不同的密钥，而 account 只支持设置一个，这时第二对的七牛密钥可以通过同一个 account-name 的设置来获得，

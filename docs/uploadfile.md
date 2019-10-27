@@ -4,6 +4,8 @@
 将本地的文件（批量）上传至存储空间。可参考：[上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy) 和 [上传资源](https://developer.qiniu.com/kodo/manual/1234/upload-types)  
 1. **操作需要指定数据源，目前仅支持上传本地文件到七牛空间，故需要配置本地数据源，参考：[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
+2. 单次上传一个文件请参考[ single 操作](single.md)  
+3. 交互式操作随时输入filepath 进行上传请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 
@@ -57,7 +59,7 @@ timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](
 path=test
 
 # 上传文件列表中指定的 filepath 文件，从 filelist.txt 中通过 parse,separator,filepath-index 等参数来解析每一行，得到文件路径等信息组织上
-传操作，当然 path 也可以指定目录，会通过读取文件列表的方式解析目录下所有 text 文件中的每一行进行一次上传操作
+# 传操作，当然 path 也可以指定目录，会通过读取文件列表的方式解析目录下所有 text 文件中的每一行进行一次上传操作
 path=filelist.txt
 parse=tab
 separator=\t
@@ -79,8 +81,8 @@ keep-path=false
 # add-prefix=
 # rm-prefix=
 
-# 上传文件列表中指定的 filepath 文件，如下所示表示文本中的每一行（以 \t 分割）的第一个字段为 filepath，那么上传 filepath 这
-# 个文件的文件名则为第二个字段确定的 key，同时可以使用 add-prefix 和 rm-prefix 对文件名做进一步自定义处理
+# 上传文件列表中指定的 filepath 文件，如下所示表示文本中的每一行（以 \t 分割）的第一个字段为 filepath，那么上传 filepath 这个文件的文件名则为
+# 第二个字段确定的 key，同时可以使用 add-prefix 和 rm-prefix 对文件名做进一步自定义处理
 parse=tab
 separator=\t
 filepath-index=0
