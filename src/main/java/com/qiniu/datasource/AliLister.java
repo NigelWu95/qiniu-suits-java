@@ -109,7 +109,12 @@ public class AliLister implements ILister<OSSObjectSummary> {
         } catch (ClientException e) {
             throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (ServiceException e) {
-            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
+            if (e.getRawResponseError().equals("Invalid byte 1 of 1-byte UTF-8 sequence.")) {
+                listObjectsRequest.setEncodingType("url");
+                doList();
+            } else {
+                throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
+            }
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {
