@@ -79,9 +79,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         // default save parameters
         this.saveTotal = true; // 默认全记录保存
         this.savePath = "result";
-        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
-            throw new IOException("please change the savePath, because there are last listed files.");
-        }
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
@@ -102,9 +99,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             throws IOException {
         this.saveTotal = saveTotal;
         this.savePath = savePath;
-        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
-            throw new IOException("please change the savePath, because there are last listed files.");
-        }
         this.saveFormat = format;
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;

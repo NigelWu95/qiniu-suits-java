@@ -60,4 +60,15 @@ public class FileUtilsTest {
         File[] files2 = new File("/Users/wubingheng/Downloads/").listFiles();
         System.out.println(files2.length);
     }
+
+    @Test
+    public void testConvertToRealPath() throws IOException {
+        String path = FileUtils.convertToRealPath("\\~/Downloads");
+        File file1 = new File(path);
+        System.out.println(file1.getCanonicalPath());
+        File file2 = new File("~/Downloads");
+        System.out.println(file2.getCanonicalPath());
+        File file3 = new File("\\~/Downloads");
+        System.out.println(file3.getCanonicalPath());
+    }
 }

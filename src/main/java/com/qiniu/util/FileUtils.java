@@ -56,16 +56,19 @@ public final class FileUtils {
         }
     }
 
-    public static String pathSeparator = System.getProperty("file.separator");
-    public static String userHomeStartPath = "~" + pathSeparator;
-    public static String currentPath = "." + pathSeparator;
-    public static String parentPath = ".." + pathSeparator;
-    public static String userHome = System.getProperty("user.home");
+    public static final String pathSeparator = System.getProperty("file.separator");
+    public static final String userHomeStartPath = "~" + pathSeparator;
+    public static final String currentPath = "." + pathSeparator;
+    public static final String parentPath = ".." + pathSeparator;
+    public static final String userHome = System.getProperty("user.home");
 
     public static String convertToRealPath(String filepath) throws IOException {
         if (filepath == null || "".equals(filepath)) throw new IOException("the path is empty.");
         if (filepath.startsWith(userHomeStartPath)) {
             return String.join("", userHome, filepath.substring(1));
+        }
+        if (filepath.startsWith("\\~")) { // 转义字符的路径
+            return new File(currentPath + filepath.substring(1)).getCanonicalPath();
         }
         if (filepath.contains("\\~")) { // 转义字符的路径
             return new File(filepath.replace("\\~", "~")).getCanonicalPath();

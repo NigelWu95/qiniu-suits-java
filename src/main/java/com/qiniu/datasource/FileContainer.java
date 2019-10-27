@@ -71,9 +71,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         // default save parameters
         this.saveTotal = false; // 默认全记录不保存
         this.savePath = "result";
-        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
-            throw new IOException("please change the savePath, because there are last read files.");
-        }
         this.saveFormat = "tab";
         this.saveSeparator = "\t";
         if (fields == null || fields.size() == 0) {
@@ -87,9 +84,6 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             throws IOException {
         this.saveTotal = saveTotal;
         this.savePath = savePath;
-        if (FileUtils.checkKeyFilesInPath(savePath, getSourceName())) {
-            throw new IOException("please change the savePath, because there are last read files.");
-        }
         this.saveFormat = format;
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
         this.saveSeparator = separator;

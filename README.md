@@ -6,10 +6,10 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
 资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
 非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
-令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2.-命令行执行器-qsuits(by-golang))）。  
+令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2-命令行执行器-qsuits(by-golang))）。  
 
 ### 功能列表：
-- [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及结束文件名(或前缀)或 marker 等参数  
+- [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
 - [x] 文件[迁移/备份](docs/datamigration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
 - [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
@@ -41,7 +41,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 *【部分 process 属于危险操作（如文件删除/禁用等），需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则需要在命令行加入 -f 参数】*  
 
 ### 支持特性：
-- [x] 数据源账户密钥（加密）设置：[账号设置](#账号设置)  
+- [x] 多数据源账户密钥（加密）设置：[账号设置](#账号设置)  
 - [x] 多种模式运行：[程序运行过程](#1-程序运行过程)  
 - [x] 中间状态保持：[断点续操作](#10-断点续操作)  
 - [x] 手动分布式执行任务：[分布式任务方案](#11-分布式任务方案)  
@@ -83,11 +83,11 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-提供命令行运行工具 [qsuits](#2.-命令行执行器-qsuits(by-golang))（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
+提供命令行运行工具 [qsuits](#2-命令行执行器-qsuits(by-golang))（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
 以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1. 命令行直接运行 jar 包  
-在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/raw/master/qsuits.jar)
+在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases/download/v8.0.9/qsuits-8.0.9.jar)
 （**maven 仓库中的 \<version\>.jar 包不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 
 [-config=\<filepath\>] 指定配置文件路径，运行命令形如：
 ```

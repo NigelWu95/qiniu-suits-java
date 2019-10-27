@@ -34,6 +34,20 @@ public class AliLister implements ILister<OSSObjectSummary> {
         count += ossObjectList.size();
     }
 
+    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max,
+                     String encodeType) throws SuitsException {
+        this.ossClient = ossClient;
+        this.listObjectsRequest = new ListObjectsRequest();
+        listObjectsRequest.setEncodingType(encodeType);
+        listObjectsRequest.setBucketName(bucket);
+        listObjectsRequest.setPrefix(prefix);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
+        listObjectsRequest.setMaxKeys(max);
+        this.endPrefix = endPrefix;
+        doList();
+        count += ossObjectList.size();
+    }
+
     @Override
     public String getBucket() {
         return listObjectsRequest.getBucketName();

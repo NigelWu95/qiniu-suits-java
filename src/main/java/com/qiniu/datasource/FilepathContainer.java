@@ -43,9 +43,6 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
 
     @Override
     protected List<IReader<Iterator<String>>> getFileReaders(String path) throws IOException {
-        if (FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
-            throw new IOException("the save-path can not be same as path.");
-        }
         List<IReader<Iterator<String>>> filepathReaders = new ArrayList<>(threads);
         String transferPath = null;
         int leftTrimSize = 0;

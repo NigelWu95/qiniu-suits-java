@@ -68,9 +68,6 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
             }
         } else {
             path = FileUtils.convertToRealPath(path);
-            if (path.equals(FileUtils.convertToRealPath(savePath))) {
-                throw new IOException("the save-path can not be same as path.");
-            }
             File sourceFile = new File(path);
             if (sourceFile.isDirectory()) {
                 List<File> files = FileUtils.getFiles(sourceFile, true);
