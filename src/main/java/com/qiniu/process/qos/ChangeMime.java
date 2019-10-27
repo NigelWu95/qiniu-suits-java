@@ -17,7 +17,6 @@ public class ChangeMime extends Base<Map<String, String>> {
     private String mimeType;
     private String encodedMime;
     private String mimeIndex;
-    private String condition;
     private String encodedCondition;
     private ArrayList<String> ops;
     private List<Map<String, String>> lines;
@@ -32,8 +31,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         this.mimeType = mimeType;
         if (mimeType != null) encodedMime = UrlSafeBase64.encodeToString(mimeType);
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
-        this.condition = condition;
-        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
+        if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.configuration = configuration;
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.auth = Auth.create(accessKey, secretKey);
@@ -47,8 +45,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         this.mimeType = mimeType;
         if (mimeType != null) encodedMime = UrlSafeBase64.encodeToString(mimeType);
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
-        this.condition = condition;
-        if (condition != null) encodedCondition = UrlSafeBase64.encodeToString(condition);
+        if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.batchSize = 1000;
         this.ops = new ArrayList<>();
         this.lines = new ArrayList<>();
@@ -97,7 +94,7 @@ public class ChangeMime extends Base<Map<String, String>> {
                     pathBuilder = new StringBuilder("/chgm/")
                             .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                             .append("/mime/").append(UrlSafeBase64.encodeToString(mime));
-                    if (condition != null) pathBuilder.append("/cond/").append(encodedCondition);
+                    if (encodedCondition != null) pathBuilder.append("/cond/").append(encodedCondition);
                     ops.add(pathBuilder.toString());
 //                    batchOperations.addChgmOp(bucket, mime, key);
                 } else {
@@ -112,7 +109,7 @@ public class ChangeMime extends Base<Map<String, String>> {
                     pathBuilder = new StringBuilder("/chgm/")
                             .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                             .append("/mime/").append(encodedMime);
-                    if (condition != null) pathBuilder.append("/cond/").append(encodedCondition);
+                    if (encodedCondition != null) pathBuilder.append("/cond/").append(encodedCondition);
                     ops.add(pathBuilder.toString());
 //                    batchOperations.addChgmOp(bucket, mimeType, key);
                 } else {
@@ -141,7 +138,7 @@ public class ChangeMime extends Base<Map<String, String>> {
             urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
                     .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                     .append("/mime/").append(UrlSafeBase64.encodeToString(mime));
-            if (condition != null) urlBuilder.append("/cond/").append(encodedCondition);
+            if (encodedCondition != null) urlBuilder.append("/cond/").append(encodedCondition);
             String url = urlBuilder.toString();
             Response response = client.post(url, null, auth.authorization(url, null, Client.FormMime), Client.FormMime);
             if (response.statusCode != 200) throw new QiniuException(response);
@@ -151,7 +148,7 @@ public class ChangeMime extends Base<Map<String, String>> {
             urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
                     .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                     .append("/mime/").append(encodedMime);
-            if (condition != null) urlBuilder.append("/cond/").append(encodedCondition);
+            if (encodedCondition != null) urlBuilder.append("/cond/").append(encodedCondition);
             String url = urlBuilder.toString();
             Response response = client.post(url, null, auth.authorization(url, null, Client.FormMime), Client.FormMime);
             if (response.statusCode != 200) throw new QiniuException(response);
@@ -165,7 +162,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         super.closeResource();
         mimeType = null;
         mimeIndex = null;
-        condition = null;
+        encodedCondition = null;
 //        batchOperations = null;
         if (ops != null) ops.clear();
         ops = null;

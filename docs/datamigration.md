@@ -25,7 +25,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -44,7 +44,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -63,7 +63,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -78,7 +78,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 
 # 又拍云没有直接对资源名进行私有签名的操作，必须提供公开访问域名才能进行迁移
@@ -100,7 +100,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -119,7 +119,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -140,7 +140,7 @@ process=asyncfetch
 qiniu-ak=
 qiniu-sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -155,7 +155,7 @@ process=asyncfetch
 ak=
 sk=
 to-bucket=
-# zone 可以不设置则自动判断，如愿指定则使用 qiniu-zone，便于和数据源的 zone 区分开
+# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 
 # 本地的文件列表为文件名时需要提供能公开访问的 domain，为 url 时需要提供每一行中 url 的坐标名

@@ -103,7 +103,7 @@ public class EntryMain {
         Map<String, String> paramsMap = args != null && args.length > 0 ? ParamsUtils.toParamsMap(args, preSetMap) : null;
         if (paramsMap != null && paramsMap.containsKey("config")) {
             Map<String, String> fileConfig = ParamsUtils.toParamsMap(paramsMap.get("config"));
-            fileConfig.putAll(paramsMap);
+            fileConfig.putAll(paramsMap); // 使用命令行的参数覆盖配置文件中可能存在的同个配置
             return fileConfig;
         } else {
             String configFilePath = null;
