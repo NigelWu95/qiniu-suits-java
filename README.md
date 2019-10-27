@@ -6,7 +6,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
 资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
 非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
-令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2、命令行执行器-qsuits)）。  
+令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2命令行执行器-qsuits)）。  
 
 ### 功能列表：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
@@ -83,7 +83,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-提供命令行运行工具 [qsuits](#2、命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
+提供命令行运行工具 [qsuits](#2命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
 以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
 #### 1、命令行直接运行 jar 包  

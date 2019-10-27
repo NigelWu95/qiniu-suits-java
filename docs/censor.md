@@ -4,6 +4,8 @@
 对图片/视频资源进行内容审核。参考：[七牛内容审核](https://developer.qiniu.com/censor)  
 1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
+3. 单次审核一个文件请参考[ single 操作](single.md)  
+4. 交互式操作随时输入 url 进行审核请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 

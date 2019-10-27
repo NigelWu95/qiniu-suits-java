@@ -11,6 +11,8 @@
 `pfopresult_need_retry_xxx.txt` 表示需要重新提交查询的部分任务  
 
 1. **操作需指定数据源，因为该操作是针对 persistentId 进行查询，因此只支持本地 localfile 数据源，请先[配置数据源](datasource.md)**  
+2. 单次查询一个 pfop 结果请参考[ single 操作](single.md)  
+3. 交互式操作随时输入 id 进行查询请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 

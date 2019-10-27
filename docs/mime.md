@@ -4,6 +4,8 @@
 修改存储空间文件的 mimeType。可参考：[七牛资源元信息修改](https://developer.qiniu.com/kodo/api/1252/chgm)  
 1. **操作需要指定数据源，目前仅支持上传本地文件到七牛空间，故需要配置本地数据源，参考：[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
+3. 单次修改一个文件请参考[ single 操作](single.md)  
+4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 

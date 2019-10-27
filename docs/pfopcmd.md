@@ -5,6 +5,8 @@
 自定义的转码并自定义转码后的文件名。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)，
 经过该指令生成之后那么又可以回到[ pfop 操作](pfop.md)进行批量提交处理请求的操作。  
 1. **操作需要指定数据源，因为该操作是针对 avinfo 的信息进行判断，需要本地提供 avinfo 信息的列表，所以只支持本地数据源，请先[配置数据源](datasource.md)**  
+2. 单次生成一个 pfop 指令请参考[ single 操作](single.md)  
+3. 交互式操作随时输入 avinfo 进行指令生成请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 

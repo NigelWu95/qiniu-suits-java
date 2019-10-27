@@ -4,6 +4,8 @@
 将本地的文件（批量）上传至存储空间。可参考：[上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy) 和 [上传资源](https://developer.qiniu.com/kodo/manual/1234/upload-types)  
 1. **操作需要指定数据源，目前仅支持上传本地文件到七牛空间，故需要配置本地数据源，参考：[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
+2. 单次上传一个文件请参考[ single 操作](single.md)  
+3. 交互式操作随时输入filepath 进行上传请参考[ interactive 操作](interactive.md)  
 
 ## 配置文件
 
