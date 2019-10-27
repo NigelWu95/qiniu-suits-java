@@ -1007,9 +1007,16 @@ public class CommonParams {
         this.saveTotal = Boolean.valueOf(saveTotal);
     }
 
-    private void setSavePath() {
-        savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith("/") ?
+    private void setSavePath() throws IOException {
+        savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
+        if (FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
+            throw new IOException("the save-path can not be same as path.");
+        } else if (FileUtils.checkKeyFilesInPath(savePath, source)) {
+            if (!savePath.startsWith(bucket) || prefixesMap == null || prefixesMap.size() <= 0) {
+                throw new IOException("please change the savePath, because there are last listed files.");
+            }
+        }
     }
 
     private void setSaveSeparator() {
