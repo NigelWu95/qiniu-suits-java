@@ -42,7 +42,7 @@ queries=
 
 ### 其他存储配置参数
 ```
-process=tenprivate/aliprivate/awsprivate
+process=tenprivate/aliprivate/s3private/huaweiprivate/baiduprivate
 <密钥配置>
 region=
 bucket=

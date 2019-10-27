@@ -1,7 +1,7 @@
 # 资源（音视频文件）查询元信息操作
 
 ## 简介
-对空间中的音视频资源查询 avinfo 元信息。参考：[七牛音视频元信息查询](https://developer.qiniu.com/dora/manual/1247/audio-and-video-metadata-information-avinfo)  
+在对存储空间上的一些音视频文件分辨率、编码等信息需要做进一步了解的情况，可以对空间中的音视频资源查询 avinfo 元信息。参考：[七牛音视频元信息查询](https://developer.qiniu.com/dora/manual/1247/audio-and-video-metadata-information-avinfo)  
 1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ## 配置文件

@@ -57,7 +57,7 @@ timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](
 path=test
 
 # 上传文件列表中指定的 filepath 文件，从 filelist.txt 中通过 parse,separator,filepath-index 等参数来解析每一行，得到文件路径等信息组织上
-传操作，当然 path 也可以指定目录，会通过读取文件列表的方式解析目录下所有 text 文件中的每一行进行一次上传操作
+# 传操作，当然 path 也可以指定目录，会通过读取文件列表的方式解析目录下所有 text 文件中的每一行进行一次上传操作
 path=filelist.txt
 parse=tab
 separator=\t
@@ -79,8 +79,8 @@ keep-path=false
 # add-prefix=
 # rm-prefix=
 
-# 上传文件列表中指定的 filepath 文件，如下所示表示文本中的每一行（以 \t 分割）的第一个字段为 filepath，那么上传 filepath 这
-# 个文件的文件名则为第二个字段确定的 key，同时可以使用 add-prefix 和 rm-prefix 对文件名做进一步自定义处理
+# 上传文件列表中指定的 filepath 文件，如下所示表示文本中的每一行（以 \t 分割）的第一个字段为 filepath，那么上传 filepath 这个文件的文件名则为
+# 第二个字段确定的 key，同时可以使用 add-prefix 和 rm-prefix 对文件名做进一步自定义处理
 parse=tab
 separator=\t
 filepath-index=0

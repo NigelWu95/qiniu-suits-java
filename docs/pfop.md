@@ -1,4 +1,4 @@
-# 资源数据处理
+# 多媒体资源数据处理
 
 ## 简介
 对空间中的资源请求 pfop 持久化数据处理。参考：[七牛数据处理 pfop 文档](https://developer.qiniu.com/dora/manual/3686/pfop-directions-for-use)  
