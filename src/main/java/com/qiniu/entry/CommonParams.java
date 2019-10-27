@@ -1013,7 +1013,7 @@ public class CommonParams {
         if (FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException("the save-path can not be same as path.");
         } else if (FileUtils.checkKeyFilesInPath(savePath, source)) {
-            if (!savePath.startsWith(bucket) || prefixesMap == null || prefixesMap.size() <= 0) {
+            if (!savePath.contains(bucket) || prefixesMap == null || prefixesMap.size() <= 0) {
                 throw new IOException("please change the savePath, because there are last listed files.");
             }
         }

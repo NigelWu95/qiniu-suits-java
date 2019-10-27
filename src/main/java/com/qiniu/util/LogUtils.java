@@ -25,7 +25,7 @@ public class LogUtils {
             if (logFile.exists()) {
                 do {
                     serial++;
-                    logPath.delete(position, position + 1).append(serial);
+                    logPath.delete(position, logPath.length()).append(serial);
                     logFile = new File(String.join(".", logPath, INFO));
                 } while (logFile.exists());
                 s = String.valueOf(serial);

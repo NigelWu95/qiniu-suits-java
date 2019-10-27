@@ -34,6 +34,20 @@ public class AliLister implements ILister<OSSObjectSummary> {
         count += ossObjectList.size();
     }
 
+    public AliLister(OSSClient ossClient, String bucket, String prefix, String marker, String endPrefix, int max,
+                     String encodeType) throws SuitsException {
+        this.ossClient = ossClient;
+        this.listObjectsRequest = new ListObjectsRequest();
+        listObjectsRequest.setEncodingType(encodeType);
+        listObjectsRequest.setBucketName(bucket);
+        listObjectsRequest.setPrefix(prefix);
+        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
+        listObjectsRequest.setMaxKeys(max);
+        this.endPrefix = endPrefix;
+        doList();
+        count += ossObjectList.size();
+    }
+
     @Override
     public String getBucket() {
         return listObjectsRequest.getBucketName();
@@ -109,12 +123,7 @@ public class AliLister implements ILister<OSSObjectSummary> {
         } catch (ClientException e) {
             throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (ServiceException e) {
-            if (e.getRawResponseError().equals("Invalid byte 1 of 1-byte UTF-8 sequence.")) {
-                listObjectsRequest.setEncodingType("url");
-                doList();
-            } else {
-                throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
-            }
+            throw new SuitsException(e, CloudApiUtils.AliStatusCode(e.getErrorCode(), -1));
         } catch (NullPointerException e) {
             throw new SuitsException(e, 400000, "lister maybe already closed");
         } catch (Exception e) {

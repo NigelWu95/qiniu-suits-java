@@ -18,6 +18,7 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
+import com.qiniu.util.FileUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -90,7 +91,18 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     @Override
     protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
-        return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(credentials),
-                clientConfig), bucket, prefix, marker, end, unitLen);
+        try {
+            return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(credentials),
+                    clientConfig), bucket, prefix, marker, end, unitLen);
+        } catch (SuitsException e) {
+            if (e.getMessage().endsWith("Invalid byte 1 of 1-byte UTF-8 sequence.")) {
+                try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                errorLogger.error("generate lister by prefix:{} retrying...", prefix, e);
+                return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(credentials),
+                        clientConfig), bucket, prefix, marker, end, unitLen, "url");
+            } else {
+                throw e;
+            }
+        }
     }
 }
