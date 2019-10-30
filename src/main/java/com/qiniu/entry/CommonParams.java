@@ -209,6 +209,7 @@ public class CommonParams {
         addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
         rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
         setProcess();
+        setPrivateType();
         regionName = entryParam.getValue("region", "").trim().toLowerCase();
         setIndexMap();
         setRetryTimes(entryParam.getValue("retry-times", "5").trim());
@@ -594,34 +595,58 @@ public class CommonParams {
         if ("".equals(privateType)) return;
         switch (privateType) {
             case "qiniu":
-                if (!"qiniu".equals(source) && isStorageSource) {
-                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                if (isStorageSource) {
+                    if (!"qiniu".equals(source)) {
+                        throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                    }
+                } else {
+                    setQiniuAuthKey();
                 }
                 break;
             case "tencent":
-                if (!"tencent".equals(source) && isStorageSource) {
-                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                if (isStorageSource) {
+                    if (!"tencent".equals(source)) {
+                        throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                    }
+                } else {
+                    setTencentAuthKey();
                 }
                 break;
             case "aliyun":
-                if (!"aliyun".equals(source) && isStorageSource) {
-                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                if (isStorageSource) {
+                    if (!"aliyun".equals(source)) {
+                        throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                    }
+                } else {
+                    setAliyunAuthKey();
                 }
                 break;
             case "aws":
             case "s3":
-                if (!"s3".equals(source) && isStorageSource) {
-                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                if (isStorageSource) {
+                    if (!"s3".equals(source)) {
+                        throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                    }
+                } else {
+                    setS3AuthKey();
                 }
                 break;
             case "huawei":
-                if (!"huawei".equals(source) && isStorageSource) {
-                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                if (isStorageSource) {
+                    if (!"huawei".equals(source)) {
+                        throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                    }
+                } else {
+                    setHuaweiAuthKey();
                 }
                 break;
             case "baidu":
-                if (!"baidu".equals(source) && isStorageSource) {
-                    throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                if (isStorageSource) {
+                    if (!"baidu".equals(source)) {
+                        throw new IOException("the privateType: " + privateType + " can not match source: " + source);
+                    }
+                } else {
+                    setBaiduAuthKey();
                 }
                 break;
             default: throw new IOException("unsupported private-type: " + privateType);

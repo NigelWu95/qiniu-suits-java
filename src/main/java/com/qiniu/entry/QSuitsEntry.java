@@ -563,12 +563,8 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getMoveFile(Map<String, String> indexMap, boolean single) throws IOException {
-        String toBucket = entryParam.getValue("to-bucket", "").trim();
-        if ("move".equals(process)) {
-            if (toBucket.isEmpty()) throw new IOException("no incorrect to-bucket, please set it.");
-        } else {
-            toBucket = null;
-        }
+        String toBucket = "move".equals(process) ?
+                entryParam.getValue("to-bucket").trim() : entryParam.getValue("to-bucket", "").trim();
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
@@ -586,8 +582,10 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getAsyncFetch(Map<String, String> indexMap, boolean single) throws IOException {
-        String ak = entryParam.getValue("qiniu-ak", qiniuAccessKey).trim();
-        String sk = entryParam.getValue("qiniu-sk", qiniuSecretKey).trim();
+        String ak = qiniuAccessKey == null || qiniuAccessKey.isEmpty() ?
+                entryParam.getValue("qiniu-ak").trim() : qiniuAccessKey;
+        String sk = qiniuSecretKey == null || qiniuSecretKey.isEmpty() ?
+                entryParam.getValue("qiniu-sk").trim() : qiniuSecretKey;
         String toBucket = entryParam.getValue("to-bucket").trim();
         if (toBucket.equals(bucket) && "qiniu".equals(source))
             throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
@@ -737,8 +735,12 @@ public class QSuitsEntry {
     }
 
     private com.qiniu.process.tencent.PrivateUrl getTencentPrivateUrl(boolean single) throws IOException {
-        String secretId = entryParam.getValue("ten-id", commonParams.getTencentSecretId());
-        String secretKey = entryParam.getValue("ten-secret", commonParams.getTencentSecretKey());
+        String secretId = commonParams.getTencentSecretId();
+        String secretKey = commonParams.getTencentSecretKey();
+        if (secretId == null || secretId.isEmpty()) {
+            secretId = entryParam.getValue("ten-id");
+            secretKey = entryParam.getValue("ten-secret");
+        }
         String tenBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket") : bucket;
         String region = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (region == null || "".equals(region)) region = CloudApiUtils.getTenCosRegion(secretId, secretKey, tenBucket);
@@ -750,9 +752,13 @@ public class QSuitsEntry {
     }
 
     private com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
-        String accessId = entryParam.getValue("ali-id", commonParams.getAliyunAccessId());
-        String accessSecret = entryParam.getValue("ali-secret", commonParams.getAliyunAccessSecret());
-        String aliBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
+        String accessId = commonParams.getAliyunAccessId();
+        String accessSecret = commonParams.getAliyunAccessSecret();
+        if (accessId == null || accessId.isEmpty()) {
+            accessId = entryParam.getValue("ali-id");
+            accessSecret = entryParam.getValue("ali-secret");
+        }
+        String aliBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket") : bucket;
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
         if (!endPoint.matches("https?://.+")) {
@@ -767,9 +773,13 @@ public class QSuitsEntry {
     }
 
     private com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
-        String accessId = entryParam.getValue("s3-id", commonParams.getS3AccessId());
-        String secretKey = entryParam.getValue("s3-secret", commonParams.getS3SecretKey());
-        String s3Bucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
+        String accessId = commonParams.getS3AccessId();
+        String secretKey = commonParams.getS3SecretKey();
+        if (accessId == null || accessId.isEmpty()) {
+            accessId = entryParam.getValue("s3-id");
+            secretKey = entryParam.getValue("s3-secret");
+        }
+        String s3Bucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket") : bucket;
         String region = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         String endpoint = entryParam.getValue("endpoint", "").trim();
         if (endpoint.isEmpty() && (region == null || "".equals(region)))
@@ -782,9 +792,13 @@ public class QSuitsEntry {
     }
 
     private com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
-        String accessId = entryParam.getValue("hua-id", commonParams.getS3AccessId());
-        String secretKey = entryParam.getValue("hua-secret", commonParams.getS3SecretKey());
-        String huaweiBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
+        String accessId = commonParams.getS3AccessId();
+        String secretKey = commonParams.getS3SecretKey();
+        if (accessId == null || accessId.isEmpty()) {
+            accessId = entryParam.getValue("hua-id");
+            secretKey = entryParam.getValue("hua-secret");
+        }
+        String huaweiBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket") : bucket;
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getHuaweiObsRegion(accessId, secretKey, huaweiBucket);
         if (!endPoint.matches("https?://.+")) {
@@ -800,9 +814,13 @@ public class QSuitsEntry {
     }
 
     private com.qiniu.process.baidu.PrivateUrl getBaiduPrivateUrl(boolean single) throws IOException {
-        String accessId = entryParam.getValue("bai-id", commonParams.getS3AccessId());
-        String secretKey = entryParam.getValue("bai-secret", commonParams.getS3SecretKey());
-        String baiduBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket", bucket) : bucket;
+        String accessId = commonParams.getS3AccessId();
+        String secretKey = commonParams.getS3SecretKey();
+        if (accessId == null || accessId.isEmpty()) {
+            accessId = entryParam.getValue("bai-id");
+            secretKey = entryParam.getValue("bai-secret");
+        }
+        String baiduBucket = bucket == null || bucket.isEmpty() ? entryParam.getValue("bucket") : bucket;
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getBaiduBosRegion(accessId, secretKey, baiduBucket);
         if (!endPoint.matches("https?://.+")) {
