@@ -6,8 +6,8 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
-    <version>8.0.10</version>
-    <name>qsuits</name>
+    <version>8.0.11</version>
+    <name>qiniu-suits-java</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>
 
@@ -156,73 +156,6 @@
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.cloud</groupId>
-            <artifactId>nos-sdk-java-publiccloud</artifactId>
-            <version>1.3.1</version>
-            <exclusions>
-                <!--<exclusion>-->
-                <!--<groupId>org.apache.httpcomponents</groupId>-->
-                <!--<artifactId>httpclient</artifactId>-->
-                <!--</exclusion>-->
-                <!--<exclusion>-->
-                <!--<groupId>org.apache.httpcomponents</groupId>-->
-                <!--<artifactId>httpcore</artifactId>-->
-                <!--</exclusion>-->
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.jackson</groupId>
-                    <artifactId>jackson-core-asl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.testng</groupId>
-                    <artifactId>testng</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <!--<exclusion>-->
-                <!--<groupId>joda-time</groupId>-->
-                <!--<artifactId>joda-time</artifactId>-->
-                <!--</exclusion>-->
-                <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-                <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <!--客户端加密依赖-->
-                <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
-                <!--Java加密工具类-->
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                </exclusion>
-                <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -499,13 +432,6 @@
               <includes>
                   <include>check.json</include>
                   <include>log4j2.properties</include>
-              </includes>
-          </resource>
-          <resource>
-              <directory>/</directory>
-              <filtering>false</filtering>
-              <includes>
-                  <include>pom.properties</include>
               </includes>
           </resource>
         </resources>

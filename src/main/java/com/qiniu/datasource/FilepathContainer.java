@@ -73,12 +73,12 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
         File sourceFile = new File(realPath);
         if (sourceFile.isDirectory()) {
             List<File> files = FileUtils.getFiles(sourceFile, false);
-            String filepath;
-            String key;
             int size = files.size() > threads ? threads : files.size();
             List<List<String>> lists = new ArrayList<>(size);
             for (int i = 0; i < size; i++) lists.add(new ArrayList<>());
             File file;
+            String filepath;
+            String key;
             String etag;
             long length;
             long timestamp;
@@ -108,8 +108,10 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
                 filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
             }
         } else {
-            filepathReaders.add(new FilepathReader("filepath-" + path, new ArrayList<String>(){{
-                add(sourceFile.getPath());
+            filepathReaders.add(new FilepathReader("filepath-" + path,
+                    new ArrayList<String>(){{ add(String.join(separator, sourceFile.getPath(),
+                        Etag.file(sourceFile), String.valueOf(sourceFile.length()),
+                        String.valueOf(sourceFile.lastModified()), FileUtils.contentType(sourceFile)));
             }}, null, unitLen));
         }
         if (filepathReaders.size() == 0) throw new IOException("no files in the current path you gave: " + path);
