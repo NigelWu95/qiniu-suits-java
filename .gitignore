@@ -1,6 +1,6 @@
 ### Gradle template
 .gradle
-/build/
+build/
 
 ### Maven template
 target/
@@ -26,9 +26,4 @@ resources/.*
 assembly/
 .DS_Store
 
-qsuits.log
-procedure*.log
-qsuits.error
-qsuits.info
-.qsuits.account
 logs/

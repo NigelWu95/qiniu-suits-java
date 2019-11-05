@@ -13,14 +13,14 @@ import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
+import sun.misc.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
