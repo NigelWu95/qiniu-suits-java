@@ -456,8 +456,8 @@
                         <arg>-verbose</arg>
                         <arg>-Xlint:deprecation</arg>
                     </compilerArgs>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
             <plugin>
