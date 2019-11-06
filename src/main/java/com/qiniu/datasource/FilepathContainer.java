@@ -108,8 +108,9 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
                 filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
             }
         } else {
+            String key = leftTrimSize == 0 ? sourceFile.getPath() : transferPath + sourceFile.getPath().substring(leftTrimSize);
             filepathReaders.add(new FilepathReader("filepath-" + path,
-                    new ArrayList<String>(){{ add(String.join(separator, sourceFile.getPath(),
+                    new ArrayList<String>(){{ add(String.join(separator, sourceFile.getPath(), key,
                         Etag.file(sourceFile), String.valueOf(sourceFile.length()),
                         String.valueOf(sourceFile.lastModified()), FileUtils.contentType(sourceFile)));
             }}, null, unitLen));
