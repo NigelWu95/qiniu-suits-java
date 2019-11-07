@@ -114,6 +114,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
                     .putNotNull("callbackbodytype", callbackBodyType).putNotNull("callbackhost", callbackHost)
                     .putNotNull("file_type", fileType).putNotNull("ignore_same_key", ignoreSameKey);
         }
+//        return bucketManager.asyncFetch(url, bucket, stringMap);
         byte[] bodyByte = Json.encode(stringMap).getBytes(Constants.UTF_8);
         return client.post(requestUrl, bodyByte, auth.authorizationV2(requestUrl, "POST", bodyByte, Client.JsonMime),
                 Client.JsonMime);
