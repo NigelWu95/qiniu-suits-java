@@ -6,9 +6,7 @@
 2. 单次下载一个文件请参考[ single 操作](single.md)  
 3. 交互式操作随时输入 url 进行下载请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 功能配置参数
+## 配置
 ```
 process=download
 protocol=
@@ -31,7 +29,7 @@ private=
 |protocol| http/https| 使用 http 还是 https 访问资源进行下载（默认 http）|  
 |domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
-|url-index| 字符串| 通过 url 操作时需要设置的 [url 索引（下标）](#关于-url-index)，需要手动指定才会进行解析，支持[需要私有签名的情况](#url-需要私有签名访问)|  
+|url-index| 字符串| 通过 url 操作时需要设置的 [url 索引（下标）](#关于-url-index)，需要手动指定才会进行解析，支持[需要私有签名的情况](#资源需要私有签名)|  
 |host| 域名字符串| 下载源资源时指定 host|  
 |bytes| 字节范围| 下载源资源时指定 range 的范围，如 `0-1024`，只有一个数字时表示起始字节，如 `1024-` 表示从 1024 到结尾，可用于大文件预热起始字节的场景|  
 |queries| 字符串| url 的 query 参数或样式后缀，如 `-w480` 或 `?v=1.1&time=1565171107845`（这种形式请务必带上 ? 号，否则无效）[关于 queries 参数](#关于-queries-参数)|  
@@ -60,7 +58,7 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 `private=huawei` [华为云私有签名](privateurl.md#其他存储配置参数)  
 `private=baidu` [百度云私有签名](privateurl.md#其他存储配置参数)  
 
-## 命令行参数方式
+### 命令行参数方式
 ```
 -process=download -ak= -sk= -protocol= -domain= -host= -add-prefix= -save-path= ...
 ```

@@ -7,9 +7,7 @@
 3. 单次修改一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 功能配置参数
+## 配置
 ```
 process=mime
 ak=
@@ -26,7 +24,7 @@ cond.[]=
 |mime| 字符串| 非必填字端，如果设置表示所有文件均设置为该 mime 类型，否则需要从每一行中获取 mime 的值，mime 值的索引通过 [indexes](datasource.md#关于-indexes-索引) 的第五个字段获取|  
 |cond.[]| 字符串| 可以设置一些修改操作时的条件 condition，cond 当前支持设置 hash、mime、fsize、putTime 条件，只有条件匹配才会执行修改操作，如 cond.mime=text/plain|  
 
-## 命令行参数方式
+### 命令行参数方式
 ```
 -process=mime -ak= -sk= -bucket= -mime= ...
 ```

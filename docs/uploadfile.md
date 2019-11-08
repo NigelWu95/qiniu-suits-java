@@ -7,9 +7,7 @@
 2. 单次上传一个文件请参考[ single 操作](single.md)  
 3. 交互式操作随时输入filepath 进行上传请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 功能配置参数
+## 配置
 ```
 process=qupload
 path=
@@ -45,11 +43,11 @@ crc=
 |crc| true/false| 是否开启 crc32 来校验文件的上传，默认为 false|  
 |line-config| 配置文件路径|已上传的文件在 path 中的位置标识，用于[断点续操作](../README.md#10-断点续操作)，不需要自行编写该配置|  
 
-#### 关于 line-config
+### 关于 line-config
 line-config 需要的断点文件基于上次上传文件操作未完成的情况下可以产生，理论上只要上传的目录结构没有发生变化，断点文件就能针对上次未完成上传的文件进
 行上传，而不会所有文件重新上传一遍，断点信息的获取参考[断点续操作](../README.md#10-断点续操作)。
 
-#### 上传超时时间
+### 上传超时时间
 timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](../README.md#7-超时设置)  
 
 ### 关于上传的文件路径
@@ -95,7 +93,7 @@ indexes=1
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。filepath-index 表示输入行含 filepath 形式的文件路径，未设置的情
 况下则使用 key 字段加上 parent-path 的方式访问文件路径，key 下标用 indexes 参数设置。  
 
-## 命令行参数方式
+### 命令行参数方式
 ```
 -process=qupload -ak= -sk= -bucket= -path= ...
 ```

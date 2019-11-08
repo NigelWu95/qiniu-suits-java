@@ -4,7 +4,7 @@
 从支持的数据源中读入资源信息列表，部分数据源需要指定行解析方式或所需格式分隔符，读取指定位置的字段作为输入值进行下一步处理。**目前支持的数据源类型分为
 几大类型：云存储列举(storage)、文件内容读取(file)**。  
 
-## 配置文件
+## 配置
 数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](#2-腾讯云存储)  
@@ -156,7 +156,7 @@ prefix-right=
 |upyun |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
 |huawei|`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Region](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
 |baidu |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Region](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
-**支持通过上述参数设置账号，避免使用时需要重复设置或暴露密钥，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)**  
+**支持通过上述参数设置账号，避免使用时需要重复设置或暴露密钥，参考：[账号设置](../README.md#账号设置)**  
 
 #### 数据源完备性和多前缀列举
 1. prefix-left 为可选择是否列举所有前缀 ASCII 顺序之前的文件，prefix-right 为选择是否列举所有前缀 ASCII 顺序之后的文件，确保在没有预定义前缀
@@ -211,9 +211,9 @@ threads 小于等于 100，100 万左右及以下的文件数量设置 threads �
 之后，分别加入起始（无前缀，但到第一个前缀结束）列举对象和修改终止对象的前缀，随即开始并发执行列举，分别对输出结果进行后续处理。前缀索引个数和起始与终
 止列举对象的前缀会随自定义参数 prefixes/prefix-config 和 anti-prefixes 而改变，前者为指定列举的公共前缀，anti-prefixes 表示从所有列举操作
 中排除包含该前缀的情况，通常 prefixes 和 anti-prefixes 不同时进行设置。  
-<details><summary>并发列举算法描述图：点击查看</summary>  
-  
-  ![云存储文件并发列举算法](云存储文件并发列举算法.jpg)</details>  
+<details>
+<summary>并发列举算法描述图：点击查看</summary>![云存储文件并发列举算法](云存储文件并发列举算法.jpg)
+</details>  
 
 4、部分空间可能存在文件名包含中文等字符，这部分字符没有定义在预定于前缀中，因此在列举时为了保证数据完备性会通过计算进行单独列举，如果空间中存在大量此
 类文件名可能会导致并发受到限制，因为此种文件名无法进行更多一级的前缀划分，可能会出现较慢的情况。
@@ -225,13 +225,13 @@ threads 小于等于 100，100 万左右及以下的文件数量设置 threads �
 的过程中，也进行列举，则产生每一级前缀均能得到文件，也优化了内存占用和前缀级数。  
 (3) 空间频繁删除过大量文件，经过优化可以消除大量的等待时间和超时情况，同时优化前缀下文件数量较少时尽量少分割下一级。  
 
-## 命令行方式
+### 命令行方式
 ```
 -source= -path= threads= -unit-len= [-<name>=<value>]...
 ```
 
 ## 数据源示例
-如果已设置账号，则不需要再直接设置密钥，可以通过 `-a=<account-name>`/`-d` 来读取账号，参考：[账号设置](../README.md#账号设置（7.73-及以上版本）)  
+如果已设置账号，则不需要再直接设置密钥，可以通过 `-a=<account-name>`/`-d` 来读取账号，参考：[账号设置](../README.md#账号设置)  
 
 ### 1 七牛云存储
 命令行参数示例：

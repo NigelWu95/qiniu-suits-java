@@ -6,9 +6,7 @@
 2. 单次查询一个文件请参考[ single 操作](single.md)  
 3. 交互式操作随时输入 url 进行查询请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=avinfo 
 protocol=
@@ -28,7 +26,7 @@ url-index=
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=avinfo -protocol= -domain=
 ```

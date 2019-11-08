@@ -7,18 +7,14 @@
 3. 单次查询一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行查询请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=stat
 ak=
 sk=
 bucket=
 indexes=
-```
-
-### 参数字段说明
+```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=stat| 查询资源元信息时设置为stat| 表示查询 stat 信息操作|  
@@ -26,7 +22,7 @@ indexes=
 |bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=stat -ak= -sk= -bucket=
 ```
