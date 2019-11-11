@@ -6,9 +6,8 @@ import com.qiniu.http.Response;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
-
-import static okhttp3.Dns.SYSTEM;
 
 public final class RequestUtils {
 
@@ -16,8 +15,15 @@ public final class RequestUtils {
 
     public static String lookUpFirstIpFromHost(String domain) throws UnknownHostException {
         if (domain == null || "".equals(domain)) throw new UnknownHostException("the hostname is empty.");
-        List<InetAddress> inetAddresses = SYSTEM.lookup(domain);
-        return inetAddresses.get(0).getHostAddress();
+        try {
+            List<InetAddress> inetAddresses = Arrays.asList(InetAddress.getAllByName(domain));
+            return inetAddresses.get(0).getHostAddress();
+        } catch (NullPointerException e) {
+            UnknownHostException unknownHostException =
+                    new UnknownHostException("Broken system behaviour for dns lookup of " + domain);
+            unknownHostException.initCause(e);
+            throw unknownHostException;
+        }
     }
 
     public static void checkCallbackUrl(String callbackUrl) throws QiniuException {

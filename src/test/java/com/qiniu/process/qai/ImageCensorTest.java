@@ -4,10 +4,7 @@ import com.qiniu.config.PropertiesFile;
 import com.qiniu.storage.Configuration;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
-
-import static org.junit.Assert.*;
 
 public class ImageCensorTest {
 
@@ -20,6 +17,7 @@ public class ImageCensorTest {
                 "url", "?imageView2/0/w/4999/h/4999", new String[]{"pulp", "ads"});
         String result = imageCensor.singleResult(new HashMap<String, String>(){{
             put("url", "http://xxx.cn/upload/24790f63-0936-44c4-8695-a6d6b1dd8d91.jpg");
+            put("mime", "iii");
         }});
 //        ImageCensor imageCensor = new ImageCensor(accessKey, secretKey, new Configuration(), null, null,
 //                "url", "-w480", new String[]{"pulp"});

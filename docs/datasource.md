@@ -136,7 +136,7 @@ prefix-right=
 |-----|-------|-----|  
 |<密钥配置>|字符串|密钥对字符串|  
 |region|字符串|存储区域|
-|bucket|字符串| 需要列举的空间名称，通过 "path=qiniu://<bucket>" 来设置的话此参数可不设置，设置则会覆盖 path 中指定的 bucket 值|  
+|bucket|字符串| 需要列举的空间名称，通过 "path=qiniu://<bucket\>" 来设置的话此参数可不设置，设置则会覆盖 path 中指定的 bucket 值|  
 |prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表，如果前缀本身包含 `,\=` 等特殊字符则需要加转义符，如 `\,`|  
 |prefix-config| 字符串| 该选项用于设置列举前缀的[配置文件](#prefix-config-配置)路径，配置文件格式为 json，参考[ prefix-config 配置文件](#prefix-config-配置)|
 |anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
@@ -156,13 +156,14 @@ prefix-right=
 |upyun |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
 |huawei|`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Region](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
 |baidu |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Region](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
+
 **支持通过上述参数设置账号，避免使用时需要重复设置或暴露密钥，参考：[账号设置](../README.md#账号设置)**  
 
 #### 数据源完备性和多前缀列举
 1. prefix-left 为可选择是否列举所有前缀 ASCII 顺序之前的文件，prefix-right 为选择是否列举所有前缀 ASCII 顺序之后的文件，确保在没有预定义前缀
 的情况下仍能列举完整数据。   
 2. prefixes 或 prefix-config 用于设置多个 <prefix> 分别列举这些前缀下的文件，如指定多个前缀：[a,c,d]，则会分别列举到这三个前缀下的文件，如果
-设置 prefix-config 则 prefixes 配置无效，同时 prefix-config 支持指定列举起始和结束位置(<start/marker>、<end>)，写法如下，配置举例见
+设置 prefix-config 则 prefixes 配置无效，同时 prefix-config 支持指定列举起始(<start/marker\>)和结束位置(<end\>)，写法如下，配置举例见
 [prefix-config 配置](../resources/prefixes.json)。在使用多个前缀列举的同时，可能存在需要列举到**第一个前缀之前**或**最后一个前缀之后**(前
 缀会自动按照 ASCII 码排序)的文件，因此设置 prefix-left 和 prefix-right 用于满足该需求。   
 **备注：** 又拍云存储强制目录结构以 "/" 作为分隔符，不支持任意前缀列举，列举算法有不同，因此也不支持 prefix-left 和 prefix-right 参数，设置
