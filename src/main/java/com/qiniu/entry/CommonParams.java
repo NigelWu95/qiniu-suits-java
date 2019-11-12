@@ -184,6 +184,7 @@ public class CommonParams {
         setBaseFilter();
         setSeniorFilter();
         setIndexMap();
+        checkFilterForProcess();
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
         setThreads(entryParam.getValue("threads", "50").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
@@ -750,12 +751,12 @@ public class CommonParams {
         String keySuffix = entryParam.getValue("f-suffix", "");
         String keyInner = entryParam.getValue("f-inner", "");
         String keyRegex = entryParam.getValue("f-regex", "");
-        String mimeType = entryParam.getValue("f-mime", "");
+        String mimeType = entryParam.getValue("f-mime", "").trim();
         String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
         String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
         String antiKeyInner = entryParam.getValue("f-anti-inner", "");
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
-        String antiMimeType = entryParam.getValue("f-anti-mime", "");
+        String antiMimeType = entryParam.getValue("f-anti-mime", "").trim();
         String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", "").trim());
         LocalDateTime putTimeMin = checkedDatetime(dateScale[0]);
         LocalDateTime putTimeMax = checkedDatetime(dateScale[1]);
@@ -777,6 +778,7 @@ public class CommonParams {
         List<String> antiKeyInnerList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyInner));
         List<String> antiKeyRegexList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyRegex));
         List<String> antiMimeTypeList = Arrays.asList(ParamsUtils.escapeSplit(antiMimeType));
+
         try {
             baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
                     antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
@@ -979,6 +981,28 @@ public class CommonParams {
                     }
                 }
             }
+        }
+    }
+
+    private void checkFilterForProcess() throws IOException {
+        if (!baseFilter.checkMimeTypeCon() && indexMap.containsValue("mime")) {
+            if ("imagecensor".equals(process)) {
+                throw new IOException("please set \"f-mime\" like \"f-mime=image/\" for process=" + process
+                        + ", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
+            } else if ("videocensor".equals(process) || "avinfo".equals(process)) {
+                throw new IOException("please set \"f-mime\" like \"f-mime=video/\" for process=" + process
+                        + ", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
+            }
+        }
+        if ("type".equals(process) && !baseFilter.checkTypeCon() && indexMap.containsValue("type")) {
+            throw new IOException("please set \"f-type\" like \"f-type=0/\" for process=type if you want to set target "
+                    + "files \"type=1\", or \"type=0\" with \"f-type=1/\", and recommend you to set "
+                    + "\"f-strict-error=true\" to record unmatched lines.");
+        }
+        if ("status".equals(process) && !baseFilter.checkStatusCon() && indexMap.containsValue("status")) {
+            throw new IOException("please set \"f-status\" like \"f-status=0/\" for process=status if you want to set "
+                    + "target files \"status=1\", or \"status=0\" with \"f-status=1/\", and recommend you to set "
+                    + "\"f-strict-error=true\" to record unmatched lines.");
         }
     }
 

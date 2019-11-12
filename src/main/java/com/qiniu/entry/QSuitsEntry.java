@@ -426,31 +426,34 @@ public class QSuitsEntry {
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
-        ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor(false);
+        ILineProcess<Map<String, String>> processor = process == null ? null : whichNextProcessor(false);
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
-        ILineProcess<Map<String, String>> processor;
         if (baseFilter != null || seniorFilter != null) {
             List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
-            if (nextProcessor == null) {
-                processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
+            FilterProcess<Map<String, String>> filterProcessor;
+            if (processor == null) {
+                filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newPersistConverter() throws IOException {
                         return new MapToString(saveFormat, saveSeparator, fields);
                     }
                 };
             } else {
-                processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter){};
-                processor.setNextProcessor(nextProcessor);
+                filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter){};
+                filterProcessor.setNextProcessor(processor);
             }
+            String strictError = entryParam.getValue("f-strict-error", "false").trim();
+            ParamsUtils.checked(strictError, "f-strict-error", "(true|false)");
+            filterProcessor.setStrictError(Boolean.parseBoolean(strictError));
+            return filterProcessor;
         } else {
             if ("filter".equals(process)) {
                 throw new Exception("please set the correct filter conditions.");
             } else {
-                processor = nextProcessor;
+                return processor;
             }
         }
-        return processor;
     }
 
     public ILineProcess<Map<String, String>> whichNextProcessor(boolean single) throws Exception {
