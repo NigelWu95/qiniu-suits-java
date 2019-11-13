@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
-    <version>8.0.11</version>
+    <version>8.0.12</version>
     <name>qiniu-suits-java</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>
@@ -105,10 +105,10 @@
                     <groupId>com.qcloud</groupId>
                     <artifactId>qcloud-java-sdk</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.httpcomponents</groupId>-->
+<!--                    <artifactId>httpclient</artifactId>-->
+<!--                </exclusion>-->
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
@@ -198,10 +198,10 @@
                     <groupId>com.fasterxml.jackson.dataformat</groupId>
                     <artifactId>jackson-dataformat-cbor</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>joda-time</groupId>
-                    <artifactId>joda-time</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>joda-time</groupId>-->
+<!--                    <artifactId>joda-time</artifactId>-->
+<!--                </exclusion>-->
                 <exclusion>
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
@@ -225,10 +225,6 @@
                 <exclusion>
                     <groupId>org.easymock</groupId>
                     <artifactId>easymock</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>commons-io</groupId>
@@ -324,10 +320,10 @@
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>commons-logging</groupId>-->
+<!--                    <artifactId>commons-logging</artifactId>-->
+<!--                </exclusion>-->
                 <!--<exclusion>-->
                 <!--<groupId>com.google.guava</groupId>-->
                 <!--<artifactId>guava</artifactId>-->

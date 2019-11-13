@@ -12,9 +12,9 @@ public class HttpDownloaderTest {
         HttpDownloader downloader = new HttpDownloader();
         try {
             StringMap headers = new StringMap().put("Range", "bytes=0-");
-//            downloader.download("http://p3l1d5mx4.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
+//            downloader.download("http://xxx.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
 //                    "/Users/wubingheng/Downloads/ltSP7XPbPGviBNjXiZEHX7mpdm6o", null);
-            downloader.download("http://p3l1d5mx4.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
+            downloader.download("http://xxx.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mpdm6o",
                     headers);
         } catch (IOException e) {
             e.printStackTrace();

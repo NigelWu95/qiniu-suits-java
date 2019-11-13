@@ -130,6 +130,10 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig() throws IOException {
+        if (qiniuAccessKey == null || "".equals(qiniuAccessKey)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
+        }
         com.qiniu.storage.Region region = (regionName == null || "".equals(regionName)) ?
                 CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(qiniuAccessKey, qiniuSecretKey, bucket))
                 : CloudApiUtils.getQiniuRegion(regionName);

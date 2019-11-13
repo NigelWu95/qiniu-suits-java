@@ -1007,22 +1007,22 @@ public class CommonParams {
     }
 
     private void checkFilterForProcess() throws IOException {
-        if (!baseFilter.checkMimeTypeCon() && indexMap.containsValue("mime")) {
+        if ((baseFilter == null || !baseFilter.checkMimeTypeCon()) && indexMap.containsValue("mime")) {
             if ("imagecensor".equals(process)) {
-                throw new IOException("please set \"f-mime\" like \"f-mime=image/\" for process=" + process
-                        + ", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
+                throw new IOException("please set \"f-mime\" like \"f-mime=image/\" for \"process=" + process
+                        + "\", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
             } else if ("videocensor".equals(process) || "avinfo".equals(process)) {
-                throw new IOException("please set \"f-mime\" like \"f-mime=video/\" for process=" + process
-                        + ", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
+                throw new IOException("please set \"f-mime\" like \"f-mime=video/\" for \"process=" + process
+                        + "\", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
             }
         }
-        if ("type".equals(process) && !baseFilter.checkTypeCon() && indexMap.containsValue("type")) {
-            throw new IOException("please set \"f-type\" like \"f-type=0/\" for process=type if you want to set target "
+        if ("type".equals(process) && (baseFilter == null || !baseFilter.checkTypeCon()) && indexMap.containsValue("type")) {
+            throw new IOException("please set \"f-type\" like \"f-type=0/\" for \"process=type\" if you want to set target "
                     + "files \"type=1\", or \"type=0\" with \"f-type=1/\", and recommend you to set "
                     + "\"f-strict-error=true\" to record unmatched lines.");
         }
-        if ("status".equals(process) && !baseFilter.checkStatusCon() && indexMap.containsValue("status")) {
-            throw new IOException("please set \"f-status\" like \"f-status=0/\" for process=status if you want to set "
+        if ("status".equals(process) && (baseFilter == null || !baseFilter.checkStatusCon()) && indexMap.containsValue("status")) {
+            throw new IOException("please set \"f-status\" like \"f-status=0/\" for \"process=status\" if you want to set "
                     + "target files \"status=1\", or \"status=0\" with \"f-status=1/\", and recommend you to set "
                     + "\"f-strict-error=true\" to record unmatched lines.");
         }

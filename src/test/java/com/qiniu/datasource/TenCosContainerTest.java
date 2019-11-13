@@ -20,12 +20,14 @@ public class TenCosContainerTest {
     @Before
     public void init() throws IOException {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.tencent.properties");
-        String secretId = propertiesFile.getValue("SecretId");
-        String secretKey = propertiesFile.getValue("SecretKey");
+        String secretId = propertiesFile.getValue("ten-id");
+        String secretKey = propertiesFile.getValue("ten-secret");
         String regionName = propertiesFile.getValue("region");
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig(new Region(regionName));
-        String bucket = propertiesFile.getValue("bucket");
+        String bucket
+//                = propertiesFile.getValue("bucket");
+                = "test-1254031816";
         tenCosContainer = new TenCosContainer(secretId, secretKey, clientConfig, bucket, null, null,
                 false, false, new HashMap<String, String>(){{ put("key", "key"); }}, null,
                 1000, 10);
