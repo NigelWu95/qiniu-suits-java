@@ -18,6 +18,7 @@ f-anti-prefix=
 f-anti-suffix=
 f-anti-regex=
 f-anti-mime=
+f-strict-error=
 f-check=
 f-check-config=
 f-check-rewrite=
@@ -37,9 +38,10 @@ f-check-rewrite=
 |f-anti-inner| ","分隔的字符串列表| 表示**排除**文件名包含该部分字符的文件|  
 |f-anti-regex| ","分隔的字符串列表| 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式|  
 |f-anti-mime| ","分隔的字符串列表| 表示**排除**该 mime 类型的文件|  
+|f-strict-error| true/false| 严格错误模式，默认为 false，为 true 表示对基础字段过滤到不匹配的行抛出异常或记录为 not_match 的结果（filter_not_match_xxx.txt）|  
 |f-check|字符串| 是否进行字段关联匹配性检查，不符合规范的疑似异常文件将被筛选出来|  
-|f-check-config|配置文件路径字符串|自定义资源字段规范对应关系列表的配置文件，格式为 json|  
-|f-check-rewrite|true/false|是否完全使用自定义的规范列表进行检查，默认为 false|  
+|f-check-config|配置文件路径字符串| 自定义资源字段规范对应关系列表的配置文件，格式为 json|  
+|f-check-rewrite|true/false| 是否完全使用自定义的规范列表进行检查，默认为 false|  
 
 ### 关于 f-type
 |存储源|type 参数类型|具体值                   |

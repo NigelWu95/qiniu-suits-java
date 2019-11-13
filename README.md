@@ -12,7 +12,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
 - [x] 文件[迁移/备份](docs/datamigration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
-- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](#-f-check-x)，过滤异常文件列表  
 - [x] 上传文件到存储空间 [qupload 配置](docs/uploadfile.md)  
 - [x] 删除空间资源 [delete 配置](docs/delete.md)  
 - [x] 复制资源到指定空间 [copy 配置](docs/copy.md)  
@@ -204,6 +204,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `f-anti-inner=` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex=` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime=` 表示**排除**该 mime 类型的文件  
+`f-strict-error=` true/false，是否使用严格错误模式，默认为 false，为 true 表示对基础字段过滤到不匹配的行抛出异常或记录为 not_match 的结果（filter_not_match_xxx.txt）  
 
 #### 关于 f-type
 |存储源|type 参数类型|具体值                   |
@@ -219,7 +220,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 用命令行来设置，注意日期值包含空格的情况（date 日期和时刻中间含有空格分隔符），故在设置时需要使用引号 `'` 或者 `"`，
 如 `-f-date-scale="[0,2018-08-01 12:30:00]"`，配置文件则不需要引号。  
 
-#### 特殊特征匹配过滤 f-check[-x]  
+#### 特殊特征匹配过滤 f-check[-x]
 根据资源的字段关系选择某个特征下的文件，目前支持 `ext-mime` 检查，程序内置的默认特征配置见：[check 默认配置](resources/check.json)，运行
 参数选项如下：  
 `f-check=ext-mime` 表示进行**后缀名 ext** 和 **mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  

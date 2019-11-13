@@ -256,7 +256,7 @@ public class QSuitsEntry {
             if (commonParams.isSelfUpload()) return getFilepathContainer();
             else return getLocalFileContainer();
         } else {
-            return null;
+            throw new IOException("no such datasource: " + source);
         }
     }
 

@@ -16,6 +16,9 @@ pfop-config=
 duration=
 size=
 avinfo-index=
+#cmd=
+#saveas=
+#scale=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
@@ -25,6 +28,9 @@ avinfo-index=
 |duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
 |size| true/false| 得到的结果行中是否需要保存 size（音视频时长）信息，会放在 duration 字段之后|  
 |avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），必须指定才能进行处理|  
+|cmd| 字符串| pfop 命令，如 avthumb/mp4，和 pfop-config 中的 cmd 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
+|saveas| 字符串| saveas 的格式，如 bucket:$(key)F720.mp4，和 pfop-config 中的 saveas 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
+|scale| 字符串| scale 的格式，如 `[1000,1280]`，和 pfop-config 中的 scale 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
 
 ### pfop-config 配置文件
 ```json
