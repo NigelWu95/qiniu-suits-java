@@ -7,9 +7,7 @@
 3. 单次复制一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行复制请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=copy 
 ak=<ak> 
@@ -38,7 +36,7 @@ rm-prefix=
 标和 key 字段下标不可相同，key 下标用 indexes 参数设置，。  
 **注意**：七牛存储空间不支持文件名以 `../`, `./` 开头或者包含 `/../`, `/./` 这种情况，会造成无法访问，因此设置文件名时请注意。  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=copy -ak= -sk= -bucket= -to-bucket= -toKey-index= -add-prefix= -rm-prefix=
 ```

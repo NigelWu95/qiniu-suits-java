@@ -13,7 +13,7 @@
 3. 单次对一个文件/url 签名请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key/url 进行签名请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
+## 配置
 
 ### 七牛配置参数
 ```
@@ -42,6 +42,14 @@ queries=
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
 加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
 
+#### 关于 queries 参数
+queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在私有签名之前加上参数。  
+
+#### 命令行方式
+```
+-process=private -ak= -sk= -bucket= 
+```
+
 ### 其他存储配置参数
 ```
 process=tenprivate/aliprivate/s3private/huaweiprivate/baiduprivate
@@ -66,10 +74,10 @@ queries=
 |huawei|`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Region](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
 |baidu |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Region](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
 
-### 关于 queries 参数
+#### 关于 queries 参数
 queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在私有签名之前加上参数。  
 
-## 命令行方式
+#### 命令行方式
 ```
--process=avinfo -ak= -sk= -bucket= 
+-process=tenprivate -ak= -sk= -bucket= 
 ```

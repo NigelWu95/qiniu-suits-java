@@ -125,12 +125,18 @@ public class QSuitsEntry {
         return commonParams;
     }
 
-    public Configuration getQiniuConfig() {
+    public Configuration getQiniuConfig() throws IOException {
         return qiniuConfig == null ? getDefaultQiniuConfig() : qiniuConfig;
     }
 
-    private Configuration getDefaultQiniuConfig() {
-        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
+    private Configuration getDefaultQiniuConfig() throws IOException {
+        if (qiniuAccessKey == null || "".equals(qiniuAccessKey)) {
+            qiniuAccessKey = entryParam.getValue("ak").trim();
+            qiniuSecretKey = entryParam.getValue("sk").trim();
+        }
+        com.qiniu.storage.Region region = (regionName == null || "".equals(regionName)) ?
+                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(qiniuAccessKey, qiniuSecretKey, bucket))
+                : CloudApiUtils.getQiniuRegion(regionName);
         String rsfDomain = entryParam.getValue("rsf-domain", null);
         String rsDomain = entryParam.getValue("rs-domain", null);
         String apiDomain = entryParam.getValue("api-domain", null);
@@ -254,7 +260,7 @@ public class QSuitsEntry {
             if (commonParams.isSelfUpload()) return getFilepathContainer();
             else return getLocalFileContainer();
         } else {
-            return null;
+            throw new IOException("no such datasource: " + source);
         }
     }
 
@@ -424,31 +430,34 @@ public class QSuitsEntry {
     }
 
     public ILineProcess<Map<String, String>> getProcessor() throws Exception {
-        ILineProcess<Map<String, String>> nextProcessor = process == null ? null : whichNextProcessor(false);
+        ILineProcess<Map<String, String>> processor = process == null ? null : whichNextProcessor(false);
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
-        ILineProcess<Map<String, String>> processor;
         if (baseFilter != null || seniorFilter != null) {
             List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
-            if (nextProcessor == null) {
-                processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
+            FilterProcess<Map<String, String>> filterProcessor;
+            if (processor == null) {
+                filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newPersistConverter() throws IOException {
                         return new MapToString(saveFormat, saveSeparator, fields);
                     }
                 };
             } else {
-                processor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter){};
-                processor.setNextProcessor(nextProcessor);
+                filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter){};
+                filterProcessor.setNextProcessor(processor);
             }
+            String strictError = entryParam.getValue("f-strict-error", "false").trim();
+            ParamsUtils.checked(strictError, "f-strict-error", "(true|false)");
+            filterProcessor.setStrictError(Boolean.parseBoolean(strictError));
+            return filterProcessor;
         } else {
             if ("filter".equals(process)) {
                 throw new Exception("please set the correct filter conditions.");
             } else {
-                processor = nextProcessor;
+                return processor;
             }
         }
-        return processor;
     }
 
     public ILineProcess<Map<String, String>> whichNextProcessor(boolean single) throws Exception {
@@ -607,17 +616,26 @@ public class QSuitsEntry {
         String ignore = entryParam.getValue("ignore-same-key", "false").trim();
         ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionStr);
+        com.qiniu.storage.Region region = "".equals(regionStr) ?
+                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
+                : CloudApiUtils.getQiniuRegion(regionStr);
+        String rsDomain = entryParam.getValue("rs-domain", null);
+        String apiDomain = entryParam.getValue("api-domain", null);
+        if (rsDomain != null || apiDomain != null) {
+            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
+            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
+            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+        }
         Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
         if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
-        ILineProcess<Map<String, String>> processor = single ? new AsyncFetch(ak, sk, configuration, toBucket, protocol,
+        AsyncFetch processor = single ? new AsyncFetch(ak, sk, configuration, toBucket, protocol,
                 domain, urlIndex, addPrefix, rmPrefix)
                 : new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix, savePath);
         if (!host.isEmpty() || md5Index != null || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
                 !callbackBodyType.isEmpty() || !callbackHost.isEmpty() || "1".equals(type) || "true".equals(ignore)) {
-            ((AsyncFetch) processor).setFetchArgs(host, md5Index, callbackUrl, callbackBody,
+            processor.setFetchArgs(host, md5Index, callbackUrl, callbackBody,
                     callbackBodyType, callbackHost, Integer.valueOf(type), Boolean.valueOf(ignore));
         }
         return processor;

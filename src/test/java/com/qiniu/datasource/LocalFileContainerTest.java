@@ -14,7 +14,7 @@ public class LocalFileContainerTest {
     @Test
     public void getFileReaders() throws Exception {
 
-        String filePath = "../../Github/yppphoto";
+        String filePath = "../../Github/temp";
         String parse = "tab";
         String separator = ",";
         Map<String, String> linesMap = new HashMap<String, String>(){{

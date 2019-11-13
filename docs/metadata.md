@@ -7,9 +7,7 @@
 3. 单次修改一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 功能配置参数
+## 配置
 ```
 process=metadata
 ak=
@@ -26,7 +24,7 @@ cond.[]=
 |meta.[]| 字符串| metadata 的设置，全局设置，应用在所有文件上进行修改，支持任意自定义字段，也可以是常用的标准字段，如 meta.key1=value1, meta.Cache-Control=public, max-age=36000|  
 |cond.[]| 字符串| 可以设置一些修改操作时的条件 condition，cond 当前支持设置 hash、mime、fsize、putTime 条件，只有条件匹配才会执行修改操作，如 cond.mime=text/plain|  
 
-## 命令行参数方式
+### 命令行参数方式
 ```
 -process=metadata -ak= -sk= -bucket= -meta.Cache-Control=no store ...
 ```

@@ -12,7 +12,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
 - [x] 文件[迁移/备份](docs/datamigration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
-- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](docs/filter.md#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
 - [x] 上传文件到存储空间 [qupload 配置](docs/uploadfile.md)  
 - [x] 删除空间资源 [delete 配置](docs/delete.md)  
 - [x] 复制资源到指定空间 [copy 配置](docs/copy.md)  
@@ -204,6 +204,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `f-anti-inner=` 表示**排除**文件名包含该部分字符的文件  
 `f-anti-regex=` 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式  
 `f-anti-mime=` 表示**排除**该 mime 类型的文件  
+`f-strict-error=` true/false，是否使用严格错误模式，默认为 false，为 true 表示对基础字段过滤到不匹配的行抛出异常或记录为 not_match 的结果（filter_not_match_xxx.txt）  
 
 #### 关于 f-type
 |存储源|type 参数类型|具体值                   |
@@ -219,7 +220,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 用命令行来设置，注意日期值包含空格的情况（date 日期和时刻中间含有空格分隔符），故在设置时需要使用引号 `'` 或者 `"`，
 如 `-f-date-scale="[0,2018-08-01 12:30:00]"`，配置文件则不需要引号。  
 
-#### 特殊特征匹配过滤 f-check[-x]  
+#### 特殊特征匹配过滤 f-check[-x]
 根据资源的字段关系选择某个特征下的文件，目前支持 `ext-mime` 检查，程序内置的默认特征配置见：[check 默认配置](resources/check.json)，运行
 参数选项如下：  
 `f-check=ext-mime` 表示进行**后缀名 ext** 和 **mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  
@@ -298,7 +299,7 @@ rm-fields=
 |save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
 |rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际字段选项，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
 
-**关于save-total**  
+#### 关于save-total  
 （1）用于选择是否直接保存数据源完整输出结果，针对存在过滤条件或下一步处理过程时是否需要保存原始数据，如 bucket 的 list 操作需要在列举出结果之后再针
     对字段进行过滤或者做删除，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置为 false，如
     果是删除等操作，通常删除结果会直接保存文件名和删除结果，原始数据也不需要保存。  
@@ -306,14 +307,14 @@ rm-fields=
 （2）云存储数据源时默认设置 save-total=true。  
 （3）保存结果的路径 **默认（save-path）使用 <bucket\>（云存储数据源情况下）名称或者 <path\>-result 来创建目录**。  
 
-**关于持久化文件名** 
+#### 关于持久化文件名  
 （1）持数据源久化结果的文件名为 "<source-name\>\_success_<order\>.txt"，如 qiniu 存储数据源结果为 "qiniu_success_<order\>.txt"，
     local 数据源结果为 "local_success_<order\>.txt"。  
 （2）如果设置了过滤选项或者处理过程，则过滤到的结果文件名为 "filter_success/error_<order\>.txt"。
 （3）process 过程保存的结果为文件为 "<process\>\_success/error\_<order\>.txt"，<process\>\_success/error\_<order\>.txt 表明无法
     成功处理的结果，<process\>\_need_retry\_<order\>.txt，表明为需要重试的记录，可能需要确认所有错误数据和记录的错误信息。  
 
-**关于 rm-fields** 
+#### 关于 rm-fields  
 rm-fields 可选择持久化结果中去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式 save-format 保存在 save-path 的文件
 中。file 数据源输入字段完全取决于 indexes 和其他的一些 index 设置，可参考 [indexes 索引](datasource.md#关于-indexes-索引)，而其他 index
 设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](docs/datasource.md#关于文件信息字段)   

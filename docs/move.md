@@ -7,9 +7,7 @@
 3. 单次移动一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行移动请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=move
 ak=

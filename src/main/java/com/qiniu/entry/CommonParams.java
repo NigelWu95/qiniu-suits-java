@@ -184,6 +184,7 @@ public class CommonParams {
         setBaseFilter();
         setSeniorFilter();
         setIndexMap();
+        checkFilterForProcess();
         setUnitLen(entryParam.getValue("unit-len", "-1").trim());
         setThreads(entryParam.getValue("threads", "50").trim());
         setBatchSize(entryParam.getValue("batch-size", "-1").trim());
@@ -325,28 +326,49 @@ public class CommonParams {
             source = "terminal";
             return;
         }
-        try {
-            source = entryParam.getValue("source-type").trim();
-        } catch (IOException e1) {
+        if ("".equals(path)) {
             try {
-                source = entryParam.getValue("source").trim();
-            } catch (IOException e2) {
-                if ("".equals(path) || path.startsWith("qiniu://")) source = "qiniu";
-                else if (path.startsWith("tencent://")) source = "tencent";
-                else if (path.startsWith("aliyun://")) source = "aliyun";
-                else if (path.startsWith("upyun://")) source = "upyun";
-                else if (path.startsWith("aws://") || path.startsWith("s3://")) source = "s3";
-                else if (path.startsWith("huawei://")) source = "huawei";
-                else if (path.startsWith("baidu://")) source = "baidu";
-                else source = "local";
+                source = entryParam.getValue("source-type").trim();
+            } catch (IOException e1) {
+                try {
+                    source = entryParam.getValue("source").trim();
+                } catch (IOException e2) {
+                    source = "qiniu";
+                }
             }
-        }
-        // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
-        if ("list".equals(source)) source = "qiniu";
-        else if ("file".equals(source)) source = "local";
-        else if ("aws".equals(source)) source = "s3";
-        if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3|huawei|baidu)")) {
-            throw new IOException("the datasource is supported only in: [local,qiniu,tencent,aliyun,upyun,aws,s3,huawei,baidu]");
+            // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
+            if ("list".equals(source)) source = "qiniu";
+            else if ("file".equals(source)) source = "local";
+            else if ("aws".equals(source)) source = "s3";
+            else if (!source.matches("(local|qiniu|tencent|aliyun|upyun|s3|huawei|baidu)")) {
+                throw new IOException("the datasource: " + source + " is supported.");
+            }
+        } else if (path.startsWith("qiniu://")) {
+            source = "qiniu";
+            bucket = path.substring(8);
+        } else if (path.startsWith("tencent://")) {
+            source = "tencent";
+            bucket = path.substring(10);
+        } else if (path.startsWith("aliyun://")) {
+            source = "aliyun";
+            bucket = path.substring(9);
+        } else if (path.startsWith("upyun://")) {
+            source = "upyun";
+            bucket = path.substring(8);
+        } else if (path.startsWith("aws://")) {
+            source = "s3";
+            bucket = path.substring(6);
+        } else if (path.startsWith("s3://")) {
+            source = "s3";
+            bucket = path.substring(5);
+        } else if (path.startsWith("huawei://")) {
+            source = "huawei";
+            bucket = path.substring(9);
+        } else if (path.startsWith("baidu://")) {
+            source = "baidu";
+            bucket = path.substring(8);
+        } else {
+            source = "local";
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
     }
@@ -549,18 +571,19 @@ public class CommonParams {
      * @throws IOException 解析 bucket 参数失败抛出异常
      */
     private void setBucket() throws IOException {
-        if ("qiniu".equals(source) && path.startsWith("qiniu://")) bucket = path.substring(8);
-        else if ("tencent".equals(source) && path.startsWith("tencent://")) bucket = path.substring(10);
-        else if ("aliyun".equals(source) && path.startsWith("aliyun://")) bucket = path.substring(9);
-        else if ("upyun".equals(source) && path.startsWith("upyun://")) bucket = path.substring(8);
-        else if ("s3".equals(source)) {
-            if (path.startsWith("s3://")) bucket = path.substring(5);
+        if (bucket == null || "".equals(bucket)) {
+            if (path.startsWith("qiniu://")) bucket = path.substring(8);
+            else if (path.startsWith("tencent://")) bucket = path.substring(10);
+            else if (path.startsWith("aliyun://")) bucket = path.substring(9);
+            else if (path.startsWith("upyun://")) bucket = path.substring(8);
+            else if (path.startsWith("s3://")) bucket = path.substring(5);
             else if (path.startsWith("aws://")) bucket = path.substring(6);
+            else if (path.startsWith("huawei://")) bucket = path.substring(9);
+            else if (path.startsWith("baidu://")) bucket = path.substring(8);
+            else bucket = entryParam.getValue("bucket").trim();
+        } else {
+            bucket = entryParam.getValue("bucket", bucket).trim();
         }
-        else if ("huawei".equals(source) && path.startsWith("huawei://")) bucket = path.substring(9);
-        else if ("baidu".equals(source) && path.startsWith("baidu://")) bucket = path.substring(8);
-        if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
-        else bucket = entryParam.getValue("bucket", bucket).trim();
     }
 
     private void setProcess() throws IOException {
@@ -750,12 +773,12 @@ public class CommonParams {
         String keySuffix = entryParam.getValue("f-suffix", "");
         String keyInner = entryParam.getValue("f-inner", "");
         String keyRegex = entryParam.getValue("f-regex", "");
-        String mimeType = entryParam.getValue("f-mime", "");
+        String mimeType = entryParam.getValue("f-mime", "").trim();
         String antiKeyPrefix = entryParam.getValue("f-anti-prefix", "");
         String antiKeySuffix = entryParam.getValue("f-anti-suffix", "");
         String antiKeyInner = entryParam.getValue("f-anti-inner", "");
         String antiKeyRegex = entryParam.getValue("f-anti-regex", "");
-        String antiMimeType = entryParam.getValue("f-anti-mime", "");
+        String antiMimeType = entryParam.getValue("f-anti-mime", "").trim();
         String[] dateScale = splitDateScale(entryParam.getValue("f-date-scale", "").trim());
         LocalDateTime putTimeMin = checkedDatetime(dateScale[0]);
         LocalDateTime putTimeMax = checkedDatetime(dateScale[1]);
@@ -777,6 +800,7 @@ public class CommonParams {
         List<String> antiKeyInnerList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyInner));
         List<String> antiKeyRegexList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyRegex));
         List<String> antiMimeTypeList = Arrays.asList(ParamsUtils.escapeSplit(antiMimeType));
+
         try {
             baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
                     antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
@@ -982,6 +1006,28 @@ public class CommonParams {
         }
     }
 
+    private void checkFilterForProcess() throws IOException {
+        if ((baseFilter == null || !baseFilter.checkMimeTypeCon()) && indexMap.containsValue("mime")) {
+            if ("imagecensor".equals(process)) {
+                throw new IOException("please set \"f-mime\" like \"f-mime=image/\" for \"process=" + process
+                        + "\", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
+            } else if ("videocensor".equals(process) || "avinfo".equals(process)) {
+                throw new IOException("please set \"f-mime\" like \"f-mime=video/\" for \"process=" + process
+                        + "\", and recommend you to set \"f-strict-error\" as true to record unmatched lines.");
+            }
+        }
+        if ("type".equals(process) && (baseFilter == null || !baseFilter.checkTypeCon()) && indexMap.containsValue("type")) {
+            throw new IOException("please set \"f-type\" like \"f-type=0/\" for \"process=type\" if you want to set target "
+                    + "files \"type=1\", or \"type=0\" with \"f-type=1/\", and recommend you to set "
+                    + "\"f-strict-error=true\" to record unmatched lines.");
+        }
+        if ("status".equals(process) && (baseFilter == null || !baseFilter.checkStatusCon()) && indexMap.containsValue("status")) {
+            throw new IOException("please set \"f-status\" like \"f-status=0/\" for \"process=status\" if you want to set "
+                    + "target files \"status=1\", or \"status=0\" with \"f-status=1/\", and recommend you to set "
+                    + "\"f-strict-error=true\" to record unmatched lines.");
+        }
+    }
+
     private void setUnitLen(String unitLen) throws IOException {
         if (unitLen.startsWith("-")) {
             if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
@@ -1043,7 +1089,7 @@ public class CommonParams {
     private void setSavePath() throws IOException {
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
-        if (FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
+        if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException("the save-path can not be same as path.");
         } else if (FileUtils.checkKeyFilesInPath(savePath, source)) {
             if (!savePath.contains(bucket) || prefixesMap == null || prefixesMap.size() <= 0) {

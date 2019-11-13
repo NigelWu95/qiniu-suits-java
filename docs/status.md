@@ -7,9 +7,7 @@
 3. 单次修改一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 可选参数
+## 配置
 ```
 process=status
 ak=
@@ -26,7 +24,7 @@ status=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |status| 0/1| 设置资源的状态为 type，0 表示文件启用，1 表示文件禁用|  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=status -ak= -sk= -bucket= -status=  
 ```

@@ -7,9 +7,7 @@
 3. 单次查询一个审核结果请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 id 进行查询请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=censorresult
 ak=
@@ -22,7 +20,7 @@ id-index=
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |id-index| 字符串| 转码结果查询所需 jobId 的索引（下标），censorresult 操作时必须指定 |  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=censorresult -id-index=
 ```

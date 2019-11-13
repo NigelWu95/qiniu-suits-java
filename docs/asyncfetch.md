@@ -7,9 +7,7 @@
 3. 单次抓取一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 url 进行抓取请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 功能配置参数
+## 配置
 ```
 process=asyncfetch
 ak/qiniu-ak=
@@ -58,7 +56,7 @@ check-url=
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
 
-## 命令行参数方式
+### 命令行参数方式
 ```
 -process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
 ```

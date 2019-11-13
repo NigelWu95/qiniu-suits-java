@@ -7,9 +7,7 @@
 3. 单次更新一个文件请参考[ single 操作](single.md)  
 4. 交互式操作随时输入 key 进行更新请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=mirror
 ak=
@@ -24,7 +22,7 @@ indexes=
 |bucket| 字符串| 镜像源空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=mirror -ak= -sk= -bucket=  
 ```

@@ -3,11 +3,9 @@
 ## 简介
 基于[默认的基础字段](datasource.md#关于文件信息字段)对资源信息进行过滤，接受数据源输入的信息字段按条件过滤后输出符合条件的记录，目前支持七牛存
 储资源的信息字段。  
+1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 
-## 配置文件
-**操作需指定数据源，请先[配置数据源](datasource.md)**  
-
-### 配置参数
+## 配置
 ```
 f-prefix=
 f-suffix=
@@ -20,6 +18,7 @@ f-anti-prefix=
 f-anti-suffix=
 f-anti-regex=
 f-anti-mime=
+f-strict-error=
 f-check=
 f-check-config=
 f-check-rewrite=
@@ -39,29 +38,30 @@ f-check-rewrite=
 |f-anti-inner| ","分隔的字符串列表| 表示**排除**文件名包含该部分字符的文件|  
 |f-anti-regex| ","分隔的字符串列表| 表示**排除**文件名符合该正则表达式的文件，所填内容必须为正则表达式|  
 |f-anti-mime| ","分隔的字符串列表| 表示**排除**该 mime 类型的文件|  
+|f-strict-error| true/false| 严格错误模式，默认为 false，为 true 表示对基础字段过滤到不匹配的行抛出异常或记录为 not_match 的结果（filter_not_match_xxx.txt）|  
 |f-check|字符串| 是否进行字段关联匹配性检查，不符合规范的疑似异常文件将被筛选出来|  
-|f-check-config|配置文件路径字符串|自定义资源字段规范对应关系列表的配置文件，格式为 json|  
-|f-check-rewrite|true/false|是否完全使用自定义的规范列表进行检查，默认为 false|  
+|f-check-config|配置文件路径字符串| 自定义资源字段规范对应关系列表的配置文件，格式为 json|  
+|f-check-rewrite|true/false| 是否完全使用自定义的规范列表进行检查，默认为 false|  
 
-#### 关于 f-type
+### 关于 f-type
 |存储源|type 参数类型|具体值                   |
 |-----|-----------|------------------------|
 |七牛  | 整型      |0 表示标准存储；1 表示低频存储|
 |其他  | 字符串     |如：Standard 表示标准存储，IA 表示低频存储，Archive 表示归档存储 |  
 
-#### 特殊字符
+### 特殊字符
 特殊字符包括: `, \ =` 如有参数值本身包含特殊字符需要进行转义：`\, \\ \=`  
 
-#### f-date-scale
+### f-date-scale
 \<date\> 中的 00:00:00 为默认值可省略，无起始时间则可填 [0,\<date2\>]，结束时间支持 now 和 max，分别表示到当前时间为结束或无结束时间。由于 date
 值日期和时刻中间含有空格分隔符，故在设置时需要使用引号 `'` 或者 `"`，如 `f-date-scale="[0,2018-08-01 12:30:00]"`  
 
-#### 基本字段过滤  
+### 基本字段过滤  
 过滤条件中，f-prefix,f-suffix,f-inner,f-regex,f-mime 可以为列表形式，用逗号分割，如 param1,param2,param3。
 f-prefix,f-suffix,f-inner,f-regex 四个均为针对文件名 key 的过滤条件，多个过滤条件时使用 &&（与）的关系得到最终过滤结果。f-anti-xx 的参数
 表示反向过滤条件，即排除符合该特征的记录。  
 
-#### 特殊特征匹配过滤 f-check[-x]  
+### 特殊特征匹配过滤 f-check[-x]  
 根据资源的字段关系选择某个特征下的文件，目前支持 "ext-mime" 检查，程序内置的默认特征配置见：[check 默认配置](../resources/check.json)，运行
 参数选项如下：  
 `f-check=ext-mime` 表示进行**后缀名 ext** 和 **mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  
@@ -78,7 +78,7 @@ f-prefix,f-suffix,f-inner,f-regex 四个均为针对文件名 key 的过滤条�
 `f-check-rewrite` 是否覆盖默认的特征配置，为 false（默认）表示将自定义的规范对应关系列表和默认的列表进行叠加，否则程序内置的规范对应关系将失效，
 只检查自定义的规范列表。  
 
-## 命令行方式
+### 命令行方式
 ```
 -f-prefix= -f-suffix= -f-inner= -f-regex= -f-mime= -f-type= -f-status= -f-date-scale= -f-anti-prefix= -f-anti-suffix= -f-anti-inner= -f-anti-regex= -f-anti-mime=
 ```

@@ -14,9 +14,7 @@
 2. 单次查询一个 pfop 结果请参考[ single 操作](single.md)  
 3. 交互式操作随时输入 id 进行查询请参考[ interactive 操作](interactive.md)  
 
-## 配置文件
-
-### 配置参数
+## 配置
 ```
 process=pfopresult 
 id-index=
@@ -26,7 +24,7 @@ id-index=
 |process=pfopresult| 查询 pfop 转码结果时设置为pfopresult| 表示查询 pfop 转码结果操作|  
 |id-index| 字符串| 转码结果查询所需 persistentId 的索引（下标），pfopresult 操作时必须指定 |  
 
-## 命令行方式
+### 命令行方式
 ```
 -process=pfopresult -id-index=
 ```

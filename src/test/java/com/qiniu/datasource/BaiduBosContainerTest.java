@@ -13,8 +13,9 @@ public class BaiduBosContainerTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKeyId = propertiesFile.getValue("bai-id");
         String secretKey = propertiesFile.getValue("bai-secret");
-        String bucket = propertiesFile.getValue("bucket");
-        bucket = "nigel-test";
+        String bucket
+//                = propertiesFile.getValue("bucket");
+                = "nigel-test";
         BaiduBosContainer baiduObsContainer = new BaiduBosContainer(accessKeyId, secretKey, new BosClientConfiguration(),
                 "su.bcebos.com", bucket, null, null,
                 false, false, new HashMap<String, String>(){{ put("key", "key"); }}, null,

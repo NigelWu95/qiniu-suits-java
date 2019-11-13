@@ -22,8 +22,12 @@ public class AliListerTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.ali.properties");
         String accessKeyId = propertiesFile.getValue("ali-id");
         String accessKeySecret = propertiesFile.getValue("ali-secret");
-        String endpoint = propertiesFile.getValue("endpoint");
-        String bucket = propertiesFile.getValue("bucket");
+        String endpoint
+//                = propertiesFile.getValue("endpoint");
+                = "oss-cn-hangzhou.aliyuncs.com";
+        String bucket
+//                = propertiesFile.getValue("bucket");
+                = "nigel";
         CredentialsProvider credentialsProvider = new DefaultCredentialProvider(accessKeyId, accessKeySecret);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         OSSClient ossClient = new OSSClient(endpoint, credentialsProvider, clientConfiguration);

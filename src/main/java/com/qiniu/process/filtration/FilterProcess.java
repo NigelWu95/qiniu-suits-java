@@ -15,6 +15,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
 
     private String processName;
     private ILineFilter<T> filter;
+    private boolean strictError; // 严格错误模式，如果不匹配就抛出异常或记录错误
     private ILineProcess<T> nextProcessor;
     private String savePath;
     private AtomicInteger saveIndex;
@@ -32,6 +33,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.savePath = savePath;
         this.saveIndex = new AtomicInteger(saveIndex);
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
+        this.fileSaveMapper.preAddWriter("not_match");
         this.typeConverter = newPersistConverter();
     }
 
@@ -78,6 +80,14 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         return this.processName;
     }
 
+    public boolean isStrictError() {
+        return strictError;
+    }
+
+    public void setStrictError(boolean strictError) {
+        this.strictError = strictError;
+    }
+
     public void setNextProcessor(ILineProcess<T> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_after_" + processName;
@@ -94,6 +104,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         if (fileSaveMapper == null) return mapFilter;
         try {
             mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+            mapFilter.fileSaveMapper.preAddWriter("not_match");
             mapFilter.typeConverter = newPersistConverter();
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
@@ -106,6 +117,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             if (filter.doFilter(line)) {
                 if (nextProcessor == null) return String.valueOf(line);
                 else return nextProcessor.processLine(line);
+            } else if (strictError) {
+                throw new IOException("not match");
             } else {
                 return "false";
             }
@@ -130,6 +143,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         for (T line : list) {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
+                else fileSaveMapper.writeToKey("not_match", typeConverter.convertToV(line), false);
             } catch (NullPointerException e) {
                 if (canceled) {
 //                // nothing to do
