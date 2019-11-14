@@ -29,14 +29,24 @@ public class EntryMain {
             put("d", "default=true"); // for default account setting
             put("getaccount", "getaccount=default"); // for default account query
             put("dis", "displayed=false"); // get default account without displayed secret
+            put("key=", ""); // get default account without displayed secret
+            put("to-key=", ""); // get default account without displayed secret
         }};
         Map<String, String> paramsMap = getEntryParams(args, preSetMap);
         IEntryParam entryParam = new ParamsConfig(paramsMap);
         if (paramsMap.containsKey("account")) {
-            AccountUtils.setAccount(entryParam, paramsMap.get("account"));
+            String accountName = paramsMap.get("account");
+            if (!accountName.contains("-")) accountName = String.join("-", "qiniu", accountName);
+            AccountUtils.setAccount(entryParam, accountName);
+            List<String[]> keysList = AccountUtils.getAccount(accountName, true);
+            for (String[] keys : keysList) {
+                System.out.println(keys[2] + ": ");
+                System.out.println("id: " + keys[0]);
+                System.out.println("secret: " + keys[1]);
+            }
             return;
         } else if (paramsMap.containsKey("getaccount")) {
-            Boolean implicit = !paramsMap.containsKey("displayed");
+            boolean implicit = !paramsMap.containsKey("displayed");
             String accountName = paramsMap.get("getaccount");
             if ("default".equals(accountName)) {
                 if (entryParam.getValue("default", "false").equals("true")) accountName = null;

@@ -230,12 +230,9 @@ public class CommonParams {
             case "copy":
             case "move":
             case "rename":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                String toKey = entryParam.getValue("to-key", null);
-                if (toKey != null) {
-                    indexMap.put("toKey", "toKey");
-                    mapLine.put("toKey", toKey);
-                }
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
+                indexMap.put("toKey", "toKey");
+                mapLine.put("toKey", entryParam.getValue("to-key", ""));
                 break;
             case "download": savePath = entryParam.getValue("save-path", ".");
             case "asyncfetch":
@@ -295,7 +292,7 @@ public class CommonParams {
                 setSaveSeparator();
                 break;
             case "qupload":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
                 String filepath = entryParam.getValue("filepath", "").trim();
                 if (!"".equals(filepath)) {
                     indexMap.put("filepath", "filepath");
