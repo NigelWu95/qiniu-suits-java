@@ -436,22 +436,22 @@ public class QSuitsEntry {
         BaseFilter<Map<String, String>> baseFilter = commonParams.getBaseFilter();
         SeniorFilter<Map<String, String>> seniorFilter = commonParams.getSeniorFilter();
         if (baseFilter != null || seniorFilter != null) {
+            String strictError = entryParam.getValue("f-strict-error", "false").trim();
+            ParamsUtils.checked(strictError, "f-strict-error", "(true|false)");
             List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
             FilterProcess<Map<String, String>> filterProcessor;
-            if (processor == null) {
+            if ("true".equals(strictError)) {
                 filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newPersistConverter() throws IOException {
                         return new MapToString(saveFormat, saveSeparator, fields);
                     }
                 };
+                filterProcessor.setStrictError(Boolean.parseBoolean(strictError));
             } else {
                 filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter){};
-                filterProcessor.setNextProcessor(processor);
             }
-            String strictError = entryParam.getValue("f-strict-error", "false").trim();
-            ParamsUtils.checked(strictError, "f-strict-error", "(true|false)");
-            filterProcessor.setStrictError(Boolean.parseBoolean(strictError));
+            if (processor != null) filterProcessor.setNextProcessor(processor);
             return filterProcessor;
         } else {
             if ("filter".equals(process)) {

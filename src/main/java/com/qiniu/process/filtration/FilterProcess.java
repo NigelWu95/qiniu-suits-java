@@ -124,16 +124,16 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             }
         } catch (NullPointerException e) {
             if (canceled) {
-                throw new IOException("processor is canceled state.", e);
+                throw new IOException("processor is canceled state.");
             } else if (filter == null) { // 如果是关闭了那么 filter 应该为 null
-                throw new IOException("input is empty or the processor may be already closed.", e);
+                throw new IOException("input is empty or the processor may be already closed.");
             } else {
-                throw new IOException("instance without savePath can not call this batch process method.", e);
+                throw new IOException("instance without savePath can not call this batch process method.");
             }
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            throw new IOException(e.getMessage());
         }
     }
 
@@ -143,19 +143,19 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         for (T line : list) {
             try {
                 if (filter.doFilter(line)) filterList.add(line);
-                else fileSaveMapper.writeToKey("not_match", typeConverter.convertToV(line), false);
+                else if (strictError) fileSaveMapper.writeToKey("not_match", typeConverter.convertToV(line), false);
             } catch (NullPointerException e) {
                 if (canceled) {
 //                // nothing to do
                 } else if (filter == null) { // 如果是关闭了那么 filter 应该为 null
-                    throw new IOException("input is empty or the processor may be already closed.", e);
+                    throw new IOException("input is empty or the processor may be already closed.");
                 } else {
-                    throw new IOException("instance without savePath can not call this batch process method.", e);
+                    throw new IOException("instance without savePath can not call this batch process method.");
                 }
             } catch (IOException e) {
                 throw e;
             } catch (Exception e) {
-                throw new IOException(e.getMessage(), e);
+                throw new IOException(e.getMessage());
             }
         }
         // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。
