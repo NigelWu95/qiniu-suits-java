@@ -290,9 +290,11 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
+        String addKeyPrefix = commonParams.getAddKeyPrefix();
+        String rmKeyPrefix = commonParams.getRmKeyPrefix();
         Map<String, String> linesMap = commonParams.getLinesMap();
-        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator,
-                linesMap, indexMap, null, unitLen, threads);
+        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator, addKeyPrefix,
+                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
         filepathContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         filepathContainer.setRetryTimes(retryTimes);
         return filepathContainer;

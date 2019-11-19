@@ -15,7 +15,7 @@ public class FilepathContainerTest {
     @Test
     public void testGetFileReaders() throws IOException {
         FilepathContainer filepathContainer = new FilepathContainer("Downloads", "tab", "\t",
-                null, new HashMap<String, String>(){{ put("0", "path"); }},
+                null, null, null, new HashMap<String, String>(){{ put("0", "path"); }},
                 null, 10, 10);
         try {
             List<IReader<Iterator<String>>> readers = filepathContainer.getFileReaders("/Users/wubingheng/Downloads");
