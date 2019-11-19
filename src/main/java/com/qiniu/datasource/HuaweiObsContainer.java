@@ -82,7 +82,7 @@ public class HuaweiObsContainer extends CloudStorageContainer<ObsObject, Buffere
     }
 
     @Override
-    protected ILister<ObsObject> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+    protected ILister<ObsObject> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         return new HuaweiLister(new ObsClient(accessKeyId, accessKeySecret, configuration), bucket, prefix, marker, end, unitLen);
     }

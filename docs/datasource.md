@@ -251,8 +251,11 @@ prefixes=
 **使用七牛数据源除了可以自行指定 region（建议您自行指定 region 较好），也可以单独指定 rsf,rs,api 域名（一般不需要用到），如**：  
 ```
 rsf-domain=rsf-z0.qiniu.com
+#rsf-domain=rsf-z1.qiniu.com
 rs-domain=rs-z0.qiniu.com
-api-domain=api-z0.qiniu.com
+#rs-domain=rs-z1.qiniu.com
+api-domain=api.qiniu.com
+#api-domain=api-z1.qiniu.com
 ```  
 
 ### 2 腾讯云存储

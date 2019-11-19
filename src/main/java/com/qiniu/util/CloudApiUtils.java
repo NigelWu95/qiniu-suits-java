@@ -284,7 +284,8 @@ public final class CloudApiUtils {
                 return builder.iovipHost("iovip-z0.qbox.me")
                         .rsfHost("rsf-z0.qbox.me")
                         .rsHost("rs-z0.qbox.me")
-                        .apiHost("api-z0.qiniu.com").build();
+//                        .apiHost("api-z0.qiniu.com")
+                        .build();
             case "z1":
             case "huabei": return Region.huabei();
             case "z2":

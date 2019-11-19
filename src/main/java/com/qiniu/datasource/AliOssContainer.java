@@ -89,7 +89,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     }
 
     @Override
-    protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+    protected ILister<OSSObjectSummary> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         try {
             return new AliLister(new OSSClient(endpoint, new DefaultCredentialProvider(credentials),

@@ -85,7 +85,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     }
 
     @Override
-    protected ILister<FileItem> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+    protected ILister<FileItem> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getUpYunMarker(username, password, bucket, start);
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }

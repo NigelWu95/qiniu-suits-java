@@ -333,9 +333,14 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    protected abstract ILister<E> getLister(String prefix, String marker, String start, String end) throws SuitsException;
+    protected abstract ILister<E> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException;
 
     ILister<E> generateLister(String prefix) throws SuitsException {
+        return generateLister(prefix, 0);
+    }
+
+    private ILister<E> generateLister(String prefix, int limit) throws SuitsException {
+        limit = limit > 0 ? limit : unitLen;
         int retry = retryTimes;
         Map<String, String> map = prefixesMap.get(prefix);
         String marker;
@@ -350,7 +355,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
         while (true) {
             try {
-                return getLister(prefix, marker, start, end);
+                return getLister(prefix, marker, start, end, limit);
             } catch (SuitsException e) {
                 retry = HttpRespUtils.listExceptionWithRetry(e, retry);
                 try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
@@ -632,7 +637,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         showdownHook();
         ILister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
-            startLister = generateLister("");
+            startLister = generateLister("", 1);
             if (threads > 1) {
                 prefixes = moreValidPrefixes(startLister, false);
                 if (prefixes == null) threads = 1;
@@ -646,7 +651,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         } else {
             if (prefixLeft && prefixes.get(0).compareTo("") > 0) {
                 insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
-                startLister = generateLister("");
+                startLister = generateLister("", 1);
             }
             prefixes = prefixes.parallelStream().filter(this::checkPrefix).peek(this::recordListerByPrefix)
                     .collect(Collectors.toList());
