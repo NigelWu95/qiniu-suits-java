@@ -134,16 +134,16 @@ public final class FileUtils {
         return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
     }
 
-    public static List<File> getFiles(File directory, boolean check) throws IOException {
+    public static List<File> getFiles(File directory, boolean checkText) throws IOException {
         File[] fs = directory.listFiles();
         if (fs == null) throw new IOException("The current path you gave may be incorrect: " + directory);
         List<File> files = new ArrayList<>();
 //        Objects.requireNonNull(directory.listFiles());
         for(File f : fs) {
             if (f.isDirectory()) {
-                files.addAll(getFiles(f, check));
+                files.addAll(getFiles(f, checkText));
             } else {
-                if (check) {
+                if (checkText) {
                     String type = FileUtils.contentType(f);
                     if (type.startsWith("text") || type.equals("application/octet-stream")) {
                         files.add(f);

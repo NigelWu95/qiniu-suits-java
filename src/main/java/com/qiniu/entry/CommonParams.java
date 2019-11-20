@@ -230,12 +230,9 @@ public class CommonParams {
             case "copy":
             case "move":
             case "rename":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                String toKey = entryParam.getValue("to-key", null);
-                if (toKey != null) {
-                    indexMap.put("toKey", "toKey");
-                    mapLine.put("toKey", toKey);
-                }
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
+                indexMap.put("toKey", "toKey");
+                mapLine.put("toKey", entryParam.getValue("to-key", ""));
                 break;
             case "download": savePath = entryParam.getValue("save-path", ".");
             case "asyncfetch":
@@ -295,7 +292,7 @@ public class CommonParams {
                 setSaveSeparator();
                 break;
             case "qupload":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
                 String filepath = entryParam.getValue("filepath", "").trim();
                 if (!"".equals(filepath)) {
                     indexMap.put("filepath", "filepath");
@@ -852,49 +849,34 @@ public class CommonParams {
         }
     }
 
-    private void setIndexMap() throws IOException {
-        indexMap = new HashMap<>();
-        String indexes = entryParam.getValue("indexes", "").trim();
-        if (isSelfUpload) {
-            if (!"".equals(indexes) && !"[]".equals(indexes)) throw new IOException("upload from path can not set indexes.");
-            if (isStorageSource) throw new IOException("self upload only support local file source.");
-            indexMap.put("0", "filepath");
-            indexMap.put("1", "key");
-            indexMap.put("2", "etag");
-            indexMap.put("3", "size");
-            indexMap.put("4", "timestamp");
-            indexMap.put("5", "mime");
-            return;
-        }
-        List<String> keys = new ArrayList<>(ConvertingUtils.defaultFileFields);
-        int fieldsMode = 0;
-        if ("upyun".equals(source)) {
-            fieldsMode = 1;
-            keys.remove(ConvertingUtils.defaultEtagField);
-            keys.remove(ConvertingUtils.defaultTypeField);
-            keys.remove(ConvertingUtils.defaultStatusField);
-            keys.remove(ConvertingUtils.defaultMd5Field);
-            keys.remove(ConvertingUtils.defaultOwnerField);
-        } else if ("huawei".equals(source)) {
-            fieldsMode = 2;
-            keys.remove(ConvertingUtils.defaultStatusField);
-        } else if (isStorageSource && !"qiniu".equals(source)) {
-            fieldsMode = 3;
-            keys.remove(ConvertingUtils.defaultMimeField);
-            keys.remove(ConvertingUtils.defaultStatusField);
-            keys.remove(ConvertingUtils.defaultMd5Field);
-        }
-        if (indexes.startsWith("[") && indexes.endsWith("]")) {
+    private void setIndexes(List<String> keys, String indexes) throws IOException {
+        if (indexes.startsWith("pre-")) {
+            String num = indexes.substring(4);
+            if (num.matches("\\d+")) {
+                int number = Integer.valueOf(num);
+                if (isSelfUpload && number < 2) {
+                    throw new IOException("indexes must contain \"filepath\" and \"key\" for upload process");
+                } else if (keys.size() > number) {
+                    for (int i = 0; i < number; i++) setIndex(String.valueOf(i), keys.get(i));
+                } else {
+                    throw new IOException("the indexes are out of default fields' size, default fields are: " + keys);
+                }
+            } else {
+                throw new IOException("\"pre-indexes\" must use a number like \"indexes=pre-3\"");
+            }
+        } else if (indexes.startsWith("[") && indexes.endsWith("]")) {
             indexes = indexes.substring(1, indexes.length() - 1);
-            String[] strings = ParamsUtils.escapeSplit(indexes, false);
-            for (int i = 0; i < strings.length; i++) {
-                if (strings[i].matches(".+:.+")) {
-                    String[] keyIndex = ParamsUtils.escapeSplit(strings[i], ':');
-                    if (keyIndex.length != 2) throw new IOException("incorrect key:index pattern: " + strings[i]);
+            String[] indexList = ParamsUtils.escapeSplit(indexes, false);
+            for (int i = 0; i < indexList.length; i++) {
+                if (indexList[i].matches(".+:.+")) {
+                    String[] keyIndex = ParamsUtils.escapeSplit(indexList[i], ':');
+                    if (keyIndex.length != 2) throw new IOException("incorrect key:index pattern: " + indexList[i]);
                     setIndex(keyIndex[1], keyIndex[0]);
                 } else {
-                    if (i >= keys.size()) throw new IOException("the index is out of default fields size.");
-                    setIndex(strings[i], keys.get(i));
+                    if (i >= keys.size()) {
+                        throw new IOException("the indexes are out of default fields' size, default fields are: " + keys);
+                    }
+                    setIndex(indexList[i], keys.get(i));
                 }
             }
         } else if (indexes.startsWith("[") || indexes.endsWith("]")) {
@@ -903,16 +885,56 @@ public class CommonParams {
             String[] indexList = ParamsUtils.escapeSplit(indexes);
             for (int i = 0; i < indexList.length; i++) {
                 if ("timestamp".equals(indexList[i])) {
-                    indexMap.put(indexList[i], "timestamp");
+                    setIndex(indexList[i], "timestamp");
                     keys.add(i, "timestamp");
                 } else {
                     if (i >= keys.size()) {
-                        throw new IOException("the file object fields' indexes are too long than default: " + keys);
+                        throw new IOException("the indexes are out of default fields' size, default fields are: " + keys);
                     }
                     setIndex(indexList[i], keys.get(i));
                 }
             }
         }
+    }
+
+    private void setIndexMap() throws IOException {
+        int fieldsMode = 0;
+        indexMap = new HashMap<>();
+        List<String> keys = new ArrayList<>();
+        String indexes = entryParam.getValue("indexes", "").trim();
+        if (isSelfUpload) {
+            if (isStorageSource) throw new IOException("self upload only support local file source.");
+            if (!indexes.startsWith("pre-")) {
+                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
+            } else {
+                fieldsMode = 1;
+                keys.add("filepath");
+                keys.add("key");
+                keys.add("etag");
+                keys.add("size");
+                keys.add("datetime");
+                keys.add("mime");
+            }
+        } else {
+            keys.addAll(ConvertingUtils.defaultFileFields);
+            if ("upyun".equals(source)) {
+                fieldsMode = 1;
+                keys.remove(ConvertingUtils.defaultEtagField);
+                keys.remove(ConvertingUtils.defaultTypeField);
+                keys.remove(ConvertingUtils.defaultStatusField);
+                keys.remove(ConvertingUtils.defaultMd5Field);
+                keys.remove(ConvertingUtils.defaultOwnerField);
+            } else if ("huawei".equals(source)) {
+                fieldsMode = 2;
+                keys.remove(ConvertingUtils.defaultStatusField);
+            } else if (isStorageSource && !"qiniu".equals(source)) {
+                fieldsMode = 3;
+                keys.remove(ConvertingUtils.defaultMimeField);
+                keys.remove(ConvertingUtils.defaultStatusField);
+                keys.remove(ConvertingUtils.defaultMd5Field);
+            }
+        }
+        setIndexes(keys, indexes);
         if (ProcessUtils.needUrl(process))
             setIndex(entryParam.getValue("url-index", "").trim(), "url");
         if (ProcessUtils.needToKey(process))
@@ -934,6 +956,8 @@ public class CommonParams {
             useDefault = true;
             if (isStorageSource) {
                 for (String key : keys) indexMap.put(key, key);
+            } else if (isSelfUpload) {
+                for (int i = 0; i < keys.size(); i++) indexMap.put(String.valueOf(i), keys.get(i));
             } else if (fieldIndex) {
                 indexMap.put("key", "key");
             } else {

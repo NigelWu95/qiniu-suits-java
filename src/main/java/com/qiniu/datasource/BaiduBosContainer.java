@@ -89,7 +89,7 @@ public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, B
     }
 
     @Override
-    protected ILister<BosObjectSummary> getLister(String prefix, String marker, String start, String end) throws SuitsException {
+    protected ILister<BosObjectSummary> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         BosClient bosClient = new BosClient(this.configuration);
         try {

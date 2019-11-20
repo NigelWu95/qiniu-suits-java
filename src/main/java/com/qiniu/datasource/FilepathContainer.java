@@ -16,14 +16,15 @@ import java.util.*;
 
 public class FilepathContainer extends FileContainer<Iterator<String>, BufferedWriter, Map<String, String>> {
 
-    public FilepathContainer(String filePath, String parseFormat, String separator, Map<String, String> linesMap,
-                             Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
-        super(filePath, parseFormat, separator, null, null, linesMap, indexMap, fields, unitLen, threads);
+    public FilepathContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
+                             String rmKeyPrefix, Map<String, String> linesMap, Map<String, String> indexMap,
+                             List<String> fields, int unitLen, int threads) throws IOException {
+        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, linesMap, indexMap, fields, unitLen, threads);
     }
 
     @Override
     protected ITypeConvert<String, Map<String, String>> getNewConverter() throws IOException {
-        return new LineToMap(parse, separator, null, null, indexMap);
+        return new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
     @Override

@@ -121,13 +121,18 @@ public class ParamsUtils {
             String key;
             for (String arg : args) {
                 // 参数命令格式：-<key>=<value>
-                cmdGoon = cmdGoon || arg.matches("^-.+=.+$");
-                if (cmdGoon || arg.matches("^-[^=]+$")) {
+                cmdGoon = cmdGoon || arg.matches("^-.+=.*");
+                if (cmdGoon || arg.matches("^-[^=]+")) {
                     if (!arg.startsWith("-"))
                         throw new IOException("invalid command param: \"" + arg + "\", not start with \"-\".");
                     key = arg.substring(1);
                     if (preSetMap != null && preSetMap.containsKey(key)) {
                         key = preSetMap.get(key);
+                        if (key == null || "".equals(key)) {
+                            strings = arg.substring(1).split("=");
+                            paramsMap.put(strings[0], strings.length > 1 ? strings[1] : "");
+                            continue;
+                        }
                     }
                     strings = splitParam(key);
                     paramsMap.put(strings[0], strings[1]);
