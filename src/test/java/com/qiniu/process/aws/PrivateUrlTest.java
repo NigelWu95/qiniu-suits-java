@@ -17,11 +17,12 @@ public class PrivateUrlTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKeyId = propertiesFile.getValue("s3-id");
         String accessKeySecret = propertiesFile.getValue("s3-secret");
-        String bucket = "nigel1";
-        String region = "ap-southeast-1";
-        PrivateUrl privateUrl = new PrivateUrl(accessKeyId, accessKeySecret, bucket, null, region, 3600, null, "~/Downloads");
+        String bucket = "7zmz4b";
+        String region = "cn-east-1";
+        String endpoint = "http://s3-cn-east-1.qiniucs.com";
+        PrivateUrl privateUrl = new PrivateUrl(accessKeyId, accessKeySecret, bucket, endpoint, region, 3600000, null, "~/Downloads");
         String result = privateUrl.singleResult(new HashMap<String, String>(){{
-            put("key", "24790f63-0936-44c4-8695-a6d6b1dd8d91.jpg");
+            put("key", "0000021");
         }});
         System.out.println(result);
 

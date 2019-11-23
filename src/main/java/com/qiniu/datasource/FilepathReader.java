@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class FilepathReader implements IReader<Iterator<String>> {
+public class FilepathReader implements IReader<String> {
 
     private String name;
     private Iterator<String> iterator;
@@ -34,12 +34,7 @@ public class FilepathReader implements IReader<Iterator<String>> {
     }
 
     @Override
-    public Iterator<String> getRealReader() {
-        return iterator;
-    }
-
-    @Override
-    public List<String> readLines() {
+    public List<String> readElements() {
         if (line == null) {
             return null;
         } else if (count <= limit) {

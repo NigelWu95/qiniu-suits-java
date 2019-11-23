@@ -28,15 +28,15 @@ import static com.qiniu.entry.CommonParams.lineFormats;
 
 public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
 
-    private static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
+    static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
     private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
-    private static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
-    private static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    private static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
+    static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
+    static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
     private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
-    private static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
+    static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
 
-    private String filePath;
+    protected String path;
     protected String parse;
     protected String separator;
     protected String addKeyPrefix;
@@ -52,14 +52,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected String saveSeparator;
     protected List<String> rmFields;
     protected List<String> fields;
-    private ILineProcess<T> processor; // 定义的资源处理器
-    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
-    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
+    protected ExecutorService executorPool;
+    protected ILineProcess<T> processor; // 定义的资源处理器
+    protected ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
+    protected ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
 
-    public FileContainer(String filePath, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
+    public FileContainer(String path, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
                          Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
                          int threads) throws IOException {
-        this.filePath = filePath;
+        this.path = path;
         this.parse = parse;
         this.separator = separator;
         this.addKeyPrefix = addKeyPrefix;
@@ -101,21 +102,21 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.processor = processor;
     }
 
-    protected abstract ITypeConvert<String, T> getNewConverter() throws IOException;
+    protected abstract ITypeConvert<E, T> getNewConverter() throws IOException;
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    private JsonRecorder recorder = new JsonRecorder();
+    protected JsonRecorder recorder = new JsonRecorder();
 
     public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
-        ITypeConvert<String, T> converter = getNewConverter();
+        ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<T, String> stringConverter = null;
         if (saveTotal) {
             stringConverter = getNewStringConverter();
             saver.preAddWriter("failed");
         }
         String lastLine = reader.lastLine();
-        List<String> srcList = null;
+        List<E> srcList = null;
         List<T> convertedList;
         List<String> writeList;
         int retry;
@@ -128,7 +129,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
             retry = retryTimes + 1;
             while (retry > 0) {
                 try {
-                    srcList = reader.readLines();
+                    srcList = reader.readElements();
                     retry = 0;
                 } catch (IOException e) {
                     retry--;
@@ -207,7 +208,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
-    private void endAction() throws IOException {
+    void endAction() throws IOException {
         ILineProcess<T> processor;
         for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
@@ -230,7 +231,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         procedureLogger.info(record);
     }
 
-    private void showdownHook() {
+    void showdownHook() {
         SignalHandler handler = signal -> {
             try {
                 pauseDateTime = LocalDateTime.MIN;
@@ -250,15 +251,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
 
     public void export() throws Exception {
-        List<IReader<E>> fileReaders = getFileReaders(filePath);
+        List<IReader<E>> fileReaders = getFileReaders(path);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
         String info = processor == null ?
-                String.join(" ", "read objects from file(s):", filePath) :
-                String.join(" ", "read objects from file(s):", filePath, "and", processor.getProcessName());
+                String.join(" ", "read objects from file(s):", path) :
+                String.join(" ", "read objects from file(s):", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tpath\tquantity");
-        ExecutorService executorPool = Executors.newFixedThreadPool(runningThreads);
+        executorPool = Executors.newFixedThreadPool(runningThreads);
         showdownHook();
         try {
             String start = null;

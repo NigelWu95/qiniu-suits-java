@@ -23,8 +23,9 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
     }
 
     @Override
-    protected ITypeConvert<String, Map<String, String>> getNewConverter() throws IOException {
-        return new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+    protected ITypeConvert<Iterator<String>, Map<String, String>> getNewConverter() throws IOException {
+//        return new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
+        return null;
     }
 
     @Override
@@ -106,15 +107,15 @@ public class FilepathContainer extends FileContainer<Iterator<String>, BufferedW
                 startLine = linesMap == null ? null : linesMap.get(name);
                 list = lists.get(i);
                 if (list.size() == 0) continue;
-                filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
+//                filepathReaders.add(new FilepathReader(name, lists.get(i), startLine, unitLen));
             }
         } else {
             String key = leftTrimSize == 0 ? sourceFile.getPath() : transferPath + sourceFile.getPath().substring(leftTrimSize);
-            filepathReaders.add(new FilepathReader("filepath-" + path,
-                    new ArrayList<String>(){{ add(String.join(separator, sourceFile.getPath(), key,
-                        Etag.file(sourceFile), String.valueOf(sourceFile.length()),
-                        String.valueOf(sourceFile.lastModified()), FileUtils.contentType(sourceFile)));
-            }}, null, unitLen));
+//            filepathReaders.add(new FilepathReader("filepath-" + path,
+//                    new ArrayList<String>(){{ add(String.join(separator, sourceFile.getPath(), key,
+//                        Etag.file(sourceFile), String.valueOf(sourceFile.length()),
+//                        String.valueOf(sourceFile.lastModified()), FileUtils.contentType(sourceFile)));
+//            }}, null, unitLen));
         }
         if (filepathReaders.size() == 0) throw new IOException("no files in the current path you gave: " + path);
         return filepathReaders;

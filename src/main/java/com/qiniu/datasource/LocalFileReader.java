@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalFileReader implements IReader<BufferedReader> {
+public class LocalFileReader implements IReader<String> {
 
     private String name;
     private BufferedReader bufferedReader;
@@ -40,12 +40,7 @@ public class LocalFileReader implements IReader<BufferedReader> {
     }
 
     @Override
-    public BufferedReader getRealReader() {
-        return bufferedReader;
-    }
-
-    @Override
-    public List<String> readLines() throws IOException {
+    public List<String> readElements() throws IOException {
         if (line == null) return null;
         List<String> srcList = new ArrayList<>(lineList);
         lineList.clear();

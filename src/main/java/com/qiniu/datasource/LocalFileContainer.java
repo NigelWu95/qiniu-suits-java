@@ -11,7 +11,7 @@ import com.qiniu.util.FileUtils;
 import java.io.*;
 import java.util.*;
 
-public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWriter, Map<String, String>> {
+public class LocalFileContainer extends FileContainer<String, BufferedWriter, Map<String, String>> {
 
     public LocalFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
                               String rmKeyPrefix, Map<String, String> linesMap, Map<String, String> indexMap,
@@ -40,8 +40,8 @@ public class LocalFileContainer extends FileContainer<BufferedReader, BufferedWr
     }
 
     @Override
-    protected List<IReader<BufferedReader>> getFileReaders(String path) throws IOException {
-        List<IReader<BufferedReader>> fileReaders = new ArrayList<>();
+    protected List<IReader<String>> getFileReaders(String path) throws IOException {
+        List<IReader<String>> fileReaders = new ArrayList<>();
         if (linesMap != null && linesMap.size() > 0) {
             boolean pathIsValid = true;
             try { path = FileUtils.convertToRealPath(path); } catch (IOException ignored) { pathIsValid = false; }

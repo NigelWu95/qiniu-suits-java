@@ -20,7 +20,7 @@ public class FilepathContainerTest {
         try {
             List<IReader<Iterator<String>>> readers = filepathContainer.getFileReaders("/Users/wubingheng/Downloads");
             for (IReader<Iterator<String>> reader : readers) {
-                System.out.println(reader.readLines());
+                System.out.println(reader.readElements());
             }
         } catch (IOException e) {
             e.printStackTrace();

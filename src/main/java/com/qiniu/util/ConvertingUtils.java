@@ -376,6 +376,25 @@ public final class ConvertingUtils {
         return toPair(parsed, indexMap, pair);
     }
 
+    public static <T> T toPair(com.qiniu.model.local.FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "filepath": pair.put(indexMap.get(index), fileInfo.filepath); break;
+                case "key": pair.put(indexMap.get(index), fileInfo.key); break;
+                case "etag": pair.put(indexMap.get(index), fileInfo.etag); break;
+                case "size": pair.put(indexMap.get(index), fileInfo.length); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.timestamp)); break;
+                case "timestamp": pair.put(indexMap.get(index), fileInfo.timestamp); break;
+                case "mime": pair.put(indexMap.get(index), fileInfo.mime); break;
+                default: throw new IOException("local FileInfo doesn't have field: " + index);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
     public static <T> T toPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (line == null) throw new IOException("empty string line.");
