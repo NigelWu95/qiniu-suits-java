@@ -178,22 +178,21 @@ public class FilepathContainerV2 extends FileContainer<FileInfo, BufferedWriter,
 
     private List<File> directoriesAfterListerRun(File directory) {
         try {
-            FilepathLister filepathLister = new FilepathLister(directory, true, transferPath, leftTrimSize);
-            FileInfoReader fileInfoReader = new FileInfoReader(path, filepathLister.getFileInfos(), filepathLister.getFileInfos().get(0), unitLen);
-            if (fileInfoReader.lastLine() != null || filepathLister.getDirectories() != null) {
-                reading(fileInfoReader);
-                if (filepathLister.getDirectories() == null || filepathLister.getDirectories().size() <= 0) {
+            FileInfoLister fileInfoLister = new FileInfoLister(directory, true, transferPath, leftTrimSize, null, null, unitLen);
+            if (fileInfoLister.lastLine() != null || fileInfoLister.getDirectories() != null) {
+                reading(fileInfoLister);
+                if (fileInfoLister.getDirectories() == null || fileInfoLister.getDirectories().size() <= 0) {
                     return null;
                 } else if (hasAntiDirectories) {
-                    return filepathLister.getDirectories().stream().filter(this::checkDirectory)
+                    return fileInfoLister.getDirectories().stream().filter(this::checkDirectory)
                             .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList());
                 } else {
-                    for (File dir : filepathLister.getDirectories()) recordListerByDirectory(dir.getPath());
-                    return filepathLister.getDirectories();
+                    for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
+                    return fileInfoLister.getDirectories();
                 }
             } else {
-                reading(fileInfoReader);
-                return filepathLister.getDirectories();
+                reading(fileInfoLister);
+                return fileInfoLister.getDirectories();
             }
         } catch (IOException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
