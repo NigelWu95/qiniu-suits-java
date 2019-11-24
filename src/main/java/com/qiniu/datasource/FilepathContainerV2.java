@@ -81,10 +81,9 @@ public class FilepathContainerV2 extends FileContainer<FileInfo, BufferedWriter,
             if (directoriesMap.containsKey(null)) throw new IOException("can not find directory named \"null\".");
             this.directoriesMap = new HashMap<>(threads);
             this.directoriesMap.putAll(directoriesMap);
-            List<String> list = this.directoriesMap.keySet().stream().sorted().collect(Collectors.toList());
-            int size = list.size();
-            Iterator<String> iterator = list.iterator();
             directories = new ArrayList<>();
+            int size = this.directoriesMap.size();
+            Iterator<String> iterator = this.directoriesMap.keySet().stream().sorted().collect(Collectors.toList()).iterator();
             String temp = iterator.next();
             File tempFile;
             Map<String, String> value = directoriesMap.get(temp);
@@ -130,7 +129,7 @@ public class FilepathContainerV2 extends FileContainer<FileInfo, BufferedWriter,
         }
     }
 
-    boolean checkDirectory(File directory) {
+    private boolean checkDirectory(File directory) {
         if (hasAntiDirectories) {
             for (String antiPrefix : antiDirectories) {
                 if (directory.getPath().startsWith(antiPrefix)) return false;
